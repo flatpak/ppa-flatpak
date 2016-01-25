@@ -1,0 +1,3 @@
+xdg-app-disable-fuse-tests.patch
+xdg-app-escape-xml.patch
+xdg-app-no-gtk-doc.patch

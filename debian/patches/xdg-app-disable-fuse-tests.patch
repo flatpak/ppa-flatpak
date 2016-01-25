@@ -1,0 +1,18 @@
+diff -up xdg-app-0.4.3/tests/Makefile.am.inc.disable_fuse_tests xdg-app-0.4.3/tests/Makefile.am.inc
+--- xdg-app-0.4.3/tests/Makefile.am.inc.disable_fuse_tests	2015-10-02 09:19:52.138234105 +0200
++++ xdg-app-0.4.3/tests/Makefile.am.inc	2015-10-02 09:20:08.677988947 +0200
+@@ -1,4 +1,4 @@
+-TEST_PROGS += testdb test-doc-portal
++TEST_PROGS += testdb 
+ testdb_CFLAGS = $(BASE_CFLAGS) -DDB_DIR=\"$(abs_srcdir)/tests/dbs\"
+ testdb_LDADD = \
+              $(BASE_LIBS) \
+@@ -30,7 +30,7 @@ test_doc_portal_DEPENDENCIES = tests/ser
+ 
+ check_PROGRAMS = $(TEST_PROGS)
+ 
+-TESTS=testdb test-doc-portal
++TESTS=testdb 
+ 
+ @VALGRIND_CHECK_RULES@
+ VALGRIND_SUPPRESSIONS_FILES=tests/xdg-app.supp

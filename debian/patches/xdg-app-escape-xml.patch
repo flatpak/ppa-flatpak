@@ -1,0 +1,26 @@
+From 4671149722e8718fb67b64b274c07f6484e67708 Mon Sep 17 00:00:00 2001
+From: Alexander Larsson <alexl@redhat.com>
+Date: Mon, 25 Jan 2016 13:13:24 +0100
+Subject: [PATCH] update-repo: Escape text when writing xml
+
+---
+ common/xdg-app-utils.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/common/xdg-app-utils.c b/common/xdg-app-utils.c
+index fbe0be1..18f2665 100644
+--- a/common/xdg-app-utils.c
++++ b/common/xdg-app-utils.c
+@@ -2094,7 +2094,8 @@ xdg_app_xml_to_string (XdgAppXml *node, GString *res)
+     }
+   else if (node->text)
+     {
+-      g_string_append (res, node->text);
++      g_autofree char *escaped = g_markup_escape_text (node->text, -1);
++      g_string_append (res, escaped);
+     }
+ }
+ 
+-- 
+2.5.0
+

@@ -1,0 +1,97 @@
+Source: xdg-app
+Section: devel
+Priority: optional
+Maintainer: Alexander Larsson <alexander.larsson@gmail.com>
+Build-Depends:
+ debhelper (>= 9),
+ dh-autoreconf,
+ dh-exec (>= 0.3),
+ docbook-xml,
+ docbook-xsl,
+ libelf-dev,
+ libattr1-dev,
+ libcap-dev,
+ libglib2.0-dev,
+ libgsystem-dev,
+ libostree-dev,
+ libsoup2.4-dev,
+ xsltproc,
+ libarchive-dev (>= 2.8.0),
+ libjson-glib-dev,
+ docbook-xsl-doc-html,
+ libxml2-utils,
+ libfuse-dev,
+ libseccomp-dev,
+ libxau-dev,
+ dbus,
+ gobject-introspection,
+ libgirepository1.0-dev,
+ gtk-doc-tools,
+ fuse
+Standards-Version: 3.9.6
+Homepage: https://github.com/alexlarsson/xdg-app
+
+Package: xdg-app
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ fuse
+Description: Application deployment framework for desktop apps
+ Install and run sandboxed applications.
+
+Package: xdg-app-builder
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ xdg-app (= ${binary:Version}),
+ git,
+ bzr,
+ patch,
+ unzip,
+ tar
+Description: xdg-app application building helper
+ xdg-app-builder is a tool that makes it easy to build applications and their
+ dependencies by automating the configure && make && make install steps.
+
+Package: libxdgapp
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends}
+Pre-Depends: ${misc:Pre-Depends}
+Multi-arch: same
+Description: Library for xdg-app support
+ Library that gives access to xdg-app features. Needed for higher level package
+ management like gnome-software.
+
+Package: libxdgapp-dev
+Architecture: any
+Section: libdevel
+Depends:
+ ${misc:Depends},
+ xdg-app (= ${binary:Version}),
+ pkg-config
+Description: Development files for xdg-app
+ Development headers and pkg-config file for xdg-app.
+
+Package: gir1.2-xdgapp-1.0
+Architecture: any
+Section: introspection
+Depends:
+ ${misc:Depends},
+ ${gir:Depends}
+Description: Application deployment framework for desktop apps (introspection)
+ This package can be used by other packages using the GIRepository format to
+ generate dynamic bindings.
+
+Package: xdg-app-dbg
+Architecture: any
+Section: debug
+Priority: extra
+Depends:
+ ${misc:Depends},
+ xdg-app (= ${binary:Version})
+Description: debugging symbols for xdg-app
+ This package contains the debugging symbols for xdg-app.

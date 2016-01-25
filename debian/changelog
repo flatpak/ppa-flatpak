@@ -1,0 +1,86 @@
+xdg-app (0.4.7-alexlarsson1~wily4) wily; urgency=medium
+
+  * Disabled gtk-doc
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Mon, 25 Jan 2016 11:15:00 +0200
+
+xdg-app (0.4.7-alexlarsson1~vivid1) vivid; urgency=medium
+
+  * New upstream release
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Mon, 25 Jan 2016 11:05:00 +0200
+
+xdg-app (0.4.6-alexlarsson1~vivid2) vivid; urgency=medium
+
+  * New upstream release
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Thu, 17 Dec 2015 11:05:00 +0200
+
+xdg-app (0.4.5-alexlarsson1~vivid) vivid; urgency=medium
+
+  * New upstream release
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Fri, 06 Nov 2015 15:41:00 +0200
+
+xdg-app (0.4.4-alexlarsson1) vivid; urgency=medium
+
+  * New upstream release
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Fri, 02 Oct 2015 10:01:55 +0200
+
+xdg-app (0.4.3-alexlarsson5) vivid; urgency=medium
+
+  * Really disable fuse tests
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Fri, 02 Oct 2015 09:20:53 +0200
+
+xdg-app (0.4.3-alexlarsson4) vivid; urgency=medium
+
+  * Remove fuse based tests, as they don't work in ppa build
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Fri, 02 Oct 2015 09:06:51 +0200
+
+xdg-app (0.4.3-alexlarsson3) vivid; urgency=medium
+
+  * Add fuse dependency
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Fri, 02 Oct 2015 08:48:48 +0200
+
+xdg-app (0.4.3-alexlarsson2) vivid; urgency=medium
+
+  * Add dbus dependency
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Fri, 02 Oct 2015 08:40:46 +0200
+
+xdg-app (0.4.3-alexlarsson1) vivid; urgency=medium
+
+  * New upstream release
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Thu, 01 Oct 2015 13:06:05 +0200
+
+xdg-app (0.1-0amigadave4) trusty; urgency=low
+
+  * Add build dependency on dh-exec.
+
+ -- David King <david@ubuntudave>  Wed, 08 Apr 2015 13:48:36 +0100
+
+xdg-app (0.1-0amigadave3) trusty; urgency=low
+
+  [ David King ]
+  * Add build dependency on libattr1-dev.
+
+ -- David King <amigadave@amigadave.com>  Wed, 08 Apr 2015 13:36:39 +0100
+
+xdg-app (0.1-0amigadave2) trusty; urgency=low
+
+  [ David King ]
+  * Add build dependency on xsltproc.
+
+ -- David King <amigadave@amigadave.com>  Wed, 08 Apr 2015 13:28:14 +0100
+
+xdg-app (0.1-0amigadave1) trusty; urgency=low
+
+  [ David King ]
+  * Initial packaging.
+
+ -- David King <amigadave@amigadave.com>  Thu, 02 Apr 2015 15:44:01 +0000
