@@ -62,13 +62,18 @@ Description: Library for xdg-app support
  Library that gives access to xdg-app features. Needed for higher level package
  management like gnome-software.
 
-Package: libxdgapp-dev
+Package: libxdg-app-dev
 Architecture: any
 Section: libdevel
 Depends:
  pkg-config,
  xdg-app (= ${binary:Version}),
  ${misc:Depends},
+# this name was never in Debian but is in upstream's PPAs
+Conflicts:
+ libxdgapp-dev,
+Replaces:
+ libxdgapp-dev,
 Description: Development files for xdg-app
  Development headers and pkg-config file for xdg-app.
 
