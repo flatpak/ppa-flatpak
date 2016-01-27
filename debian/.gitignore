@@ -1,0 +1,7 @@
+/*.debhelper
+/*.substvars
+/gir1.2-xdgapp-1.0/
+/libxdgapp-dev/
+/libxdgapp/
+/xdg-app-builder/
+/xdg-app/
