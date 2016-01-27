@@ -18,6 +18,7 @@ xdg-app (0.4.7+39+g71a30f5-1) UNRELEASED; urgency=medium
   * Rename libxdgapp-dev to libxdg-app-dev for consistency
   * Stop disabling the test that relies on FUSE; it is now correctly
     skipped if appropriate
+  * Re-enable gtk-doc and add a libxdg-app-doc package
 
  -- Simon McVittie <smcv@debian.org>  Fri, 29 Jan 2016 10:04:17 +0100
 

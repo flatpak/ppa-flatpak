@@ -77,6 +77,15 @@ Replaces:
 Description: Development files for xdg-app
  Development headers and pkg-config file for xdg-app.
 
+Package: libxdg-app-doc
+Architecture: all
+Section: doc
+Depends:
+ ${misc:Depends},
+Suggests: devhelp
+Multi-Arch: foreign
+Description: Documentation for xdg-app
+
 Package: xdg-app
 Architecture: any
 Depends:
