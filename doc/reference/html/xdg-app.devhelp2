@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<book xmlns="http://www.devhelp.net/book" title="xdg-app Reference Manual" link="index.html" author="" name="xdg-app" version="2" language="c">
+  <chapters>
+    <sub name="XDG-App" link="ch01.html">
+      <sub name="XdgAppInstallation" link="xdg-app-XdgAppInstallation.html"/>
+      <sub name="XdgAppInstalledRef" link="xdg-app-XdgAppInstalledRef.html"/>
+      <sub name="XdgAppRemoteRef" link="xdg-app-XdgAppRemoteRef.html"/>
+      <sub name="XdgAppRef" link="xdg-app-XdgAppRef.html"/>
+      <sub name="XdgAppRemote" link="xdg-app-XdgAppRemote.html"/>
+      <sub name="xdg-app-version-macros" link="xdg-app-xdg-app-version-macros.html"/>
+    </sub>
+    <sub name="Object Hierarchy" link="object-tree.html"/>
+    <sub name="API Index" link="full-api-index.html"/>
+    <sub name="Index of deprecated API" link="deprecated-api-index.html"/>
+  </chapters>
+  <functions>
+    <keyword type="typedef" name="XdgAppInstallation" link="xdg-app-XdgAppInstallation.html#XdgAppInstallation"/>
+    <keyword type="struct" name="XdgAppInstallationClass" link="xdg-app-XdgAppInstallation.html#XdgAppInstallationClass"/>
+    <keyword type="typedef" name="XdgAppInstalledRef" link="xdg-app-XdgAppInstalledRef.html#XdgAppInstalledRef"/>
+    <keyword type="struct" name="XdgAppInstalledRefClass" link="xdg-app-XdgAppInstalledRef.html#XdgAppInstalledRefClass"/>
+    <keyword type="typedef" name="XdgAppRemoteRef" link="xdg-app-XdgAppRemoteRef.html#XdgAppRemoteRef"/>
+    <keyword type="struct" name="XdgAppRemoteRefClass" link="xdg-app-XdgAppRemoteRef.html#XdgAppRemoteRefClass"/>
+    <keyword type="typedef" name="XdgAppRef" link="xdg-app-XdgAppRef.html#XdgAppRef"/>
+    <keyword type="struct" name="XdgAppRefClass" link="xdg-app-XdgAppRef.html#XdgAppRefClass"/>
+    <keyword type="enum" name="enum XdgAppRefKind" link="xdg-app-XdgAppRef.html#XdgAppRefKind"/>
+    <keyword type="typedef" name="XdgAppRemote" link="xdg-app-XdgAppRemote.html#XdgAppRemote"/>
+    <keyword type="struct" name="XdgAppRemoteClass" link="xdg-app-XdgAppRemote.html#XdgAppRemoteClass"/>
+    <keyword type="macro" name="XDG_APP_MAJOR_VERSION" link="xdg-app-xdg-app-version-macros.html#XDG-APP-MAJOR-VERSION:CAPS"/>
+    <keyword type="macro" name="XDG_APP_MINOR_VERSION" link="xdg-app-xdg-app-version-macros.html#XDG-APP-MINOR-VERSION:CAPS"/>
+    <keyword type="macro" name="XDG_APP_MICRO_VERSION" link="xdg-app-xdg-app-version-macros.html#XDG-APP-MICRO-VERSION:CAPS"/>
+    <keyword type="macro" name="XDG_APP_EXTERN" link="xdg-app-xdg-app-version-macros.html#XDG-APP-EXTERN:CAPS"/>
+    <keyword type="constant" name="XDG_APP_REF_KIND_APP" link="xdg-app-XdgAppRef.html#XDG-APP-REF-KIND-APP:CAPS"/>
+    <keyword type="constant" name="XDG_APP_REF_KIND_RUNTIME" link="xdg-app-XdgAppRef.html#XDG-APP-REF-KIND-RUNTIME:CAPS"/>
+  </functions>
+</book>
