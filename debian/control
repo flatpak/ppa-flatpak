@@ -88,13 +88,3 @@ Depends:
 Description: Application deployment framework for desktop apps (introspection)
  This package can be used by other packages using the GIRepository format to
  generate dynamic bindings.
-
-Package: xdg-app-dbg
-Architecture: any
-Section: debug
-Priority: extra
-Depends:
- ${misc:Depends},
- xdg-app (= ${binary:Version})
-Description: debugging symbols for xdg-app
- This package contains the debugging symbols for xdg-app.
