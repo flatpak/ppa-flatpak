@@ -109,7 +109,6 @@ Recommends:
  bzr,
  git,
  patch,
- tar,
  unzip,
 Description: xdg-app application building helper
  xdg-app-builder is a tool that makes it easy to build applications and their
