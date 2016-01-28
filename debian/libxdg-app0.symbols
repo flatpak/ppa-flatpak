@@ -1,0 +1,2 @@
+libxdg-app.so.0 libxdg-app0 #MINVER#
+* Build-Depends-Package: libxdg-app-dev
