@@ -1,3 +1,10 @@
+xdg-app (0.4.7+39+g71a30f5-1) UNRELEASED; urgency=medium
+
+  * New upstream snapshot, plus patches to fix distcheck
+    - drop patch for XML escaping, applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 29 Jan 2016 10:04:17 +0100
+
 xdg-app (0.4.7-alexlarsson1~wily4) wily; urgency=medium
 
   * Disabled gtk-doc
