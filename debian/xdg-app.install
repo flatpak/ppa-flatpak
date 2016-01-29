@@ -4,6 +4,8 @@ usr/bin/xdg-app-helper
 usr/lib/*/xdg-app-session-helper
 usr/lib/*/xdg-dbus-proxy
 usr/lib/*/xdg-document-portal
+usr/lib/systemd/user/xdg-app-session-helper.service
+usr/lib/systemd/user/xdg-document-portal.service
 usr/share/bash-completion
 usr/share/dbus-1/services/*
 usr/share/gdm/env.d
