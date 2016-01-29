@@ -1,5 +1,5 @@
 Source: xdg-app
-Section: devel
+Section: admin
 Priority: optional
 Maintainer: Utopia Maintenance Team <pkg-utopia-maintainers@lists.alioth.debian.org>
 Uploaders:
@@ -46,6 +46,7 @@ Description: Application deployment framework for desktop apps (introspection)
 
 Package: libxdgapp
 Architecture: any
+Section: libs
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
@@ -77,6 +78,7 @@ Description: Application deployment framework for desktop apps
 
 Package: xdg-app-builder
 Architecture: any
+Section: devel
 Depends:
  bzr,
  git,
