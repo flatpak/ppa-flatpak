@@ -1,0 +1,1231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>XdgAppInstallation: xdg-app Reference Manual</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<link rel="home" href="index.html" title="xdg-app Reference Manual">
+<link rel="up" href="ch01.html" title="XDG-App">
+<link rel="prev" href="xdg-app-xdg-app-error.html" title="xdg-app-error">
+<link rel="next" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef">
+<meta name="generator" content="GTK-Doc V1.24 (XML mode)">
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<table class="navigation" id="top" width="100%" summary="Navigation header" cellpadding="2" cellspacing="5"><tr valign="middle">
+<td width="100%" align="left" class="shortcuts">
+<a href="#" class="shortcut">Top</a><span id="nav_description">  <span class="dim">|</span> 
+                  <a href="#XdgAppInstallation.description" class="shortcut">Description</a></span><span id="nav_hierarchy">  <span class="dim">|</span> 
+                  <a href="#XdgAppInstallation.object-hierarchy" class="shortcut">Object Hierarchy</a></span>
+</td>
+<td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
+<td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
+<td><a accesskey="p" href="xdg-app-xdg-app-error.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="XdgAppInstalledRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+</tr></table>
+<div class="refentry">
+<a name="XdgAppInstallation"></a><div class="titlepage"></div>
+<div class="refnamediv"><table width="100%"><tr>
+<td valign="top">
+<h2><span class="refentrytitle"><a name="XdgAppInstallation.top_of_page"></a>XdgAppInstallation</span></h2>
+<p>XdgAppInstallation</p>
+</td>
+<td class="gallery_image" valign="top" align="right"></td>
+</tr></table></div>
+<div class="refsect1">
+<a name="XdgAppInstallation.functions"></a><h2>Functions</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="functions_return">
+<col class="functions_name">
+</colgroup>
+<tbody>
+<tr>
+<td class="function_type">
+<a href="https://developer.gnome.org/gio/unstable/GFileMonitor.html"><span class="returnvalue">GFileMonitor</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-create-monitor" title="xdg_app_installation_create_monitor ()">xdg_app_installation_create_monitor</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="https://developer.gnome.org/glib/unstable/glib-Byte-Arrays.html#GBytes"><span class="returnvalue">GBytes</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-fetch-remote-metadata-sync" title="xdg_app_installation_fetch_remote_metadata_sync ()">xdg_app_installation_fetch_remote_metadata_sync</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="XdgAppRemoteRef.html" title="XdgAppRemoteRef"><span class="returnvalue">XdgAppRemoteRef</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-fetch-remote-ref-sync" title="xdg_app_installation_fetch_remote_ref_sync ()">xdg_app_installation_fetch_remote_ref_sync</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-fetch-remote-size-sync" title="xdg_app_installation_fetch_remote_size_sync ()">xdg_app_installation_fetch_remote_size_sync</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="returnvalue">XdgAppInstalledRef</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-get-current-installed-app" title="xdg_app_installation_get_current_installed_app ()">xdg_app_installation_get_current_installed_app</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="returnvalue">XdgAppInstalledRef</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-get-installed-ref" title="xdg_app_installation_get_installed_ref ()">xdg_app_installation_get_installed_ref</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-get-is-user" title="xdg_app_installation_get_is_user ()">xdg_app_installation_get_is_user</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-get-type" title="xdg_app_installation_get_type ()">xdg_app_installation_get_type</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="returnvalue">XdgAppInstalledRef</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-install" title="xdg_app_installation_install ()">xdg_app_installation_install</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-launch" title="xdg_app_installation_launch ()">xdg_app_installation_launch</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="https://developer.gnome.org/glib/unstable/glib-Pointer-Arrays.html#GPtrArray"><span class="returnvalue">GPtrArray</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-list-installed-refs" title="xdg_app_installation_list_installed_refs ()">xdg_app_installation_list_installed_refs</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="https://developer.gnome.org/glib/unstable/glib-Pointer-Arrays.html#GPtrArray"><span class="returnvalue">GPtrArray</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-list-installed-refs-by-kind" title="xdg_app_installation_list_installed_refs_by_kind ()">xdg_app_installation_list_installed_refs_by_kind</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="https://developer.gnome.org/glib/unstable/glib-Pointer-Arrays.html#GPtrArray"><span class="returnvalue">GPtrArray</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-list-installed-refs-for-update" title="xdg_app_installation_list_installed_refs_for_update ()">xdg_app_installation_list_installed_refs_for_update</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="https://developer.gnome.org/glib/unstable/glib-Pointer-Arrays.html#GPtrArray"><span class="returnvalue">GPtrArray</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-list-remote-refs-sync" title="xdg_app_installation_list_remote_refs_sync ()">xdg_app_installation_list_remote_refs_sync</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="https://developer.gnome.org/glib/unstable/glib-Pointer-Arrays.html#GPtrArray"><span class="returnvalue">GPtrArray</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-list-remotes" title="xdg_app_installation_list_remotes ()">xdg_app_installation_list_remotes</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">char</span> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-load-app-overrides" title="xdg_app_installation_load_app_overrides ()">xdg_app_installation_load_app_overrides</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="returnvalue">XdgAppInstallation</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-new-for-path" title="xdg_app_installation_new_for_path ()">xdg_app_installation_new_for_path</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="returnvalue">XdgAppInstallation</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-new-system" title="xdg_app_installation_new_system ()">xdg_app_installation_new_system</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="returnvalue">XdgAppInstallation</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-new-user" title="xdg_app_installation_new_user ()">xdg_app_installation_new_user</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-uninstall" title="xdg_app_installation_uninstall ()">xdg_app_installation_uninstall</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="returnvalue">XdgAppInstalledRef</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-update" title="xdg_app_installation_update ()">xdg_app_installation_update</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-update-appstream-sync" title="xdg_app_installation_update_appstream_sync ()">xdg_app_installation_update_appstream_sync</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<span class="c_punctuation">(</span><a class="link" href="XdgAppInstallation.html#XdgAppProgressCallback" title="XdgAppProgressCallback ()">*XdgAppProgressCallback</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
+</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="XdgAppInstallation.other"></a><h2>Types and Values</h2>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="name">
+<col class="description">
+</colgroup>
+<tbody>
+<tr>
+<td class="datatype_keyword">struct</td>
+<td class="function_name"><a class="link" href="XdgAppInstallation.html#XdgAppInstallation-struct" title="struct XdgAppInstallation">XdgAppInstallation</a></td>
+</tr>
+<tr>
+<td class="datatype_keyword"> </td>
+<td class="function_name"><a class="link" href="XdgAppInstallation.html#XdgAppInstallationClass" title="XdgAppInstallationClass">XdgAppInstallationClass</a></td>
+</tr>
+<tr>
+<td class="datatype_keyword">enum</td>
+<td class="function_name"><a class="link" href="XdgAppInstallation.html#XdgAppUpdateFlags" title="enum XdgAppUpdateFlags">XdgAppUpdateFlags</a></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect1">
+<a name="XdgAppInstallation.object-hierarchy"></a><h2>Object Hierarchy</h2>
+<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>
+    <span class="lineart">╰──</span> XdgAppInstallation
+</pre>
+</div>
+<div class="refsect1">
+<a name="XdgAppInstallation.description"></a><h2>Description</h2>
+</div>
+<div class="refsect1">
+<a name="XdgAppInstallation.functions_details"></a><h2>Functions</h2>
+<div class="refsect2">
+<a name="xdg-app-installation-create-monitor"></a><h3>xdg_app_installation_create_monitor ()</h3>
+<pre class="programlisting"><a href="https://developer.gnome.org/gio/unstable/GFileMonitor.html"><span class="returnvalue">GFileMonitor</span></a> *
+xdg_app_installation_create_monitor (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                     <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                     <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Gets the current remote branch of a ref in the remote.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.2.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.7.2.6"></a><h4>Returns</h4>
+<p> a new <a href="https://developer.gnome.org/gio/unstable/GFileMonitor.html"><span class="type">GFileMonitor</span></a> instance, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> on error. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-fetch-remote-metadata-sync"></a><h3>xdg_app_installation_fetch_remote_metadata_sync ()</h3>
+<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Byte-Arrays.html#GBytes"><span class="returnvalue">GBytes</span></a> *
+xdg_app_installation_fetch_remote_metadata_sync
+                               (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *remote_name</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *commit</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-fetch-remote-ref-sync"></a><h3>xdg_app_installation_fetch_remote_ref_sync ()</h3>
+<pre class="programlisting"><a class="link" href="XdgAppRemoteRef.html" title="XdgAppRemoteRef"><span class="returnvalue">XdgAppRemoteRef</span></a> *
+xdg_app_installation_fetch_remote_ref_sync
+                               (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *remote_name</code></em>,
+                                <em class="parameter"><code><a class="link" href="XdgAppRef.html#XdgAppRefKind" title="enum XdgAppRefKind"><span class="type">XdgAppRefKind</span></a> kind</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *name</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *arch</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *branch</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Gets the current remote branch of a ref in the remote.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.4.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>remote_name</p></td>
+<td class="parameter_description"><p>the name of the remote</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>kind</p></td>
+<td class="parameter_description"><p>what this ref contains (an <a class="link" href="XdgAppRef.html#XdgAppRefKind" title="enum XdgAppRefKind"><span class="type">XdgAppRefKind</span></a>)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>name</p></td>
+<td class="parameter_description"><p>name of the app/runtime to fetch</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>arch</p></td>
+<td class="parameter_description"><p> which architecture to fetch (default: current architecture). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>branch</p></td>
+<td class="parameter_description"><p> which branch to fetch (default: 'master'). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.7.4.6"></a><h4>Returns</h4>
+<p> a <a class="link" href="XdgAppRemoteRef.html" title="XdgAppRemoteRef"><span class="type">XdgAppRemoteRef</span></a> instance, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-fetch-remote-size-sync"></a><h3>xdg_app_installation_fetch_remote_size_sync ()</h3>
+<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+xdg_app_installation_fetch_remote_size_sync
+                               (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *remote_name</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *commit</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint64"><span class="type">guint64</span></a> *download_size</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint64"><span class="type">guint64</span></a> *installed_size</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-get-current-installed-app"></a><h3>xdg_app_installation_get_current_installed_app ()</h3>
+<pre class="programlisting"><a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="returnvalue">XdgAppInstalledRef</span></a> *
+xdg_app_installation_get_current_installed_app
+                               (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *name</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Get the last build of app <em class="parameter"><code>name</code></em>
+ that was installed with
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-install" title="xdg_app_installation_install ()"><code class="function">xdg_app_installation_install()</code></a>, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if the app has never been installed
+locally.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.6.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>name</p></td>
+<td class="parameter_description"><p>the name of the app</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.7.6.6"></a><h4>Returns</h4>
+<p> an <a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="type">XdgAppInstalledRef</span></a>. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-get-installed-ref"></a><h3>xdg_app_installation_get_installed_ref ()</h3>
+<pre class="programlisting"><a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="returnvalue">XdgAppInstalledRef</span></a> *
+xdg_app_installation_get_installed_ref
+                               (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code><a class="link" href="XdgAppRef.html#XdgAppRefKind" title="enum XdgAppRefKind"><span class="type">XdgAppRefKind</span></a> kind</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *name</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *arch</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *branch</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Returns information about an installed app or runtime, such as the
+available builds, its size, location, etc.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.7.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>kind</p></td>
+<td class="parameter_description"><p>whether this is an app or runtime</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>name</p></td>
+<td class="parameter_description"><p>name of the app/runtime to fetch</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>arch</p></td>
+<td class="parameter_description"><p> which architecture to fetch (default: current architecture). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>branch</p></td>
+<td class="parameter_description"><p> which branch to fetch (default: 'master'). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.7.7.6"></a><h4>Returns</h4>
+<p> an <a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="type">XdgAppInstalledRef</span></a>. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-get-is-user"></a><h3>xdg_app_installation_get_is_user ()</h3>
+<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+xdg_app_installation_get_is_user (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-get-type"></a><h3>xdg_app_installation_get_type ()</h3>
+<pre class="programlisting"><a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
+xdg_app_installation_get_type (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-install"></a><h3>xdg_app_installation_install ()</h3>
+<pre class="programlisting"><a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="returnvalue">XdgAppInstalledRef</span></a> *
+xdg_app_installation_install (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                              <em class="parameter"><code>const <span class="type">char</span> *remote_name</code></em>,
+                              <em class="parameter"><code><a class="link" href="XdgAppRef.html#XdgAppRefKind" title="enum XdgAppRefKind"><span class="type">XdgAppRefKind</span></a> kind</code></em>,
+                              <em class="parameter"><code>const <span class="type">char</span> *name</code></em>,
+                              <em class="parameter"><code>const <span class="type">char</span> *arch</code></em>,
+                              <em class="parameter"><code>const <span class="type">char</span> *branch</code></em>,
+                              <em class="parameter"><code><a class="link" href="XdgAppInstallation.html#XdgAppProgressCallback" title="XdgAppProgressCallback ()"><span class="type">XdgAppProgressCallback</span></a> progress</code></em>,
+                              <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> progress_data</code></em>,
+                              <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                              <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Install a new ref.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.10.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>remote_name</p></td>
+<td class="parameter_description"><p>name of the remote to use</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>kind</p></td>
+<td class="parameter_description"><p>what this ref contains (an <a class="link" href="XdgAppRef.html#XdgAppRefKind" title="enum XdgAppRefKind"><span class="type">XdgAppRefKind</span></a>)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>name</p></td>
+<td class="parameter_description"><p>name of the app/runtime to fetch</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>arch</p></td>
+<td class="parameter_description"><p> which architecture to fetch (default: current architecture). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>branch</p></td>
+<td class="parameter_description"><p> which branch to fetch (default: 'master'). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>progress</p></td>
+<td class="parameter_description"><p> progress callback. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="The callback is valid only during the call to the method."><span class="acronym">scope call</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>progress_data</p></td>
+<td class="parameter_description"><p>user data passed to <em class="parameter"><code>progress</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.7.10.6"></a><h4>Returns</h4>
+<p> The ref for the newly installed app or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> on failure. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-launch"></a><h3>xdg_app_installation_launch ()</h3>
+<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+xdg_app_installation_launch (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                             <em class="parameter"><code>const <span class="type">char</span> *name</code></em>,
+                             <em class="parameter"><code>const <span class="type">char</span> *arch</code></em>,
+                             <em class="parameter"><code>const <span class="type">char</span> *branch</code></em>,
+                             <em class="parameter"><code>const <span class="type">char</span> *commit</code></em>,
+                             <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                             <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Launch an installed application.</p>
+<p>You can use <a class="link" href="XdgAppInstallation.html#xdg-app-installation-get-installed-ref" title="xdg_app_installation_get_installed_ref ()"><code class="function">xdg_app_installation_get_installed_ref()</code></a> or
+<a class="link" href="XdgAppInstallation.html#xdg-app-installation-get-current-installed-app" title="xdg_app_installation_get_current_installed_app ()"><code class="function">xdg_app_installation_get_current_installed_app()</code></a> to find out what builds
+are available, in order to get a value for <em class="parameter"><code>commit</code></em>
+.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.11.6"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>name</p></td>
+<td class="parameter_description"><p>name of the app to launch</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>arch</p></td>
+<td class="parameter_description"><p> which architecture to launch (default: current architecture). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>branch</p></td>
+<td class="parameter_description"><p> which branch of the application (default: 'master'). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>commit</p></td>
+<td class="parameter_description"><p> the commit of <em class="parameter"><code>branch</code></em>
+to launch. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-list-installed-refs"></a><h3>xdg_app_installation_list_installed_refs ()</h3>
+<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Pointer-Arrays.html#GPtrArray"><span class="returnvalue">GPtrArray</span></a> *
+xdg_app_installation_list_installed_refs
+                               (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Lists the installed references.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.12.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.7.12.6"></a><h4>Returns</h4>
+<p> an GPtrArray of
+<a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="type">XdgAppInstalledRef</span></a> instances. </p>
+<p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> XdgAppInstalledRef]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-list-installed-refs-by-kind"></a><h3>xdg_app_installation_list_installed_refs_by_kind ()</h3>
+<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Pointer-Arrays.html#GPtrArray"><span class="returnvalue">GPtrArray</span></a> *
+xdg_app_installation_list_installed_refs_by_kind
+                               (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code><a class="link" href="XdgAppRef.html#XdgAppRefKind" title="enum XdgAppRefKind"><span class="type">XdgAppRefKind</span></a> kind</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Lists the installed references of a specific kind.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.13.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>kind</p></td>
+<td class="parameter_description"><p>the kind of installation</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.7.13.6"></a><h4>Returns</h4>
+<p> an GPtrArray of
+<a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="type">XdgAppInstalledRef</span></a> instances. </p>
+<p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> XdgAppInstalledRef]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-list-installed-refs-for-update"></a><h3>xdg_app_installation_list_installed_refs_for_update ()</h3>
+<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Pointer-Arrays.html#GPtrArray"><span class="returnvalue">GPtrArray</span></a> *
+xdg_app_installation_list_installed_refs_for_update
+                               (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Lists the installed references that has a remote update that is not
+locally available. However, even though an app is not returned by this
+it can have local updates available that has not been deployed. Look
+at commit vs latest_commit on installed apps for this.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.14.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.7.14.6"></a><h4>Returns</h4>
+<p> an GPtrArray of
+<a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="type">XdgAppInstalledRef</span></a> instances. </p>
+<p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> XdgAppInstalledRef]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-list-remote-refs-sync"></a><h3>xdg_app_installation_list_remote_refs_sync ()</h3>
+<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Pointer-Arrays.html#GPtrArray"><span class="returnvalue">GPtrArray</span></a> *
+xdg_app_installation_list_remote_refs_sync
+                               (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *remote_name</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Lists all the refs in a remote.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.15.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>remote_name</p></td>
+<td class="parameter_description"><p>the name of the remote</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.7.15.6"></a><h4>Returns</h4>
+<p> an GPtrArray of
+<a class="link" href="XdgAppRemoteRef.html" title="XdgAppRemoteRef"><span class="type">XdgAppRemoteRef</span></a> instances. </p>
+<p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> XdgAppInstalledRef]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-list-remotes"></a><h3>xdg_app_installation_list_remotes ()</h3>
+<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Pointer-Arrays.html#GPtrArray"><span class="returnvalue">GPtrArray</span></a> *
+xdg_app_installation_list_remotes (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                   <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                   <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Lists the remotes, in priority (highest first) order. For same priority,
+earlier added remote comes before a later added one.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.16.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.7.16.6"></a><h4>Returns</h4>
+<p> an GPtrArray of
+<a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a> instances. </p>
+<p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> XdgAppRemote]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-load-app-overrides"></a><h3>xdg_app_installation_load_app_overrides ()</h3>
+<pre class="programlisting"><span class="returnvalue">char</span> *
+xdg_app_installation_load_app_overrides
+                               (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *app_id</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-new-for-path"></a><h3>xdg_app_installation_new_for_path ()</h3>
+<pre class="programlisting"><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="returnvalue">XdgAppInstallation</span></a> *
+xdg_app_installation_new_for_path (<em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GFile.html"><span class="type">GFile</span></a> *path</code></em>,
+                                   <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> user</code></em>,
+                                   <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                   <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-new-system"></a><h3>xdg_app_installation_new_system ()</h3>
+<pre class="programlisting"><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="returnvalue">XdgAppInstallation</span></a> *
+xdg_app_installation_new_system (<em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                 <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-new-user"></a><h3>xdg_app_installation_new_user ()</h3>
+<pre class="programlisting"><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="returnvalue">XdgAppInstallation</span></a> *
+xdg_app_installation_new_user (<em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                               <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-uninstall"></a><h3>xdg_app_installation_uninstall ()</h3>
+<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+xdg_app_installation_uninstall (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code><a class="link" href="XdgAppRef.html#XdgAppRefKind" title="enum XdgAppRefKind"><span class="type">XdgAppRefKind</span></a> kind</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *name</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *arch</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *branch</code></em>,
+                                <em class="parameter"><code><a class="link" href="XdgAppInstallation.html#XdgAppProgressCallback" title="XdgAppProgressCallback ()"><span class="type">XdgAppProgressCallback</span></a> progress</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> progress_data</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Update a ref.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.21.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>kind</p></td>
+<td class="parameter_description"><p>what this ref contains (an <a class="link" href="XdgAppRef.html#XdgAppRefKind" title="enum XdgAppRefKind"><span class="type">XdgAppRefKind</span></a>)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>name</p></td>
+<td class="parameter_description"><p>name of the app or runtime to uninstall</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>arch</p></td>
+<td class="parameter_description"><p>architecture of the app or runtime to uninstall</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>branch</p></td>
+<td class="parameter_description"><p>name of the branch of the app or runtime to uninstall</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>progress</p></td>
+<td class="parameter_description"><p> the callback. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="The callback is valid only during the call to the method."><span class="acronym">scope call</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>progress_data</p></td>
+<td class="parameter_description"><p>user data passed to <em class="parameter"><code>progress</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.7.21.6"></a><h4>Returns</h4>
+<p> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> on success</p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-update"></a><h3>xdg_app_installation_update ()</h3>
+<pre class="programlisting"><a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="returnvalue">XdgAppInstalledRef</span></a> *
+xdg_app_installation_update (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                             <em class="parameter"><code><a class="link" href="XdgAppInstallation.html#XdgAppUpdateFlags" title="enum XdgAppUpdateFlags"><span class="type">XdgAppUpdateFlags</span></a> flags</code></em>,
+                             <em class="parameter"><code><a class="link" href="XdgAppRef.html#XdgAppRefKind" title="enum XdgAppRefKind"><span class="type">XdgAppRefKind</span></a> kind</code></em>,
+                             <em class="parameter"><code>const <span class="type">char</span> *name</code></em>,
+                             <em class="parameter"><code>const <span class="type">char</span> *arch</code></em>,
+                             <em class="parameter"><code>const <span class="type">char</span> *branch</code></em>,
+                             <em class="parameter"><code><a class="link" href="XdgAppInstallation.html#XdgAppProgressCallback" title="XdgAppProgressCallback ()"><span class="type">XdgAppProgressCallback</span></a> progress</code></em>,
+                             <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> progress_data</code></em>,
+                             <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                             <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Update a ref.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.22.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>flags</p></td>
+<td class="parameter_description"><p>an <a class="link" href="XdgAppInstallation.html#XdgAppUpdateFlags" title="enum XdgAppUpdateFlags"><span class="type">XdgAppUpdateFlags</span></a> variable</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>kind</p></td>
+<td class="parameter_description"><p>whether this is an app or runtime</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>name</p></td>
+<td class="parameter_description"><p>name of the app or runtime to update</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>arch</p></td>
+<td class="parameter_description"><p> architecture of the app or runtime to update (default: current architecture). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>branch</p></td>
+<td class="parameter_description"><p> name of the branch of the app or runtime to update (default: master). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>progress</p></td>
+<td class="parameter_description"><p> the callback. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="The callback is valid only during the call to the method."><span class="acronym">scope call</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>progress_data</p></td>
+<td class="parameter_description"><p>user data passed to <em class="parameter"><code>progress</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.7.22.6"></a><h4>Returns</h4>
+<p> The ref for the newly updated app (or the same if no update) or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> on failure. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="xdg-app-installation-update-appstream-sync"></a><h3>xdg_app_installation_update_appstream_sync ()</h3>
+<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+xdg_app_installation_update_appstream_sync
+                               (<em class="parameter"><code><a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *remote_name</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *arch</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> *out_changed</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a> *cancellable</code></em>,
+                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>Updates the local copy of appstream for <em class="parameter"><code>remote_name</code></em>
+ for the specified <em class="parameter"><code>arch</code></em>
+.</p>
+<div class="refsect3">
+<a name="id-1.2.3.7.23.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppInstallation.html" title="XdgAppInstallation"><span class="type">XdgAppInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>remote_name</p></td>
+<td class="parameter_description"><p>the name of the remote</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>arch</p></td>
+<td class="parameter_description"><p>Architecture to update, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> for the local machine arch</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>out_changed</p></td>
+<td class="parameter_description"><p> Set to <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if the contents of the appstream changed, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> if nothing changed. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a href="https://developer.gnome.org/gio/unstable/GCancellable.html"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.7.23.6"></a><h4>Returns</h4>
+<p> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> on success, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> on error</p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="XdgAppProgressCallback"></a><h3>XdgAppProgressCallback ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+<span class="c_punctuation">(</span>*XdgAppProgressCallback<span class="c_punctuation">)</span> (<em class="parameter"><code>const <span class="type">char</span> *status</code></em>,
+                           <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a> progress</code></em>,
+                           <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> estimating</code></em>,
+                           <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
+</div>
+</div>
+<div class="refsect1">
+<a name="XdgAppInstallation.other_details"></a><h2>Types and Values</h2>
+<div class="refsect2">
+<a name="XdgAppInstallation-struct"></a><h3>struct XdgAppInstallation</h3>
+<pre class="programlisting">struct XdgAppInstallation;</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="XdgAppInstallationClass"></a><h3>XdgAppInstallationClass</h3>
+<pre class="programlisting">typedef struct {
+  GObjectClass parent_class;
+} XdgAppInstallationClass;
+</pre>
+</div>
+<hr>
+<div class="refsect2">
+<a name="XdgAppUpdateFlags"></a><h3>enum XdgAppUpdateFlags</h3>
+<p>Flags to alter the behavior of <a class="link" href="XdgAppInstallation.html#xdg-app-installation-update" title="xdg_app_installation_update ()"><code class="function">xdg_app_installation_update()</code></a>.</p>
+<div class="refsect3">
+<a name="id-1.2.3.8.4.4"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="300px" class="enum_members_name">
+<col class="enum_members_description">
+<col width="200px" class="enum_members_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="enum_member_name"><p><a name="XDG-APP-UPDATE-FLAGS-NONE:CAPS"></a>XDG_APP_UPDATE_FLAGS_NONE</p></td>
+<td class="enum_member_description">
+<p>Fetch remote builds and install the latest one (default)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="XDG-APP-UPDATE-FLAGS-NO-DEPLOY:CAPS"></a>XDG_APP_UPDATE_FLAGS_NO_DEPLOY</p></td>
+<td class="enum_member_description">
+<p>Don't install any new builds that might be fetched</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="XDG-APP-UPDATE-FLAGS-NO-PULL:CAPS"></a>XDG_APP_UPDATE_FLAGS_NO_PULL</p></td>
+<td class="enum_member_description">
+<p>Don't try to fetch new builds from the remote repo</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr>Generated by GTK-Doc V1.24</div>
+</body>
+</html>

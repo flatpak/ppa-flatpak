@@ -25,7 +25,7 @@
 #ifndef __XDG_APP_INSTALLATION_H__
 #define __XDG_APP_INSTALLATION_H__
 
-typedef struct XdgAppInstallation XdgAppInstallation;
+typedef struct _XdgAppInstallation XdgAppInstallation;
 
 #include <gio/gio.h>
 #include <xdg-app-installed-ref.h>
@@ -37,7 +37,7 @@ typedef struct XdgAppInstallation XdgAppInstallation;
 
 XDG_APP_EXTERN GType xdg_app_installation_get_type (void);
 
-struct XdgAppInstallation {
+struct _XdgAppInstallation {
   GObject parent;
 };
 
@@ -45,6 +45,14 @@ typedef struct {
   GObjectClass parent_class;
 } XdgAppInstallationClass;
 
+/**
+ * XdgAppUpdateFlags:
+ * @XDG_APP_UPDATE_FLAGS_NONE: Fetch remote builds and install the latest one (default)
+ * @XDG_APP_UPDATE_FLAGS_NO_DEPLOY: Don't install any new builds that might be fetched
+ * @XDG_APP_UPDATE_FLAGS_NO_PULL: Don't try to fetch new builds from the remote repo
+ *
+ * Flags to alter the behavior of xdg_app_installation_update().
+ */
 typedef enum {
   XDG_APP_UPDATE_FLAGS_NONE      = 0,
   XDG_APP_UPDATE_FLAGS_NO_DEPLOY = (1<<0),

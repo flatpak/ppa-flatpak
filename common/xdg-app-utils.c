@@ -970,8 +970,7 @@ got_credentials_cb (GObject *source_object,
                           info->app_id = g_strdup (name);
                         }
                     }
-                  else if (g_str_has_prefix (scope, "session-") &&
-                           g_str_has_suffix (scope, ".scope"))
+                  else
                     info->app_id = g_strdup ("");
                 }
             }
@@ -1214,7 +1213,7 @@ xdg_app_spawn (GFile        *dir,
       out = g_memory_output_stream_new_resizable ();
       g_output_stream_splice_async  (out,
                                      in,
-                                     G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET,
+                                     G_OUTPUT_STREAM_SPLICE_NONE,
                                      0,
                                      NULL,
                                      spawn_output_spliced_cb,
@@ -1242,6 +1241,7 @@ xdg_app_spawn (GFile        *dir,
 
       /* Null terminate */
       g_output_stream_write (out, "\0", 1, NULL, NULL);
+      g_output_stream_close (out, NULL, NULL);
       *output = g_memory_output_stream_steal_data (G_MEMORY_OUTPUT_STREAM (out));
     }
 
@@ -2094,7 +2094,8 @@ xdg_app_xml_to_string (XdgAppXml *node, GString *res)
     }
   else if (node->text)
     {
-      g_string_append (res, node->text);
+      g_autofree char *escaped = g_markup_escape_text (node->text, -1);
+      g_string_append (res, escaped);
     }
 }
 
