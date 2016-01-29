@@ -30,6 +30,9 @@ xdg-app (0.4.8-1) UNRELEASED; urgency=medium
   * Depend on libpam-systemd (i.e. a working systemd-logind),
     because xdg-app currently relies on systemd to put user processes
     in cgroups
+  * Run tests once via check-TESTS, but do not run them a second time
+    via gtester, which fails because all test-cases in one test might
+    be skipped
 
  -- Simon McVittie <smcv@debian.org>  Fri, 29 Jan 2016 10:04:17 +0100
 
