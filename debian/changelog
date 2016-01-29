@@ -26,6 +26,7 @@ xdg-app (0.4.7+39+g71a30f5-1) UNRELEASED; urgency=medium
     incorrectly-named shared libraries
   * xdg-app-builder: reduce non-mandatory build tools to Recommends
   * xdg-app-builder: do not depend on tar, which is Essential
+  * Fill in better values for Description
 
  -- Simon McVittie <smcv@debian.org>  Fri, 29 Jan 2016 10:04:17 +0100
 

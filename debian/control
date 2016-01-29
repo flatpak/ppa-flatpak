@@ -41,8 +41,11 @@ Depends:
  ${gir:Depends},
  ${misc:Depends},
 Description: Application deployment framework for desktop apps (introspection)
+ xdg-app installs, manages and runs sandboxed desktop application bundles.
+ See the xdg-app package for a more comprehensive description.
+ .
  This package can be used by other packages using the GIRepository format to
- generate dynamic bindings.
+ generate dynamic bindings for libxdg-app0.
 
 Package: libxdg-app0
 Architecture: any
@@ -58,9 +61,12 @@ Conflicts:
 Replaces:
  libxdgapp,
 Multi-arch: same
-Description: Library for xdg-app support
- Library that gives access to xdg-app features. Needed for higher level package
- management like gnome-software.
+Description: Application deployment framework for desktop apps (library)
+ xdg-app installs, manages and runs sandboxed desktop application bundles.
+ See the xdg-app package for a more comprehensive description.
+ .
+ This package contains the xdg-app shared library, used by higher level
+ package management tools like gnome-software.
 
 Package: libxdg-app-dev
 Architecture: any
@@ -77,8 +83,12 @@ Conflicts:
  libxdgapp-dev,
 Replaces:
  libxdgapp-dev,
-Description: Development files for xdg-app
- Development headers and pkg-config file for xdg-app.
+Description: Application deployment framework for desktop apps (development)
+ xdg-app installs, manages and runs sandboxed desktop application bundles.
+ See the xdg-app package for a more comprehensive description.
+ .
+ This package contains development headers and pkg-config metadata
+ for libxdg-app0.
 
 Package: libxdg-app-doc
 Architecture: all
@@ -87,7 +97,11 @@ Depends:
  ${misc:Depends},
 Suggests: devhelp
 Multi-Arch: foreign
-Description: Documentation for xdg-app
+Description: Application deployment framework for desktop apps (documentation)
+ xdg-app installs, manages and runs sandboxed desktop application bundles.
+ See the xdg-app package for a more comprehensive description.
+ .
+ This package contains reference documentation for libxdg-app0.
 
 Package: xdg-app
 Architecture: any
@@ -96,7 +110,22 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
 Description: Application deployment framework for desktop apps
- Install and run sandboxed applications.
+ xdg-app installs, manages and runs sandboxed desktop application bundles.
+ Application bundles run partially isolated from the wider system, using
+ containerization techniques such as namespaces to prevent direct access
+ to system resources. Resources from outside the sandbox can be accessed
+ via "portal" services, which are responsible for access control; for
+ example, the Documents portal displays an "Open" dialog outside the
+ sandbox, then allows the application to access only the selected file.
+ .
+ Each application uses a specified "runtime", libraries, which is available
+ as /usr inside its sandbox. This can be used to run application bundles
+ with multiple, potentially incompatible sets of dependencies within the
+ same desktop environment.
+ .
+ This package contains the services and executables needed to install and
+ launch sandboxed applications, and the portal services needed to provide
+ limited access to resources outside the sandbox.
 
 Package: xdg-app-builder
 Architecture: any
@@ -111,5 +140,8 @@ Recommends:
  patch,
  unzip,
 Description: xdg-app application building helper
+ xdg-app installs, manages and runs sandboxed desktop application bundles.
+ See the xdg-app package for a more comprehensive description.
+ .
  xdg-app-builder is a tool that makes it easy to build applications and their
  dependencies by automating the configure && make && make install steps.
