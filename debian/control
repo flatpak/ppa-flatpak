@@ -102,14 +102,15 @@ Package: xdg-app-builder
 Architecture: any
 Section: devel
 Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ xdg-app (= ${binary:Version}),
+Recommends:
  bzr,
  git,
  patch,
  tar,
  unzip,
- xdg-app (= ${binary:Version}),
- ${misc:Depends},
- ${shlibs:Depends},
 Description: xdg-app application building helper
  xdg-app-builder is a tool that makes it easy to build applications and their
  dependencies by automating the configure && make && make install steps.
