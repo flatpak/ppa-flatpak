@@ -1,4 +1,3 @@
-#! /usr/bin/dh-exec
 etc/profile.d/
 usr/bin/xdg-app
 usr/bin/xdg-app-helper
@@ -25,7 +24,7 @@ usr/share/man/man1/xdg-app-uninstall.1
 usr/share/man/man1/xdg-app-update.1
 usr/share/man/man1/xdg-app.1
 usr/share/xdg-app
-usr/lib/${DEB_HOST_MULTIARCH}/xdg-app-session-helper
-usr/lib/${DEB_HOST_MULTIARCH}/xdg-dbus-proxy
-usr/lib/${DEB_HOST_MULTIARCH}/xdg-document-portal
+usr/lib/*/xdg-app-session-helper
+usr/lib/*/xdg-dbus-proxy
+usr/lib/*/xdg-document-portal
 usr/share/gdm/env.d

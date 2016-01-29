@@ -7,7 +7,6 @@ Uploaders:
 Build-Depends:
  debhelper (>= 9),
  dh-autoreconf,
- dh-exec (>= 0.3),
  docbook-xml,
  docbook-xsl,
  libelf-dev,
