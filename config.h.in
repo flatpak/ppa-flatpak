@@ -1,10 +1,10 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define if not using user namespaces */
-#undef DISABLE_USERNS
-
 /* Define if using seccomp */
 #undef ENABLE_SECCOMP
+
+/* Define if using xauth */
+#undef ENABLE_XAUTH
 
 /* Define to 1 if you have the `archive_read_support_filter_all' function. */
 #undef HAVE_ARCHIVE_READ_SUPPORT_FILTER_ALL
@@ -48,7 +48,8 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to the sub-directory where libtool stores uninstalled libraries. */
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
 #undef LT_OBJDIR
 
 /* Define to the address where bug reports for this package should be sent. */

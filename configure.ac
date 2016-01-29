@@ -60,6 +60,14 @@ AC_ARG_WITH(dbus_service_dir,
 DBUS_SERVICE_DIR=$with_dbus_service_dir
 AC_SUBST(DBUS_SERVICE_DIR)
 
+AC_ARG_WITH([systemduserunitdir],
+            [AS_HELP_STRING([--with-systemduserunitdir=DIR],
+                            [Directory for systemd user service files (default=PREFIX/lib/systemd/user)])],
+    [],
+    dnl This is deliberately not ${libdir}: systemd units always go in
+    dnl .../lib, never .../lib64 or .../lib/x86_64-linux-gnu
+    [with_systemduserunitdir='${prefix}/lib/systemd/user'])
+AC_SUBST([systemduserunitdir], [$with_systemduserunitdir])
 
 AC_ARG_WITH(system_fonts_dir,
 		AS_HELP_STRING([--with-system-fonts-dir=PATH],[Directory where system fonts are, [default=/usr/share/fonts]]),
@@ -82,9 +90,19 @@ AC_SUBST(BASE_LIBS)
 PKG_CHECK_MODULES(SOUP, [libsoup-2.4])
 AC_SUBST(SOUP_CFLAGS)
 AC_SUBST(SOUP_LIBS)
-PKG_CHECK_MODULES(XAUTH, [xau])
-AC_SUBST(XAUTH_CFLAGS)
-AC_SUBST(XAUTH_LIBS)
+
+AC_ARG_ENABLE([xauth],
+              AC_HELP_STRING([--disable-xauth],
+                             [Disable Xauth use]),
+              [],
+              [enable_xauth=yes])
+if test "x$enable_xauth" = "xyes"; then
+   PKG_CHECK_MODULES(XAUTH, [xau])
+   AC_SUBST(XAUTH_CFLAGS)
+   AC_SUBST(XAUTH_LIBS)
+   AC_DEFINE([ENABLE_XAUTH], [1],
+      [Define if using xauth])
+fi
 
 PKG_CHECK_MODULES(OSTREE, [libgsystem >= 2015.1 ostree-1 >= 2015.3])
 AC_SUBST(OSTREE_CFLAGS)
@@ -116,28 +134,14 @@ if test "x$enable_seccomp" = "xyes"; then
       [Define if using seccomp])
 fi
 
-
-AC_ARG_ENABLE([userns],
-              AC_HELP_STRING([--disable-userns],
-                             [Disable User namespaces (requires setuid/setcaps)]),
-              [],
-              [enable_userns=yes])
-
-AM_CONDITIONAL(DISABLE_USERNS, test "x$enable_userns" = "xno")
-if test "x$enable_userns" = "xno"; then
-  AC_DEFINE([DISABLE_USERNS], [1],
-      [Define if not using user namespaces])
-fi
-
 AC_ARG_WITH(priv-mode,
             AS_HELP_STRING([--with-priv-mode=setuid/caps/none],
-                           [How to set privilege-raising during install (only needed if userns disabled)]),
+                           [How to set privilege-raising during install (only needed if userns not working)]),
             [],
-            [with_priv_mode="setuid"])
+            [with_priv_mode="none"])
 
 AM_CONDITIONAL(PRIV_MODE_FILECAPS, test "x$with_priv_mode" = "xcaps")
 AM_CONDITIONAL(PRIV_MODE_SETUID, test "x$with_priv_mode" = "xsetuid")
-AM_CONDITIONAL(PRIV_MODE_FILECAPS, test "x$with_priv_mode" = "xcaps")
 
 AC_ARG_ENABLE(sudo,
               AS_HELP_STRING([--enable-sudo],[Use sudo to set setuid flags on binaries during install (only needed if userns disabled)]),
@@ -222,10 +226,18 @@ GOBJECT_INTROSPECTION_CHECK([1.40.0])
 # gtkdocize greps for ^GTK_DOC_CHECK, so we need to put it on its own line
 m4_ifdef([GTK_DOC_CHECK], [
 GTK_DOC_CHECK([1.20], [--flavour no-tmpl])
+
+AC_ARG_ENABLE([gtk-doc-check],
+              [AS_HELP_STRING([--enable-gtk-doc-check],
+                              [Check completeness of documentation in 'make check'])],
+    [],
+    [enable_gtk_doc_check=no])
 ],[
 enable_gtk_doc="disabled (no gtk-doc)"
+enable_gtk_doc_check="disabled (no gtk-doc)"
 AM_CONDITIONAL([ENABLE_GTK_DOC], [false])
 ])
+AM_CONDITIONAL([ENABLE_GTK_DOC_CHECK], [test "x$enable_gtk_doc_check" = xyes])
 
 ##################################################
 # Visibility handling

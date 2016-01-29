@@ -25,7 +25,7 @@
 #ifndef __XDG_APP_REF_H__
 #define __XDG_APP_REF_H__
 
-typedef struct XdgAppRef XdgAppRef;
+typedef struct _XdgAppRef XdgAppRef;
 
 #include <glib-object.h>
 
@@ -35,7 +35,7 @@ typedef struct XdgAppRef XdgAppRef;
 
 XDG_APP_EXTERN GType xdg_app_ref_get_type (void);
 
-struct XdgAppRef {
+struct _XdgAppRef {
   GObject parent;
 };
 
@@ -48,6 +48,15 @@ typedef struct {
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(XdgAppRef, g_object_unref)
 #endif
 
+/**
+ * XdgAppRefKind:
+ * @XDG_APP_REF_KIND_APP: An application
+ * @XDG_APP_REF_KIND_RUNTIME: A runtime that applications can use.
+ *
+ * Currently xdg-app manages two types of binary artifacts: applications, and
+ * runtimes. Applications contain a program that desktop users can run, while
+ * runtimes contain only libraries and data.
+ */
 typedef enum {
   XDG_APP_REF_KIND_APP,
   XDG_APP_REF_KIND_RUNTIME,
