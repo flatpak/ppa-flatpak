@@ -107,6 +107,7 @@ Package: xdg-app
 Architecture: any
 Depends:
  fuse,
+ libpam-systemd,
  ${misc:Depends},
  ${shlibs:Depends},
 Description: Application deployment framework for desktop apps
