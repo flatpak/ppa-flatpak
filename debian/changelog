@@ -1,6 +1,6 @@
-xdg-app (0.4.7+39+g71a30f5-1) UNRELEASED; urgency=medium
+xdg-app (0.4.8-1) UNRELEASED; urgency=medium
 
-  * New upstream snapshot, plus patches to fix distcheck
+  * New upstream release
     - drop patch for XML escaping, applied upstream
   * Set the Utopia Maintenance Team as maintainer and myself as an uploader
   * Add Vcs-Git, Vcs-Browser
