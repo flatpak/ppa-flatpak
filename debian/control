@@ -5,65 +5,52 @@ Maintainer: Utopia Maintenance Team <pkg-utopia-maintainers@lists.alioth.debian.
 Uploaders:
  Simon McVittie <smcv@debian.org>,
 Build-Depends:
+ dbus,
  debhelper (>= 9),
  dh-autoreconf,
  docbook-xml,
  docbook-xsl,
- libelf-dev,
+ docbook-xsl-doc-html,
+ fuse,
+ gobject-introspection,
+ gtk-doc-tools,
+ libarchive-dev (>= 2.8.0),
  libattr1-dev,
  libcap-dev,
+ libelf-dev,
+ libfuse-dev,
+ libgirepository1.0-dev,
  libglib2.0-dev,
  libgsystem-dev,
- libostree-dev,
- libsoup2.4-dev,
- xsltproc,
- libarchive-dev (>= 2.8.0),
  libjson-glib-dev,
- docbook-xsl-doc-html,
- libxml2-utils,
- libfuse-dev,
+ libostree-dev,
  libseccomp-dev,
+ libsoup2.4-dev,
  libxau-dev,
- dbus,
- gobject-introspection,
- libgirepository1.0-dev,
- gtk-doc-tools,
- fuse
+ libxml2-utils,
+ xsltproc,
 Standards-Version: 3.9.6
 Homepage: https://github.com/alexlarsson/xdg-app
 Vcs-Git: https://anonscm.debian.org/git/pkg-utopia/libgsystem.git
 Vcs-Browser: https://anonscm.debian.org/cgit/pkg-utopia/libgsystem.git
 
-Package: xdg-app
+Package: gir1.2-xdgapp-1.0
 Architecture: any
+Section: introspection
 Depends:
+ ${gir:Depends},
  ${misc:Depends},
- ${shlibs:Depends},
- fuse
-Description: Application deployment framework for desktop apps
- Install and run sandboxed applications.
-
-Package: xdg-app-builder
-Architecture: any
-Depends:
- ${misc:Depends},
- ${shlibs:Depends},
- xdg-app (= ${binary:Version}),
- git,
- bzr,
- patch,
- unzip,
- tar
-Description: xdg-app application building helper
- xdg-app-builder is a tool that makes it easy to build applications and their
- dependencies by automating the configure && make && make install steps.
+Description: Application deployment framework for desktop apps (introspection)
+ This package can be used by other packages using the GIRepository format to
+ generate dynamic bindings.
 
 Package: libxdgapp
 Architecture: any
 Depends:
  ${misc:Depends},
- ${shlibs:Depends}
-Pre-Depends: ${misc:Pre-Depends}
+ ${shlibs:Depends},
+Pre-Depends:
+ ${misc:Pre-Depends},
 Multi-arch: same
 Description: Library for xdg-app support
  Library that gives access to xdg-app features. Needed for higher level package
@@ -73,18 +60,32 @@ Package: libxdgapp-dev
 Architecture: any
 Section: libdevel
 Depends:
- ${misc:Depends},
+ pkg-config,
  xdg-app (= ${binary:Version}),
- pkg-config
+ ${misc:Depends},
 Description: Development files for xdg-app
  Development headers and pkg-config file for xdg-app.
 
-Package: gir1.2-xdgapp-1.0
+Package: xdg-app
 Architecture: any
-Section: introspection
 Depends:
+ fuse,
  ${misc:Depends},
- ${gir:Depends}
-Description: Application deployment framework for desktop apps (introspection)
- This package can be used by other packages using the GIRepository format to
- generate dynamic bindings.
+ ${shlibs:Depends},
+Description: Application deployment framework for desktop apps
+ Install and run sandboxed applications.
+
+Package: xdg-app-builder
+Architecture: any
+Depends:
+ bzr,
+ git,
+ patch,
+ tar,
+ unzip,
+ xdg-app (= ${binary:Version}),
+ ${misc:Depends},
+ ${shlibs:Depends},
+Description: xdg-app application building helper
+ xdg-app-builder is a tool that makes it easy to build applications and their
+ dependencies by automating the configure && make && make install steps.

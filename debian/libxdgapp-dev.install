@@ -1,6 +1,6 @@
 usr/include/*
-usr/lib/*/pkgconfig
 usr/lib/*/libxdg-app.so
-usr/share/dbus-1/interfaces/org.freedesktop.portal.Documents.xml
+usr/lib/*/pkgconfig
 usr/share/dbus-1/interfaces/org.freedesktop.XdgApp.xml
+usr/share/dbus-1/interfaces/org.freedesktop.portal.Documents.xml
 usr/share/gir-1.0/*

@@ -8,6 +8,7 @@ xdg-app (0.4.7+39+g71a30f5-1) UNRELEASED; urgency=medium
   * Remove -dbg package, rely on automatic dbgsym packages instead
   * debian/.gitignore: add
   * debian/copyright: fill in all copyright holders
+  * Normalize packaging via `wrap-and-sort -abst`
 
  -- Simon McVittie <smcv@debian.org>  Fri, 29 Jan 2016 10:04:17 +0100
 

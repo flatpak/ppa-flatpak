@@ -1,8 +1,12 @@
 etc/profile.d/
 usr/bin/xdg-app
 usr/bin/xdg-app-helper
+usr/lib/*/xdg-app-session-helper
+usr/lib/*/xdg-dbus-proxy
+usr/lib/*/xdg-document-portal
 usr/share/bash-completion
 usr/share/dbus-1/services/*
+usr/share/gdm/env.d
 usr/share/man/man1/xdg-app-build-export.1
 usr/share/man/man1/xdg-app-build-finish.1
 usr/share/man/man1/xdg-app-build-init.1
@@ -24,7 +28,3 @@ usr/share/man/man1/xdg-app-uninstall.1
 usr/share/man/man1/xdg-app-update.1
 usr/share/man/man1/xdg-app.1
 usr/share/xdg-app
-usr/lib/*/xdg-app-session-helper
-usr/lib/*/xdg-dbus-proxy
-usr/lib/*/xdg-document-portal
-usr/share/gdm/env.d
