@@ -44,7 +44,7 @@ Description: Application deployment framework for desktop apps (introspection)
  This package can be used by other packages using the GIRepository format to
  generate dynamic bindings.
 
-Package: libxdgapp
+Package: libxdg-app0
 Architecture: any
 Section: libs
 Depends:
@@ -52,6 +52,11 @@ Depends:
  ${shlibs:Depends},
 Pre-Depends:
  ${misc:Pre-Depends},
+# this name was never in Debian but is in upstream's PPAs
+Conflicts:
+ libxdgapp,
+Replaces:
+ libxdgapp,
 Multi-arch: same
 Description: Library for xdg-app support
  Library that gives access to xdg-app features. Needed for higher level package

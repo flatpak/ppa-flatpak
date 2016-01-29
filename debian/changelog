@@ -13,6 +13,8 @@ xdg-app (0.4.7+39+g71a30f5-1) UNRELEASED; urgency=medium
   * Run the tests with VERBOSE=1
   * Install the new systemd user services
   * Run dh_install with --fail-missing to catch mistakes
+  * Rename libxdgapp to the correct libxdg-app0 corresponding to
+    libxdg-app.so.0
 
  -- Simon McVittie <smcv@debian.org>  Fri, 29 Jan 2016 10:04:17 +0100
 
