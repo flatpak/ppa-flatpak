@@ -12,6 +12,7 @@ override_dh_autoreconf:
 override_dh_auto_configure:
 	dh_auto_configure -- \
 		--disable-silent-rules \
+		--libexecdir=/usr/lib/xdg-app \
 		--with-priv-mode=none \
 		--with-html-dir=/usr/share/doc/libxdg-app-doc \
 		--enable-gtk-doc \
