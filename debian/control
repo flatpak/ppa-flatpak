@@ -67,6 +67,9 @@ Architecture: any
 Section: libdevel
 Depends:
  pkg-config,
+ libglib2.0-dev,
+ libgsystem-dev,
+ libostree-dev,
  xdg-app (= ${binary:Version}),
  ${misc:Depends},
 # this name was never in Debian but is in upstream's PPAs
