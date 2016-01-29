@@ -27,7 +27,7 @@
 
 #define XDG_APP_MAJOR_VERSION (0)
 #define XDG_APP_MINOR_VERSION (4)
-#define XDG_APP_MICRO_VERSION (7)
+#define XDG_APP_MICRO_VERSION (8)
 
 #ifndef XDG_APP_EXTERN
 #define XDG_APP_EXTERN extern

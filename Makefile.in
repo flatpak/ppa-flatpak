@@ -647,7 +647,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.gtester $(srcdir)/Makefile.in \
 	$(srcdir)/tests/Makefile.am.inc $(srcdir)/xdg-app.pc.in \
 	$(top_srcdir)/lib/xdg-app-version-macros.h.in COPYING INSTALL \
 	NEWS compile config.guess config.sub depcomp install-sh \
-	ltmain.sh missing test-driver
+	ltmain.sh missing py-compile test-driver
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -762,6 +762,7 @@ LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 LT_CURRENT_MINUS_AGE = @LT_CURRENT_MINUS_AGE@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 LT_VERSION_INFO = @LT_VERSION_INFO@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
@@ -853,7 +854,6 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
-runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
