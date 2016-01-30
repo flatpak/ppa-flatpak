@@ -33,6 +33,8 @@ xdg-app (0.4.8-1) UNRELEASED; urgency=medium
   * Run tests once via check-TESTS, but do not run them a second time
     via gtester, which fails because all test-cases in one test might
     be skipped
+  * Add patch from Alex Larsson to fix an assertion failure in runtime
+    installation
 
  -- Simon McVittie <smcv@debian.org>  Fri, 29 Jan 2016 10:04:17 +0100
 

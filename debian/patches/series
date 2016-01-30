@@ -1,1 +1,2 @@
+install-Only-set-current-for-apps-not-for-runtimes.patch
 Don-t-run-tests-under-gtester-in-addition-to-make-check.patch

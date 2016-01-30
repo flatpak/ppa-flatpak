@@ -1,0 +1,27 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Fri, 29 Jan 2016 15:54:54 +0100
+Subject: install: Only set current for apps, not for runtimes
+
+---
+ app/xdg-app-builtins-install.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/app/xdg-app-builtins-install.c b/app/xdg-app-builtins-install.c
+index 1907dae..8f2790a 100644
+--- a/app/xdg-app-builtins-install.c
++++ b/app/xdg-app-builtins-install.c
+@@ -328,11 +328,11 @@ install_bundle (XdgAppDir *dir,
+   if (!xdg_app_dir_deploy (dir, ref, to_checksum, cancellable, error))
+     goto out;
+ 
+-  if (!xdg_app_dir_make_current_ref (dir, ref, cancellable, error))
+-    goto out;
+-
+   if (strcmp (parts[0], "app") == 0)
+     {
++      if (!xdg_app_dir_make_current_ref (dir, ref, cancellable, error))
++        goto out;
++
+       if (!xdg_app_dir_update_exports (dir, parts[1], cancellable, error))
+         goto out;
+     }
