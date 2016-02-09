@@ -134,18 +134,59 @@ xdg_app_fail (GError **error, const char *format, ...)
   return FALSE;
 }
 
+
+/* This maps the kernel-reported uname to a single string representing
+ * the cpu family, in the sense that all members of this family would
+ * be able to understand and link to a binary file with such cpu
+ * opcodes. That doesn't necessarily mean that all members of the
+ * family can run all opcodes, for instance for modern 32bit intel we
+ * report "i386", even though they support instructions that the
+ * original i386 cpu cannot run. Still, such an executable would
+ * at least try to execute a 386, wheras an arm binary would not.
+ */
 const char *
 xdg_app_get_arch (void)
 {
   static struct utsname buf;
   static char *arch = NULL;
+  char *m;
 
-  if (arch == NULL)
+  if (arch != NULL)
+    return arch;
+
+  if (uname (&buf))
     {
-      if (uname (&buf))
-        arch = "unknown";
+      arch = "unknown";
+      return arch;
+    }
+
+  /* By default, just pass on machine, good enough for most arches */
+  arch = buf.machine;
+
+  /* Override for some arches */
+
+  m = buf.machine;
+  /* i?86 */
+  if (strlen (m) == 4 && m[0] == 'i' && m[2] == '8'  && m[3] == '6')
+    arch = "i386";
+  else if (g_str_has_prefix (m, "arm"))
+    {
+      if (g_str_has_suffix (m, "b"))
+        arch = "armeb";
       else
-        arch = buf.machine;
+        arch = "arm";
+    }
+  else if (strcmp (m, "mips") == 0)
+    {
+#if G_BYTE_ORDER == G_LITTLE_ENDIAN
+      arch = "mipsel";
+#endif
+    }
+  else if (strcmp (m, "mips64") == 0)
+    {
+#if G_BYTE_ORDER == G_LITTLE_ENDIAN
+      arch = "mips64el";
+#endif
     }
 
   return arch;
@@ -970,8 +1011,7 @@ got_credentials_cb (GObject *source_object,
                           info->app_id = g_strdup (name);
                         }
                     }
-                  else if (g_str_has_prefix (scope, "session-") &&
-                           g_str_has_suffix (scope, ".scope"))
+                  else
                     info->app_id = g_strdup ("");
                 }
             }
@@ -1214,7 +1254,7 @@ xdg_app_spawn (GFile        *dir,
       out = g_memory_output_stream_new_resizable ();
       g_output_stream_splice_async  (out,
                                      in,
-                                     G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET,
+                                     G_OUTPUT_STREAM_SPLICE_NONE,
                                      0,
                                      NULL,
                                      spawn_output_spliced_cb,
@@ -1242,6 +1282,7 @@ xdg_app_spawn (GFile        *dir,
 
       /* Null terminate */
       g_output_stream_write (out, "\0", 1, NULL, NULL);
+      g_output_stream_close (out, NULL, NULL);
       *output = g_memory_output_stream_steal_data (G_MEMORY_OUTPUT_STREAM (out));
     }
 
@@ -1581,7 +1622,7 @@ copy_icon (const char *id,
   g_autofree char *icon_name = g_strconcat (id, ".png", NULL);
   g_autoptr(GFile) icons_dir =
     g_file_resolve_relative_path (root,
-                                  "export/share/app-info/icons/xdg-app");
+                                  "files/share/app-info/icons/xdg-app");
   g_autoptr(GFile) size_dir =g_file_get_child (icons_dir, size);
   g_autoptr(GFile) icon_file = g_file_get_child (size_dir, icon_name);
   g_autoptr(GFile) dest_dir = g_file_get_child (dest, "icons");
@@ -1632,7 +1673,7 @@ extract_appstream (OstreeRepo    *repo,
   if (!ostree_repo_read_commit (repo, ref, &root, NULL, NULL, error))
     return FALSE;
 
-  xmls_dir = g_file_resolve_relative_path (root, "export/share/app-info/xmls");
+  xmls_dir = g_file_resolve_relative_path (root, "files/share/app-info/xmls");
   appstream_basename = g_strconcat (id, ".xml.gz", NULL);
   appstream_file = g_file_get_child (xmls_dir, appstream_basename);
 
@@ -1654,7 +1695,7 @@ extract_appstream (OstreeRepo    *repo,
         }
       if (!copy_icon (id, root, dest, "128x128", &my_error))
         {
-          g_print ("Error copying 128x12 icon: %s\n", my_error->message);
+          g_print ("Error copying 128x128 icon: %s\n", my_error->message);
           g_clear_error (&my_error);
         }
     }
@@ -2094,7 +2135,8 @@ xdg_app_xml_to_string (XdgAppXml *node, GString *res)
     }
   else if (node->text)
     {
-      g_string_append (res, node->text);
+      g_autofree char *escaped = g_markup_escape_text (node->text, -1);
+      g_string_append (res, escaped);
     }
 }
 
@@ -2164,7 +2206,7 @@ xdg_app_xml_parse (GInputStream *in,
   char buffer[32*1024];
   gssize len;
   g_autoptr(GMarkupParseContext) ctx = NULL;
-  
+
   if (compressed)
     {
       g_autoptr(GZlibDecompressor) decompressor = NULL;

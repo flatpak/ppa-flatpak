@@ -168,10 +168,11 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" \
-	"$(DESTDIR)$(completiondir)" "$(DESTDIR)$(envdir)" \
-	"$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(girdir)" \
-	"$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" \
-	"$(DESTDIR)$(profiledir)" "$(DESTDIR)$(servicedir)" \
+	"$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" \
+	"$(DESTDIR)$(envdir)" "$(DESTDIR)$(introspectiondir)" \
+	"$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" \
+	"$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(profiledir)" \
+	"$(DESTDIR)$(systemduserunitdir)" \
 	"$(DESTDIR)$(xdgappincludedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
 am__DEPENDENCIES_1 =
@@ -275,6 +276,7 @@ am_xdg_app_OBJECTS = app/xdg_app-xdg-app-main.$(OBJEXT) \
 	app/xdg_app-xdg-app-builtins-update.$(OBJEXT) \
 	app/xdg_app-xdg-app-builtins-uninstall.$(OBJEXT) \
 	app/xdg_app-xdg-app-builtins-list.$(OBJEXT) \
+	app/xdg_app-xdg-app-builtins-info.$(OBJEXT) \
 	app/xdg_app-xdg-app-builtins-run.$(OBJEXT) \
 	app/xdg_app-xdg-app-builtins-enter.$(OBJEXT) \
 	app/xdg_app-xdg-app-builtins-build-init.$(OBJEXT) \
@@ -303,6 +305,7 @@ am_xdg_app_builder_OBJECTS =  \
 	builder/xdg_app_builder-builder-source-bzr.$(OBJEXT) \
 	builder/xdg_app_builder-builder-source-file.$(OBJEXT) \
 	builder/xdg_app_builder-builder-source-script.$(OBJEXT) \
+	builder/xdg_app_builder-builder-source-shell.$(OBJEXT) \
 	builder/xdg_app_builder-builder-source-patch.$(OBJEXT) \
 	builder/xdg_app_builder-builder-context.$(OBJEXT) \
 	builder/xdg_app_builder-builder-cache.$(OBJEXT) \
@@ -422,9 +425,10 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-DATA = $(completion_DATA) $(env_DATA) $(introspection_DATA) \
-	$(nodist_gir_DATA) $(nodist_typelib_DATA) $(pkgconfig_DATA) \
-	$(profile_DATA) $(service_DATA)
+DATA = $(completion_DATA) $(dbus_service_DATA) $(env_DATA) \
+	$(introspection_DATA) $(nodist_gir_DATA) \
+	$(nodist_typelib_DATA) $(pkgconfig_DATA) $(profile_DATA) \
+	$(systemduserunit_DATA)
 HEADERS = $(xdgappinclude_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
@@ -631,7 +635,7 @@ TEST_LOGS = $(am__test_logs2:.test.log=.log)
 TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/test-driver
 TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 	$(TEST_LOG_FLAGS)
-DIST_SUBDIRS = doc
+DIST_SUBDIRS = . doc
 am__DIST_COMMON = $(srcdir)/Makefile.gtester $(srcdir)/Makefile.in \
 	$(srcdir)/app/Makefile.am.inc \
 	$(srcdir)/builder/Makefile.am.inc \
@@ -856,31 +860,48 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
+systemduserunitdir = @systemduserunitdir@
 target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 NULL = 
-CLEANFILES = $(NULL) $(am__append_2)
-DISTCLEANFILES = $(NULL) lib/xdg-app-enum-types.c \
-	lib/xdg-app-enum-types.h $(NULL) \
-	session-helper/xdg-app-session.service \
-	document-portal/org.freedesktop.portal.Documents.service \
-	tests/services/xdg-app-session.service \
+CLEANFILES = $(NULL) $(dbus_service_DATA) $(systemduserunit_DATA) \
+	$(am__append_2) tests/services/org.freedesktop.XdgApp.service \
 	tests/services/org.freedesktop.portal.Documents.service \
-	xdg-app.sh xdg-app.env
+	$(NULL)
+DISTCLEANFILES = $(NULL) lib/xdg-app-enum-types.c \
+	lib/xdg-app-enum-types.h $(NULL) xdg-app.sh xdg-app.env
 BUILT_SOURCES = $(NULL) $(dbus_built_sources) \
 	$(systemd_dbus_built_sources) lib/xdg-app-enum-types.c \
 	lib/xdg-app-enum-types.h $(NULL) $(xdp_dbus_built_sources)
-@BUILD_DOCUMENTATION_TRUE@SUBDIRS = doc
-servicedir = $(DBUS_SERVICE_DIR)
-service_in_files = $(NULL) session-helper/xdg-app-session.service.in \
+EXTRA_DIST = $(service_in_files) ./libglnx/README.md ./libglnx/COPYING \
+	data/org.freedesktop.portal.Documents.xml \
+	data/org.freedesktop.systemd1.xml \
+	data/org.freedesktop.XdgApp.xml $(NULL) \
+	lib/xdg-app-enum-types.c.template \
+	lib/xdg-app-enum-types.h.template \
+	session-helper/xdg-app.gresource.xml \
+	document-portal/xdg-document-portal.gresource.xml \
+	tests/xdg-app.supp tests/dbs/no_tables $(completion_DATA) \
+	profile/xdg-app.sh.in $(NULL) env.d/xdg-app.env.in \
+	xdg-app.pc.in
+@BUILD_DOCUMENTATION_TRUE@SUBDIRS = . doc
+dbus_servicedir = $(DBUS_SERVICE_DIR)
+service_in_files = $(NULL) \
+	session-helper/xdg-app-session-helper.service.in \
+	session-helper/org.freedesktop.XdgApp.service.in \
+	document-portal/xdg-document-portal.service.in \
 	document-portal/org.freedesktop.portal.Documents.service.in
-service_DATA = $(NULL) session-helper/xdg-app-session.service \
+dbus_service_DATA = $(NULL) \
+	session-helper/org.freedesktop.XdgApp.service \
 	document-portal/org.freedesktop.portal.Documents.service
+systemduserunit_DATA = $(NULL) \
+	session-helper/xdg-app-session-helper.service \
+	document-portal/xdg-document-portal.service
 AM_CPPFLAGS = \
 	-DXDG_APP_BINDIR=\"$(bindir)\"			\
-	-DXDG_APP_SYSTEMDIR=\"$(localstatedir)/xdg-app\"\
+	-DXDG_APP_SYSTEMDIR=\"$(localstatedir)/lib/xdg-app\"\
 	-DXDG_APP_BASEDIR=\"$(pkgdatadir)\"		\
 	-DXDG_APP_TRIGGERDIR=\"$(pkgdatadir)/triggers\" \
 	-DSYSTEM_FONTS_DIR=\"$(SYSTEM_FONTS_DIR)\"	\
@@ -898,21 +919,15 @@ dist_triggers_SCRIPTS = \
 	triggers/desktop-database.trigger \
 	$(NULL)
 
-EXTRA_DIST = ./libglnx/README.md ./libglnx/COPYING \
-	data/org.freedesktop.portal.Documents.xml \
-	data/org.freedesktop.systemd1.xml \
-	data/org.freedesktop.XdgApp.xml $(NULL) \
-	lib/xdg-app-enum-types.c.template \
-	lib/xdg-app-enum-types.h.template \
-	session-helper/xdg-app.gresource.xml \
-	document-portal/xdg-document-portal.gresource.xml \
-	tests/xdg-app.supp tests/dbs/no_tables $(completion_DATA) \
-	profile/xdg-app.sh.in $(service_in_files) env.d/xdg-app.env.in \
-	xdg-app.pc.in
 lib_LTLIBRARIES = libxdg-app.la
 noinst_LTLIBRARIES = libglnx.la libxdgapp-common.la
 libglnx_srcpath := $(srcdir)/libglnx
-libglnx_cflags := $(BASE_CFLAGS) "-I$(libglnx_srcpath)"
+libglnx_cflags := \
+	$(BASE_CFLAGS) \
+	"-I$(libglnx_srcpath)" \
+	$(HIDDEN_VISIBILITY_CFLAGS) \
+	$(NULL)
+
 libglnx_libs := $(BASE_LIBS)
 libglnx_la_SOURCES = \
 	./libglnx/glnx-backport-autocleanups.h \
@@ -968,7 +983,16 @@ libxdgapp_common_la_SOURCES = \
 	$(systemd_dbus_built_sources)	\
 	$(NULL)
 
-libxdgapp_common_la_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(XAUTH_CFLAGS) -I$(srcdir)/dbus-proxy
+libxdgapp_common_la_CFLAGS = \
+	$(AM_CFLAGS) \
+	$(BASE_CFLAGS) \
+	$(HIDDEN_VISIBILITY_CFLAGS) \
+	$(OSTREE_CFLAGS) \
+	$(SOUP_CFLAGS) \
+	$(XAUTH_CFLAGS) \
+	-I$(srcdir)/dbus-proxy \
+	$(NULL)
+
 libxdgapp_common_la_LIBADD = libglnx.la $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(XAUTH_LIBS)
 xdg_app_helper_SOURCES = common/xdg-app-helper.c
 xdg_app_helper_LDADD = $(LIBSECCOMP_LIBS)
@@ -992,6 +1016,7 @@ xdg_app_SOURCES = \
 	app/xdg-app-builtins-update.c \
 	app/xdg-app-builtins-uninstall.c \
 	app/xdg-app-builtins-list.c \
+	app/xdg-app-builtins-info.c \
 	app/xdg-app-builtins-run.c \
 	app/xdg-app-builtins-enter.c \
 	app/xdg-app-builtins-build-init.c \
@@ -1120,6 +1145,8 @@ xdg_app_builder_SOURCES = \
 	builder/builder-source-file.h \
 	builder/builder-source-script.c \
 	builder/builder-source-script.h \
+	builder/builder-source-shell.c \
+	builder/builder-source-shell.h \
 	builder/builder-source-patch.c \
 	builder/builder-source-patch.h \
 	builder/builder-context.c \
@@ -1190,7 +1217,7 @@ test_doc_portal_LDADD = \
              $(NULL)
 
 test_doc_portal_SOURCES = tests/test-doc-portal.c $(xdp_dbus_built_sources)
-test_doc_portal_DEPENDENCIES = tests/services/org.freedesktop.portal.Documents.service  tests/services/xdg-app-session.service
+test_doc_portal_DEPENDENCIES = tests/services/org.freedesktop.portal.Documents.service  tests/services/org.freedesktop.XdgApp.service
 VALGRIND_SUPPRESSIONS_FILES = tests/xdg-app.supp
 completiondir = $(datadir)/bash-completion/completions
 completion_DATA = completion/xdg-app
@@ -1578,6 +1605,8 @@ app/xdg_app-xdg-app-builtins-uninstall.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/xdg_app-xdg-app-builtins-list.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
+app/xdg_app-xdg-app-builtins-info.$(OBJEXT): app/$(am__dirstamp) \
+	app/$(DEPDIR)/$(am__dirstamp)
 app/xdg_app-xdg-app-builtins-run.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/xdg_app-xdg-app-builtins-enter.$(OBJEXT): app/$(am__dirstamp) \
@@ -1628,6 +1657,8 @@ builder/xdg_app_builder-builder-source-bzr.$(OBJEXT):  \
 builder/xdg_app_builder-builder-source-file.$(OBJEXT):  \
 	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
 builder/xdg_app_builder-builder-source-script.$(OBJEXT):  \
+	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
+builder/xdg_app_builder-builder-source-shell.$(OBJEXT):  \
 	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
 builder/xdg_app_builder-builder-source-patch.$(OBJEXT):  \
 	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
@@ -1776,6 +1807,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-delete-remote.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-document.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-enter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-install.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-list-remotes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-list.Po@am__quote@
@@ -1798,6 +1830,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/xdg_app_builder-builder-source-git.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/xdg_app_builder-builder-source-patch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/xdg_app_builder-builder-source-script.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/xdg_app_builder-builder-source-shell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/xdg_app_builder-builder-source.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/xdg_app_builder-builder-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/xdg_app_builder-xdg-app-builder-main.Po@am__quote@
@@ -2266,6 +2299,20 @@ app/xdg_app-xdg-app-builtins-list.obj: app/xdg-app-builtins-list.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_CFLAGS) $(CFLAGS) -c -o app/xdg_app-xdg-app-builtins-list.obj `if test -f 'app/xdg-app-builtins-list.c'; then $(CYGPATH_W) 'app/xdg-app-builtins-list.c'; else $(CYGPATH_W) '$(srcdir)/app/xdg-app-builtins-list.c'; fi`
 
+app/xdg_app-xdg-app-builtins-info.o: app/xdg-app-builtins-info.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_CFLAGS) $(CFLAGS) -MT app/xdg_app-xdg-app-builtins-info.o -MD -MP -MF app/$(DEPDIR)/xdg_app-xdg-app-builtins-info.Tpo -c -o app/xdg_app-xdg-app-builtins-info.o `test -f 'app/xdg-app-builtins-info.c' || echo '$(srcdir)/'`app/xdg-app-builtins-info.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/xdg_app-xdg-app-builtins-info.Tpo app/$(DEPDIR)/xdg_app-xdg-app-builtins-info.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/xdg-app-builtins-info.c' object='app/xdg_app-xdg-app-builtins-info.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_CFLAGS) $(CFLAGS) -c -o app/xdg_app-xdg-app-builtins-info.o `test -f 'app/xdg-app-builtins-info.c' || echo '$(srcdir)/'`app/xdg-app-builtins-info.c
+
+app/xdg_app-xdg-app-builtins-info.obj: app/xdg-app-builtins-info.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_CFLAGS) $(CFLAGS) -MT app/xdg_app-xdg-app-builtins-info.obj -MD -MP -MF app/$(DEPDIR)/xdg_app-xdg-app-builtins-info.Tpo -c -o app/xdg_app-xdg-app-builtins-info.obj `if test -f 'app/xdg-app-builtins-info.c'; then $(CYGPATH_W) 'app/xdg-app-builtins-info.c'; else $(CYGPATH_W) '$(srcdir)/app/xdg-app-builtins-info.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/xdg_app-xdg-app-builtins-info.Tpo app/$(DEPDIR)/xdg_app-xdg-app-builtins-info.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/xdg-app-builtins-info.c' object='app/xdg_app-xdg-app-builtins-info.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_CFLAGS) $(CFLAGS) -c -o app/xdg_app-xdg-app-builtins-info.obj `if test -f 'app/xdg-app-builtins-info.c'; then $(CYGPATH_W) 'app/xdg-app-builtins-info.c'; else $(CYGPATH_W) '$(srcdir)/app/xdg-app-builtins-info.c'; fi`
+
 app/xdg_app-xdg-app-builtins-run.o: app/xdg-app-builtins-run.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_CFLAGS) $(CFLAGS) -MT app/xdg_app-xdg-app-builtins-run.o -MD -MP -MF app/$(DEPDIR)/xdg_app-xdg-app-builtins-run.Tpo -c -o app/xdg_app-xdg-app-builtins-run.o `test -f 'app/xdg-app-builtins-run.c' || echo '$(srcdir)/'`app/xdg-app-builtins-run.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/xdg_app-xdg-app-builtins-run.Tpo app/$(DEPDIR)/xdg_app-xdg-app-builtins-run.Po
@@ -2546,6 +2593,20 @@ builder/xdg_app_builder-builder-source-script.obj: builder/builder-source-script
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_builder_CFLAGS) $(CFLAGS) -c -o builder/xdg_app_builder-builder-source-script.obj `if test -f 'builder/builder-source-script.c'; then $(CYGPATH_W) 'builder/builder-source-script.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-script.c'; fi`
 
+builder/xdg_app_builder-builder-source-shell.o: builder/builder-source-shell.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_builder_CFLAGS) $(CFLAGS) -MT builder/xdg_app_builder-builder-source-shell.o -MD -MP -MF builder/$(DEPDIR)/xdg_app_builder-builder-source-shell.Tpo -c -o builder/xdg_app_builder-builder-source-shell.o `test -f 'builder/builder-source-shell.c' || echo '$(srcdir)/'`builder/builder-source-shell.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/xdg_app_builder-builder-source-shell.Tpo builder/$(DEPDIR)/xdg_app_builder-builder-source-shell.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-shell.c' object='builder/xdg_app_builder-builder-source-shell.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_builder_CFLAGS) $(CFLAGS) -c -o builder/xdg_app_builder-builder-source-shell.o `test -f 'builder/builder-source-shell.c' || echo '$(srcdir)/'`builder/builder-source-shell.c
+
+builder/xdg_app_builder-builder-source-shell.obj: builder/builder-source-shell.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_builder_CFLAGS) $(CFLAGS) -MT builder/xdg_app_builder-builder-source-shell.obj -MD -MP -MF builder/$(DEPDIR)/xdg_app_builder-builder-source-shell.Tpo -c -o builder/xdg_app_builder-builder-source-shell.obj `if test -f 'builder/builder-source-shell.c'; then $(CYGPATH_W) 'builder/builder-source-shell.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-shell.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/xdg_app_builder-builder-source-shell.Tpo builder/$(DEPDIR)/xdg_app_builder-builder-source-shell.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-shell.c' object='builder/xdg_app_builder-builder-source-shell.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_builder_CFLAGS) $(CFLAGS) -c -o builder/xdg_app_builder-builder-source-shell.obj `if test -f 'builder/builder-source-shell.c'; then $(CYGPATH_W) 'builder/builder-source-shell.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-shell.c'; fi`
+
 builder/xdg_app_builder-builder-source-patch.o: builder/builder-source-patch.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_builder_CFLAGS) $(CFLAGS) -MT builder/xdg_app_builder-builder-source-patch.o -MD -MP -MF builder/$(DEPDIR)/xdg_app_builder-builder-source-patch.Tpo -c -o builder/xdg_app_builder-builder-source-patch.o `test -f 'builder/builder-source-patch.c' || echo '$(srcdir)/'`builder/builder-source-patch.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/xdg_app_builder-builder-source-patch.Tpo builder/$(DEPDIR)/xdg_app_builder-builder-source-patch.Po
@@ -2789,6 +2850,27 @@ uninstall-completionDATA:
 	@list='$(completion_DATA)'; test -n "$(completiondir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(completiondir)'; $(am__uninstall_files_from_dir)
+install-dbus_serviceDATA: $(dbus_service_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(dbus_service_DATA)'; test -n "$(dbus_servicedir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(dbus_servicedir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(dbus_servicedir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(dbus_servicedir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(dbus_servicedir)" || exit $$?; \
+	done
+
+uninstall-dbus_serviceDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dbus_service_DATA)'; test -n "$(dbus_servicedir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(dbus_servicedir)'; $(am__uninstall_files_from_dir)
 install-envDATA: $(env_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(env_DATA)'; test -n "$(envdir)" || list=; \
@@ -2915,27 +2997,27 @@ uninstall-profileDATA:
 	@list='$(profile_DATA)'; test -n "$(profiledir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(profiledir)'; $(am__uninstall_files_from_dir)
-install-serviceDATA: $(service_DATA)
+install-systemduserunitDATA: $(systemduserunit_DATA)
 	@$(NORMAL_INSTALL)
-	@list='$(service_DATA)'; test -n "$(servicedir)" || list=; \
+	@list='$(systemduserunit_DATA)'; test -n "$(systemduserunitdir)" || list=; \
 	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(servicedir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(servicedir)" || exit 1; \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(systemduserunitdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(systemduserunitdir)" || exit 1; \
 	fi; \
 	for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  echo "$$d$$p"; \
 	done | $(am__base_list) | \
 	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(servicedir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(servicedir)" || exit $$?; \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(systemduserunitdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(systemduserunitdir)" || exit $$?; \
 	done
 
-uninstall-serviceDATA:
+uninstall-systemduserunitDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(service_DATA)'; test -n "$(servicedir)" || list=; \
+	@list='$(systemduserunit_DATA)'; test -n "$(systemduserunitdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(servicedir)'; $(am__uninstall_files_from_dir)
+	dir='$(DESTDIR)$(systemduserunitdir)'; $(am__uninstall_files_from_dir)
 install-xdgappincludeHEADERS: $(xdgappinclude_HEADERS)
 	@$(NORMAL_INSTALL)
 	@list='$(xdgappinclude_HEADERS)'; test -n "$(xdgappincludedir)" || list=; \
@@ -3432,7 +3514,7 @@ install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(completiondir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(servicedir)" "$(DESTDIR)$(xdgappincludedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(xdgappincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -3517,10 +3599,11 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-completionDATA install-dist_triggersSCRIPTS \
-	install-envDATA install-introspectionDATA \
-	install-nodist_girDATA install-nodist_typelibDATA \
-	install-pkgconfigDATA install-profileDATA install-serviceDATA \
+install-data-am: install-completionDATA install-dbus_serviceDATA \
+	install-dist_triggersSCRIPTS install-envDATA \
+	install-introspectionDATA install-nodist_girDATA \
+	install-nodist_typelibDATA install-pkgconfigDATA \
+	install-profileDATA install-systemduserunitDATA \
 	install-xdgappincludeHEADERS
 
 install-dvi: install-dvi-recursive
@@ -3572,12 +3655,12 @@ ps: ps-recursive
 ps-am:
 
 uninstall-am: uninstall-binPROGRAMS uninstall-completionDATA \
-	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
-	uninstall-introspectionDATA uninstall-libLTLIBRARIES \
-	uninstall-libexecPROGRAMS uninstall-nodist_girDATA \
-	uninstall-nodist_typelibDATA uninstall-pkgconfigDATA \
-	uninstall-profileDATA uninstall-serviceDATA \
-	uninstall-xdgappincludeHEADERS
+	uninstall-dbus_serviceDATA uninstall-dist_triggersSCRIPTS \
+	uninstall-envDATA uninstall-introspectionDATA \
+	uninstall-libLTLIBRARIES uninstall-libexecPROGRAMS \
+	uninstall-nodist_girDATA uninstall-nodist_typelibDATA \
+	uninstall-pkgconfigDATA uninstall-profileDATA \
+	uninstall-systemduserunitDATA uninstall-xdgappincludeHEADERS
 
 .MAKE: $(am__recursive_targets) all check check-am install install-am \
 	install-exec-am install-strip
@@ -3594,26 +3677,26 @@ uninstall-am: uninstall-binPROGRAMS uninstall-completionDATA \
 	distdir distuninstallcheck dvi dvi-am html html-am info \
 	info-am install install-am install-binPROGRAMS \
 	install-completionDATA install-data install-data-am \
-	install-dist_triggersSCRIPTS install-dvi install-dvi-am \
-	install-envDATA install-exec install-exec-am install-exec-hook \
-	install-html install-html-am install-info install-info-am \
-	install-introspectionDATA install-libLTLIBRARIES \
-	install-libexecPROGRAMS install-man install-nodist_girDATA \
-	install-nodist_typelibDATA install-pdf install-pdf-am \
-	install-pkgconfigDATA install-profileDATA install-ps \
-	install-ps-am install-serviceDATA install-strip \
-	install-xdgappincludeHEADERS installcheck installcheck-am \
-	installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	recheck tags tags-am uninstall uninstall-am \
-	uninstall-binPROGRAMS uninstall-completionDATA \
-	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
-	uninstall-introspectionDATA uninstall-libLTLIBRARIES \
-	uninstall-libexecPROGRAMS uninstall-nodist_girDATA \
-	uninstall-nodist_typelibDATA uninstall-pkgconfigDATA \
-	uninstall-profileDATA uninstall-serviceDATA \
-	uninstall-xdgappincludeHEADERS
+	install-dbus_serviceDATA install-dist_triggersSCRIPTS \
+	install-dvi install-dvi-am install-envDATA install-exec \
+	install-exec-am install-exec-hook install-html install-html-am \
+	install-info install-info-am install-introspectionDATA \
+	install-libLTLIBRARIES install-libexecPROGRAMS install-man \
+	install-nodist_girDATA install-nodist_typelibDATA install-pdf \
+	install-pdf-am install-pkgconfigDATA install-profileDATA \
+	install-ps install-ps-am install-strip \
+	install-systemduserunitDATA install-xdgappincludeHEADERS \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am recheck tags tags-am uninstall \
+	uninstall-am uninstall-binPROGRAMS uninstall-completionDATA \
+	uninstall-dbus_serviceDATA uninstall-dist_triggersSCRIPTS \
+	uninstall-envDATA uninstall-introspectionDATA \
+	uninstall-libLTLIBRARIES uninstall-libexecPROGRAMS \
+	uninstall-nodist_girDATA uninstall-nodist_typelibDATA \
+	uninstall-pkgconfigDATA uninstall-profileDATA \
+	uninstall-systemduserunitDATA uninstall-xdgappincludeHEADERS
 
 .PRECIOUS: Makefile
 
@@ -3638,9 +3721,9 @@ $(systemd_dbus_built_sources) : data/org.freedesktop.systemd1.xml
 		$(NULL)
 
 install-exec-hook:
-@DISABLE_USERNS_TRUE@@PRIV_MODE_SETUID_TRUE@	$(SUDO_BIN) chown root $(DESTDIR)$(bindir)/xdg-app-helper
-@DISABLE_USERNS_TRUE@@PRIV_MODE_SETUID_TRUE@	$(SUDO_BIN) chmod u+s $(DESTDIR)$(bindir)/xdg-app-helper
-@DISABLE_USERNS_TRUE@@PRIV_MODE_FILECAPS_TRUE@@PRIV_MODE_SETUID_FALSE@	$(SUDO_BIN) setcap cap_sys_admin+ep $(DESTDIR)$(bindir)/xdg-app-helper
+@PRIV_MODE_SETUID_TRUE@	$(SUDO_BIN) chown root $(DESTDIR)$(bindir)/xdg-app-helper
+@PRIV_MODE_SETUID_TRUE@	$(SUDO_BIN) chmod u+s $(DESTDIR)$(bindir)/xdg-app-helper
+@PRIV_MODE_FILECAPS_TRUE@@PRIV_MODE_SETUID_FALSE@	$(SUDO_BIN) setcap cap_sys_admin+ep $(DESTDIR)$(bindir)/xdg-app-helper
 
 lib/xdg-app-enum-types.h: $(public_headers) lib/xdg-app-enum-types.h.template
 	$(AM_V_GEN) $(GLIB_MKENUMS) --template $(filter %.template,$^) $(filter-out %.template,$^) > \
@@ -3747,7 +3830,7 @@ tests/services/org.freedesktop.portal.Documents.service: document-portal/org.fre
 	mkdir -p tests/services
 	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(abs_top_builddir)|" $< > $@
 
-tests/services/xdg-app-session.service: session-helper/xdg-app-session.service.in
+tests/services/org.freedesktop.XdgApp.service: session-helper/org.freedesktop.XdgApp.service.in
 	mkdir -p tests/services
 	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(abs_top_builddir)|" $< > $@
 

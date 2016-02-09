@@ -1,10 +1,10 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define if not using user namespaces */
-#undef DISABLE_USERNS
-
 /* Define if using seccomp */
 #undef ENABLE_SECCOMP
+
+/* Define if using xauth */
+#undef ENABLE_XAUTH
 
 /* Define to 1 if you have the `archive_read_support_filter_all' function. */
 #undef HAVE_ARCHIVE_READ_SUPPORT_FILTER_ALL

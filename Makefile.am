@@ -6,21 +6,26 @@ libexec_PROGRAMS = $(NULL)
 CLEANFILES = $(NULL)
 DISTCLEANFILES= $(NULL)
 BUILT_SOURCES = $(NULL)
+EXTRA_DIST =
 
 if BUILD_DOCUMENTATION
-SUBDIRS = doc
+SUBDIRS = . doc
 endif
 
 %.service: %.service.in config.log
 	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(libexecdir)|" $< > $@
 
-servicedir = $(DBUS_SERVICE_DIR)
+dbus_servicedir = $(DBUS_SERVICE_DIR)
 service_in_files = $(NULL)
-service_DATA = $(NULL)
+dbus_service_DATA = $(NULL)
+systemduserunit_DATA = $(NULL)
+CLEANFILES += $(dbus_service_DATA)
+CLEANFILES += $(systemduserunit_DATA)
+EXTRA_DIST += $(service_in_files)
 
 AM_CPPFLAGS =						\
 	-DXDG_APP_BINDIR=\"$(bindir)\"			\
-	-DXDG_APP_SYSTEMDIR=\"$(localstatedir)/xdg-app\"\
+	-DXDG_APP_SYSTEMDIR=\"$(localstatedir)/lib/xdg-app\"\
 	-DXDG_APP_BASEDIR=\"$(pkgdatadir)\"		\
 	-DXDG_APP_TRIGGERDIR=\"$(pkgdatadir)/triggers\" \
 	-DSYSTEM_FONTS_DIR=\"$(SYSTEM_FONTS_DIR)\"	\
@@ -38,12 +43,14 @@ dist_triggers_SCRIPTS = \
 	triggers/desktop-database.trigger \
 	$(NULL)
 
-EXTRA_DIST =
-
 lib_LTLIBRARIES =
 noinst_LTLIBRARIES = libglnx.la
 libglnx_srcpath := $(srcdir)/libglnx
-libglnx_cflags := $(BASE_CFLAGS) "-I$(libglnx_srcpath)"
+libglnx_cflags := \
+	$(BASE_CFLAGS) \
+	"-I$(libglnx_srcpath)" \
+	$(HIDDEN_VISIBILITY_CFLAGS) \
+	$(NULL)
 libglnx_libs := $(BASE_LIBS)
 include libglnx/Makefile-libglnx.am.inc
 
@@ -64,7 +71,9 @@ EXTRA_DIST += $(completion_DATA)
 
 profiledir = $(sysconfdir)/profile.d
 profile_DATA = xdg-app.sh
-EXTRA_DIST += profile/xdg-app.sh.in $(service_in_files)
+EXTRA_DIST += \
+	profile/xdg-app.sh.in \
+	$(NULL)
 DISTCLEANFILES += xdg-app.sh
 
 xdg-app.sh: profile/xdg-app.sh.in

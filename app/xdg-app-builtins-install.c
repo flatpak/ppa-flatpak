@@ -328,11 +328,11 @@ install_bundle (XdgAppDir *dir,
   if (!xdg_app_dir_deploy (dir, ref, to_checksum, cancellable, error))
     goto out;
 
-  if (!xdg_app_dir_make_current_ref (dir, ref, cancellable, error))
-    goto out;
-
   if (strcmp (parts[0], "app") == 0)
     {
+      if (!xdg_app_dir_make_current_ref (dir, ref, cancellable, error))
+        goto out;
+
       if (!xdg_app_dir_update_exports (dir, parts[1], cancellable, error))
         goto out;
     }
@@ -482,8 +482,8 @@ xdg_app_builtin_install_runtime (int argc, char **argv, GCancellable *cancellabl
 gboolean
 xdg_app_builtin_install_app (int argc, char **argv, GCancellable *cancellable, GError **error)
 {
-  opt_runtime = TRUE;
-  opt_app = FALSE;
+  opt_runtime = FALSE;
+  opt_app = TRUE;
 
   return xdg_app_builtin_install (argc, argv, cancellable, error);
 }

@@ -18,19 +18,23 @@
  *       Alexander Larsson <alexl@redhat.com>
  */
 
-#if !defined (__XDG_APP_H_INSIDE__) && !defined (XDG_APP_COMPILATION)
-#error "Only <xdg-app.h> can be included directly."
-#endif
+#ifndef __BUILDER_SOURCE_SHELL_H__
+#define __BUILDER_SOURCE_SHELL_H__
 
-#ifndef __XDG_APP_VERSION_MACROS_H__
-#define __XDG_APP_VERSION_MACROS_H__
+#include "builder-source.h"
 
-#define XDG_APP_MAJOR_VERSION (0)
-#define XDG_APP_MINOR_VERSION (4)
-#define XDG_APP_MICRO_VERSION (11)
+G_BEGIN_DECLS
 
-#ifndef XDG_APP_EXTERN
-#define XDG_APP_EXTERN extern
-#endif
+typedef struct BuilderSourceShell BuilderSourceShell;
 
-#endif /* __XDG_APP_VERSION_MACROS_H__ */
+#define BUILDER_TYPE_SOURCE_SHELL (builder_source_shell_get_type())
+#define BUILDER_SOURCE_SHELL(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), BUILDER_TYPE_SOURCE_SHELL, BuilderSourceShell))
+#define BUILDER_IS_SOURCE_SHELL(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), BUILDER_TYPE_SOURCE_SHELL))
+
+GType builder_source_shell_get_type (void);
+
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(BuilderSourceShell, g_object_unref)
+
+G_END_DECLS
+
+#endif /* __BUILDER_SOURCE_SHELL_H__ */
