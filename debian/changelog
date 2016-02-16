@@ -1,7 +1,5 @@
-xdg-app (0.4.8-1) UNRELEASED; urgency=medium
+xdg-app (0.4.11-1) UNRELEASED; urgency=medium
 
-  * New upstream release
-    - drop patch for XML escaping, applied upstream
   * Set the Utopia Maintenance Team as maintainer and myself as an uploader
   * Add Vcs-Git, Vcs-Browser
   * Remove unnecessary use of dh-exec
@@ -33,12 +31,28 @@ xdg-app (0.4.8-1) UNRELEASED; urgency=medium
   * Run tests once via check-TESTS, but do not run them a second time
     via gtester, which fails because all test-cases in one test might
     be skipped
-  * Add patch from Alex Larsson to fix an assertion failure in runtime
-    installation
 
  -- Simon McVittie <smcv@debian.org>  Fri, 29 Jan 2016 10:04:17 +0100
 
-xdg-app (0.4.7-alexlarsson1~wily4) wily; urgency=medium
+xdg-app (0.4.11-0alexlarsson1~wily1) wily; urgency=medium
+
+  * Update to new upstream version
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Tue, 9 Feb 2016 12:25:00 +0200
+
+xdg-app (0.4.10-0alexlarsson1~vivid1) vivid; urgency=medium
+
+  * Update to new upstream version
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Tue, 9 Feb 2016 10:42:00 +0200
+
+xdg-app (0.4.9-0alexlarsson1~vivid1) vivid; urgency=medium
+
+  * Update to new upstream version
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Mon, 8 Feb 2016 15:15:00 +0200
+
+xdg-app (0.4.7-alexlarsson1~vivid4) vivid; urgency=medium
 
   * Disabled gtk-doc
 
