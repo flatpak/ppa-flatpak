@@ -120,10 +120,10 @@ Description: Application deployment framework for desktop apps
  example, the Documents portal displays an "Open" dialog outside the
  sandbox, then allows the application to access only the selected file.
  .
- Each application uses a specified "runtime", libraries, which is available
- as /usr inside its sandbox. This can be used to run application bundles
- with multiple, potentially incompatible sets of dependencies within the
- same desktop environment.
+ Each application uses a specified "runtime", or set of libraries, which is
+ available as /usr inside its sandbox. This can be used to run application
+ bundles with multiple, potentially incompatible sets of dependencies within
+ the same desktop environment.
  .
  This package contains the services and executables needed to install and
  launch sandboxed applications, and the portal services needed to provide
