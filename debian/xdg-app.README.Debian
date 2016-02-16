@@ -1,0 +1,61 @@
+User namespaces
+===============
+
+xdg-app relies on user namespaces in order to work; however, user
+namespaces cannot be created by unprivileged users on a standard Debian
+installation. There are two options to get user namespace support:
+
+Enabling unprivileged user namespaces
+-------------------------------------
+
+In upstream Linux kernels, the kernel configuration includes a compile-time
+choice for whether unprivileged users are allowed to create user namespaces.
+In Debian this is augmented with a runtime configuration option.
+
+In principle giving unprivileged users the ability to create user
+namespaces is designed to be safe, but there have been several security
+vulnerabilities involving this feature, so it is off by default.
+The security risk of enabling this feature is that a kernel bug
+(such as CVE-2014-9717) or a user-space bug (such as systemd bug 1822)
+might allow an unprivileged user to escalate their privileges or
+carry out a denial-of-service attack.
+
+To enable user namespaces for unprivileged users until the next reboot:
+
+    # apt install procps
+    # sysctl kernel.unprivileged_userns_clone=1
+
+To enable user namespaces for unprivileged users for the next reboot
+and all subsequent reboots:
+
+    # apt install procps
+    # echo "kernel.unprivileged_userns_clone=1" >> /etc/sysctl.d/local.conf
+
+(The procps package is only required if init is not systemd; systemd has
+its own built-in support for /etc/sysctl.d which does not rely on that
+package.)
+
+Making xdg-app-helper privileged
+--------------------------------
+
+Another way to give xdg-app the capabilities it needs is to let the
+xdg-app-helper executable run as root. It will retain the CAP_SYS_ADMIN
+capability for as long as it needs it, then drop capabilities.
+This executable is designed to be safe to run setuid root. The security
+risk of enabling this is that a bug in the xdg-app-helper executable,
+or in some library that it uses, might allow an unprivileged user to
+escalate their privileges or carry out a denial-of-service attack.
+
+To make xdg-app-helper setuid root, allowing all users to run xdg-app:
+
+    # dpkg-statoverride --update --add root root 04755 /usr/bin/xdg-app-helper
+
+Alternatively, it is possible to restrict xdg-app-helper execution to
+members of a specific group, which would mitigate any vulnerabilities that
+might exist in it. For example, if Alice and Bob, but no other users,
+should be able to run it:
+
+    # addgroup xdg-app-users
+    # adduser alice xdg-app-users
+    # adduser bob xdg-app-users
+    # dpkg-statoverride --update --add root xdg-app-users 04754 /usr/bin/xdg-app-helper
