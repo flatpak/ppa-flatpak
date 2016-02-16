@@ -31,8 +31,8 @@ Build-Depends:
  xsltproc,
 Standards-Version: 3.9.6
 Homepage: https://github.com/alexlarsson/xdg-app
-Vcs-Git: https://anonscm.debian.org/git/pkg-utopia/libgsystem.git
-Vcs-Browser: https://anonscm.debian.org/cgit/pkg-utopia/libgsystem.git
+Vcs-Git: https://anonscm.debian.org/git/collab-maint/xdg-app.git
+Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/xdg-app.git
 
 Package: gir1.2-xdgapp-1.0
 Architecture: any
