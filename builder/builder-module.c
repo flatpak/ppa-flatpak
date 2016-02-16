@@ -46,6 +46,7 @@ struct BuilderModule {
   char **make_install_args;
   gboolean rm_configure;
   gboolean no_autogen;
+  gboolean no_parallel_make;
   gboolean cmake;
   gboolean builddir;
   BuilderOptions *build_options;
@@ -70,6 +71,7 @@ enum {
   PROP_SUBDIR,
   PROP_RM_CONFIGURE,
   PROP_NO_AUTOGEN,
+  PROP_NO_PARALLEL_MAKE,
   PROP_CMAKE,
   PROP_BUILDDIR,
   PROP_CONFIG_OPTS,
@@ -130,6 +132,10 @@ builder_module_get_property (GObject    *object,
 
     case PROP_NO_AUTOGEN:
       g_value_set_boolean (value, self->no_autogen);
+      break;
+
+    case PROP_NO_PARALLEL_MAKE:
+      g_value_set_boolean (value, self->no_parallel_make);
       break;
 
     case PROP_CMAKE:
@@ -204,6 +210,10 @@ builder_module_set_property (GObject      *object,
 
     case PROP_NO_AUTOGEN:
       self->no_autogen = g_value_get_boolean (value);
+      break;
+
+    case PROP_NO_PARALLEL_MAKE:
+      self->no_parallel_make = g_value_get_boolean (value);
       break;
 
     case PROP_CMAKE:
@@ -298,6 +308,13 @@ builder_module_class_init (BuilderModuleClass *klass)
   g_object_class_install_property (object_class,
                                    PROP_NO_AUTOGEN,
                                    g_param_spec_boolean ("no-autogen",
+                                                         "",
+                                                         "",
+                                                         FALSE,
+                                                         G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_NO_PARALLEL_MAKE,
+                                   g_param_spec_boolean ("no-parallel-make",
                                                          "",
                                                          "",
                                                          FALSE,
@@ -728,7 +745,6 @@ builder_module_build (BuilderModule *self,
   GFile *app_dir = builder_context_get_app_dir (context);
   g_autofree char *make_j = NULL;
   g_autofree char *make_l = NULL;
-  g_autofree char *makefile_content = NULL;
   g_autoptr(GFile) configure_file = NULL;
   g_autoptr(GFile) cmake_file = NULL;
   const char *makefile_names[] =  {"Makefile", "makefile", "GNUmakefile", NULL};
@@ -736,29 +752,38 @@ builder_module_build (BuilderModule *self,
   g_autofree char *build_dir_relative = NULL;
   gboolean has_configure;
   gboolean var_require_builddir;
-  gboolean has_notparallel;
   gboolean use_builddir;
   int i;
   g_auto(GStrv) env = NULL;
   g_auto(GStrv) build_args = NULL;
   const char *cflags, *cxxflags;
-  g_autofree char *buildname = NULL;
   g_autoptr(GFile) source_dir = NULL;
   g_autoptr(GFile) source_subdir = NULL;
   const char *source_subdir_relative = NULL;
-  g_autoptr(GFile) source_dir_template = NULL;
   g_autofree char *source_dir_path = NULL;
+  int count;
 
-  buildname = g_strdup_printf ("build-%s-XXXXXX", self->name);
-
-  source_dir_template = g_file_get_child (builder_context_get_state_dir (context),
-                                          buildname);
-  source_dir_path = g_file_get_path (source_dir_template);
-
-  if (g_mkdtemp (source_dir_path) == NULL)
+  for (count = 1; source_dir_path == NULL; count++)
     {
-      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "Can't create build directory");
-      return FALSE;
+      g_autofree char *buildname = NULL;
+      g_autoptr(GFile) source_dir_count = NULL;
+      g_autoptr(GError) my_error = NULL;
+
+      buildname = g_strdup_printf ("build-%s-%d", self->name, count);
+
+      source_dir_count = g_file_get_child (builder_context_get_state_dir (context), buildname);
+
+      if (g_file_make_directory (source_dir_count, NULL, &my_error))
+        source_dir_path = g_file_get_path (source_dir_count);
+      else
+        {
+          if (!g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_EXISTS))
+            {
+              g_propagate_error (error, g_steal_pointer (&my_error));
+              return FALSE;
+            }
+          /* Already exists, try again */
+        }
     }
 
   source_dir = g_file_new_for_path (source_dir_path);
@@ -916,24 +941,16 @@ builder_module_build (BuilderModule *self,
     {
       g_autoptr(GFile) makefile_file = g_file_get_child (build_dir, makefile_names[i]);
       if (g_file_query_exists (makefile_file, NULL))
-        {
-          if (!g_file_load_contents (makefile_file, NULL, &makefile_content, NULL, NULL, error))
-            return FALSE;
-          break;
-        }
+        break;
     }
 
-  if (makefile_content == NULL)
+  if (makefile_names[i] == NULL)
     {
       g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "Can't find makefile");
       return FALSE;
     }
 
-  has_notparallel =
-    g_str_has_prefix (makefile_content, ".NOTPARALLEL") ||
-    (strstr (makefile_content, "\n.NOTPARALLEL") != NULL);
-
-  if (!has_notparallel)
+  if (!self->no_parallel_make)
     {
       make_j = g_strdup_printf ("-j%d", builder_context_get_n_cpu (context));
       make_l = g_strdup_printf ("-l%d", 2*builder_context_get_n_cpu (context));
@@ -1029,6 +1046,7 @@ builder_module_checksum (BuilderModule  *self,
   builder_cache_checksum_strv (cache, self->make_install_args);
   builder_cache_checksum_boolean (cache, self->rm_configure);
   builder_cache_checksum_boolean (cache, self->no_autogen);
+  builder_cache_checksum_boolean (cache, self->no_parallel_make);
   builder_cache_checksum_boolean (cache, self->cmake);
   builder_cache_checksum_boolean (cache, self->builddir);
 
