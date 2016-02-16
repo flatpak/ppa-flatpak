@@ -118,7 +118,7 @@ xdg-app (0.1-0amigadave4) trusty; urgency=low
 
   * Add build dependency on dh-exec.
 
- -- David King <david@ubuntudave>  Wed, 08 Apr 2015 13:48:36 +0100
+ -- David King <amigadave@amigadave.com>  Wed, 08 Apr 2015 13:48:36 +0100
 
 xdg-app (0.1-0amigadave3) trusty; urgency=low
 
