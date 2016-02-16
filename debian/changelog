@@ -1,6 +1,7 @@
 xdg-app (0.4.11-1) UNRELEASED; urgency=medium
 
-  * Set the Utopia Maintenance Team as maintainer and myself as an uploader
+  * Set the Utopia Maintenance Team as maintainer, with myself and
+    Matthias Klumpp as uploaders
   * Add Vcs-Git, Vcs-Browser (in collab-maint git)
   * Remove unnecessary use of dh-exec
   * Remove -dbg package, rely on automatic dbgsym packages instead
