@@ -1,4 +1,16 @@
-xdg-app (0.4.11-0alexlarsson1~wily1) wily; urgency=medium
+xdg-app (0.4.13-0alexlarsson3~wily1) wily; urgency=medium
+
+  * Update to new upstream version
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Fri, 26 Feb 2016 10:12:00 +0200
+
+xdg-app (0.4.12-0alexlarsson1~vivid1) vivid; urgency=medium
+
+  * Update to new upstream version
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Fri, 19 Feb 2016 13:18:00 +0200
+
+xdg-app (0.4.11-0alexlarsson1~vivid1) vivid; urgency=medium
 
   * Update to new upstream version
 

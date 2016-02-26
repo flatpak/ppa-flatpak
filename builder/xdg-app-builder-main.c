@@ -34,6 +34,7 @@
 
 static gboolean opt_verbose;
 static gboolean opt_version;
+static gboolean opt_run;
 static gboolean opt_disable_cache;
 static gboolean opt_download_only;
 static gboolean opt_build_only;
@@ -51,6 +52,7 @@ static char **opt_key_ids;
 static GOptionEntry entries[] = {
   { "verbose", 'v', 0, G_OPTION_ARG_NONE, &opt_verbose, "Print debug information during command processing", NULL },
   { "version", 0, 0, G_OPTION_ARG_NONE, &opt_version, "Print version information and exit", NULL },
+  { "run", 0, 0, G_OPTION_ARG_NONE, &opt_run, "Run a command in the build directory", NULL },
   { "ccache", 0, 0, G_OPTION_ARG_NONE, &opt_ccache, "Use ccache", NULL },
   { "disable-cache", 0, 0, G_OPTION_ARG_NONE, &opt_disable_cache, "Disable cache", NULL },
   { "disable-download", 0, 0, G_OPTION_ARG_NONE, &opt_disable_download, "Don't download any new sources", NULL },
@@ -89,6 +91,8 @@ usage (GOptionContext *context, const char *message)
   return 1;
 }
 
+static const char skip_arg[] = "skip";
+
 static gboolean
 do_export (GError   **error,
            gboolean   runtime,
@@ -122,7 +126,8 @@ do_export (GError   **error,
 
   va_start (ap, runtime);
   while ((arg = va_arg (ap, const gchar *)))
-    g_ptr_array_add (args, g_strdup ((gchar *) arg));
+    if (arg != skip_arg)
+      g_ptr_array_add (args, g_strdup ((gchar *) arg));
   va_end (ap);
 
   g_ptr_array_add (args, NULL);
@@ -155,6 +160,9 @@ main (int    argc,
   g_autoptr(GFile) app_dir = NULL;
   g_autoptr(BuilderCache) cache = NULL;
   g_autofree char *cache_branch = NULL;
+  g_autoptr(GFileEnumerator) dir_enum = NULL;
+  g_autoptr(GFileEnumerator) dir_enum2 = NULL;
+  GFileInfo *next = NULL;
   const char *platform_id = NULL;
 
   setlocale (LC_ALL, "");
@@ -216,13 +224,6 @@ main (int    argc,
   base_dir = g_file_new_for_path (g_get_current_dir ());
   app_dir = g_file_new_for_path (app_dir_path);
 
-  if (g_file_query_exists (app_dir, NULL) && !directory_is_empty (app_dir_path))
-    {
-      g_printerr ("App dir '%s' is not empty. Please delete "
-                  "the existing contents.\n", app_dir_path);
-      return 1;
-    }
-
   build_context = builder_context_new (base_dir, app_dir);
 
   builder_context_set_keep_build_dirs (build_context, opt_keep_build_dirs);
@@ -231,6 +232,34 @@ main (int    argc,
       !builder_context_enable_ccache (build_context, &error))
     {
       g_printerr ("Can't initialize ccache use: %s\n", error->message);
+      return 1;
+    }
+
+  if (opt_run)
+    {
+      if (argc == 3)
+        return usage (context, "Program to run must be specified");
+
+      if (!g_file_query_exists (app_dir, NULL) ||
+          directory_is_empty (app_dir_path))
+        {
+          g_printerr ("App dir '%s' is empty or doesn't exist.\n", app_dir_path);
+          return 1;
+        }
+
+      if (!builder_manifest_run (manifest, build_context, argv + 3, argc - 3, &error))
+        {
+          g_printerr ("Error running %s: %s\n", argv[3], error->message);
+          return 1;
+        }
+
+      return 0;
+    }
+
+  if (g_file_query_exists (app_dir, NULL) && !directory_is_empty (app_dir_path))
+    {
+      g_printerr ("App dir '%s' is not empty. Please delete "
+                  "the existing contents.\n", app_dir_path);
       return 1;
     }
 
@@ -324,12 +353,63 @@ main (int    argc,
                       builder_context_get_build_runtime (build_context),
                       "--exclude=/lib/debug/*",
                       "--include=/lib/debug/app",
+                      builder_context_get_separate_locales (build_context) ? "--exclude=/share/runtime/locale/*/*" : skip_arg,
                       opt_repo, app_dir_path, NULL))
         {
           g_print ("Export failed: %s\n", error->message);
           return 1;
         }
 
+      /* Export regular locale extensions */
+      dir_enum = g_file_enumerate_children (app_dir, "standard::name,standard::type",
+                                            G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                            NULL, NULL);
+      while (dir_enum != NULL &&
+             (next = g_file_enumerator_next_file (dir_enum, NULL, NULL)))
+        {
+          g_autoptr(GFileInfo) child_info = next;
+          const char *name = g_file_info_get_name (child_info);
+          const char *language;
+          g_autofree char *metadata_arg = NULL;
+          g_autofree char *files_arg = NULL;
+
+          if (!g_str_has_prefix (name, "metadata.locale."))
+            continue;
+          language = name + strlen ("metadata.locale.");
+
+          g_print ("exporting %s.Locale.%s to repo\n", builder_manifest_get_id (manifest), language);
+
+          metadata_arg = g_strdup_printf ("--metadata=%s", name);
+          files_arg = g_strconcat (builder_context_get_build_runtime (build_context) ? "--files=usr" : "--files=files",
+                                   "/share/runtime/locale/",
+                                   language, NULL);
+          if (!do_export (&error, TRUE,
+                          metadata_arg,
+                          files_arg,
+                          opt_repo, app_dir_path, NULL))
+            {
+              g_print ("Export failed: %s\n", error->message);
+              return 1;
+            }
+        }
+
+      /* Export debug extensions */
+      debuginfo_metadata = g_file_get_child (app_dir, "metadata.debuginfo");
+      if (g_file_query_exists (debuginfo_metadata, NULL))
+        {
+          g_print ("exporting %s.Debug to repo\n", builder_manifest_get_id (manifest));
+
+          if (!do_export (&error, TRUE,
+                          "--metadata=metadata.debuginfo",
+                          builder_context_get_build_runtime (build_context) ? "--files=usr/lib/debug" : "--files=files/lib/debug",
+                          opt_repo, app_dir_path, NULL))
+            {
+              g_print ("Export failed: %s\n", error->message);
+              return 1;
+            }
+        }
+
+      /* Export platform */
       platform_id = builder_manifest_get_id_platform (manifest);
       if (builder_context_get_build_runtime (build_context) &&
           platform_id != NULL)
@@ -339,6 +419,7 @@ main (int    argc,
             if (!do_export (&error, TRUE,
                             "--metadata=metadata.platform",
                             "--files=platform",
+                            builder_context_get_separate_locales (build_context) ? "--exclude=/share/runtime/locale/*/*" : skip_arg,
                             opt_repo, app_dir_path, NULL))
               {
                 g_print ("Export failed: %s\n", error->message);
@@ -346,14 +427,30 @@ main (int    argc,
               }
         }
 
-      debuginfo_metadata = g_file_get_child (app_dir, "metadata.debuginfo");
-      if (g_file_query_exists (debuginfo_metadata, NULL))
+      /* Export platform locales */
+      dir_enum2 = g_file_enumerate_children (app_dir, "standard::name,standard::type",
+                                            G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                            NULL, NULL);
+      while (dir_enum2 != NULL &&
+             (next = g_file_enumerator_next_file (dir_enum2, NULL, NULL)))
         {
-          g_print ("exporting %s.Debug to repo\n", builder_manifest_get_id (manifest));
+          g_autoptr(GFileInfo) child_info = next;
+          const char *name = g_file_info_get_name (child_info);
+          const char *language;
+          g_autofree char *metadata_arg = NULL;
+          g_autofree char *files_arg = NULL;
 
+          if (!g_str_has_prefix (name, "metadata.platform.locale."))
+            continue;
+          language = name + strlen ("metadata.platform.locale.");
+
+          g_print ("exporting %s.Locale.%s to repo\n", platform_id, language);
+
+          metadata_arg = g_strdup_printf ("--metadata=%s", name);
+          files_arg = g_strconcat ("--files=platform/share/runtime/locale/", language, NULL);
           if (!do_export (&error, TRUE,
-                          "--metadata=metadata.debuginfo",
-                          builder_context_get_build_runtime (build_context) ? "--files=usr/lib/debug" : "--files=files/lib/debug",
+                          metadata_arg,
+                          files_arg,
                           opt_repo, app_dir_path, NULL))
             {
               g_print ("Export failed: %s\n", error->message);

@@ -9,6 +9,7 @@ Build-Depends:
  docbook-xml,
  docbook-xsl,
  libelf-dev,
+ libdwarf-dev,
  libattr1-dev,
  libcap-dev,
  libglib2.0-dev,
@@ -72,6 +73,7 @@ Section: libdevel
 Depends:
  ${misc:Depends},
  xdg-app (= ${binary:Version}),
+ libxdgapp (= ${binary:Version}),
  pkg-config
 Description: Development files for xdg-app
  Development headers and pkg-config file for xdg-app.
@@ -92,6 +94,7 @@ Section: debug
 Priority: extra
 Depends:
  ${misc:Depends},
- xdg-app (= ${binary:Version})
+ xdg-app (= ${binary:Version}),
+ libxdgapp (= ${binary:Version})
 Description: debugging symbols for xdg-app
  This package contains the debugging symbols for xdg-app.
