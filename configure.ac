@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([xdg_app_major_version], [0])
 m4_define([xdg_app_minor_version], [4])
-m4_define([xdg_app_micro_version], [11])
-m4_define([xdg_app_interface_age], [11])
+m4_define([xdg_app_micro_version], [13])
+m4_define([xdg_app_interface_age], [13])
 m4_define([xdg_app_binary_age],
           [m4_eval(100 * xdg_app_minor_version + xdg_app_micro_version)])
 m4_define([xdg_app_version],
@@ -102,6 +102,16 @@ if test "x$enable_xauth" = "xyes"; then
    AC_SUBST(XAUTH_LIBS)
    AC_DEFINE([ENABLE_XAUTH], [1],
       [Define if using xauth])
+fi
+
+AC_ARG_ENABLE([sandboxed-triggers],
+              AC_HELP_STRING([--disable-sandboxed-triggers],
+                             [Disable sandboxed triggers]),
+              [],
+              [enable_sandboxed_triggers=yes])
+if test "x$enable_sandboxed_triggers" = "xno"; then
+   AC_DEFINE([DISABLE_SANDBOXED_TRIGGERS], [1],
+      [Define if sandboxed triggers are disabled])
 fi
 
 PKG_CHECK_MODULES(OSTREE, [libgsystem >= 2015.1 ostree-1 >= 2015.3])

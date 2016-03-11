@@ -565,13 +565,13 @@ static const create_table_t create[] = {
   { FILE_TYPE_DIR, "app", 0755},
   { FILE_TYPE_DIR, "run", 0755},
   { FILE_TYPE_DIR, "run/host", 0755},
+  { FILE_TYPE_DIR, "run/host/monitor", 0700, NULL},
   { FILE_TYPE_DIR, "run/dbus", 0755},
   { FILE_TYPE_DIR, "run/media", 0755},
   { FILE_TYPE_DIR, "run/user", 0755},
   { FILE_TYPE_DIR, "run/user/%1$d", 0700, NULL},
   { FILE_TYPE_DIR, "run/user/%1$d/pulse", 0700, NULL},
   { FILE_TYPE_DIR, "run/user/%1$d/dconf", 0700, NULL},
-  { FILE_TYPE_DIR, "run/user/%1$d/xdg-app-monitor", 0700, NULL},
   { FILE_TYPE_REGULAR, "run/user/%1$d/pulse/native", 0700, NULL},
   { FILE_TYPE_DIR, "var", 0755},
   { FILE_TYPE_SYMLINK, "var/tmp", 0755, "/tmp"},
@@ -586,7 +586,7 @@ static const create_table_t create[] = {
   { FILE_TYPE_ETC_PASSWD, "etc/passwd", 0755, NULL, 0, &create_etc_dir},
   { FILE_TYPE_ETC_GROUP, "etc/group", 0755, NULL, 0, &create_etc_dir},
   { FILE_TYPE_REGULAR, "etc/resolv.conf", 0755, NULL, 0, &bind_resolv_conf},
-  { FILE_TYPE_SYMLINK, "etc/resolv.conf", 0755, "/run/user/%1$d/xdg-app-monitor/resolv.conf", 0, &create_monitor_links},
+  { FILE_TYPE_SYMLINK, "etc/resolv.conf", 0755, "/run/host/monitor/resolv.conf", 0, &create_monitor_links},
   { FILE_TYPE_REGULAR, "etc/machine-id", 0755, NULL, 0, &create_etc_dir},
   { FILE_TYPE_DIR, "tmp/.X11-unix", 0755 },
   { FILE_TYPE_REGULAR, "tmp/.X11-unix/X99", 0755 },
@@ -879,11 +879,13 @@ get_mountinfo (const char *mountpoint)
 
   if (free_me)
     free (free_me);
-  free (mountinfo);
 
   if (res)
-    return xstrdup (res);
-  return NULL;
+    res = xstrdup (res);
+
+  free (mountinfo);
+
+  return res;
 }
 
 static unsigned long
@@ -2036,7 +2038,6 @@ main (int argc,
   char *system_dbus_socket = NULL;
   char *session_dbus_socket = NULL;
   char *xdg_runtime_dir;
-  char *tz_val;
   char **args;
   char *tmp;
   int n_args;
@@ -2062,6 +2063,7 @@ main (int argc,
   char *uid_map, *gid_map;
   uid_t ns_uid;
   gid_t ns_gid;
+  struct stat st_buf;
 
   /* Get the (optional) capabilities we need, drop root */
   acquire_caps ();
@@ -2290,6 +2292,8 @@ main (int argc,
 
   if (pid != 0)
     {
+      /* We don't need any caps in the launcher, drop them immediately. */
+      drop_caps ();
       if (app_id)
         set_procname (strdup_printf ("xdg-app-helper %s launcher", app_id));
       monitor_child (event_fd);
@@ -2340,6 +2344,24 @@ main (int argc,
 
   create_files (create, N_ELEMENTS (create), share_shm, runtime_path);
 
+  /* If stdout is a tty, that means the sandbox can write to the
+     outside-sandbox tty. In that case we also creata a /dev/console
+     that points to this tty device. This should not cause any more
+     access than we already have, and it makes ttyname() work in the
+     sandbox. */
+  if (isatty (1))
+    {
+      char *host_tty_dev = ttyname (1);
+      if (host_tty_dev != NULL && *host_tty_dev != 0)
+        {
+          if (!create_file ("dev/console", 0666, NULL))
+            die_with_error ("creating /dev/console");
+
+          if (bind_mount (host_tty_dev, "dev/console", BIND_DEVICES))
+            die_with_error ("mount /dev/console");
+        }
+    }
+
   if (share_shm)
     {
       if (bind_mount ("/dev/shm", "dev/shm", BIND_DEVICES))
@@ -2384,12 +2406,8 @@ main (int argc,
 
   if (monitor_path)
     {
-      char *monitor_mount_path = strdup_printf ("run/user/%d/xdg-app-monitor", uid);
-
-      if (bind_mount (monitor_path, monitor_mount_path, BIND_READONLY))
-	die ("can't bind monitor dir");
-
-      free (monitor_mount_path);
+      if (bind_mount (monitor_path, "run/host/monitor", BIND_READONLY))
+        die ("can't bind monitor dir");
     }
 
   /* Bind mount in X socket
@@ -2533,6 +2551,16 @@ main (int argc,
         }
     }
 
+  if (app_path != NULL &&
+      lstat ("run/build", &st_buf) != 0 &&
+      errno == ENOENT)
+    symlink ("/app/lib/debug/source", "run/build");
+
+  if (app_path != NULL &&
+      lstat ("run/build-runtime", &st_buf) != 0 &&
+      errno == ENOENT)
+    symlink ("/usr/lib/debug/source", "run/build-runtime");
+
   if (!network)
     loopback_setup ();
 
@@ -2589,11 +2617,7 @@ main (int argc,
   xsetenv ("XDG_RUNTIME_DIR", xdg_runtime_dir, 1);
   free (xdg_runtime_dir);
   if (monitor_path)
-    {
-      tz_val = strdup_printf (":/run/user/%d/xdg-app-monitor/localtime", uid);
-      xsetenv ("TZ", tz_val, 0);
-      free (tz_val);
-    }
+    xsetenv ("TZ", ":/run/host/monitor/localtime", 0);
 
   __debug__(("forking for child\n"));
 

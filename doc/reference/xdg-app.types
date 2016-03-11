@@ -1,3 +1,4 @@
+xdg_app_bundle_ref_get_type
 xdg_app_installation_get_type
 xdg_app_installed_ref_get_type
 xdg_app_ref_get_type

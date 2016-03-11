@@ -3,6 +3,7 @@
 #include "libglnx/libglnx.h"
 
 #include <xdg-app.h>
+#include <gio/gunixoutputstream.h>
 
 
 static void
@@ -88,6 +89,52 @@ main (int argc, char *argv[])
       return 0;
     }
 
+  g_print ("\n**** Loading bundle\n");
+  {
+    g_autoptr(GFile) f = g_file_new_for_commandline_arg ("tests/hello.xdgapp");
+    g_autoptr(XdgAppBundleRef) bundle = xdg_app_bundle_ref_new (f, &error);
+    if (bundle == NULL)
+      {
+        g_print ("Error loading bundle: %s\n", error->message);
+        g_clear_error (&error);
+      }
+    else
+      {
+        g_autofree char *path = g_file_get_path (xdg_app_bundle_ref_get_file (bundle));
+        g_autoptr(GBytes) metadata = xdg_app_bundle_ref_get_metadata (bundle);
+        g_autoptr(GBytes) appdata = xdg_app_bundle_ref_get_appdata (bundle);
+        g_print ("%d %s %s %s %s %s %"G_GUINT64_FORMAT"\n%s\n",
+                 xdg_app_ref_get_kind (XDG_APP_REF(bundle)),
+                 xdg_app_ref_get_name (XDG_APP_REF(bundle)),
+                 xdg_app_ref_get_arch (XDG_APP_REF(bundle)),
+                 xdg_app_ref_get_branch (XDG_APP_REF(bundle)),
+                 xdg_app_ref_get_commit (XDG_APP_REF(bundle)),
+                 path,
+                 xdg_app_bundle_ref_get_installed_size (bundle),
+                 (char *)g_bytes_get_data (metadata, NULL));
+
+        if (appdata != NULL)
+          {
+            g_autoptr(GZlibDecompressor) decompressor = NULL;
+            g_autoptr(GOutputStream) out2 = NULL;
+            g_autoptr(GOutputStream) out = NULL;
+
+            out = g_unix_output_stream_new (1, FALSE);
+            decompressor = g_zlib_decompressor_new (G_ZLIB_COMPRESSOR_FORMAT_GZIP);
+            out2 = g_converter_output_stream_new (out, G_CONVERTER (decompressor));
+
+            if (!g_output_stream_write_all (out2,
+                                            g_bytes_get_data (appdata, NULL),
+                                            g_bytes_get_size (appdata),
+                                            NULL, NULL, &error))
+              {
+                g_print ("Error decompressing appdata: %s\n", error->message);
+                g_clear_error (&error);
+              }
+          }
+      }
+  }
+
   g_print ("\n**** Checking for updates\n");
   {
     g_autoptr(GPtrArray) updates =
@@ -166,7 +213,7 @@ main (int argc, char *argv[])
                  xdg_app_installed_ref_get_deploy_dir (app),
                  xdg_app_installed_ref_get_is_current (app),
                  xdg_app_installed_ref_get_installed_size (app));
-        g_print ("metadata:\n%s\n", xdg_app_installed_ref_load_metadata (app, NULL, NULL));
+        g_print ("metadata:\n%s\n", (char *)g_bytes_get_data (xdg_app_installed_ref_load_metadata (app, NULL, NULL), NULL));
       }
   }
 

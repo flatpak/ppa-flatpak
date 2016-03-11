@@ -130,6 +130,10 @@ gboolean    xdg_app_dir_ensure_repo     (XdgAppDir      *self,
                                          GError        **error);
 gboolean    xdg_app_dir_mark_changed    (XdgAppDir      *self,
                                          GError        **error);
+gboolean    xdg_app_dir_remove_appstream(XdgAppDir      *self,
+                                         const char     *remote,
+                                         GCancellable   *cancellable,
+                                         GError        **error);
 gboolean    xdg_app_dir_update_appstream(XdgAppDir      *self,
                                          const char     *remote,
                                          const char     *arch,
@@ -141,6 +145,13 @@ gboolean    xdg_app_dir_pull            (XdgAppDir      *self,
                                          const char     *repository,
                                          const char     *ref,
                                          OstreeAsyncProgress *progress,
+                                         GCancellable   *cancellable,
+                                         GError        **error);
+gboolean   xdg_app_dir_pull_from_bundle (XdgAppDir      *self,
+                                         GFile          *file,
+                                         const char     *remote,
+                                         const char     *ref,
+                                         gboolean        require_gpg_signature,
                                          GCancellable   *cancellable,
                                          GError        **error);
 gboolean    xdg_app_dir_list_refs_for_name (XdgAppDir      *self,
@@ -210,6 +221,10 @@ gboolean    xdg_app_dir_undeploy_all    (XdgAppDir      *self,
                                          gboolean       *was_deployed_out,
                                          GCancellable   *cancellable,
                                          GError        **error);
+gboolean    xdg_app_dir_remove_all_refs (XdgAppDir      *self,
+                                         const char     *remote,
+                                         GCancellable   *cancellable,
+                                         GError        **error);
 gboolean    xdg_app_dir_remove_ref      (XdgAppDir      *self,
                                          const char     *remote_name,
                                          const char     *ref,
@@ -233,6 +248,13 @@ gboolean    xdg_app_dir_collect_deployed_refs (XdgAppDir *self,
 					       GHashTable *hash,
 					       GCancellable *cancellable,
 					       GError **error);
+char      *xdg_app_dir_create_origin_remote (XdgAppDir *self,
+                                             const char *url,
+                                             const char *id,
+                                             const char *title,
+                                             GBytes *gpg_data,
+                                             GCancellable *cancellable,
+                                             GError **error);
 char     **xdg_app_dir_list_remotes     (XdgAppDir *self,
                                          GCancellable *cancellable,
                                          GError **error);
