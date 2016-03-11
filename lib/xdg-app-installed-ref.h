@@ -19,7 +19,7 @@
  */
 
 #if !defined (__XDG_APP_H_INSIDE__) && !defined (XDG_APP_COMPILATION)
-#error "Only <xdg-app.h> can be included installed_refectly."
+#error "Only <xdg-app.h> can be included directly."
 #endif
 
 #ifndef __XDG_APP_INSTALLED_REF_H__
@@ -53,7 +53,7 @@ XDG_APP_EXTERN guint64     xdg_app_installed_ref_get_installed_size (XdgAppInsta
 XDG_APP_EXTERN const char *xdg_app_installed_ref_get_deploy_dir     (XdgAppInstalledRef  *self);
 XDG_APP_EXTERN const char *xdg_app_installed_ref_get_latest_commit  (XdgAppInstalledRef  *self);
 XDG_APP_EXTERN gboolean    xdg_app_installed_ref_get_is_current     (XdgAppInstalledRef  *self);
-XDG_APP_EXTERN char       *xdg_app_installed_ref_load_metadata      (XdgAppInstalledRef  *self,
+XDG_APP_EXTERN GBytes     *xdg_app_installed_ref_load_metadata      (XdgAppInstalledRef  *self,
                                                                      GCancellable        *cancellable,
                                                                      GError             **error);
 

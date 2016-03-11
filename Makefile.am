@@ -23,15 +23,18 @@ CLEANFILES += $(dbus_service_DATA)
 CLEANFILES += $(systemduserunit_DATA)
 EXTRA_DIST += $(service_in_files)
 
+XDG_APP_BINDIR=$(bindir)
+
 AM_CPPFLAGS =						\
-	-DXDG_APP_BINDIR=\"$(bindir)\"			\
+	-DXDG_APP_BINDIR=\"$(XDG_APP_BINDIR)\"		\
 	-DXDG_APP_SYSTEMDIR=\"$(localstatedir)/lib/xdg-app\"\
 	-DXDG_APP_BASEDIR=\"$(pkgdatadir)\"		\
 	-DXDG_APP_TRIGGERDIR=\"$(pkgdatadir)/triggers\" \
 	-DSYSTEM_FONTS_DIR=\"$(SYSTEM_FONTS_DIR)\"	\
 	-DHELPER=\"$(bindir)/xdg-app-helper\"		\
 	-DDBUSPROXY=\"$(libexecdir)/xdg-dbus-proxy\"	\
-	-I$(srcdir)/libglnx 				\
+	-DG_LOG_DOMAIN=\"xdg-app\"			\
+	-I$(srcdir)/libglnx				\
 	-I$(srcdir)/common				\
 	-I$(builddir)/common				\
 	$(NULL)

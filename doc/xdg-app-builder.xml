@@ -131,6 +131,10 @@
                     <listitem><para>Build a new runtime instead of an application.</para></listitem>
                 </varlistentry>
                 <varlistentry>
+                    <term><option>separate-locales</option></term>
+                    <listitem><para>Separate out locale files and translations to an extention runtime. Defaults to true.</para></listitem>
+                </varlistentry>
+                <varlistentry>
                     <term><option>id-platform</option></term>
                     <listitem><para>When building a runtime sdk, also create a platform based on it wit this id.</para></listitem>
                 </varlistentry>
@@ -144,12 +148,20 @@
                     Defaults to true if --build-runtime is specified</para></listitem>
                 </varlistentry>
                 <varlistentry>
+                    <term><option>appstream-compose</option></term>
+                    <listitem><para>Run appstream-compose during cleanup phase. Defaults to true.</para></listitem>
+                </varlistentry>
+                <varlistentry>
                     <term><option>sdk-extensions</option></term>
                     <listitem><para>Install these extra sdk extensions in /usr</para></listitem>
                 </varlistentry>
                 <varlistentry>
                     <term><option>platform-extensions</option></term>
                     <listitem><para>Install these extra sdk extensions when creating the platform</para></listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>tags</option></term>
+                    <listitem><para>Add these tags to the metadata file</para></listitem>
                 </varlistentry>
                 <varlistentry>
                     <term><option>build-options</option></term>
@@ -337,8 +349,12 @@
                         <listitem><para>"archive"</para></listitem>
                     </varlistentry>
                     <varlistentry>
+                        <term><option>path</option></term>
+                        <listitem><para>The path of the archive</para></listitem>
+                    </varlistentry>
+                    <varlistentry>
                         <term><option>url</option></term>
-                        <listitem><para>URL of the archive</para></listitem>
+                        <listitem><para>The url of a remote archive that will be downloaded. This overrides path if both are specified.</para></listitem>
                     </varlistentry>
                     <varlistentry>
                         <term><option>sha256</option></term>
@@ -450,6 +466,22 @@
                 </variablelist>
             </refsect3>
             <refsect3>
+                <title>Shell sources</title>
+                <para>
+                    This is a to create/modify the sources by running shell commands.
+                </para>
+                <variablelist>
+                    <varlistentry>
+                        <term><option>type</option></term>
+                        <listitem><para>"shell"</para></listitem>
+                    </varlistentry>
+                    <varlistentry>
+                        <term><option>commands</option></term>
+                        <listitem><para>An array of shell commands that will be run during source extraction</para></listitem>
+                    </varlistentry>
+                </variablelist>
+            </refsect3>
+            <refsect3>
                 <title>Patch sources</title>
                 <variablelist>
                     <varlistentry>
@@ -529,6 +561,16 @@
                 <listitem><para>
                   Download missing sources, but don't update local mirrors of version control repos. This is useful
                   to rebuild things but without updating git or bzr repositories from the remote repository.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--run</option></term>
+
+                <listitem><para>
+                  Run a command in a sandbox based on the build dir. This starts xdg-app build, with some extra
+                  arguments to give the same environment as the build, and the same permissions the final app
+                  will have.
                 </para></listitem>
             </varlistentry>
 

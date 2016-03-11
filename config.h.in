@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if sandboxed triggers are disabled */
+#undef DISABLE_SANDBOXED_TRIGGERS
+
 /* Define if using seccomp */
 #undef ENABLE_SECCOMP
 

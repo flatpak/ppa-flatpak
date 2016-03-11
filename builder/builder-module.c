@@ -572,6 +572,7 @@ build (GFile *app_dir,
   g_autofree char *source_dir_path = g_file_get_path (source_dir);
   g_autofree char *source_dir_path_canonical = NULL;
   g_autofree char *ccache_dir_path = NULL;
+  const char *builddir;
   va_list ap;
   int i;
 
@@ -581,14 +582,19 @@ build (GFile *app_dir,
 
   source_dir_path_canonical = canonicalize_file_name (source_dir_path);
 
+  if (builder_context_get_build_runtime (context))
+    builddir = "/run/build-runtime/";
+  else
+    builddir = "/run/build/";
+
   g_ptr_array_add (args, g_strdup ("--nofilesystem=host"));
   g_ptr_array_add (args, g_strdup_printf ("--filesystem=%s", source_dir_path_canonical));
 
-  g_ptr_array_add (args, g_strdup_printf ("--bind-mount=/run/build/%s=%s", module_name, source_dir_path_canonical));
+  g_ptr_array_add (args, g_strdup_printf ("--bind-mount=%s%s=%s", builddir, module_name, source_dir_path_canonical));
   if (cwd_subdir)
-    g_ptr_array_add (args, g_strdup_printf ("--build-dir=/run/build/%s/%s", module_name, cwd_subdir));
+    g_ptr_array_add (args, g_strdup_printf ("--build-dir=%s%s/%s", builddir, module_name, cwd_subdir));
   else
-    g_ptr_array_add (args, g_strdup_printf ("--build-dir=/run/build/%s", module_name));
+    g_ptr_array_add (args, g_strdup_printf ("--build-dir=%s%s", builddir, module_name));
 
   if (g_file_query_exists (builder_context_get_ccache_dir (context), NULL))
     {
@@ -699,35 +705,95 @@ builder_module_handle_debuginfo (BuilderModule *self,
               g_autofree char *filename = g_path_get_basename (rel_path);
               g_autofree char *filename_debug = g_strconcat (filename, ".debug", NULL);
               g_autofree char *debug_dir = NULL;
+              g_autofree char *source_dir_path = NULL;
+              g_autoptr(GFile) source_dir = NULL;
               g_autofree char *real_debug_dir = NULL;
 
               if (g_str_has_prefix (rel_path_dir, "files/"))
                 {
                   debug_dir = g_build_filename (app_dir_path, "files/lib/debug", rel_path_dir + strlen("files/"), NULL);
                   real_debug_dir = g_build_filename ("/app/lib/debug", rel_path_dir + strlen("files/"), NULL);
+                  source_dir_path = g_build_filename (app_dir_path, "files/lib/debug/source", NULL);
                 }
               else if (g_str_has_prefix (rel_path_dir, "usr/"))
                 {
                   debug_dir = g_build_filename (app_dir_path, "usr/lib/debug", rel_path_dir, NULL);
                   real_debug_dir = g_build_filename ("/usr/lib/debug", rel_path_dir, NULL);
+                  source_dir_path = g_build_filename (app_dir_path, "usr/lib/debug/source", NULL);
                 }
 
               if (debug_dir)
                 {
+                  const char *builddir;
+                  g_autoptr(GError) local_error = NULL;
+                  g_auto(GStrv) file_refs = NULL;
+
                   if (g_mkdir_with_parents (debug_dir, 0755) != 0)
                     {
                       glnx_set_error_from_errno (error);
                       return FALSE;
                     }
 
+                  source_dir = g_file_new_for_path (source_dir_path);
+                  if (g_mkdir_with_parents (source_dir_path, 0755) != 0)
+                    {
+                      glnx_set_error_from_errno (error);
+                      return FALSE;
+                    }
+
+                  if (builder_context_get_build_runtime (context))
+                    builddir = "/run/build-runtime/";
+                  else
+                    builddir = "/run/build/";
+
                   debug_path = g_build_filename (debug_dir, filename_debug, NULL);
                   real_debug_path = g_build_filename (real_debug_dir, filename_debug, NULL);
 
+                  file_refs = builder_get_debuginfo_file_references (path, &local_error);
+
+                  if (file_refs == NULL)
+                    g_warning ("%s", local_error->message);
+                  else
+                    {
+                      GFile *build_dir = builder_context_get_build_dir (context);
+                      int i;
+                      g_print ("Copying sources: \n");
+                      for (i = 0; file_refs[i] != NULL; i++)
+                        {
+                          if (g_str_has_prefix (file_refs[i], builddir))
+                            {
+                              const char *relative_path = file_refs[i] + strlen (builddir);
+                              g_autoptr(GFile) src = g_file_resolve_relative_path (build_dir, relative_path);
+                              g_autoptr(GFile) dst = g_file_resolve_relative_path (source_dir, relative_path);
+                              g_autoptr(GFile) dst_parent = g_file_get_parent (dst);
+                              GFileType file_type;
+
+                              if (!gs_file_ensure_directory (dst_parent, TRUE, NULL, error))
+                                return FALSE;
+
+                              file_type = g_file_query_file_type (src, 0, NULL);
+                              if (file_type == G_FILE_TYPE_DIRECTORY)
+                                {
+                                  if (!gs_file_ensure_directory (dst, FALSE, NULL, error))
+                                    return FALSE;
+                                }
+                              else if (file_type == G_FILE_TYPE_REGULAR)
+                                {
+                                  if (!g_file_copy (src, dst,
+                                                    G_FILE_COPY_OVERWRITE,
+                                                    NULL, NULL, NULL, error))
+                                    return FALSE;
+                                }
+                            }
+                        }
+                    }
+
                   g_print ("stripping %s to %s\n", path, debug_path);
-                  eu_strip (error, "--remove-comment", "--reloc-debug-sections",
-                            "-f", debug_path,
-                            "-F", real_debug_path,
-                            path, NULL);
+                  if (!eu_strip (error, "--remove-comment", "--reloc-debug-sections",
+                                 "-f", debug_path,
+                                 "-F", real_debug_path,
+                                 path, NULL))
+                    return FALSE;
                 }
             }
         }
@@ -748,7 +814,9 @@ builder_module_build (BuilderModule *self,
   g_autoptr(GFile) configure_file = NULL;
   g_autoptr(GFile) cmake_file = NULL;
   const char *makefile_names[] =  {"Makefile", "makefile", "GNUmakefile", NULL};
+  GFile *build_parent_dir = NULL;
   g_autoptr(GFile) build_dir = NULL;
+  g_autoptr(GFile) build_link = NULL;
   g_autofree char *build_dir_relative = NULL;
   gboolean has_configure;
   gboolean var_require_builddir;
@@ -756,22 +824,28 @@ builder_module_build (BuilderModule *self,
   int i;
   g_auto(GStrv) env = NULL;
   g_auto(GStrv) build_args = NULL;
-  const char *cflags, *cxxflags;
   g_autoptr(GFile) source_dir = NULL;
   g_autoptr(GFile) source_subdir = NULL;
   const char *source_subdir_relative = NULL;
   g_autofree char *source_dir_path = NULL;
+  g_autofree char *buildname = NULL;
+  g_autoptr(GError) my_error = NULL;
   int count;
+
+  build_parent_dir = builder_context_get_build_dir (context);
+
+  if (!gs_file_ensure_directory (build_parent_dir, TRUE,
+                                 NULL, error))
+      return FALSE;
 
   for (count = 1; source_dir_path == NULL; count++)
     {
-      g_autofree char *buildname = NULL;
       g_autoptr(GFile) source_dir_count = NULL;
-      g_autoptr(GError) my_error = NULL;
 
-      buildname = g_strdup_printf ("build-%s-%d", self->name, count);
+      g_free (buildname);
+      buildname = g_strdup_printf ("%s-%d", self->name, count);
 
-      source_dir_count = g_file_get_child (builder_context_get_state_dir (context), buildname);
+      source_dir_count = g_file_get_child (build_parent_dir, buildname);
 
       if (g_file_make_directory (source_dir_count, NULL, &my_error))
         source_dir_path = g_file_get_path (source_dir_count);
@@ -782,11 +856,27 @@ builder_module_build (BuilderModule *self,
               g_propagate_error (error, g_steal_pointer (&my_error));
               return FALSE;
             }
+          g_clear_error (&my_error);
           /* Already exists, try again */
         }
     }
 
   source_dir = g_file_new_for_path (source_dir_path);
+
+  /* Make an unversioned symlink */
+  build_link = g_file_get_child (build_parent_dir, self->name);
+  if (!g_file_delete (build_link, NULL, &my_error) &&
+      !g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+    {
+      g_propagate_error (error, g_steal_pointer (&my_error));
+      return FALSE;
+    }
+  g_clear_error (&my_error);
+
+  if (!g_file_make_symbolic_link (build_link,
+                                  buildname,
+                                  NULL, error))
+    return FALSE;
 
   g_print ("========================================================================\n");
   g_print ("Building module %s in %s\n", self->name, source_dir_path);
@@ -805,14 +895,6 @@ builder_module_build (BuilderModule *self,
 
   env = builder_options_get_env (self->build_options, context);
   build_args = builder_options_get_build_args (self->build_options, context);
-
-  cflags = builder_options_get_cflags (self->build_options, context);
-  if (cflags)
-    env = g_environ_setenv (env, "CFLAGS", cflags, TRUE);
-
-  cxxflags = builder_options_get_cxxflags (self->build_options, context);
-  if (cxxflags)
-    env = g_environ_setenv (env, "CXXFLAGS", cxxflags, TRUE);
 
   if (self->cmake)
     {
@@ -968,6 +1050,19 @@ builder_module_build (BuilderModule *self,
 
   /* Post installation scripts */
 
+  if (builder_context_get_separate_locales (context))
+    {
+      g_autoptr(GFile) root_dir = NULL;
+
+      if (builder_context_get_build_runtime (context))
+        root_dir = g_file_get_child (app_dir, "usr");
+      else
+        root_dir = g_file_get_child (app_dir, "files");
+
+      if (!builder_migrate_locale_dirs (root_dir, error))
+        return FALSE;
+    }
+
   if (self->post_install)
     {
       for (i = 0; self->post_install[i] != NULL; i++)
@@ -983,28 +1078,11 @@ builder_module_build (BuilderModule *self,
 
   /* Clean up build dir */
 
-  if (builder_context_get_keep_build_dirs (context))
+  if (!builder_context_get_keep_build_dirs (context))
     {
-      g_autofree char *buildname_link = g_strdup_printf ("build-%s", self->name);
-      g_autoptr(GFile) build_link = g_file_get_child (builder_context_get_state_dir (context),
-                                                      buildname_link);
-      g_autoptr(GError) my_error = NULL;
-      g_autofree char *buildname_target = g_path_get_basename (source_dir_path);
-
-      if (!g_file_delete (build_link, NULL, &my_error) &&
-          !g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
-        {
-          g_propagate_error (error, g_steal_pointer (&my_error));
-          return FALSE;
-        }
-
-      if (!g_file_make_symbolic_link (build_link,
-                                      buildname_target,
-                                      NULL, error))
+      if (!g_file_delete (build_link, NULL, error))
         return FALSE;
-    }
-  else
-    {
+
       if (!gs_shutil_rm_rf (source_dir, NULL, error))
         return FALSE;
     }

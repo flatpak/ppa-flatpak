@@ -38,6 +38,30 @@
 #include "libglnx/libglnx.h"
 #include <libsoup/soup.h>
 
+GBytes *
+xdg_app_read_stream (GInputStream *in,
+                     gboolean null_terminate,
+                     GError **error)
+{
+  g_autoptr(GOutputStream) mem_stream = NULL;
+
+  mem_stream = g_memory_output_stream_new_resizable ();
+  if (g_output_stream_splice (mem_stream, in,
+                              0, NULL, error) < 0)
+    return NULL;
+
+  if (null_terminate)
+    {
+      if (!g_output_stream_write (G_OUTPUT_STREAM (mem_stream), "\0", 1, NULL, error))
+        return NULL;
+    }
+
+  if (!g_output_stream_close (G_OUTPUT_STREAM (mem_stream), NULL, error))
+    return NULL;
+
+  return g_memory_output_stream_steal_as_bytes (G_MEMORY_OUTPUT_STREAM (mem_stream));
+}
+
 gint
 xdg_app_strcmp0_ptr (gconstpointer  a,
                      gconstpointer  b)
@@ -1304,6 +1328,7 @@ xdg_app_cp_a (GFile         *src,
   int dest_dfd = -1;
   gboolean merge = (flags & XDG_APP_CP_FLAGS_MERGE) != 0;
   gboolean no_chown = (flags & XDG_APP_CP_FLAGS_NO_CHOWN) != 0;
+  gboolean move = (flags & XDG_APP_CP_FLAGS_MOVE) != 0;
   int r;
 
   enumerator = g_file_enumerate_children (src, "standard::type,standard::name,unix::uid,unix::gid,unix::mode",
@@ -1384,11 +1409,24 @@ xdg_app_cp_a (GFile         *src,
           GFileCopyFlags copyflags = G_FILE_COPY_OVERWRITE | G_FILE_COPY_NOFOLLOW_SYMLINKS;
           if (!no_chown)
             copyflags |= G_FILE_COPY_ALL_METADATA;
-          if (!g_file_copy (src_child, dest_child, copyflags,
-                            cancellable, NULL, NULL, error))
-            goto out;
+          if (move)
+            {
+              if (!g_file_move (src_child, dest_child, copyflags,
+                                cancellable, NULL, NULL, error))
+                goto out;
+            }
+          else
+            {
+              if (!g_file_copy (src_child, dest_child, copyflags,
+                                cancellable, NULL, NULL, error))
+                goto out;
+            }
         }
     }
+
+  if (move &&
+      !g_file_delete (src, NULL, error))
+    goto out;
 
   ret = TRUE;
  out:
@@ -1529,10 +1567,14 @@ commit_filter (OstreeRepo *repo,
 static gboolean
 validate_component (XdgAppXml *component,
                     const char *ref,
-                    const char *id)
+                    const char *id,
+                    char **tags,
+                    const char *runtime,
+                    const char *sdk)
 {
-  XdgAppXml *bundle, *text, *prev, *id_node, *id_text_node;
+  XdgAppXml *bundle, *text, *prev, *id_node, *id_text_node, *metadata, *value;
   g_autofree char *id_text = NULL;
+  int i;
 
   if (g_strcmp0 (component->element_name, "component") != 0)
     return FALSE;
@@ -1557,50 +1599,110 @@ validate_component (XdgAppXml *component,
     xdg_app_xml_free (xdg_app_xml_unlink (component, bundle));
 
   bundle = xdg_app_xml_new ("bundle");
-  bundle->attribute_names = g_new0 (char *, 2);
-  bundle->attribute_values = g_new0 (char *, 2);
+  bundle->attribute_names = g_new0 (char *, 2 * 4);
+  bundle->attribute_values = g_new0 (char *, 2 * 4);
   bundle->attribute_names[0] = g_strdup ("type");
   bundle->attribute_values[0] = g_strdup ("xdg-app");
+
+  i = 1;
+  if (runtime)
+    {
+      bundle->attribute_names[i] = g_strdup ("runtime");
+      bundle->attribute_values[i] = g_strdup (runtime);
+      i++;
+    }
+
+  if (sdk)
+    {
+      bundle->attribute_names[i] = g_strdup ("sdk");
+      bundle->attribute_values[i] = g_strdup (sdk);
+      i++;
+    }
+
+  text = xdg_app_xml_new (NULL);
+  text->text = g_strdup (ref);
+  xdg_app_xml_add (bundle, text);
 
   xdg_app_xml_add (component, xdg_app_xml_new_text ("  "));
   xdg_app_xml_add (component, bundle);
   xdg_app_xml_add (component, xdg_app_xml_new_text ("\n  "));
 
-  text = xdg_app_xml_new (NULL);
-  text->text = g_strdup (ref);
+  if (tags != NULL && tags[0] != NULL)
+    {
+      metadata = xdg_app_xml_find (component, "metadata", NULL);
+      if (metadata == NULL)
+        {
+          metadata = xdg_app_xml_new ("metadata");
+          metadata->attribute_names = g_new0 (char *, 1);
+          metadata->attribute_values = g_new0 (char *, 1);
 
-  xdg_app_xml_add (bundle, text);
+          xdg_app_xml_add (component, xdg_app_xml_new_text ("  "));
+          xdg_app_xml_add (component, metadata);
+          xdg_app_xml_add (component, xdg_app_xml_new_text ("\n  "));
+        }
+
+      value = xdg_app_xml_new ("value");
+      value->attribute_names = g_new0 (char *, 2);
+      value->attribute_values = g_new0 (char *, 2);
+      value->attribute_names[0] = g_strdup ("key");
+      value->attribute_values[0] = g_strdup ("X-XdgApp-Tags");
+      xdg_app_xml_add (metadata, xdg_app_xml_new_text ("\n       "));
+      xdg_app_xml_add (metadata, value);
+      xdg_app_xml_add (metadata, xdg_app_xml_new_text ("\n    "));
+
+      text = xdg_app_xml_new (NULL);
+      text->text = g_strjoinv (",", tags);
+      xdg_app_xml_add (value, text);
+
+    }
 
   return TRUE;
 }
 
-static gboolean
-migrate_xml (XdgAppXml *root,
-             XdgAppXml *appstream,
-             const char *ref,
-             const char *id)
+gboolean
+xdg_app_appstream_xml_migrate (XdgAppXml *source,
+                               XdgAppXml *dest,
+                               const char *ref,
+                               const char *id,
+                               GKeyFile *metadata)
 {
-  XdgAppXml *components;
+  XdgAppXml *source_components;
+  XdgAppXml *dest_components;
   XdgAppXml *component;
   XdgAppXml *prev_component;
   gboolean migrated = FALSE;
+  g_auto(GStrv) tags = NULL;
+  g_autofree const char *runtime = NULL;
+  g_autofree const char *sdk = NULL;
+  const char *group;
 
-  if (root->first_child == NULL ||
-      root->first_child->next_sibling != NULL ||
-      g_strcmp0 (root->first_child->element_name, "components") != 0)
+  if (source->first_child == NULL ||
+      source->first_child->next_sibling != NULL ||
+      g_strcmp0 (source->first_child->element_name, "components") != 0)
     return FALSE;
 
-  components = root->first_child;
+  if (g_str_has_prefix (ref, "app/"))
+    group = "Application";
+  else
+    group = "Runtime";
 
-  component = components->first_child;
+  tags = g_key_file_get_string_list (metadata, group, "tags", NULL, NULL);
+  runtime = g_key_file_get_string (metadata, group, "runtime", NULL);
+  sdk = g_key_file_get_string (metadata, group, "sdk", NULL);
+
+  source_components = source->first_child;
+  dest_components = dest->first_child;
+
+  component = source_components->first_child;
   prev_component = NULL;
   while (component != NULL)
     {
       XdgAppXml *next = component->next_sibling;
 
-      if (validate_component (component, ref, id))
+      if (validate_component (component, ref, id, tags, runtime, sdk))
         {
-          xdg_app_xml_add (appstream, xdg_app_xml_unlink (component, prev_component));
+          xdg_app_xml_add (dest_components,
+                           xdg_app_xml_unlink (component, prev_component));
           migrated = TRUE;
         }
       else
@@ -1656,7 +1758,7 @@ copy_icon (const char *id,
 
 static gboolean
 extract_appstream (OstreeRepo    *repo,
-                   XdgAppXml       *appstream_components,
+                   XdgAppXml     *appstream_root,
                    const char    *ref,
                    const char    *id,
                    GFile         *dest,
@@ -1666,12 +1768,28 @@ extract_appstream (OstreeRepo    *repo,
   g_autoptr(GFile) root = NULL;
   g_autoptr(GFile) xmls_dir = NULL;
   g_autoptr(GFile) appstream_file = NULL;
+  g_autoptr(GFile) metadata = NULL;
   g_autofree char *appstream_basename = NULL;
   g_autoptr(GInputStream) in = NULL;
   g_autoptr(XdgAppXml) xml_root = NULL;
+  g_autoptr(GKeyFile) keyfile = NULL;
 
   if (!ostree_repo_read_commit (repo, ref, &root, NULL, NULL, error))
     return FALSE;
+
+  keyfile = g_key_file_new ();
+  metadata = g_file_get_child (root, "metadata");
+  if (g_file_query_exists (metadata, cancellable))
+    {
+      g_autofree char *content = NULL;
+      gsize len;
+
+      if (!g_file_load_contents (metadata, cancellable, &content, &len, NULL, error))
+        return FALSE;
+
+      if (!g_key_file_load_from_data (keyfile, content, len, G_KEY_FILE_NONE, error))
+        return FALSE;
+    }
 
   xmls_dir = g_file_resolve_relative_path (root, "files/share/app-info/xmls");
   appstream_basename = g_strconcat (id, ".xml.gz", NULL);
@@ -1685,7 +1803,8 @@ extract_appstream (OstreeRepo    *repo,
   if (xml_root == NULL)
     return FALSE;
 
-  if (migrate_xml (xml_root, appstream_components, ref, id))
+  if (xdg_app_appstream_xml_migrate (xml_root, appstream_root,
+                                     ref, id, keyfile))
     {
       g_autoptr(GError) my_error = NULL;
       if (!copy_icon (id, root, dest, "64x64", &my_error))
@@ -1701,6 +1820,53 @@ extract_appstream (OstreeRepo    *repo,
     }
 
   return TRUE;
+}
+
+XdgAppXml *
+xdg_app_appstream_xml_new (void)
+{
+  XdgAppXml *appstream_root = NULL;
+  XdgAppXml *appstream_components;
+
+  appstream_root = xdg_app_xml_new ("root");
+  appstream_components = xdg_app_xml_new ("components");
+  xdg_app_xml_add (appstream_root, appstream_components);
+  xdg_app_xml_add (appstream_components, xdg_app_xml_new_text ("\n  "));
+
+  appstream_components->attribute_names = g_new0 (char *, 3);
+  appstream_components->attribute_values = g_new0 (char *, 3);
+  appstream_components->attribute_names[0] = g_strdup ("version");
+  appstream_components->attribute_values[0] = g_strdup ("0.8");
+  appstream_components->attribute_names[1] = g_strdup ("origin");
+  appstream_components->attribute_values[1] = g_strdup ("xdg-app");
+
+  return appstream_root;
+}
+
+GBytes *
+xdg_app_appstream_xml_root_to_data (XdgAppXml *appstream_root,
+                                    GError **error)
+{
+  g_autoptr(GString) xml = NULL;
+  g_autoptr(GZlibCompressor) compressor = NULL;
+  g_autoptr(GOutputStream) out2 = NULL;
+  g_autoptr(GOutputStream) out = NULL;
+
+  xdg_app_xml_add (appstream_root->first_child, xdg_app_xml_new_text ("\n"));
+
+  xml = g_string_new ("");
+  xdg_app_xml_to_string (appstream_root, xml);
+
+  compressor = g_zlib_compressor_new (G_ZLIB_COMPRESSOR_FORMAT_GZIP, -1);
+  out = g_memory_output_stream_new_resizable ();
+  out2 = g_converter_output_stream_new (out, G_CONVERTER (compressor));
+  if (!g_output_stream_write_all (out2, xml->str, xml->len,
+                                  NULL, NULL, error))
+    return NULL;
+  if (!g_output_stream_close (out2, NULL, error))
+    return NULL;
+
+  return g_memory_output_stream_steal_as_bytes (G_MEMORY_OUTPUT_STREAM (out));
 }
 
 gboolean
@@ -1757,28 +1923,14 @@ xdg_app_repo_generate_appstream (OstreeRepo    *repo,
       g_autofree char *parent = NULL;
       g_autofree char *branch = NULL;
       g_autoptr(XdgAppXml) appstream_root = NULL;
-      XdgAppXml *appstream_components;
-      g_autoptr(GString) xml = NULL;
-      g_autoptr(GZlibCompressor) compressor = NULL;
-      g_autoptr(GOutputStream) out2 = NULL;
-      g_autoptr(GOutputStream) out = NULL;
+      g_autoptr(GBytes) xml_data = NULL;
 
       if (g_mkdtemp (tmpdir) == NULL)
         return xdg_app_fail (error, "Can't create temporary directory");
 
       tmpdir_file = g_file_new_for_path (tmpdir);
 
-      appstream_root = xdg_app_xml_new ("root");
-      appstream_components = xdg_app_xml_new ("components");
-      xdg_app_xml_add (appstream_root, appstream_components);
-      xdg_app_xml_add (appstream_components, xdg_app_xml_new_text ("\n  "));
-
-      appstream_components->attribute_names = g_new0 (char *, 3);
-      appstream_components->attribute_values = g_new0 (char *, 3);
-      appstream_components->attribute_names[0] = g_strdup ("version");
-      appstream_components->attribute_values[0] = g_strdup ("0.8");
-      appstream_components->attribute_names[1] = g_strdup ("origin");
-      appstream_components->attribute_values[1] = g_strdup ("xdg-app");
+      appstream_root = xdg_app_appstream_xml_new ();
 
       g_hash_table_iter_init (&iter2, all_refs);
       while (g_hash_table_iter_next (&iter2, &key, &value))
@@ -1794,32 +1946,24 @@ xdg_app_repo_generate_appstream (OstreeRepo    *repo,
           if (strcmp (split[2], arch) != 0)
             continue;
 
-          if (!extract_appstream (repo, appstream_components, ref, split[1], tmpdir_file, cancellable, &my_error))
+          if (!extract_appstream (repo, appstream_root,
+                                  ref, split[1], tmpdir_file,
+                                  cancellable, &my_error))
             {
               g_print ("No appstream data for %s\n", ref);
               continue;
             }
         }
 
-      xdg_app_xml_add (appstream_components, xdg_app_xml_new_text ("\n"));
-
-      xml = g_string_new ("");
-      xdg_app_xml_to_string (appstream_root, xml);
-
-      compressor = g_zlib_compressor_new (G_ZLIB_COMPRESSOR_FORMAT_GZIP, -1);
-      out = g_memory_output_stream_new_resizable ();
-      out2 = g_converter_output_stream_new (out, G_CONVERTER (compressor));
-      if (!g_output_stream_write_all (out2, xml->str, xml->len,
-                                      NULL, NULL, error))
-        return FALSE;
-      if (!g_output_stream_close (out2, NULL, error))
+      xml_data = xdg_app_appstream_xml_root_to_data (appstream_root, error);
+      if (xml_data == NULL)
         return FALSE;
 
       appstream_file = g_file_get_child (tmpdir_file, "appstream.xml.gz");
 
       if (!g_file_replace_contents (appstream_file,
-                                    g_memory_output_stream_get_data (G_MEMORY_OUTPUT_STREAM (out)),
-                                    g_memory_output_stream_get_data_size (G_MEMORY_OUTPUT_STREAM (out)),
+                                    g_bytes_get_data (xml_data, NULL),
+                                    g_bytes_get_size (xml_data),
                                     NULL,
                                     FALSE,
                                     G_FILE_CREATE_NONE,
@@ -2103,10 +2247,7 @@ xdg_app_xml_to_string (XdgAppXml *node, GString *res)
     {
       if (node->parent != NULL)
         {
-          if (node->first_child == NULL)
-            g_string_append (res, "</");
-          else
-            g_string_append (res, "<");
+          g_string_append (res, "<");
           g_string_append (res, node->element_name);
           if (node->attribute_names)
             {
@@ -2117,7 +2258,10 @@ xdg_app_xml_to_string (XdgAppXml *node, GString *res)
                                           node->attribute_values[i]);
                 }
             }
-          g_string_append (res, ">");
+          if (node->first_child == NULL)
+            g_string_append (res, "/>");
+          else
+            g_string_append (res, ">");
         }
 
       child = node->first_child;
@@ -2235,4 +2379,108 @@ xdg_app_xml_parse (GInputStream *in,
     return NULL;
 
   return g_steal_pointer (&xml_root);
+}
+
+#define OSTREE_STATIC_DELTA_META_ENTRY_FORMAT "(uayttay)"
+#define OSTREE_STATIC_DELTA_FALLBACK_FORMAT "(yaytt)"
+#define OSTREE_STATIC_DELTA_SUPERBLOCK_FORMAT "(a{sv}tayay" OSTREE_COMMIT_GVARIANT_STRING "aya" OSTREE_STATIC_DELTA_META_ENTRY_FORMAT "a" OSTREE_STATIC_DELTA_FALLBACK_FORMAT ")"
+
+static guint64
+xdg_app_bundle_get_installed_size (GVariant *bundle)
+{
+  guint64 total_size = 0, total_usize = 0;
+  g_autoptr(GVariant) meta_entries = NULL;
+  guint i, n_parts;
+
+  g_variant_get_child (bundle, 6, "@a" OSTREE_STATIC_DELTA_META_ENTRY_FORMAT, &meta_entries);
+  n_parts = g_variant_n_children (meta_entries);
+  g_print ("Number of parts: %u\n", n_parts);
+
+  for (i = 0; i < n_parts; i++)
+    {
+      guint32 version;
+      guint64 size, usize;
+      g_autoptr(GVariant) objects = NULL;
+
+      g_variant_get_child (meta_entries, i, "(u@aytt@ay)",
+                           &version, NULL, &size, &usize, &objects);
+
+      total_size += size;
+      total_usize += usize;
+    }
+
+  return total_usize;
+}
+
+GVariant *
+xdg_app_bundle_load (GFile *file,
+                     char **commit,
+                     char **ref,
+                     char **origin,
+                     guint64 *installed_size,
+                     GBytes **gpg_keys,
+                     GError **error)
+{
+  g_autoptr(GVariant) delta = NULL;
+  g_autoptr(GVariant) metadata = NULL;
+  g_autoptr(GBytes) bytes = NULL;
+  g_autoptr(GVariant) to_csum_v = NULL;
+
+  GMappedFile *mfile = g_mapped_file_new (gs_file_get_path_cached (file), FALSE, error);
+
+  if (mfile == NULL)
+    return NULL;
+
+  bytes = g_mapped_file_get_bytes (mfile);
+  g_mapped_file_unref (mfile);
+
+  delta = g_variant_new_from_bytes (G_VARIANT_TYPE (OSTREE_STATIC_DELTA_SUPERBLOCK_FORMAT), bytes, FALSE);
+  g_variant_ref_sink (delta);
+
+  to_csum_v = g_variant_get_child_value (delta, 3);
+  if (!ostree_validate_structureof_csum_v (to_csum_v, error))
+    return NULL;
+
+  if (commit)
+    *commit = ostree_checksum_from_bytes_v (to_csum_v);
+
+  if (installed_size)
+    *installed_size = xdg_app_bundle_get_installed_size (delta);
+
+  metadata = g_variant_get_child_value (delta, 0);
+
+  if (ref != NULL)
+    {
+      if (!g_variant_lookup (metadata, "ref", "s", ref))
+        {
+          xdg_app_fail (error, "Invalid bundle, no ref in metadata");
+          return NULL;
+        }
+    }
+
+  if (origin != NULL)
+    {
+      if (!g_variant_lookup (metadata, "origin", "s", origin))
+        *origin = NULL;
+    }
+
+  if (gpg_keys != NULL)
+    {
+        g_autoptr(GVariant) gpg_value = g_variant_lookup_value (metadata, "gpg-keys",
+                                                                G_VARIANT_TYPE("ay"));
+        if (gpg_value)
+          {
+            gsize n_elements;
+            const char *data = g_variant_get_fixed_array (gpg_value, &n_elements, 1);
+            *gpg_keys = g_bytes_new (data, n_elements);
+          }
+        else
+          *gpg_keys = NULL;
+    }
+
+  /* Make a copy of the data so we can return it after freeing the file */
+  return g_variant_new_from_bytes (g_variant_get_type (metadata),
+                                   g_bytes_new (g_variant_get_data (metadata),
+                                                g_variant_get_size (metadata)),
+                                   FALSE);
 }

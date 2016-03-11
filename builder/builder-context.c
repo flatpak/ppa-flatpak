@@ -41,6 +41,7 @@ struct BuilderContext {
 
   GFile *download_dir;
   GFile *state_dir;
+  GFile *build_dir;
   GFile *cache_dir;
   GFile *ccache_dir;
 
@@ -50,6 +51,7 @@ struct BuilderContext {
   char **cleanup_platform;
   gboolean use_ccache;
   gboolean build_runtime;
+  gboolean separate_locales;
 };
 
 typedef struct {
@@ -135,6 +137,7 @@ builder_context_constructed (GObject *object)
 
   self->state_dir = g_file_get_child (self->base_dir, ".xdg-app-builder");
   self->download_dir = g_file_get_child (self->state_dir, "downloads");
+  self->build_dir = g_file_get_child (self->state_dir, "build");
   self->cache_dir = g_file_get_child (self->state_dir, "cache");
   self->ccache_dir = g_file_get_child (self->state_dir, "ccache");
 }
@@ -198,6 +201,12 @@ GFile *
 builder_context_get_cache_dir (BuilderContext  *self)
 {
   return self->cache_dir;
+}
+
+GFile *
+builder_context_get_build_dir (BuilderContext  *self)
+{
+  return self->build_dir;
 }
 
 GFile *
@@ -321,6 +330,19 @@ builder_context_set_build_runtime (BuilderContext  *self,
                                    gboolean         build_runtime)
 {
   self->build_runtime = !!build_runtime;
+}
+
+gboolean
+builder_context_get_separate_locales (BuilderContext  *self)
+{
+  return self->separate_locales;
+}
+
+void
+builder_context_set_separate_locales (BuilderContext  *self,
+                                      gboolean         separate_locales)
+{
+  self->separate_locales = !!separate_locales;
 }
 
 gboolean

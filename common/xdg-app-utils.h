@@ -41,6 +41,10 @@ const char * xdg_app_path_match_prefix (const char *pattern,
 
 const char * xdg_app_get_arch (void);
 
+GBytes * xdg_app_read_stream (GInputStream *in,
+                              gboolean null_terminate,
+                              GError **error);
+
 gboolean xdg_app_variant_bsearch_str (GVariant   *array,
                                       const char *str,
                                       int        *out_pos);
@@ -178,11 +182,15 @@ gboolean xdg_app_repo_update    (OstreeRepo    *repo,
                                  const char    *gpg_homedir,
                                  GCancellable  *cancellable,
                                  GError       **error);
-gboolean xdg_app_repo_generate_appstream (OstreeRepo    *repo,
-                                          const char   **gpg_key_ids,
-                                          const char    *gpg_homedir,
-                                          GCancellable  *cancellable,
-                                          GError       **error);
+
+GVariant * xdg_app_bundle_load (GFile *file,
+                                char **commit,
+                                char **ref,
+                                char **origin,
+                                guint64 *installed_size,
+                                GBytes **gpg_keys,
+                                GError **error);
+
 
 typedef struct {
   char *id;
@@ -206,7 +214,8 @@ gboolean            xdg_app_spawn (GFile        *dir,
 typedef enum {
   XDG_APP_CP_FLAGS_NONE = 0,
   XDG_APP_CP_FLAGS_MERGE = 1<<0,
-  XDG_APP_CP_FLAGS_NO_CHOWN = 1<<1
+  XDG_APP_CP_FLAGS_NO_CHOWN = 1<<1,
+  XDG_APP_CP_FLAGS_MOVE = 1<<2,
 } XdgAppCpFlags;
 
 gboolean   xdg_app_cp_a (GFile         *src,
@@ -283,5 +292,19 @@ XdgAppXml *xdg_app_xml_find      (XdgAppXml     *node,
 
 G_DEFINE_AUTOPTR_CLEANUP_FUNC(XdgAppXml, xdg_app_xml_free);
 
+
+XdgAppXml *xdg_app_appstream_xml_new       (void);
+gboolean   xdg_app_appstream_xml_migrate   (XdgAppXml     *source,
+                                            XdgAppXml     *dest,
+                                            const char    *ref,
+                                            const char    *id,
+                                            GKeyFile      *metadata);
+GBytes *xdg_app_appstream_xml_root_to_data (XdgAppXml     *appstream_root,
+                                            GError       **error);
+gboolean   xdg_app_repo_generate_appstream (OstreeRepo    *repo,
+                                            const char   **gpg_key_ids,
+                                            const char    *gpg_homedir,
+                                            GCancellable  *cancellable,
+                                            GError       **error);
 
 #endif /* __XDG_APP_UTILS_H__ */

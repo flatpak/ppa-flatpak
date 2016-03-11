@@ -39,6 +39,7 @@ GFile *         builder_context_get_app_dir         (BuilderContext  *self);
 GFile *         builder_context_get_base_dir        (BuilderContext  *self);
 GFile *         builder_context_get_state_dir       (BuilderContext  *self);
 GFile *         builder_context_get_cache_dir       (BuilderContext  *self);
+GFile *         builder_context_get_build_dir       (BuilderContext  *self);
 GFile *         builder_context_get_ccache_dir      (BuilderContext  *self);
 GFile *         builder_context_get_download_dir    (BuilderContext  *self);
 SoupSession *   builder_context_get_soup_session    (BuilderContext  *self);
@@ -61,6 +62,9 @@ void            builder_context_set_options         (BuilderContext  *self,
 gboolean        builder_context_get_build_runtime   (BuilderContext  *self);
 void            builder_context_set_build_runtime   (BuilderContext  *self,
                                                      gboolean         build_runtime);
+gboolean        builder_context_get_separate_locales(BuilderContext  *self);
+void            builder_context_set_separate_locales(BuilderContext  *self,
+                                                     gboolean         separate_locales);
 
 BuilderContext *builder_context_new              (GFile          *base_dir,
                                                   GFile          *app_dir);

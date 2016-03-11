@@ -53,7 +53,6 @@ read_gpg_data (GCancellable *cancellable,
                GError **error)
 {
   g_autoptr(GInputStream) source_stream = NULL;
-  g_autoptr(GOutputStream) mem_stream = NULL;
   guint n_keyrings = 0;
   g_autoptr(GPtrArray) streams = NULL;
 
@@ -88,11 +87,7 @@ read_gpg_data (GCancellable *cancellable,
   /* Chain together all the --keyring options as one long stream. */
   source_stream = (GInputStream *) xdg_app_chain_input_stream_new (streams);
 
-  mem_stream = g_memory_output_stream_new_resizable ();
-  if (g_output_stream_splice (mem_stream, source_stream, G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET, cancellable, error) < 0)
-    return NULL;
-
-  return g_memory_output_stream_steal_as_bytes (G_MEMORY_OUTPUT_STREAM (mem_stream));
+  return xdg_app_read_stream (source_stream, FALSE, error);
 }
 
 gboolean
@@ -103,6 +98,10 @@ xdg_app_builtin_build_bundle (int argc, char **argv, GCancellable *cancellable, 
   g_autoptr(GFile) repofile = NULL;
   g_autoptr(OstreeRepo) repo = NULL;
   g_autoptr(GBytes) gpg_data = NULL;
+  g_autoptr(GFile) root = NULL;
+  g_autoptr(GFile) metadata_file = NULL;
+  g_autoptr(GInputStream) in = NULL;
+  g_autoptr(GInputStream) xml_in = NULL;
   const char *location;
   const char *filename;
   const char *name;
@@ -111,6 +110,11 @@ xdg_app_builtin_build_bundle (int argc, char **argv, GCancellable *cancellable, 
   g_autofree char *commit_checksum = NULL;
   GVariantBuilder metadata_builder;
   GVariantBuilder param_builder;
+  g_autoptr(XdgAppXml) xml_root = NULL;
+  g_autoptr(GFile) appstream_file = NULL;
+  g_autoptr(GKeyFile) keyfile = NULL;
+  g_autoptr(GFile) xmls_dir = NULL;
+  g_autofree char *appstream_basename = NULL;
 
   context = g_option_context_new ("LOCATION FILENAME NAME [BRANCH] - Create a single file bundle from a local repository");
 
@@ -157,8 +161,101 @@ xdg_app_builtin_build_bundle (int argc, char **argv, GCancellable *cancellable, 
   if (!ostree_repo_resolve_rev (repo, full_branch, FALSE, &commit_checksum, error))
     return FALSE;
 
+  if (!ostree_repo_read_commit (repo, commit_checksum, &root, NULL, NULL, error))
+    return FALSE;
+
   g_variant_builder_init (&metadata_builder, G_VARIANT_TYPE ("a{sv}"));
+
+  /* We add this first in the metadata, so this will become the file
+   * format header.  The first part is readable to make it easy to
+   * figure out the type. The uint32 is basically a random value, but
+   * it ensures we have both zero and high bits sets, so we don't get
+   * sniffed as text. Also, the last 01 can be used as a version
+   * later.  Furthermore, the use of an uint32 lets use detect
+   * byteorder issues.
+   */
+  g_variant_builder_add (&metadata_builder, "{sv}", "xdg-app",
+                         g_variant_new_uint32 (0xe5890001));
+
   g_variant_builder_add (&metadata_builder, "{sv}", "ref", g_variant_new_string (full_branch));
+
+  metadata_file = g_file_resolve_relative_path (root, "metadata");
+
+  keyfile = g_key_file_new ();
+
+  in = (GInputStream*)g_file_read (metadata_file, cancellable, NULL);
+  if (in != NULL)
+    {
+      g_autoptr(GBytes) bytes = xdg_app_read_stream (in, TRUE, error);
+
+      if (bytes == NULL)
+        return FALSE;
+
+      if (!g_key_file_load_from_data (keyfile,
+                                      g_bytes_get_data (bytes, NULL),
+                                      g_bytes_get_size (bytes),
+                                      G_KEY_FILE_NONE, error))
+        return FALSE;
+
+      g_variant_builder_add (&metadata_builder, "{sv}", "metadata",
+                             g_variant_new_string (g_bytes_get_data (bytes, NULL)));
+    }
+
+  xmls_dir = g_file_resolve_relative_path (root, "files/share/app-info/xmls");
+  appstream_basename = g_strconcat (name, ".xml.gz", NULL);
+  appstream_file = g_file_get_child (xmls_dir, appstream_basename);
+
+  xml_in = (GInputStream*)g_file_read (appstream_file, cancellable, NULL);
+  if (xml_in)
+    {
+      g_autoptr(XdgAppXml) appstream_root = NULL;
+      g_autoptr(XdgAppXml) xml_root = xdg_app_xml_parse (xml_in, TRUE,
+                                                         cancellable, error);
+      if (xml_root == NULL)
+        return FALSE;
+
+      appstream_root = xdg_app_appstream_xml_new ();
+      if (xdg_app_appstream_xml_migrate (xml_root, appstream_root,
+                                         full_branch, name, keyfile))
+        {
+          g_autoptr(GBytes) xml_data = xdg_app_appstream_xml_root_to_data (appstream_root, error);
+          int i;
+          g_autoptr(GFile) icons_dir =
+            g_file_resolve_relative_path (root,
+                                          "files/share/app-info/icons/xdg-app");
+          const char *icon_sizes[] = { "64x64", "128x128" };
+          const char *icon_sizes_key[] = { "icon-64", "icon-128" };
+          g_autofree char *icon_name = g_strconcat (name, ".png", NULL);
+
+          if (xml_data == NULL)
+            return FALSE;
+
+          g_variant_builder_add (&metadata_builder, "{sv}", "appdata",
+                                 g_variant_new_from_bytes (G_VARIANT_TYPE_BYTESTRING,
+                                                           xml_data, TRUE));
+
+          for (i = 0; i < G_N_ELEMENTS (icon_sizes); i++)
+            {
+              g_autoptr(GFile) size_dir =g_file_get_child (icons_dir, icon_sizes[i]);
+              g_autoptr(GFile) icon_file = g_file_get_child (size_dir, icon_name);
+              g_autoptr(GInputStream) png_in = NULL;
+
+              png_in = (GInputStream*)g_file_read (icon_file, cancellable, NULL);
+              if (png_in != NULL)
+                {
+                  g_autoptr(GBytes) png_data = xdg_app_read_stream (png_in, FALSE, error);
+                  if (png_data == NULL)
+                    return FALSE;
+
+                  g_variant_builder_add (&metadata_builder, "{sv}", icon_sizes_key[i],
+                                         g_variant_new_from_bytes (G_VARIANT_TYPE_BYTESTRING,
+                                                                   png_data, TRUE));
+                }
+            }
+        }
+
+    }
+
   if (opt_repo_url)
     g_variant_builder_add (&metadata_builder, "{sv}", "origin", g_variant_new_string (opt_repo_url));
 

@@ -19,7 +19,7 @@
  */
 
 #if !defined (__XDG_APP_H_INSIDE__) && !defined (XDG_APP_COMPILATION)
-#error "Only <xdg-app.h> can be included installationectly."
+#error "Only <xdg-app.h> can be included directly."
 #endif
 
 #ifndef __XDG_APP_INSTALLATION_H__
@@ -79,6 +79,7 @@ typedef void (*XdgAppProgressCallback)(const char *status,
                                        gpointer user_data);
 
 XDG_APP_EXTERN gboolean             xdg_app_installation_get_is_user               (XdgAppInstallation  *self);
+XDG_APP_EXTERN GFile               *xdg_app_installation_get_path                  (XdgAppInstallation  *self);
 XDG_APP_EXTERN gboolean             xdg_app_installation_launch                    (XdgAppInstallation  *self,
                                                                                     const char          *name,
                                                                                     const char          *arch,
@@ -113,6 +114,10 @@ XDG_APP_EXTERN XdgAppInstalledRef * xdg_app_installation_get_current_installed_a
 XDG_APP_EXTERN GPtrArray           *xdg_app_installation_list_remotes              (XdgAppInstallation  *self,
                                                                                     GCancellable        *cancellable,
                                                                                     GError             **error);
+XDG_APP_EXTERN XdgAppRemote        *xdg_app_installation_get_remote_by_name        (XdgAppInstallation *self,
+                                                                                    const gchar         *name,
+                                                                                    GCancellable        *cancellable,
+                                                                                    GError              **error);
 XDG_APP_EXTERN char *              xdg_app_installation_load_app_overrides         (XdgAppInstallation *self,
                                                                                     const char         *app_id,
                                                                                     GCancellable       *cancellable,
@@ -133,6 +138,12 @@ XDG_APP_EXTERN XdgAppInstalledRef * xdg_app_installation_update                 
                                                                                     const char          *name,
                                                                                     const char          *arch,
                                                                                     const char          *branch,
+                                                                                    XdgAppProgressCallback  progress,
+                                                                                    gpointer             progress_data,
+                                                                                    GCancellable        *cancellable,
+                                                                                    GError             **error);
+XDG_APP_EXTERN XdgAppInstalledRef * xdg_app_installation_install_bundle            (XdgAppInstallation  *self,
+                                                                                    GFile               *file,
                                                                                     XdgAppProgressCallback  progress,
                                                                                     gpointer             progress_data,
                                                                                     GCancellable        *cancellable,

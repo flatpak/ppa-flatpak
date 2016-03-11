@@ -47,10 +47,12 @@ struct BuilderManifest {
   char *sdk_commit;
   char *metadata;
   char *metadata_platform;
+  gboolean separate_locales;
   char **cleanup;
   char **cleanup_commands;
   char **cleanup_platform;
   char **finish_args;
+  char **tags;
   char *rename_desktop_file;
   char *rename_appdata_file;
   char *rename_icon;
@@ -95,11 +97,13 @@ enum {
   PROP_CLEANUP_COMMANDS,
   PROP_CLEANUP_PLATFORM,
   PROP_BUILD_RUNTIME,
+  PROP_SEPARATE_LOCALES,
   PROP_WRITABLE_SDK,
   PROP_APPSTREAM_COMPOSE,
   PROP_SDK_EXTENSIONS,
   PROP_PLATFORM_EXTENSIONS,
   PROP_FINISH_ARGS,
+  PROP_TAGS,
   PROP_RENAME_DESKTOP_FILE,
   PROP_RENAME_APPDATA_FILE,
   PROP_RENAME_ICON,
@@ -130,6 +134,7 @@ builder_manifest_finalize (GObject *object)
   g_strfreev (self->cleanup_commands);
   g_strfreev (self->cleanup_platform);
   g_strfreev (self->finish_args);
+  g_strfreev (self->tags);
   g_free (self->rename_desktop_file);
   g_free (self->rename_appdata_file);
   g_free (self->rename_icon);
@@ -217,8 +222,16 @@ builder_manifest_get_property (GObject    *object,
       g_value_set_boxed (value, self->finish_args);
       break;
 
+    case PROP_TAGS:
+      g_value_set_boxed (value, self->tags);
+      break;
+
     case PROP_BUILD_RUNTIME:
       g_value_set_boolean (value, self->build_runtime);
+      break;
+
+    case PROP_SEPARATE_LOCALES:
+      g_value_set_boolean (value, self->separate_locales);
       break;
 
     case PROP_WRITABLE_SDK:
@@ -366,8 +379,18 @@ builder_manifest_set_property (GObject       *object,
       g_strfreev (tmp);
       break;
 
+    case PROP_TAGS:
+      tmp = self->tags;
+      self->tags = g_strdupv (g_value_get_boxed (value));
+      g_strfreev (tmp);
+      break;
+
     case PROP_BUILD_RUNTIME:
       self->build_runtime = g_value_get_boolean (value);
+      break;
+
+    case PROP_SEPARATE_LOCALES:
+      self->separate_locales = g_value_get_boolean (value);
       break;
 
     case PROP_WRITABLE_SDK:
@@ -559,6 +582,13 @@ builder_manifest_class_init (BuilderManifestClass *klass)
                                                          FALSE,
                                                          G_PARAM_READWRITE));
   g_object_class_install_property (object_class,
+                                   PROP_SEPARATE_LOCALES,
+                                   g_param_spec_boolean ("separate-locales",
+                                                         "",
+                                                         "",
+                                                         TRUE,
+                                                         G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
                                    PROP_WRITABLE_SDK,
                                    g_param_spec_boolean ("writable-sdk",
                                                          "",
@@ -582,6 +612,13 @@ builder_manifest_class_init (BuilderManifestClass *klass)
   g_object_class_install_property (object_class,
                                    PROP_PLATFORM_EXTENSIONS,
                                    g_param_spec_boxed ("platform-extensions",
+                                                       "",
+                                                       "",
+                                                       G_TYPE_STRV,
+                                                       G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_TAGS,
+                                   g_param_spec_boxed ("tags",
                                                        "",
                                                        "",
                                                        G_TYPE_STRV,
@@ -634,6 +671,7 @@ static void
 builder_manifest_init (BuilderManifest *self)
 {
   self->appstream_compose = TRUE;
+  self->separate_locales = TRUE;
 }
 
 static JsonNode *
@@ -855,6 +893,11 @@ builder_manifest_init_app_dir (BuilderManifest *self,
           g_ptr_array_add (args, g_strdup_printf ("--sdk-extension=%s", ext));
         }
     }
+  if (self->tags)
+    {
+      for (i = 0; self->tags[i] != NULL; i++)
+        g_ptr_array_add (args, g_strdup_printf ("--tag=%s", self->tags[i]));
+    }
   g_ptr_array_add (args, g_file_get_path (app_dir));
   g_ptr_array_add (args, g_strdup (self->id));
   g_ptr_array_add (args, g_strdup (self->sdk));
@@ -870,6 +913,16 @@ builder_manifest_init_app_dir (BuilderManifest *self,
   if (subp == NULL ||
       !g_subprocess_wait_check (subp, NULL, error))
     return FALSE;
+
+  if (self->build_runtime && self->separate_locales)
+    {
+      g_autoptr(GFile) root_dir = NULL;
+
+      root_dir = g_file_get_child (app_dir, "usr");
+
+      if (!builder_migrate_locale_dirs (root_dir, error))
+        return FALSE;
+    }
 
   return TRUE;
 }
@@ -888,9 +941,11 @@ builder_manifest_checksum (BuilderManifest *self,
   builder_cache_checksum_str (cache, self->sdk);
   builder_cache_checksum_str (cache, self->sdk_commit);
   builder_cache_checksum_str (cache, self->metadata);
+  builder_cache_checksum_strv (cache, self->tags);
   builder_cache_checksum_boolean (cache, self->writable_sdk);
   builder_cache_checksum_strv (cache, self->sdk_extensions);
   builder_cache_checksum_boolean (cache, self->build_runtime);
+  builder_cache_checksum_boolean (cache, self->separate_locales);
 
   if (self->build_options)
     builder_options_checksum (self->build_options, cache, context);
@@ -991,6 +1046,7 @@ builder_manifest_build (BuilderManifest *self,
   builder_context_set_global_cleanup (context, (const char **)self->cleanup);
   builder_context_set_global_cleanup_platform (context, (const char **)self->cleanup_platform);
   builder_context_set_build_runtime (context, self->build_runtime);
+  builder_context_set_separate_locales (context, self->separate_locales);
 
   g_print ("Starting build of %s\n", self->id ? self->id : "app");
   for (l = self->modules; l != NULL; l = l->next)
@@ -1477,6 +1533,7 @@ builder_manifest_finish (BuilderManifest *self,
   GFile *app_dir = builder_context_get_app_dir (context);
   g_autoptr(GFile) manifest_file = NULL;
   g_autoptr(GFile) debuginfo_dir = NULL;
+  g_autoptr(GFile) locale_parent_dir = NULL;
   g_autofree char *app_dir_path = g_file_get_path (app_dir);
   g_autofree char *json = NULL;
   g_autoptr(GPtrArray) args = NULL;
@@ -1544,9 +1601,70 @@ builder_manifest_finish (BuilderManifest *self,
 
 
       if (self->build_runtime)
-        debuginfo_dir = g_file_resolve_relative_path (app_dir, "usr/lib/debug");
+        {
+          debuginfo_dir = g_file_resolve_relative_path (app_dir, "usr/lib/debug");
+          locale_parent_dir = g_file_resolve_relative_path (app_dir, "usr/share/runtime/locale");
+        }
       else
-        debuginfo_dir = g_file_resolve_relative_path (app_dir, "files/lib/debug");
+        {
+          debuginfo_dir = g_file_resolve_relative_path (app_dir, "files/lib/debug");
+          locale_parent_dir = g_file_resolve_relative_path (app_dir, "files/share/runtime/locale");
+        }
+
+      if (self->separate_locales)
+        {
+          g_autoptr(GFile) metadata_file = NULL;
+          g_autofree char *extension_contents = NULL;
+          g_autoptr(GFileEnumerator) dir_enum = NULL;
+          g_autoptr(GFileOutputStream) output = NULL;
+          GFileInfo *next;
+
+          metadata_file = g_file_get_child (app_dir, "metadata");
+
+          extension_contents = g_strdup_printf("\n"
+                                               "[Extension %s.Locale]\n"
+                                               "directory=share/runtime/locale\n"
+                                               "subdirectories=true\n",
+                                               self->id);
+
+          output = g_file_append_to (metadata_file, G_FILE_CREATE_NONE, NULL, error);
+          if (output == NULL)
+            return FALSE;
+
+          if (!g_output_stream_write_all (G_OUTPUT_STREAM (output),
+                                          extension_contents, strlen (extension_contents),
+                                          NULL, NULL, error))
+            return FALSE;
+
+          dir_enum = g_file_enumerate_children (locale_parent_dir, "standard::name,standard::type",
+                                                G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                                NULL, NULL);
+
+          while (dir_enum != NULL &&
+                 (next = g_file_enumerator_next_file (dir_enum, NULL, NULL)))
+            {
+              g_autoptr(GFileInfo) child_info = next;
+              const char *name = g_file_info_get_name (child_info);
+
+              if (g_file_info_get_file_type (child_info) == G_FILE_TYPE_DIRECTORY)
+                {
+                  g_autoptr(GFile) metadata_locale_file = NULL;
+                  g_autofree char *metadata_contents = NULL;
+                  g_autofree char *filename = g_strdup_printf ("metadata.locale.%s", name);
+
+                  metadata_locale_file = g_file_get_child (app_dir, filename);
+
+                  metadata_contents = g_strdup_printf("[Runtime]\n"
+                                                      "name=%s.Locale.%s\n", self->id, name);
+                  if (!g_file_replace_contents (metadata_locale_file,
+                                                metadata_contents, strlen (metadata_contents),
+                                                NULL, FALSE,
+                                                G_FILE_CREATE_REPLACE_DESTINATION,
+                                                NULL, NULL, error))
+                    return FALSE;
+                }
+            }
+        }
 
       if (g_file_query_exists (debuginfo_dir, NULL))
         {
@@ -1647,6 +1765,16 @@ builder_manifest_create_platform (BuilderManifest *self,
       if (subp == NULL ||
           !g_subprocess_wait_check (subp, NULL, error))
         return FALSE;
+
+      if (self->separate_locales)
+        {
+          g_autoptr(GFile) root_dir = NULL;
+
+          root_dir = g_file_get_child (app_dir, "platform");
+
+          if (!builder_migrate_locale_dirs (root_dir, error))
+            return FALSE;
+        }
 
       if (self->metadata_platform)
         {
@@ -1750,11 +1878,148 @@ builder_manifest_create_platform (BuilderManifest *self,
             }
         }
 
+      if (self->separate_locales)
+        {
+          g_autoptr(GFile) metadata_file = NULL;
+          g_autofree char *extension_contents = NULL;
+          g_autoptr(GFileEnumerator) dir_enum = NULL;
+          g_autoptr(GFileOutputStream) output = NULL;
+          g_autoptr(GFile) locale_parent_dir = NULL;
+          GFileInfo *next;
+
+          metadata_file = g_file_get_child (app_dir, "metadata.platform");
+
+          extension_contents = g_strdup_printf("\n"
+                                               "[Extension %s.Locale]\n"
+                                               "directory=share/runtime/locale\n"
+                                               "subdirectories=true\n",
+                                               self->id_platform);
+
+          output = g_file_append_to (metadata_file, G_FILE_CREATE_NONE, NULL, error);
+          if (output == NULL)
+            return FALSE;
+
+          if (!g_output_stream_write_all (G_OUTPUT_STREAM (output),
+                                          extension_contents, strlen (extension_contents),
+                                          NULL, NULL, error))
+            return FALSE;
+
+          locale_parent_dir = g_file_resolve_relative_path (platform_dir, "share/runtime/locale");
+          dir_enum = g_file_enumerate_children (locale_parent_dir, "standard::name,standard::type",
+                                                G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                                NULL, NULL);
+
+          while (dir_enum != NULL &&
+                 (next = g_file_enumerator_next_file (dir_enum, NULL, NULL)))
+            {
+              g_autoptr(GFileInfo) child_info = next;
+              const char *name = g_file_info_get_name (child_info);
+
+              if (g_file_info_get_file_type (child_info) == G_FILE_TYPE_DIRECTORY)
+                {
+                  g_autoptr(GFile) metadata_locale_file = NULL;
+                  g_autofree char *metadata_contents = NULL;
+                  g_autofree char *filename = g_strdup_printf ("metadata.platform.locale.%s", name);
+
+                  metadata_locale_file = g_file_get_child (app_dir, filename);
+
+                  metadata_contents = g_strdup_printf("[Runtime]\n"
+                                                      "name=%s.Locale.%s\n", self->id_platform, name);
+                  if (!g_file_replace_contents (metadata_locale_file,
+                                                metadata_contents, strlen (metadata_contents),
+                                                NULL, FALSE,
+                                                G_FILE_CREATE_REPLACE_DESTINATION,
+                                                NULL, NULL, error))
+                    return FALSE;
+                }
+            }
+        }
+
       if (!builder_cache_commit (cache, "Created platform", error))
         return FALSE;
     }
   else
     g_print ("Cache hit for create platform, skipping\n");
 
+  return TRUE;
+}
+
+
+gboolean
+builder_manifest_run (BuilderManifest  *self,
+                      BuilderContext   *context,
+                      char            **argv,
+                      int               argc,
+                      GError          **error)
+{
+  g_autoptr(GPtrArray) args = NULL;
+  g_autofree char *commandline = NULL;
+  g_autofree char *build_dir_path = NULL;
+  g_autofree char *ccache_dir_path = NULL;
+  g_auto(GStrv) env = NULL;
+  g_auto(GStrv) build_args = NULL;
+  int i;
+
+  if (!gs_file_ensure_directory (builder_context_get_build_dir (context), TRUE,
+                                 NULL, error))
+    return FALSE;
+
+  args = g_ptr_array_new_with_free_func (g_free);
+  g_ptr_array_add (args, g_strdup ("xdg-app"));
+  g_ptr_array_add (args, g_strdup ("build"));
+
+  build_dir_path = g_file_get_path (builder_context_get_build_dir (context));
+  g_ptr_array_add (args, g_strdup_printf ("--bind-mount=/run/%s=%s",
+                                          builder_context_get_build_runtime (context) ? "build-runtime" : "build",
+                                          build_dir_path));
+
+  if (g_file_query_exists (builder_context_get_ccache_dir (context), NULL))
+    {
+      ccache_dir_path = g_file_get_path (builder_context_get_ccache_dir (context));
+      g_ptr_array_add (args, g_strdup_printf ("--bind-mount=/run/ccache=%s", ccache_dir_path));
+    }
+
+  build_args = builder_options_get_build_args (self->build_options, context);
+
+  if (build_args)
+    {
+      for (i = 0; build_args[i] != NULL; i++)
+        g_ptr_array_add (args, g_strdup (build_args[i]));
+    }
+
+  env = builder_options_get_env (self->build_options, context);
+  if (env)
+    {
+      for (i = 0; env[i] != NULL; i++)
+        g_ptr_array_add (args, g_strdup_printf ("--env=%s", env[i]));
+    }
+
+  /* Inherit all finish args except the filesystem ones so the
+   * command gets the same access as the final app */
+  if (self->finish_args)
+    {
+      for (i = 0; self->finish_args[i] != NULL; i++)
+        {
+          const char *arg = self->finish_args[i];
+          if (!g_str_has_prefix (arg, "--filesystem"))
+            g_ptr_array_add (args, g_strdup (arg));
+        }
+    }
+
+  g_ptr_array_add (args, g_file_get_path (builder_context_get_app_dir (context)));
+
+  for (i = 0; i < argc; i++)
+    g_ptr_array_add (args, g_strdup (argv[i]));
+  g_ptr_array_add (args, NULL);
+
+  commandline = g_strjoinv (" ", (char **) args->pdata);
+
+  if (!execvp ((char *)args->pdata[0], (char **)args->pdata))
+    {
+      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno), "Unable to start xdg-app build");
+      return FALSE;
+    }
+
+  /* Not reached */
   return TRUE;
 }

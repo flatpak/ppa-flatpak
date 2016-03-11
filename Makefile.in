@@ -207,6 +207,7 @@ am__objects_3 = lib/libxdg_app_la-xdg-app.lo \
 	lib/libxdg_app_la-xdg-app-ref.lo \
 	lib/libxdg_app_la-xdg-app-installed-ref.lo \
 	lib/libxdg_app_la-xdg-app-remote-ref.lo \
+	lib/libxdg_app_la-xdg-app-bundle-ref.lo \
 	lib/libxdg_app_la-xdg-app-remote.lo \
 	lib/libxdg_app_la-xdg-app-error.lo \
 	lib/libxdg_app_la-xdg-app-installation.lo $(am__objects_1)
@@ -899,15 +900,17 @@ dbus_service_DATA = $(NULL) \
 systemduserunit_DATA = $(NULL) \
 	session-helper/xdg-app-session-helper.service \
 	document-portal/xdg-document-portal.service
+XDG_APP_BINDIR = $(bindir)
 AM_CPPFLAGS = \
-	-DXDG_APP_BINDIR=\"$(bindir)\"			\
+	-DXDG_APP_BINDIR=\"$(XDG_APP_BINDIR)\"		\
 	-DXDG_APP_SYSTEMDIR=\"$(localstatedir)/lib/xdg-app\"\
 	-DXDG_APP_BASEDIR=\"$(pkgdatadir)\"		\
 	-DXDG_APP_TRIGGERDIR=\"$(pkgdatadir)/triggers\" \
 	-DSYSTEM_FONTS_DIR=\"$(SYSTEM_FONTS_DIR)\"	\
 	-DHELPER=\"$(bindir)/xdg-app-helper\"		\
 	-DDBUSPROXY=\"$(libexecdir)/xdg-dbus-proxy\"	\
-	-I$(srcdir)/libglnx 				\
+	-DG_LOG_DOMAIN=\"xdg-app\"			\
+	-I$(srcdir)/libglnx				\
 	-I$(srcdir)/common				\
 	-I$(builddir)/common				\
 	$(NULL)
@@ -1037,6 +1040,7 @@ public_headers = \
 	lib/xdg-app-error.h \
 	lib/xdg-app-installed-ref.h \
 	lib/xdg-app-remote-ref.h \
+	lib/xdg-app-bundle-ref.h \
 	lib/xdg-app-installation.h \
 	lib/xdg-app-remote.h \
 	lib/xdg-app-version-macros.h \
@@ -1055,6 +1059,7 @@ sources = \
 	lib/xdg-app-installed-ref.c \
 	lib/xdg-app-installed-ref-private.h \
 	lib/xdg-app-remote-ref.c \
+	lib/xdg-app-bundle-ref.c \
 	lib/xdg-app-remote-ref-private.h \
 	lib/xdg-app-remote-private.h \
 	lib/xdg-app-remote.c \
@@ -1381,6 +1386,8 @@ lib/libxdg_app_la-xdg-app-ref.lo: lib/$(am__dirstamp) \
 lib/libxdg_app_la-xdg-app-installed-ref.lo: lib/$(am__dirstamp) \
 	lib/$(DEPDIR)/$(am__dirstamp)
 lib/libxdg_app_la-xdg-app-remote-ref.lo: lib/$(am__dirstamp) \
+	lib/$(DEPDIR)/$(am__dirstamp)
+lib/libxdg_app_la-xdg-app-bundle-ref.lo: lib/$(am__dirstamp) \
 	lib/$(DEPDIR)/$(am__dirstamp)
 lib/libxdg_app_la-xdg-app-remote.lo: lib/$(am__dirstamp) \
 	lib/$(DEPDIR)/$(am__dirstamp)
@@ -1854,6 +1861,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@document-portal/$(DEPDIR)/xdg_document_portal-xdp-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@document-portal/$(DEPDIR)/xdg_document_portal-xdp-resources.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@document-portal/$(DEPDIR)/xdg_document_portal-xdp-util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libxdg_app_la-xdg-app-bundle-ref.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libxdg_app_la-xdg-app-enum-types.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libxdg_app_la-xdg-app-error.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libxdg_app_la-xdg-app-installation.Plo@am__quote@
@@ -1997,6 +2005,13 @@ lib/libxdg_app_la-xdg-app-remote-ref.lo: lib/xdg-app-remote-ref.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/xdg-app-remote-ref.c' object='lib/libxdg_app_la-xdg-app-remote-ref.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxdg_app_la_CFLAGS) $(CFLAGS) -c -o lib/libxdg_app_la-xdg-app-remote-ref.lo `test -f 'lib/xdg-app-remote-ref.c' || echo '$(srcdir)/'`lib/xdg-app-remote-ref.c
+
+lib/libxdg_app_la-xdg-app-bundle-ref.lo: lib/xdg-app-bundle-ref.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxdg_app_la_CFLAGS) $(CFLAGS) -MT lib/libxdg_app_la-xdg-app-bundle-ref.lo -MD -MP -MF lib/$(DEPDIR)/libxdg_app_la-xdg-app-bundle-ref.Tpo -c -o lib/libxdg_app_la-xdg-app-bundle-ref.lo `test -f 'lib/xdg-app-bundle-ref.c' || echo '$(srcdir)/'`lib/xdg-app-bundle-ref.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libxdg_app_la-xdg-app-bundle-ref.Tpo lib/$(DEPDIR)/libxdg_app_la-xdg-app-bundle-ref.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/xdg-app-bundle-ref.c' object='lib/libxdg_app_la-xdg-app-bundle-ref.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxdg_app_la_CFLAGS) $(CFLAGS) -c -o lib/libxdg_app_la-xdg-app-bundle-ref.lo `test -f 'lib/xdg-app-bundle-ref.c' || echo '$(srcdir)/'`lib/xdg-app-bundle-ref.c
 
 lib/libxdg_app_la-xdg-app-remote.lo: lib/xdg-app-remote.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libxdg_app_la_CFLAGS) $(CFLAGS) -MT lib/libxdg_app_la-xdg-app-remote.lo -MD -MP -MF lib/$(DEPDIR)/libxdg_app_la-xdg-app-remote.Tpo -c -o lib/libxdg_app_la-xdg-app-remote.lo `test -f 'lib/xdg-app-remote.c' || echo '$(srcdir)/'`lib/xdg-app-remote.c
