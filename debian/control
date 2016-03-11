@@ -36,7 +36,7 @@ Vcs-Git: https://anonscm.debian.org/git/collab-maint/xdg-app.git
 Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/xdg-app.git
 
 Package: gir1.2-xdgapp-1.0
-Architecture: any
+Architecture: linux-any
 Section: introspection
 Depends:
  ${gir:Depends},
@@ -49,7 +49,7 @@ Description: Application deployment framework for desktop apps (introspection)
  generate dynamic bindings for libxdg-app0.
 
 Package: libxdg-app0
-Architecture: any
+Architecture: linux-any
 Section: libs
 Depends:
  ${misc:Depends},
@@ -70,7 +70,7 @@ Description: Application deployment framework for desktop apps (library)
  package management tools like gnome-software.
 
 Package: libxdg-app-dev
-Architecture: any
+Architecture: linux-any
 Section: libdevel
 Depends:
  pkg-config,
@@ -105,7 +105,7 @@ Description: Application deployment framework for desktop apps (documentation)
  This package contains reference documentation for libxdg-app0.
 
 Package: xdg-app
-Architecture: any
+Architecture: linux-any
 Depends:
  fuse,
  libpam-systemd,
@@ -135,7 +135,7 @@ Description: Application deployment framework for desktop apps
  See README.Debian for details.
 
 Package: xdg-app-builder
-Architecture: any
+Architecture: linux-any
 Section: devel
 Depends:
  ${misc:Depends},
