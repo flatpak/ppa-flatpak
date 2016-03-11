@@ -1,6 +1,7 @@
-xdg-app (0.4.11-1) UNRELEASED; urgency=medium
+xdg-app (0.4.13-1) UNRELEASED; urgency=medium
 
   * Prepare package for Debian (Closes: #697477)
+  * New upstream release
   * Set the Utopia Maintenance Team as maintainer, with myself and
     Matthias Klumpp as uploaders
   * Add Vcs-Git, Vcs-Browser (in collab-maint git)
