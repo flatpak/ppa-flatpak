@@ -1445,13 +1445,95 @@ static const _ExtendedGDBusMethodInfo * const _xdg_app_permission_store_method_i
   NULL
 };
 
+static const _ExtendedGDBusArgInfo _xdg_app_permission_store_signal_info_changed_ARG_table =
+{
+  {
+    -1,
+    (gchar *) "table",
+    (gchar *) "s",
+    NULL
+  },
+  FALSE
+};
+
+static const _ExtendedGDBusArgInfo _xdg_app_permission_store_signal_info_changed_ARG_id =
+{
+  {
+    -1,
+    (gchar *) "id",
+    (gchar *) "s",
+    NULL
+  },
+  FALSE
+};
+
+static const _ExtendedGDBusArgInfo _xdg_app_permission_store_signal_info_changed_ARG_deleted =
+{
+  {
+    -1,
+    (gchar *) "deleted",
+    (gchar *) "b",
+    NULL
+  },
+  FALSE
+};
+
+static const _ExtendedGDBusArgInfo _xdg_app_permission_store_signal_info_changed_ARG_data =
+{
+  {
+    -1,
+    (gchar *) "data",
+    (gchar *) "v",
+    NULL
+  },
+  FALSE
+};
+
+static const _ExtendedGDBusArgInfo _xdg_app_permission_store_signal_info_changed_ARG_permissions =
+{
+  {
+    -1,
+    (gchar *) "permissions",
+    (gchar *) "a{sas}",
+    NULL
+  },
+  FALSE
+};
+
+static const _ExtendedGDBusArgInfo * const _xdg_app_permission_store_signal_info_changed_ARG_pointers[] =
+{
+  &_xdg_app_permission_store_signal_info_changed_ARG_table,
+  &_xdg_app_permission_store_signal_info_changed_ARG_id,
+  &_xdg_app_permission_store_signal_info_changed_ARG_deleted,
+  &_xdg_app_permission_store_signal_info_changed_ARG_data,
+  &_xdg_app_permission_store_signal_info_changed_ARG_permissions,
+  NULL
+};
+
+static const _ExtendedGDBusSignalInfo _xdg_app_permission_store_signal_info_changed =
+{
+  {
+    -1,
+    (gchar *) "Changed",
+    (GDBusArgInfo **) &_xdg_app_permission_store_signal_info_changed_ARG_pointers,
+    NULL
+  },
+  "changed"
+};
+
+static const _ExtendedGDBusSignalInfo * const _xdg_app_permission_store_signal_info_pointers[] =
+{
+  &_xdg_app_permission_store_signal_info_changed,
+  NULL
+};
+
 static const _ExtendedGDBusInterfaceInfo _xdg_app_permission_store_interface_info =
 {
   {
     -1,
     (gchar *) "org.freedesktop.XdgApp.PermissionStore",
     (GDBusMethodInfo **) &_xdg_app_permission_store_method_info_pointers,
-    NULL,
+    (GDBusSignalInfo **) &_xdg_app_permission_store_signal_info_pointers,
     NULL,
     NULL
   },
@@ -1505,6 +1587,7 @@ xdg_app_permission_store_override_properties (GObjectClass *klass, guint propert
  * @handle_set: Handler for the #XdgAppPermissionStore::handle-set signal.
  * @handle_set_permission: Handler for the #XdgAppPermissionStore::handle-set-permission signal.
  * @handle_set_value: Handler for the #XdgAppPermissionStore::handle-set-value signal.
+ * @changed: Handler for the #XdgAppPermissionStore::changed signal.
  *
  * Virtual table for the D-Bus interface <link linkend="gdbus-interface-org-freedesktop-XdgApp-PermissionStore.top_of_page">org.freedesktop.XdgApp.PermissionStore</link>.
  */
@@ -1667,6 +1750,53 @@ xdg_app_permission_store_default_init (XdgAppPermissionStoreIface *iface)
     2,
     G_TYPE_DBUS_METHOD_INVOCATION, G_TYPE_STRING);
 
+  /* GObject signals for received D-Bus signals: */
+  /**
+   * XdgAppPermissionStore::changed:
+   * @object: A #XdgAppPermissionStore.
+   * @arg_table: Argument.
+   * @arg_id: Argument.
+   * @arg_deleted: Argument.
+   * @arg_data: Argument.
+   * @arg_permissions: Argument.
+   *
+   * On the client-side, this signal is emitted whenever the D-Bus signal <link linkend="gdbus-signal-org-freedesktop-XdgApp-PermissionStore.Changed">"Changed"</link> is received.
+   *
+   * On the service-side, this signal can be used with e.g. g_signal_emit_by_name() to make the object emit the D-Bus signal.
+   */
+  g_signal_new ("changed",
+    G_TYPE_FROM_INTERFACE (iface),
+    G_SIGNAL_RUN_LAST,
+    G_STRUCT_OFFSET (XdgAppPermissionStoreIface, changed),
+    NULL,
+    NULL,
+    g_cclosure_marshal_generic,
+    G_TYPE_NONE,
+    5, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN, G_TYPE_VARIANT, G_TYPE_VARIANT);
+
+}
+
+/**
+ * xdg_app_permission_store_emit_changed:
+ * @object: A #XdgAppPermissionStore.
+ * @arg_table: Argument to pass with the signal.
+ * @arg_id: Argument to pass with the signal.
+ * @arg_deleted: Argument to pass with the signal.
+ * @arg_data: Argument to pass with the signal.
+ * @arg_permissions: Argument to pass with the signal.
+ *
+ * Emits the <link linkend="gdbus-signal-org-freedesktop-XdgApp-PermissionStore.Changed">"Changed"</link> D-Bus signal.
+ */
+void
+xdg_app_permission_store_emit_changed (
+    XdgAppPermissionStore *object,
+    const gchar *arg_table,
+    const gchar *arg_id,
+    gboolean arg_deleted,
+    GVariant *arg_data,
+    GVariant *arg_permissions)
+{
+  g_signal_emit_by_name (object, "changed", arg_table, arg_id, arg_deleted, arg_data, arg_permissions);
 }
 
 /**
@@ -3025,6 +3155,38 @@ xdg_app_permission_store_skeleton_dbus_interface_flush (GDBusInterfaceSkeleton *
 {
 }
 
+static void
+_xdg_app_permission_store_on_signal_changed (
+    XdgAppPermissionStore *object,
+    const gchar *arg_table,
+    const gchar *arg_id,
+    gboolean arg_deleted,
+    GVariant *arg_data,
+    GVariant *arg_permissions)
+{
+  XdgAppPermissionStoreSkeleton *skeleton = XDG_APP_PERMISSION_STORE_SKELETON (object);
+
+  GList      *connections, *l;
+  GVariant   *signal_variant;
+  connections = g_dbus_interface_skeleton_get_connections (G_DBUS_INTERFACE_SKELETON (skeleton));
+
+  signal_variant = g_variant_ref_sink (g_variant_new ("(ssb@v@a{sas})",
+                   arg_table,
+                   arg_id,
+                   arg_deleted,
+                   arg_data,
+                   arg_permissions));
+  for (l = connections; l != NULL; l = l->next)
+    {
+      GDBusConnection *connection = l->data;
+      g_dbus_connection_emit_signal (connection,
+        NULL, g_dbus_interface_skeleton_get_object_path (G_DBUS_INTERFACE_SKELETON (skeleton)), "org.freedesktop.XdgApp.PermissionStore", "Changed",
+        signal_variant, NULL);
+    }
+  g_variant_unref (signal_variant);
+  g_list_free_full (connections, g_object_unref);
+}
+
 static void xdg_app_permission_store_skeleton_iface_init (XdgAppPermissionStoreIface *iface);
 #if GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_38
 G_DEFINE_TYPE_WITH_CODE (XdgAppPermissionStoreSkeleton, xdg_app_permission_store_skeleton, G_TYPE_DBUS_INTERFACE_SKELETON,
@@ -3084,6 +3246,7 @@ xdg_app_permission_store_skeleton_class_init (XdgAppPermissionStoreSkeletonClass
 static void
 xdg_app_permission_store_skeleton_iface_init (XdgAppPermissionStoreIface *iface)
 {
+  iface->changed = _xdg_app_permission_store_on_signal_changed;
 }
 
 /**
