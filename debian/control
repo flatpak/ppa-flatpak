@@ -49,6 +49,42 @@ Description: Application deployment framework for desktop apps (introspection)
  This package can be used by other packages using the GIRepository format to
  generate dynamic bindings for libxdg-app0.
 
+Package: libxdg-app-dev
+Architecture: linux-any
+Section: libdevel
+Depends:
+ libglib2.0-dev,
+ libgsystem-dev,
+ libostree-dev,
+ pkg-config,
+ xdg-app (= ${binary:Version}),
+ ${misc:Depends},
+# this name was never in Debian but is in upstream's PPAs
+Conflicts:
+ libxdgapp-dev,
+Replaces:
+ libxdgapp-dev,
+Description: Application deployment framework for desktop apps (development)
+ xdg-app installs, manages and runs sandboxed desktop application bundles.
+ See the xdg-app package for a more comprehensive description.
+ .
+ This package contains development headers and pkg-config metadata
+ for libxdg-app0.
+
+Package: libxdg-app-doc
+Architecture: all
+Section: doc
+Depends:
+ ${misc:Depends},
+Suggests:
+ devhelp,
+Multi-Arch: foreign
+Description: Application deployment framework for desktop apps (documentation)
+ xdg-app installs, manages and runs sandboxed desktop application bundles.
+ See the xdg-app package for a more comprehensive description.
+ .
+ This package contains reference documentation for libxdg-app0.
+
 Package: libxdg-app0
 Architecture: linux-any
 Section: libs
@@ -69,41 +105,6 @@ Description: Application deployment framework for desktop apps (library)
  .
  This package contains the xdg-app shared library, used by higher level
  package management tools like gnome-software.
-
-Package: libxdg-app-dev
-Architecture: linux-any
-Section: libdevel
-Depends:
- pkg-config,
- libglib2.0-dev,
- libgsystem-dev,
- libostree-dev,
- xdg-app (= ${binary:Version}),
- ${misc:Depends},
-# this name was never in Debian but is in upstream's PPAs
-Conflicts:
- libxdgapp-dev,
-Replaces:
- libxdgapp-dev,
-Description: Application deployment framework for desktop apps (development)
- xdg-app installs, manages and runs sandboxed desktop application bundles.
- See the xdg-app package for a more comprehensive description.
- .
- This package contains development headers and pkg-config metadata
- for libxdg-app0.
-
-Package: libxdg-app-doc
-Architecture: all
-Section: doc
-Depends:
- ${misc:Depends},
-Suggests: devhelp
-Multi-Arch: foreign
-Description: Application deployment framework for desktop apps (documentation)
- xdg-app installs, manages and runs sandboxed desktop application bundles.
- See the xdg-app package for a more comprehensive description.
- .
- This package contains reference documentation for libxdg-app0.
 
 Package: xdg-app
 Architecture: linux-any
@@ -139,9 +140,9 @@ Package: xdg-app-builder
 Architecture: linux-any
 Section: devel
 Depends:
+ xdg-app (= ${binary:Version}),
  ${misc:Depends},
  ${shlibs:Depends},
- xdg-app (= ${binary:Version}),
 Recommends:
  bzr,
  git,
