@@ -70,6 +70,8 @@ typedef int bool;
 #define READ_END 0
 #define WRITE_END 1
 
+#define DEFAULT_SHELL "/bin/sh"
+
 /* Globals to avoid having to use getuid(), since the uid/gid changes during runtime */
 static uid_t uid;
 static gid_t gid;
@@ -740,7 +742,7 @@ load_file (const char *path)
 
   do
     {
-      if (data_len >= data_read + 1)
+      if (data_len == data_read + 1)
         {
           data_len *= 2;
           data = xrealloc (data, data_len);
@@ -1295,7 +1297,7 @@ create_files (const create_table_t *create, int n_create, int ignore_shm, const 
                                          uid, gid,
                                          p->pw_gecos,
                                          p->pw_dir,
-                                         p->pw_shell);
+                                         DEFAULT_SHELL);
 
               }
 

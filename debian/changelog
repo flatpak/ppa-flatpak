@@ -1,3 +1,9 @@
+xdg-app (0.5.0-0alexlarsson1~wily1) wily; urgency=medium
+
+  * Update to new upstream version
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Wed, 16 Mar 2016 10:10:34 +0200
+
 xdg-app (0.4.13-1) UNRELEASED; urgency=medium
 
   * Prepare package for Debian (Closes: #697477)
@@ -38,7 +44,7 @@ xdg-app (0.4.13-1) UNRELEASED; urgency=medium
 
  -- Simon McVittie <smcv@debian.org>  Fri, 29 Jan 2016 10:04:17 +0100
 
-xdg-app (0.4.13-0alexlarsson3~wily1) wily; urgency=medium
+xdg-app (0.4.13-0alexlarsson3~vivid1) vivid; urgency=medium
 
   * Update to new upstream version
 

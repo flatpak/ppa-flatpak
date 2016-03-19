@@ -181,6 +181,7 @@ struct _XdgAppPermissionStoreIface
 {
   GTypeInterface parent_iface;
 
+
   gboolean (*handle_delete) (
     XdgAppPermissionStore *object,
     GDBusMethodInvocation *invocation,
@@ -224,6 +225,14 @@ struct _XdgAppPermissionStoreIface
     const gchar *arg_id,
     GVariant *arg_data);
 
+  void (*changed) (
+    XdgAppPermissionStore *object,
+    const gchar *arg_table,
+    const gchar *arg_id,
+    gboolean arg_deleted,
+    GVariant *arg_data,
+    GVariant *arg_permissions);
+
 };
 
 GType xdg_app_permission_store_get_type (void) G_GNUC_CONST;
@@ -259,6 +268,17 @@ void xdg_app_permission_store_complete_list (
     XdgAppPermissionStore *object,
     GDBusMethodInvocation *invocation,
     const gchar *const *ids);
+
+
+
+/* D-Bus signal emissions functions: */
+void xdg_app_permission_store_emit_changed (
+    XdgAppPermissionStore *object,
+    const gchar *arg_table,
+    const gchar *arg_id,
+    gboolean arg_deleted,
+    GVariant *arg_data,
+    GVariant *arg_permissions);
 
 
 
