@@ -1,10 +1,4 @@
-xdg-app (0.5.0-0alexlarsson1~wily1) wily; urgency=medium
-
-  * Update to new upstream version
-
- -- Alexander Larsson <alexander.larsson@gmail.com>  Wed, 16 Mar 2016 10:10:34 +0200
-
-xdg-app (0.4.13-1) UNRELEASED; urgency=medium
+xdg-app (0.5.0-1) UNRELEASED; urgency=medium
 
   * Prepare package for Debian (Closes: #697477)
   * Set the Utopia Maintenance Team as maintainer, with myself and
@@ -42,7 +36,13 @@ xdg-app (0.4.13-1) UNRELEASED; urgency=medium
   * debian/control: document how to enable user namespaces
   * Only build for Linux: this package is specifically not portable
 
- -- Simon McVittie <smcv@debian.org>  Fri, 29 Jan 2016 10:04:17 +0100
+ -- Simon McVittie <smcv@debian.org>  Sat, 19 Mar 2016 15:32:08 +0000
+
+xdg-app (0.5.0-0alexlarsson1~wily1) wily; urgency=medium
+
+  * Update to new upstream version
+
+ -- Alexander Larsson <alexander.larsson@gmail.com>  Wed, 16 Mar 2016 10:10:34 +0200
 
 xdg-app (0.4.13-0alexlarsson3~vivid1) vivid; urgency=medium
 
