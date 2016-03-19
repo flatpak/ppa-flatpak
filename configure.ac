@@ -14,11 +14,11 @@ AC_PREREQ([2.63])
 # on the unstable (ie master), interface age = 0
 
 m4_define([xdg_app_major_version], [0])
-m4_define([xdg_app_minor_version], [4])
-m4_define([xdg_app_micro_version], [13])
-m4_define([xdg_app_interface_age], [13])
+m4_define([xdg_app_minor_version], [5])
+m4_define([xdg_app_micro_version], [0])
+m4_define([xdg_app_interface_age], [0])
 m4_define([xdg_app_binary_age],
-          [m4_eval(100 * xdg_app_minor_version + xdg_app_micro_version)])
+          [m4_eval(10000 * xdg_app_major_version + 100 * xdg_app_minor_version + xdg_app_micro_version)])
 m4_define([xdg_app_version],
           [xdg_app_major_version.xdg_app_minor_version.xdg_app_micro_version])
 
@@ -206,6 +206,26 @@ AS_IF([ test $have_libelf = maybe ], [
 if test x$have_libelf != xyes; then
   AC_MSG_ERROR([libelf not found])
 fi
+
+dnl This only checks for the header, not the library.
+AC_ARG_WITH([dwarf-header],
+            [AS_HELP_STRING([--with-dwarf-header],
+                            [path containing dwarf.h])],
+            [AS_IF([test "x$with_dwarf_header" = "xno"],
+                   [AC_MSG_WARN([either a path containing dwarf.h must be
+provided, or it will be searched for in includedir])])],
+            [with_dwarf_header=yes])
+
+AS_IF([test "x$with_dwarf_header" = "xyes"],
+      [CPPFLAGS="$CPPFLAGS -I$(eval echo \"$includedir\")/libdwarf"
+       AC_CHECK_HEADER([dwarf.h])
+       AS_IF([test "x$ac_cv_header_dwarf_h" != "xyes"],
+             [AC_MSG_ERROR([dwarf.h is required but was not found; locate it using --with-dwarf-header=/path/containing/header])])],
+      [CPPFLAGS="$CPPFLAGS -I$with_dwarf_header"
+       AC_CHECK_HEADER([dwarf.h])
+       AS_IF([test "x$ac_cv_header_dwarf_h" != "xyes"],
+             [AC_MSG_ERROR([dwarf.h is required but was not found])])])
+
 AC_ARG_ENABLE(documentation,
               AC_HELP_STRING([--enable-documentation], [Build documentation]),,
               enable_documentation=yes)
@@ -297,7 +317,7 @@ AC_SUBST(XDG_APP_VERSION)
 #LT_AGE=`expr $XDG_APP_BINARY_AGE - $XDG_APP_INTERFACE_AGE`
 #LT_CURRENT_MINUS_AGE=`expr $LT_CURRENT - $LT_AGE`
 
-m4_define([lt_current], [m4_eval(100 * xdg_app_minor_version + xdg_app_micro_version - xdg_app_interface_age)])
+m4_define([lt_current], [m4_eval(10000 * xdg_app_major_version +  100 * xdg_app_minor_version + xdg_app_micro_version - xdg_app_interface_age)])
 m4_define([lt_revision], [xdg_app_interface_age])
 m4_define([lt_age], [m4_eval(xdg_app_binary_age - xdg_app_interface_age)])
 LT_VERSION_INFO="lt_current:lt_revision:lt_age"

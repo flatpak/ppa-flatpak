@@ -33,6 +33,8 @@ typedef struct GLnxConsoleRef GLnxConsoleRef;
 
 void	 glnx_console_lock (GLnxConsoleRef *ref);
 
+void	 glnx_console_text (const char     *text);
+
 void	 glnx_console_progress_text_percent (const char     *text,
                                              guint           percentage);
 
@@ -45,7 +47,8 @@ guint    glnx_console_columns (void);
 static inline void
 glnx_console_ref_cleanup (GLnxConsoleRef *p)
 {
-  glnx_console_unlock (p);
+  if (p->locked)
+    glnx_console_unlock (p);
 }
 G_DEFINE_AUTO_CLEANUP_CLEAR_FUNC(GLnxConsoleRef, glnx_console_ref_cleanup)
 
