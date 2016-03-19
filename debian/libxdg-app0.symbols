@@ -1,10 +1,11 @@
 libxdg-app.so.0 libxdg-app0 #MINVER#
 * Build-Depends-Package: libxdg-app-dev
- xdg_app_bundle_ref_get_appdata@Base 0.4.13
+ xdg_app_bundle_ref_get_appstream@Base 0.5.0
  xdg_app_bundle_ref_get_file@Base 0.4.13
  xdg_app_bundle_ref_get_icon@Base 0.4.13
  xdg_app_bundle_ref_get_installed_size@Base 0.4.13
  xdg_app_bundle_ref_get_metadata@Base 0.4.13
+ xdg_app_bundle_ref_get_origin@Base 0.5.0
  xdg_app_bundle_ref_get_type@Base 0.4.13
  xdg_app_bundle_ref_new@Base 0.4.13
  xdg_app_error_get_type@Base 0.4.7
