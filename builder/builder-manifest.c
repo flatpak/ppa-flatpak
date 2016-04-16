@@ -803,6 +803,11 @@ builder_manifest_get_runtime_version (BuilderManifest *self)
   return self->runtime_version ? self->runtime_version : "master";
 }
 
+const char *
+builder_manifest_get_branch (BuilderManifest *self)
+{
+  return self->branch ? self->branch : "master";
+}
 
 static char *
 xdg_app (GError      **error,
@@ -1009,9 +1014,23 @@ builder_manifest_checksum_for_platform (BuilderManifest *self,
   builder_cache_checksum_str (cache, BUILDER_MANIFEST_CHECKSUM_PLATFORM_VERSION);
   builder_cache_checksum_str (cache, self->id_platform);
   builder_cache_checksum_str (cache, self->runtime_commit);
-  builder_cache_checksum_str (cache, self->metadata);
+  builder_cache_checksum_str (cache, self->metadata_platform);
   builder_cache_checksum_strv (cache, self->cleanup_platform);
   builder_cache_checksum_strv (cache, self->platform_extensions);
+
+  if (self->metadata_platform)
+    {
+      GFile *base_dir = builder_context_get_base_dir (context);
+      g_autoptr(GFile) metadata = g_file_resolve_relative_path (base_dir, self->metadata_platform);
+      g_autofree char *data = NULL;
+      g_autoptr(GError) my_error = NULL;
+      gsize len;
+
+      if (g_file_load_contents (metadata, NULL, &data, &len, NULL, &my_error))
+        builder_cache_checksum_data (cache, (guchar *)data, len);
+      else
+        g_warning ("Can't load metadata-platform file %s: %s", self->metadata_platform, my_error->message);
+    }
 }
 
 gboolean
@@ -1448,7 +1467,10 @@ builder_manifest_cleanup (BuilderManifest *self,
 
           if (!g_file_load_contents (desktop, NULL,
                                      &desktop_contents, &desktop_size, NULL, error))
-            return FALSE;
+            {
+              g_prefix_error (error, "Can't load desktop file %s: ", desktop_basename);
+              return FALSE;
+            }
 
           if (!g_key_file_load_from_data (keyfile,
                                           desktop_contents, desktop_size,
@@ -1615,9 +1637,9 @@ builder_manifest_finish (BuilderManifest *self,
         {
           g_autoptr(GFile) metadata_file = NULL;
           g_autofree char *extension_contents = NULL;
-          g_autoptr(GFileEnumerator) dir_enum = NULL;
           g_autoptr(GFileOutputStream) output = NULL;
-          GFileInfo *next;
+          g_autoptr(GFile) metadata_locale_file = NULL;
+          g_autofree char *metadata_contents = NULL;
 
           metadata_file = g_file_get_child (app_dir, "metadata");
 
@@ -1636,35 +1658,18 @@ builder_manifest_finish (BuilderManifest *self,
                                           NULL, NULL, error))
             return FALSE;
 
-          dir_enum = g_file_enumerate_children (locale_parent_dir, "standard::name,standard::type",
-                                                G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
-                                                NULL, NULL);
 
-          while (dir_enum != NULL &&
-                 (next = g_file_enumerator_next_file (dir_enum, NULL, NULL)))
-            {
-              g_autoptr(GFileInfo) child_info = next;
-              const char *name = g_file_info_get_name (child_info);
-
-              if (g_file_info_get_file_type (child_info) == G_FILE_TYPE_DIRECTORY)
-                {
-                  g_autoptr(GFile) metadata_locale_file = NULL;
-                  g_autofree char *metadata_contents = NULL;
-                  g_autofree char *filename = g_strdup_printf ("metadata.locale.%s", name);
-
-                  metadata_locale_file = g_file_get_child (app_dir, filename);
-
-                  metadata_contents = g_strdup_printf("[Runtime]\n"
-                                                      "name=%s.Locale.%s\n", self->id, name);
-                  if (!g_file_replace_contents (metadata_locale_file,
-                                                metadata_contents, strlen (metadata_contents),
-                                                NULL, FALSE,
-                                                G_FILE_CREATE_REPLACE_DESTINATION,
-                                                NULL, NULL, error))
-                    return FALSE;
-                }
-            }
+          metadata_locale_file = g_file_get_child (app_dir, "metadata.locale");
+          metadata_contents = g_strdup_printf("[Runtime]\n"
+                                              "name=%s.Locale\n", self->id);
+          if (!g_file_replace_contents (metadata_locale_file,
+                                        metadata_contents, strlen (metadata_contents),
+                                        NULL, FALSE,
+                                        G_FILE_CREATE_REPLACE_DESTINATION,
+                                        NULL, NULL, error))
+            return FALSE;
         }
+
 
       if (g_file_query_exists (debuginfo_dir, NULL))
         {
@@ -1882,10 +1887,10 @@ builder_manifest_create_platform (BuilderManifest *self,
         {
           g_autoptr(GFile) metadata_file = NULL;
           g_autofree char *extension_contents = NULL;
-          g_autoptr(GFileEnumerator) dir_enum = NULL;
           g_autoptr(GFileOutputStream) output = NULL;
           g_autoptr(GFile) locale_parent_dir = NULL;
-          GFileInfo *next;
+          g_autoptr(GFile) metadata_locale_file = NULL;
+          g_autofree char *metadata_contents = NULL;
 
           metadata_file = g_file_get_child (app_dir, "metadata.platform");
 
@@ -1904,35 +1909,16 @@ builder_manifest_create_platform (BuilderManifest *self,
                                           NULL, NULL, error))
             return FALSE;
 
-          locale_parent_dir = g_file_resolve_relative_path (platform_dir, "share/runtime/locale");
-          dir_enum = g_file_enumerate_children (locale_parent_dir, "standard::name,standard::type",
-                                                G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
-                                                NULL, NULL);
 
-          while (dir_enum != NULL &&
-                 (next = g_file_enumerator_next_file (dir_enum, NULL, NULL)))
-            {
-              g_autoptr(GFileInfo) child_info = next;
-              const char *name = g_file_info_get_name (child_info);
-
-              if (g_file_info_get_file_type (child_info) == G_FILE_TYPE_DIRECTORY)
-                {
-                  g_autoptr(GFile) metadata_locale_file = NULL;
-                  g_autofree char *metadata_contents = NULL;
-                  g_autofree char *filename = g_strdup_printf ("metadata.platform.locale.%s", name);
-
-                  metadata_locale_file = g_file_get_child (app_dir, filename);
-
-                  metadata_contents = g_strdup_printf("[Runtime]\n"
-                                                      "name=%s.Locale.%s\n", self->id_platform, name);
-                  if (!g_file_replace_contents (metadata_locale_file,
-                                                metadata_contents, strlen (metadata_contents),
-                                                NULL, FALSE,
-                                                G_FILE_CREATE_REPLACE_DESTINATION,
-                                                NULL, NULL, error))
-                    return FALSE;
-                }
-            }
+          metadata_locale_file = g_file_get_child (app_dir, "metadata.platform.locale");
+          metadata_contents = g_strdup_printf("[Runtime]\n"
+                                              "name=%s.Locale\n", self->id_platform);
+          if (!g_file_replace_contents (metadata_locale_file,
+                                        metadata_contents, strlen (metadata_contents),
+                                        NULL, FALSE,
+                                        G_FILE_CREATE_REPLACE_DESTINATION,
+                                        NULL, NULL, error))
+            return FALSE;
         }
 
       if (!builder_cache_commit (cache, "Created platform", error))

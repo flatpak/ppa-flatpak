@@ -27,10 +27,15 @@
 
 #define XDG_APP_MAJOR_VERSION (0)
 #define XDG_APP_MINOR_VERSION (5)
-#define XDG_APP_MICRO_VERSION (0)
+#define XDG_APP_MICRO_VERSION (2)
 
 #ifndef XDG_APP_EXTERN
 #define XDG_APP_EXTERN extern
 #endif
+
+/**
+ * SECTION:xdg-app-version-macros
+ * @Title: Version information
+ */
 
 #endif /* __XDG_APP_VERSION_MACROS_H__ */

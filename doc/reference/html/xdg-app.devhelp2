@@ -1,86 +1,76 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
-<book xmlns="http://www.devhelp.net/book" title="xdg-app Reference Manual" link="index.html" author="" name="xdg-app" version="2" language="c">
+<book xmlns="http://www.devhelp.net/book" title="xdg-app Library Reference Manual" link="index.html" author="" name="xdg-app" version="2" language="c">
   <chapters>
     <sub name="XDG-App" link="ch01.html">
-      <sub name="xdg-app-error" link="xdg-app-xdg-app-error.html"/>
       <sub name="XdgAppInstallation" link="XdgAppInstallation.html"/>
+      <sub name="XdgAppRef" link="XdgAppRef.html"/>
       <sub name="XdgAppInstalledRef" link="XdgAppInstalledRef.html"/>
       <sub name="XdgAppRemoteRef" link="XdgAppRemoteRef.html"/>
-      <sub name="XdgAppRef" link="XdgAppRef.html"/>
       <sub name="XdgAppRemote" link="XdgAppRemote.html"/>
-      <sub name="xdg-app-version-macros" link="xdg-app-xdg-app-version-macros.html"/>
+      <sub name="Error codes" link="xdg-app-Error-codes.html"/>
+      <sub name="Version information" link="xdg-app-Version-information.html"/>
     </sub>
     <sub name="Object Hierarchy" link="object-tree.html"/>
     <sub name="API Index" link="full-api-index.html"/>
-    <sub name="Index of deprecated API" link="deprecated-api-index.html"/>
     <sub name="Annotation Glossary" link="annotation-glossary.html"/>
   </chapters>
   <functions>
-    <keyword type="function" name="xdg_app_error_quark ()" link="xdg-app-xdg-app-error.html#xdg-app-error-quark"/>
-    <keyword type="macro" name="XDG_APP_ERROR" link="xdg-app-xdg-app-error.html#XDG-APP-ERROR:CAPS"/>
-    <keyword type="enum" name="enum XdgAppError" link="xdg-app-xdg-app-error.html#XdgAppError"/>
+    <keyword type="function" name="xdg_app_installation_new_system ()" link="XdgAppInstallation.html#xdg-app-installation-new-system"/>
+    <keyword type="function" name="xdg_app_installation_new_user ()" link="XdgAppInstallation.html#xdg-app-installation-new-user"/>
+    <keyword type="function" name="xdg_app_installation_new_for_path ()" link="XdgAppInstallation.html#xdg-app-installation-new-for-path"/>
+    <keyword type="function" name="xdg_app_installation_get_is_user ()" link="XdgAppInstallation.html#xdg-app-installation-get-is-user"/>
+    <keyword type="function" name="xdg_app_installation_get_path ()" link="XdgAppInstallation.html#xdg-app-installation-get-path"/>
     <keyword type="function" name="xdg_app_installation_create_monitor ()" link="XdgAppInstallation.html#xdg-app-installation-create-monitor"/>
-    <keyword type="function" name="xdg_app_installation_fetch_remote_metadata_sync ()" link="XdgAppInstallation.html#xdg-app-installation-fetch-remote-metadata-sync"/>
-    <keyword type="function" name="xdg_app_installation_fetch_remote_ref_sync ()" link="XdgAppInstallation.html#xdg-app-installation-fetch-remote-ref-sync"/>
-    <keyword type="function" name="xdg_app_installation_fetch_remote_size_sync ()" link="XdgAppInstallation.html#xdg-app-installation-fetch-remote-size-sync"/>
+    <keyword type="function" name="xdg_app_installation_install ()" link="XdgAppInstallation.html#xdg-app-installation-install"/>
+    <keyword type="function" name="xdg_app_installation_update ()" link="XdgAppInstallation.html#xdg-app-installation-update"/>
+    <keyword type="function" name="xdg_app_installation_uninstall ()" link="XdgAppInstallation.html#xdg-app-installation-uninstall"/>
+    <keyword type="function" name="xdg_app_installation_launch ()" link="XdgAppInstallation.html#xdg-app-installation-launch"/>
     <keyword type="function" name="xdg_app_installation_get_current_installed_app ()" link="XdgAppInstallation.html#xdg-app-installation-get-current-installed-app"/>
     <keyword type="function" name="xdg_app_installation_get_installed_ref ()" link="XdgAppInstallation.html#xdg-app-installation-get-installed-ref"/>
-    <keyword type="function" name="xdg_app_installation_get_is_user ()" link="XdgAppInstallation.html#xdg-app-installation-get-is-user"/>
-    <keyword type="function" name="xdg_app_installation_get_type ()" link="XdgAppInstallation.html#xdg-app-installation-get-type"/>
-    <keyword type="function" name="xdg_app_installation_install ()" link="XdgAppInstallation.html#xdg-app-installation-install"/>
-    <keyword type="function" name="xdg_app_installation_launch ()" link="XdgAppInstallation.html#xdg-app-installation-launch"/>
     <keyword type="function" name="xdg_app_installation_list_installed_refs ()" link="XdgAppInstallation.html#xdg-app-installation-list-installed-refs"/>
     <keyword type="function" name="xdg_app_installation_list_installed_refs_by_kind ()" link="XdgAppInstallation.html#xdg-app-installation-list-installed-refs-by-kind"/>
     <keyword type="function" name="xdg_app_installation_list_installed_refs_for_update ()" link="XdgAppInstallation.html#xdg-app-installation-list-installed-refs-for-update"/>
     <keyword type="function" name="xdg_app_installation_list_remote_refs_sync ()" link="XdgAppInstallation.html#xdg-app-installation-list-remote-refs-sync"/>
     <keyword type="function" name="xdg_app_installation_list_remotes ()" link="XdgAppInstallation.html#xdg-app-installation-list-remotes"/>
+    <keyword type="function" name="xdg_app_installation_fetch_remote_metadata_sync ()" link="XdgAppInstallation.html#xdg-app-installation-fetch-remote-metadata-sync"/>
+    <keyword type="function" name="xdg_app_installation_fetch_remote_ref_sync ()" link="XdgAppInstallation.html#xdg-app-installation-fetch-remote-ref-sync"/>
+    <keyword type="function" name="xdg_app_installation_fetch_remote_size_sync ()" link="XdgAppInstallation.html#xdg-app-installation-fetch-remote-size-sync"/>
     <keyword type="function" name="xdg_app_installation_load_app_overrides ()" link="XdgAppInstallation.html#xdg-app-installation-load-app-overrides"/>
-    <keyword type="function" name="xdg_app_installation_new_for_path ()" link="XdgAppInstallation.html#xdg-app-installation-new-for-path"/>
-    <keyword type="function" name="xdg_app_installation_new_system ()" link="XdgAppInstallation.html#xdg-app-installation-new-system"/>
-    <keyword type="function" name="xdg_app_installation_new_user ()" link="XdgAppInstallation.html#xdg-app-installation-new-user"/>
-    <keyword type="function" name="xdg_app_installation_uninstall ()" link="XdgAppInstallation.html#xdg-app-installation-uninstall"/>
-    <keyword type="function" name="xdg_app_installation_update ()" link="XdgAppInstallation.html#xdg-app-installation-update"/>
     <keyword type="function" name="xdg_app_installation_update_appstream_sync ()" link="XdgAppInstallation.html#xdg-app-installation-update-appstream-sync"/>
+    <keyword type="function" name="xdg_app_installation_install_bundle ()" link="XdgAppInstallation.html#xdg-app-installation-install-bundle"/>
     <keyword type="function" name="XdgAppProgressCallback ()" link="XdgAppInstallation.html#XdgAppProgressCallback"/>
     <keyword type="struct" name="struct XdgAppInstallation" link="XdgAppInstallation.html#XdgAppInstallation-struct"/>
-    <keyword type="struct" name="XdgAppInstallationClass" link="XdgAppInstallation.html#XdgAppInstallationClass"/>
     <keyword type="enum" name="enum XdgAppUpdateFlags" link="XdgAppInstallation.html#XdgAppUpdateFlags"/>
-    <keyword type="function" name="xdg_app_installed_ref_get_deploy_dir ()" link="XdgAppInstalledRef.html#xdg-app-installed-ref-get-deploy-dir"/>
-    <keyword type="function" name="xdg_app_installed_ref_get_installed_size ()" link="XdgAppInstalledRef.html#xdg-app-installed-ref-get-installed-size"/>
-    <keyword type="function" name="xdg_app_installed_ref_get_is_current ()" link="XdgAppInstalledRef.html#xdg-app-installed-ref-get-is-current"/>
-    <keyword type="function" name="xdg_app_installed_ref_get_latest_commit ()" link="XdgAppInstalledRef.html#xdg-app-installed-ref-get-latest-commit"/>
-    <keyword type="function" name="xdg_app_installed_ref_get_origin ()" link="XdgAppInstalledRef.html#xdg-app-installed-ref-get-origin"/>
-    <keyword type="function" name="xdg_app_installed_ref_get_type ()" link="XdgAppInstalledRef.html#xdg-app-installed-ref-get-type"/>
-    <keyword type="function" name="xdg_app_installed_ref_load_metadata ()" link="XdgAppInstalledRef.html#xdg-app-installed-ref-load-metadata"/>
-    <keyword type="struct" name="struct XdgAppInstalledRef" link="XdgAppInstalledRef.html#XdgAppInstalledRef-struct"/>
-    <keyword type="struct" name="XdgAppInstalledRefClass" link="XdgAppInstalledRef.html#XdgAppInstalledRefClass"/>
-    <keyword type="property" name="The “deploy-dir” property" link="XdgAppInstalledRef.html#XdgAppInstalledRef--deploy-dir"/>
-    <keyword type="property" name="The “installed-size” property" link="XdgAppInstalledRef.html#XdgAppInstalledRef--installed-size"/>
-    <keyword type="property" name="The “is-current” property" link="XdgAppInstalledRef.html#XdgAppInstalledRef--is-current"/>
-    <keyword type="property" name="The “latest-commit” property" link="XdgAppInstalledRef.html#XdgAppInstalledRef--latest-commit"/>
-    <keyword type="property" name="The “origin” property" link="XdgAppInstalledRef.html#XdgAppInstalledRef--origin"/>
-    <keyword type="function" name="xdg_app_remote_ref_get_remote_name ()" link="XdgAppRemoteRef.html#xdg-app-remote-ref-get-remote-name"/>
-    <keyword type="function" name="xdg_app_remote_ref_get_type ()" link="XdgAppRemoteRef.html#xdg-app-remote-ref-get-type"/>
-    <keyword type="function" name="xdg_app_remote_ref_new ()" link="XdgAppRemoteRef.html#xdg-app-remote-ref-new"/>
-    <keyword type="struct" name="struct XdgAppRemoteRef" link="XdgAppRemoteRef.html#XdgAppRemoteRef-struct"/>
-    <keyword type="struct" name="XdgAppRemoteRefClass" link="XdgAppRemoteRef.html#XdgAppRemoteRefClass"/>
-    <keyword type="property" name="The “remote-name” property" link="XdgAppRemoteRef.html#XdgAppRemoteRef--remote-name"/>
     <keyword type="function" name="xdg_app_ref_format_ref ()" link="XdgAppRef.html#xdg-app-ref-format-ref"/>
     <keyword type="function" name="xdg_app_ref_get_arch ()" link="XdgAppRef.html#xdg-app-ref-get-arch"/>
     <keyword type="function" name="xdg_app_ref_get_branch ()" link="XdgAppRef.html#xdg-app-ref-get-branch"/>
     <keyword type="function" name="xdg_app_ref_get_commit ()" link="XdgAppRef.html#xdg-app-ref-get-commit"/>
     <keyword type="function" name="xdg_app_ref_get_kind ()" link="XdgAppRef.html#xdg-app-ref-get-kind"/>
     <keyword type="function" name="xdg_app_ref_get_name ()" link="XdgAppRef.html#xdg-app-ref-get-name"/>
-    <keyword type="function" name="xdg_app_ref_get_type ()" link="XdgAppRef.html#xdg-app-ref-get-type"/>
     <keyword type="function" name="xdg_app_ref_parse ()" link="XdgAppRef.html#xdg-app-ref-parse"/>
     <keyword type="struct" name="struct XdgAppRef" link="XdgAppRef.html#XdgAppRef-struct"/>
-    <keyword type="struct" name="XdgAppRefClass" link="XdgAppRef.html#XdgAppRefClass"/>
     <keyword type="enum" name="enum XdgAppRefKind" link="XdgAppRef.html#XdgAppRefKind"/>
     <keyword type="property" name="The “arch” property" link="XdgAppRef.html#XdgAppRef--arch"/>
     <keyword type="property" name="The “branch” property" link="XdgAppRef.html#XdgAppRef--branch"/>
     <keyword type="property" name="The “commit” property" link="XdgAppRef.html#XdgAppRef--commit"/>
     <keyword type="property" name="The “kind” property" link="XdgAppRef.html#XdgAppRef--kind"/>
     <keyword type="property" name="The “name” property" link="XdgAppRef.html#XdgAppRef--name"/>
+    <keyword type="function" name="xdg_app_installed_ref_get_deploy_dir ()" link="XdgAppInstalledRef.html#xdg-app-installed-ref-get-deploy-dir"/>
+    <keyword type="function" name="xdg_app_installed_ref_get_installed_size ()" link="XdgAppInstalledRef.html#xdg-app-installed-ref-get-installed-size"/>
+    <keyword type="function" name="xdg_app_installed_ref_get_is_current ()" link="XdgAppInstalledRef.html#xdg-app-installed-ref-get-is-current"/>
+    <keyword type="function" name="xdg_app_installed_ref_get_latest_commit ()" link="XdgAppInstalledRef.html#xdg-app-installed-ref-get-latest-commit"/>
+    <keyword type="function" name="xdg_app_installed_ref_get_origin ()" link="XdgAppInstalledRef.html#xdg-app-installed-ref-get-origin"/>
+    <keyword type="function" name="xdg_app_installed_ref_load_metadata ()" link="XdgAppInstalledRef.html#xdg-app-installed-ref-load-metadata"/>
+    <keyword type="struct" name="struct XdgAppInstalledRef" link="XdgAppInstalledRef.html#XdgAppInstalledRef-struct"/>
+    <keyword type="property" name="The “deploy-dir” property" link="XdgAppInstalledRef.html#XdgAppInstalledRef--deploy-dir"/>
+    <keyword type="property" name="The “installed-size” property" link="XdgAppInstalledRef.html#XdgAppInstalledRef--installed-size"/>
+    <keyword type="property" name="The “is-current” property" link="XdgAppInstalledRef.html#XdgAppInstalledRef--is-current"/>
+    <keyword type="property" name="The “latest-commit” property" link="XdgAppInstalledRef.html#XdgAppInstalledRef--latest-commit"/>
+    <keyword type="property" name="The “origin” property" link="XdgAppInstalledRef.html#XdgAppInstalledRef--origin"/>
+    <keyword type="property" name="The “subpaths” property" link="XdgAppInstalledRef.html#XdgAppInstalledRef--subpaths"/>
+    <keyword type="function" name="xdg_app_remote_ref_get_remote_name ()" link="XdgAppRemoteRef.html#xdg-app-remote-ref-get-remote-name"/>
+    <keyword type="struct" name="struct XdgAppRemoteRef" link="XdgAppRemoteRef.html#XdgAppRemoteRef-struct"/>
+    <keyword type="property" name="The “remote-name” property" link="XdgAppRemoteRef.html#XdgAppRemoteRef--remote-name"/>
     <keyword type="function" name="xdg_app_remote_get_appstream_dir ()" link="XdgAppRemote.html#xdg-app-remote-get-appstream-dir"/>
     <keyword type="function" name="xdg_app_remote_get_appstream_timestamp ()" link="XdgAppRemote.html#xdg-app-remote-get-appstream-timestamp"/>
     <keyword type="function" name="xdg_app_remote_get_gpg_verify ()" link="XdgAppRemote.html#xdg-app-remote-get-gpg-verify"/>
@@ -88,21 +78,22 @@
     <keyword type="function" name="xdg_app_remote_get_noenumerate ()" link="XdgAppRemote.html#xdg-app-remote-get-noenumerate"/>
     <keyword type="function" name="xdg_app_remote_get_prio ()" link="XdgAppRemote.html#xdg-app-remote-get-prio"/>
     <keyword type="function" name="xdg_app_remote_get_title ()" link="XdgAppRemote.html#xdg-app-remote-get-title"/>
-    <keyword type="function" name="xdg_app_remote_get_type ()" link="XdgAppRemote.html#xdg-app-remote-get-type"/>
     <keyword type="function" name="xdg_app_remote_get_url ()" link="XdgAppRemote.html#xdg-app-remote-get-url"/>
     <keyword type="struct" name="struct XdgAppRemote" link="XdgAppRemote.html#XdgAppRemote-struct"/>
-    <keyword type="struct" name="XdgAppRemoteClass" link="XdgAppRemote.html#XdgAppRemoteClass"/>
     <keyword type="property" name="The “name” property" link="XdgAppRemote.html#XdgAppRemote--name"/>
-    <keyword type="macro" name="XDG_APP_MAJOR_VERSION" link="xdg-app-xdg-app-version-macros.html#XDG-APP-MAJOR-VERSION:CAPS"/>
-    <keyword type="macro" name="XDG_APP_MINOR_VERSION" link="xdg-app-xdg-app-version-macros.html#XDG-APP-MINOR-VERSION:CAPS"/>
-    <keyword type="macro" name="XDG_APP_MICRO_VERSION" link="xdg-app-xdg-app-version-macros.html#XDG-APP-MICRO-VERSION:CAPS"/>
-    <keyword type="macro" name="XDG_APP_EXTERN" link="xdg-app-xdg-app-version-macros.html#XDG-APP-EXTERN:CAPS"/>
-    <keyword type="constant" name="XDG_APP_ERROR_ALREADY_INSTALLED" link="xdg-app-xdg-app-error.html#XDG-APP-ERROR-ALREADY-INSTALLED:CAPS"/>
-    <keyword type="constant" name="XDG_APP_ERROR_NOT_INSTALLED" link="xdg-app-xdg-app-error.html#XDG-APP-ERROR-NOT-INSTALLED:CAPS"/>
+    <keyword type="function" name="xdg_app_error_quark ()" link="xdg-app-Error-codes.html#xdg-app-error-quark"/>
+    <keyword type="macro" name="XDG_APP_ERROR" link="xdg-app-Error-codes.html#XDG-APP-ERROR:CAPS"/>
+    <keyword type="enum" name="enum XdgAppError" link="xdg-app-Error-codes.html#XdgAppError"/>
+    <keyword type="macro" name="XDG_APP_MAJOR_VERSION" link="xdg-app-Version-information.html#XDG-APP-MAJOR-VERSION:CAPS"/>
+    <keyword type="macro" name="XDG_APP_MINOR_VERSION" link="xdg-app-Version-information.html#XDG-APP-MINOR-VERSION:CAPS"/>
+    <keyword type="macro" name="XDG_APP_MICRO_VERSION" link="xdg-app-Version-information.html#XDG-APP-MICRO-VERSION:CAPS"/>
+    <keyword type="macro" name="XDG_APP_EXTERN" link="xdg-app-Version-information.html#XDG-APP-EXTERN:CAPS"/>
     <keyword type="constant" name="XDG_APP_UPDATE_FLAGS_NONE" link="XdgAppInstallation.html#XDG-APP-UPDATE-FLAGS-NONE:CAPS"/>
     <keyword type="constant" name="XDG_APP_UPDATE_FLAGS_NO_DEPLOY" link="XdgAppInstallation.html#XDG-APP-UPDATE-FLAGS-NO-DEPLOY:CAPS"/>
     <keyword type="constant" name="XDG_APP_UPDATE_FLAGS_NO_PULL" link="XdgAppInstallation.html#XDG-APP-UPDATE-FLAGS-NO-PULL:CAPS"/>
     <keyword type="constant" name="XDG_APP_REF_KIND_APP" link="XdgAppRef.html#XDG-APP-REF-KIND-APP:CAPS"/>
     <keyword type="constant" name="XDG_APP_REF_KIND_RUNTIME" link="XdgAppRef.html#XDG-APP-REF-KIND-RUNTIME:CAPS"/>
+    <keyword type="constant" name="XDG_APP_ERROR_ALREADY_INSTALLED" link="xdg-app-Error-codes.html#XDG-APP-ERROR-ALREADY-INSTALLED:CAPS"/>
+    <keyword type="constant" name="XDG_APP_ERROR_NOT_INSTALLED" link="xdg-app-Error-codes.html#XDG-APP-ERROR-NOT-INSTALLED:CAPS"/>
   </functions>
 </book>

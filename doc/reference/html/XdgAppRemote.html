@@ -2,12 +2,12 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>XdgAppRemote: xdg-app Reference Manual</title>
+<title>XdgAppRemote: xdg-app Library Reference Manual</title>
 <meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
-<link rel="home" href="index.html" title="xdg-app Reference Manual">
+<link rel="home" href="index.html" title="xdg-app Library Reference Manual">
 <link rel="up" href="ch01.html" title="XDG-App">
-<link rel="prev" href="XdgAppRef.html" title="XdgAppRef">
-<link rel="next" href="xdg-app-xdg-app-version-macros.html" title="xdg-app-version-macros">
+<link rel="prev" href="XdgAppRemoteRef.html" title="XdgAppRemoteRef">
+<link rel="next" href="xdg-app-Error-codes.html" title="Error codes">
 <meta name="generator" content="GTK-Doc V1.24.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
@@ -21,15 +21,15 @@
 </td>
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
-<td><a accesskey="p" href="XdgAppRef.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="xdg-app-xdg-app-version-macros.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="p" href="XdgAppRemoteRef.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="xdg-app-Error-codes.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="XdgAppRemote"></a><div class="titlepage"></div>
 <div class="refnamediv"><table width="100%"><tr>
 <td valign="top">
 <h2><span class="refentrytitle"><a name="XdgAppRemote.top_of_page"></a>XdgAppRemote</span></h2>
-<p>XdgAppRemote</p>
+<p>XdgAppRemote — Remote repository</p>
 </td>
 <td class="gallery_image" valign="top" align="right"></td>
 </tr></table></div>
@@ -98,14 +98,6 @@
 </tr>
 <tr>
 <td class="function_type">
-<span class="returnvalue">GType</span>
-</td>
-<td class="function_name">
-<a class="link" href="XdgAppRemote.html#xdg-app-remote-get-type" title="xdg_app_remote_get_type ()">xdg_app_remote_get_type</a> <span class="c_punctuation">()</span>
-</td>
-</tr>
-<tr>
-<td class="function_type">
 <span class="returnvalue">char</span> *
 </td>
 <td class="function_name">
@@ -138,16 +130,10 @@
 <col width="150px" class="name">
 <col class="description">
 </colgroup>
-<tbody>
-<tr>
+<tbody><tr>
 <td class="datatype_keyword">struct</td>
 <td class="function_name"><a class="link" href="XdgAppRemote.html#XdgAppRemote-struct" title="struct XdgAppRemote">XdgAppRemote</a></td>
-</tr>
-<tr>
-<td class="datatype_keyword"> </td>
-<td class="function_name"><a class="link" href="XdgAppRemote.html#XdgAppRemoteClass" title="XdgAppRemoteClass">XdgAppRemoteClass</a></td>
-</tr>
-</tbody>
+</tr></tbody>
 </table></div>
 </div>
 <div class="refsect1">
@@ -158,6 +144,16 @@
 </div>
 <div class="refsect1">
 <a name="XdgAppRemote.description"></a><h2>Description</h2>
+<p>A <a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a> object provides information about a remote
+repository (or short: remote) that has been configured.</p>
+<p>At its most basic level, a remote has a name and the URL for
+the repository. In addition, they provide some additional
+information that can be useful when presenting repositories
+in a UI, such as a title, a priority or a "don't enumerate"
+flags.</p>
+<p>To obtain XdgAppRemote objects for the configured remotes
+on a system, use <a class="link" href="XdgAppInstallation.html#xdg-app-installation-list-remotes" title="xdg_app_installation_list_remotes ()"><code class="function">xdg_app_installation_list_remotes()</code></a> or
+<code class="function">xdg_app_installation_get_remote_by_name()</code>.</p>
 </div>
 <div class="refsect1">
 <a name="XdgAppRemote.functions_details"></a><h2>Functions</h2>
@@ -170,7 +166,7 @@ xdg_app_remote_get_appstream_dir (<em class="parameter"><code><a class="link" hr
 appstream information for the specified <em class="parameter"><code>arch</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.2.7.8.2.5"></a><h4>Parameters</h4>
+<a name="id-1.2.6.8.2.5"></a><h4>Parameters</h4>
 <div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -192,8 +188,8 @@ appstream information for the specified <em class="parameter"><code>arch</code><
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.7.8.2.6"></a><h4>Returns</h4>
-<p> an <span class="type">GFile</span>. </p>
+<a name="id-1.2.6.8.2.6"></a><h4>Returns</h4>
+<p> a <span class="type">GFile</span>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -208,7 +204,7 @@ xdg_app_remote_get_appstream_timestamp
 has been updated (or tried to update) for the specified <em class="parameter"><code>arch</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.2.7.8.3.5"></a><h4>Parameters</h4>
+<a name="id-1.2.6.8.3.5"></a><h4>Parameters</h4>
 <div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -230,8 +226,8 @@ has been updated (or tried to update) for the specified <em class="parameter"><c
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.7.8.3.6"></a><h4>Returns</h4>
-<p> an <span class="type">GFile</span>. </p>
+<a name="id-1.2.6.8.3.6"></a><h4>Returns</h4>
+<p> a <span class="type">GFile</span>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -240,42 +236,159 @@ has been updated (or tried to update) for the specified <em class="parameter"><c
 <a name="xdg-app-remote-get-gpg-verify"></a><h3>xdg_app_remote_get_gpg_verify ()</h3>
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
 xdg_app_remote_get_gpg_verify (<em class="parameter"><code><a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a> *self</code></em>);</pre>
+<p>Returns whether GPG verification is enabled for the remote.</p>
+<div class="refsect3">
+<a name="id-1.2.6.8.4.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.6.8.4.6"></a><h4>Returns</h4>
+<p> whether GPG verification is enabled</p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="xdg-app-remote-get-name"></a><h3>xdg_app_remote_get_name ()</h3>
 <pre class="programlisting">const <span class="returnvalue">char</span> *
 xdg_app_remote_get_name (<em class="parameter"><code><a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a> *self</code></em>);</pre>
+<p>Returns the name of the remote repository.</p>
+<div class="refsect3">
+<a name="id-1.2.6.8.5.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.6.8.5.6"></a><h4>Returns</h4>
+<p> the name. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="xdg-app-remote-get-noenumerate"></a><h3>xdg_app_remote_get_noenumerate ()</h3>
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
 xdg_app_remote_get_noenumerate (<em class="parameter"><code><a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a> *self</code></em>);</pre>
+<p>Returns whether this remote should be used to list applications.</p>
+<div class="refsect3">
+<a name="id-1.2.6.8.6.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.6.8.6.6"></a><h4>Returns</h4>
+<p> whether the remote is marked as "don't enumerate"</p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="xdg-app-remote-get-prio"></a><h3>xdg_app_remote_get_prio ()</h3>
 <pre class="programlisting"><span class="returnvalue">int</span>
 xdg_app_remote_get_prio (<em class="parameter"><code><a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a> *self</code></em>);</pre>
+<p>Returns the priority for the remote.</p>
+<div class="refsect3">
+<a name="id-1.2.6.8.7.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.6.8.7.6"></a><h4>Returns</h4>
+<p> the priority</p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="xdg-app-remote-get-title"></a><h3>xdg_app_remote_get_title ()</h3>
 <pre class="programlisting"><span class="returnvalue">char</span> *
 xdg_app_remote_get_title (<em class="parameter"><code><a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a> *self</code></em>);</pre>
+<p>Returns the title of the remote.</p>
+<div class="refsect3">
+<a name="id-1.2.6.8.8.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
 </div>
-<hr>
-<div class="refsect2">
-<a name="xdg-app-remote-get-type"></a><h3>xdg_app_remote_get_type ()</h3>
-<pre class="programlisting"><span class="returnvalue">GType</span>
-xdg_app_remote_get_type (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
+<div class="refsect3">
+<a name="id-1.2.6.8.8.6"></a><h4>Returns</h4>
+<p> the title. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="xdg-app-remote-get-url"></a><h3>xdg_app_remote_get_url ()</h3>
 <pre class="programlisting"><span class="returnvalue">char</span> *
 xdg_app_remote_get_url (<em class="parameter"><code><a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a> *self</code></em>);</pre>
+<p>Returns the repository URL of this remote.</p>
+<div class="refsect3">
+<a name="id-1.2.6.8.9.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppRemote.html" title="XdgAppRemote"><span class="type">XdgAppRemote</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.6.8.9.6"></a><h4>Returns</h4>
+<p> the URL. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
 </div>
 </div>
 <div class="refsect1">
@@ -284,20 +397,13 @@ xdg_app_remote_get_url (<em class="parameter"><code><a class="link" href="XdgApp
 <a name="XdgAppRemote-struct"></a><h3>struct XdgAppRemote</h3>
 <pre class="programlisting">struct XdgAppRemote;</pre>
 </div>
-<hr>
-<div class="refsect2">
-<a name="XdgAppRemoteClass"></a><h3>XdgAppRemoteClass</h3>
-<pre class="programlisting">typedef struct {
-  GObjectClass parent_class;
-} XdgAppRemoteClass;
-</pre>
-</div>
 </div>
 <div class="refsect1">
 <a name="XdgAppRemote.property-details"></a><h2>Property Details</h2>
 <div class="refsect2">
 <a name="XdgAppRemote--name"></a><h3>The <code class="literal">“name”</code> property</h3>
 <pre class="programlisting">  “name”                     <span class="type">gchar</span> *</pre>
+<p>The name of the remote.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: NULL</p>
 </div>

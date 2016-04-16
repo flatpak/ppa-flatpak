@@ -298,7 +298,7 @@ static inline int raw_clone(unsigned long flags, void *child_stack) {
 }
 
 static void
-setup_seccomp (bool devel)
+setup_seccomp (bool devel, const char *arch)
 {
 #ifdef ENABLE_SECCOMP
   scmp_filter_ctx seccomp;
@@ -390,27 +390,37 @@ setup_seccomp (bool devel)
     AF_NETLINK + 1, /* Last gets CMP_GE, so order is important */
   };
   int i, r;
-  struct utsname uts;
 
   seccomp = seccomp_init(SCMP_ACT_ALLOW);
   if (!seccomp)
     return die_oom ();
 
-  /* Add in all possible secondary archs we are aware of that
-   * this kernel might support. */
-#if defined(__i386__) || defined(__x86_64__)
-  r = seccomp_arch_add (seccomp, SCMP_ARCH_X86);
-  if (r < 0 && r != -EEXIST)
-    die_with_error ("Failed to add x86 architecture to seccomp filter");
+  if (arch != NULL)
+    {
+      uint32_t arch_id = 0;
 
-  r = seccomp_arch_add (seccomp, SCMP_ARCH_X86_64);
-  if (r < 0 && r != -EEXIST)
-    die_with_error ("Failed to add x86_64 architecture to seccomp filter");
+      if (strcmp (arch, "i386") == 0)
+        arch_id = SCMP_ARCH_X86;
+      else if (strcmp (arch, "x86_64") == 0)
+        arch_id = SCMP_ARCH_X86_64;
 
-  r = seccomp_arch_add (seccomp, SCMP_ARCH_X32);
-  if (r < 0 && r != -EEXIST)
-    die_with_error ("Failed to add x32 architecture to seccomp filter");
-#endif
+      /* We only really need to handle arches on multiarch systems.
+       * If only one arch is supported the default is fine */
+      if (arch_id != 0)
+        {
+          /* This *adds* the target arch, instead of replacing the
+             native one. This is not ideal, because we'd like to only
+             allow the target arch, but we can't really disallow the
+             native arch at this point, because then xdg-app-helper
+             couldn't continue runnning. */
+          r = seccomp_arch_add (seccomp, arch_id);
+          if (r < 0 && r != -EEXIST)
+            {
+              errno = -r;
+              die_with_error ("Failed to add architecture to seccomp filter");
+            }
+        }
+    }
 
   /* TODO: Should we filter the kernel keyring syscalls in some way?
    * We do want them to be used by desktop apps, but they could also perhaps
@@ -425,7 +435,10 @@ setup_seccomp (bool devel)
       else
         r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO(EPERM), scall, 0);
       if (r < 0 && r == -EFAULT /* unknown syscall */)
-        die_with_error ("Failed to block syscall %d", scall);
+        {
+          errno = -r;
+          die_with_error ("Failed to block syscall %d", scall);
+        }
     }
 
   if (!devel)
@@ -438,28 +451,31 @@ setup_seccomp (bool devel)
           else
             r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO(EPERM), scall, 0);
           if (r < 0 && r == -EFAULT /* unknown syscall */)
-            die_with_error ("Failed to block syscall %d", scall);
+            {
+              errno = -r;
+              die_with_error ("Failed to block syscall %d", scall);
+            }
         }
     }
 
-  /* Socket filtering doesn't work on x86 */
-  if (uname (&uts) == 0 && strcmp (uts.machine, "i686") != 0)
+  /* Socket filtering doesn't work on e.g. i386, so ignore failures here
+   * However, we need to user seccomp_rule_add_exact to avoid libseccomp doing
+   * something else: https://github.com/seccomp/libseccomp/issues/8 */
+  for (i = 0; i < N_ELEMENTS (socket_family_blacklist); i++)
     {
-      for (i = 0; i < N_ELEMENTS (socket_family_blacklist); i++)
-	{
-	  int family = socket_family_blacklist[i];
-	  if (i == N_ELEMENTS (socket_family_blacklist) - 1)
-	    r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO(EAFNOSUPPORT), SCMP_SYS(socket), 1, SCMP_A0(SCMP_CMP_GE, family));
-	  else
-	    r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO(EAFNOSUPPORT), SCMP_SYS(socket), 1, SCMP_A0(SCMP_CMP_EQ, family));
-	  if (r < 0)
-	    die_with_error ("Failed to block socket family %d", family);
-	}
+      int family = socket_family_blacklist[i];
+      if (i == N_ELEMENTS (socket_family_blacklist) - 1)
+        r = seccomp_rule_add_exact (seccomp, SCMP_ACT_ERRNO(EAFNOSUPPORT), SCMP_SYS(socket), 1, SCMP_A0(SCMP_CMP_GE, family));
+      else
+        r = seccomp_rule_add_exact (seccomp, SCMP_ACT_ERRNO(EAFNOSUPPORT), SCMP_SYS(socket), 1, SCMP_A0(SCMP_CMP_EQ, family));
     }
 
   r = seccomp_load (seccomp);
   if (r < 0)
-    die_with_error ("Failed to install seccomp audit filter: ");
+    {
+      errno = -r;
+      die_with_error ("Failed to install seccomp audit filter: ");
+    }
 
   seccomp_release (seccomp);
 #endif
@@ -1932,22 +1948,27 @@ do_init (int event_fd, pid_t initial_pid)
   return initial_exit_status;
 }
 
-#define REQUIRED_CAPS (CAP_TO_MASK(CAP_SYS_ADMIN))
+/* low 32bit caps needed */
+#define REQUIRED_CAPS_0 (CAP_TO_MASK(CAP_SYS_ADMIN))
+/* high 32bit caps needed */
+#define REQUIRED_CAPS_1 0
 
 static void
 acquire_caps (void)
 {
   struct __user_cap_header_struct hdr;
-  struct __user_cap_data_struct data;
+  struct __user_cap_data_struct data[2];
 
   memset (&hdr, 0, sizeof(hdr));
-  hdr.version = _LINUX_CAPABILITY_VERSION;
+  hdr.version = _LINUX_CAPABILITY_VERSION_3;
 
-  if (capget (&hdr, &data)  < 0)
+  if (capget (&hdr, data)  < 0)
     die_with_error ("capget failed");
 
-  if (((data.effective & REQUIRED_CAPS) == REQUIRED_CAPS) &&
-      ((data.permitted & REQUIRED_CAPS) == REQUIRED_CAPS))
+  if (((data[0].effective & REQUIRED_CAPS_0) == REQUIRED_CAPS_0) &&
+      ((data[0].permitted & REQUIRED_CAPS_0) == REQUIRED_CAPS_0) &&
+      ((data[1].effective & REQUIRED_CAPS_1) == REQUIRED_CAPS_1) &&
+      ((data[1].permitted & REQUIRED_CAPS_1) == REQUIRED_CAPS_1))
     is_privileged = TRUE;
 
   if (getuid () != geteuid ())
@@ -1964,13 +1985,16 @@ acquire_caps (void)
   if (is_privileged)
     {
       memset (&hdr, 0, sizeof(hdr));
-      hdr.version = _LINUX_CAPABILITY_VERSION;
+      hdr.version = _LINUX_CAPABILITY_VERSION_3;
 
       /* Drop all non-require capabilities */
-      data.effective = REQUIRED_CAPS;
-      data.permitted = REQUIRED_CAPS;
-      data.inheritable = 0;
-      if (capset (&hdr, &data) < 0)
+      data[0].effective = REQUIRED_CAPS_0;
+      data[0].permitted = REQUIRED_CAPS_0;
+      data[0].inheritable = 0;
+      data[1].effective = REQUIRED_CAPS_1;
+      data[1].permitted = REQUIRED_CAPS_1;
+      data[1].inheritable = 0;
+      if (capset (&hdr, data) < 0)
         die_with_error ("capset failed");
     }
   /* Else, we try unprivileged user namespaces */
@@ -1980,18 +2004,21 @@ static void
 drop_caps (void)
 {
   struct __user_cap_header_struct hdr;
-  struct __user_cap_data_struct data;
+  struct __user_cap_data_struct data[2];
 
   if (!is_privileged)
     return;
 
   memset (&hdr, 0, sizeof(hdr));
-  hdr.version = _LINUX_CAPABILITY_VERSION;
-  data.effective = 0;
-  data.permitted = 0;
-  data.inheritable = 0;
+  hdr.version = _LINUX_CAPABILITY_VERSION_3;
+  data[0].effective = 0;
+  data[0].permitted = 0;
+  data[0].inheritable = 0;
+  data[1].effective = 0;
+  data[1].permitted = 0;
+  data[1].inheritable = 0;
 
-  if (capset (&hdr, &data) < 0)
+  if (capset (&hdr, data) < 0)
     die_with_error ("capset failed");
 
   if (prctl (PR_SET_DUMPABLE, 1, 0, 0, 0) < 0)
@@ -2039,6 +2066,7 @@ main (int argc,
   char *wayland_socket = NULL;
   char *system_dbus_socket = NULL;
   char *session_dbus_socket = NULL;
+  char *opt_arch = NULL;
   char *xdg_runtime_dir;
   char **args;
   char *tmp;
@@ -2076,10 +2104,14 @@ main (int argc,
 
   clean_argv (argc, argv);
 
-  while ((c =  getopt (argc, argv, "+inWwceEsfFHhra:m:M:b:B:p:x:ly:d:D:v:I:gS:P:")) >= 0)
+  while ((c =  getopt (argc, argv, "+inWwceEsfFHhrA:a:m:M:b:B:p:x:ly:d:D:v:I:gS:P:")) >= 0)
     {
       switch (c)
         {
+        case 'A':
+          opt_arch = optarg;
+          break;
+
         case 'a':
           app_path = optarg;
           break;
@@ -2651,7 +2683,7 @@ main (int argc,
         }
 
       __debug__(("setting up seccomp in child\n"));
-      setup_seccomp (devel);
+      setup_seccomp (devel, opt_arch);
 
       if (sync_fd != -1)
 	close (sync_fd);
@@ -2664,7 +2696,7 @@ main (int argc,
     }
 
   __debug__(("setting up seccomp in monitor\n"));
-  setup_seccomp (devel);
+  setup_seccomp (devel, opt_arch);
 
   /* Close all extra fds in pid 1.
      Any passed in fds have been passed on to the child anyway. */
