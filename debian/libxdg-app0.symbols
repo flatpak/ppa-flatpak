@@ -11,8 +11,10 @@ libxdg-app.so.0 libxdg-app0 #MINVER#
  xdg_app_error_get_type@Base 0.4.7
  xdg_app_error_quark@Base 0.4.7
  xdg_app_installation_create_monitor@Base 0.4.7
+ xdg_app_installation_fetch_remote_metadata_sync2@Base 0.5.2
  xdg_app_installation_fetch_remote_metadata_sync@Base 0.4.7
  xdg_app_installation_fetch_remote_ref_sync@Base 0.4.7
+ xdg_app_installation_fetch_remote_size_sync2@Base 0.5.2
  xdg_app_installation_fetch_remote_size_sync@Base 0.4.7
  xdg_app_installation_get_current_installed_app@Base 0.4.7
  xdg_app_installation_get_installed_ref@Base 0.4.7
