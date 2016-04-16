@@ -12,7 +12,6 @@ Build-Depends:
  docbook-xml,
  docbook-xsl,
  docbook-xsl-doc-html,
- fuse,
  gobject-introspection,
  gtk-doc-tools,
  libarchive-dev (>= 2.8.0),

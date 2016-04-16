@@ -6,6 +6,9 @@ xdg-app (0.5.2-1) UNRELEASED; urgency=medium
   * debian/gbp.conf: use DEP-14 branch names
   * Correct ITP bug number in previous changelog entry (was #697477,
     should have been #813308)
+  * Don't build-depend on fuse. The test that uses fuse appears to fail on
+    buildds, possibly because the kernel module is blacklisted; it should
+    automatically be skipped when fuse isn't installed.
 
  -- Simon McVittie <smcv@debian.org>  Sun, 20 Mar 2016 23:55:06 +0000
 
