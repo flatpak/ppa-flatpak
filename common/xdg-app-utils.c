@@ -1504,6 +1504,62 @@ xdg_app_repo_set_title (OstreeRepo *repo,
   return TRUE;
 }
 
+#define OSTREE_GIO_FAST_QUERYINFO ("standard::name,standard::type,standard::size,standard::is-symlink,standard::symlink-target," \
+                                   "unix::device,unix::inode,unix::mode,unix::uid,unix::gid,unix::rdev")
+
+static gboolean
+xdg_app_repo_collect_sizes (OstreeRepo *repo,
+                            GFile *file,
+                            GFileInfo *file_info,
+                            guint64 *installed_size,
+                            guint64 *download_size,
+                            GCancellable *cancellable,
+                            GError **error)
+{
+  g_autoptr(GFileInfo) local_file_info = NULL;
+  g_autoptr(GFileEnumerator) dir_enum = NULL;
+  GFileInfo *child_info_tmp;
+  GError *temp_error = NULL;
+
+  if (file_info != NULL && g_file_info_get_file_type (file_info) == G_FILE_TYPE_REGULAR)
+    {
+      const char *checksum = ostree_repo_file_get_checksum (OSTREE_REPO_FILE (file));
+      guint64 obj_size;
+      guint64 file_size = g_file_info_get_size (file_info);
+
+      *installed_size += ((file_size + 511) / 512) * 512;
+
+      if (!ostree_repo_query_object_storage_size (repo,
+                                                  OSTREE_OBJECT_TYPE_FILE, checksum,
+                                                  &obj_size, cancellable, error))
+        return FALSE;
+
+      *download_size += obj_size;
+    }
+
+  if (file_info == NULL || g_file_info_get_file_type (file_info) == G_FILE_TYPE_DIRECTORY)
+    {
+      dir_enum = g_file_enumerate_children (file, OSTREE_GIO_FAST_QUERYINFO,
+                                            G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                            cancellable, error);
+      if (!dir_enum)
+        return FALSE;
+
+
+      while ((child_info_tmp = g_file_enumerator_next_file (dir_enum, cancellable, &temp_error)))
+        {
+          g_autoptr(GFileInfo) child_info = child_info_tmp;
+          const char *name = g_file_info_get_name (child_info);
+          g_autoptr(GFile) child = g_file_get_child (file, name);
+
+          if (!xdg_app_repo_collect_sizes (repo, child, child_info, installed_size, download_size, cancellable, error))
+            return FALSE;
+        }
+    }
+
+  return TRUE;
+}
+
 gboolean
 xdg_app_repo_update (OstreeRepo   *repo,
                      const char  **gpg_key_ids,
@@ -1512,8 +1568,12 @@ xdg_app_repo_update (OstreeRepo   *repo,
                      GError      **error)
 {
   GVariantBuilder builder;
+  GVariantBuilder ref_data_builder;
   GKeyFile *config;
   g_autofree char *title = NULL;
+  g_autoptr(GHashTable) refs = NULL;
+  GList *ordered_keys = NULL;
+  GList *l = NULL;
 
   g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 
@@ -1527,6 +1587,51 @@ xdg_app_repo_update (OstreeRepo   *repo,
   if (title)
     g_variant_builder_add (&builder, "{sv}", "xa.title",
                            g_variant_new_string (title));
+
+
+  g_variant_builder_init (&ref_data_builder, G_VARIANT_TYPE("a{s(tts)}"));
+
+  if (!ostree_repo_list_refs (repo, NULL, &refs, cancellable, error))
+    return FALSE;
+
+  ordered_keys = g_hash_table_get_keys (refs);
+  ordered_keys = g_list_sort (ordered_keys, (GCompareFunc)strcmp);
+
+  for (l = ordered_keys; l; l = l->next)
+    {
+      const char *ref = l->data;
+      const char *commit = g_hash_table_lookup (refs, ref);
+      g_autoptr(GVariant) commit_obj = NULL;
+      g_autoptr(GFile) root = NULL;
+      g_autoptr(GFile) metadata = NULL;
+      guint64 installed_size = 0;
+      guint64 download_size = 0;
+      g_autofree char *metadata_contents = NULL;
+
+      g_assert (commit);
+
+      if (!ostree_repo_load_variant (repo, OSTREE_OBJECT_TYPE_COMMIT, commit, &commit_obj, error))
+        return FALSE;
+
+      if (!ostree_repo_read_commit (repo, ref, &root, NULL, NULL, error))
+        return FALSE;
+
+      if (!xdg_app_repo_collect_sizes (repo, root, NULL, &installed_size, &download_size, cancellable, error))
+        return FALSE;
+
+      metadata = g_file_get_child (root, "metadata");
+      if (!g_file_load_contents (metadata, cancellable, &metadata_contents, NULL, NULL, NULL))
+        metadata_contents = g_strdup ("");
+
+      g_variant_builder_add (&ref_data_builder, "{s(tts)}",
+                             ref,
+                             GUINT64_TO_BE (installed_size),
+                             GUINT64_TO_BE (download_size),
+                             metadata_contents);
+    }
+
+  g_variant_builder_add (&builder, "{sv}", "xa.cache",
+                         g_variant_new_variant (g_variant_builder_end (&ref_data_builder)));
 
   if (!ostree_repo_regenerate_summary (repo, g_variant_builder_end (&builder),
                                        cancellable, error))
@@ -1807,15 +1912,45 @@ extract_appstream (OstreeRepo    *repo,
                                      ref, id, keyfile))
     {
       g_autoptr(GError) my_error = NULL;
-      if (!copy_icon (id, root, dest, "64x64", &my_error))
+      XdgAppXml *components = appstream_root->first_child;
+      XdgAppXml *component = components->first_child;
+
+      while (component != NULL)
         {
-          g_print ("Error copying 64x64 icon: %s\n", my_error->message);
-          g_clear_error (&my_error);
-        }
-      if (!copy_icon (id, root, dest, "128x128", &my_error))
-        {
-          g_print ("Error copying 128x128 icon: %s\n", my_error->message);
-          g_clear_error (&my_error);
+          XdgAppXml *component_id, *component_id_text_node;
+          g_autofree char *component_id_text = NULL;
+
+          if (g_strcmp0 (component->element_name, "component") != 0)
+            {
+              component = component->next_sibling;
+              continue;
+            }
+
+          component_id = xdg_app_xml_find (component, "id", NULL);
+          component_id_text_node = xdg_app_xml_find (component_id, NULL, NULL);
+
+          component_id_text = g_strstrip (g_strdup (component_id_text_node->text));
+          if (!g_str_has_suffix (component_id_text, ".desktop"))
+            {
+              component = component->next_sibling;
+              continue;
+            }
+
+          g_print ("Extracting icons for component %s\n", component_id_text);
+          component_id_text[strlen(component_id_text)-strlen(".desktop")] = 0;
+
+          if (!copy_icon (component_id_text, root, dest, "64x64", &my_error))
+            {
+              g_print ("Error copying 64x64 icon: %s\n", my_error->message);
+              g_clear_error (&my_error);
+            }
+          if (!copy_icon (component_id_text, root, dest, "128x128", &my_error))
+            {
+              g_print ("Error copying 128x128 icon: %s\n", my_error->message);
+              g_clear_error (&my_error);
+            }
+
+          component = component->next_sibling;
         }
     }
 
@@ -1881,6 +2016,7 @@ xdg_app_repo_generate_appstream (OstreeRepo    *repo,
   GHashTableIter iter;
   gpointer key;
   gpointer value;
+  gboolean skip_commit = FALSE;
 
   arches = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
@@ -1991,33 +2127,51 @@ xdg_app_repo_generate_appstream (OstreeRepo    *repo,
       if (!ostree_repo_write_mtree (repo, mtree, &root, cancellable, error))
         goto out;
 
-      if (!ostree_repo_write_commit (repo, parent, "Update", NULL, NULL,
-                                     OSTREE_REPO_FILE (root),
-                                     &commit_checksum, cancellable, error))
-        goto out;
 
-      if (gpg_key_ids)
+      /* No need to commit if nothing changed */
+      if (parent)
         {
-          int i;
+          g_autoptr(GFile) parent_root;
 
-          for (i = 0; gpg_key_ids[i] != NULL; i++)
-            {
-              const char *keyid = gpg_key_ids[i];
+          if (!ostree_repo_read_commit (repo, parent, &parent_root, NULL, cancellable, error))
+            goto out;
 
-              if (!ostree_repo_sign_commit (repo,
-                                            commit_checksum,
-                                            keyid,
-                                            gpg_homedir,
-                                            cancellable,
-                                            error))
-                goto out;
-            }
+          if (g_file_equal (root, parent_root))
+            skip_commit = TRUE;
         }
 
-      ostree_repo_transaction_set_ref (repo, NULL, branch, commit_checksum);
+      if (!skip_commit)
+        {
+          if (!ostree_repo_write_commit (repo, parent, "Update", NULL, NULL,
+                                         OSTREE_REPO_FILE (root),
+                                         &commit_checksum, cancellable, error))
+            goto out;
 
-      if (!ostree_repo_commit_transaction (repo, &stats, cancellable, error))
-        goto out;
+          if (gpg_key_ids)
+            {
+              int i;
+
+              for (i = 0; gpg_key_ids[i] != NULL; i++)
+                {
+                  const char *keyid = gpg_key_ids[i];
+
+                  if (!ostree_repo_sign_commit (repo,
+                                                commit_checksum,
+                                                keyid,
+                                                gpg_homedir,
+                                                cancellable,
+                                                error))
+                    goto out;
+                }
+            }
+
+          ostree_repo_transaction_set_ref (repo, NULL, branch, commit_checksum);
+
+          if (!ostree_repo_commit_transaction (repo, &stats, cancellable, error))
+            goto out;
+        }
+      else
+        ostree_repo_abort_transaction (repo, cancellable, NULL);
     }
 
   return TRUE;
@@ -2078,7 +2232,9 @@ xdg_app_list_extensions (GKeyFile *metakey,
         {
           g_autofree char *directory = g_key_file_get_string (metakey, groups[i], "directory", NULL);
           g_autofree char *version = g_key_file_get_string (metakey, groups[i], "version", NULL);
+          g_autofree char *ref = NULL;
           const char *branch;
+          g_autoptr(GFile) deploy = NULL;
 
           if (directory == NULL)
             continue;
@@ -2088,8 +2244,17 @@ xdg_app_list_extensions (GKeyFile *metakey,
           else
             branch = default_branch;
 
-          if (g_key_file_get_boolean (metakey, groups[i],
-                                      "subdirectories", NULL))
+          ref = g_build_filename ("runtime", extension, arch, branch, NULL);
+
+          deploy = xdg_app_find_deploy_dir_for_ref (ref, NULL, NULL);
+          /* Prefer a full extension (org.freedesktop.Locale) over subdirectory ones (org.freedesktop.Locale.sv) */
+          if (deploy != NULL)
+            {
+              ext = xdg_app_extension_new (extension, extension, arch, branch, directory);
+              res = g_list_prepend (res, ext);
+            }
+          else if (g_key_file_get_boolean (metakey, groups[i],
+                                           "subdirectories", NULL))
             {
               g_autofree char *prefix = g_strconcat (extension, ".", NULL);
               g_auto(GStrv) refs = NULL;
@@ -2104,11 +2269,6 @@ xdg_app_list_extensions (GKeyFile *metakey,
                   ext = xdg_app_extension_new (extension, refs[j], arch, branch, extended_dir);
                   res = g_list_prepend (res, ext);
                 }
-            }
-          else
-            {
-              ext = xdg_app_extension_new (extension, extension, arch, branch, directory);
-              res = g_list_prepend (res, ext);
             }
         }
     }
@@ -2385,8 +2545,17 @@ xdg_app_xml_parse (GInputStream *in,
 #define OSTREE_STATIC_DELTA_FALLBACK_FORMAT "(yaytt)"
 #define OSTREE_STATIC_DELTA_SUPERBLOCK_FORMAT "(a{sv}tayay" OSTREE_COMMIT_GVARIANT_STRING "aya" OSTREE_STATIC_DELTA_META_ENTRY_FORMAT "a" OSTREE_STATIC_DELTA_FALLBACK_FORMAT ")"
 
+static inline guint64
+maybe_swap_endian_u64 (gboolean swap,
+                       guint64 v)
+{
+  if (!swap)
+    return v;
+  return GUINT64_SWAP_LE_BE (v);
+}
+
 static guint64
-xdg_app_bundle_get_installed_size (GVariant *bundle)
+xdg_app_bundle_get_installed_size (GVariant *bundle, gboolean byte_swap)
 {
   guint64 total_size = 0, total_usize = 0;
   g_autoptr(GVariant) meta_entries = NULL;
@@ -2405,8 +2574,8 @@ xdg_app_bundle_get_installed_size (GVariant *bundle)
       g_variant_get_child (meta_entries, i, "(u@aytt@ay)",
                            &version, NULL, &size, &usize, &objects);
 
-      total_size += size;
-      total_usize += usize;
+      total_size += maybe_swap_endian_u64 (byte_swap, size);
+      total_usize += maybe_swap_endian_u64 (byte_swap, usize);
     }
 
   return total_usize;
@@ -2425,6 +2594,8 @@ xdg_app_bundle_load (GFile *file,
   g_autoptr(GVariant) metadata = NULL;
   g_autoptr(GBytes) bytes = NULL;
   g_autoptr(GVariant) to_csum_v = NULL;
+  guint8 endianness_char;
+  gboolean byte_swap = FALSE;
 
   GMappedFile *mfile = g_mapped_file_new (gs_file_get_path_cached (file), FALSE, error);
 
@@ -2445,9 +2616,27 @@ xdg_app_bundle_load (GFile *file,
     *commit = ostree_checksum_from_bytes_v (to_csum_v);
 
   if (installed_size)
-    *installed_size = xdg_app_bundle_get_installed_size (delta);
+    *installed_size = xdg_app_bundle_get_installed_size (delta, byte_swap);
 
   metadata = g_variant_get_child_value (delta, 0);
+
+  if (g_variant_lookup (metadata, "ostree.endianness", "y", &endianness_char))
+    {
+      int file_byte_order = G_BYTE_ORDER;
+      switch (endianness_char)
+        {
+        case 'l':
+          file_byte_order = G_LITTLE_ENDIAN;
+          break;
+        case 'B':
+          file_byte_order = G_BIG_ENDIAN;
+          break;
+        default:
+          break;
+        }
+      byte_swap = (G_BYTE_ORDER != file_byte_order);
+    }
+
 
   if (ref != NULL)
     {

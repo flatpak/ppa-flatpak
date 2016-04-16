@@ -26,6 +26,16 @@
 #include "xdg-app-installed-ref.h"
 #include "xdg-app-enum-types.h"
 
+/**
+ * SECTION:xdg-app-installed-ref
+ * @Title: XdgAppInstalledRef
+ * @Short_description: Installed application reference
+ *
+ * A XdgAppInstalledRef provides information about an installed
+ * application or runtime (in short: ref), such as the available
+ * builds, its size, location, etc.
+ */
+
 typedef struct _XdgAppInstalledRefPrivate XdgAppInstalledRefPrivate;
 
 struct _XdgAppInstalledRefPrivate
@@ -34,6 +44,7 @@ struct _XdgAppInstalledRefPrivate
   char *origin;
   char *latest_commit;
   char *deploy_dir;
+  char **subpaths;
   guint64 installed_size;
 };
 
@@ -46,7 +57,8 @@ enum {
   PROP_ORIGIN,
   PROP_LATEST_COMMIT,
   PROP_DEPLOY_DIR,
-  PROP_INSTALLED_SIZE
+  PROP_INSTALLED_SIZE,
+  PROP_SUBPATHS
 };
 
 static void
@@ -57,6 +69,7 @@ xdg_app_installed_ref_finalize (GObject *object)
 
   g_free (priv->origin);
   g_free (priv->deploy_dir);
+  g_strfreev (priv->subpaths);
 
   G_OBJECT_CLASS (xdg_app_installed_ref_parent_class)->finalize (object);
 }
@@ -93,6 +106,11 @@ xdg_app_installed_ref_set_property (GObject         *object,
     case PROP_DEPLOY_DIR:
       g_clear_pointer (&priv->deploy_dir, g_free);
       priv->deploy_dir = g_value_dup_string (value);
+      break;
+
+    case PROP_SUBPATHS:
+      g_clear_pointer (&priv->subpaths, g_strfreev);
+      priv->subpaths = g_strdupv (g_value_get_boxed (value));
       break;
 
     default:
@@ -132,6 +150,10 @@ xdg_app_installed_ref_get_property (GObject         *object,
       g_value_set_string (value, priv->deploy_dir);
       break;
 
+    case PROP_SUBPATHS:
+      g_value_set_boxed (value, priv->subpaths);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -150,38 +172,45 @@ xdg_app_installed_ref_class_init (XdgAppInstalledRefClass *klass)
   g_object_class_install_property (object_class,
                                    PROP_IS_CURRENT,
                                    g_param_spec_boolean ("is-current",
-                                                         "",
-                                                         "",
+                                                         "Is Current",
+                                                         "Whether the application is current",
                                                          FALSE,
                                                          G_PARAM_READWRITE));
   g_object_class_install_property (object_class,
                                    PROP_INSTALLED_SIZE,
                                    g_param_spec_uint64 ("installed-size",
-                                                         "",
-                                                         "",
+                                                         "Installed Size",
+                                                         "The installed size of the application",
                                                         0, G_MAXUINT64, 0,
                                                          G_PARAM_READWRITE));
   g_object_class_install_property (object_class,
                                    PROP_ORIGIN,
                                    g_param_spec_string ("origin",
-                                                        "",
-                                                        "",
+                                                        "Origin",
+                                                        "The origin",
                                                         NULL,
                                                         G_PARAM_READWRITE));
   g_object_class_install_property (object_class,
                                    PROP_LATEST_COMMIT,
                                    g_param_spec_string ("latest-commit",
-                                                        "",
-                                                        "",
+                                                        "Latest Commit",
+                                                        "The latest commit",
                                                         NULL,
                                                         G_PARAM_READWRITE));
   g_object_class_install_property (object_class,
                                    PROP_DEPLOY_DIR,
                                    g_param_spec_string ("deploy-dir",
-                                                        "",
-                                                        "",
+                                                        "Deploy Dir",
+                                                        "Where the application is installed",
                                                         NULL,
                                                         G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_SUBPATHS,
+                                   g_param_spec_boxed ("subpaths",
+                                                       "",
+                                                       "",
+                                                       G_TYPE_STRV,
+                                                       G_PARAM_READWRITE));
 }
 
 static void
@@ -189,6 +218,14 @@ xdg_app_installed_ref_init (XdgAppInstalledRef *self)
 {
 }
 
+/**
+ * xdg_app_installed_ref_get_origin:
+ * @self: a #XdgAppInstalledRef
+ *
+ * Gets the origin of the ref.
+ *
+ * Returns: (transfer none): the origin
+ */
 const char *
 xdg_app_installed_ref_get_origin (XdgAppInstalledRef *self)
 {
@@ -197,6 +234,14 @@ xdg_app_installed_ref_get_origin (XdgAppInstalledRef *self)
   return priv->origin;
 }
 
+/**
+ * xdg_app_installed_ref_get_latest_commit:
+ * @self: a #XdgAppInstalledRef
+ *
+ * Gets the latest commit of the ref.
+ *
+ * Returns: (transfer none): the latest commit
+ */
 const char *
 xdg_app_installed_ref_get_latest_commit (XdgAppInstalledRef *self)
 {
@@ -205,6 +250,14 @@ xdg_app_installed_ref_get_latest_commit (XdgAppInstalledRef *self)
   return priv->latest_commit;
 }
 
+/**
+ * xdg_app_installed_ref_get_deploy_dir:
+ * @self: a #XdgAppInstalledRef
+ *
+ * Gets the deploy dir of the ref.
+ *
+ * Returns: (transfer none): the deploy dir
+ */
 const char *
 xdg_app_installed_ref_get_deploy_dir (XdgAppInstalledRef *self)
 {
@@ -213,6 +266,14 @@ xdg_app_installed_ref_get_deploy_dir (XdgAppInstalledRef *self)
   return priv->deploy_dir;
 }
 
+/**
+ * xdg_app_installed_ref_get_is_current:
+ * @self: a #XdgAppInstalledRef
+ *
+ * Returns whether the ref is current.
+ *
+ * Returns: %TRUE if the ref is current
+ */
 gboolean
 xdg_app_installed_ref_get_is_current (XdgAppInstalledRef *self)
 {
@@ -221,6 +282,14 @@ xdg_app_installed_ref_get_is_current (XdgAppInstalledRef *self)
   return priv->is_current;
 }
 
+/**
+ * xdg_app_installed_ref_get_installed_size:
+ * @self: a #XdgAppInstalledRef
+ *
+ * Returns the installed size of the ref.
+ *
+ * Returns: the installed size
+ */
 guint64
 xdg_app_installed_ref_get_installed_size (XdgAppInstalledRef *self)
 {
@@ -229,6 +298,17 @@ xdg_app_installed_ref_get_installed_size (XdgAppInstalledRef *self)
   return priv->installed_size;
 }
 
+/**
+ * xdg_app_installed_ref_load_metadata:
+ * @self: a #XdgAppInstalledRef
+ * @cancellable: (nullable): a #GCancellable
+ * @error: a return location for a #GError
+ *
+ * Loads the metadata file for this ref.
+ *
+ * Returns: (transfer full): a #GBytes containing the metadata file,
+ *     or %NULL if an error occurred
+ */
 GBytes *
 xdg_app_installed_ref_load_metadata  (XdgAppInstalledRef *self,
                                       GCancellable *cancellable,
@@ -258,6 +338,7 @@ xdg_app_installed_ref_new (const char *full_ref,
                            const char *commit,
                            const char *latest_commit,
                            const char *origin,
+                           char      **subpaths,
                            const char *deploy_dir,
                            guint64     installed_size,
                            gboolean    is_current)
@@ -271,6 +352,10 @@ xdg_app_installed_ref_new (const char *full_ref,
   if (strcmp (parts[0], "app") != 0)
     kind = XDG_APP_REF_KIND_RUNTIME;
 
+  /* Canonicalize the "no subpaths" case */
+  if (subpaths && *subpaths == NULL)
+    subpaths = NULL;
+
   ref = g_object_new (XDG_APP_TYPE_INSTALLED_REF,
                       "kind", kind,
                       "name", parts[1],
@@ -279,6 +364,7 @@ xdg_app_installed_ref_new (const char *full_ref,
                       "commit", commit,
                       "latest-commit", latest_commit,
                       "origin", origin,
+                      "subpaths", subpaths,
                       "is-current", is_current,
                       "installed-size", installed_size,
                       "deploy-dir", deploy_dir,

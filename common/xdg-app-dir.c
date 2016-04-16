@@ -521,6 +521,87 @@ xdg_app_dir_set_origin (XdgAppDir      *self,
   return TRUE;
 }
 
+char **
+xdg_app_dir_get_subpaths (XdgAppDir      *self,
+                          const char     *ref,
+                          GCancellable   *cancellable,
+                          GError        **error)
+{
+  g_autoptr(GFile) deploy_base = NULL;
+  g_autoptr(GFile) file = NULL;
+  g_autofree char *data = NULL;
+  g_autoptr(GError) my_error = NULL;
+  g_autoptr(GPtrArray) subpaths = NULL;
+  g_auto(GStrv) lines = NULL;
+  int i;
+
+  deploy_base = xdg_app_dir_get_deploy_dir (self, ref);
+  if (!g_file_query_exists (deploy_base, cancellable))
+    {
+      xdg_app_fail (error, "%s is not installed", ref);
+      return NULL;
+    }
+
+  file = g_file_get_child (deploy_base, "subpaths");
+  if (!g_file_load_contents (file, cancellable, &data, NULL, NULL, &my_error))
+    {
+      if (g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+        data = g_strdup ("");
+      else
+        {
+          g_propagate_error (error, g_steal_pointer (&my_error));
+          return NULL;
+        }
+    }
+
+  lines = g_strsplit (data, "\n", 0);
+
+  subpaths = g_ptr_array_new ();
+  for (i = 0; lines[i] != NULL; i++)
+    {
+      lines[i] = g_strstrip (lines[i]);
+      if (lines[i][0] == '/')
+        g_ptr_array_add (subpaths, g_strdup (lines[i]));
+    }
+
+  g_ptr_array_add (subpaths, NULL);
+  return (char **)g_ptr_array_free (subpaths, FALSE);
+}
+
+gboolean
+xdg_app_dir_set_subpaths (XdgAppDir      *self,
+                          const char     *ref,
+                          const char    **subpaths,
+                          GCancellable   *cancellable,
+                          GError        **error)
+{
+  g_autoptr(GFile) deploy_base = NULL;
+  g_autoptr(GFile) file = NULL;
+  g_autofree char *data = NULL;
+
+  deploy_base = xdg_app_dir_get_deploy_dir (self, ref);
+  if (!g_file_query_exists (deploy_base, cancellable))
+    {
+      xdg_app_fail (error, "%s is not installed", ref);
+      return FALSE;
+    }
+
+  file = g_file_get_child (deploy_base, "subpaths");
+
+  if (subpaths == NULL || subpaths[0] == NULL)
+    {
+      g_file_delete (file, cancellable, NULL);
+      return TRUE;
+    }
+
+  data = g_strjoinv ("\n", (char **)subpaths);
+  if (!g_file_replace_contents (file, data, strlen (data), NULL, FALSE,
+                                G_FILE_CREATE_NONE, NULL, cancellable, error))
+    return FALSE;
+
+  return TRUE;
+}
+
 gboolean
 xdg_app_dir_ensure_path (XdgAppDir     *self,
                          GCancellable  *cancellable,
@@ -690,7 +771,7 @@ xdg_app_dir_update_appstream (XdgAppDir *self,
   if (!ostree_repo_resolve_rev (self->repo, remote_and_branch, TRUE, &old_checksum, error))
     return FALSE;
 
-  if (!xdg_app_dir_pull (self, remote, branch, progress,
+  if (!xdg_app_dir_pull (self, remote, branch, NULL, progress,
                          cancellable, error))
     return FALSE;
 
@@ -785,10 +866,45 @@ xdg_app_dir_update_appstream (XdgAppDir *self,
   return TRUE;
 }
 
+/* This is a copy of ostree_repo_pull_one_dir that always disables
+   static deltas if subdir is used */
+static gboolean
+repo_pull_one_dir (OstreeRepo               *self,
+                   const char               *remote_name,
+                   const char               *dir_to_pull,
+                   char                    **refs_to_fetch,
+                   OstreeRepoPullFlags       flags,
+                   OstreeAsyncProgress      *progress,
+                   GCancellable             *cancellable,
+                   GError                  **error)
+{
+  GVariantBuilder builder;
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
+
+  if (dir_to_pull)
+    {
+      g_variant_builder_add (&builder, "{s@v}", "subdir",
+                             g_variant_new_variant (g_variant_new_string (dir_to_pull)));
+      g_variant_builder_add (&builder, "{s@v}", "disable-static-deltas",
+                             g_variant_new_variant (g_variant_new_boolean (TRUE)));
+    }
+
+  g_variant_builder_add (&builder, "{s@v}", "flags",
+                         g_variant_new_variant (g_variant_new_int32 (flags)));
+  if (refs_to_fetch)
+    g_variant_builder_add (&builder, "{s@v}", "refs",
+                           g_variant_new_variant (g_variant_new_strv ((const char *const*) refs_to_fetch, -1)));
+
+  return ostree_repo_pull_with_options (self, remote_name, g_variant_builder_end (&builder),
+                                        progress, cancellable, error);
+}
+
+
 gboolean
 xdg_app_dir_pull (XdgAppDir *self,
                   const char *repository,
                   const char *ref,
+                  char **subpaths,
                   OstreeAsyncProgress *progress,
                   GCancellable *cancellable,
                   GError **error)
@@ -825,13 +941,46 @@ xdg_app_dir_pull (XdgAppDir *self,
   refs[0] = ref;
   refs[1] = NULL;
 
-  if (!ostree_repo_pull (self->repo, repository,
-                         (char **)refs, OSTREE_REPO_PULL_FLAGS_NONE,
-                         progress,
-                         cancellable, error))
+  if (subpaths == NULL || subpaths[0] == NULL)
     {
-      g_prefix_error (error, "While pulling %s from remote %s: ", ref, repository);
-      goto out;
+      if (!ostree_repo_pull (self->repo, repository,
+                             (char **)refs, OSTREE_REPO_PULL_FLAGS_NONE,
+                             progress,
+                             cancellable, error))
+        {
+          g_prefix_error (error, "While pulling %s from remote %s: ", ref, repository);
+          goto out;
+        }
+    }
+  else
+    {
+      int i;
+
+      if (!repo_pull_one_dir (self->repo, repository,
+                              "/metadata",
+                              (char **)refs, OSTREE_REPO_PULL_FLAGS_NONE,
+                              progress,
+                              cancellable, error))
+        {
+          g_prefix_error (error, "While pulling %s from remote %s, metadata: ",
+                          ref, repository);
+          goto out;
+        }
+
+      for (i = 0; subpaths[i] != NULL; i++)
+        {
+          g_autofree char *subpath = g_build_filename ("/files", subpaths[i], NULL);
+          if (!repo_pull_one_dir (self->repo, repository,
+                                  subpath,
+                                  (char **)refs, OSTREE_REPO_PULL_FLAGS_NONE,
+                                  progress,
+                                  cancellable, error))
+            {
+              g_prefix_error (error, "While pulling %s from remote %s, subpath %s: ",
+                              ref, repository, subpaths[i]);
+              goto out;
+            }
+        }
     }
 
   ret = TRUE;
@@ -1905,7 +2054,6 @@ xdg_app_dir_deploy (XdgAppDir *self,
                     GCancellable *cancellable,
                     GError **error)
 {
-  gboolean ret = FALSE;
   g_autofree char *resolved_ref = NULL;
   g_autoptr(GFile) root = NULL;
   g_autoptr(GFileInfo) file_info = NULL;
@@ -1915,12 +2063,12 @@ xdg_app_dir_deploy (XdgAppDir *self,
   g_autoptr(GFile) files_etc = NULL;
   g_autoptr(GFile) metadata = NULL;
   g_autoptr(GFile) export = NULL;
-  GSConsole *console = NULL;
   g_autoptr(OstreeAsyncProgress) progress = NULL;
   g_autoptr(GKeyFile) keyfile = NULL;
+  g_auto(GStrv) subpaths = NULL;
 
   if (!xdg_app_dir_ensure_repo (self, cancellable, error))
-    goto out;
+    return FALSE;
 
   deploy_base = xdg_app_dir_get_deploy_dir (self, ref);
 
@@ -1934,7 +2082,7 @@ xdg_app_dir_deploy (XdgAppDir *self,
       if (resolved_ref == NULL)
         {
           g_prefix_error (error, "While trying to resolve ref %s: ", ref);
-          goto out;
+          return FALSE;
         }
 
       checksum = resolved_ref;
@@ -1947,36 +2095,7 @@ xdg_app_dir_deploy (XdgAppDir *self,
 
       g_debug ("Looking for checksum %s in local repo", checksum);
       if (!ostree_repo_read_commit (self->repo, checksum, &root, &commit, cancellable, NULL))
-        {
-           const char *refs[2];
-           g_autoptr(GFile) origin = NULL;
-           g_autofree char *repository = NULL;
-
-           refs[0] = checksum;
-           refs[1] = NULL;
-
-           origin = g_file_get_child (deploy_base, "origin");
-           if (!g_file_load_contents (origin, cancellable, &repository, NULL, NULL, error))
-             goto out;
-
-           g_debug ("Pulling checksum %s from remote %s", checksum, repository);
-
-           console = gs_console_get ();
-           if (console)
-             {
-               gs_console_begin_status_line (console, "", NULL, NULL);
-               progress = ostree_async_progress_new_and_connect (ostree_repo_pull_default_console_progress_changed, console);
-             }
-
-           if (!ostree_repo_pull (self->repo, repository,
-                                  (char **)refs, OSTREE_REPO_PULL_FLAGS_NONE,
-                                  progress,
-                                  cancellable, error))
-             {
-               g_prefix_error (error, "Failed to pull %s from remote %s: ", checksum, repository);
-               goto out;
-             }
-        }
+        return xdg_app_fail (error, "%s is not available", ref);
     }
 
   checkoutdir = g_file_get_child (deploy_base, checksum);
@@ -1985,41 +2104,94 @@ xdg_app_dir_deploy (XdgAppDir *self,
       g_set_error (error, XDG_APP_DIR_ERROR,
                    XDG_APP_DIR_ERROR_ALREADY_DEPLOYED,
                    "%s branch %s already deployed", ref, checksum);
-      goto out;
+      return FALSE;
     }
 
   if (!ostree_repo_read_commit (self->repo, checksum, &root, NULL, cancellable, error))
     {
       g_prefix_error (error, "Failed to read commit %s: ", checksum);
-      goto out;
+      return FALSE;
     }
 
   file_info = g_file_query_info (root, OSTREE_GIO_FAST_QUERYINFO,
                                  G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
                                  cancellable, error);
   if (file_info == NULL)
-    goto out;
+    return FALSE;
 
-  if (!ostree_repo_checkout_tree (self->repo,
-                                  OSTREE_REPO_CHECKOUT_MODE_USER,
-                                  OSTREE_REPO_CHECKOUT_OVERWRITE_NONE,
-                                  checkoutdir,
-                                  OSTREE_REPO_FILE (root), file_info,
-                                  cancellable, error))
+  subpaths = xdg_app_dir_get_subpaths (self, ref, cancellable, error);
+  if (subpaths == NULL)
+    return FALSE;
+
+  if (*subpaths == NULL)
     {
-      g_autofree char *rootpath = NULL;
-      g_autofree char *checkoutpath = NULL;
+      if (!ostree_repo_checkout_tree (self->repo,
+                                      OSTREE_REPO_CHECKOUT_MODE_USER,
+                                      OSTREE_REPO_CHECKOUT_OVERWRITE_NONE,
+                                      checkoutdir,
+                                      OSTREE_REPO_FILE (root), file_info,
+                                      cancellable, error))
+        {
+          g_autofree char *rootpath = NULL;
+          g_autofree char *checkoutpath = NULL;
 
-      rootpath = g_file_get_path (root);
-      checkoutpath = g_file_get_path (checkoutdir);
-      g_prefix_error (error, "While trying to checkout %s into %s: ", rootpath, checkoutpath);
-      goto out;
+          rootpath = g_file_get_path (root);
+          checkoutpath = g_file_get_path (checkoutdir);
+          g_prefix_error (error, "While trying to checkout %s into %s: ", rootpath, checkoutpath);
+          return FALSE;
+        }
+    }
+  else
+    {
+      OstreeRepoCheckoutOptions options = { 0, };
+      g_autofree char *checkoutdirpath = g_file_get_path (checkoutdir);
+      g_autoptr(GFile) files = g_file_get_child (checkoutdir, "files");
+      int i;
+
+      if (!g_file_make_directory_with_parents (files, cancellable, error))
+        return FALSE;
+
+      options.mode = OSTREE_REPO_CHECKOUT_MODE_USER;
+      options.overwrite_mode = OSTREE_REPO_CHECKOUT_OVERWRITE_UNION_FILES;
+      options.subpath = "/metadata";
+
+      access ("checkout metadata", 0);
+      if (!ostree_repo_checkout_tree_at (self->repo, &options,
+                                         AT_FDCWD, checkoutdirpath,
+                                         checksum,
+                                         cancellable, error))
+        {
+          g_prefix_error (error, "While trying to checkout metadata subpath: ");
+          return FALSE;
+        }
+
+      for (i = 0; subpaths[i] != NULL; i++)
+        {
+          g_autofree char *subpath = g_build_filename ("/files", subpaths[i], NULL);
+          g_autofree char *dstpath = g_build_filename (checkoutdirpath, "/files", subpaths[i], NULL);
+          g_autofree char *dstpath_parent = g_path_get_dirname (dstpath);
+          if (g_mkdir_with_parents  (dstpath_parent, 0755))
+            {
+              glnx_set_error_from_errno (error);
+              return FALSE;
+            }
+
+          options.subpath = subpath;
+          if (!ostree_repo_checkout_tree_at (self->repo, &options,
+                                             AT_FDCWD, dstpath,
+                                             checksum,
+                                             cancellable, error))
+            {
+              g_prefix_error (error, "While trying to checkout metadata subpath: ");
+              return FALSE;
+            }
+        }
     }
 
   dotref = g_file_resolve_relative_path (checkoutdir, "files/.ref");
   if (!g_file_replace_contents (dotref, "", 0, NULL, FALSE,
                                 G_FILE_CREATE_REPLACE_DESTINATION, NULL, cancellable, error))
-    goto out;
+    return TRUE;
 
   /* Ensure that various files exists as regular files in /usr/etc, as we
      want to bind-mount over them */
@@ -2043,23 +2215,23 @@ xdg_app_dir_deploy (XdgAppDir *self,
             {
               /* Already exists, but not regular, probably symlink. Remove it */
               if (!g_file_delete (etc_file, cancellable, error))
-                goto out;
+                return FALSE;
             }
 
           if (!g_file_replace_contents (etc_file, "", 0, NULL, FALSE,
                                         G_FILE_CREATE_REPLACE_DESTINATION,
                                         NULL, cancellable, error))
-            goto out;
+            return FALSE;
         }
 
       if (g_file_query_exists (etc_resolve_conf, cancellable) &&
           !g_file_delete (etc_resolve_conf, cancellable, error))
-        goto out;
+        return TRUE;
 
       if (!g_file_make_symbolic_link (etc_resolve_conf,
                                       "/run/host/monitor/resolv.conf",
                                       cancellable, error))
-        goto out;
+        return FALSE;
     }
 
   keyfile = g_key_file_new ();
@@ -2069,7 +2241,7 @@ xdg_app_dir_deploy (XdgAppDir *self,
       g_autofree char *path = g_file_get_path (metadata);
 
       if (!g_key_file_load_from_file (keyfile, path, G_KEY_FILE_NONE, error))
-        goto out;
+        return FALSE;
     }
 
   export = g_file_get_child (checkoutdir, "export");
@@ -2083,22 +2255,13 @@ xdg_app_dir_deploy (XdgAppDir *self,
                                        keyfile, export,
                                        cancellable,
                                        error))
-        goto out;
+        return FALSE;
     }
 
   if (!xdg_app_dir_set_active (self, ref, checksum, cancellable, error))
-    goto out;
+    return FALSE;
 
-  ret = TRUE;
-
- out:
-  if (console)
-    {
-      ostree_async_progress_finish (progress);
-      gs_console_end_status_line (console, NULL, NULL);
-    }
-
-  return ret;
+  return TRUE;
 }
 
 gboolean
@@ -2586,6 +2749,23 @@ xdg_app_dir_get_if_deployed (XdgAppDir     *self,
   return NULL;
 }
 
+static gboolean
+xdg_app_dir_remote_fetch_summary (XdgAppDir     *self,
+                                  const char    *name,
+                                  GBytes       **out_summary,
+                                  GCancellable  *cancellable,
+                                  GError       **error)
+{
+  /* TODO: Add in-memory cache here, also use for ostree_repo_list_refs */
+  if (!ostree_repo_remote_fetch_summary (self->repo, name,
+                                         out_summary, NULL,
+                                         cancellable,
+                                         error))
+    return FALSE;
+
+  return TRUE;
+}
+
 char *
 xdg_app_dir_find_remote_ref (XdgAppDir      *self,
                              const char     *remote,
@@ -2646,8 +2826,8 @@ xdg_app_dir_find_remote_ref (XdgAppDir      *self,
       return g_steal_pointer (&runtime_ref);
     }
 
-  if (!ostree_repo_remote_fetch_summary (self->repo, remote,
-                                         &summary_bytes, NULL,
+  if (!xdg_app_dir_remote_fetch_summary (self, remote,
+                                         &summary_bytes,
                                          cancellable, error))
     return NULL;
 
@@ -3012,8 +3192,8 @@ xdg_app_dir_fetch_remote_title (XdgAppDir *self,
   if (!xdg_app_dir_ensure_repo (self, cancellable, error))
     return NULL;
 
-  if (!ostree_repo_remote_fetch_summary (self->repo, remote,
-                                         &summary_bytes, NULL,
+  if (!xdg_app_dir_remote_fetch_summary (self, remote,
+                                         &summary_bytes,
                                          cancellable, error))
     return FALSE;
 
@@ -3391,6 +3571,81 @@ xdg_app_dir_fetch_sizes (XdgAppDir *self,
                      total_unpacked,
                      cancellable,
                      error);
+}
+
+gboolean
+xdg_app_dir_fetch_ref_cache (XdgAppDir    *self,
+                             const char   *remote_name,
+                             const char   *ref,
+                             guint64      *download_size,
+                             guint64      *installed_size,
+                             char        **metadata,
+                             GCancellable *cancellable,
+                             GError      **error)
+{
+  g_autoptr(GBytes) summary_bytes = NULL;
+  g_autoptr(GVariant) extensions = NULL;
+  g_autoptr(GVariant) summary = NULL;
+  g_autoptr(GVariant) cache_v = NULL;
+  g_autoptr(GVariant) cache = NULL;
+  g_autoptr(GVariant) res = NULL;
+
+  if (!xdg_app_dir_ensure_repo (self, cancellable, error))
+    return FALSE;
+
+  if (!xdg_app_dir_remote_fetch_summary (self, remote_name,
+                                         &summary_bytes,
+                                         cancellable, error))
+    return FALSE;
+
+  if (summary_bytes == NULL)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                   "Data not available; server has no summary file");
+      return FALSE;
+    }
+
+  summary = g_variant_new_from_bytes (OSTREE_SUMMARY_GVARIANT_FORMAT,
+                                      summary_bytes, FALSE);
+  extensions = g_variant_get_child_value (summary, 1);
+
+  cache_v = g_variant_lookup_value (extensions, "xa.cache", NULL);
+  if (cache_v == NULL)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                   "Data not found");
+      return FALSE;
+    }
+
+  cache = g_variant_get_child_value (cache_v, 0);
+  res = g_variant_lookup_value (cache, ref, NULL);
+  if (res == NULL)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                   "Data not found for ref %s", ref);
+      return FALSE;
+    }
+
+  if (installed_size)
+    {
+      guint64 v;
+      g_variant_get_child (res, 0, "t", &v);
+      *installed_size = GUINT64_FROM_BE(v);
+    }
+
+  if (download_size)
+    {
+      guint64 v;
+      g_variant_get_child (res, 1, "t", &v);
+      *download_size = GUINT64_FROM_BE(v);
+    }
+
+  if (metadata)
+    {
+      g_variant_get_child (res, 2, "s", metadata);
+    }
+
+  return TRUE;
 }
 
 GBytes *

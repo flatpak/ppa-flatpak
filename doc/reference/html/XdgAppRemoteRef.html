@@ -2,12 +2,12 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>XdgAppRemoteRef: xdg-app Reference Manual</title>
+<title>XdgAppRemoteRef: xdg-app Library Reference Manual</title>
 <meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
-<link rel="home" href="index.html" title="xdg-app Reference Manual">
+<link rel="home" href="index.html" title="xdg-app Library Reference Manual">
 <link rel="up" href="ch01.html" title="XDG-App">
 <link rel="prev" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef">
-<link rel="next" href="XdgAppRef.html" title="XdgAppRef">
+<link rel="next" href="XdgAppRemote.html" title="XdgAppRemote">
 <meta name="generator" content="GTK-Doc V1.24.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
@@ -22,14 +22,14 @@
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
 <td><a accesskey="p" href="XdgAppInstalledRef.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="XdgAppRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="n" href="XdgAppRemote.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="XdgAppRemoteRef"></a><div class="titlepage"></div>
 <div class="refnamediv"><table width="100%"><tr>
 <td valign="top">
 <h2><span class="refentrytitle"><a name="XdgAppRemoteRef.top_of_page"></a>XdgAppRemoteRef</span></h2>
-<p>XdgAppRemoteRef</p>
+<p>XdgAppRemoteRef — Remote application reference</p>
 </td>
 <td class="gallery_image" valign="top" align="right"></td>
 </tr></table></div>
@@ -40,31 +40,13 @@
 <col width="150px" class="functions_return">
 <col class="functions_name">
 </colgroup>
-<tbody>
-<tr>
+<tbody><tr>
 <td class="function_type">const <span class="returnvalue">char</span> *
 </td>
 <td class="function_name">
 <a class="link" href="XdgAppRemoteRef.html#xdg-app-remote-ref-get-remote-name" title="xdg_app_remote_ref_get_remote_name ()">xdg_app_remote_ref_get_remote_name</a> <span class="c_punctuation">()</span>
 </td>
-</tr>
-<tr>
-<td class="function_type">
-<span class="returnvalue">GType</span>
-</td>
-<td class="function_name">
-<a class="link" href="XdgAppRemoteRef.html#xdg-app-remote-ref-get-type" title="xdg_app_remote_ref_get_type ()">xdg_app_remote_ref_get_type</a> <span class="c_punctuation">()</span>
-</td>
-</tr>
-<tr>
-<td class="function_type">
-<a class="link" href="XdgAppRemoteRef.html" title="XdgAppRemoteRef"><span class="returnvalue">XdgAppRemoteRef</span></a> *
-</td>
-<td class="function_name">
-<a class="link" href="XdgAppRemoteRef.html#xdg-app-remote-ref-new" title="xdg_app_remote_ref_new ()">xdg_app_remote_ref_new</a> <span class="c_punctuation">()</span>
-</td>
-</tr>
-</tbody>
+</tr></tbody>
 </table></div>
 </div>
 <div class="refsect1">
@@ -90,16 +72,10 @@
 <col width="150px" class="name">
 <col class="description">
 </colgroup>
-<tbody>
-<tr>
+<tbody><tr>
 <td class="datatype_keyword">struct</td>
 <td class="function_name"><a class="link" href="XdgAppRemoteRef.html#XdgAppRemoteRef-struct" title="struct XdgAppRemoteRef">XdgAppRemoteRef</a></td>
-</tr>
-<tr>
-<td class="datatype_keyword"> </td>
-<td class="function_name"><a class="link" href="XdgAppRemoteRef.html#XdgAppRemoteRefClass" title="XdgAppRemoteRefClass">XdgAppRemoteRefClass</a></td>
-</tr>
-</tbody>
+</tr></tbody>
 </table></div>
 </div>
 <div class="refsect1">
@@ -111,6 +87,8 @@
 </div>
 <div class="refsect1">
 <a name="XdgAppRemoteRef.description"></a><h2>Description</h2>
+<p>A XdgAppRemoteRef provides information about an application or runtime
+(in short: ref) that is available from a remote repository.</p>
 </div>
 <div class="refsect1">
 <a name="XdgAppRemoteRef.functions_details"></a><h2>Functions</h2>
@@ -118,20 +96,27 @@
 <a name="xdg-app-remote-ref-get-remote-name"></a><h3>xdg_app_remote_ref_get_remote_name ()</h3>
 <pre class="programlisting">const <span class="returnvalue">char</span> *
 xdg_app_remote_ref_get_remote_name (<em class="parameter"><code><a class="link" href="XdgAppRemoteRef.html" title="XdgAppRemoteRef"><span class="type">XdgAppRemoteRef</span></a> *self</code></em>);</pre>
+<p>Gets the remote name of the ref.</p>
+<div class="refsect3">
+<a name="id-1.2.5.8.2.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppRemoteRef.html" title="XdgAppRemoteRef"><span class="type">XdgAppRemoteRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
 </div>
-<hr>
-<div class="refsect2">
-<a name="xdg-app-remote-ref-get-type"></a><h3>xdg_app_remote_ref_get_type ()</h3>
-<pre class="programlisting"><span class="returnvalue">GType</span>
-xdg_app_remote_ref_get_type (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
+<div class="refsect3">
+<a name="id-1.2.5.8.2.6"></a><h4>Returns</h4>
+<p> the remote name. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
-<hr>
-<div class="refsect2">
-<a name="xdg-app-remote-ref-new"></a><h3>xdg_app_remote_ref_new ()</h3>
-<pre class="programlisting"><a class="link" href="XdgAppRemoteRef.html" title="XdgAppRemoteRef"><span class="returnvalue">XdgAppRemoteRef</span></a> *
-xdg_app_remote_ref_new (<em class="parameter"><code>const <span class="type">char</span> *full_ref</code></em>,
-                        <em class="parameter"><code>const <span class="type">char</span> *commit</code></em>,
-                        <em class="parameter"><code>const <span class="type">char</span> *remote_name</code></em>);</pre>
 </div>
 </div>
 <div class="refsect1">
@@ -140,20 +125,13 @@ xdg_app_remote_ref_new (<em class="parameter"><code>const <span class="type">cha
 <a name="XdgAppRemoteRef-struct"></a><h3>struct XdgAppRemoteRef</h3>
 <pre class="programlisting">struct XdgAppRemoteRef;</pre>
 </div>
-<hr>
-<div class="refsect2">
-<a name="XdgAppRemoteRefClass"></a><h3>XdgAppRemoteRefClass</h3>
-<pre class="programlisting">typedef struct {
-  XdgAppRefClass parent_class;
-} XdgAppRemoteRefClass;
-</pre>
-</div>
 </div>
 <div class="refsect1">
 <a name="XdgAppRemoteRef.property-details"></a><h2>Property Details</h2>
 <div class="refsect2">
 <a name="XdgAppRemoteRef--remote-name"></a><h3>The <code class="literal">“remote-name”</code> property</h3>
 <pre class="programlisting">  “remote-name”              <span class="type">gchar</span> *</pre>
+<p>The name of the remote.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: NULL</p>
 </div>

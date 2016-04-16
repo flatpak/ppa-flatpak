@@ -2,12 +2,12 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>XdgAppRef: xdg-app Reference Manual</title>
+<title>XdgAppRef: xdg-app Library Reference Manual</title>
 <meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
-<link rel="home" href="index.html" title="xdg-app Reference Manual">
+<link rel="home" href="index.html" title="xdg-app Library Reference Manual">
 <link rel="up" href="ch01.html" title="XDG-App">
-<link rel="prev" href="XdgAppRemoteRef.html" title="XdgAppRemoteRef">
-<link rel="next" href="XdgAppRemote.html" title="XdgAppRemote">
+<link rel="prev" href="XdgAppInstallation.html" title="XdgAppInstallation">
+<link rel="next" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef">
 <meta name="generator" content="GTK-Doc V1.24.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
@@ -21,15 +21,15 @@
 </td>
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
-<td><a accesskey="p" href="XdgAppRemoteRef.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="XdgAppRemote.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="p" href="XdgAppInstallation.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="XdgAppInstalledRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="XdgAppRef"></a><div class="titlepage"></div>
 <div class="refnamediv"><table width="100%"><tr>
 <td valign="top">
 <h2><span class="refentrytitle"><a name="XdgAppRef.top_of_page"></a>XdgAppRef</span></h2>
-<p>XdgAppRef</p>
+<p>XdgAppRef — Application reference</p>
 </td>
 <td class="gallery_image" valign="top" align="right"></td>
 </tr></table></div>
@@ -83,14 +83,6 @@
 </td>
 <td class="function_name">
 <a class="link" href="XdgAppRef.html#xdg-app-ref-get-name" title="xdg_app_ref_get_name ()">xdg_app_ref_get_name</a> <span class="c_punctuation">()</span>
-</td>
-</tr>
-<tr>
-<td class="function_type">
-<span class="returnvalue">GType</span>
-</td>
-<td class="function_name">
-<a class="link" href="XdgAppRef.html#xdg-app-ref-get-type" title="xdg_app_ref_get_type ()">xdg_app_ref_get_type</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
@@ -158,10 +150,6 @@
 <td class="function_name"><a class="link" href="XdgAppRef.html#XdgAppRef-struct" title="struct XdgAppRef">XdgAppRef</a></td>
 </tr>
 <tr>
-<td class="datatype_keyword"> </td>
-<td class="function_name"><a class="link" href="XdgAppRef.html#XdgAppRefClass" title="XdgAppRefClass">XdgAppRefClass</a></td>
-</tr>
-<tr>
 <td class="datatype_keyword">enum</td>
 <td class="function_name"><a class="link" href="XdgAppRef.html#XdgAppRefKind" title="enum XdgAppRefKind">XdgAppRefKind</a></td>
 </tr>
@@ -178,6 +166,18 @@
 </div>
 <div class="refsect1">
 <a name="XdgAppRef.description"></a><h2>Description</h2>
+<p>Currently xdg-app manages two types of binary artifacts: applications, and
+runtimes. Applications contain a program that desktop users can run, while
+runtimes contain only libraries and data. An XdgAppRef object (or short: ref)
+can refer to either of these.</p>
+<p>Both applications and runtimes are identified by a 4-tuple of strings: kind,
+name, arch and branch, e.g. app/org.gnome.evince/x86_64/master. The functions
+<a class="link" href="XdgAppRef.html#xdg-app-ref-parse" title="xdg_app_ref_parse ()"><code class="function">xdg_app_ref_parse()</code></a> and <a class="link" href="XdgAppRef.html#xdg-app-ref-format-ref" title="xdg_app_ref_format_ref ()"><code class="function">xdg_app_ref_format_ref()</code></a> can be used to convert
+XdgAppRef objects into this string representation and back.</p>
+<p>To uniquely identify a particular version of an application or runtime, you
+need a commit.</p>
+<p>The subclasses <a class="link" href="XdgAppInstalledRef.html" title="XdgAppInstalledRef"><span class="type">XdgAppInstalledRef</span></a> and <a class="link" href="XdgAppRemoteRef.html" title="XdgAppRemoteRef"><span class="type">XdgAppRemoteRef</span></a> provide more information
+for artifacts that are locally installed or available from a remote repository.</p>
 </div>
 <div class="refsect1">
 <a name="XdgAppRef.functions_details"></a><h2>Functions</h2>
@@ -185,42 +185,162 @@
 <a name="xdg-app-ref-format-ref"></a><h3>xdg_app_ref_format_ref ()</h3>
 <pre class="programlisting"><span class="returnvalue">char</span> *
 xdg_app_ref_format_ref (<em class="parameter"><code><a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a> *self</code></em>);</pre>
+<p>Convert an XdgAppRef object into a string representation that
+can be parsed by <a class="link" href="XdgAppRef.html#xdg-app-ref-parse" title="xdg_app_ref_parse ()"><code class="function">xdg_app_ref_parse()</code></a>.</p>
+<div class="refsect3">
+<a name="id-1.2.3.8.2.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.8.2.6"></a><h4>Returns</h4>
+<p> string representation. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="xdg-app-ref-get-arch"></a><h3>xdg_app_ref_get_arch ()</h3>
 <pre class="programlisting">const <span class="returnvalue">char</span> *
 xdg_app_ref_get_arch (<em class="parameter"><code><a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a> *self</code></em>);</pre>
+<p>Gets the arch or the ref.</p>
+<div class="refsect3">
+<a name="id-1.2.3.8.3.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.8.3.6"></a><h4>Returns</h4>
+<p> the arch. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="xdg-app-ref-get-branch"></a><h3>xdg_app_ref_get_branch ()</h3>
 <pre class="programlisting">const <span class="returnvalue">char</span> *
 xdg_app_ref_get_branch (<em class="parameter"><code><a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a> *self</code></em>);</pre>
+<p>Gets the branch of the ref.</p>
+<div class="refsect3">
+<a name="id-1.2.3.8.4.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.8.4.6"></a><h4>Returns</h4>
+<p> the branch. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="xdg-app-ref-get-commit"></a><h3>xdg_app_ref_get_commit ()</h3>
 <pre class="programlisting">const <span class="returnvalue">char</span> *
 xdg_app_ref_get_commit (<em class="parameter"><code><a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a> *self</code></em>);</pre>
+<p>Gets the commit of the ref.</p>
+<div class="refsect3">
+<a name="id-1.2.3.8.5.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.8.5.6"></a><h4>Returns</h4>
+<p> the commit. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="xdg-app-ref-get-kind"></a><h3>xdg_app_ref_get_kind ()</h3>
 <pre class="programlisting"><a class="link" href="XdgAppRef.html#XdgAppRefKind" title="enum XdgAppRefKind"><span class="returnvalue">XdgAppRefKind</span></a>
 xdg_app_ref_get_kind (<em class="parameter"><code><a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a> *self</code></em>);</pre>
+<p>Gets the kind of artifact that this ref refers to.</p>
+<div class="refsect3">
+<a name="id-1.2.3.8.6.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="id-1.2.3.8.6.6"></a><h4>Returns</h4>
+<p> the kind of artifact</p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="xdg-app-ref-get-name"></a><h3>xdg_app_ref_get_name ()</h3>
 <pre class="programlisting">const <span class="returnvalue">char</span> *
 xdg_app_ref_get_name (<em class="parameter"><code><a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a> *self</code></em>);</pre>
+<p>Gets the name of the ref.</p>
+<div class="refsect3">
+<a name="id-1.2.3.8.7.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
 </div>
-<hr>
-<div class="refsect2">
-<a name="xdg-app-ref-get-type"></a><h3>xdg_app_ref_get_type ()</h3>
-<pre class="programlisting"><span class="returnvalue">GType</span>
-xdg_app_ref_get_type (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
+<div class="refsect3">
+<a name="id-1.2.3.8.7.6"></a><h4>Returns</h4>
+<p> the name. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -231,7 +351,7 @@ xdg_app_ref_parse (<em class="parameter"><code>const <span class="type">char</sp
 <p>Tries to parse a full ref name and return a <a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a> (without a
 commit set) or fail if the ref is invalid somehow.</p>
 <div class="refsect3">
-<a name="id-1.2.6.8.9.5"></a><h4>Parameters</h4>
+<a name="id-1.2.3.8.8.5"></a><h4>Parameters</h4>
 <div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -253,7 +373,7 @@ commit set) or fail if the ref is invalid somehow.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.6.8.9.6"></a><h4>Returns</h4>
+<a name="id-1.2.3.8.8.6"></a><h4>Returns</h4>
 <p> an <a class="link" href="XdgAppRef.html" title="XdgAppRef"><span class="type">XdgAppRef</span></a>, or <code class="literal">NULL</code>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
@@ -267,20 +387,10 @@ commit set) or fail if the ref is invalid somehow.</p>
 </div>
 <hr>
 <div class="refsect2">
-<a name="XdgAppRefClass"></a><h3>XdgAppRefClass</h3>
-<pre class="programlisting">typedef struct {
-  GObjectClass parent_class;
-} XdgAppRefClass;
-</pre>
-</div>
-<hr>
-<div class="refsect2">
 <a name="XdgAppRefKind"></a><h3>enum XdgAppRefKind</h3>
-<p>Currently xdg-app manages two types of binary artifacts: applications, and
-runtimes. Applications contain a program that desktop users can run, while
-runtimes contain only libraries and data.</p>
+<p>The kind of artifact that a XdgAppRef refers to.</p>
 <div class="refsect3">
-<a name="id-1.2.6.9.4.4"></a><h4>Members</h4>
+<a name="id-1.2.3.9.3.4"></a><h4>Members</h4>
 <div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
@@ -312,6 +422,7 @@ runtimes contain only libraries and data.</p>
 <div class="refsect2">
 <a name="XdgAppRef--arch"></a><h3>The <code class="literal">“arch”</code> property</h3>
 <pre class="programlisting">  “arch”                     <span class="type">gchar</span> *</pre>
+<p>The architecture of the application or runtime.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: NULL</p>
 </div>
@@ -319,6 +430,7 @@ runtimes contain only libraries and data.</p>
 <div class="refsect2">
 <a name="XdgAppRef--branch"></a><h3>The <code class="literal">“branch”</code> property</h3>
 <pre class="programlisting">  “branch”                   <span class="type">gchar</span> *</pre>
+<p>The branch of the application or runtime.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: NULL</p>
 </div>
@@ -326,6 +438,7 @@ runtimes contain only libraries and data.</p>
 <div class="refsect2">
 <a name="XdgAppRef--commit"></a><h3>The <code class="literal">“commit”</code> property</h3>
 <pre class="programlisting">  “commit”                   <span class="type">gchar</span> *</pre>
+<p>The commit.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: NULL</p>
 </div>
@@ -333,6 +446,7 @@ runtimes contain only libraries and data.</p>
 <div class="refsect2">
 <a name="XdgAppRef--kind"></a><h3>The <code class="literal">“kind”</code> property</h3>
 <pre class="programlisting">  “kind”                     <a class="link" href="XdgAppRef.html#XdgAppRefKind" title="enum XdgAppRefKind"><span class="type">XdgAppRefKind</span></a></pre>
+<p>The kind of artifact.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: XDG_APP_REF_KIND_APP</p>
 </div>
@@ -340,6 +454,7 @@ runtimes contain only libraries and data.</p>
 <div class="refsect2">
 <a name="XdgAppRef--name"></a><h3>The <code class="literal">“name”</code> property</h3>
 <pre class="programlisting">  “name”                     <span class="type">gchar</span> *</pre>
+<p>The name of the application or runtime.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: NULL</p>
 </div>

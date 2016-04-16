@@ -285,6 +285,7 @@ am_xdg_app_OBJECTS = app/xdg_app-xdg-app-main.$(OBJEXT) \
 	app/xdg_app-xdg-app-builtins-build-finish.$(OBJEXT) \
 	app/xdg_app-xdg-app-builtins-build-export.$(OBJEXT) \
 	app/xdg_app-xdg-app-builtins-build-bundle.$(OBJEXT) \
+	app/xdg_app-xdg-app-builtins-build-sign.$(OBJEXT) \
 	app/xdg_app-xdg-app-builtins-repo-update.$(OBJEXT) \
 	app/xdg_app-xdg-app-builtins-document.$(OBJEXT) \
 	$(am__objects_7) $(am__objects_1)
@@ -1028,6 +1029,7 @@ xdg_app_SOURCES = \
 	app/xdg-app-builtins-build-finish.c \
 	app/xdg-app-builtins-build-export.c \
 	app/xdg-app-builtins-build-bundle.c \
+	app/xdg-app-builtins-build-sign.c \
 	app/xdg-app-builtins-repo-update.c \
 	app/xdg-app-builtins-document.c \
 	$(xdp_dbus_built_sources)	\
@@ -1629,6 +1631,8 @@ app/xdg_app-xdg-app-builtins-build-export.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/xdg_app-xdg-app-builtins-build-bundle.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
+app/xdg_app-xdg-app-builtins-build-sign.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/xdg_app-xdg-app-builtins-repo-update.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/xdg_app-xdg-app-builtins-document.$(OBJEXT): app/$(am__dirstamp) \
@@ -1811,6 +1815,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-build-export.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-build-finish.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-build-init.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-build-sign.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-build.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-delete-remote.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/xdg_app-xdg-app-builtins-document.Po@am__quote@
@@ -2426,6 +2431,20 @@ app/xdg_app-xdg-app-builtins-build-bundle.obj: app/xdg-app-builtins-build-bundle
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/xdg-app-builtins-build-bundle.c' object='app/xdg_app-xdg-app-builtins-build-bundle.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_CFLAGS) $(CFLAGS) -c -o app/xdg_app-xdg-app-builtins-build-bundle.obj `if test -f 'app/xdg-app-builtins-build-bundle.c'; then $(CYGPATH_W) 'app/xdg-app-builtins-build-bundle.c'; else $(CYGPATH_W) '$(srcdir)/app/xdg-app-builtins-build-bundle.c'; fi`
+
+app/xdg_app-xdg-app-builtins-build-sign.o: app/xdg-app-builtins-build-sign.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_CFLAGS) $(CFLAGS) -MT app/xdg_app-xdg-app-builtins-build-sign.o -MD -MP -MF app/$(DEPDIR)/xdg_app-xdg-app-builtins-build-sign.Tpo -c -o app/xdg_app-xdg-app-builtins-build-sign.o `test -f 'app/xdg-app-builtins-build-sign.c' || echo '$(srcdir)/'`app/xdg-app-builtins-build-sign.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/xdg_app-xdg-app-builtins-build-sign.Tpo app/$(DEPDIR)/xdg_app-xdg-app-builtins-build-sign.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/xdg-app-builtins-build-sign.c' object='app/xdg_app-xdg-app-builtins-build-sign.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_CFLAGS) $(CFLAGS) -c -o app/xdg_app-xdg-app-builtins-build-sign.o `test -f 'app/xdg-app-builtins-build-sign.c' || echo '$(srcdir)/'`app/xdg-app-builtins-build-sign.c
+
+app/xdg_app-xdg-app-builtins-build-sign.obj: app/xdg-app-builtins-build-sign.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_CFLAGS) $(CFLAGS) -MT app/xdg_app-xdg-app-builtins-build-sign.obj -MD -MP -MF app/$(DEPDIR)/xdg_app-xdg-app-builtins-build-sign.Tpo -c -o app/xdg_app-xdg-app-builtins-build-sign.obj `if test -f 'app/xdg-app-builtins-build-sign.c'; then $(CYGPATH_W) 'app/xdg-app-builtins-build-sign.c'; else $(CYGPATH_W) '$(srcdir)/app/xdg-app-builtins-build-sign.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/xdg_app-xdg-app-builtins-build-sign.Tpo app/$(DEPDIR)/xdg_app-xdg-app-builtins-build-sign.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/xdg-app-builtins-build-sign.c' object='app/xdg_app-xdg-app-builtins-build-sign.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_CFLAGS) $(CFLAGS) -c -o app/xdg_app-xdg-app-builtins-build-sign.obj `if test -f 'app/xdg-app-builtins-build-sign.c'; then $(CYGPATH_W) 'app/xdg-app-builtins-build-sign.c'; else $(CYGPATH_W) '$(srcdir)/app/xdg-app-builtins-build-sign.c'; fi`
 
 app/xdg_app-xdg-app-builtins-repo-update.o: app/xdg-app-builtins-repo-update.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_app_CFLAGS) $(CFLAGS) -MT app/xdg_app-xdg-app-builtins-repo-update.o -MD -MP -MF app/$(DEPDIR)/xdg_app-xdg-app-builtins-repo-update.Tpo -c -o app/xdg_app-xdg-app-builtins-repo-update.o `test -f 'app/xdg-app-builtins-repo-update.c' || echo '$(srcdir)/'`app/xdg-app-builtins-repo-update.c

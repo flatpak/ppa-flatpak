@@ -40,7 +40,7 @@ static gint opt_prune_depth = -1;
 
 static GOptionEntry options[] = {
   { "title", 0, 0, G_OPTION_ARG_STRING, &opt_title, "A nice name to use for this repository", "TITLE" },
-  { "gpg-sign", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_gpg_key_ids, "GPG Key ID to sign the commit with", "KEY-ID"},
+  { "gpg-sign", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_gpg_key_ids, "GPG Key ID to sign the summary with", "KEY-ID"},
   { "gpg-homedir", 0, 0, G_OPTION_ARG_STRING, &opt_gpg_homedir, "GPG Homedir to use when looking for keyrings", "HOMEDIR"},
   { "generate-static-deltas", 0, 0, G_OPTION_ARG_NONE, &opt_generate_deltas, "Generate delta files", NULL },
   { "prune", 0, 0, G_OPTION_ARG_NONE, &opt_prune, "Prune unused objects", NULL },
@@ -115,9 +115,12 @@ xdg_app_builtin_build_update_repo (int argc, char **argv,
 
       all_deltas_hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
       for (i = 0; i < all_deltas->len; i++)
-        g_hash_table_insert (all_deltas_hash,
-                             g_strdup (g_ptr_array_index (all_deltas, i)),
-                             NULL);
+        {
+          g_print ("adding %s\n", (char *)g_ptr_array_index (all_deltas, i));
+          g_hash_table_insert (all_deltas_hash,
+                               g_strdup (g_ptr_array_index (all_deltas, i)),
+                               NULL);
+        }
 
       if (!ostree_repo_list_refs (repo, NULL, &all_refs,
                                   cancellable, error))
@@ -145,6 +148,7 @@ xdg_app_builtin_build_update_repo (int argc, char **argv,
 
 
           /* From empty */
+          g_print ("looking for %s\n", commit);
           if (!g_hash_table_contains (all_deltas_hash, commit))
             {
               g_print ("Generating from-empty delta for %s (%s)\n", ref, commit);
