@@ -9,13 +9,16 @@ usr/lib/xdg-app/xdg-document-portal
 usr/share/bash-completion
 usr/share/dbus-1/services/*
 usr/share/gdm/env.d
+usr/share/man/man1/xdg-app-build-bundle.1
 usr/share/man/man1/xdg-app-build-export.1
 usr/share/man/man1/xdg-app-build-finish.1
 usr/share/man/man1/xdg-app-build-init.1
+usr/share/man/man1/xdg-app-build-sign.1
 usr/share/man/man1/xdg-app-build-update-repo.1
 usr/share/man/man1/xdg-app-build.1
 usr/share/man/man1/xdg-app-enter.1
 usr/share/man/man1/xdg-app-export-file.1
+usr/share/man/man1/xdg-app-info.1
 usr/share/man/man1/xdg-app-install.1
 usr/share/man/man1/xdg-app-list.1
 usr/share/man/man1/xdg-app-make-current.1
