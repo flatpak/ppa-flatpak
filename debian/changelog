@@ -9,6 +9,8 @@ xdg-app (0.5.2-1) UNRELEASED; urgency=medium
   * Don't build-depend on fuse. The test that uses fuse appears to fail on
     buildds, possibly because the kernel module is blacklisted; it should
     automatically be skipped when fuse isn't installed.
+  * debian/gbp.conf: disable numbered patches, to reduce diff noise when
+    they get applied upstream
 
  -- Simon McVittie <smcv@debian.org>  Sun, 20 Mar 2016 23:55:06 +0000
 
