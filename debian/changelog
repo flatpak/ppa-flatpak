@@ -11,6 +11,8 @@ xdg-app (0.5.2-1) UNRELEASED; urgency=medium
     automatically be skipped when fuse isn't installed.
   * debian/gbp.conf: disable numbered patches, to reduce diff noise when
     they get applied upstream
+  * d/p/session-helper-connect-the-D-Bus-and-systemd-services.patch:
+    link the D-Bus session service to the systemd user service
 
  -- Simon McVittie <smcv@debian.org>  Sun, 20 Mar 2016 23:55:06 +0000
 
