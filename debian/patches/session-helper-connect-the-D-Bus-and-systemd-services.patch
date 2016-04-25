@@ -3,6 +3,8 @@ Date: Sun, 17 Apr 2016 10:22:06 +0100
 Subject: session-helper: connect the D-Bus and systemd services
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/alexlarsson/xdg-app/pull/134
+Applied-upstream: 0.5.3, commit:8b77e8ae1709a8808c39879ca02a68500430ae3f
 ---
  session-helper/org.freedesktop.XdgApp.service.in | 1 +
  1 file changed, 1 insertion(+)
