@@ -55,8 +55,8 @@ Depends:
  libglib2.0-dev,
  libgsystem-dev,
  libostree-dev,
+ libxdg-app0 (= ${binary:Version}),
  pkg-config,
- xdg-app (= ${binary:Version}),
  ${misc:Depends},
 # this name was never in Debian but is in upstream's PPAs
 Conflicts:
