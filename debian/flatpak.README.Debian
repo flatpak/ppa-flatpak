@@ -1,7 +1,7 @@
 User namespaces
 ===============
 
-xdg-app relies on user namespaces in order to work; however, user
+Flatpak relies on user namespaces in order to work; however, user
 namespaces cannot be created by unprivileged users on a standard Debian
 installation. There are two options to get user namespace support:
 
@@ -35,27 +35,27 @@ and all subsequent reboots:
 its own built-in support for /etc/sysctl.d which does not rely on that
 package.)
 
-Making xdg-app-helper privileged
---------------------------------
+Making bwrap privileged
+-----------------------
 
-Another way to give xdg-app the capabilities it needs is to let the
-xdg-app-helper executable run as root. It will retain the CAP_SYS_ADMIN
+Another way to give Flatpak the capabilities it needs is to let the
+bwrap helper executable run as root. It will retain the CAP_SYS_ADMIN
 capability for as long as it needs it, then drop capabilities.
 This executable is designed to be safe to run setuid root. The security
-risk of enabling this is that a bug in the xdg-app-helper executable,
+risk of enabling this is that a bug in the bwrap helper executable,
 or in some library that it uses, might allow an unprivileged user to
 escalate their privileges or carry out a denial-of-service attack.
 
-To make xdg-app-helper setuid root, allowing all users to run xdg-app:
+To make brwap setuid root, allowing all users to use Flatpak:
 
-    # dpkg-statoverride --update --add root root 04755 /usr/bin/xdg-app-helper
+    # dpkg-statoverride --update --add root root 04755 /usr/lib/flatpak/bwrap
 
-Alternatively, it is possible to restrict xdg-app-helper execution to
+Alternatively, it is possible to restrict bwrap execution to
 members of a specific group, which would mitigate any vulnerabilities that
 might exist in it. For example, if Alice and Bob, but no other users,
 should be able to run it:
 
-    # addgroup xdg-app-users
-    # adduser alice xdg-app-users
-    # adduser bob xdg-app-users
-    # dpkg-statoverride --update --add root xdg-app-users 04754 /usr/bin/xdg-app-helper
+    # addgroup bwrap-users
+    # adduser alice bwrap-users
+    # adduser bob bwrap-users
+    # dpkg-statoverride --update --add root bwrap-users 04754 /usr/lib/flatpak/bwrap

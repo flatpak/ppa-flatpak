@@ -1,8 +1,0 @@
-Document: xdg-app
-Title: xdg-app Reference Manual
-Abstract: This manual provides API documentation for the xdg-app application sandboxing framework.
-Section: Programming/C
-
-Format: HTML
-Index: /usr/share/doc/libxdg-app-doc/xdg-app/index.html
-Files: /usr/share/doc/libxdg-app-doc/xdg-app/*.html

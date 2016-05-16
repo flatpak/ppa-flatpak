@@ -1,5 +1,5 @@
-libxdg-app.so.0 libxdg-app0 #MINVER#
-* Build-Depends-Package: libxdg-app-dev
+libflatpak.so.0 libflatpak0 #MINVER#
+* Build-Depends-Package: libflatpak-dev
  xdg_app_bundle_ref_get_appstream@Base 0.5.0
  xdg_app_bundle_ref_get_file@Base 0.4.13
  xdg_app_bundle_ref_get_icon@Base 0.4.13

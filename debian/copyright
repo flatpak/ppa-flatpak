@@ -1,5 +1,5 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: xdg-app
+Upstream-Name: Flatpak
 Source: https://github.com/alexlarsson/xdg-app
 
 Files:
