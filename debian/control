@@ -25,6 +25,7 @@ Build-Depends:
  libgsystem-dev,
  libjson-glib-dev,
  libostree-dev,
+ libpolkit-gobject-1-dev,
  libseccomp-dev,
  libsoup2.4-dev,
  libxau-dev,
