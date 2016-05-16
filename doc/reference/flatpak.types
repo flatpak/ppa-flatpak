@@ -1,0 +1,6 @@
+flatpak_bundle_ref_get_type
+flatpak_installation_get_type
+flatpak_installed_ref_get_type
+flatpak_ref_get_type
+flatpak_remote_get_type
+flatpak_remote_ref_get_type

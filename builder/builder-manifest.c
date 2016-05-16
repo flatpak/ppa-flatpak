@@ -29,47 +29,51 @@
 
 #include "builder-manifest.h"
 #include "builder-utils.h"
-#include "xdg-app-utils.h"
+#include "flatpak-utils.h"
 
 #include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
-struct BuilderManifest {
-  GObject parent;
+#define LOCALES_SEPARATE_DIR "share/runtime/locale"
 
-  char *id;
-  char *id_platform;
-  char *branch;
-  char *runtime;
-  char *runtime_commit;
-  char *runtime_version;
-  char *sdk;
-  char *sdk_commit;
-  char *metadata;
-  char *metadata_platform;
-  gboolean separate_locales;
-  char **cleanup;
-  char **cleanup_commands;
-  char **cleanup_platform;
-  char **finish_args;
-  char **tags;
-  char *rename_desktop_file;
-  char *rename_appdata_file;
-  char *rename_icon;
-  gboolean copy_icon;
-  char *desktop_file_name_prefix;
-  char *desktop_file_name_suffix;
-  gboolean build_runtime;
-  gboolean writable_sdk;
-  gboolean appstream_compose;
-  char **sdk_extensions;
-  char **platform_extensions;
-  char *command;
+struct BuilderManifest
+{
+  GObject         parent;
+
+  char           *id;
+  char           *id_platform;
+  char           *branch;
+  char           *runtime;
+  char           *runtime_commit;
+  char           *runtime_version;
+  char           *sdk;
+  char           *sdk_commit;
+  char           *metadata;
+  char           *metadata_platform;
+  gboolean        separate_locales;
+  char          **cleanup;
+  char          **cleanup_commands;
+  char          **cleanup_platform;
+  char          **finish_args;
+  char          **tags;
+  char           *rename_desktop_file;
+  char           *rename_appdata_file;
+  char           *rename_icon;
+  gboolean        copy_icon;
+  char           *desktop_file_name_prefix;
+  char           *desktop_file_name_suffix;
+  gboolean        build_runtime;
+  gboolean        writable_sdk;
+  gboolean        appstream_compose;
+  char          **sdk_extensions;
+  char          **platform_extensions;
+  char           *command;
   BuilderOptions *build_options;
-  GList *modules;
+  GList          *modules;
 };
 
-typedef struct {
+typedef struct
+{
   GObjectClass parent_class;
 } BuilderManifestClass;
 
@@ -116,7 +120,7 @@ enum {
 static void
 builder_manifest_finalize (GObject *object)
 {
-  BuilderManifest *self = (BuilderManifest *)object;
+  BuilderManifest *self = (BuilderManifest *) object;
 
   g_free (self->id);
   g_free (self->branch);
@@ -150,7 +154,7 @@ builder_manifest_get_property (GObject    *object,
                                GValue     *value,
                                GParamSpec *pspec)
 {
-  BuilderManifest *self = BUILDER_MANIFEST(object);
+  BuilderManifest *self = BUILDER_MANIFEST (object);
 
   switch (prop_id)
     {
@@ -280,7 +284,7 @@ builder_manifest_get_property (GObject    *object,
 }
 
 static void
-builder_manifest_set_property (GObject       *object,
+builder_manifest_set_property (GObject      *object,
                                guint         prop_id,
                                const GValue *value,
                                GParamSpec   *pspec)
@@ -705,10 +709,12 @@ builder_manifest_serialize_property (JsonSerializable *serializable,
       return retval;
     }
   else
-    return json_serializable_default_serialize_property (serializable,
-                                                         property_name,
-                                                         value,
-                                                         pspec);
+    {
+      return json_serializable_default_serialize_property (serializable,
+                                                           property_name,
+                                                           value,
+                                                           pspec);
+    }
 }
 
 static gboolean
@@ -760,10 +766,12 @@ builder_manifest_deserialize_property (JsonSerializable *serializable,
       return FALSE;
     }
   else
-    return json_serializable_default_deserialize_property (serializable,
-                                                           property_name,
-                                                           value,
-                                                           pspec, property_node);
+    {
+      return json_serializable_default_deserialize_property (serializable,
+                                                             property_name,
+                                                             value,
+                                                             pspec, property_node);
+    }
 }
 
 static void
@@ -774,13 +782,13 @@ serializable_iface_init (JsonSerializableIface *serializable_iface)
 }
 
 const char *
-builder_manifest_get_id  (BuilderManifest *self)
+builder_manifest_get_id (BuilderManifest *self)
 {
   return self->id;
 }
 
 const char *
-builder_manifest_get_id_platform  (BuilderManifest *self)
+builder_manifest_get_id_platform (BuilderManifest *self)
 {
   return self->id_platform;
 }
@@ -810,7 +818,7 @@ builder_manifest_get_branch (BuilderManifest *self)
 }
 
 static char *
-xdg_app (GError      **error,
+flatpak (GError **error,
          ...)
 {
   gboolean res;
@@ -818,7 +826,7 @@ xdg_app (GError      **error,
   va_list ap;
 
   va_start (ap, error);
-  res = xdg_app_spawn (NULL, &output, error, "xdg-app", ap);
+  res = flatpak_spawn (NULL, &output, error, "flatpak", ap);
   va_end (ap);
 
   if (res)
@@ -830,21 +838,25 @@ xdg_app (GError      **error,
 }
 
 gboolean
-builder_manifest_start (BuilderManifest  *self,
-                        BuilderContext   *context,
-                        GError          **error)
+builder_manifest_start (BuilderManifest *self,
+                        BuilderContext  *context,
+                        GError         **error)
 {
-  self->sdk_commit = xdg_app (NULL, "info", "--show-commit", self->sdk,
+  g_autofree char *arch_option;
+
+  arch_option = g_strdup_printf ("--arch=%s", builder_context_get_arch (context));
+
+  self->sdk_commit = flatpak (NULL, "info", arch_option, "--show-commit", self->sdk,
                               builder_manifest_get_runtime_version (self), NULL);
   if (self->sdk_commit == NULL)
-    return xdg_app_fail (error, "Unable to find sdk %s version %s",
+    return flatpak_fail (error, "Unable to find sdk %s version %s",
                          self->sdk,
                          builder_manifest_get_runtime_version (self));
 
-  self->runtime_commit = xdg_app (NULL, "info", "--show-commit", self->runtime,
+  self->runtime_commit = flatpak (NULL, "info", arch_option, "--show-commit", self->runtime,
                                   builder_manifest_get_runtime_version (self), NULL);
   if (self->runtime_commit == NULL)
-    return xdg_app_fail (error, "Unable to find runtime %s version %s",
+    return flatpak_fail (error, "Unable to find runtime %s version %s",
                          self->runtime,
                          builder_manifest_get_runtime_version (self));
 
@@ -853,10 +865,11 @@ builder_manifest_start (BuilderManifest  *self,
 
 gboolean
 builder_manifest_init_app_dir (BuilderManifest *self,
-                               BuilderContext *context,
-                               GError **error)
+                               BuilderContext  *context,
+                               GError         **error)
 {
   GFile *app_dir = builder_context_get_app_dir (context);
+
   g_autoptr(GSubprocess) subp = NULL;
   g_autoptr(GPtrArray) args = NULL;
   int i;
@@ -886,7 +899,7 @@ builder_manifest_init_app_dir (BuilderManifest *self,
 
   args = g_ptr_array_new_with_free_func (g_free);
 
-  g_ptr_array_add (args, g_strdup ("xdg-app"));
+  g_ptr_array_add (args, g_strdup ("flatpak"));
   g_ptr_array_add (args, g_strdup ("build-init"));
   if (self->writable_sdk || self->build_runtime)
     {
@@ -903,6 +916,7 @@ builder_manifest_init_app_dir (BuilderManifest *self,
       for (i = 0; self->tags[i] != NULL; i++)
         g_ptr_array_add (args, g_strdup_printf ("--tag=%s", self->tags[i]));
     }
+  g_ptr_array_add (args, g_strdup_printf ("--arch=%s", builder_context_get_arch (context)));
   g_ptr_array_add (args, g_file_get_path (app_dir));
   g_ptr_array_add (args, g_strdup (self->id));
   g_ptr_array_add (args, g_strdup (self->sdk));
@@ -935,8 +949,8 @@ builder_manifest_init_app_dir (BuilderManifest *self,
 /* This gets the checksum of everything that globally affects the build */
 void
 builder_manifest_checksum (BuilderManifest *self,
-                           BuilderCache *cache,
-                           BuilderContext *context)
+                           BuilderCache    *cache,
+                           BuilderContext  *context)
 {
   builder_cache_checksum_str (cache, BUILDER_MANIFEST_CHECKSUM_VERSION);
   builder_cache_checksum_str (cache, self->id);
@@ -958,8 +972,8 @@ builder_manifest_checksum (BuilderManifest *self,
 
 void
 builder_manifest_checksum_for_cleanup (BuilderManifest *self,
-                                       BuilderCache *cache,
-                                       BuilderContext *context)
+                                       BuilderCache    *cache,
+                                       BuilderContext  *context)
 {
   GList *l;
 
@@ -983,8 +997,8 @@ builder_manifest_checksum_for_cleanup (BuilderManifest *self,
 
 void
 builder_manifest_checksum_for_finish (BuilderManifest *self,
-                                      BuilderCache *cache,
-                                      BuilderContext *context)
+                                      BuilderCache    *cache,
+                                      BuilderContext  *context)
 {
   builder_cache_checksum_str (cache, BUILDER_MANIFEST_CHECKSUM_FINISH_VERSION);
   builder_cache_checksum_strv (cache, self->finish_args);
@@ -999,7 +1013,7 @@ builder_manifest_checksum_for_finish (BuilderManifest *self,
       gsize len;
 
       if (g_file_load_contents (metadata, NULL, &data, &len, NULL, &my_error))
-        builder_cache_checksum_data (cache, (guchar *)data, len);
+        builder_cache_checksum_data (cache, (guchar *) data, len);
       else
         g_warning ("Can't load metadata file %s: %s", self->metadata, my_error->message);
     }
@@ -1008,8 +1022,8 @@ builder_manifest_checksum_for_finish (BuilderManifest *self,
 
 void
 builder_manifest_checksum_for_platform (BuilderManifest *self,
-                                        BuilderCache *cache,
-                                        BuilderContext *context)
+                                        BuilderCache    *cache,
+                                        BuilderContext  *context)
 {
   builder_cache_checksum_str (cache, BUILDER_MANIFEST_CHECKSUM_PLATFORM_VERSION);
   builder_cache_checksum_str (cache, self->id_platform);
@@ -1027,7 +1041,7 @@ builder_manifest_checksum_for_platform (BuilderManifest *self,
       gsize len;
 
       if (g_file_load_contents (metadata, NULL, &data, &len, NULL, &my_error))
-        builder_cache_checksum_data (cache, (guchar *)data, len);
+        builder_cache_checksum_data (cache, (guchar *) data, len);
       else
         g_warning ("Can't load metadata-platform file %s: %s", self->metadata_platform, my_error->message);
     }
@@ -1035,9 +1049,9 @@ builder_manifest_checksum_for_platform (BuilderManifest *self,
 
 gboolean
 builder_manifest_download (BuilderManifest *self,
-                           gboolean update_vcs,
-                           BuilderContext *context,
-                           GError **error)
+                           gboolean         update_vcs,
+                           BuilderContext  *context,
+                           GError         **error)
 {
   GList *l;
 
@@ -1046,7 +1060,10 @@ builder_manifest_download (BuilderManifest *self,
     {
       BuilderModule *m = l->data;
 
-      if (! builder_module_download_sources (m, update_vcs, context, error))
+      if (builder_module_get_disabled (m))
+        continue;
+
+      if (!builder_module_download_sources (m, update_vcs, context, error))
         return FALSE;
     }
 
@@ -1055,15 +1072,15 @@ builder_manifest_download (BuilderManifest *self,
 
 gboolean
 builder_manifest_build (BuilderManifest *self,
-                        BuilderCache *cache,
-                        BuilderContext *context,
-                        GError **error)
+                        BuilderCache    *cache,
+                        BuilderContext  *context,
+                        GError         **error)
 {
   GList *l;
 
   builder_context_set_options (context, self->build_options);
-  builder_context_set_global_cleanup (context, (const char **)self->cleanup);
-  builder_context_set_global_cleanup_platform (context, (const char **)self->cleanup_platform);
+  builder_context_set_global_cleanup (context, (const char **) self->cleanup);
+  builder_context_set_global_cleanup_platform (context, (const char **) self->cleanup_platform);
   builder_context_set_build_runtime (context, self->build_runtime);
   builder_context_set_separate_locales (context, self->separate_locales);
 
@@ -1072,6 +1089,13 @@ builder_manifest_build (BuilderManifest *self,
     {
       BuilderModule *m = l->data;
       g_autoptr(GPtrArray) changes = NULL;
+
+      if (builder_module_get_disabled (m))
+        {
+          g_print ("Skipping disabled module %s\n", builder_module_get_name (m));
+          continue;
+        }
+
       g_autofree char *stage = g_strdup_printf ("build-%s", builder_module_get_name (m));
 
       builder_module_checksum (m, cache, context);
@@ -1086,8 +1110,10 @@ builder_manifest_build (BuilderManifest *self,
             return FALSE;
         }
       else
-        g_print ("Cache hit for %s, skipping build\n",
-                 builder_module_get_name (m));
+        {
+          g_print ("Cache hit for %s, skipping build\n",
+                   builder_module_get_name (m));
+        }
 
       changes = builder_cache_get_changes (cache, error);
       if (changes == NULL)
@@ -1102,10 +1128,10 @@ builder_manifest_build (BuilderManifest *self,
 }
 
 static gboolean
-command (GFile *app_dir,
-         char **env_vars,
+command (GFile      *app_dir,
+         char      **env_vars,
          const char *commandline,
-         GError **error)
+         GError    **error)
 {
   g_autoptr(GSubprocessLauncher) launcher = NULL;
   g_autoptr(GSubprocess) subp = NULL;
@@ -1113,7 +1139,7 @@ command (GFile *app_dir,
   int i;
 
   args = g_ptr_array_new_with_free_func (g_free);
-  g_ptr_array_add (args, g_strdup ("xdg-app"));
+  g_ptr_array_add (args, g_strdup ("flatpak"));
   g_ptr_array_add (args, g_strdup ("build"));
 
   g_ptr_array_add (args, g_strdup ("--nofilesystem=host"));
@@ -1146,25 +1172,25 @@ command (GFile *app_dir,
 }
 
 typedef gboolean (*ForeachFileFunc) (BuilderManifest *self,
-                                     int            source_parent_fd,
-                                     const char    *source_name,
-                                     const char    *full_dir,
-                                     const char    *rel_dir,
-                                     struct stat   *stbuf,
-                                     gboolean      *found,
-                                     int            depth,
-                                     GError       **error);
+                                     int              source_parent_fd,
+                                     const char      *source_name,
+                                     const char      *full_dir,
+                                     const char      *rel_dir,
+                                     struct stat     *stbuf,
+                                     gboolean        *found,
+                                     int              depth,
+                                     GError         **error);
 
 static gboolean
 foreach_file_helper (BuilderManifest *self,
-                     ForeachFileFunc func,
-                     int            source_parent_fd,
-                     const char    *source_name,
-                     const char    *full_dir,
-                     const char    *rel_dir,
-                     gboolean      *found,
-                     int            depth,
-                     GError       **error)
+                     ForeachFileFunc  func,
+                     int              source_parent_fd,
+                     const char      *source_name,
+                     const char      *full_dir,
+                     const char      *rel_dir,
+                     gboolean        *found,
+                     int              depth,
+                     GError         **error)
 {
   g_auto(GLnxDirFdIterator) source_iter = {0};
   struct dirent *dent;
@@ -1192,7 +1218,9 @@ foreach_file_helper (BuilderManifest *self,
       if (fstatat (source_iter.fd, dent->d_name, &stbuf, AT_SYMLINK_NOFOLLOW) == -1)
         {
           if (errno == ENOENT)
-            continue;
+            {
+              continue;
+            }
           else
             {
               glnx_set_error_from_errno (error);
@@ -1217,10 +1245,10 @@ foreach_file_helper (BuilderManifest *self,
 
 static gboolean
 foreach_file (BuilderManifest *self,
-              ForeachFileFunc func,
-              gboolean      *found,
-              GFile         *root,
-              GError       **error)
+              ForeachFileFunc  func,
+              gboolean        *found,
+              GFile           *root,
+              GError         **error)
 {
   return foreach_file_helper (self, func, AT_FDCWD,
                               gs_file_get_path_cached (root),
@@ -1232,14 +1260,14 @@ foreach_file (BuilderManifest *self,
 
 static gboolean
 rename_icon_cb (BuilderManifest *self,
-                int            source_parent_fd,
-                const char    *source_name,
-                const char    *full_dir,
-                const char    *rel_dir,
-                struct stat   *stbuf,
-                gboolean      *found,
-                int            depth,
-                GError       **error)
+                int              source_parent_fd,
+                const char      *source_name,
+                const char      *full_dir,
+                const char      *rel_dir,
+                struct stat     *stbuf,
+                gboolean        *found,
+                int              depth,
+                GError         **error)
 {
   if (S_ISREG (stbuf->st_mode) &&
       depth == 3 &&
@@ -1272,11 +1300,11 @@ rename_icon_cb (BuilderManifest *self,
 static int
 cmpstringp (const void *p1, const void *p2)
 {
-  return strcmp (* (char * const *) p1, * (char * const *) p2);
+  return strcmp (*(char * const *) p1, *(char * const *) p2);
 }
 
 static gboolean
-appstream_compose (GFile *app_dir,
+appstream_compose (GFile   *app_dir,
                    GError **error,
                    ...)
 {
@@ -1288,12 +1316,12 @@ appstream_compose (GFile *app_dir,
   va_list ap;
 
   args = g_ptr_array_new_with_free_func (g_free);
-  g_ptr_array_add (args, g_strdup ("xdg-app"));
+  g_ptr_array_add (args, g_strdup ("flatpak"));
   g_ptr_array_add (args, g_strdup ("build"));
   g_ptr_array_add (args, g_strdup ("--nofilesystem=host"));
   g_ptr_array_add (args, g_file_get_path (app_dir));
   g_ptr_array_add (args, g_strdup ("appstream-compose"));
-  
+
   va_start (ap, error);
   while ((arg = va_arg (ap, const gchar *)))
     g_ptr_array_add (args, g_strdup (arg));
@@ -1318,11 +1346,12 @@ appstream_compose (GFile *app_dir,
 
 gboolean
 builder_manifest_cleanup (BuilderManifest *self,
-                          BuilderCache *cache,
-                          BuilderContext *context,
-                          GError **error)
+                          BuilderCache    *cache,
+                          BuilderContext  *context,
+                          GError         **error)
 {
   GFile *app_dir = builder_context_get_app_dir (context);
+
   g_autoptr(GFile) app_root = NULL;
   GList *l;
   g_auto(GStrv) env = NULL;
@@ -1354,10 +1383,13 @@ builder_manifest_cleanup (BuilderManifest *self,
         {
           BuilderModule *m = l->data;
 
+          if (builder_module_get_disabled (m))
+            continue;
+
           builder_module_cleanup_collect (m, FALSE, context, to_remove_ht);
         }
 
-      keys = (char **)g_hash_table_get_keys_as_array (to_remove_ht, &n_keys);
+      keys = (char **) g_hash_table_get_keys_as_array (to_remove_ht, &n_keys);
 
       qsort (keys, n_keys, sizeof (char *), cmpstringp);
       /* Iterate in reverse to remove leafs first */
@@ -1416,7 +1448,7 @@ builder_manifest_cleanup (BuilderManifest *self,
 
               to_replace = contents;
 
-              while ( (match = strstr (to_replace, self->rename_desktop_file)) != NULL)
+              while ((match = strstr (to_replace, self->rename_desktop_file)) != NULL)
                 {
                   g_string_append_len (new_contents, to_replace, match - to_replace);
                   g_string_append (new_contents, desktop_basename);
@@ -1479,38 +1511,40 @@ builder_manifest_cleanup (BuilderManifest *self,
             return FALSE;
 
           if (self->rename_icon)
-            g_key_file_set_string (keyfile,
-                                   G_KEY_FILE_DESKTOP_GROUP,
-                                   G_KEY_FILE_DESKTOP_KEY_ICON,
-                                   self->id);
+            {
+              g_key_file_set_string (keyfile,
+                                     G_KEY_FILE_DESKTOP_GROUP,
+                                     G_KEY_FILE_DESKTOP_KEY_ICON,
+                                     self->id);
+            }
 
           if (self->desktop_file_name_suffix ||
               self->desktop_file_name_prefix)
-          {
-            desktop_keys = g_key_file_get_keys (keyfile,
-                                                G_KEY_FILE_DESKTOP_GROUP,
-                                                NULL, NULL);
-            for (i = 0; desktop_keys[i]; i++)
-              {
-                if (strcmp (desktop_keys[i], "Name") == 0 ||
-                    g_str_has_prefix (desktop_keys[i], "Name["))
-                  {
-                    g_autofree char *name = g_key_file_get_string (keyfile, G_KEY_FILE_DESKTOP_GROUP, desktop_keys[i], NULL);
-                    if (name)
-                      {
-                        g_autofree char *new_name =
-                          g_strdup_printf ("%s%s%s",
-                                           self->desktop_file_name_prefix ? self->desktop_file_name_prefix : "",
-                                           name,
-                                           self->desktop_file_name_suffix ? self->desktop_file_name_suffix : "");
-                        g_key_file_set_string (keyfile,
-                                               G_KEY_FILE_DESKTOP_GROUP,
-                                               desktop_keys[i],
-                                               new_name);
-                      }
-                  }
-              }
-          }
+            {
+              desktop_keys = g_key_file_get_keys (keyfile,
+                                                  G_KEY_FILE_DESKTOP_GROUP,
+                                                  NULL, NULL);
+              for (i = 0; desktop_keys[i]; i++)
+                {
+                  if (strcmp (desktop_keys[i], "Name") == 0 ||
+                      g_str_has_prefix (desktop_keys[i], "Name["))
+                    {
+                      g_autofree char *name = g_key_file_get_string (keyfile, G_KEY_FILE_DESKTOP_GROUP, desktop_keys[i], NULL);
+                      if (name)
+                        {
+                          g_autofree char *new_name =
+                            g_strdup_printf ("%s%s%s",
+                                             self->desktop_file_name_prefix ? self->desktop_file_name_prefix : "",
+                                             name,
+                                             self->desktop_file_name_suffix ? self->desktop_file_name_suffix : "");
+                          g_key_file_set_string (keyfile,
+                                                 G_KEY_FILE_DESKTOP_GROUP,
+                                                 desktop_keys[i],
+                                                 new_name);
+                        }
+                    }
+                }
+            }
 
           g_free (desktop_contents);
           desktop_contents = g_key_file_to_data (keyfile, &desktop_size, error);
@@ -1529,7 +1563,7 @@ builder_manifest_cleanup (BuilderManifest *self,
           g_print ("Running appstream-compose\n");
           if (!appstream_compose (app_dir, error,
                                   self->build_runtime ?  "--prefix=/usr" : "--prefix=/app",
-                                  "--origin=xdg-app",
+                                  "--origin=flatpak",
                                   basename_arg,
                                   self->id,
                                   NULL))
@@ -1540,7 +1574,9 @@ builder_manifest_cleanup (BuilderManifest *self,
         return FALSE;
     }
   else
-    g_print ("Cache hit for cleanup, skipping\n");
+    {
+      g_print ("Cache hit for cleanup, skipping\n");
+    }
 
   return TRUE;
 }
@@ -1548,11 +1584,12 @@ builder_manifest_cleanup (BuilderManifest *self,
 
 gboolean
 builder_manifest_finish (BuilderManifest *self,
-                         BuilderCache *cache,
-                         BuilderContext *context,
-                         GError **error)
+                         BuilderCache    *cache,
+                         BuilderContext  *context,
+                         GError         **error)
 {
   GFile *app_dir = builder_context_get_app_dir (context);
+
   g_autoptr(GFile) manifest_file = NULL;
   g_autoptr(GFile) debuginfo_dir = NULL;
   g_autoptr(GFile) locale_parent_dir = NULL;
@@ -1581,7 +1618,7 @@ builder_manifest_finish (BuilderManifest *self,
         }
 
       args = g_ptr_array_new_with_free_func (g_free);
-      g_ptr_array_add (args, g_strdup ("xdg-app"));
+      g_ptr_array_add (args, g_strdup ("flatpak"));
       g_ptr_array_add (args, g_strdup ("build-finish"));
       if (self->command)
         g_ptr_array_add (args, g_strdup_printf ("--command=%s", self->command));
@@ -1625,15 +1662,15 @@ builder_manifest_finish (BuilderManifest *self,
       if (self->build_runtime)
         {
           debuginfo_dir = g_file_resolve_relative_path (app_dir, "usr/lib/debug");
-          locale_parent_dir = g_file_resolve_relative_path (app_dir, "usr/share/runtime/locale");
+          locale_parent_dir = g_file_resolve_relative_path (app_dir, "usr/" LOCALES_SEPARATE_DIR);
         }
       else
         {
           debuginfo_dir = g_file_resolve_relative_path (app_dir, "files/lib/debug");
-          locale_parent_dir = g_file_resolve_relative_path (app_dir, "files/share/runtime/locale");
+          locale_parent_dir = g_file_resolve_relative_path (app_dir, "files/" LOCALES_SEPARATE_DIR);
         }
 
-      if (self->separate_locales)
+      if (self->separate_locales && g_file_query_exists (locale_parent_dir, NULL))
         {
           g_autoptr(GFile) metadata_file = NULL;
           g_autofree char *extension_contents = NULL;
@@ -1643,11 +1680,12 @@ builder_manifest_finish (BuilderManifest *self,
 
           metadata_file = g_file_get_child (app_dir, "metadata");
 
-          extension_contents = g_strdup_printf("\n"
-                                               "[Extension %s.Locale]\n"
-                                               "directory=share/runtime/locale\n"
-                                               "subdirectories=true\n",
-                                               self->id);
+          extension_contents = g_strdup_printf ("\n"
+                                                "[Extension %s.Locale]\n"
+                                                "directory=%s\n"
+                                                "subdirectories=true\n",
+                                                self->id,
+                                                LOCALES_SEPARATE_DIR);
 
           output = g_file_append_to (metadata_file, G_FILE_CREATE_NONE, NULL, error);
           if (output == NULL)
@@ -1660,8 +1698,8 @@ builder_manifest_finish (BuilderManifest *self,
 
 
           metadata_locale_file = g_file_get_child (app_dir, "metadata.locale");
-          metadata_contents = g_strdup_printf("[Runtime]\n"
-                                              "name=%s.Locale\n", self->id);
+          metadata_contents = g_strdup_printf ("[Runtime]\n"
+                                               "name=%s.Locale\n", self->id);
           if (!g_file_replace_contents (metadata_locale_file,
                                         metadata_contents, strlen (metadata_contents),
                                         NULL, FALSE,
@@ -1682,10 +1720,10 @@ builder_manifest_finish (BuilderManifest *self,
           metadata_file = g_file_get_child (app_dir, "metadata");
           metadata_debuginfo_file = g_file_get_child (app_dir, "metadata.debuginfo");
 
-          extension_contents = g_strdup_printf("\n"
-                                               "[Extension %s.Debug]\n"
-                                               "directory=lib/debug\n",
-                                               self->id);
+          extension_contents = g_strdup_printf ("\n"
+                                                "[Extension %s.Debug]\n"
+                                                "directory=lib/debug\n",
+                                                self->id);
 
           output = g_file_append_to (metadata_file, G_FILE_CREATE_NONE, NULL, error);
           if (output == NULL)
@@ -1695,8 +1733,8 @@ builder_manifest_finish (BuilderManifest *self,
                                           NULL, NULL, error))
             return FALSE;
 
-          metadata_contents = g_strdup_printf("[Runtime]\n"
-                                              "name=%s.Debug\n", self->id);
+          metadata_contents = g_strdup_printf ("[Runtime]\n"
+                                               "name=%s.Debug\n", self->id);
           if (!g_file_replace_contents (metadata_debuginfo_file,
                                         metadata_contents, strlen (metadata_contents), NULL, FALSE,
                                         G_FILE_CREATE_REPLACE_DESTINATION,
@@ -1708,7 +1746,9 @@ builder_manifest_finish (BuilderManifest *self,
         return FALSE;
     }
   else
-    g_print ("Cache hit for finish, skipping\n");
+    {
+      g_print ("Cache hit for finish, skipping\n");
+    }
 
   return TRUE;
 }
@@ -1716,10 +1756,12 @@ builder_manifest_finish (BuilderManifest *self,
 gboolean
 builder_manifest_create_platform (BuilderManifest *self,
                                   BuilderCache    *cache,
-                                  BuilderContext *context,
-                                  GError          **error)
+                                  BuilderContext  *context,
+                                  GError         **error)
 {
   GFile *app_dir = builder_context_get_app_dir (context);
+
+  g_autoptr(GFile) locale_dir = NULL;
   int i;
 
   if (!self->build_runtime ||
@@ -1742,11 +1784,12 @@ builder_manifest_create_platform (BuilderManifest *self,
 
       args = g_ptr_array_new_with_free_func (g_free);
 
-      g_ptr_array_add (args, g_strdup ("xdg-app"));
+      g_ptr_array_add (args, g_strdup ("flatpak"));
       g_ptr_array_add (args, g_strdup ("build-init"));
       g_ptr_array_add (args, g_strdup ("--update"));
       g_ptr_array_add (args, g_strdup ("--writable-sdk"));
       g_ptr_array_add (args, g_strdup ("--sdk-dir=platform"));
+      g_ptr_array_add (args, g_strdup_printf ("--arch=%s", builder_context_get_arch (context)));
 
       for (i = 0; self->platform_extensions != NULL && self->platform_extensions[i] != NULL; i++)
         {
@@ -1779,6 +1822,8 @@ builder_manifest_create_platform (BuilderManifest *self,
 
           if (!builder_migrate_locale_dirs (root_dir, error))
             return FALSE;
+
+          locale_dir = g_file_resolve_relative_path (root_dir, LOCALES_SEPARATE_DIR);
         }
 
       if (self->metadata_platform)
@@ -1795,6 +1840,9 @@ builder_manifest_create_platform (BuilderManifest *self,
       for (l = self->modules; l != NULL; l = l->next)
         {
           BuilderModule *m = l->data;
+
+          if (builder_module_get_disabled (m))
+            continue;
 
           builder_module_cleanup_collect (m, TRUE, context, to_remove_ht);
         }
@@ -1883,22 +1931,22 @@ builder_manifest_create_platform (BuilderManifest *self,
             }
         }
 
-      if (self->separate_locales)
+      if (self->separate_locales && locale_dir && g_file_query_exists (locale_dir, NULL))
         {
           g_autoptr(GFile) metadata_file = NULL;
           g_autofree char *extension_contents = NULL;
           g_autoptr(GFileOutputStream) output = NULL;
-          g_autoptr(GFile) locale_parent_dir = NULL;
           g_autoptr(GFile) metadata_locale_file = NULL;
           g_autofree char *metadata_contents = NULL;
 
           metadata_file = g_file_get_child (app_dir, "metadata.platform");
 
-          extension_contents = g_strdup_printf("\n"
-                                               "[Extension %s.Locale]\n"
-                                               "directory=share/runtime/locale\n"
-                                               "subdirectories=true\n",
-                                               self->id_platform);
+          extension_contents = g_strdup_printf ("\n"
+                                                "[Extension %s.Locale]\n"
+                                                "directory=%s\n"
+                                                "subdirectories=true\n",
+                                                self->id_platform,
+                                                LOCALES_SEPARATE_DIR);
 
           output = g_file_append_to (metadata_file, G_FILE_CREATE_NONE, NULL, error);
           if (output == NULL)
@@ -1911,8 +1959,8 @@ builder_manifest_create_platform (BuilderManifest *self,
 
 
           metadata_locale_file = g_file_get_child (app_dir, "metadata.platform.locale");
-          metadata_contents = g_strdup_printf("[Runtime]\n"
-                                              "name=%s.Locale\n", self->id_platform);
+          metadata_contents = g_strdup_printf ("[Runtime]\n"
+                                               "name=%s.Locale\n", self->id_platform);
           if (!g_file_replace_contents (metadata_locale_file,
                                         metadata_contents, strlen (metadata_contents),
                                         NULL, FALSE,
@@ -1925,18 +1973,20 @@ builder_manifest_create_platform (BuilderManifest *self,
         return FALSE;
     }
   else
-    g_print ("Cache hit for create platform, skipping\n");
+    {
+      g_print ("Cache hit for create platform, skipping\n");
+    }
 
   return TRUE;
 }
 
 
 gboolean
-builder_manifest_run (BuilderManifest  *self,
-                      BuilderContext   *context,
-                      char            **argv,
-                      int               argc,
-                      GError          **error)
+builder_manifest_run (BuilderManifest *self,
+                      BuilderContext  *context,
+                      char           **argv,
+                      int              argc,
+                      GError         **error)
 {
   g_autoptr(GPtrArray) args = NULL;
   g_autofree char *commandline = NULL;
@@ -1951,7 +2001,7 @@ builder_manifest_run (BuilderManifest  *self,
     return FALSE;
 
   args = g_ptr_array_new_with_free_func (g_free);
-  g_ptr_array_add (args, g_strdup ("xdg-app"));
+  g_ptr_array_add (args, g_strdup ("flatpak"));
   g_ptr_array_add (args, g_strdup ("build"));
 
   build_dir_path = g_file_get_path (builder_context_get_build_dir (context));
@@ -1980,14 +2030,16 @@ builder_manifest_run (BuilderManifest  *self,
         g_ptr_array_add (args, g_strdup_printf ("--env=%s", env[i]));
     }
 
-  /* Inherit all finish args except the filesystem ones so the
-   * command gets the same access as the final app */
+  /* Inherit all finish args except the filesystem and command
+   * ones so the command gets the same access as the final app
+   */
   if (self->finish_args)
     {
       for (i = 0; self->finish_args[i] != NULL; i++)
         {
           const char *arg = self->finish_args[i];
-          if (!g_str_has_prefix (arg, "--filesystem"))
+          if (!g_str_has_prefix (arg, "--filesystem") &&
+              !g_str_has_prefix (arg, "--command"))
             g_ptr_array_add (args, g_strdup (arg));
         }
     }
@@ -2000,9 +2052,9 @@ builder_manifest_run (BuilderManifest  *self,
 
   commandline = g_strjoinv (" ", (char **) args->pdata);
 
-  if (!execvp ((char *)args->pdata[0], (char **)args->pdata))
+  if (!execvp ((char *) args->pdata[0], (char **) args->pdata))
     {
-      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno), "Unable to start xdg-app build");
+      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno), "Unable to start flatpak build");
       return FALSE;
     }
 

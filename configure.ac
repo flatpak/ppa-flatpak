@@ -1,30 +1,32 @@
 AC_PREREQ([2.63])
 
 # Making releases:
-#   XDG_APP_MICRO_VERSION += 1;
-#   XDG_APP_INTERFACE_AGE += 1;
-#   XDG_APP_BINARY_AGE += 1;
-# if any functions have been added, set XDG_APP_INTERFACE_AGE to 0.
+#   FLATPAK_MICRO_VERSION += 1;
+#   FLATPAK_INTERFACE_AGE += 1;
+#   FLATPAK_BINARY_AGE += 1;
+# if any functions have been added, set FLATPAK_INTERFACE_AGE to 0.
 # if backwards compatibility has been broken,
-# set XDG_APP_BINARY_AGE and XDG_APP_INTERFACE_AGE to 0.
+# set FLATPAK_BINARY_AGE and FLATPAK_INTERFACE_AGE to 0.
 #
 # in easier to understand terms:
 #
 # on the stable branch, interface age == micro
 # on the unstable (ie master), interface age = 0
 
-m4_define([xdg_app_major_version], [0])
-m4_define([xdg_app_minor_version], [5])
-m4_define([xdg_app_micro_version], [2])
-m4_define([xdg_app_interface_age], [2])
-m4_define([xdg_app_binary_age],
-          [m4_eval(10000 * xdg_app_major_version + 100 * xdg_app_minor_version + xdg_app_micro_version)])
-m4_define([xdg_app_version],
-          [xdg_app_major_version.xdg_app_minor_version.xdg_app_micro_version])
+m4_define([flatpak_major_version], [0])
+m4_define([flatpak_minor_version], [5])
+m4_define([flatpak_micro_version], [2])
+m4_define([flatpak_interface_age], [2])
+m4_define([flatpak_binary_age],
+          [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
+m4_define([flatpak_version],
+          [flatpak_major_version.flatpak_minor_version.flatpak_micro_version])
 
-AC_INIT([xdg-app],[xdg_app_version])
+AC_INIT([flatpak],[flatpak_version])
 
 AC_USE_SYSTEM_EXTENSIONS
+
+IT_PROG_INTLTOOL([0.35.0])
 
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -33,11 +35,17 @@ AC_DISABLE_STATIC
 LT_PREREQ([2.2.6])
 LT_INIT([disable-static])
 
-AC_CONFIG_SRCDIR([common/xdg-app-helper.c])
+AC_CONFIG_SRCDIR([common/flatpak-dir.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([1.11 no-define no-dist-gzip dist-xz tar-ustar foreign subdir-objects])
 AC_PROG_SED
+
+GETTEXT_PACKAGE=Flatpak
+AC_SUBST([GETTEXT_PACKAGE])
+AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE],["$GETTEXT_PACKAGE"],[gettext domain])
+
+AM_GLIB_GNU_GETTEXT
 
 # Enable silent rules is available
 AM_SILENT_RULES([yes])
@@ -69,6 +77,15 @@ AC_ARG_WITH([systemduserunitdir],
     [with_systemduserunitdir='${prefix}/lib/systemd/user'])
 AC_SUBST([systemduserunitdir], [$with_systemduserunitdir])
 
+AC_ARG_WITH([systemdsystemunitdir],
+            [AS_HELP_STRING([--with-systemdsystemunitdir=DIR],
+                            [Directory for systemd system service files (default=PREFIX/lib/systemd/system)])],
+    [],
+    dnl This is deliberately not ${libdir}: systemd units always go in
+    dnl .../lib, never .../lib64 or .../lib/x86_64-linux-gnu
+    [with_systemdsystemunitdir='${prefix}/lib/systemd/system'])
+AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
+
 AC_ARG_WITH(system_fonts_dir,
 		AS_HELP_STRING([--with-system-fonts-dir=PATH],[Directory where system fonts are, [default=/usr/share/fonts]]),
             with_system_fonts_dir="$withval", with_system_fonts_dir=/usr/share/fonts)
@@ -84,12 +101,17 @@ AC_SUBST([GLIB_MKENUMS], [`$PKG_CONFIG --variable glib_mkenums glib-2.0`])
 AC_SUBST([GLIB_COMPILE_RESOURCES], [`$PKG_CONFIG --variable glib_compile_resources gio-2.0`])
 AC_SUBST([GDBUS_CODEGEN], [`$PKG_CONFIG --variable gdbus_codegen gio-2.0`])
 
+POLKIT_GOBJECT_REQUIRED=0.98
+
 PKG_CHECK_MODULES(BASE, [glib-2.0 gio-2.0 gio-unix-2.0])
 AC_SUBST(BASE_CFLAGS)
 AC_SUBST(BASE_LIBS)
 PKG_CHECK_MODULES(SOUP, [libsoup-2.4])
 AC_SUBST(SOUP_CFLAGS)
 AC_SUBST(SOUP_LIBS)
+
+PKG_CHECK_MODULES(POLKIT, \
+		  polkit-gobject-1 >= $POLKIT_GOBJECT_REQUIRED)
 
 AC_ARG_ENABLE([xauth],
               AC_HELP_STRING([--disable-xauth],
@@ -114,13 +136,22 @@ if test "x$enable_sandboxed_triggers" = "xno"; then
       [Define if sandboxed triggers are disabled])
 fi
 
-PKG_CHECK_MODULES(OSTREE, [libgsystem >= 2015.1 ostree-1 >= 2015.3])
+PKG_CHECK_MODULES(OSTREE, [libgsystem >= 2015.1 ostree-1 >= 2016.5])
 AC_SUBST(OSTREE_CFLAGS)
 AC_SUBST(OSTREE_LIBS)
 save_LIBS=$LIBS
+save_CFLAGS=$CFLAGS
 LIBS=$OSTREE_LIBS
-AC_CHECK_FUNCS(ostree_repo_remote_gpg_import)
+CFLAGS=$OSTREE_CFLAGS
+
+AC_CHECK_MEMBER([OstreeRepoExportArchiveOptions.path_prefix],
+                [AC_DEFINE([HAVE_OSTREE_EXPORT_PATH_PREFIX], 1,
+                          [Have OstreeRepoExportArchiveOptions.path_prefix])],
+               , [[#include <ostree.h>]])
+
 LIBS=$save_LIBS
+CFLAGS=$save_CFLAGS
+
 
 PKG_CHECK_MODULES(FUSE, [fuse])
 AC_SUBST(FUSE_CFLAGS)
@@ -288,38 +319,40 @@ case "$host" in
     CFLAGS="${SAVED_CFLAGS}"
 
     AS_IF([test "${enable_fvisibility_hidden}" = "yes"], [
-      AC_DEFINE([XDG_APP_EXTERN], [__attribute__((visibility("default"))) extern],
+      AC_DEFINE([FLATPAK_EXTERN], [__attribute__((visibility("default"))) extern],
                 [defines how to decorate public symbols while building])
       HIDDEN_VISIBILITY_CFLAGS="-fvisibility=hidden"
     ], [
-      AC_DEFINE([XDG_APP_EXTERN], [extern],
+      AC_DEFINE([FLATPAK_EXTERN], [extern],
                 [defines how to decorate public symbols while building])
     ])
     ;;
 esac
 AC_SUBST(HIDDEN_VISIBILITY_CFLAGS)
 
-XDG_APP_MAJOR_VERSION=xdg_app_major_version
-XDG_APP_MINOR_VERSION=xdg_app_minor_version
-XDG_APP_MICRO_VERSION=xdg_app_micro_version
-XDG_APP_INTERFACE_AGE=xdg_app_interface_age
-XDG_APP_VERSION=xdg_app_version
-AC_SUBST(XDG_APP_MAJOR_VERSION)
-AC_SUBST(XDG_APP_MINOR_VERSION)
-AC_SUBST(XDG_APP_MICRO_VERSION)
-AC_SUBST(XDG_APP_INTERFACE_AGE)
-AC_SUBST(XDG_APP_VERSION)
+GLIB_TESTS
+
+FLATPAK_MAJOR_VERSION=flatpak_major_version
+FLATPAK_MINOR_VERSION=flatpak_minor_version
+FLATPAK_MICRO_VERSION=flatpak_micro_version
+FLATPAK_INTERFACE_AGE=flatpak_interface_age
+FLATPAK_VERSION=flatpak_version
+AC_SUBST(FLATPAK_MAJOR_VERSION)
+AC_SUBST(FLATPAK_MINOR_VERSION)
+AC_SUBST(FLATPAK_MICRO_VERSION)
+AC_SUBST(FLATPAK_INTERFACE_AGE)
+AC_SUBST(FLATPAK_VERSION)
 
 # libtool versioning
-#LT_RELEASE=$XDG_APP_MAJOR_VERSION.$XDG_APP_MINOR_VERSION
-#LT_CURRENT=`expr $XDG_APP_MICRO_VERSION - $XDG_APP_INTERFACE_AGE`
-#LT_REVISION=$XDG_APP_INTERFACE_AGE
-#LT_AGE=`expr $XDG_APP_BINARY_AGE - $XDG_APP_INTERFACE_AGE`
+#LT_RELEASE=$FLATPAK_MAJOR_VERSION.$FLATPAK_MINOR_VERSION
+#LT_CURRENT=`expr $FLATPAK_MICRO_VERSION - $FLATPAK_INTERFACE_AGE`
+#LT_REVISION=$FLATPAK_INTERFACE_AGE
+#LT_AGE=`expr $FLATPAK_BINARY_AGE - $FLATPAK_INTERFACE_AGE`
 #LT_CURRENT_MINUS_AGE=`expr $LT_CURRENT - $LT_AGE`
 
-m4_define([lt_current], [m4_eval(10000 * xdg_app_major_version +  100 * xdg_app_minor_version + xdg_app_micro_version - xdg_app_interface_age)])
-m4_define([lt_revision], [xdg_app_interface_age])
-m4_define([lt_age], [m4_eval(xdg_app_binary_age - xdg_app_interface_age)])
+m4_define([lt_current], [m4_eval(10000 * flatpak_major_version +  100 * flatpak_minor_version + flatpak_micro_version - flatpak_interface_age)])
+m4_define([lt_revision], [flatpak_interface_age])
+m4_define([lt_age], [m4_eval(flatpak_binary_age - flatpak_interface_age)])
 LT_VERSION_INFO="lt_current:lt_revision:lt_age"
 LT_CURRENT_MINUS_AGE=m4_eval(lt_current - lt_age)
 AC_SUBST(LT_VERSION_INFO)
@@ -329,8 +362,9 @@ AC_CONFIG_FILES([
 Makefile
 doc/Makefile
 doc/reference/Makefile
-xdg-app.pc
-lib/xdg-app-version-macros.h
+flatpak.pc
+lib/flatpak-version-macros.h
 doc/reference/version.xml
+po/Makefile.in
 ])
 AC_OUTPUT
