@@ -31,32 +31,35 @@
 #include "libglnx/libglnx.h"
 #include "libgsystem.h"
 
-#include "xdg-app-utils.h"
+#include "flatpak-utils.h"
 #include "builder-utils.h"
 #include "builder-module.h"
 
-struct BuilderModule {
-  GObject parent;
+struct BuilderModule
+{
+  GObject         parent;
 
-  char *name;
-  char *subdir;
-  char **post_install;
-  char **config_opts;
-  char **make_args;
-  char **make_install_args;
-  gboolean rm_configure;
-  gboolean no_autogen;
-  gboolean no_parallel_make;
-  gboolean cmake;
-  gboolean builddir;
+  char           *name;
+  char           *subdir;
+  char          **post_install;
+  char          **config_opts;
+  char          **make_args;
+  char          **make_install_args;
+  gboolean        disabled;
+  gboolean        rm_configure;
+  gboolean        no_autogen;
+  gboolean        no_parallel_make;
+  gboolean        cmake;
+  gboolean        builddir;
   BuilderOptions *build_options;
-  GPtrArray *changes;
-  char **cleanup;
-  char **cleanup_platform;
-  GList *sources;
+  GPtrArray      *changes;
+  char          **cleanup;
+  char          **cleanup_platform;
+  GList          *sources;
 };
 
-typedef struct {
+typedef struct
+{
   GObjectClass parent_class;
 } BuilderModuleClass;
 
@@ -70,6 +73,7 @@ enum {
   PROP_NAME,
   PROP_SUBDIR,
   PROP_RM_CONFIGURE,
+  PROP_DISABLED,
   PROP_NO_AUTOGEN,
   PROP_NO_PARALLEL_MAKE,
   PROP_CMAKE,
@@ -89,7 +93,7 @@ enum {
 static void
 builder_module_finalize (GObject *object)
 {
-  BuilderModule *self = (BuilderModule *)object;
+  BuilderModule *self = (BuilderModule *) object;
 
   g_free (self->name);
   g_free (self->subdir);
@@ -128,6 +132,10 @@ builder_module_get_property (GObject    *object,
 
     case PROP_RM_CONFIGURE:
       g_value_set_boolean (value, self->rm_configure);
+      break;
+
+    case PROP_DISABLED:
+      g_value_set_boolean (value, self->disabled);
       break;
 
     case PROP_NO_AUTOGEN:
@@ -208,6 +216,10 @@ builder_module_set_property (GObject      *object,
       self->rm_configure = g_value_get_boolean (value);
       break;
 
+    case PROP_DISABLED:
+      self->disabled = g_value_get_boolean (value);
+      break;
+
     case PROP_NO_AUTOGEN:
       self->no_autogen = g_value_get_boolean (value);
       break;
@@ -252,7 +264,7 @@ builder_module_set_property (GObject      *object,
       g_set_object (&self->build_options,  g_value_get_object (value));
       break;
 
-     case PROP_SOURCES:
+    case PROP_SOURCES:
       g_list_free_full (self->sources, g_object_unref);
       /* NOTE: This takes ownership of the list! */
       self->sources = g_value_get_pointer (value);
@@ -270,7 +282,7 @@ builder_module_set_property (GObject      *object,
       g_strfreev (tmp);
       break;
 
-   default:
+    default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
     }
 }
@@ -301,6 +313,13 @@ builder_module_class_init (BuilderModuleClass *klass)
   g_object_class_install_property (object_class,
                                    PROP_RM_CONFIGURE,
                                    g_param_spec_boolean ("rm-configure",
+                                                         "",
+                                                         "",
+                                                         FALSE,
+                                                         G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_DISABLED,
+                                   g_param_spec_boolean ("disabled",
                                                          "",
                                                          "",
                                                          FALSE,
@@ -426,10 +445,12 @@ builder_module_serialize_property (JsonSerializable *serializable,
       return retval;
     }
   else
-    return json_serializable_default_serialize_property (serializable,
-                                                         property_name,
-                                                         value,
-                                                         pspec);
+    {
+      return json_serializable_default_serialize_property (serializable,
+                                                           property_name,
+                                                           value,
+                                                           pspec);
+    }
 }
 
 static gboolean
@@ -481,10 +502,12 @@ builder_module_deserialize_property (JsonSerializable *serializable,
       return FALSE;
     }
   else
-    return json_serializable_default_deserialize_property (serializable,
-                                                           property_name,
-                                                           value,
-                                                           pspec, property_node);
+    {
+      return json_serializable_default_deserialize_property (serializable,
+                                                             property_name,
+                                                             value,
+                                                             pspec, property_node);
+    }
 }
 
 static void
@@ -495,22 +518,28 @@ serializable_iface_init (JsonSerializableIface *serializable_iface)
 }
 
 const char *
-builder_module_get_name (BuilderModule  *self)
+builder_module_get_name (BuilderModule *self)
 {
   return self->name;
 }
 
+gboolean
+builder_module_get_disabled (BuilderModule *self)
+{
+  return self->disabled;
+}
+
 GList *
-builder_module_get_sources (BuilderModule  *self)
+builder_module_get_sources (BuilderModule *self)
 {
   return self->sources;
 }
 
 gboolean
-builder_module_download_sources (BuilderModule *self,
-                                 gboolean update_vcs,
+builder_module_download_sources (BuilderModule  *self,
+                                 gboolean        update_vcs,
                                  BuilderContext *context,
-                                 GError **error)
+                                 GError        **error)
 {
   GList *l;
 
@@ -526,10 +555,10 @@ builder_module_download_sources (BuilderModule *self,
 }
 
 gboolean
-builder_module_extract_sources (BuilderModule *self,
-                                GFile *dest,
+builder_module_extract_sources (BuilderModule  *self,
+                                GFile          *dest,
                                 BuilderContext *context,
-                                GError **error)
+                                GError        **error)
 {
   GList *l;
 
@@ -541,7 +570,7 @@ builder_module_extract_sources (BuilderModule *self,
     {
       BuilderSource *source = l->data;
 
-      if (!builder_source_extract  (source, dest, context, error))
+      if (!builder_source_extract (source, dest, context, error))
         return FALSE;
     }
 
@@ -552,15 +581,15 @@ static const char skip_arg[] = "skip";
 static const char strv_arg[] = "strv";
 
 static gboolean
-build (GFile *app_dir,
-       const char *module_name,
+build (GFile          *app_dir,
+       const char     *module_name,
        BuilderContext *context,
-       GFile *source_dir,
-       const char *cwd_subdir,
-       char **xdg_app_opts,
-       char **env_vars,
-       GError **error,
-       const gchar            *argv1,
+       GFile          *source_dir,
+       const char     *cwd_subdir,
+       char          **flatpak_opts,
+       char          **env_vars,
+       GError        **error,
+       const gchar    *argv1,
        ...)
 {
   g_autoptr(GSubprocessLauncher) launcher = NULL;
@@ -577,7 +606,7 @@ build (GFile *app_dir,
   int i;
 
   args = g_ptr_array_new_with_free_func (g_free);
-  g_ptr_array_add (args, g_strdup ("xdg-app"));
+  g_ptr_array_add (args, g_strdup ("flatpak"));
   g_ptr_array_add (args, g_strdup ("build"));
 
   source_dir_path_canonical = canonicalize_file_name (source_dir_path);
@@ -602,10 +631,10 @@ build (GFile *app_dir,
       g_ptr_array_add (args, g_strdup_printf ("--bind-mount=/run/ccache=%s", ccache_dir_path));
     }
 
-  if (xdg_app_opts)
+  if (flatpak_opts)
     {
-      for (i = 0; xdg_app_opts[i] != NULL; i++)
-        g_ptr_array_add (args, g_strdup (xdg_app_opts[i]));
+      for (i = 0; flatpak_opts[i] != NULL; i++)
+        g_ptr_array_add (args, g_strdup (flatpak_opts[i]));
     }
 
   if (env_vars)
@@ -628,7 +657,9 @@ build (GFile *app_dir,
             }
         }
       else if (arg != skip_arg)
-        g_ptr_array_add (args, g_strdup (arg));
+        {
+          g_ptr_array_add (args, g_strdup (arg));
+        }
     }
   g_ptr_array_add (args, NULL);
   va_end (ap);
@@ -651,14 +682,15 @@ build (GFile *app_dir,
 }
 
 static gboolean
-builder_module_handle_debuginfo (BuilderModule *self,
-                                 GFile *app_dir,
-                                 BuilderCache *cache,
+builder_module_handle_debuginfo (BuilderModule  *self,
+                                 GFile          *app_dir,
+                                 BuilderCache   *cache,
                                  BuilderContext *context,
-                                 GError **error)
+                                 GError        **error)
 {
   g_autofree char *app_dir_path = g_file_get_path (app_dir);
   int i;
+
   g_autoptr(GPtrArray) added = NULL;
   g_autoptr(GPtrArray) modified = NULL;
   g_autoptr(GPtrArray) added_or_modified = g_ptr_array_new ();
@@ -672,11 +704,11 @@ builder_module_handle_debuginfo (BuilderModule *self,
   for (i = 0; i < modified->len; i++)
     g_ptr_array_add (added_or_modified, g_ptr_array_index (modified, i));
 
-  g_ptr_array_sort (added_or_modified, xdg_app_strcmp0_ptr);
+  g_ptr_array_sort (added_or_modified, flatpak_strcmp0_ptr);
 
   for (i = 0; i < added_or_modified->len; i++)
     {
-      const char *rel_path = (char *)g_ptr_array_index (added_or_modified, i);
+      const char *rel_path = (char *) g_ptr_array_index (added_or_modified, i);
       g_autoptr(GFile) file = g_file_resolve_relative_path (app_dir, rel_path);
       g_autofree char *path = g_file_get_path (file);
       g_autofree char *debug_path = NULL;
@@ -711,8 +743,8 @@ builder_module_handle_debuginfo (BuilderModule *self,
 
               if (g_str_has_prefix (rel_path_dir, "files/"))
                 {
-                  debug_dir = g_build_filename (app_dir_path, "files/lib/debug", rel_path_dir + strlen("files/"), NULL);
-                  real_debug_dir = g_build_filename ("/app/lib/debug", rel_path_dir + strlen("files/"), NULL);
+                  debug_dir = g_build_filename (app_dir_path, "files/lib/debug", rel_path_dir + strlen ("files/"), NULL);
+                  real_debug_dir = g_build_filename ("/app/lib/debug", rel_path_dir + strlen ("files/"), NULL);
                   source_dir_path = g_build_filename (app_dir_path, "files/lib/debug/source", NULL);
                 }
               else if (g_str_has_prefix (rel_path_dir, "usr/"))
@@ -752,7 +784,9 @@ builder_module_handle_debuginfo (BuilderModule *self,
                   file_refs = builder_get_debuginfo_file_references (path, &local_error);
 
                   if (file_refs == NULL)
-                    g_warning ("%s", local_error->message);
+                    {
+                      g_warning ("%s", local_error->message);
+                    }
                   else
                     {
                       GFile *build_dir = builder_context_get_build_dir (context);
@@ -802,14 +836,15 @@ builder_module_handle_debuginfo (BuilderModule *self,
 }
 
 gboolean
-builder_module_build (BuilderModule *self,
-                      BuilderCache *cache,
+builder_module_build (BuilderModule  *self,
+                      BuilderCache   *cache,
                       BuilderContext *context,
-                      GError **error)
+                      GError        **error)
 {
   GFile *app_dir = builder_context_get_app_dir (context);
   g_autofree char *make_j = NULL;
   g_autofree char *make_l = NULL;
+
   g_autoptr(GFile) configure_file = NULL;
   g_autoptr(GFile) cmake_file = NULL;
   const char *makefile_names[] =  {"Makefile", "makefile", "GNUmakefile", NULL};
@@ -836,7 +871,7 @@ builder_module_build (BuilderModule *self,
 
   if (!gs_file_ensure_directory (build_parent_dir, TRUE,
                                  NULL, error))
-      return FALSE;
+    return FALSE;
 
   for (count = 1; source_dir_path == NULL; count++)
     {
@@ -848,7 +883,9 @@ builder_module_build (BuilderModule *self,
       source_dir_count = g_file_get_child (build_parent_dir, buildname);
 
       if (g_file_make_directory (source_dir_count, NULL, &my_error))
-        source_dir_path = g_file_get_path (source_dir_count);
+        {
+          source_dir_path = g_file_get_path (source_dir_count);
+        }
       else
         {
           if (!g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_EXISTS))
@@ -891,7 +928,9 @@ builder_module_build (BuilderModule *self,
       source_subdir_relative = self->subdir;
     }
   else
-    source_subdir = g_object_ref (source_dir);
+    {
+      source_subdir = g_object_ref (source_dir);
+    }
 
   env = builder_options_get_env (self->build_options, context);
   build_args = builder_options_get_build_args (self->build_options, context);
@@ -972,10 +1011,10 @@ builder_module_build (BuilderModule *self,
       if (use_builddir)
         {
           if (source_subdir_relative)
-            build_dir_relative = g_build_filename (source_subdir_relative, "_xdg_app_build", NULL);
+            build_dir_relative = g_build_filename (source_subdir_relative, "_flatpak_build", NULL);
           else
-            build_dir_relative = g_strdup ("_xdg_app_build");
-          build_dir = g_file_get_child (source_subdir, "_xdg_app_build");
+            build_dir_relative = g_strdup ("_flatpak_build");
+          build_dir = g_file_get_child (source_subdir, "_flatpak_build");
 
           if (!g_file_make_directory (build_dir, NULL, error))
             return FALSE;
@@ -1000,7 +1039,9 @@ builder_module_build (BuilderModule *self,
               configure_final_arg = ".";
             }
           else
-            configure_cmd = "./configure";
+            {
+              configure_cmd = "./configure";
+            }
         }
 
       if (self->cmake)
@@ -1036,13 +1077,13 @@ builder_module_build (BuilderModule *self,
   if (!self->no_parallel_make)
     {
       make_j = g_strdup_printf ("-j%d", builder_context_get_n_cpu (context));
-      make_l = g_strdup_printf ("-l%d", 2*builder_context_get_n_cpu (context));
+      make_l = g_strdup_printf ("-l%d", 2 * builder_context_get_n_cpu (context));
     }
 
   /* Build and install */
 
   if (!build (app_dir, self->name, context, source_dir, build_dir_relative, build_args, env, error,
-              "make", make_j?make_j:skip_arg, make_l?make_l:skip_arg, strv_arg, self->make_args, NULL))
+              "make", make_j ? make_j : skip_arg, make_l ? make_l : skip_arg, strv_arg, self->make_args, NULL))
     return FALSE;
 
   if (!build (app_dir, self->name, context, source_dir, build_dir_relative, build_args, env, error,
@@ -1092,9 +1133,9 @@ builder_module_build (BuilderModule *self,
 }
 
 gboolean
-builder_module_update (BuilderModule   *self,
-                       BuilderContext  *context,
-                       GError         **error)
+builder_module_update (BuilderModule  *self,
+                       BuilderContext *context,
+                       GError        **error)
 {
   GList *l;
 
@@ -1102,7 +1143,7 @@ builder_module_update (BuilderModule   *self,
     {
       BuilderSource *source = l->data;
 
-      if (!builder_source_update  (source, context, error))
+      if (!builder_source_update (source, context, error))
         return FALSE;
     }
 
@@ -1125,6 +1166,7 @@ builder_module_checksum (BuilderModule  *self,
   builder_cache_checksum_strv (cache, self->make_install_args);
   builder_cache_checksum_boolean (cache, self->rm_configure);
   builder_cache_checksum_boolean (cache, self->no_autogen);
+  builder_cache_checksum_boolean (cache, self->disabled);
   builder_cache_checksum_boolean (cache, self->no_parallel_make);
   builder_cache_checksum_boolean (cache, self->cmake);
   builder_cache_checksum_boolean (cache, self->builddir);
@@ -1151,14 +1193,14 @@ builder_module_checksum_for_cleanup (BuilderModule  *self,
 }
 
 GPtrArray *
-builder_module_get_changes (BuilderModule  *self)
+builder_module_get_changes (BuilderModule *self)
 {
   return self->changes;
 }
 
 void
-builder_module_set_changes (BuilderModule  *self,
-                            GPtrArray      *changes)
+builder_module_set_changes (BuilderModule *self,
+                            GPtrArray     *changes)
 {
   if (self->changes != changes)
     {
@@ -1170,9 +1212,9 @@ builder_module_set_changes (BuilderModule  *self,
 
 static void
 collect_cleanup_for_path (const char **patterns,
-                          const char *path,
-                          const char *add_prefix,
-                          GHashTable *to_remove_ht)
+                          const char  *path,
+                          const char  *add_prefix,
+                          GHashTable  *to_remove_ht)
 {
   int i;
 
@@ -1180,12 +1222,12 @@ collect_cleanup_for_path (const char **patterns,
     return;
 
   for (i = 0; patterns[i] != NULL; i++)
-    xdg_app_collect_matches_for_path_pattern (path, patterns[i], add_prefix, to_remove_ht);
+    flatpak_collect_matches_for_path_pattern (path, patterns[i], add_prefix, to_remove_ht);
 }
 
 static gboolean
 matches_cleanup_for_path (const char **patterns,
-                          const char *path)
+                          const char  *path)
 {
   int i;
 
@@ -1194,7 +1236,7 @@ matches_cleanup_for_path (const char **patterns,
 
   for (i = 0; patterns[i] != NULL; i++)
     {
-      if (xdg_app_matches_path_pattern (path, patterns[i]))
+      if (flatpak_matches_path_pattern (path, patterns[i]))
         return TRUE;
     }
 
@@ -1202,10 +1244,10 @@ matches_cleanup_for_path (const char **patterns,
 }
 
 void
-builder_module_cleanup_collect (BuilderModule *self,
-                                gboolean platform,
-                                BuilderContext  *context,
-                                GHashTable *to_remove_ht)
+builder_module_cleanup_collect (BuilderModule  *self,
+                                gboolean        platform,
+                                BuilderContext *context,
+                                GHashTable     *to_remove_ht)
 {
   GPtrArray *changed_files;
   int i;
@@ -1215,12 +1257,12 @@ builder_module_cleanup_collect (BuilderModule *self,
   if (platform)
     {
       global_patterns = builder_context_get_global_cleanup_platform (context);
-      local_patterns = (const char **)self->cleanup_platform;
+      local_patterns = (const char **) self->cleanup_platform;
     }
   else
     {
       global_patterns = builder_context_get_global_cleanup (context);
-      local_patterns = (const char **)self->cleanup;
+      local_patterns = (const char **) self->cleanup;
     }
 
   changed_files = self->changes;

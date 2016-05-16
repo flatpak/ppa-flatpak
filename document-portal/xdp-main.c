@@ -13,10 +13,11 @@
 #include <gio/gunixfdlist.h>
 #include "xdp-dbus.h"
 #include "xdp-util.h"
-#include "xdg-app-db.h"
-#include "xdg-app-dbus.h"
-#include "xdg-app-utils.h"
-#include "xdg-app-portal-error.h"
+#include "flatpak-db.h"
+#include "flatpak-dbus.h"
+#include "flatpak-utils.h"
+#include "flatpak-portal-error.h"
+#include "permission-store/permission-store-dbus.h"
 #include "xdp-fuse.h"
 
 #include <sys/eventfd.h>
@@ -25,48 +26,47 @@
 
 typedef struct
 {
-  char *doc_id;
-  int fd;
-  char *owner;
-  guint flags;
+  char                  *doc_id;
+  int                    fd;
+  char                  *owner;
+  guint                  flags;
 
   GDBusMethodInvocation *finish_invocation;
 } XdpDocUpdate;
 
 
 static GMainLoop *loop = NULL;
-static XdgAppDb *db = NULL;
-static XdgAppPermissionStore *permission_store;
-static GDBusNodeInfo *introspection_data = NULL;
+static FlatpakDb *db = NULL;
+static XdgPermissionStore *permission_store;
 static int daemon_event_fd = -1;
 static int final_exit_status = 0;
 static dev_t fuse_dev = 0;
 
-G_LOCK_DEFINE(db);
+G_LOCK_DEFINE (db);
 
 char **
 xdp_list_apps (void)
 {
-  AUTOLOCK(db);
-  return xdg_app_db_list_apps (db);
+  AUTOLOCK (db);
+  return flatpak_db_list_apps (db);
 }
 
 char **
 xdp_list_docs (void)
 {
-  AUTOLOCK(db);
-  return xdg_app_db_list_ids (db);
+  AUTOLOCK (db);
+  return flatpak_db_list_ids (db);
 }
 
-XdgAppDbEntry *
+FlatpakDbEntry *
 xdp_lookup_doc (const char *doc_id)
 {
-  AUTOLOCK(db);
-  return xdg_app_db_lookup (db, doc_id);
+  AUTOLOCK (db);
+  return flatpak_db_lookup (db, doc_id);
 }
 
 static gboolean
-persist_entry (XdgAppDbEntry *entry)
+persist_entry (FlatpakDbEntry *entry)
 {
   guint32 flags = xdp_entry_get_flags (entry);
 
@@ -74,57 +74,61 @@ persist_entry (XdgAppDbEntry *entry)
 }
 
 static void
-do_set_permissions (XdgAppDbEntry *entry,
-                    const char *doc_id,
-                    const char *app_id,
+do_set_permissions (FlatpakDbEntry    *entry,
+                    const char        *doc_id,
+                    const char        *app_id,
                     XdpPermissionFlags perms)
 {
   g_autofree const char **perms_s = xdg_unparse_permissions (perms);
-  g_autoptr(XdgAppDbEntry) new_entry = NULL;
+
+  g_autoptr(FlatpakDbEntry) new_entry = NULL;
 
   g_debug ("set_permissions %s %s %x", doc_id, app_id, perms);
 
-  new_entry = xdg_app_db_entry_set_app_permissions (entry, app_id, perms_s);
-  xdg_app_db_set_entry (db, doc_id, new_entry);
+  new_entry = flatpak_db_entry_set_app_permissions (entry, app_id, perms_s);
+  flatpak_db_set_entry (db, doc_id, new_entry);
 
   if (persist_entry (new_entry))
-    xdg_app_permission_store_call_set_permission (permission_store,
-                                                  TABLE_NAME,
-                                                  FALSE,
-                                                  doc_id,
-                                                  app_id,
-                                                  perms_s,
-                                                  NULL,
-                                                  NULL, NULL);
+    {
+      xdg_permission_store_call_set_permission (permission_store,
+                                                TABLE_NAME,
+                                                FALSE,
+                                                doc_id,
+                                                app_id,
+                                                perms_s,
+                                                NULL,
+                                                NULL, NULL);
+    }
 }
 
 static void
 portal_grant_permissions (GDBusMethodInvocation *invocation,
-                          GVariant *parameters,
-                          const char *app_id)
+                          GVariant              *parameters,
+                          const char            *app_id)
 {
   const char *target_app_id;
   const char *id;
   g_autofree const char **permissions = NULL;
   XdpPermissionFlags perms;
-  g_autoptr(XdgAppDbEntry) entry = NULL;
+
+  g_autoptr(FlatpakDbEntry) entry = NULL;
 
   g_variant_get (parameters, "(&s&s^a&s)", &id, &target_app_id, &permissions);
 
   {
-    AUTOLOCK(db);
+    AUTOLOCK (db);
 
-    entry = xdg_app_db_lookup (db, id);
+    entry = flatpak_db_lookup (db, id);
     if (entry == NULL)
       {
-        g_dbus_method_invocation_return_error (invocation, XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_NOT_FOUND,
+        g_dbus_method_invocation_return_error (invocation, FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_NOT_FOUND,
                                                "No such document: %s", id);
         return;
       }
 
-    if (!xdg_app_is_valid_name (target_app_id))
+    if (!flatpak_is_valid_name (target_app_id))
       {
-        g_dbus_method_invocation_return_error (invocation, XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_INVALID_ARGUMENT,
+        g_dbus_method_invocation_return_error (invocation, FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT,
                                                "Invalid app name: %s", target_app_id);
         return;
       }
@@ -135,7 +139,7 @@ portal_grant_permissions (GDBusMethodInvocation *invocation,
     if (!xdp_entry_has_permissions (entry, app_id,
                                     XDP_PERMISSION_FLAGS_GRANT_PERMISSIONS | perms))
       {
-        g_dbus_method_invocation_return_error (invocation, XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_NOT_ALLOWED,
+        g_dbus_method_invocation_return_error (invocation, FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_NOT_ALLOWED,
                                                "Not enough permissions");
         return;
       }
@@ -152,31 +156,32 @@ portal_grant_permissions (GDBusMethodInvocation *invocation,
 
 static void
 portal_revoke_permissions (GDBusMethodInvocation *invocation,
-                           GVariant *parameters,
-                           const char *app_id)
+                           GVariant              *parameters,
+                           const char            *app_id)
 {
   const char *target_app_id;
   const char *id;
   g_autofree const char **permissions = NULL;
-  g_autoptr(XdgAppDbEntry) entry = NULL;
+
+  g_autoptr(FlatpakDbEntry) entry = NULL;
   XdpPermissionFlags perms;
 
   g_variant_get (parameters, "(&s&s^a&s)", &id, &target_app_id, &permissions);
 
   {
-    AUTOLOCK(db);
+    AUTOLOCK (db);
 
-    entry = xdg_app_db_lookup (db, id);
+    entry = flatpak_db_lookup (db, id);
     if (entry == NULL)
       {
-        g_dbus_method_invocation_return_error (invocation, XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_NOT_FOUND,
+        g_dbus_method_invocation_return_error (invocation, FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_NOT_FOUND,
                                                "No such document: %s", id);
         return;
       }
 
-    if (!xdg_app_is_valid_name (target_app_id))
+    if (!flatpak_is_valid_name (target_app_id))
       {
-        g_dbus_method_invocation_return_error (invocation, XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_INVALID_ARGUMENT,
+        g_dbus_method_invocation_return_error (invocation, FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT,
                                                "Invalid app name: %s", target_app_id);
         return;
       }
@@ -188,7 +193,7 @@ portal_revoke_permissions (GDBusMethodInvocation *invocation,
                                     XDP_PERMISSION_FLAGS_GRANT_PERMISSIONS) ||
         strcmp (app_id, target_app_id) == 0)
       {
-        g_dbus_method_invocation_return_error (invocation, XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_NOT_ALLOWED,
+        g_dbus_method_invocation_return_error (invocation, FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_NOT_ALLOWED,
                                                "Not enough permissions");
         return;
       }
@@ -205,45 +210,46 @@ portal_revoke_permissions (GDBusMethodInvocation *invocation,
 
 static void
 portal_delete (GDBusMethodInvocation *invocation,
-               GVariant *parameters,
-               const char *app_id)
+               GVariant              *parameters,
+               const char            *app_id)
 {
   const char *id;
-  g_autoptr(XdgAppDbEntry) entry = NULL;
+
+  g_autoptr(FlatpakDbEntry) entry = NULL;
   g_autofree const char **old_apps = NULL;
   int i;
 
   g_variant_get (parameters, "(s)", &id);
 
   {
-    AUTOLOCK(db);
+    AUTOLOCK (db);
 
-    entry = xdg_app_db_lookup (db, id);
+    entry = flatpak_db_lookup (db, id);
     if (entry == NULL)
       {
-        g_dbus_method_invocation_return_error (invocation, XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_NOT_FOUND,
-                                             "No such document: %s", id);
+        g_dbus_method_invocation_return_error (invocation, FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_NOT_FOUND,
+                                               "No such document: %s", id);
         return;
       }
 
     if (!xdp_entry_has_permissions (entry, app_id, XDP_PERMISSION_FLAGS_DELETE))
       {
-        g_dbus_method_invocation_return_error (invocation, XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_NOT_ALLOWED,
+        g_dbus_method_invocation_return_error (invocation, FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_NOT_ALLOWED,
                                                "Not enough permissions");
         return;
       }
 
     g_debug ("delete %s", id);
 
-    xdg_app_db_set_entry (db, id, NULL);
+    flatpak_db_set_entry (db, id, NULL);
 
     if (persist_entry (entry))
-      xdg_app_permission_store_call_delete (permission_store, TABLE_NAME,
-                                            id, NULL, NULL, NULL);
+      xdg_permission_store_call_delete (permission_store, TABLE_NAME,
+                                        id, NULL, NULL, NULL);
   }
 
   /* All i/o is done now, so drop the lock so we can invalidate the fuse caches */
-  old_apps = xdg_app_db_entry_list_apps (entry);
+  old_apps = flatpak_db_entry_list_apps (entry);
   for (i = 0; old_apps[i] != NULL; i++)
     xdp_fuse_invalidate_doc_app (id, old_apps[i]);
   xdp_fuse_invalidate_doc_app (id, NULL);
@@ -256,7 +262,7 @@ char *
 do_create_doc (struct stat *parent_st_buf, const char *path, gboolean reuse_existing, gboolean persistent)
 {
   g_autoptr(GVariant) data = NULL;
-  g_autoptr (XdgAppDbEntry) entry = NULL;
+  g_autoptr(FlatpakDbEntry) entry = NULL;
   g_auto(GStrv) ids = NULL;
   char *id = NULL;
   guint32 flags = 0;
@@ -268,13 +274,13 @@ do_create_doc (struct stat *parent_st_buf, const char *path, gboolean reuse_exis
   data =
     g_variant_ref_sink (g_variant_new ("(^ayttu)",
                                        path,
-                                       (guint64)parent_st_buf->st_dev,
-                                       (guint64)parent_st_buf->st_ino,
+                                       (guint64) parent_st_buf->st_dev,
+                                       (guint64) parent_st_buf->st_ino,
                                        flags));
 
   if (reuse_existing)
     {
-      ids = xdg_app_db_list_ids_by_value (db, data);
+      ids = flatpak_db_list_ids_by_value (db, data);
 
       if (ids[0] != NULL)
         return g_strdup (ids[0]);  /* Reuse pre-existing entry with same path */
@@ -282,36 +288,38 @@ do_create_doc (struct stat *parent_st_buf, const char *path, gboolean reuse_exis
 
   while (TRUE)
     {
-      g_autoptr(XdgAppDbEntry) existing = NULL;
+      g_autoptr(FlatpakDbEntry) existing = NULL;
 
       g_clear_pointer (&id, g_free);
-      id = xdp_name_from_id ((guint32)g_random_int ());
-      existing = xdg_app_db_lookup (db, id);
+      id = xdp_name_from_id ((guint32) g_random_int ());
+      existing = flatpak_db_lookup (db, id);
       if (existing == NULL)
         break;
     }
 
   g_debug ("create_doc %s", id);
 
-  entry = xdg_app_db_entry_new (data);
-  xdg_app_db_set_entry (db, id, entry);
+  entry = flatpak_db_entry_new (data);
+  flatpak_db_set_entry (db, id, entry);
 
   if (persistent)
-    xdg_app_permission_store_call_set (permission_store,
-                                       TABLE_NAME,
-                                       TRUE,
-                                       id,
-                                       g_variant_new_array (G_VARIANT_TYPE("{sas}"), NULL, 0),
-                                       g_variant_new_variant (data),
-                                       NULL, NULL, NULL);
+    {
+      xdg_permission_store_call_set (permission_store,
+                                     TABLE_NAME,
+                                     TRUE,
+                                     id,
+                                     g_variant_new_array (G_VARIANT_TYPE ("{sas}"), NULL, 0),
+                                     g_variant_new_variant (data),
+                                     NULL, NULL, NULL);
+    }
 
   return id;
 }
 
 static void
 portal_add (GDBusMethodInvocation *invocation,
-            GVariant *parameters,
-            const char *app_id)
+            GVariant              *parameters,
+            const char            *app_id)
 {
   GDBusMessage *message;
   GUnixFDList *fd_list;
@@ -320,7 +328,7 @@ portal_add (GDBusMethodInvocation *invocation,
   int fd_id, fd, fds_len, fd_flags;
   glnx_fd_close int dir_fd = -1;
   const int *fds;
-  char path_buffer[PATH_MAX+1];
+  char path_buffer[PATH_MAX + 1];
   ssize_t symlink_size;
   struct stat st_buf, real_st_buf, real_parent_st_buf;
   g_autofree char *dirname = NULL;
@@ -358,7 +366,7 @@ portal_add (GDBusMethodInvocation *invocation,
       (symlink_size = readlink (proc_path, path_buffer, sizeof (path_buffer) - 1)) < 0)
     {
       g_dbus_method_invocation_return_error (invocation,
-                                             XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_INVALID_ARGUMENT,
+                                             FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT,
                                              "Invalid fd passed");
       return;
     }
@@ -370,7 +378,7 @@ portal_add (GDBusMethodInvocation *invocation,
      could later replace a parent with a symlink and make us read some other file */
   dirname = g_path_get_dirname (path_buffer);
   name = g_path_get_basename (path_buffer);
-  dir_fd = open (dirname, O_CLOEXEC|O_PATH);
+  dir_fd = open (dirname, O_CLOEXEC | O_PATH);
 
   if (fstat (dir_fd, &real_parent_st_buf) < 0 ||
       fstatat (dir_fd, name, &real_st_buf, AT_SYMLINK_NOFOLLOW) < 0 ||
@@ -379,7 +387,7 @@ portal_add (GDBusMethodInvocation *invocation,
     {
       /* Don't leak any info about real file path existance, etc */
       g_dbus_method_invocation_return_error (invocation,
-                                             XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_INVALID_ARGUMENT,
+                                             FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT,
                                              "Invalid fd passed");
       return;
     }
@@ -389,14 +397,14 @@ portal_add (GDBusMethodInvocation *invocation,
   if (st_buf.st_dev == fuse_dev)
     {
       /* The passed in fd is on the fuse filesystem itself */
-      g_autoptr(XdgAppDbEntry) old_entry = NULL;
+      g_autoptr(FlatpakDbEntry) old_entry = NULL;
 
       id = xdp_fuse_lookup_id_for_inode (st_buf.st_ino);
       g_debug ("path on fuse, id %s", id);
       if (id == NULL)
         {
           g_dbus_method_invocation_return_error (invocation,
-                                                 XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_INVALID_ARGUMENT,
+                                                 FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT,
                                                  "Invalid fd passed");
           return;
         }
@@ -404,18 +412,18 @@ portal_add (GDBusMethodInvocation *invocation,
       /* Don't lock the db before doing the fuse call above, because it takes takes a lock
          that can block something calling back, causing a deadlock on the db lock */
 
-      AUTOLOCK(db);
+      AUTOLOCK (db);
 
       /* If the entry doesn't exist anymore, fail.  Also fail if not
          resuse_existing, because otherwise the user could use this to
          get a copy with permissions and thus escape later permission
          revocations */
-      old_entry = xdg_app_db_lookup (db, id);
+      old_entry = flatpak_db_lookup (db, id);
       if (old_entry == NULL ||
           !reuse_existing)
         {
           g_dbus_method_invocation_return_error (invocation,
-                                                 XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_INVALID_ARGUMENT,
+                                                 FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT,
                                                  "Invalid fd passed");
           return;
         }
@@ -423,19 +431,19 @@ portal_add (GDBusMethodInvocation *invocation,
   else
     {
       {
-        AUTOLOCK(db);
+        AUTOLOCK (db);
 
         id = do_create_doc (&real_parent_st_buf, path_buffer, reuse_existing, persistent);
 
         if (app_id[0] != '\0')
           {
-            g_autoptr(XdgAppDbEntry) entry = NULL;
+            g_autoptr(FlatpakDbEntry) entry = NULL;
             XdpPermissionFlags perms =
               XDP_PERMISSION_FLAGS_GRANT_PERMISSIONS |
               XDP_PERMISSION_FLAGS_READ |
               XDP_PERMISSION_FLAGS_WRITE;
             {
-              entry = xdg_app_db_lookup (db, id);
+              entry = flatpak_db_lookup (db, id);
 
               /* If its a unique one its safe for the creator to
                  delete it at will */
@@ -459,8 +467,8 @@ portal_add (GDBusMethodInvocation *invocation,
 
 static void
 portal_add_named (GDBusMethodInvocation *invocation,
-                  GVariant *parameters,
-                  const char *app_id)
+                  GVariant              *parameters,
+                  const char            *app_id)
 {
   GDBusMessage *message;
   GUnixFDList *fd_list;
@@ -468,12 +476,13 @@ portal_add_named (GDBusMethodInvocation *invocation,
   g_autofree char *proc_path = NULL;
   int parent_fd_id, parent_fd, fds_len, fd_flags;
   const int *fds;
-  char parent_path_buffer[PATH_MAX+1];
+  char parent_path_buffer[PATH_MAX + 1];
   g_autofree char *path = NULL;
   ssize_t symlink_size;
   struct stat parent_st_buf;
   const char *filename;
   gboolean reuse_existing, persistent;
+
   g_autoptr(GVariant) filename_v = NULL;
 
   g_variant_get (parameters, "(h@aybb)", &parent_fd_id, &filename_v, &reuse_existing, &persistent);
@@ -482,7 +491,7 @@ portal_add_named (GDBusMethodInvocation *invocation,
   /* This is only allowed from the host, or else we could leak existance of files */
   if (*app_id != 0)
     {
-      g_dbus_method_invocation_return_error (invocation, XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_NOT_ALLOWED,
+      g_dbus_method_invocation_return_error (invocation, FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_NOT_ALLOWED,
                                              "Not enough permissions");
       return;
     }
@@ -501,7 +510,7 @@ portal_add_named (GDBusMethodInvocation *invocation,
   if (strchr (filename, '/') != NULL)
     {
       g_dbus_method_invocation_return_error (invocation,
-                                             XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_INVALID_ARGUMENT,
+                                             FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT,
                                              "Invalid filename passed");
       return;
     }
@@ -524,7 +533,7 @@ portal_add_named (GDBusMethodInvocation *invocation,
       (symlink_size = readlink (proc_path, parent_path_buffer, sizeof (parent_path_buffer) - 1)) < 0)
     {
       g_dbus_method_invocation_return_error (invocation,
-                                             XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_INVALID_ARGUMENT,
+                                             FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT,
                                              "Invalid fd passed");
       return;
     }
@@ -532,7 +541,7 @@ portal_add_named (GDBusMethodInvocation *invocation,
   if (parent_st_buf.st_dev == fuse_dev)
     {
       g_dbus_method_invocation_return_error (invocation,
-                                             XDG_APP_PORTAL_ERROR, XDG_APP_PORTAL_ERROR_INVALID_ARGUMENT,
+                                             FLATPAK_PORTAL_ERROR, FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT,
                                              "Invalid fd passed");
       return;
     }
@@ -543,7 +552,7 @@ portal_add_named (GDBusMethodInvocation *invocation,
 
   g_debug ("portal_add_named %s", path);
 
-  AUTOLOCK(db);
+  AUTOLOCK (db);
 
   id = do_create_doc (&parent_st_buf, path, reuse_existing, persistent);
 
@@ -553,20 +562,21 @@ portal_add_named (GDBusMethodInvocation *invocation,
 
 
 typedef void (*PortalMethod) (GDBusMethodInvocation *invocation,
-                              GVariant *parameters,
-                              const char *app_id);
+                              GVariant              *parameters,
+                              const char            *app_id);
 
 static void
-got_app_id_cb (GObject *source_object,
+got_app_id_cb (GObject      *source_object,
                GAsyncResult *res,
-               gpointer user_data)
+               gpointer      user_data)
 {
   GDBusMethodInvocation *invocation = G_DBUS_METHOD_INVOCATION (source_object);
+
   g_autoptr(GError) error = NULL;
   g_autofree char *app_id = NULL;
   PortalMethod portal_method = user_data;
 
-  app_id = xdg_app_invocation_lookup_app_id_finish (invocation, res, &error);
+  app_id = flatpak_invocation_lookup_app_id_finish (invocation, res, &error);
 
   if (app_id == NULL)
     g_dbus_method_invocation_return_gerror (invocation, error);
@@ -575,10 +585,10 @@ got_app_id_cb (GObject *source_object,
 }
 
 static gboolean
-handle_method (GCallback method_callback,
+handle_method (GCallback              method_callback,
                GDBusMethodInvocation *invocation)
 {
-  xdg_app_invocation_lookup_app_id (invocation, NULL, got_app_id_cb, method_callback);
+  flatpak_invocation_lookup_app_id (invocation, NULL, got_app_id_cb, method_callback);
 
   return TRUE;
 }
@@ -607,7 +617,7 @@ on_bus_acquired (GDBusConnection *connection,
   g_signal_connect_swapped (helper, "handle-revoke-permissions", G_CALLBACK (handle_method), portal_revoke_permissions);
   g_signal_connect_swapped (helper, "handle-delete", G_CALLBACK (handle_method), portal_delete);
 
-  xdg_app_connection_track_name_owners (connection);
+  flatpak_connection_track_name_owners (connection);
 
   if (!g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (helper),
                                          connection,
@@ -696,9 +706,9 @@ exit_handler (int sig)
 }
 
 static int
-set_one_signal_handler (int sig,
+set_one_signal_handler (int    sig,
                         void (*handler)(int),
-                        int remove)
+                        int    remove)
 {
   struct sigaction sa;
   struct sigaction old_sa;
@@ -736,10 +746,10 @@ static GOptionEntry entries[] = {
 };
 
 static void
-message_handler (const gchar *log_domain,
+message_handler (const gchar   *log_domain,
                  GLogLevelFlags log_level,
-                 const gchar *message,
-                 gpointer user_data)
+                 const gchar   *message,
+                 gpointer       user_data)
 {
   /* Make this look like normal console output */
   if (log_level & G_LOG_LEVEL_DEBUG)
@@ -753,16 +763,18 @@ main (int    argc,
       char **argv)
 {
   guint owner_id;
-  GBytes *introspection_bytes;
+
   g_autoptr(GError) error = NULL;
   g_autofree char *path = NULL;
-  GDBusConnection  *session_bus;
+  GDBusConnection *session_bus;
   GOptionContext *context;
 
   setlocale (LC_ALL, "");
 
   /* Avoid even loading gvfs to avoid accidental confusion */
   g_setenv ("GIO_USE_VFS", "local", TRUE);
+
+  flatpak_migrate_from_xdg_app ();
 
   context = g_option_context_new ("- document portal");
   g_option_context_add_main_entries (context, entries, NULL);
@@ -797,8 +809,8 @@ main (int    argc,
 
   loop = g_main_loop_new (NULL, FALSE);
 
-  path = g_build_filename (g_get_user_data_dir (), "xdg-app/db", TABLE_NAME, NULL);
-  db = xdg_app_db_new (path, FALSE, &error);
+  path = g_build_filename (g_get_user_data_dir (), "flatpak/db", TABLE_NAME, NULL);
+  db = flatpak_db_new (path, FALSE, &error);
   if (db == NULL)
     {
       g_printerr ("Failed to load db: %s\n", error->message);
@@ -812,10 +824,10 @@ main (int    argc,
       do_exit (3);
     }
 
-  permission_store = xdg_app_permission_store_proxy_new_sync (session_bus,G_DBUS_PROXY_FLAGS_NONE,
-                                                              "org.freedesktop.XdgApp",
-                                                              "/org/freedesktop/XdgApp/PermissionStore",
-                                                              NULL, &error);
+  permission_store = xdg_permission_store_proxy_new_sync (session_bus, G_DBUS_PROXY_FLAGS_NONE,
+                                                          "org.freedesktop.impl.portal.PermissionStore",
+                                                          "/org/freedesktop/impl/portal/PermissionStore",
+                                                          NULL, &error);
   if (permission_store == NULL)
     {
       g_print ("No permission store: %s\n", error->message);
@@ -827,18 +839,11 @@ main (int    argc,
 
   g_signal_connect (session_bus, "closed", G_CALLBACK (session_bus_closed), NULL);
 
-  if (set_one_signal_handler(SIGHUP, exit_handler, 0) == -1 ||
-      set_one_signal_handler(SIGINT, exit_handler, 0) == -1 ||
-      set_one_signal_handler(SIGTERM, exit_handler, 0) == -1 ||
-      set_one_signal_handler(SIGPIPE, SIG_IGN, 0) == -1)
-    {
-      do_exit (5);
-    }
-
-  introspection_bytes = g_resources_lookup_data ("/org/freedesktop/portal/Documents/org.freedesktop.portal.Documents.xml", 0, NULL);
-  g_assert (introspection_bytes != NULL);
-
-  introspection_data = g_dbus_node_info_new_for_xml (g_bytes_get_data (introspection_bytes, NULL), NULL);
+  if (set_one_signal_handler (SIGHUP, exit_handler, 0) == -1 ||
+      set_one_signal_handler (SIGINT, exit_handler, 0) == -1 ||
+      set_one_signal_handler (SIGTERM, exit_handler, 0) == -1 ||
+      set_one_signal_handler (SIGPIPE, SIG_IGN, 0) == -1)
+    do_exit (5);
 
   owner_id = g_bus_own_name (G_BUS_TYPE_SESSION,
                              "org.freedesktop.portal.Documents",
@@ -854,8 +859,6 @@ main (int    argc,
   xdp_fuse_exit ();
 
   g_bus_unown_name (owner_id);
-
-  g_dbus_node_info_unref (introspection_data);
 
   do_exit (final_exit_status);
 

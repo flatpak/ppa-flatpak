@@ -28,7 +28,7 @@
 
 #include "libglnx/libglnx.h"
 
-#include "xdg-app-proxy.h"
+#include "flatpak-proxy.h"
 
 GList *proxies;
 int sync_fd = -1;
@@ -38,7 +38,7 @@ parse_generic_args (int n_args, const char *args[])
 {
   if (g_str_has_prefix (args[0], "--fd="))
     {
-      const char *fd_s = args[0] + strlen("--fd=");
+      const char *fd_s = args[0] + strlen ("--fd=");
       char *endptr;
       int fd;
 
@@ -62,27 +62,27 @@ parse_generic_args (int n_args, const char *args[])
 int
 start_proxy (int n_args, const char *args[])
 {
-  g_autoptr(XdgAppProxy) proxy = NULL;
-  g_autoptr (GError) error = NULL;
+  g_autoptr(FlatpakProxy) proxy = NULL;
+  g_autoptr(GError) error = NULL;
   const char *bus_address, *socket_path;
   int n;
 
   n = 0;
-  if (n_args < n+1 || args[n][0] == '-')
+  if (n_args < n + 1 || args[n][0] == '-')
     {
       g_printerr ("No bus address given\n");
       return -1;
     }
   bus_address = args[n++];
 
-  if (n_args < n+1 || args[n][0] == '-')
+  if (n_args < n + 1 || args[n][0] == '-')
     {
       g_printerr ("No socket path given\n");
       return -1;
     }
   socket_path = args[n++];
 
-  proxy = xdg_app_proxy_new (bus_address, socket_path);
+  proxy = flatpak_proxy_new (bus_address, socket_path);
 
   while (n < n_args)
     {
@@ -93,14 +93,14 @@ start_proxy (int n_args, const char *args[])
           g_str_has_prefix (args[n], "--talk=") ||
           g_str_has_prefix (args[n], "--own="))
         {
-          XdgAppPolicy policy = XDG_APP_POLICY_SEE;
+          FlatpakPolicy policy = FLATPAK_POLICY_SEE;
           g_autofree char *name = NULL;
           gboolean wildcard = FALSE;
 
           if (args[n][2] == 't')
-            policy = XDG_APP_POLICY_TALK;
+            policy = FLATPAK_POLICY_TALK;
           else if (args[n][2] == 'o')
-            policy = XDG_APP_POLICY_OWN;
+            policy = FLATPAK_POLICY_OWN;
 
           name = g_strdup (strchr (args[n], '=') + 1);
           if (g_str_has_suffix (name, ".*"))
@@ -116,17 +116,17 @@ start_proxy (int n_args, const char *args[])
             }
 
           if (wildcard)
-            xdg_app_proxy_add_wildcarded_policy (proxy, name, policy);
+            flatpak_proxy_add_wildcarded_policy (proxy, name, policy);
           else
-            xdg_app_proxy_add_policy (proxy, name, policy);
+            flatpak_proxy_add_policy (proxy, name, policy);
         }
       else if (g_str_equal (args[n], "--log"))
         {
-          xdg_app_proxy_set_log_messages (proxy, TRUE);
+          flatpak_proxy_set_log_messages (proxy, TRUE);
         }
       else if (g_str_equal (args[n], "--filter"))
         {
-          xdg_app_proxy_set_filter (proxy, TRUE);
+          flatpak_proxy_set_filter (proxy, TRUE);
         }
       else
         {
@@ -140,7 +140,7 @@ start_proxy (int n_args, const char *args[])
       n++;
     }
 
-  if (!xdg_app_proxy_start (proxy, &error))
+  if (!flatpak_proxy_start (proxy, &error))
     {
       g_printerr ("Failed to start proxy for %s: %s\n", bus_address, error->message);
       return -1;
@@ -152,14 +152,14 @@ start_proxy (int n_args, const char *args[])
 }
 
 static gboolean
-sync_closed_cb (GIOChannel   *source,
-                GIOCondition  condition,
-                gpointer      data)
+sync_closed_cb (GIOChannel  *source,
+                GIOCondition condition,
+                gpointer     data)
 {
   GList *l;
 
   for (l = proxies; l != NULL; l = l->next)
-    xdg_app_proxy_stop (XDG_APP_PROXY (l->data));
+    flatpak_proxy_stop (FLATPAK_PROXY (l->data));
 
   exit (0);
   return TRUE;
