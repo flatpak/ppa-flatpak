@@ -1,6 +1,8 @@
-flatpak (0.5.2-2) UNRELEASED; urgency=medium
+flatpak (0.5.2+git20160516-1) UNRELEASED; urgency=medium
 
   * Rename package from xdg-app to flatpak, following upstream rename
+  * New upstream snapshot
+    - Remove patches, applied upstream
   * libflatpak-dev: depend on libflatpak0, not flatpak (Closes: #823328)
 
  -- Simon McVittie <smcv@debian.org>  Wed, 04 May 2016 09:36:05 +0100
