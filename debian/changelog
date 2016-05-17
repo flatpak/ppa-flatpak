@@ -6,6 +6,8 @@ flatpak (0.5.2+git20160516-1) UNRELEASED; urgency=medium
   * libflatpak-dev: depend on libflatpak0, not flatpak (Closes: #823328)
   * Build-depend on libpolkit-gobject-1-dev
   * debian/copyright: update
+  * Install bwrap (bubblewrap) helper tool setuid by default, so that
+    the package works without further configuration (Closes: #823535)
 
  -- Simon McVittie <smcv@debian.org>  Wed, 04 May 2016 09:36:05 +0100
 

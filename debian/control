@@ -60,11 +60,6 @@ Description: Application deployment framework for desktop apps
  This package contains the services and executables needed to install and
  launch sandboxed applications, and the portal services needed to provide
  limited access to resources outside the sandbox.
- .
- Using this package on Debian systems requires some configuration by the
- system administrator: either allowing unprivileged users to create user
- namespaces, or making the flatpak-helper executable setuid root.
- See README.Debian for details.
 
 Package: flatpak-builder
 Architecture: linux-any
