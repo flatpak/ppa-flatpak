@@ -35,6 +35,9 @@ static FlatpakSystemHelper *helper = NULL;
 static GMainLoop *main_loop = NULL;
 static guint name_owner_id = 0;
 
+static gboolean on_session_bus = FALSE;
+static gboolean no_idle_exit = FALSE;
+
 #define IDLE_TIMEOUT_SECS 10*60
 
 /* This uses a weird Auto prefix to avoid conflicts with later added polkit types.
@@ -102,14 +105,24 @@ schedule_idle_callback (void)
 
   G_LOCK(idle);
 
-  if (idle_timeout_id != 0)
-    g_source_remove (idle_timeout_id);
+  if (!no_idle_exit)
+    {
+      if (idle_timeout_id != 0)
+        g_source_remove (idle_timeout_id);
 
-  idle_timeout_id = g_timeout_add_seconds (IDLE_TIMEOUT_SECS, idle_timeout_cb, NULL);
+      idle_timeout_id = g_timeout_add_seconds (IDLE_TIMEOUT_SECS, idle_timeout_cb, NULL);
+    }
 
   G_UNLOCK(idle);
 }
 
+static FlatpakDir *
+dir_get_system (void)
+{
+  FlatpakDir *system = flatpak_dir_get_system ();
+  flatpak_dir_set_no_system_helper (system, TRUE);
+  return system;
+}
 
 static gboolean
 handle_deploy (FlatpakSystemHelper   *object,
@@ -120,7 +133,7 @@ handle_deploy (FlatpakSystemHelper   *object,
                const gchar           *arg_origin,
                const gchar *const    *arg_subpaths)
 {
-  g_autoptr(FlatpakDir) system = flatpak_dir_get_system ();
+  g_autoptr(FlatpakDir) system = dir_get_system ();
   g_autoptr(GFile) path = g_file_new_for_path (arg_repo_path);
   g_autoptr(GError) error = NULL;
   g_autoptr(GFile) deploy_dir = NULL;
@@ -236,7 +249,7 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
                          const gchar           *arg_origin,
                          const gchar           *arg_arch)
 {
-  g_autoptr(FlatpakDir) system = flatpak_dir_get_system ();
+  g_autoptr(FlatpakDir) system = dir_get_system ();
   g_autoptr(GFile) path = g_file_new_for_path (arg_repo_path);
   g_autoptr(GError) error = NULL;
   g_autoptr(GMainContext) main_context = NULL;
@@ -301,7 +314,7 @@ handle_uninstall (FlatpakSystemHelper *object,
                   guint arg_flags,
                   const gchar *arg_ref)
 {
-  g_autoptr(FlatpakDir) system = flatpak_dir_get_system ();
+  g_autoptr(FlatpakDir) system = dir_get_system ();
   g_autoptr(GError) error = NULL;
 
   g_debug ("Uninstall %u %s", arg_flags, arg_ref);
@@ -338,7 +351,7 @@ handle_configure_remote (FlatpakSystemHelper *object,
                          const gchar *arg_config,
                          GVariant *arg_gpg_key)
 {
-  g_autoptr(FlatpakDir) system = flatpak_dir_get_system ();
+  g_autoptr(FlatpakDir) system = dir_get_system ();
   g_autoptr(GError) error = NULL;
   g_autoptr(GKeyFile) config = g_key_file_new ();
   g_autofree char *group = g_strdup_printf ("remote \"%s\"", arg_remote);
@@ -435,7 +448,16 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
   sender = g_dbus_method_invocation_get_sender (invocation);
   subject = polkit_system_bus_name_new (sender);
 
-  if (g_strcmp0 (method_name, "Deploy") == 0)
+  if (on_session_bus)
+    {
+      /* This is test code, make sure it never runs with privileges */
+      g_assert (geteuid () != 0);
+      g_assert (getuid () != 0);
+      g_assert (getegid () != 0);
+      g_assert (getgid () != 0);
+      authorized = TRUE;
+    }
+  else if (g_strcmp0 (method_name, "Deploy") == 0)
     {
       const char *ref, *origin;
       guint32 flags;
@@ -579,7 +601,7 @@ on_bus_acquired (GDBusConnection *connection,
 {
   GError *error = NULL;
 
-  g_debug ("Bus aquired, creating skeleton");
+  g_debug ("Bus acquired, creating skeleton");
 
   helper = flatpak_system_helper_skeleton_new ();
 
@@ -612,7 +634,7 @@ on_name_acquired (GDBusConnection *connection,
                   const gchar     *name,
                   gpointer         user_data)
 {
-  g_debug ("Name aquired");
+  g_debug ("Name acquired");
 }
 
 static void
@@ -670,6 +692,8 @@ main (int    argc,
   const GOptionEntry options[] = {
     { "replace", 'r', 0, G_OPTION_ARG_NONE, &replace,  "Replace old daemon.", NULL },
     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose,  "Enable debug output.", NULL },
+    { "session", 0, 0, G_OPTION_ARG_NONE, &on_session_bus,  "Run in session, not system scope (for tests).", NULL },
+    { "no-idle-exit", 0, 0, G_OPTION_ARG_NONE, &no_idle_exit,  "Don't exit when idle.", NULL },
     { "version", 0, 0, G_OPTION_ARG_NONE, &show_version, "Show program version.", NULL},
     { NULL }
   };
@@ -742,7 +766,7 @@ main (int    argc,
   if (replace)
     flags |= G_BUS_NAME_OWNER_FLAGS_REPLACE;
 
-  name_owner_id = g_bus_own_name (G_BUS_TYPE_SYSTEM,
+  name_owner_id = g_bus_own_name (on_session_bus ? G_BUS_TYPE_SESSION  : G_BUS_TYPE_SYSTEM,
                                   "org.freedesktop.Flatpak.SystemHelper",
                                   flags,
                                   on_bus_acquired,

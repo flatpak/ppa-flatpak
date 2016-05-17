@@ -69,11 +69,24 @@ fi
 
 # We need this to be in /var/tmp because /tmp has no xattr support
 TEST_DATA_DIR=`mktemp -d /var/tmp/test-flatpak-XXXXXX`
+mkdir -p ${TEST_DATA_DIR}/home
+mkdir -p ${TEST_DATA_DIR}/system
+export FLATPAK_SYSTEM_DIR=${TEST_DATA_DIR}/system
+export FLATPAK_SYSTEM_HELPER_ON_SESSION=1
 
-export XDG_DATA_HOME=${TEST_DATA_DIR}/share
+export XDG_DATA_HOME=${TEST_DATA_DIR}/home/share
 
-export USERDIR=${TEST_DATA_DIR}/share/flatpak
+export USERDIR=${TEST_DATA_DIR}/home/share/flatpak
+export SYSTEMDIR=${TEST_DATA_DIR}/system
 export ARCH=`flatpak --default-arch`
+
+if [ x${USE_SYSTEMDIR-} == xyes ] ; then
+    export FL_DIR=${SYSTEMDIR}
+    export U=
+else
+    export FL_DIR=${USERDIR}
+    export U="--user"
+fi
 
 export FLATPAK="${CMD_PREFIX} flatpak"
 
@@ -143,24 +156,31 @@ assert_file_empty() {
     fi
 }
 
+export FL_GPG_HOMEDIR=$(dirname $0)/test-keyring
+export FL_GPG_ID=7B0961FD
+export FL_GPGARGS="--gpg-homedir=${FL_GPG_HOMEDIR} --gpg-sign=${FL_GPG_ID}"
+
 setup_repo () {
-    . $(dirname $0)/make-test-runtime.sh org.test.Platform bash ls cat echo readlink > /dev/null
-    . $(dirname $0)/make-test-app.sh > /dev/null
-    flatpak remote-add --user --no-gpg-verify test-repo repo
+    GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-runtime.sh org.test.Platform bash ls cat echo readlink > /dev/null
+    GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-app.sh > /dev/null
+    flatpak remote-add ${U} --gpg-import=${FL_GPG_HOMEDIR}/pubring.gpg test-repo repo
+}
+
+make_updated_app () {
+    GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-app.sh UPDATED > /dev/null
 }
 
 setup_sdk_repo () {
-    . $(dirname $0)/make-test-runtime.sh org.test.Sdk bash ls cat echo readlink make mkdir cp touch > /dev/null
+    GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-runtime.sh org.test.Sdk bash ls cat echo readlink make mkdir cp touch > /dev/null
 }
 
-
 install_repo () {
-    ${FLATPAK} --user install test-repo org.test.Platform master
-    ${FLATPAK} --user install test-repo org.test.Hello master
+    ${FLATPAK} ${U} install test-repo org.test.Platform master
+    ${FLATPAK} ${U} install test-repo org.test.Hello master
 }
 
 install_sdk_repo () {
-    ${FLATPAK} --user install test-repo org.test.Sdk master
+    ${FLATPAK} ${U} install test-repo org.test.Sdk master
 }
 
 run () {
@@ -170,6 +190,17 @@ run () {
 
 run_sh () {
     ${CMD_PREFIX} flatpak run --command=bash ${ARGS-} org.test.Hello -c "$*"
+}
+
+skip_without_bwrap () {
+    if [ -z "${FLATPAK_BWRAP:-}" ]; then
+        # running installed-tests: assume we know what we're doing
+        :
+    elif ! "$FLATPAK_BWRAP" --ro-bind / / /bin/true > bwrap-result 2>&1; then
+        sed -e 's/^/# /' < bwrap-result
+        echo "1..0 # SKIP Cannot run bwrap"
+        exit 0
+    fi
 }
 
 sed s#@testdir@#${test_builddir}# ${test_srcdir}/session.conf.in > session.conf

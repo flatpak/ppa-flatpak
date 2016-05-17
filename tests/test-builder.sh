@@ -21,6 +21,8 @@ set -euo pipefail
 
 . $(dirname $0)/libtest.sh
 
+skip_without_bwrap
+
 echo "1..3"
 
 setup_repo
@@ -35,7 +37,7 @@ cd $TEST_DATA_DIR/
 cp -a $(dirname $0)/test-configure .
 echo "version1" > app-data
 cp $(dirname $0)/test.json .
-flatpak-builder --repo=$REPO --force-clean appdir test.json > /dev/null
+flatpak-builder --repo=$REPO $FL_GPGARGS --force-clean appdir test.json > /dev/null
 
 assert_file_has_content appdir/files/share/app-data version1
 assert_file_has_content appdir/metadata shared=network;
@@ -51,7 +53,7 @@ assert_file_has_content hello_out2 '^Hello world2, from a sandbox$'
 
 echo "ok build"
 
-${FLATPAK} --user install test-repo org.test.Hello2 master
+${FLATPAK} ${U} install test-repo org.test.Hello2 master
 run org.test.Hello2 > hello_out3
 assert_file_has_content hello_out3 '^Hello world2, from a sandbox$'
 
@@ -61,10 +63,10 @@ assert_file_has_content app_data_1 version1
 echo "ok install+run"
 
 echo "version2" > app-data
-flatpak-builder --repo=$REPO --force-clean appdir test.json > /dev/null
+flatpak-builder $FL_GPGARGS --repo=$REPO --force-clean appdir test.json > /dev/null
 assert_file_has_content appdir/files/share/app-data version2
 
-${FLATPAK} --user update org.test.Hello2 master
+${FLATPAK} ${U} update org.test.Hello2 master
 
 run --command=cat org.test.Hello2 /app/share/app-data > app_data_2
 assert_file_has_content app_data_2 version2

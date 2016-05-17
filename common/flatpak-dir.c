@@ -62,6 +62,7 @@ struct FlatpakDir
   gboolean             user;
   GFile               *basedir;
   OstreeRepo          *repo;
+  gboolean             no_system_helper;
 
   FlatpakSystemHelper *system_helper;
 
@@ -177,7 +178,20 @@ flatpak_deploy_new (GFile *dir, GKeyFile *metadata)
 GFile *
 flatpak_get_system_base_dir_location (void)
 {
-  return g_file_new_for_path (FLATPAK_SYSTEMDIR);
+  static gsize path = 0;
+
+  if (g_once_init_enter (&path))
+    {
+      gsize setup_value = 0;
+      const char *system_dir = g_getenv ("FLATPAK_SYSTEM_DIR");
+      if (system_dir != NULL)
+        setup_value = (gsize)system_dir;
+      else
+        setup_value = (gsize)FLATPAK_SYSTEMDIR;
+      g_once_init_leave (&path, setup_value);
+     }
+
+  return g_file_new_for_path ((char *)path);
 }
 
 GFile *
@@ -223,12 +237,13 @@ flatpak_dir_get_system_helper (FlatpakDir *self)
   if (g_once_init_enter (&self->system_helper))
     {
       FlatpakSystemHelper *system_helper;
+      const char *on_session = g_getenv ("FLATPAK_SYSTEM_HELPER_ON_SESSION");
 
       /* To ensure reverse mapping */
       flatpak_error_quark ();
 
       system_helper =
-        flatpak_system_helper_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+        flatpak_system_helper_proxy_new_for_bus_sync (on_session != NULL ? G_BUS_TYPE_SESSION : G_BUS_TYPE_SYSTEM,
                                                       G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES |
                                                       G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
                                                       "org.freedesktop.Flatpak.SystemHelper",
@@ -253,7 +268,7 @@ flatpak_dir_use_system_helper (FlatpakDir *self)
 {
   FlatpakSystemHelper *system_helper;
 
-  if (self->user || getuid () == 0)
+  if (self->no_system_helper || self->user || getuid () == 0)
     return FALSE;
 
   system_helper = flatpak_dir_get_system_helper (self);
@@ -368,6 +383,13 @@ gboolean
 flatpak_dir_is_user (FlatpakDir *self)
 {
   return self->user;
+}
+
+void
+flatpak_dir_set_no_system_helper (FlatpakDir *self,
+                                  gboolean    no_system_helper)
+{
+  self->no_system_helper = no_system_helper;
 }
 
 GFile *
