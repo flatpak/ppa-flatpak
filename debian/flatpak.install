@@ -2,7 +2,7 @@ etc/dbus-1/system.d
 etc/profile.d/
 lib/systemd/system/flatpak-system-helper.service
 usr/bin/flatpak
-usr/lib/*/flatpak/bwrap
+usr/lib/*/flatpak/bwrap                 usr/lib/flatpak
 usr/lib/flatpak/flatpak-dbus-proxy
 usr/lib/flatpak/flatpak-session-helper
 usr/lib/flatpak/flatpak-system-helper

@@ -1,0 +1,2 @@
+#!/usr/bin/dh-exec
+usr/lib/flatpak/bwrap                   usr/lib/${DEB_HOST_MULTIARCH}/flatpak/bwrap

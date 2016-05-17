@@ -9,6 +9,7 @@ Build-Depends:
  dbus,
  debhelper (>= 9),
  dh-autoreconf,
+ dh-exec,
  docbook-xml,
  docbook-xsl,
  docbook-xsl-doc-html,
