@@ -90,6 +90,10 @@ Description: Flatpak application building helper
  .
  flatpak-builder is a tool that makes it easy to build applications and their
  dependencies by automating the configure && make && make install steps.
+ .
+ On Debian and its derivatives, flatpak-builder does not currently work
+ unless the kernel is reconfigured to allow unprivileged users to create
+ new user namespaces, which is a security risk.
 
 Package: flatpak-tests
 Architecture: linux-any
