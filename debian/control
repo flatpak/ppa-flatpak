@@ -85,6 +85,21 @@ Description: Flatpak application building helper
  flatpak-builder is a tool that makes it easy to build applications and their
  dependencies by automating the configure && make && make install steps.
 
+Package: flatpak-tests
+Architecture: linux-any
+Section: misc
+Depends:
+ ca-certificates,
+ dbus-x11,
+ flatpak (= ${binary:Version}),
+ ${misc:Depends},
+ ${shlibs:Depends},
+Description: Application deployment framework for desktop apps (tests)
+ Flatpak installs, manages and runs sandboxed desktop application bundles.
+ See the flatpak package for a more comprehensive description.
+ .
+ This package contains automated tests.
+
 Package: gir1.2-flatpak-1.0
 Architecture: linux-any
 Section: introspection

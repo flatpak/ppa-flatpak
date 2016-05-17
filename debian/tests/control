@@ -1,0 +1,9 @@
+Tests: build
+Depends:
+ build-essential,
+ libflatpak-dev,
+
+Tests: gnome-desktop-testing
+Depends:
+ gnome-desktop-testing,
+ flatpak-tests,

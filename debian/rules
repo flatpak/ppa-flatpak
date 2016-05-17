@@ -12,6 +12,7 @@ override_dh_autoreconf:
 override_dh_auto_configure:
 	dh_auto_configure -- \
 		--disable-silent-rules \
+		--enable-installed-tests \
 		--libexecdir=/usr/lib/flatpak \
 		--with-priv-mode=none \
 		--with-html-dir=/usr/share/doc/libflatpak-doc \
