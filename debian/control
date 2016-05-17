@@ -44,6 +44,10 @@ Depends:
  libpam-systemd,
  ${misc:Depends},
  ${shlibs:Depends},
+Conflicts:
+ xdg-app,
+Replaces:
+ xdg-app,
 Description: Application deployment framework for desktop apps
  Flatpak installs, manages and runs sandboxed desktop application bundles.
  Application bundles run partially isolated from the wider system, using
