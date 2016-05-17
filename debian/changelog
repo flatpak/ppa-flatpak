@@ -10,6 +10,7 @@ flatpak (0.5.2+git20160516-1) UNRELEASED; urgency=medium
     the package works without further configuration (Closes: #823535)
   * Add a patch fixing various spelling mistakes detected by Lintian
   * Add a patch to avoid installing non-executable test files with +x
+  * Add patches to make the installed-tests work in an unbuilt tree
 
  -- Simon McVittie <smcv@debian.org>  Wed, 04 May 2016 09:36:05 +0100
 

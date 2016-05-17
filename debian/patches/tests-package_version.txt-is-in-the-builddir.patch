@@ -1,0 +1,57 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Tue, 17 May 2016 09:39:38 +0100
+Subject: tests: package_version.txt is in the $builddir
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ tests/test-basic.sh |  2 +-
+ tests/test-run.sh   | 12 ++++++------
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/tests/test-basic.sh b/tests/test-basic.sh
+index e074828..d8f770a 100755
+--- a/tests/test-basic.sh
++++ b/tests/test-basic.sh
+@@ -25,7 +25,7 @@ echo "1..3"
+ 
+ ${FLATPAK} --version > version_out
+ 
+-VERSION=`cat $(dirname $0)/package_version.txt`
++VERSION=`cat "$test_builddir/package_version.txt"`
+ assert_file_has_content version_out "^flatpak $VERSION$"
+ 
+ echo "ok version"
+diff --git a/tests/test-run.sh b/tests/test-run.sh
+index c10912a..584f46e 100755
+--- a/tests/test-run.sh
++++ b/tests/test-run.sh
+@@ -80,23 +80,23 @@ ARGS="--share=ipc" run_sh readlink /proc/self/ns/ipc > shared_ipc_ns
+ assert_not_streq `cat unshared_ipc_ns` `readlink /proc/self/ns/ipc`
+ assert_streq `cat shared_ipc_ns` `readlink /proc/self/ns/ipc`
+ 
+-if run_sh cat $(dirname $0)/package_version.txt &> /dev/null; then
++if run_sh cat "${test_builddir}/package_version.txt" &> /dev/null; then
+     assert_not_reached "Unexpectedly allowed to access file"
+ fi
+ 
+-ARGS="--filesystem=$(dirname $0)" run_sh cat $(dirname $0)/package_version.txt > /dev/null
+-ARGS="--filesystem=host" run_sh cat $(dirname $0)/package_version.txt > /dev/null
++ARGS="--filesystem=${test_builddir}" run_sh cat "${test_builddir}/package_version.txt" > /dev/null
++ARGS="--filesystem=host" run_sh cat "${test_builddir}/package_version.txt" > /dev/null
+ 
+ echo "ok namespaces"
+ 
+ $FLATPAK override --user --filesystem=host org.test.Hello
+-run_sh cat $(dirname $0)/package_version.txt &> /dev/null
+-if ARGS="--nofilesystem=host" run_sh cat $(dirname $0)/package_version.txt &> /dev/null; then
++run_sh cat "${test_builddir}/package_version.txt" &> /dev/null
++if ARGS="--nofilesystem=host" run_sh cat "${test_builddir}/package_version.txt" &> /dev/null; then
+     assert_not_reached "Unexpectedly allowed to access --nofilesystem=host file"
+ fi
+ $FLATPAK override --user --nofilesystem=host org.test.Hello
+ 
+-if run_sh cat $(dirname $0)/package_version.txt &> /dev/null; then
++if run_sh cat "${test_builddir}/package_version.txt" &> /dev/null; then
+     assert_not_reached "Unexpectedly allowed to access file"
+ fi
+ 

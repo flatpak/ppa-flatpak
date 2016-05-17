@@ -1,0 +1,45 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Tue, 17 May 2016 09:27:57 +0100
+Subject: test-doc-portal: rely on G_TEST_BUILDDIR to find services
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ tests/Makefile.am.inc   | 2 +-
+ tests/test-doc-portal.c | 4 +++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/tests/Makefile.am.inc b/tests/Makefile.am.inc
+index 3c3dec8..a27a44b 100644
+--- a/tests/Makefile.am.inc
++++ b/tests/Makefile.am.inc
+@@ -16,7 +16,7 @@ testdb_LDADD = \
+              $(NULL)
+ testdb_SOURCES = tests/testdb.c
+ 
+-test_doc_portal_CFLAGS = $(BASE_CFLAGS) -DTEST_SERVICES=\""$(abs_top_builddir)/tests/services"\" -DDOC_PORTAL=\""$(abs_top_builddir)/xdg-document-portal"\"
++test_doc_portal_CFLAGS = $(BASE_CFLAGS)
+ test_doc_portal_LDADD = \
+              $(BASE_LIBS) \
+              $(OSTREE_LIBS) \
+diff --git a/tests/test-doc-portal.c b/tests/test-doc-portal.c
+index 24ab7fa..8ca2164 100644
+--- a/tests/test-doc-portal.c
++++ b/tests/test-doc-portal.c
+@@ -335,6 +335,7 @@ global_setup (void)
+   g_autofree gchar *fusermount = NULL;
+   GError *error = NULL;
+   gint exit_status;
++  g_autofree gchar *services = NULL;
+ 
+   fusermount = g_find_program_in_path ("fusermount");
+   /* cache result so subsequent tests can be marked as skipped */
+@@ -352,7 +353,8 @@ global_setup (void)
+   g_setenv ("XDG_DATA_HOME", outdir, TRUE);
+ 
+   dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
+-  g_test_dbus_add_service_dir (dbus, TEST_SERVICES);
++  services = g_test_build_filename (G_TEST_BUILT, "services", NULL);
++  g_test_dbus_add_service_dir (dbus, services);
+   g_test_dbus_up (dbus);
+ 
+   /* g_test_dbus_up unsets this, so re-set */

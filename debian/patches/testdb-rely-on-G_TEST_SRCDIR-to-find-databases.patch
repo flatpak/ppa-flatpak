@@ -1,0 +1,61 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Tue, 17 May 2016 09:26:31 +0100
+Subject: testdb: rely on G_TEST_SRCDIR to find databases
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ tests/Makefile.am.inc | 7 ++++++-
+ tests/testdb.c        | 6 +++---
+ 2 files changed, 9 insertions(+), 4 deletions(-)
+
+diff --git a/tests/Makefile.am.inc b/tests/Makefile.am.inc
+index d183be9..3c3dec8 100644
+--- a/tests/Makefile.am.inc
++++ b/tests/Makefile.am.inc
+@@ -7,7 +7,7 @@ TESTS_ENVIRONMENT += OT_TESTS_DEBUG=1 \
+ 	PATH=$$(cd $(top_builddir) && pwd):$${PATH} \
+ 	$(NULL)
+ 
+-testdb_CFLAGS = $(BASE_CFLAGS) -DDB_DIR=\"$(abs_srcdir)/tests/dbs\"
++testdb_CFLAGS = $(BASE_CFLAGS)
+ testdb_LDADD = \
+              $(BASE_LIBS) \
+              $(OSTREE_LIBS) \
+@@ -70,6 +70,11 @@ installed_test_data = \
+ 	tests/session.conf.in \
+ 	$(NULL)
+ 
++installed_test_dbsdir = $(installed_testdir)/dbs
++if ENABLE_INSTALLED_TESTS
++installed_test_dbs_DATA = tests/dbs/no_tables
++endif
++
+ EXTRA_DIST += $(installed_test_SCRIPTS) $(installed_test_data)
+ 
+ test_scripts = \
+diff --git a/tests/testdb.c b/tests/testdb.c
+index d1f2f5f..92d2bd8 100644
+--- a/tests/testdb.c
++++ b/tests/testdb.c
+@@ -156,18 +156,18 @@ test_db_open (void)
+   GError *error = NULL;
+   FlatpakDb *db;
+ 
+-  db = flatpak_db_new (DB_DIR "/does_not_exist", TRUE, &error);
++  db = flatpak_db_new (g_test_get_filename (G_TEST_DIST, "dbs", "does_not_exist", NULL), TRUE, &error);
+   g_assert_error (error, G_FILE_ERROR, G_FILE_ERROR_NOENT);
+   g_assert (db == NULL);
+   g_clear_error (&error);
+ 
+-  db = flatpak_db_new (DB_DIR "/does_not_exist", FALSE, &error);
++  db = flatpak_db_new (g_test_get_filename (G_TEST_DIST, "dbs", "does_not_exist", NULL), FALSE, &error);
+   g_assert_no_error (error);
+   g_assert (db != NULL);
+   g_clear_error (&error);
+   g_object_unref (db);
+ 
+-  db = flatpak_db_new (DB_DIR "/no_tables", TRUE, &error);
++  db = flatpak_db_new (g_test_get_filename (G_TEST_DIST, "dbs", "no_tables", NULL), TRUE, &error);
+   g_assert_error (error, G_FILE_ERROR, G_FILE_ERROR_INVAL);
+   g_assert (db == NULL);
+   g_clear_error (&error);
