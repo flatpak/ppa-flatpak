@@ -3,7 +3,13 @@ Depends:
  build-essential,
  libflatpak-dev,
 
+Tests: builder
+Depends:
+ flatpak-builder,
+ flatpak-tests,
+ gnome-desktop-testing,
+
 Tests: gnome-desktop-testing
 Depends:
- gnome-desktop-testing,
  flatpak-tests,
+ gnome-desktop-testing,

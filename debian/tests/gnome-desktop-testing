@@ -3,4 +3,18 @@
 set -e
 exec 2>&1
 
-exec gnome-desktop-testing-runner flatpak
+e=0
+
+gnome-desktop-testing-runner -l flatpak | while read t; do
+	t="${t%% *}"
+
+	case "$t" in
+		(flatpak/test-builder.sh.test)
+			continue
+			;;
+	esac
+
+	gnome-desktop-testing-runner "$t" < /dev/null || e=$?
+done
+
+exit "$e"
