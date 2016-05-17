@@ -1,4 +1,4 @@
-flatpak (0.5.2+git20160516-1) UNRELEASED; urgency=medium
+flatpak (0.5.2+git20160517-1) UNRELEASED; urgency=medium
 
   * Rename package from xdg-app to flatpak, following upstream rename
   * New upstream snapshot
@@ -8,11 +8,6 @@ flatpak (0.5.2+git20160516-1) UNRELEASED; urgency=medium
   * debian/copyright: update
   * Install bwrap (bubblewrap) helper tool setuid by default, so that
     the package works without further configuration (Closes: #823535)
-  * Add a patch fixing various spelling mistakes detected by Lintian
-  * Add a patch to avoid installing non-executable test files with +x
-  * Add patches to make the installed-tests work in an unbuilt tree
-  * Add a patch to skip build-time tests that rely on bwrap if it can't
-    be run, for example on buildds with kernel.unprivileged_userns_clone=0
   * Add autopkgtests for as-installed testing
   * Build-depend on dbus-x11: the tests explicitly use dbus-launch
 
