@@ -1,0 +1,31 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Tue, 17 May 2016 08:23:47 +0100
+Subject: Don't install non-executable test files executable
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ tests/Makefile.am.inc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tests/Makefile.am.inc b/tests/Makefile.am.inc
+index 4724547..d183be9 100644
+--- a/tests/Makefile.am.inc
++++ b/tests/Makefile.am.inc
+@@ -57,15 +57,15 @@ tests/test-basic.sh: tests/package_version.txt
+ installed_test_SCRIPTS += \
+ 	buildutil/tap-driver.sh \
+ 	tests/test-configure \
+-	tests/package_version.txt \
+ 	tests/make-test-app.sh \
+ 	tests/make-test-runtime.sh \
+ 	tests/make-test-bundles.sh \
+-	tests/libtest.sh \
+ 	$(NULL)
+ 
+ installed_test_data = \
++	tests/libtest.sh \
+ 	tests/org.test.Hello.png \
++	tests/package_version.txt \
+ 	tests/test.json \
+ 	tests/session.conf.in \
+ 	$(NULL)
