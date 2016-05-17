@@ -36,66 +36,6 @@ Homepage: https://github.com/alexlarsson/xdg-app
 Vcs-Git: https://anonscm.debian.org/git/collab-maint/flatpak.git
 Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/flatpak.git
 
-Package: gir1.2-flatpak-1.0
-Architecture: linux-any
-Section: introspection
-Depends:
- ${gir:Depends},
- ${misc:Depends},
-Description: Application deployment framework for desktop apps (introspection)
- Flatpak installs, manages and runs sandboxed desktop application bundles.
- See the flatpak package for a more comprehensive description.
- .
- This package can be used by other packages using the GIRepository format to
- generate dynamic bindings for libflatpak0.
-
-Package: libflatpak-dev
-Architecture: linux-any
-Section: libdevel
-Depends:
- libglib2.0-dev,
- libgsystem-dev,
- libostree-dev,
- libflatpak0 (= ${binary:Version}),
- pkg-config,
- ${misc:Depends},
-Description: Application deployment framework for desktop apps (development)
- Flatpak installs, manages and runs sandboxed desktop application bundles.
- See the flatpak package for a more comprehensive description.
- .
- This package contains development headers and pkg-config metadata
- for libflatpak0.
-
-Package: libflatpak-doc
-Architecture: all
-Section: doc
-Depends:
- ${misc:Depends},
-Suggests:
- devhelp,
-Multi-Arch: foreign
-Description: Application deployment framework for desktop apps (documentation)
- Flatpak installs, manages and runs sandboxed desktop application bundles.
- See the flatpak package for a more comprehensive description.
- .
- This package contains reference documentation for libflatpak0.
-
-Package: libflatpak0
-Architecture: linux-any
-Section: libs
-Depends:
- ${misc:Depends},
- ${shlibs:Depends},
-Pre-Depends:
- ${misc:Pre-Depends},
-Multi-arch: same
-Description: Application deployment framework for desktop apps (library)
- Flatpak installs, manages and runs sandboxed desktop application bundles.
- See the flatpak package for a more comprehensive description.
- .
- This package contains the flatpak shared library, used by higher level
- package management tools like gnome-software.
-
 Package: flatpak
 Architecture: linux-any
 Depends:
@@ -144,3 +84,63 @@ Description: Flatpak application building helper
  .
  flatpak-builder is a tool that makes it easy to build applications and their
  dependencies by automating the configure && make && make install steps.
+
+Package: gir1.2-flatpak-1.0
+Architecture: linux-any
+Section: introspection
+Depends:
+ ${gir:Depends},
+ ${misc:Depends},
+Description: Application deployment framework for desktop apps (introspection)
+ Flatpak installs, manages and runs sandboxed desktop application bundles.
+ See the flatpak package for a more comprehensive description.
+ .
+ This package can be used by other packages using the GIRepository format to
+ generate dynamic bindings for libflatpak0.
+
+Package: libflatpak-dev
+Architecture: linux-any
+Section: libdevel
+Depends:
+ libflatpak0 (= ${binary:Version}),
+ libglib2.0-dev,
+ libgsystem-dev,
+ libostree-dev,
+ pkg-config,
+ ${misc:Depends},
+Description: Application deployment framework for desktop apps (development)
+ Flatpak installs, manages and runs sandboxed desktop application bundles.
+ See the flatpak package for a more comprehensive description.
+ .
+ This package contains development headers and pkg-config metadata
+ for libflatpak0.
+
+Package: libflatpak-doc
+Architecture: all
+Section: doc
+Depends:
+ ${misc:Depends},
+Suggests:
+ devhelp,
+Multi-Arch: foreign
+Description: Application deployment framework for desktop apps (documentation)
+ Flatpak installs, manages and runs sandboxed desktop application bundles.
+ See the flatpak package for a more comprehensive description.
+ .
+ This package contains reference documentation for libflatpak0.
+
+Package: libflatpak0
+Architecture: linux-any
+Section: libs
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+Pre-Depends:
+ ${misc:Pre-Depends},
+Multi-arch: same
+Description: Application deployment framework for desktop apps (library)
+ Flatpak installs, manages and runs sandboxed desktop application bundles.
+ See the flatpak package for a more comprehensive description.
+ .
+ This package contains the flatpak shared library, used by higher level
+ package management tools like gnome-software.
