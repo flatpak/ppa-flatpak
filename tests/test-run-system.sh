@@ -17,25 +17,6 @@
 # Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-set -euo pipefail
+export USE_SYSTEMDIR=yes
 
-. $(dirname $0)/libtest.sh
-
-echo "1..3"
-
-${FLATPAK} --version > version_out
-
-VERSION=`cat "$test_builddir/package_version.txt"`
-assert_file_has_content version_out "^flatpak $VERSION$"
-
-echo "ok version"
-
-${FLATPAK} --help > help_out
-
-assert_file_has_content help_out "^Usage:$"
-
-echo "ok help"
-
-${FLATPAK} --default-arch > /dev/null
-
-echo "ok default arch"
+. $(dirname $0)/test-run.sh

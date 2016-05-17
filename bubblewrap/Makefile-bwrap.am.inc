@@ -1,12 +1,12 @@
 
 bwrap_SOURCES = \
-	./bubblewrap/bubblewrap.c \
-	./bubblewrap/bind-mount.h \
-	./bubblewrap/bind-mount.c \
-	./bubblewrap/network.h \
-	./bubblewrap/network.c \
-	./bubblewrap/utils.h \
-	./bubblewrap/utils.c \
+	/home/smcv/src/xdg-app/bubblewrap/bubblewrap.c \
+	/home/smcv/src/xdg-app/bubblewrap/bind-mount.h \
+	/home/smcv/src/xdg-app/bubblewrap/bind-mount.c \
+	/home/smcv/src/xdg-app/bubblewrap/network.h \
+	/home/smcv/src/xdg-app/bubblewrap/network.c \
+	/home/smcv/src/xdg-app/bubblewrap/utils.h \
+	/home/smcv/src/xdg-app/bubblewrap/utils.c \
 	$(NULL)
 
 bwrap_CFLAGS = $(AM_CFLAGS)
