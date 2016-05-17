@@ -1,0 +1,3 @@
+# Expected: not everything uses enough string manipulation to end up using
+# any hardening functions.
+flatpak-builder: hardening-no-fortify-functions usr/bin/flatpak-builder

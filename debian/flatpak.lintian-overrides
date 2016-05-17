@@ -1,0 +1,8 @@
+# Intentional
+flatpak: setuid-binary usr/lib/flatpak/bwrap 4755 root/root
+
+# Expected: not everything uses enough string manipulation to end up using
+# any hardening functions. bwrap is deliberately excluded here since it
+# is very privileged, so we want to double-check that it ends up hardened
+flatpak: hardening-no-fortify-functions usr/lib/flatpak/flatpak-*
+flatpak: hardening-no-fortify-functions usr/lib/flatpak/xdg-*
