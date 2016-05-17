@@ -4,3 +4,4 @@ testdb-rely-on-G_TEST_SRCDIR-to-find-databases.patch
 test-doc-portal-rely-on-G_TEST_BUILDDIR-to-find-services.patch
 test-doc-portal-rely-on-service-activation-to-start-D-Bus.patch
 tests-package_version.txt-is-in-the-builddir.patch
+tests-skip-running-flatpak-at-build-time-if-bwrap-doesn-t.patch

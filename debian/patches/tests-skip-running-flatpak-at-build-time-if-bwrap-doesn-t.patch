@@ -1,0 +1,62 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Tue, 17 May 2016 10:17:46 +0100
+Subject: tests: skip running flatpak at build time if bwrap doesn't work
+
+Distribution autobuilders are often more locked-down than the
+environment in which the distribution binaries actually run.
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ tests/libtest.sh      | 11 +++++++++++
+ tests/test-builder.sh |  2 ++
+ tests/test-run.sh     |  2 ++
+ 3 files changed, 15 insertions(+)
+
+diff --git a/tests/libtest.sh b/tests/libtest.sh
+index 0717af2..0ff6a8a 100644
+--- a/tests/libtest.sh
++++ b/tests/libtest.sh
+@@ -172,6 +172,17 @@ run_sh () {
+     ${CMD_PREFIX} flatpak run --command=bash ${ARGS-} org.test.Hello -c "$*"
+ }
+ 
++skip_without_bwrap () {
++    if [ -z "${FLATPAK_BWRAP:-}" ]; then
++        # running installed-tests: assume we know what we're doing
++        :
++    elif ! "$FLATPAK_BWRAP" --ro-bind / / /bin/true > bwrap-result 2>&1; then
++        sed -e 's/^/# /' < bwrap-result
++        echo "1..0 # SKIP Cannot run bwrap"
++        exit 0
++    fi
++}
++
+ sed s#@testdir@#${test_builddir}# ${test_srcdir}/session.conf.in > session.conf
+ eval `dbus-launch --config-file=session.conf --sh-syntax`
+ 
+diff --git a/tests/test-builder.sh b/tests/test-builder.sh
+index dcbe586..93500cd 100755
+--- a/tests/test-builder.sh
++++ b/tests/test-builder.sh
+@@ -21,6 +21,8 @@ set -euo pipefail
+ 
+ . $(dirname $0)/libtest.sh
+ 
++skip_without_bwrap
++
+ echo "1..3"
+ 
+ setup_repo
+diff --git a/tests/test-run.sh b/tests/test-run.sh
+index 584f46e..3732567 100755
+--- a/tests/test-run.sh
++++ b/tests/test-run.sh
+@@ -21,6 +21,8 @@ set -euo pipefail
+ 
+ . $(dirname $0)/libtest.sh
+ 
++skip_without_bwrap
++
+ echo "1..5"
+ 
+ setup_repo
