@@ -1,2 +1,2 @@
 version=3
-http://www.freedesktop.org/software/xdg-app/releases/xdg-app-([\d.]+)\.tar\.xz
+https://www.freedesktop.org/software/xdg-app/releases/flatpak-([\d.]+)\.tar\.xz
