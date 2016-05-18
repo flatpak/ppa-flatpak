@@ -15,33 +15,33 @@
 # Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-EXTRA_DIST += /home/smcv/src/xdg-app/libglnx/README.md /home/smcv/src/xdg-app/libglnx/COPYING
+EXTRA_DIST += ./libglnx/README.md ./libglnx/COPYING
 
 libglnx_la_SOURCES = \
-	/home/smcv/src/xdg-app/libglnx/glnx-alloca.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-backport-autocleanups.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-backport-autoptr.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-backports.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-backports.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-local-alloc.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-local-alloc.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-errors.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-errors.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-console.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-console.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-dirfd.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-dirfd.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-fdio.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-fdio.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-lockfile.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-lockfile.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-libcontainer.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-libcontainer.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-xattrs.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-xattrs.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-shutil.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-shutil.c \
-	/home/smcv/src/xdg-app/libglnx/libglnx.h \
+	./libglnx/glnx-alloca.h \
+	./libglnx/glnx-backport-autocleanups.h \
+	./libglnx/glnx-backport-autoptr.h \
+	./libglnx/glnx-backports.h \
+	./libglnx/glnx-backports.c \
+	./libglnx/glnx-local-alloc.h \
+	./libglnx/glnx-local-alloc.c \
+	./libglnx/glnx-errors.h \
+	./libglnx/glnx-errors.c \
+	./libglnx/glnx-console.h \
+	./libglnx/glnx-console.c \
+	./libglnx/glnx-dirfd.h \
+	./libglnx/glnx-dirfd.c \
+	./libglnx/glnx-fdio.h \
+	./libglnx/glnx-fdio.c \
+	./libglnx/glnx-lockfile.h \
+	./libglnx/glnx-lockfile.c \
+	./libglnx/glnx-libcontainer.h \
+	./libglnx/glnx-libcontainer.c \
+	./libglnx/glnx-xattrs.h \
+	./libglnx/glnx-xattrs.c \
+	./libglnx/glnx-shutil.h \
+	./libglnx/glnx-shutil.c \
+	./libglnx/libglnx.h \
 	$(NULL)
 
 libglnx_la_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)

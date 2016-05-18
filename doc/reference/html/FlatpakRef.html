@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>FlatpakRef: Flatpak Library Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
 <link rel="home" href="index.html" title="Flatpak Library Reference Manual">
 <link rel="up" href="ch01.html" title="Flatpak">
 <link rel="prev" href="FlatpakInstallation.html" title="FlatpakInstallation">
 <link rel="next" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef">
-<meta name="generator" content="GTK-Doc V1.25 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.24.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -35,7 +35,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="FlatpakRef.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -98,7 +98,7 @@
 </div>
 <div class="refsect1">
 <a name="FlatpakRef.properties"></a><h2>Properties</h2>
-<div class="informaltable"><table class="informaltable" border="0">
+<div class="informaltable"><table border="0">
 <colgroup>
 <col width="150px" class="properties_type">
 <col width="300px" class="properties_name">
@@ -107,19 +107,19 @@
 <tbody>
 <tr>
 <td class="property_type">
-<a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *</td>
+<span class="type">gchar</span> *</td>
 <td class="property_name"><a class="link" href="FlatpakRef.html#FlatpakRef--arch" title="The “arch” property">arch</a></td>
 <td class="property_flags">Read / Write</td>
 </tr>
 <tr>
 <td class="property_type">
-<a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *</td>
+<span class="type">gchar</span> *</td>
 <td class="property_name"><a class="link" href="FlatpakRef.html#FlatpakRef--branch" title="The “branch” property">branch</a></td>
 <td class="property_flags">Read / Write</td>
 </tr>
 <tr>
 <td class="property_type">
-<a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *</td>
+<span class="type">gchar</span> *</td>
 <td class="property_name"><a class="link" href="FlatpakRef.html#FlatpakRef--commit" title="The “commit” property">commit</a></td>
 <td class="property_flags">Read / Write</td>
 </tr>
@@ -130,7 +130,7 @@
 </tr>
 <tr>
 <td class="property_type">
-<a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *</td>
+<span class="type">gchar</span> *</td>
 <td class="property_name"><a class="link" href="FlatpakRef.html#FlatpakRef--name" title="The “name” property">name</a></td>
 <td class="property_flags">Read / Write</td>
 </tr>
@@ -139,7 +139,7 @@
 </div>
 <div class="refsect1">
 <a name="FlatpakRef.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -158,8 +158,9 @@
 </div>
 <div class="refsect1">
 <a name="FlatpakRef.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="/usr/share/gtk-doc/html/gobjectgobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
+<pre class="screen">    GObject
     <span class="lineart">╰──</span> FlatpakRef
+        <span class="lineart">├──</span> <a class="link" href="flatpak-flatpak-bundle-ref.html#FlatpakBundleRef">FlatpakBundleRef</a>
         <span class="lineart">├──</span> <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef">FlatpakInstalledRef</a>
         <span class="lineart">╰──</span> <a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef">FlatpakRemoteRef</a>
 </pre>
@@ -188,8 +189,8 @@ flatpak_ref_format_ref (<em class="parameter"><code><a class="link" href="Flatpa
 <p>Convert an FlatpakRef object into a string representation that
 can be parsed by <a class="link" href="FlatpakRef.html#flatpak-ref-parse" title="flatpak_ref_parse ()"><code class="function">flatpak_ref_parse()</code></a>.</p>
 <div class="refsect3">
-<a name="flatpak-ref-format-ref.parameters"></a><h4>Parameters</h4>
-<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<a name="id-1.2.3.8.2.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -203,7 +204,7 @@ can be parsed by <a class="link" href="FlatpakRef.html#flatpak-ref-parse" title=
 </table></div>
 </div>
 <div class="refsect3">
-<a name="flatpak-ref-format-ref.returns"></a><h4>Returns</h4>
+<a name="id-1.2.3.8.2.6"></a><h4>Returns</h4>
 <p> string representation. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
@@ -215,8 +216,8 @@ can be parsed by <a class="link" href="FlatpakRef.html#flatpak-ref-parse" title=
 flatpak_ref_get_arch (<em class="parameter"><code><a class="link" href="FlatpakRef.html" title="FlatpakRef"><span class="type">FlatpakRef</span></a> *self</code></em>);</pre>
 <p>Gets the arch or the ref.</p>
 <div class="refsect3">
-<a name="flatpak-ref-get-arch.parameters"></a><h4>Parameters</h4>
-<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<a name="id-1.2.3.8.3.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -230,7 +231,7 @@ flatpak_ref_get_arch (<em class="parameter"><code><a class="link" href="FlatpakR
 </table></div>
 </div>
 <div class="refsect3">
-<a name="flatpak-ref-get-arch.returns"></a><h4>Returns</h4>
+<a name="id-1.2.3.8.3.6"></a><h4>Returns</h4>
 <p> the arch. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
@@ -242,8 +243,8 @@ flatpak_ref_get_arch (<em class="parameter"><code><a class="link" href="FlatpakR
 flatpak_ref_get_branch (<em class="parameter"><code><a class="link" href="FlatpakRef.html" title="FlatpakRef"><span class="type">FlatpakRef</span></a> *self</code></em>);</pre>
 <p>Gets the branch of the ref.</p>
 <div class="refsect3">
-<a name="flatpak-ref-get-branch.parameters"></a><h4>Parameters</h4>
-<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<a name="id-1.2.3.8.4.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -257,7 +258,7 @@ flatpak_ref_get_branch (<em class="parameter"><code><a class="link" href="Flatpa
 </table></div>
 </div>
 <div class="refsect3">
-<a name="flatpak-ref-get-branch.returns"></a><h4>Returns</h4>
+<a name="id-1.2.3.8.4.6"></a><h4>Returns</h4>
 <p> the branch. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
@@ -269,8 +270,8 @@ flatpak_ref_get_branch (<em class="parameter"><code><a class="link" href="Flatpa
 flatpak_ref_get_commit (<em class="parameter"><code><a class="link" href="FlatpakRef.html" title="FlatpakRef"><span class="type">FlatpakRef</span></a> *self</code></em>);</pre>
 <p>Gets the commit of the ref.</p>
 <div class="refsect3">
-<a name="flatpak-ref-get-commit.parameters"></a><h4>Parameters</h4>
-<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<a name="id-1.2.3.8.5.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -284,7 +285,7 @@ flatpak_ref_get_commit (<em class="parameter"><code><a class="link" href="Flatpa
 </table></div>
 </div>
 <div class="refsect3">
-<a name="flatpak-ref-get-commit.returns"></a><h4>Returns</h4>
+<a name="id-1.2.3.8.5.6"></a><h4>Returns</h4>
 <p> the commit. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
@@ -296,8 +297,8 @@ flatpak_ref_get_commit (<em class="parameter"><code><a class="link" href="Flatpa
 flatpak_ref_get_kind (<em class="parameter"><code><a class="link" href="FlatpakRef.html" title="FlatpakRef"><span class="type">FlatpakRef</span></a> *self</code></em>);</pre>
 <p>Gets the kind of artifact that this ref refers to.</p>
 <div class="refsect3">
-<a name="flatpak-ref-get-kind.parameters"></a><h4>Parameters</h4>
-<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<a name="id-1.2.3.8.6.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -311,7 +312,7 @@ flatpak_ref_get_kind (<em class="parameter"><code><a class="link" href="FlatpakR
 </table></div>
 </div>
 <div class="refsect3">
-<a name="flatpak-ref-get-kind.returns"></a><h4>Returns</h4>
+<a name="id-1.2.3.8.6.6"></a><h4>Returns</h4>
 <p> the kind of artifact</p>
 </div>
 </div>
@@ -322,8 +323,8 @@ flatpak_ref_get_kind (<em class="parameter"><code><a class="link" href="FlatpakR
 flatpak_ref_get_name (<em class="parameter"><code><a class="link" href="FlatpakRef.html" title="FlatpakRef"><span class="type">FlatpakRef</span></a> *self</code></em>);</pre>
 <p>Gets the name of the ref.</p>
 <div class="refsect3">
-<a name="flatpak-ref-get-name.parameters"></a><h4>Parameters</h4>
-<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<a name="id-1.2.3.8.7.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -337,7 +338,7 @@ flatpak_ref_get_name (<em class="parameter"><code><a class="link" href="FlatpakR
 </table></div>
 </div>
 <div class="refsect3">
-<a name="flatpak-ref-get-name.returns"></a><h4>Returns</h4>
+<a name="id-1.2.3.8.7.6"></a><h4>Returns</h4>
 <p> the name. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
@@ -347,12 +348,12 @@ flatpak_ref_get_name (<em class="parameter"><code><a class="link" href="FlatpakR
 <a name="flatpak-ref-parse"></a><h3>flatpak_ref_parse ()</h3>
 <pre class="programlisting"><a class="link" href="FlatpakRef.html" title="FlatpakRef"><span class="returnvalue">FlatpakRef</span></a> *
 flatpak_ref_parse (<em class="parameter"><code>const <span class="type">char</span> *ref</code></em>,
-                   <em class="parameter"><code><a href="/usr/share/gtk-doc/html/glibglib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+                   <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Tries to parse a full ref name and return a <a class="link" href="FlatpakRef.html" title="FlatpakRef"><span class="type">FlatpakRef</span></a> (without a
 commit set) or fail if the ref is invalid somehow.</p>
 <div class="refsect3">
-<a name="flatpak-ref-parse.parameters"></a><h4>Parameters</h4>
-<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<a name="id-1.2.3.8.8.5"></a><h4>Parameters</h4>
+<div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -366,15 +367,15 @@ commit set) or fail if the ref is invalid somehow.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>return location for a <a href="/usr/share/gtk-doc/html/glibglib-Error-Reporting.html#GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_description"><p>return location for a <span class="type">GError</span></p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="flatpak-ref-parse.returns"></a><h4>Returns</h4>
-<p> an <a class="link" href="FlatpakRef.html" title="FlatpakRef"><span class="type">FlatpakRef</span></a>, or <a href="/usr/share/gtk-doc/html/glibglib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
+<a name="id-1.2.3.8.8.6"></a><h4>Returns</h4>
+<p> an <a class="link" href="FlatpakRef.html" title="FlatpakRef"><span class="type">FlatpakRef</span></a>, or <code class="literal">NULL</code>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -390,8 +391,8 @@ commit set) or fail if the ref is invalid somehow.</p>
 <a name="FlatpakRefKind"></a><h3>enum FlatpakRefKind</h3>
 <p>The kind of artifact that a FlatpakRef refers to.</p>
 <div class="refsect3">
-<a name="FlatpakRefKind.members"></a><h4>Members</h4>
-<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<a name="id-1.2.3.9.3.4"></a><h4>Members</h4>
+<div class="informaltable"><table width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -421,7 +422,7 @@ commit set) or fail if the ref is invalid somehow.</p>
 <a name="FlatpakRef.property-details"></a><h2>Property Details</h2>
 <div class="refsect2">
 <a name="FlatpakRef--arch"></a><h3>The <code class="literal">“arch”</code> property</h3>
-<pre class="programlisting">  “arch”                     <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *</pre>
+<pre class="programlisting">  “arch”                     <span class="type">gchar</span> *</pre>
 <p>The architecture of the application or runtime.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: NULL</p>
@@ -429,7 +430,7 @@ commit set) or fail if the ref is invalid somehow.</p>
 <hr>
 <div class="refsect2">
 <a name="FlatpakRef--branch"></a><h3>The <code class="literal">“branch”</code> property</h3>
-<pre class="programlisting">  “branch”                   <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *</pre>
+<pre class="programlisting">  “branch”                   <span class="type">gchar</span> *</pre>
 <p>The branch of the application or runtime.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: NULL</p>
@@ -437,7 +438,7 @@ commit set) or fail if the ref is invalid somehow.</p>
 <hr>
 <div class="refsect2">
 <a name="FlatpakRef--commit"></a><h3>The <code class="literal">“commit”</code> property</h3>
-<pre class="programlisting">  “commit”                   <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *</pre>
+<pre class="programlisting">  “commit”                   <span class="type">gchar</span> *</pre>
 <p>The commit.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: NULL</p>
@@ -453,7 +454,7 @@ commit set) or fail if the ref is invalid somehow.</p>
 <hr>
 <div class="refsect2">
 <a name="FlatpakRef--name"></a><h3>The <code class="literal">“name”</code> property</h3>
-<pre class="programlisting">  “name”                     <a href="/usr/share/gtk-doc/html/glibglib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *</pre>
+<pre class="programlisting">  “name”                     <span class="type">gchar</span> *</pre>
 <p>The name of the application or runtime.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: NULL</p>
@@ -461,6 +462,6 @@ commit set) or fail if the ref is invalid somehow.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.25</div>
+<hr>Generated by GTK-Doc V1.24.1</div>
 </body>
 </html>

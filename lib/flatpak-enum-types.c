@@ -7,7 +7,7 @@
 #include <flatpak-enum-types.h>
 #include <gio/gio.h>
 
-/* enumerations from "/home/smcv/src/xdg-app/lib/flatpak-ref.h" */
+/* enumerations from "lib/flatpak-ref.h" */
 GType
 flatpak_ref_kind_get_type (void)
 {
@@ -28,7 +28,7 @@ flatpak_ref_kind_get_type (void)
   return g_define_type_id__volatile;
 }
 
-/* enumerations from "/home/smcv/src/xdg-app/lib/flatpak-error.h" */
+/* enumerations from "lib/flatpak-error.h" */
 GType
 flatpak_error_get_type (void)
 {
@@ -49,7 +49,7 @@ flatpak_error_get_type (void)
   return g_define_type_id__volatile;
 }
 
-/* enumerations from "/home/smcv/src/xdg-app/lib/flatpak-installation.h" */
+/* enumerations from "lib/flatpak-installation.h" */
 GType
 flatpak_update_flags_get_type (void)
 {

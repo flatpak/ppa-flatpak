@@ -8,7 +8,7 @@
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -20,14 +20,14 @@
 #define __MOUNTS_H__
 
 typedef enum {
-  BIND_READONLY = (1<<0),
-  BIND_DEVICES = (1<<2),
-  BIND_RECURSIVE = (1<<3),
+  BIND_READONLY = (1 << 0),
+  BIND_DEVICES = (1 << 2),
+  BIND_RECURSIVE = (1 << 3),
 } bind_option_t;
 
-int bind_mount (int proc_fd,
-                const char *src,
-                const char *dest,
+int bind_mount (int           proc_fd,
+                const char   *src,
+                const char   *dest,
                 bind_option_t options);
 
 #endif /* __MOUNTS_H__ */
