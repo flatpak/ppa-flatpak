@@ -156,10 +156,11 @@ bwrap_PROGRAMS = bwrap$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/glibtests.m4 \
-	$(top_srcdir)/m4/gtk-doc.m4 $(top_srcdir)/m4/libtool.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/gtk-doc.m4 $(top_srcdir)/m4/intltool.m4 \
+	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
@@ -267,18 +268,16 @@ libflatpak_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(CFLAGS) $(libflatpak_la_LDFLAGS) $(LDFLAGS) -o $@
 am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 libglnx_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_libglnx_la_OBJECTS =  \
-	/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-backports.lo \
-	/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-local-alloc.lo \
-	/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-errors.lo \
-	/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-console.lo \
-	/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-dirfd.lo \
-	/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-fdio.lo \
-	/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-lockfile.lo \
-	/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-libcontainer.lo \
-	/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-xattrs.lo \
-	/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-shutil.lo \
-	$(am__objects_3)
+am_libglnx_la_OBJECTS = ./libglnx/libglnx_la-glnx-backports.lo \
+	./libglnx/libglnx_la-glnx-local-alloc.lo \
+	./libglnx/libglnx_la-glnx-errors.lo \
+	./libglnx/libglnx_la-glnx-console.lo \
+	./libglnx/libglnx_la-glnx-dirfd.lo \
+	./libglnx/libglnx_la-glnx-fdio.lo \
+	./libglnx/libglnx_la-glnx-lockfile.lo \
+	./libglnx/libglnx_la-glnx-libcontainer.lo \
+	./libglnx/libglnx_la-glnx-xattrs.lo \
+	./libglnx/libglnx_la-glnx-shutil.lo $(am__objects_3)
 libglnx_la_OBJECTS = $(am_libglnx_la_OBJECTS)
 libglnx_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libglnx_la_CFLAGS) \
@@ -292,12 +291,10 @@ am__EXEEXT_3 = $(am__EXEEXT_2)
 PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(installed_test_PROGRAMS) $(libexec_PROGRAMS) \
 	$(noinst_PROGRAMS)
-am_bwrap_OBJECTS =  \
-	/home/smcv/src/xdg-app/bubblewrap/bwrap-bubblewrap.$(OBJEXT) \
-	/home/smcv/src/xdg-app/bubblewrap/bwrap-bind-mount.$(OBJEXT) \
-	/home/smcv/src/xdg-app/bubblewrap/bwrap-network.$(OBJEXT) \
-	/home/smcv/src/xdg-app/bubblewrap/bwrap-utils.$(OBJEXT) \
-	$(am__objects_3)
+am_bwrap_OBJECTS = ./bubblewrap/bwrap-bubblewrap.$(OBJEXT) \
+	./bubblewrap/bwrap-bind-mount.$(OBJEXT) \
+	./bubblewrap/bwrap-network.$(OBJEXT) \
+	./bubblewrap/bwrap-utils.$(OBJEXT) $(am__objects_3)
 bwrap_OBJECTS = $(am_bwrap_OBJECTS)
 bwrap_LDADD = $(LDADD)
 bwrap_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -744,7 +741,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/app/Makefile.am.inc \
 	$(top_srcdir)/buildutil/glib-tap.mk \
 	$(top_srcdir)/lib/flatpak-version-macros.h.in COPYING INSTALL \
 	NEWS compile config.guess config.sub depcomp install-sh \
-	ltmain.sh missing test-driver
+	ltmain.sh missing py-compile test-driver
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -925,6 +922,7 @@ SOUP_LIBS = @SOUP_LIBS@
 STRIP = @STRIP@
 SUDO_BIN = @SUDO_BIN@
 SYSTEM_FONTS_DIR = @SYSTEM_FONTS_DIR@
+SYSTEM_INSTALL_DIR = @SYSTEM_INSTALL_DIR@
 USE_NLS = @USE_NLS@
 VALGRIND = @VALGRIND@
 VALGRIND_ENABLED = @VALGRIND_ENABLED@
@@ -984,7 +982,6 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
-runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -999,23 +996,24 @@ NULL =
 noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
-	$(systemduserunit_DATA) $(am__append_16) \
+	$(systemduserunit_DATA) $(am__append_16)
+DISTCLEANFILES = $(NULL) lib/flatpak-enum-types.c \
+	lib/flatpak-enum-types.h $(NULL) \
+	system-helper/org.freedesktop.Flatpak.policy \
+	system-helper/flatpak-system-helper.service \
+	system-helper/org.freedesktop.Flatpak.SystemHelper.service \
 	tests/services/org.freedesktop.Flatpak.service \
 	tests/services/org.freedesktop.portal.Documents.service \
 	tests/services/org.freedesktop.impl.portal.PermissionStore.service \
-	$(NULL)
-DISTCLEANFILES = $(NULL) lib/flatpak-enum-types.c \
-	lib/flatpak-enum-types.h $(NULL) \
-	system-helper/org.freedesktop.Flatpak.policy flatpak.sh \
-	flatpak.env
+	tests/services/org.freedesktop.Flatpak.SystemHelper.service \
+	tests/package_version.txt $(NULL) flatpak.sh flatpak.env
 BUILT_SOURCES = $(NULL) $(dbus_built_sources) \
 	$(systemd_dbus_built_sources) lib/flatpak-enum-types.c \
 	lib/flatpak-enum-types.h $(NULL) $(ps_dbus_built_sources) \
 	$(xdp_dbus_built_sources)
 EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	$(all_dist_test_scripts) $(all_dist_test_data) \
-	$(service_in_files) /home/smcv/src/xdg-app/libglnx/README.md \
-	/home/smcv/src/xdg-app/libglnx/COPYING \
+	$(service_in_files) ./libglnx/README.md ./libglnx/COPYING \
 	data/org.freedesktop.portal.Documents.xml \
 	data/org.freedesktop.impl.portal.PermissionStore.xml \
 	data/org.freedesktop.systemd1.xml \
@@ -1025,9 +1023,10 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	system-helper/org.freedesktop.Flatpak.policy.in \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.conf \
 	$(installed_test_SCRIPTS) $(installed_test_data) \
-	tests/flatpak-valgrind.supp tests/dbs/no_tables \
-	$(completion_DATA) profile/flatpak.sh.in $(NULL) \
-	env.d/flatpak.env.in flatpak.pc.in
+	$(installed_test_keyring_DATA) $(installed_test_dbs_DATA) \
+	tests/flatpak-valgrind.supp $(completion_DATA) \
+	profile/flatpak.sh.in $(NULL) env.d/flatpak.env.in \
+	flatpak.pc.in
 TESTS_ENVIRONMENT = G_TEST_SRCDIR="$(abs_srcdir)/tests" \
 	G_TEST_BUILDDIR="$(abs_builddir)/tests" UNINSTALLEDTESTS=1 \
 	G_DEBUG=gc-friendly MALLOC_CHECK_=2 \
@@ -1096,18 +1095,18 @@ systemduserunit_DATA = $(NULL) \
 	document-portal/xdg-document-portal.service
 FLATPAK_BINDIR = $(bindir)
 AM_CPPFLAGS = \
-	-DFLATPAK_BINDIR=\"$(FLATPAK_BINDIR)\"		\
-	-DFLATPAK_SYSTEMDIR=\"$(localstatedir)/lib/flatpak\"\
-	-DFLATPAK_CONFIGDIR=\"$(sysconfdir)/flatpak\"\
-	-DFLATPAK_BASEDIR=\"$(pkgdatadir)\"		\
-	-DFLATPAK_TRIGGERDIR=\"$(pkgdatadir)/triggers\" \
-	-DSYSTEM_FONTS_DIR=\"$(SYSTEM_FONTS_DIR)\"	\
-	-DHELPER=\"$(libdir)/flatpak/bwrap\"		\
+	-DFLATPAK_BINDIR=\"$(FLATPAK_BINDIR)\"			\
+	-DFLATPAK_SYSTEMDIR=\"$(SYSTEM_INSTALL_DIR)\"		\
+	-DFLATPAK_CONFIGDIR=\"$(sysconfdir)/flatpak\"		\
+	-DFLATPAK_BASEDIR=\"$(pkgdatadir)\"			\
+	-DFLATPAK_TRIGGERDIR=\"$(pkgdatadir)/triggers\"		\
+	-DSYSTEM_FONTS_DIR=\"$(SYSTEM_FONTS_DIR)\"		\
+	-DHELPER=\"$(libdir)/flatpak/bwrap\"			\
 	-DDBUSPROXY=\"$(libexecdir)/flatpak-dbus-proxy\"	\
-	-DG_LOG_DOMAIN=\"flatpak\"			\
-	-I$(srcdir)/libglnx				\
-	-I$(srcdir)/common				\
-	-I$(builddir)/common				\
+	-DG_LOG_DOMAIN=\"flatpak\"				\
+	-I$(srcdir)/libglnx					\
+	-I$(srcdir)/common					\
+	-I$(builddir)/common					\
 	$(NULL)
 
 triggersdir = $(pkgdatadir)/triggers
@@ -1127,30 +1126,30 @@ libglnx_cflags := \
 
 libglnx_libs := $(BASE_LIBS)
 libglnx_la_SOURCES = \
-	/home/smcv/src/xdg-app/libglnx/glnx-alloca.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-backport-autocleanups.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-backport-autoptr.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-backports.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-backports.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-local-alloc.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-local-alloc.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-errors.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-errors.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-console.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-console.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-dirfd.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-dirfd.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-fdio.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-fdio.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-lockfile.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-lockfile.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-libcontainer.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-libcontainer.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-xattrs.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-xattrs.c \
-	/home/smcv/src/xdg-app/libglnx/glnx-shutil.h \
-	/home/smcv/src/xdg-app/libglnx/glnx-shutil.c \
-	/home/smcv/src/xdg-app/libglnx/libglnx.h \
+	./libglnx/glnx-alloca.h \
+	./libglnx/glnx-backport-autocleanups.h \
+	./libglnx/glnx-backport-autoptr.h \
+	./libglnx/glnx-backports.h \
+	./libglnx/glnx-backports.c \
+	./libglnx/glnx-local-alloc.h \
+	./libglnx/glnx-local-alloc.c \
+	./libglnx/glnx-errors.h \
+	./libglnx/glnx-errors.c \
+	./libglnx/glnx-console.h \
+	./libglnx/glnx-console.c \
+	./libglnx/glnx-dirfd.h \
+	./libglnx/glnx-dirfd.c \
+	./libglnx/glnx-fdio.h \
+	./libglnx/glnx-fdio.c \
+	./libglnx/glnx-lockfile.h \
+	./libglnx/glnx-lockfile.c \
+	./libglnx/glnx-libcontainer.h \
+	./libglnx/glnx-libcontainer.c \
+	./libglnx/glnx-xattrs.h \
+	./libglnx/glnx-xattrs.c \
+	./libglnx/glnx-shutil.h \
+	./libglnx/glnx-shutil.c \
+	./libglnx/libglnx.h \
 	$(NULL)
 
 libglnx_la_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
@@ -1466,13 +1465,13 @@ test_programs = testdb test-doc-portal
 VALGRIND_SUPPRESSIONS_FILES = tests/flatpak-valgrind.supp
 bwrapdir = $(libdir)/flatpak
 bwrap_SOURCES = \
-	/home/smcv/src/xdg-app/bubblewrap/bubblewrap.c \
-	/home/smcv/src/xdg-app/bubblewrap/bind-mount.h \
-	/home/smcv/src/xdg-app/bubblewrap/bind-mount.c \
-	/home/smcv/src/xdg-app/bubblewrap/network.h \
-	/home/smcv/src/xdg-app/bubblewrap/network.c \
-	/home/smcv/src/xdg-app/bubblewrap/utils.h \
-	/home/smcv/src/xdg-app/bubblewrap/utils.c \
+	./bubblewrap/bubblewrap.c \
+	./bubblewrap/bind-mount.h \
+	./bubblewrap/bind-mount.c \
+	./bubblewrap/network.h \
+	./bubblewrap/network.c \
+	./bubblewrap/utils.h \
+	./bubblewrap/utils.c \
 	$(NULL)
 
 bwrap_CFLAGS = $(AM_CFLAGS)
@@ -1704,42 +1703,32 @@ lib/libflatpak_la-flatpak-installation.lo: lib/$(am__dirstamp) \
 
 libflatpak.la: $(libflatpak_la_OBJECTS) $(libflatpak_la_DEPENDENCIES) $(EXTRA_libflatpak_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libflatpak_la_LINK) -rpath $(libdir) $(libflatpak_la_OBJECTS) $(libflatpak_la_LIBADD) $(LIBS)
-/home/smcv/src/xdg-app/libglnx/$(am__dirstamp):
-	@$(MKDIR_P) /home/smcv/src/xdg-app/libglnx
-	@: > /home/smcv/src/xdg-app/libglnx/$(am__dirstamp)
-/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) /home/smcv/src/xdg-app/libglnx/$(DEPDIR)
-	@: > /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-backports.lo:  \
-	/home/smcv/src/xdg-app/libglnx/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-local-alloc.lo:  \
-	/home/smcv/src/xdg-app/libglnx/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-errors.lo:  \
-	/home/smcv/src/xdg-app/libglnx/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-console.lo:  \
-	/home/smcv/src/xdg-app/libglnx/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-dirfd.lo:  \
-	/home/smcv/src/xdg-app/libglnx/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-fdio.lo:  \
-	/home/smcv/src/xdg-app/libglnx/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-lockfile.lo:  \
-	/home/smcv/src/xdg-app/libglnx/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-libcontainer.lo:  \
-	/home/smcv/src/xdg-app/libglnx/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-xattrs.lo:  \
-	/home/smcv/src/xdg-app/libglnx/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-shutil.lo:  \
-	/home/smcv/src/xdg-app/libglnx/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/$(am__dirstamp)
+libglnx/$(am__dirstamp):
+	@$(MKDIR_P) ./libglnx
+	@: > libglnx/$(am__dirstamp)
+libglnx/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) ./libglnx/$(DEPDIR)
+	@: > libglnx/$(DEPDIR)/$(am__dirstamp)
+./libglnx/libglnx_la-glnx-backports.lo: libglnx/$(am__dirstamp) \
+	libglnx/$(DEPDIR)/$(am__dirstamp)
+./libglnx/libglnx_la-glnx-local-alloc.lo: libglnx/$(am__dirstamp) \
+	libglnx/$(DEPDIR)/$(am__dirstamp)
+./libglnx/libglnx_la-glnx-errors.lo: libglnx/$(am__dirstamp) \
+	libglnx/$(DEPDIR)/$(am__dirstamp)
+./libglnx/libglnx_la-glnx-console.lo: libglnx/$(am__dirstamp) \
+	libglnx/$(DEPDIR)/$(am__dirstamp)
+./libglnx/libglnx_la-glnx-dirfd.lo: libglnx/$(am__dirstamp) \
+	libglnx/$(DEPDIR)/$(am__dirstamp)
+./libglnx/libglnx_la-glnx-fdio.lo: libglnx/$(am__dirstamp) \
+	libglnx/$(DEPDIR)/$(am__dirstamp)
+./libglnx/libglnx_la-glnx-lockfile.lo: libglnx/$(am__dirstamp) \
+	libglnx/$(DEPDIR)/$(am__dirstamp)
+./libglnx/libglnx_la-glnx-libcontainer.lo: libglnx/$(am__dirstamp) \
+	libglnx/$(DEPDIR)/$(am__dirstamp)
+./libglnx/libglnx_la-glnx-xattrs.lo: libglnx/$(am__dirstamp) \
+	libglnx/$(DEPDIR)/$(am__dirstamp)
+./libglnx/libglnx_la-glnx-shutil.lo: libglnx/$(am__dirstamp) \
+	libglnx/$(DEPDIR)/$(am__dirstamp)
 
 libglnx.la: $(libglnx_la_OBJECTS) $(libglnx_la_DEPENDENCIES) $(EXTRA_libglnx_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libglnx_la_LINK)  $(libglnx_la_OBJECTS) $(libglnx_la_LIBADD) $(LIBS)
@@ -1957,24 +1946,20 @@ clean-noinstPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-/home/smcv/src/xdg-app/bubblewrap/$(am__dirstamp):
-	@$(MKDIR_P) /home/smcv/src/xdg-app/bubblewrap
-	@: > /home/smcv/src/xdg-app/bubblewrap/$(am__dirstamp)
-/home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)
-	@: > /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/bubblewrap/bwrap-bubblewrap.$(OBJEXT):  \
-	/home/smcv/src/xdg-app/bubblewrap/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/bubblewrap/bwrap-bind-mount.$(OBJEXT):  \
-	/home/smcv/src/xdg-app/bubblewrap/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/bubblewrap/bwrap-network.$(OBJEXT):  \
-	/home/smcv/src/xdg-app/bubblewrap/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/$(am__dirstamp)
-/home/smcv/src/xdg-app/bubblewrap/bwrap-utils.$(OBJEXT):  \
-	/home/smcv/src/xdg-app/bubblewrap/$(am__dirstamp) \
-	/home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/$(am__dirstamp)
+bubblewrap/$(am__dirstamp):
+	@$(MKDIR_P) ./bubblewrap
+	@: > bubblewrap/$(am__dirstamp)
+bubblewrap/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) ./bubblewrap/$(DEPDIR)
+	@: > bubblewrap/$(DEPDIR)/$(am__dirstamp)
+./bubblewrap/bwrap-bubblewrap.$(OBJEXT): bubblewrap/$(am__dirstamp) \
+	bubblewrap/$(DEPDIR)/$(am__dirstamp)
+./bubblewrap/bwrap-bind-mount.$(OBJEXT): bubblewrap/$(am__dirstamp) \
+	bubblewrap/$(DEPDIR)/$(am__dirstamp)
+./bubblewrap/bwrap-network.$(OBJEXT): bubblewrap/$(am__dirstamp) \
+	bubblewrap/$(DEPDIR)/$(am__dirstamp)
+./bubblewrap/bwrap-utils.$(OBJEXT): bubblewrap/$(am__dirstamp) \
+	bubblewrap/$(DEPDIR)/$(am__dirstamp)
 
 bwrap$(EXEEXT): $(bwrap_OBJECTS) $(bwrap_DEPENDENCIES) $(EXTRA_bwrap_DEPENDENCIES) 
 	@rm -f bwrap$(EXEEXT)
@@ -2266,9 +2251,9 @@ uninstall-installed_testSCRIPTS:
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f /home/smcv/src/xdg-app/bubblewrap/*.$(OBJEXT)
-	-rm -f /home/smcv/src/xdg-app/libglnx/*.$(OBJEXT)
-	-rm -f /home/smcv/src/xdg-app/libglnx/*.lo
+	-rm -f ./bubblewrap/*.$(OBJEXT)
+	-rm -f ./libglnx/*.$(OBJEXT)
+	-rm -f ./libglnx/*.lo
 	-rm -f app/*.$(OBJEXT)
 	-rm -f builder/*.$(OBJEXT)
 	-rm -f common/*.$(OBJEXT)
@@ -2287,20 +2272,20 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bind-mount.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-network.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-utils.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-errors.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-fdio.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-libcontainer.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-local-alloc.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-lockfile.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-shutil.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@/home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-xattrs.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./bubblewrap/$(DEPDIR)/bwrap-network.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./bubblewrap/$(DEPDIR)/bwrap-utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./libglnx/$(DEPDIR)/libglnx_la-glnx-errors.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./libglnx/$(DEPDIR)/libglnx_la-glnx-fdio.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./libglnx/$(DEPDIR)/libglnx_la-glnx-libcontainer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./libglnx/$(DEPDIR)/libglnx_la-glnx-local-alloc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./libglnx/$(DEPDIR)/libglnx_la-glnx-lockfile.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./libglnx/$(DEPDIR)/libglnx_la-glnx-shutil.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./libglnx/$(DEPDIR)/libglnx_la-glnx-xattrs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-add-remote.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build-bundle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build-export.Po@am__quote@
@@ -2534,131 +2519,131 @@ lib/libflatpak_la-flatpak-installation.lo: lib/flatpak-installation.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak-installation.lo `test -f 'lib/flatpak-installation.c' || echo '$(srcdir)/'`lib/flatpak-installation.c
 
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-backports.lo: /home/smcv/src/xdg-app/libglnx/glnx-backports.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-backports.lo -MD -MP -MF /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Tpo -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-backports.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-backports.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-backports.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Tpo /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/libglnx/glnx-backports.c' object='/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-backports.lo' libtool=yes @AMDEPBACKSLASH@
+./libglnx/libglnx_la-glnx-backports.lo: ./libglnx/glnx-backports.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT ./libglnx/libglnx_la-glnx-backports.lo -MD -MP -MF ./libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Tpo -c -o ./libglnx/libglnx_la-glnx-backports.lo `test -f './libglnx/glnx-backports.c' || echo '$(srcdir)/'`./libglnx/glnx-backports.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Tpo ./libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./libglnx/glnx-backports.c' object='./libglnx/libglnx_la-glnx-backports.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-backports.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-backports.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-backports.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o ./libglnx/libglnx_la-glnx-backports.lo `test -f './libglnx/glnx-backports.c' || echo '$(srcdir)/'`./libglnx/glnx-backports.c
 
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-local-alloc.lo: /home/smcv/src/xdg-app/libglnx/glnx-local-alloc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-local-alloc.lo -MD -MP -MF /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-local-alloc.Tpo -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-local-alloc.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-local-alloc.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-local-alloc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-local-alloc.Tpo /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-local-alloc.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/libglnx/glnx-local-alloc.c' object='/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-local-alloc.lo' libtool=yes @AMDEPBACKSLASH@
+./libglnx/libglnx_la-glnx-local-alloc.lo: ./libglnx/glnx-local-alloc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT ./libglnx/libglnx_la-glnx-local-alloc.lo -MD -MP -MF ./libglnx/$(DEPDIR)/libglnx_la-glnx-local-alloc.Tpo -c -o ./libglnx/libglnx_la-glnx-local-alloc.lo `test -f './libglnx/glnx-local-alloc.c' || echo '$(srcdir)/'`./libglnx/glnx-local-alloc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./libglnx/$(DEPDIR)/libglnx_la-glnx-local-alloc.Tpo ./libglnx/$(DEPDIR)/libglnx_la-glnx-local-alloc.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./libglnx/glnx-local-alloc.c' object='./libglnx/libglnx_la-glnx-local-alloc.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-local-alloc.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-local-alloc.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-local-alloc.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o ./libglnx/libglnx_la-glnx-local-alloc.lo `test -f './libglnx/glnx-local-alloc.c' || echo '$(srcdir)/'`./libglnx/glnx-local-alloc.c
 
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-errors.lo: /home/smcv/src/xdg-app/libglnx/glnx-errors.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-errors.lo -MD -MP -MF /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-errors.Tpo -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-errors.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-errors.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-errors.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-errors.Tpo /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-errors.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/libglnx/glnx-errors.c' object='/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-errors.lo' libtool=yes @AMDEPBACKSLASH@
+./libglnx/libglnx_la-glnx-errors.lo: ./libglnx/glnx-errors.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT ./libglnx/libglnx_la-glnx-errors.lo -MD -MP -MF ./libglnx/$(DEPDIR)/libglnx_la-glnx-errors.Tpo -c -o ./libglnx/libglnx_la-glnx-errors.lo `test -f './libglnx/glnx-errors.c' || echo '$(srcdir)/'`./libglnx/glnx-errors.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./libglnx/$(DEPDIR)/libglnx_la-glnx-errors.Tpo ./libglnx/$(DEPDIR)/libglnx_la-glnx-errors.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./libglnx/glnx-errors.c' object='./libglnx/libglnx_la-glnx-errors.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-errors.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-errors.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-errors.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o ./libglnx/libglnx_la-glnx-errors.lo `test -f './libglnx/glnx-errors.c' || echo '$(srcdir)/'`./libglnx/glnx-errors.c
 
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-console.lo: /home/smcv/src/xdg-app/libglnx/glnx-console.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-console.lo -MD -MP -MF /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-console.Tpo -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-console.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-console.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-console.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-console.Tpo /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/libglnx/glnx-console.c' object='/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-console.lo' libtool=yes @AMDEPBACKSLASH@
+./libglnx/libglnx_la-glnx-console.lo: ./libglnx/glnx-console.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT ./libglnx/libglnx_la-glnx-console.lo -MD -MP -MF ./libglnx/$(DEPDIR)/libglnx_la-glnx-console.Tpo -c -o ./libglnx/libglnx_la-glnx-console.lo `test -f './libglnx/glnx-console.c' || echo '$(srcdir)/'`./libglnx/glnx-console.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./libglnx/$(DEPDIR)/libglnx_la-glnx-console.Tpo ./libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./libglnx/glnx-console.c' object='./libglnx/libglnx_la-glnx-console.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-console.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-console.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-console.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o ./libglnx/libglnx_la-glnx-console.lo `test -f './libglnx/glnx-console.c' || echo '$(srcdir)/'`./libglnx/glnx-console.c
 
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-dirfd.lo: /home/smcv/src/xdg-app/libglnx/glnx-dirfd.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-dirfd.lo -MD -MP -MF /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Tpo -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-dirfd.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-dirfd.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-dirfd.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Tpo /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/libglnx/glnx-dirfd.c' object='/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-dirfd.lo' libtool=yes @AMDEPBACKSLASH@
+./libglnx/libglnx_la-glnx-dirfd.lo: ./libglnx/glnx-dirfd.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT ./libglnx/libglnx_la-glnx-dirfd.lo -MD -MP -MF ./libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Tpo -c -o ./libglnx/libglnx_la-glnx-dirfd.lo `test -f './libglnx/glnx-dirfd.c' || echo '$(srcdir)/'`./libglnx/glnx-dirfd.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Tpo ./libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./libglnx/glnx-dirfd.c' object='./libglnx/libglnx_la-glnx-dirfd.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-dirfd.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-dirfd.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-dirfd.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o ./libglnx/libglnx_la-glnx-dirfd.lo `test -f './libglnx/glnx-dirfd.c' || echo '$(srcdir)/'`./libglnx/glnx-dirfd.c
 
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-fdio.lo: /home/smcv/src/xdg-app/libglnx/glnx-fdio.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-fdio.lo -MD -MP -MF /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-fdio.Tpo -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-fdio.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-fdio.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-fdio.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-fdio.Tpo /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-fdio.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/libglnx/glnx-fdio.c' object='/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-fdio.lo' libtool=yes @AMDEPBACKSLASH@
+./libglnx/libglnx_la-glnx-fdio.lo: ./libglnx/glnx-fdio.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT ./libglnx/libglnx_la-glnx-fdio.lo -MD -MP -MF ./libglnx/$(DEPDIR)/libglnx_la-glnx-fdio.Tpo -c -o ./libglnx/libglnx_la-glnx-fdio.lo `test -f './libglnx/glnx-fdio.c' || echo '$(srcdir)/'`./libglnx/glnx-fdio.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./libglnx/$(DEPDIR)/libglnx_la-glnx-fdio.Tpo ./libglnx/$(DEPDIR)/libglnx_la-glnx-fdio.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./libglnx/glnx-fdio.c' object='./libglnx/libglnx_la-glnx-fdio.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-fdio.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-fdio.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-fdio.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o ./libglnx/libglnx_la-glnx-fdio.lo `test -f './libglnx/glnx-fdio.c' || echo '$(srcdir)/'`./libglnx/glnx-fdio.c
 
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-lockfile.lo: /home/smcv/src/xdg-app/libglnx/glnx-lockfile.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-lockfile.lo -MD -MP -MF /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-lockfile.Tpo -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-lockfile.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-lockfile.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-lockfile.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-lockfile.Tpo /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-lockfile.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/libglnx/glnx-lockfile.c' object='/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-lockfile.lo' libtool=yes @AMDEPBACKSLASH@
+./libglnx/libglnx_la-glnx-lockfile.lo: ./libglnx/glnx-lockfile.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT ./libglnx/libglnx_la-glnx-lockfile.lo -MD -MP -MF ./libglnx/$(DEPDIR)/libglnx_la-glnx-lockfile.Tpo -c -o ./libglnx/libglnx_la-glnx-lockfile.lo `test -f './libglnx/glnx-lockfile.c' || echo '$(srcdir)/'`./libglnx/glnx-lockfile.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./libglnx/$(DEPDIR)/libglnx_la-glnx-lockfile.Tpo ./libglnx/$(DEPDIR)/libglnx_la-glnx-lockfile.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./libglnx/glnx-lockfile.c' object='./libglnx/libglnx_la-glnx-lockfile.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-lockfile.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-lockfile.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-lockfile.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o ./libglnx/libglnx_la-glnx-lockfile.lo `test -f './libglnx/glnx-lockfile.c' || echo '$(srcdir)/'`./libglnx/glnx-lockfile.c
 
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-libcontainer.lo: /home/smcv/src/xdg-app/libglnx/glnx-libcontainer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-libcontainer.lo -MD -MP -MF /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-libcontainer.Tpo -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-libcontainer.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-libcontainer.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-libcontainer.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-libcontainer.Tpo /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-libcontainer.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/libglnx/glnx-libcontainer.c' object='/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-libcontainer.lo' libtool=yes @AMDEPBACKSLASH@
+./libglnx/libglnx_la-glnx-libcontainer.lo: ./libglnx/glnx-libcontainer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT ./libglnx/libglnx_la-glnx-libcontainer.lo -MD -MP -MF ./libglnx/$(DEPDIR)/libglnx_la-glnx-libcontainer.Tpo -c -o ./libglnx/libglnx_la-glnx-libcontainer.lo `test -f './libglnx/glnx-libcontainer.c' || echo '$(srcdir)/'`./libglnx/glnx-libcontainer.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./libglnx/$(DEPDIR)/libglnx_la-glnx-libcontainer.Tpo ./libglnx/$(DEPDIR)/libglnx_la-glnx-libcontainer.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./libglnx/glnx-libcontainer.c' object='./libglnx/libglnx_la-glnx-libcontainer.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-libcontainer.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-libcontainer.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-libcontainer.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o ./libglnx/libglnx_la-glnx-libcontainer.lo `test -f './libglnx/glnx-libcontainer.c' || echo '$(srcdir)/'`./libglnx/glnx-libcontainer.c
 
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-xattrs.lo: /home/smcv/src/xdg-app/libglnx/glnx-xattrs.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-xattrs.lo -MD -MP -MF /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-xattrs.Tpo -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-xattrs.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-xattrs.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-xattrs.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-xattrs.Tpo /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-xattrs.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/libglnx/glnx-xattrs.c' object='/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-xattrs.lo' libtool=yes @AMDEPBACKSLASH@
+./libglnx/libglnx_la-glnx-xattrs.lo: ./libglnx/glnx-xattrs.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT ./libglnx/libglnx_la-glnx-xattrs.lo -MD -MP -MF ./libglnx/$(DEPDIR)/libglnx_la-glnx-xattrs.Tpo -c -o ./libglnx/libglnx_la-glnx-xattrs.lo `test -f './libglnx/glnx-xattrs.c' || echo '$(srcdir)/'`./libglnx/glnx-xattrs.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./libglnx/$(DEPDIR)/libglnx_la-glnx-xattrs.Tpo ./libglnx/$(DEPDIR)/libglnx_la-glnx-xattrs.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./libglnx/glnx-xattrs.c' object='./libglnx/libglnx_la-glnx-xattrs.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-xattrs.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-xattrs.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-xattrs.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o ./libglnx/libglnx_la-glnx-xattrs.lo `test -f './libglnx/glnx-xattrs.c' || echo '$(srcdir)/'`./libglnx/glnx-xattrs.c
 
-/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-shutil.lo: /home/smcv/src/xdg-app/libglnx/glnx-shutil.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-shutil.lo -MD -MP -MF /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-shutil.Tpo -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-shutil.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-shutil.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-shutil.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-shutil.Tpo /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/libglnx_la-glnx-shutil.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/libglnx/glnx-shutil.c' object='/home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-shutil.lo' libtool=yes @AMDEPBACKSLASH@
+./libglnx/libglnx_la-glnx-shutil.lo: ./libglnx/glnx-shutil.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT ./libglnx/libglnx_la-glnx-shutil.lo -MD -MP -MF ./libglnx/$(DEPDIR)/libglnx_la-glnx-shutil.Tpo -c -o ./libglnx/libglnx_la-glnx-shutil.lo `test -f './libglnx/glnx-shutil.c' || echo '$(srcdir)/'`./libglnx/glnx-shutil.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./libglnx/$(DEPDIR)/libglnx_la-glnx-shutil.Tpo ./libglnx/$(DEPDIR)/libglnx_la-glnx-shutil.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./libglnx/glnx-shutil.c' object='./libglnx/libglnx_la-glnx-shutil.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/libglnx/libglnx_la-glnx-shutil.lo `test -f '/home/smcv/src/xdg-app/libglnx/glnx-shutil.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/libglnx/glnx-shutil.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o ./libglnx/libglnx_la-glnx-shutil.lo `test -f './libglnx/glnx-shutil.c' || echo '$(srcdir)/'`./libglnx/glnx-shutil.c
 
-/home/smcv/src/xdg-app/bubblewrap/bwrap-bubblewrap.o: /home/smcv/src/xdg-app/bubblewrap/bubblewrap.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/bubblewrap/bwrap-bubblewrap.o -MD -MP -MF /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Tpo -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-bubblewrap.o `test -f '/home/smcv/src/xdg-app/bubblewrap/bubblewrap.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/bubblewrap/bubblewrap.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Tpo /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/bubblewrap/bubblewrap.c' object='/home/smcv/src/xdg-app/bubblewrap/bwrap-bubblewrap.o' libtool=no @AMDEPBACKSLASH@
+./bubblewrap/bwrap-bubblewrap.o: ./bubblewrap/bubblewrap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-bubblewrap.o -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Tpo -c -o ./bubblewrap/bwrap-bubblewrap.o `test -f './bubblewrap/bubblewrap.c' || echo '$(srcdir)/'`./bubblewrap/bubblewrap.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Tpo ./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/bubblewrap.c' object='./bubblewrap/bwrap-bubblewrap.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-bubblewrap.o `test -f '/home/smcv/src/xdg-app/bubblewrap/bubblewrap.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/bubblewrap/bubblewrap.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-bubblewrap.o `test -f './bubblewrap/bubblewrap.c' || echo '$(srcdir)/'`./bubblewrap/bubblewrap.c
 
-/home/smcv/src/xdg-app/bubblewrap/bwrap-bubblewrap.obj: /home/smcv/src/xdg-app/bubblewrap/bubblewrap.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/bubblewrap/bwrap-bubblewrap.obj -MD -MP -MF /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Tpo -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-bubblewrap.obj `if test -f '/home/smcv/src/xdg-app/bubblewrap/bubblewrap.c'; then $(CYGPATH_W) '/home/smcv/src/xdg-app/bubblewrap/bubblewrap.c'; else $(CYGPATH_W) '$(srcdir)//home/smcv/src/xdg-app/bubblewrap/bubblewrap.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Tpo /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/bubblewrap/bubblewrap.c' object='/home/smcv/src/xdg-app/bubblewrap/bwrap-bubblewrap.obj' libtool=no @AMDEPBACKSLASH@
+./bubblewrap/bwrap-bubblewrap.obj: ./bubblewrap/bubblewrap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-bubblewrap.obj -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Tpo -c -o ./bubblewrap/bwrap-bubblewrap.obj `if test -f './bubblewrap/bubblewrap.c'; then $(CYGPATH_W) './bubblewrap/bubblewrap.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/bubblewrap.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Tpo ./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/bubblewrap.c' object='./bubblewrap/bwrap-bubblewrap.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-bubblewrap.obj `if test -f '/home/smcv/src/xdg-app/bubblewrap/bubblewrap.c'; then $(CYGPATH_W) '/home/smcv/src/xdg-app/bubblewrap/bubblewrap.c'; else $(CYGPATH_W) '$(srcdir)//home/smcv/src/xdg-app/bubblewrap/bubblewrap.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-bubblewrap.obj `if test -f './bubblewrap/bubblewrap.c'; then $(CYGPATH_W) './bubblewrap/bubblewrap.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/bubblewrap.c'; fi`
 
-/home/smcv/src/xdg-app/bubblewrap/bwrap-bind-mount.o: /home/smcv/src/xdg-app/bubblewrap/bind-mount.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/bubblewrap/bwrap-bind-mount.o -MD -MP -MF /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bind-mount.Tpo -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-bind-mount.o `test -f '/home/smcv/src/xdg-app/bubblewrap/bind-mount.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/bubblewrap/bind-mount.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bind-mount.Tpo /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bind-mount.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/bubblewrap/bind-mount.c' object='/home/smcv/src/xdg-app/bubblewrap/bwrap-bind-mount.o' libtool=no @AMDEPBACKSLASH@
+./bubblewrap/bwrap-bind-mount.o: ./bubblewrap/bind-mount.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-bind-mount.o -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Tpo -c -o ./bubblewrap/bwrap-bind-mount.o `test -f './bubblewrap/bind-mount.c' || echo '$(srcdir)/'`./bubblewrap/bind-mount.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Tpo ./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/bind-mount.c' object='./bubblewrap/bwrap-bind-mount.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-bind-mount.o `test -f '/home/smcv/src/xdg-app/bubblewrap/bind-mount.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/bubblewrap/bind-mount.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-bind-mount.o `test -f './bubblewrap/bind-mount.c' || echo '$(srcdir)/'`./bubblewrap/bind-mount.c
 
-/home/smcv/src/xdg-app/bubblewrap/bwrap-bind-mount.obj: /home/smcv/src/xdg-app/bubblewrap/bind-mount.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/bubblewrap/bwrap-bind-mount.obj -MD -MP -MF /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bind-mount.Tpo -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-bind-mount.obj `if test -f '/home/smcv/src/xdg-app/bubblewrap/bind-mount.c'; then $(CYGPATH_W) '/home/smcv/src/xdg-app/bubblewrap/bind-mount.c'; else $(CYGPATH_W) '$(srcdir)//home/smcv/src/xdg-app/bubblewrap/bind-mount.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bind-mount.Tpo /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-bind-mount.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/bubblewrap/bind-mount.c' object='/home/smcv/src/xdg-app/bubblewrap/bwrap-bind-mount.obj' libtool=no @AMDEPBACKSLASH@
+./bubblewrap/bwrap-bind-mount.obj: ./bubblewrap/bind-mount.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-bind-mount.obj -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Tpo -c -o ./bubblewrap/bwrap-bind-mount.obj `if test -f './bubblewrap/bind-mount.c'; then $(CYGPATH_W) './bubblewrap/bind-mount.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/bind-mount.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Tpo ./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/bind-mount.c' object='./bubblewrap/bwrap-bind-mount.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-bind-mount.obj `if test -f '/home/smcv/src/xdg-app/bubblewrap/bind-mount.c'; then $(CYGPATH_W) '/home/smcv/src/xdg-app/bubblewrap/bind-mount.c'; else $(CYGPATH_W) '$(srcdir)//home/smcv/src/xdg-app/bubblewrap/bind-mount.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-bind-mount.obj `if test -f './bubblewrap/bind-mount.c'; then $(CYGPATH_W) './bubblewrap/bind-mount.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/bind-mount.c'; fi`
 
-/home/smcv/src/xdg-app/bubblewrap/bwrap-network.o: /home/smcv/src/xdg-app/bubblewrap/network.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/bubblewrap/bwrap-network.o -MD -MP -MF /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-network.Tpo -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-network.o `test -f '/home/smcv/src/xdg-app/bubblewrap/network.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/bubblewrap/network.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-network.Tpo /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-network.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/bubblewrap/network.c' object='/home/smcv/src/xdg-app/bubblewrap/bwrap-network.o' libtool=no @AMDEPBACKSLASH@
+./bubblewrap/bwrap-network.o: ./bubblewrap/network.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-network.o -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-network.Tpo -c -o ./bubblewrap/bwrap-network.o `test -f './bubblewrap/network.c' || echo '$(srcdir)/'`./bubblewrap/network.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-network.Tpo ./bubblewrap/$(DEPDIR)/bwrap-network.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/network.c' object='./bubblewrap/bwrap-network.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-network.o `test -f '/home/smcv/src/xdg-app/bubblewrap/network.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/bubblewrap/network.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-network.o `test -f './bubblewrap/network.c' || echo '$(srcdir)/'`./bubblewrap/network.c
 
-/home/smcv/src/xdg-app/bubblewrap/bwrap-network.obj: /home/smcv/src/xdg-app/bubblewrap/network.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/bubblewrap/bwrap-network.obj -MD -MP -MF /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-network.Tpo -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-network.obj `if test -f '/home/smcv/src/xdg-app/bubblewrap/network.c'; then $(CYGPATH_W) '/home/smcv/src/xdg-app/bubblewrap/network.c'; else $(CYGPATH_W) '$(srcdir)//home/smcv/src/xdg-app/bubblewrap/network.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-network.Tpo /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-network.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/bubblewrap/network.c' object='/home/smcv/src/xdg-app/bubblewrap/bwrap-network.obj' libtool=no @AMDEPBACKSLASH@
+./bubblewrap/bwrap-network.obj: ./bubblewrap/network.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-network.obj -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-network.Tpo -c -o ./bubblewrap/bwrap-network.obj `if test -f './bubblewrap/network.c'; then $(CYGPATH_W) './bubblewrap/network.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/network.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-network.Tpo ./bubblewrap/$(DEPDIR)/bwrap-network.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/network.c' object='./bubblewrap/bwrap-network.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-network.obj `if test -f '/home/smcv/src/xdg-app/bubblewrap/network.c'; then $(CYGPATH_W) '/home/smcv/src/xdg-app/bubblewrap/network.c'; else $(CYGPATH_W) '$(srcdir)//home/smcv/src/xdg-app/bubblewrap/network.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-network.obj `if test -f './bubblewrap/network.c'; then $(CYGPATH_W) './bubblewrap/network.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/network.c'; fi`
 
-/home/smcv/src/xdg-app/bubblewrap/bwrap-utils.o: /home/smcv/src/xdg-app/bubblewrap/utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/bubblewrap/bwrap-utils.o -MD -MP -MF /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-utils.Tpo -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-utils.o `test -f '/home/smcv/src/xdg-app/bubblewrap/utils.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/bubblewrap/utils.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-utils.Tpo /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-utils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/bubblewrap/utils.c' object='/home/smcv/src/xdg-app/bubblewrap/bwrap-utils.o' libtool=no @AMDEPBACKSLASH@
+./bubblewrap/bwrap-utils.o: ./bubblewrap/utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-utils.o -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-utils.Tpo -c -o ./bubblewrap/bwrap-utils.o `test -f './bubblewrap/utils.c' || echo '$(srcdir)/'`./bubblewrap/utils.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-utils.Tpo ./bubblewrap/$(DEPDIR)/bwrap-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/utils.c' object='./bubblewrap/bwrap-utils.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-utils.o `test -f '/home/smcv/src/xdg-app/bubblewrap/utils.c' || echo '$(srcdir)/'`/home/smcv/src/xdg-app/bubblewrap/utils.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-utils.o `test -f './bubblewrap/utils.c' || echo '$(srcdir)/'`./bubblewrap/utils.c
 
-/home/smcv/src/xdg-app/bubblewrap/bwrap-utils.obj: /home/smcv/src/xdg-app/bubblewrap/utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT /home/smcv/src/xdg-app/bubblewrap/bwrap-utils.obj -MD -MP -MF /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-utils.Tpo -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-utils.obj `if test -f '/home/smcv/src/xdg-app/bubblewrap/utils.c'; then $(CYGPATH_W) '/home/smcv/src/xdg-app/bubblewrap/utils.c'; else $(CYGPATH_W) '$(srcdir)//home/smcv/src/xdg-app/bubblewrap/utils.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-utils.Tpo /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/bwrap-utils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='/home/smcv/src/xdg-app/bubblewrap/utils.c' object='/home/smcv/src/xdg-app/bubblewrap/bwrap-utils.obj' libtool=no @AMDEPBACKSLASH@
+./bubblewrap/bwrap-utils.obj: ./bubblewrap/utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-utils.obj -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-utils.Tpo -c -o ./bubblewrap/bwrap-utils.obj `if test -f './bubblewrap/utils.c'; then $(CYGPATH_W) './bubblewrap/utils.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/utils.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-utils.Tpo ./bubblewrap/$(DEPDIR)/bwrap-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/utils.c' object='./bubblewrap/bwrap-utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o /home/smcv/src/xdg-app/bubblewrap/bwrap-utils.obj `if test -f '/home/smcv/src/xdg-app/bubblewrap/utils.c'; then $(CYGPATH_W) '/home/smcv/src/xdg-app/bubblewrap/utils.c'; else $(CYGPATH_W) '$(srcdir)//home/smcv/src/xdg-app/bubblewrap/utils.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-utils.obj `if test -f './bubblewrap/utils.c'; then $(CYGPATH_W) './bubblewrap/utils.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/utils.c'; fi`
 
 app/flatpak-flatpak-main.o: app/flatpak-main.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-main.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-main.Tpo -c -o app/flatpak-flatpak-main.o `test -f 'app/flatpak-main.c' || echo '$(srcdir)/'`app/flatpak-main.c
@@ -3449,7 +3434,7 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
-	-rm -rf /home/smcv/src/xdg-app/libglnx/.libs /home/smcv/src/xdg-app/libglnx/_libs
+	-rm -rf ./libglnx/.libs ./libglnx/_libs
 	-rm -rf common/.libs common/_libs
 	-rm -rf common/gvdb/.libs common/gvdb/_libs
 	-rm -rf lib/.libs lib/_libs
@@ -4417,12 +4402,10 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
-	-rm -f /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR)/$(am__dirstamp)
-	-rm -f /home/smcv/src/xdg-app/bubblewrap/$(am__dirstamp)
-	-rm -f /home/smcv/src/xdg-app/libglnx/$(DEPDIR)/$(am__dirstamp)
-	-rm -f /home/smcv/src/xdg-app/libglnx/$(am__dirstamp)
 	-rm -f app/$(DEPDIR)/$(am__dirstamp)
 	-rm -f app/$(am__dirstamp)
+	-rm -f bubblewrap/$(DEPDIR)/$(am__dirstamp)
+	-rm -f bubblewrap/$(am__dirstamp)
 	-rm -f builder/$(DEPDIR)/$(am__dirstamp)
 	-rm -f builder/$(am__dirstamp)
 	-rm -f common/$(DEPDIR)/$(am__dirstamp)
@@ -4435,6 +4418,8 @@ distclean-generic:
 	-rm -f document-portal/$(am__dirstamp)
 	-rm -f lib/$(DEPDIR)/$(am__dirstamp)
 	-rm -f lib/$(am__dirstamp)
+	-rm -f libglnx/$(DEPDIR)/$(am__dirstamp)
+	-rm -f libglnx/$(am__dirstamp)
 	-rm -f permission-store/$(DEPDIR)/$(am__dirstamp)
 	-rm -f permission-store/$(am__dirstamp)
 	-rm -f session-helper/$(DEPDIR)/$(am__dirstamp)
@@ -4459,7 +4444,7 @@ clean-am: clean-binPROGRAMS clean-bwrapPROGRAMS clean-checkLTLIBRARIES \
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR) /home/smcv/src/xdg-app/libglnx/$(DEPDIR) app/$(DEPDIR) builder/$(DEPDIR) common/$(DEPDIR) common/gvdb/$(DEPDIR) dbus-proxy/$(DEPDIR) document-portal/$(DEPDIR) lib/$(DEPDIR) permission-store/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf ./bubblewrap/$(DEPDIR) ./libglnx/$(DEPDIR) app/$(DEPDIR) builder/$(DEPDIR) common/$(DEPDIR) common/gvdb/$(DEPDIR) dbus-proxy/$(DEPDIR) document-portal/$(DEPDIR) lib/$(DEPDIR) permission-store/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -4522,7 +4507,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf /home/smcv/src/xdg-app/bubblewrap/$(DEPDIR) /home/smcv/src/xdg-app/libglnx/$(DEPDIR) app/$(DEPDIR) builder/$(DEPDIR) common/$(DEPDIR) common/gvdb/$(DEPDIR) dbus-proxy/$(DEPDIR) document-portal/$(DEPDIR) lib/$(DEPDIR) permission-store/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf ./bubblewrap/$(DEPDIR) ./libglnx/$(DEPDIR) app/$(DEPDIR) builder/$(DEPDIR) common/$(DEPDIR) common/gvdb/$(DEPDIR) dbus-proxy/$(DEPDIR) document-portal/$(DEPDIR) lib/$(DEPDIR) permission-store/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

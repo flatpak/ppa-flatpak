@@ -14,9 +14,9 @@ AC_PREREQ([2.63])
 # on the unstable (ie master), interface age = 0
 
 m4_define([flatpak_major_version], [0])
-m4_define([flatpak_minor_version], [5])
-m4_define([flatpak_micro_version], [2])
-m4_define([flatpak_interface_age], [2])
+m4_define([flatpak_minor_version], [6])
+m4_define([flatpak_micro_version], [0])
+m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -237,6 +237,14 @@ AS_IF([ test $have_libelf = maybe ], [
 if test x$have_libelf != xyes; then
   AC_MSG_ERROR([libelf not found])
 fi
+
+AC_ARG_WITH(system-install-dir,
+           [AS_HELP_STRING([--with-system-install-dir=DIR],
+                           [Location of system installation [LOCALSTATEDIR/lib/flatpak]])],
+           [],
+           [with_system_install_dir='$(localstatedir)/lib/flatpak'])
+SYSTEM_INSTALL_DIR=$with_system_install_dir
+AC_SUBST(SYSTEM_INSTALL_DIR)
 
 dnl This only checks for the header, not the library.
 AC_ARG_WITH([dwarf-header],
