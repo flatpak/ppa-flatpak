@@ -9,3 +9,7 @@ if [ "$1" = configure ]; then
     # its side-effect of initializing the shared system-wide repository.
     flatpak remote-list --system >/dev/null || :
 fi
+
+exit 0
+
+# vim:set sw=4 sts=4 et:
