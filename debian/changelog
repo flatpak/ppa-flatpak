@@ -7,6 +7,9 @@ flatpak (0.6.0-2) UNRELEASED; urgency=medium
   * debian/tests/control: flatpak-builder test requires make
   * Add patches from bubblewrap bug #71 to the embedded copy of bwrap,
     fixing flatpak-builder on the normal configuration of Debian kernels
+  * Change patch for gtk-update-icon-cache-3.0 to fall back to
+    gtk-update-icon-cache. This means it will still work when the
+    Debian-specific gtk-update-icon-cache-3.0 name is dropped.
 
  -- Simon McVittie <smcv@debian.org>  Thu, 19 May 2016 17:52:39 +0100
 
