@@ -1,4 +1,4 @@
-flatpak (0.6.0-2) UNRELEASED; urgency=medium
+flatpak (0.6.0-2) experimental; urgency=medium
 
   * debian/flatpak.postinst: initialize /var/lib/flatpak/repo
     as requested by upstream
@@ -11,7 +11,7 @@ flatpak (0.6.0-2) UNRELEASED; urgency=medium
     gtk-update-icon-cache. This means it will still work when the
     Debian-specific gtk-update-icon-cache-3.0 name is dropped.
 
- -- Simon McVittie <smcv@debian.org>  Thu, 19 May 2016 17:52:39 +0100
+ -- Simon McVittie <smcv@debian.org>  Sat, 21 May 2016 22:57:49 +0100
 
 flatpak (0.6.0-1) experimental; urgency=medium
 
