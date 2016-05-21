@@ -8,6 +8,7 @@ Depends:
  flatpak-builder,
  flatpak-tests,
  gnome-desktop-testing,
+ make,
 
 Tests: gnome-desktop-testing
 Depends:
