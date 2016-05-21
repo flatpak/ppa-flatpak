@@ -3,9 +3,4 @@
 set -e
 exec 2>&1
 
-if test "$(/sbin/sysctl --values kernel.unprivileged_userns_clone || :)" = "0"; then
-	echo "SKIP: flatpak-builder requires kernel.unprivileged_userns_clone=1"
-	exit 0
-fi
-
 exec gnome-desktop-testing-runner flatpak/test-builder.sh.test
