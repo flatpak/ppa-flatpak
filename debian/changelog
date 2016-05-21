@@ -3,6 +3,7 @@ flatpak (0.6.0-2) UNRELEASED; urgency=medium
   * debian/flatpak.postinst: initialize /var/lib/flatpak/repo
     as requested by upstream
   * debian/flatpak.postrm: remove /var/lib/flatpak/repo on purge
+  * Use dh-systemd to restart flatpak-system-helper on upgrades
 
  -- Simon McVittie <smcv@debian.org>  Thu, 19 May 2016 17:52:39 +0100
 

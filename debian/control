@@ -11,6 +11,7 @@ Build-Depends:
  debhelper (>= 9),
  dh-autoreconf,
  dh-exec,
+ dh-systemd,
  docbook-xml,
  docbook-xsl,
  docbook-xsl-doc-html,

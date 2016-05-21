@@ -4,7 +4,7 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
 %:
-	dh $@ --parallel --with=autoreconf
+	dh $@ --parallel --with=autoreconf,systemd
 
 override_dh_autoreconf:
 	dh_autoreconf --as-needed
