@@ -1,8 +1,9 @@
-flatpak (0.6.0-3) UNRELEASED; urgency=medium
+flatpak (0.6.0-3) experimental; urgency=medium
 
-  * Build-depend on procps, for /bin/kill (used in the tests)
+  * Build-depend on procps, for /bin/kill (used in the tests).
+    This fixes FTBFS in a more up-to-date buildd schroot.
 
- -- Simon McVittie <smcv@debian.org>  Sun, 22 May 2016 12:42:48 +0100
+ -- Simon McVittie <smcv@debian.org>  Sun, 22 May 2016 14:19:12 +0100
 
 flatpak (0.6.0-2) experimental; urgency=medium
 
