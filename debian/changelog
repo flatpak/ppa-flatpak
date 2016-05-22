@@ -1,3 +1,9 @@
+flatpak (0.6.0-3) UNRELEASED; urgency=medium
+
+  * Build-depend on procps, for /bin/kill (used in the tests)
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 22 May 2016 12:42:48 +0100
+
 flatpak (0.6.0-2) experimental; urgency=medium
 
   * debian/flatpak.postinst: initialize /var/lib/flatpak/repo

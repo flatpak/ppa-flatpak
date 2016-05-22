@@ -33,6 +33,7 @@ Build-Depends:
  libsoup2.4-dev,
  libxau-dev,
  libxml2-utils,
+ procps,
  xsltproc,
 Standards-Version: 3.9.8
 Homepage: https://wiki.freedesktop.org/www/Software/xdg-app/
