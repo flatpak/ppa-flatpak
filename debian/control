@@ -50,7 +50,7 @@ Depends:
 Recommends:
  desktop-file-utils,
  hicolor-icon-theme,
- libgtk-3-bin,
+ gtk-update-icon-cache | libgtk-3-bin,
  shared-mime-info,
 Conflicts:
  xdg-app,
@@ -106,7 +106,7 @@ Depends:
  desktop-file-utils,
  flatpak (= ${binary:Version}),
  hicolor-icon-theme,
- libgtk-3-bin,
+ gtk-update-icon-cache | libgtk-3-bin,
  shared-mime-info,
  ${misc:Depends},
  ${shlibs:Depends},

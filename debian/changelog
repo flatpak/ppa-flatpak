@@ -14,6 +14,8 @@ flatpak (0.6.1-1) UNRELEASED; urgency=medium
     skip several tests if we can run bwrap, but cannot write extended
     attributes in /var/tmp, for example on an Ubuntu live system
   * Use dh_girepository to get correct ${gir:Depends}
+  * Prefer gtk-update-icon-cache as provider of the binary of the same
+    name, but still accept libgtk-3-bin for now, to be nice to backports
 
  -- Simon McVittie <smcv@debian.org>  Mon, 23 May 2016 15:23:18 +0100
 
