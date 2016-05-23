@@ -1,3 +1,10 @@
+flatpak (0.6.1-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    - drop patches to bubblewrap, included in the submodule upstream
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 23 May 2016 15:23:18 +0100
+
 flatpak (0.6.0-3) experimental; urgency=medium
 
   * Build-depend on procps, for /bin/kill (used in the tests).
