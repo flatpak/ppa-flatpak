@@ -14,7 +14,7 @@ Forwarded: no, Debian-specific
  1 file changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/triggers/gtk-icon-cache.trigger b/triggers/gtk-icon-cache.trigger
-index 711cfab..245ab37 100755
+index 711cfab..fa780fe 100755
 --- a/triggers/gtk-icon-cache.trigger
 +++ b/triggers/gtk-icon-cache.trigger
 @@ -1,11 +1,13 @@
@@ -29,7 +29,7 @@ index 711cfab..245ab37 100755
          if test -f $dir/index.theme; then
 -            if ! gtk-update-icon-cache --quiet $dir; then
 -                echo "Failed to run gtk-update-icon-cache for $dir"
-+            if ! "$update_icon_cache"--quiet $dir; then
++            if ! "$update_icon_cache" --quiet $dir; then
 +                echo "Failed to run $update_icon_cache for $dir"
                  exit 1
              fi
