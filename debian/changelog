@@ -10,6 +10,9 @@ flatpak (0.6.1-1) UNRELEASED; urgency=medium
       the admin group as equivalent to sudo
   * d/rules: don't install bwrap setuid on Ubuntu. Ubuntu enables
     unprivileged user namespaces by default. (Closes: #825090)
+  * d/p/Skip-tests-that-make-a-repository-if-var-tmp-lacks-user-x.patch:
+    skip several tests if we can run bwrap, but cannot write extended
+    attributes in /var/tmp, for example on an Ubuntu live system
 
  -- Simon McVittie <smcv@debian.org>  Mon, 23 May 2016 15:23:18 +0100
 

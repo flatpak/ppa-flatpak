@@ -1,2 +1,3 @@
 Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch
 Treat-members-of-sudo-group-as-privileged.patch
+Skip-tests-that-make-a-repository-if-var-tmp-lacks-user-x.patch
