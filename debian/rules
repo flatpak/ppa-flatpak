@@ -22,6 +22,11 @@ override_dh_auto_configure:
 
 override_dh_install:
 	rm -f debian/tmp/usr/lib/*/*.la
+	if dpkg-vendor --derives-from Ubuntu; then \
+		sed -i \
+			-e 's,subject\.isInGroup("sudo"),(subject.isInGroup("sudo") || subject.isInGroup("admin")),g' \
+			debian/tmp/usr/share/polkit-1/rules.d/org.freedesktop.Flatpak.rules; \
+	fi
 	dh_install --fail-missing
 
 # On Debian, unprivileged user namespaces are not available by default,
