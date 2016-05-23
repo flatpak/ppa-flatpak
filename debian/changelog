@@ -6,6 +6,8 @@ flatpak (0.6.1-1) UNRELEASED; urgency=medium
     add missing space between the tool's name and its --quiet argument
   * d/p/Treat-members-of-sudo-group-as-privileged.patch:
     use sudo, not wheel, as the group of administrative users
+  * d/rules: don't install bwrap setuid on Ubuntu. Ubuntu enables
+    unprivileged user namespaces by default. (Closes: #825090)
 
  -- Simon McVittie <smcv@debian.org>  Mon, 23 May 2016 15:23:18 +0100
 
