@@ -148,6 +148,7 @@ usage (int ecode, FILE *out)
            "    --version                    Print version\n"
            "    --args FD                    Parse nul-separated args from FD\n"
            "    --unshare-user               Create new user namespace (may be automatically implied if not setuid)\n"
+           "    --unshare-user-try           Create new user namespace if possible else continue by skipping it\n"
            "    --unshare-ipc                Create new ipc namespace\n"
            "    --unshare-pid                Create new pid namespace\n"
            "    --unshare-net                Create new network namespace\n"
@@ -310,15 +311,15 @@ do_init (int event_fd, pid_t initial_pid)
   for (lock = lock_files; lock != NULL; lock = lock->next)
     {
       int fd = open (lock->path, O_RDONLY | O_CLOEXEC);
-      struct flock l = {0};
-
       if (fd == -1)
         die_with_error ("Unable to open lock file %s", lock->path);
 
-      l.l_type = F_RDLCK;
-      l.l_whence = SEEK_SET;
-      l.l_start = 0;
-      l.l_len = 0;
+      struct flock l = {
+        .l_type = F_RDLCK,
+        .l_whence = SEEK_SET,
+        .l_start = 0,
+        .l_len = 0
+      };
 
       if (fcntl (fd, F_SETLK, &l) < 0)
         die_with_error ("Unable to lock file %s", lock->path);
@@ -358,7 +359,7 @@ do_init (int event_fd, pid_t initial_pid)
 }
 
 /* low 32bit caps needed */
-#define REQUIRED_CAPS_0 (CAP_TO_MASK (CAP_SYS_ADMIN) | CAP_TO_MASK (CAP_SYS_CHROOT) | CAP_TO_MASK (CAP_NET_ADMIN))
+#define REQUIRED_CAPS_0 (CAP_TO_MASK (CAP_SYS_ADMIN) | CAP_TO_MASK (CAP_SYS_CHROOT) | CAP_TO_MASK (CAP_SETUID) | CAP_TO_MASK (CAP_SETGID))
 /* high 32bit caps needed */
 #define REQUIRED_CAPS_1 0
 
@@ -441,21 +442,44 @@ write_uid_gid_map (uid_t sandbox_uid,
                    uid_t parent_uid,
                    uid_t sandbox_gid,
                    uid_t parent_gid,
-                   bool  deny_groups)
+                   pid_t pid,
+                   bool  deny_groups,
+                   bool  map_root)
 {
   cleanup_free char *uid_map = NULL;
   cleanup_free char *gid_map = NULL;
+  cleanup_free char *dir = NULL;
+  cleanup_fd int dir_fd = -1;
 
-  uid_map = xasprintf ("%d %d 1\n", sandbox_uid, parent_uid);
-  if (write_file_at (proc_fd, "self/uid_map", uid_map) != 0)
+  if (pid == -1)
+    dir = xstrdup ("self");
+  else
+    dir = xasprintf ("%d", pid);
+
+  dir_fd = openat (proc_fd, dir, O_RDONLY | O_PATH);
+  if (dir_fd < 0)
+    die_with_error ("open /proc/%s failed", dir);
+
+  if (map_root && parent_uid != 0 && sandbox_uid != 0)
+    uid_map = xasprintf ("0 0 1\n"
+                         "%d %d 1\n", sandbox_uid, parent_uid);
+  else
+    uid_map = xasprintf ("%d %d 1\n", sandbox_uid, parent_uid);
+
+  if (write_file_at (dir_fd, "uid_map", uid_map) != 0)
     die_with_error ("setting up uid map");
 
   if (deny_groups &&
-      write_file_at (proc_fd, "self/setgroups", "deny\n") != 0)
+      write_file_at (dir_fd, "setgroups", "deny\n") != 0)
     die_with_error ("error writing to setgroups");
 
-  gid_map = xasprintf ("%d %d 1\n", sandbox_gid, parent_gid);
-  if (write_file_at (proc_fd, "self/gid_map", gid_map) != 0)
+  if (map_root && parent_gid != 0 && sandbox_gid != 0)
+    gid_map = xasprintf ("0 0 1\n"
+                         "%d %d 1\n", sandbox_gid, parent_gid);
+  else
+    gid_map = xasprintf ("%d %d 1\n", sandbox_gid, parent_gid);
+
+  if (write_file_at (dir_fd, "gid_map", gid_map) != 0)
     die_with_error ("setting up gid map");
 }
 
@@ -817,6 +841,7 @@ read_priv_sec_op (int          read_socket,
 
 char *opt_chdir_path = NULL;
 bool opt_unshare_user = FALSE;
+bool opt_unshare_user_try = FALSE;
 bool opt_unshare_pid = FALSE;
 bool opt_unshare_ipc = FALSE;
 bool opt_unshare_net = FALSE;
@@ -931,6 +956,10 @@ parse_args_recurse (int    *argcp,
       else if (strcmp (arg, "--unshare-user") == 0)
         {
           opt_unshare_user = TRUE;
+        }
+      else if (strcmp (arg, "--unshare-user-try") == 0)
+        {
+          opt_unshare_user_try = TRUE;
         }
       else if (strcmp (arg, "--unshare-ipc") == 0)
         {
@@ -1269,10 +1298,13 @@ main (int    argc,
   char *old_cwd = NULL;
   pid_t pid;
   int event_fd = -1;
+  int child_wait_fd = -1;
   const char *new_cwd;
   uid_t ns_uid;
   gid_t ns_gid;
   struct stat sbuf;
+  uint64_t val;
+  int res UNUSED;
 
   /* Get the (optional) capabilities we need, drop root */
   acquire_caps ();
@@ -1299,6 +1331,10 @@ main (int    argc,
 
   /* We have to do this if we weren't installed setuid, so let's just DWIM */
   if (!is_privileged)
+    opt_unshare_user = TRUE;
+
+  if (opt_unshare_user_try &&
+      stat ("/proc/self/ns/user", &sbuf) == 0)
     opt_unshare_user = TRUE;
 
   if (argc == 0)
@@ -1374,6 +1410,10 @@ main (int    argc,
     if (!stat ("/proc/self/ns/cgroup", &sbuf))
       clone_flags |= CLONE_NEWCGROUP;
 
+  child_wait_fd = eventfd (0, EFD_CLOEXEC);
+  if (child_wait_fd == -1)
+    die_with_error ("eventfd()");
+
   pid = raw_clone (clone_flags, NULL);
   if (pid == -1)
     {
@@ -1388,23 +1428,52 @@ main (int    argc,
       die_with_error ("Creating new namespace failed");
     }
 
+  ns_uid = opt_sandbox_uid;
+  ns_gid = opt_sandbox_gid;
+
   if (pid != 0)
     {
+      if (is_privileged && opt_unshare_user)
+        {
+          /* Map the uid/gid 0 if opt_needs_devpts, as otherwise
+           * mounting it will fail.
+           * Due to this non-direct mapping we need to have set[ug]id
+           * caps in the parent namespaces, and thus we need to write
+           * the map in the parent namespace, not the child. */
+          write_uid_gid_map (ns_uid, uid,
+                             ns_gid, gid,
+                             pid, TRUE, opt_needs_devpts);
+        }
+
       /* Initial launched process, wait for exec:ed command to exit */
 
       /* We don't need any caps in the launcher, drop them immediately. */
       drop_caps ();
+
+      /* Let child run */
+      val = 1;
+      res = write (child_wait_fd, &val, 8);
+      /* Ignore res, if e.g. the child died and closed child_wait_fd we don't want to error out here */
+      close (child_wait_fd);
+
       monitor_child (event_fd);
       exit (0); /* Should not be reached, but better safe... */
     }
+
+  /* Wait for the parent to init uid/gid maps and drop caps */
+  res = read (child_wait_fd, &val, 8);
+  close (child_wait_fd);
 
   if (opt_unshare_net && loopback_setup () != 0)
     die ("Can't create loopback device");
 
   ns_uid = opt_sandbox_uid;
   ns_gid = opt_sandbox_gid;
-  if (opt_unshare_user)
+  if (!is_privileged && opt_unshare_user)
     {
+      /* In the unprivileged case we have to write the uid/gid maps in
+       * the child, because we have no caps in the parent */
+
       if (opt_needs_devpts)
         {
           /* This is a bit hacky, but we need to first map the real uid/gid to
@@ -1417,7 +1486,7 @@ main (int    argc,
 
       write_uid_gid_map (ns_uid, uid,
                          ns_gid, gid,
-                         TRUE);
+                         -1, TRUE, FALSE);
     }
 
   old_umask = umask (0);
@@ -1523,7 +1592,7 @@ main (int    argc,
 
       write_uid_gid_map (opt_sandbox_uid, ns_uid,
                          opt_sandbox_gid, ns_gid,
-                         FALSE);
+                         -1, FALSE, FALSE);
     }
 
   /* Now make /newroot the real root */

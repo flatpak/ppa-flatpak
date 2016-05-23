@@ -736,7 +736,7 @@ flatpak_installation_modify_remote (FlatpakInstallation *self,
      it has local changes */
   dir_clone = flatpak_dir_clone (dir);
   if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
-    return NULL;
+    return FALSE;
 
   if (!flatpak_remote_commit (remote, dir_clone, cancellable, error))
     return FALSE;
@@ -771,7 +771,7 @@ flatpak_installation_remove_remote (FlatpakInstallation *self,
      it has local changes */
   dir_clone = flatpak_dir_clone (dir);
   if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
-    return NULL;
+    return FALSE;
 
   if (!flatpak_dir_remove_remote (dir, FALSE, name,
                                   cancellable, error))
@@ -1222,7 +1222,7 @@ flatpak_installation_update (FlatpakInstallation    *self,
   if (!flatpak_dir_update (dir_clone,
                            (flags & FLATPAK_UPDATE_FLAGS_NO_PULL) != 0,
                            (flags & FLATPAK_UPDATE_FLAGS_NO_DEPLOY) != 0,
-                           remote_name, ref, NULL, subpaths,
+                           ref, remote_name, NULL, subpaths,
                            ostree_progress, cancellable, error))
     goto out;
 
