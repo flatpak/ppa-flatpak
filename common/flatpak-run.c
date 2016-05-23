@@ -2568,8 +2568,10 @@ setup_seccomp (GPtrArray  *argv_array,
         arch_id = SCMP_ARCH_X86_64;
       else if (strcmp (arch, "arm") == 0)
         arch_id = SCMP_ARCH_ARM;
+#ifdef SCMP_ARCH_AARCH64
       else if (strcmp (arch, "aarch64") == 0)
         arch_id = SCMP_ARCH_AARCH64;
+#endif
 
       /* We only really need to handle arches on multiarch systems.
        * If only one arch is supported the default is fine */
@@ -2702,7 +2704,7 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
 
   add_args (argv_array,
             "--unshare-pid",
-            "--unshare-user",
+            "--unshare-user-try",
             "--dev", "/dev",
             "--proc", "/proc",
             "--dir", "/tmp",
