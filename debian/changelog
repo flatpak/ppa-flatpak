@@ -1,5 +1,10 @@
-flatpak (0.6.1-2) UNRELEASED; urgency=medium
+flatpak (0.6.2-1) UNRELEASED; urgency=medium
 
+  * New upstream release
+    - d/p/Treat-members-of-sudo-group-as-privileged.patch: drop,
+      superseded by new --with-privileged-group option
+    - d/p/Skip-tests-that-make-a-repository-if-var-tmp-lacks-user-x.patch:
+      drop, merged upstream
   * Build-depend on libdw-dev from src:elfutils instead of libdwarf-dev.
     Both provide dwarf.h, which is all we really need; libdw-dev is
     the one that is used in various important packages, including systemd.
