@@ -8,6 +8,8 @@ flatpak (0.6.2-1) UNRELEASED; urgency=medium
   * Use new --with-privileged-group option to make "sudo" group privileged
     - d/p/Correctly-handle-with-privileged-group.patch: add post-release
       patch from upstream to make it work
+    - drop hack to make admin group privileged on Ubuntu, they started to
+      phase out that group in 2012
   * Build-depend on libdw-dev from src:elfutils instead of libdwarf-dev.
     Both provide dwarf.h, which is all we really need; libdw-dev is
     the one that is used in various important packages, including systemd.
