@@ -165,7 +165,6 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
 	$(am__configure_deps) $(dist_triggers_SCRIPTS) \
-	$(dist_polkit_policy_DATA) $(dist_polkit_rules_DATA) \
 	$(flatpakinclude_HEADERS) $(am__DIST_COMMON)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
@@ -206,15 +205,15 @@ am__installdirs = "$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(completiondir)" \
 	"$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbusconfdir)" \
-	"$(DESTDIR)$(dbussystemservicedir)" \
-	"$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" \
-	"$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" \
+	"$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(envdir)" \
+	"$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(installed_test_dbsdir)" \
 	"$(DESTDIR)$(installed_test_keyringdir)" \
 	"$(DESTDIR)$(installed_test_metadir)" \
 	"$(DESTDIR)$(introspectiondir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" \
 	"$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" \
+	"$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" \
 	"$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" \
 	"$(DESTDIR)$(systemduserunitdir)" \
 	"$(DESTDIR)$(flatpakincludedir)"
@@ -509,14 +508,13 @@ am__can_run_installinfo = \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
 DATA = $(completion_DATA) $(dbus_service_DATA) $(dbusconf_DATA) \
-	$(dbussystemservice_DATA) $(dist_polkit_policy_DATA) \
-	$(dist_polkit_rules_DATA) $(env_DATA) $(installed_test_DATA) \
+	$(dbussystemservice_DATA) $(env_DATA) $(installed_test_DATA) \
 	$(installed_test_dbs_DATA) $(installed_test_keyring_DATA) \
 	$(installed_test_meta_DATA) $(introspection_DATA) \
 	$(nobase_installed_test_DATA) $(nodist_gir_DATA) \
 	$(nodist_typelib_DATA) $(noinst_DATA) $(pkgconfig_DATA) \
-	$(profile_DATA) $(systemdsystemunit_DATA) \
-	$(systemduserunit_DATA)
+	$(polkit_policy_DATA) $(polkit_rules_DATA) $(profile_DATA) \
+	$(systemdsystemunit_DATA) $(systemduserunit_DATA)
 HEADERS = $(flatpakinclude_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
@@ -913,6 +911,7 @@ POLKIT_LIBS = @POLKIT_LIBS@
 POSUB = @POSUB@
 PO_IN_DATADIR_FALSE = @PO_IN_DATADIR_FALSE@
 PO_IN_DATADIR_TRUE = @PO_IN_DATADIR_TRUE@
+PRIVILEGED_GROUP = @PRIVILEGED_GROUP@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -1000,6 +999,7 @@ CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
 DISTCLEANFILES = $(NULL) lib/flatpak-enum-types.c \
 	lib/flatpak-enum-types.h $(NULL) \
 	system-helper/org.freedesktop.Flatpak.policy \
+	system-helper/org.freedesktop.Flatpak.rules \
 	system-helper/flatpak-system-helper.service \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.service \
 	tests/services/org.freedesktop.Flatpak.service \
@@ -1022,6 +1022,7 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	lib/flatpak-enum-types.h.template \
 	system-helper/org.freedesktop.Flatpak.policy.in \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.conf \
+	system-helper/org.freedesktop.Flatpak.rules.in \
 	$(installed_test_SCRIPTS) $(installed_test_data) \
 	$(installed_test_keyring_DATA) $(installed_test_dbs_DATA) \
 	tests/flatpak-valgrind.supp $(completion_DATA) \
@@ -1380,11 +1381,11 @@ flatpak_system_helper_SOURCES = \
 flatpak_system_helper_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(POLKIT_LIBS) libflatpak-common.la
 flatpak_system_helper_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(POLKIT_CFLAGS)
 polkit_rulesdir = $(datadir)/polkit-1/rules.d
-dist_polkit_rules_DATA = \
+polkit_rules_DATA = \
 	system-helper/org.freedesktop.Flatpak.rules
 
 polkit_policydir = $(datadir)/polkit-1/actions
-dist_polkit_policy_DATA = \
+polkit_policy_DATA = \
 	system-helper/org.freedesktop.Flatpak.policy
 
 flatpak_dbus_proxy_SOURCES = \
@@ -3525,48 +3526,6 @@ uninstall-dbussystemserviceDATA:
 	@list='$(dbussystemservice_DATA)'; test -n "$(dbussystemservicedir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(dbussystemservicedir)'; $(am__uninstall_files_from_dir)
-install-dist_polkit_policyDATA: $(dist_polkit_policy_DATA)
-	@$(NORMAL_INSTALL)
-	@list='$(dist_polkit_policy_DATA)'; test -n "$(polkit_policydir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(polkit_policydir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(polkit_policydir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(polkit_policydir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(polkit_policydir)" || exit $$?; \
-	done
-
-uninstall-dist_polkit_policyDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(dist_polkit_policy_DATA)'; test -n "$(polkit_policydir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(polkit_policydir)'; $(am__uninstall_files_from_dir)
-install-dist_polkit_rulesDATA: $(dist_polkit_rules_DATA)
-	@$(NORMAL_INSTALL)
-	@list='$(dist_polkit_rules_DATA)'; test -n "$(polkit_rulesdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(polkit_rulesdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(polkit_rulesdir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(polkit_rulesdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(polkit_rulesdir)" || exit $$?; \
-	done
-
-uninstall-dist_polkit_rulesDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(dist_polkit_rules_DATA)'; test -n "$(polkit_rulesdir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(polkit_rulesdir)'; $(am__uninstall_files_from_dir)
 install-envDATA: $(env_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(env_DATA)'; test -n "$(envdir)" || list=; \
@@ -3780,6 +3739,48 @@ uninstall-pkgconfigDATA:
 	@list='$(pkgconfig_DATA)'; test -n "$(pkgconfigdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(pkgconfigdir)'; $(am__uninstall_files_from_dir)
+install-polkit_policyDATA: $(polkit_policy_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(polkit_policy_DATA)'; test -n "$(polkit_policydir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(polkit_policydir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(polkit_policydir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(polkit_policydir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(polkit_policydir)" || exit $$?; \
+	done
+
+uninstall-polkit_policyDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(polkit_policy_DATA)'; test -n "$(polkit_policydir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(polkit_policydir)'; $(am__uninstall_files_from_dir)
+install-polkit_rulesDATA: $(polkit_rules_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(polkit_rules_DATA)'; test -n "$(polkit_rulesdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(polkit_rulesdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(polkit_rulesdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(polkit_rulesdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(polkit_rulesdir)" || exit $$?; \
+	done
+
+uninstall-polkit_rulesDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(polkit_rules_DATA)'; test -n "$(polkit_rulesdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(polkit_rulesdir)'; $(am__uninstall_files_from_dir)
 install-profileDATA: $(profile_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(profile_DATA)'; test -n "$(profiledir)" || list=; \
@@ -4368,7 +4369,7 @@ install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_dbsdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(flatpakincludedir)"; do \
+	for dir in "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_dbsdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(flatpakincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -4463,8 +4464,7 @@ info-am:
 
 install-data-am: install-bwrapPROGRAMS install-completionDATA \
 	install-dbus_serviceDATA install-dbusconfDATA \
-	install-dbussystemserviceDATA install-dist_polkit_policyDATA \
-	install-dist_polkit_rulesDATA install-dist_triggersSCRIPTS \
+	install-dbussystemserviceDATA install-dist_triggersSCRIPTS \
 	install-envDATA install-flatpakincludeHEADERS \
 	install-installed_testDATA install-installed_testLTLIBRARIES \
 	install-installed_testPROGRAMS install-installed_testSCRIPTS \
@@ -4473,6 +4473,7 @@ install-data-am: install-bwrapPROGRAMS install-completionDATA \
 	install-installed_test_metaDATA install-introspectionDATA \
 	install-nobase_installed_testDATA install-nodist_girDATA \
 	install-nodist_typelibDATA install-pkgconfigDATA \
+	install-polkit_policyDATA install-polkit_rulesDATA \
 	install-profileDATA install-systemdsystemunitDATA \
 	install-systemduserunitDATA
 	@$(NORMAL_INSTALL)
@@ -4527,10 +4528,8 @@ ps-am:
 uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-completionDATA uninstall-dbus_serviceDATA \
 	uninstall-dbusconfDATA uninstall-dbussystemserviceDATA \
-	uninstall-dist_polkit_policyDATA \
-	uninstall-dist_polkit_rulesDATA uninstall-dist_triggersSCRIPTS \
-	uninstall-envDATA uninstall-flatpakincludeHEADERS \
-	uninstall-installed_testDATA \
+	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
+	uninstall-flatpakincludeHEADERS uninstall-installed_testDATA \
 	uninstall-installed_testLTLIBRARIES \
 	uninstall-installed_testPROGRAMS \
 	uninstall-installed_testSCRIPTS \
@@ -4540,6 +4539,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-libLTLIBRARIES uninstall-libexecPROGRAMS \
 	uninstall-nobase_installed_testDATA uninstall-nodist_girDATA \
 	uninstall-nodist_typelibDATA uninstall-pkgconfigDATA \
+	uninstall-polkit_policyDATA uninstall-polkit_rulesDATA \
 	uninstall-profileDATA uninstall-systemdsystemunitDATA \
 	uninstall-systemduserunitDATA
 
@@ -4562,7 +4562,6 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	install-completionDATA install-data install-data-am \
 	install-data-hook install-dbus_serviceDATA \
 	install-dbusconfDATA install-dbussystemserviceDATA \
-	install-dist_polkit_policyDATA install-dist_polkit_rulesDATA \
 	install-dist_triggersSCRIPTS install-dvi install-dvi-am \
 	install-envDATA install-exec install-exec-am \
 	install-flatpakincludeHEADERS install-html install-html-am \
@@ -4575,7 +4574,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	install-libLTLIBRARIES install-libexecPROGRAMS install-man \
 	install-nobase_installed_testDATA install-nodist_girDATA \
 	install-nodist_typelibDATA install-pdf install-pdf-am \
-	install-pkgconfigDATA install-profileDATA install-ps \
+	install-pkgconfigDATA install-polkit_policyDATA \
+	install-polkit_rulesDATA install-profileDATA install-ps \
 	install-ps-am install-strip install-systemdsystemunitDATA \
 	install-systemduserunitDATA installcheck installcheck-am \
 	installdirs installdirs-am maintainer-clean \
@@ -4585,10 +4585,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-completionDATA uninstall-dbus_serviceDATA \
 	uninstall-dbusconfDATA uninstall-dbussystemserviceDATA \
-	uninstall-dist_polkit_policyDATA \
-	uninstall-dist_polkit_rulesDATA uninstall-dist_triggersSCRIPTS \
-	uninstall-envDATA uninstall-flatpakincludeHEADERS \
-	uninstall-installed_testDATA \
+	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
+	uninstall-flatpakincludeHEADERS uninstall-installed_testDATA \
 	uninstall-installed_testLTLIBRARIES \
 	uninstall-installed_testPROGRAMS \
 	uninstall-installed_testSCRIPTS \
@@ -4598,6 +4596,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-libLTLIBRARIES uninstall-libexecPROGRAMS \
 	uninstall-nobase_installed_testDATA uninstall-nodist_girDATA \
 	uninstall-nodist_typelibDATA uninstall-pkgconfigDATA \
+	uninstall-polkit_policyDATA uninstall-polkit_rulesDATA \
 	uninstall-profileDATA uninstall-systemdsystemunitDATA \
 	uninstall-systemduserunitDATA
 
@@ -4642,6 +4641,9 @@ lib/flatpak-enum-types.c: $(public_headers) lib/flatpak-enum-types.c.template
 -include $(INTROSPECTION_MAKEFILE)
 
 @HAVE_INTROSPECTION_TRUE@Flatpak-1.0.gir: libflatpak.la Makefile
+
+system-helper/org.freedesktop.Flatpak.rules: system-helper/org.freedesktop.Flatpak.rules.in
+	$(AM_V_GEN) $(SED) -e "s|\@privileged_group\@|$(PRIVILEGED_GROUP)|" $< > $@
 
 @INTLTOOL_POLICY_RULE@
 
@@ -4698,7 +4700,7 @@ install-data-hook:
 	$(MAKE) $(AM_MAKEFLAGS) install-test-data-hook
 @PRIV_MODE_SETUID_TRUE@	$(SUDO_BIN) chown root $(DESTDIR)$(libdir)/flatpak/bwrap
 @PRIV_MODE_SETUID_TRUE@	$(SUDO_BIN) chmod u+s $(DESTDIR)$(libdir)/flatpak/bwrap
-@PRIV_MODE_FILECAPS_TRUE@@PRIV_MODE_SETUID_FALSE@	$(SUDO_BIN) setcap cap_sys_admin,cap_net_admin,cap_sys_chroot+ep $(DESTDIR)$(libdir)/flatpak/bwrap
+@PRIV_MODE_FILECAPS_TRUE@@PRIV_MODE_SETUID_FALSE@	$(SUDO_BIN) setcap cap_sys_admin,cap_net_admin,cap_sys_chroot,cap_setuid,cap_setgid+ep $(DESTDIR)$(libdir)/flatpak/bwrap
 
 flatpak.sh: profile/flatpak.sh.in
 	$(AM_V_GEN) $(SED) -e "s|\@localstatedir\@|$(localstatedir)|" \
