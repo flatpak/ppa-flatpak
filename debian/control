@@ -20,7 +20,7 @@ Build-Depends:
  libarchive-dev (>= 2.8.0),
  libattr1-dev,
  libcap-dev,
- libdwarf-dev,
+ libdw-dev,
  libelf-dev,
  libfuse-dev,
  libgirepository1.0-dev,
