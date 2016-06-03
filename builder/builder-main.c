@@ -55,9 +55,9 @@ static GOptionEntry entries[] = {
   { "verbose", 'v', 0, G_OPTION_ARG_NONE, &opt_verbose, "Print debug information during command processing", NULL },
   { "version", 0, 0, G_OPTION_ARG_NONE, &opt_version, "Print version information and exit", NULL },
   { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, "Architecture to build for (must be host compatible)", "ARCH" },
-  { "run", 0, 0, G_OPTION_ARG_NONE, &opt_run, "Run a command in the build directory", NULL },
+  { "run", 0, 0, G_OPTION_ARG_NONE, &opt_run, "Run a command in the build directory (see --run --help)", NULL },
   { "ccache", 0, 0, G_OPTION_ARG_NONE, &opt_ccache, "Use ccache", NULL },
-  { "disable-cache", 0, 0, G_OPTION_ARG_NONE, &opt_disable_cache, "Disable cache", NULL },
+  { "disable-cache", 0, 0, G_OPTION_ARG_NONE, &opt_disable_cache, "Disable cache lookups", NULL },
   { "disable-download", 0, 0, G_OPTION_ARG_NONE, &opt_disable_download, "Don't download any new sources", NULL },
   { "disable-updates", 0, 0, G_OPTION_ARG_NONE, &opt_disable_updates, "Only download missing sources, never update to latest vcs version", NULL },
   { "download-only", 0, 0, G_OPTION_ARG_NONE, &opt_download_only, "Only download sources, don't build", NULL },
@@ -72,6 +72,15 @@ static GOptionEntry entries[] = {
   { "force-clean", 0, 0, G_OPTION_ARG_NONE, &opt_force_clean, "Erase previous contents of DIRECTORY", NULL },
   { NULL }
 };
+
+static GOptionEntry run_entries[] = {
+  { "verbose", 'v', 0, G_OPTION_ARG_NONE, &opt_verbose, "Print debug information during command processing", NULL },
+  { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, "Architecture to build for (must be host compatible)", "ARCH" },
+  { "run", 0, 0, G_OPTION_ARG_NONE, &opt_run, "Run a command in the build directory", NULL },
+  { "ccache", 0, 0, G_OPTION_ARG_NONE, &opt_ccache, "Use ccache", NULL },
+  { NULL }
+};
+
 
 static void
 message_handler (const gchar   *log_domain,
@@ -174,6 +183,10 @@ main (int    argc,
   g_autoptr(GFileEnumerator) dir_enum2 = NULL;
   GFileInfo *next = NULL;
   const char *platform_id = NULL;
+  g_autofree char **orig_argv;
+  gboolean is_run = FALSE;
+  g_autoptr(FlatpakContext) arg_context = NULL;
+  int i, first_non_arg, orig_argc;
 
   setlocale (LC_ALL, "");
 
@@ -190,8 +203,35 @@ main (int    argc,
   else
     g_unsetenv ("GIO_USE_VFS");
 
-  context = g_option_context_new ("DIRECTORY MANIFEST - Build manifest");
-  g_option_context_add_main_entries (context, entries, NULL);
+  orig_argv = g_memdup (argv, sizeof (char *) * argc);
+  orig_argc = argc;
+
+  first_non_arg = 1;
+  for (i = 1; i < argc; i++)
+    {
+      if (argv[i][0] != '-')
+        break;
+      first_non_arg = i + 1;
+      if (strcmp (argv[i], "--run") == 0)
+        is_run = TRUE;
+    }
+
+  if (is_run)
+    {
+      context = g_option_context_new ("DIRECTORY MANIFEST COMMAND [args] - Run command in build sandbox");
+      g_option_context_add_main_entries (context, run_entries, NULL);
+      arg_context = flatpak_context_new ();
+      g_option_context_add_group (context, flatpak_context_get_options (arg_context));
+
+      /* We drop the post-command part from the args, these go with the command in the sandbox */
+      argc = MIN (first_non_arg + 3, argc);
+    }
+  else
+    {
+      context = g_option_context_new ("DIRECTORY MANIFEST - Build manifest");
+      g_option_context_add_main_entries (context, entries, NULL);
+    }
+
   if (!g_option_context_parse (context, &argc, &argv, &error))
     {
       g_printerr ("option parsing failed: %s\n", error->message);
@@ -231,6 +271,9 @@ main (int    argc,
       return 1;
     }
 
+  if (is_run && argc == 3)
+    return usage (context, "Program to run must be specified");
+
   manifest_file = g_file_new_for_path (manifest_path);
   base_dir = g_file_get_parent (manifest_file);
   app_dir = g_file_new_for_path (app_dir_path);
@@ -249,10 +292,9 @@ main (int    argc,
       return 1;
     }
 
-  if (opt_run)
+  if (is_run)
     {
-      if (argc == 3)
-        return usage (context, "Program to run must be specified");
+      g_assert (opt_run);
 
       if (!g_file_query_exists (app_dir, NULL) ||
           directory_is_empty (app_dir_path))
@@ -261,7 +303,9 @@ main (int    argc,
           return 1;
         }
 
-      if (!builder_manifest_run (manifest, build_context, argv + 3, argc - 3, &error))
+      if (!builder_manifest_run (manifest, build_context, arg_context,
+                                 orig_argv + first_non_arg + 2,
+                                 orig_argc - first_non_arg - 2, &error))
         {
           g_printerr ("Error running %s: %s\n", argv[3], error->message);
           return 1;
@@ -269,6 +313,8 @@ main (int    argc,
 
       return 0;
     }
+
+  g_assert (!opt_run);
 
   if (g_file_query_exists (app_dir, NULL) && !directory_is_empty (app_dir_path))
     {

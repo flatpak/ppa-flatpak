@@ -169,7 +169,9 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
             "--bind", gs_file_get_path_cached (app_files), "/app",
             NULL);
 
-  if (!flatpak_run_setup_base_argv (argv_array, NULL, runtime_files, NULL, runtime_ref_parts[2], FLATPAK_RUN_FLAG_DEVEL, error))
+  if (!flatpak_run_setup_base_argv (argv_array, NULL, runtime_files, NULL, runtime_ref_parts[2],
+                                    FLATPAK_RUN_FLAG_DEVEL | FLATPAK_RUN_FLAG_NO_SESSION_HELPER,
+                                    error))
     return FALSE;
 
   /* After setup_base to avoid conflicts with /var symlinks */
@@ -222,12 +224,37 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
 
   g_ptr_array_add (argv_array, NULL);
 
-  if (!execve (flatpak_get_bwrap (), (char **) argv_array->pdata, envp))
+  if (execve (flatpak_get_bwrap (), (char **) argv_array->pdata, envp) == -1)
     {
       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno), "Unable to start app");
       return FALSE;
     }
 
   /* Not actually reached... */
+  return TRUE;
+}
+
+gboolean
+flatpak_complete_build (FlatpakCompletion *completion)
+{
+  g_autoptr(GOptionContext) context = NULL;
+
+  context = g_option_context_new ("");
+
+  if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv,
+                                     FLATPAK_BUILTIN_FLAG_NO_DIR, NULL, NULL, NULL))
+    return FALSE;
+
+  switch (completion->argc)
+    {
+    case 0:
+    case 1: /* DIR */
+      flatpak_complete_options (completion, global_entries);
+      flatpak_complete_options (completion, options);
+
+      flatpak_complete_dir (completion);
+      break;
+    }
+
   return TRUE;
 }

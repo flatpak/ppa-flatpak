@@ -24,6 +24,7 @@
 #include "libglnx/libglnx.h"
 #include "dbus-proxy/flatpak-proxy.h"
 #include "flatpak-common-types.h"
+#include "flatpak-utils.h"
 
 gboolean flatpak_run_in_transient_unit (const char *app_id,
                                         GError    **error);
@@ -38,11 +39,17 @@ gboolean flatpak_run_in_transient_unit (const char *app_id,
 #define FLATPAK_METADATA_KEY_PERSISTENT "persistent"
 #define FLATPAK_METADATA_KEY_DEVICES "devices"
 
+extern const char *flatpak_context_sockets[];
+extern const char *flatpak_context_devices[];
+extern const char *flatpak_context_shares[];
+
 FlatpakContext *flatpak_context_new (void);
 void           flatpak_context_free (FlatpakContext *context);
 void           flatpak_context_merge (FlatpakContext *context,
                                       FlatpakContext *other);
 GOptionGroup  *flatpak_context_get_options (FlatpakContext *context);
+void           flatpak_context_complete (FlatpakContext *context,
+                                         FlatpakCompletion *completion);
 gboolean       flatpak_context_load_metadata (FlatpakContext *context,
                                               GKeyFile       *metakey,
                                               GError        **error);
@@ -55,6 +62,8 @@ void           flatpak_context_set_session_bus_policy (FlatpakContext *context,
 void           flatpak_context_set_system_bus_policy (FlatpakContext *context,
                                                       const char     *name,
                                                       FlatpakPolicy   policy);
+void           flatpak_context_to_args (FlatpakContext *context,
+                                        GPtrArray *args);
 
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakContext, flatpak_context_free)
 
@@ -84,10 +93,11 @@ GFile *flatpak_ensure_data_dir (const char   *app_id,
                                 GError      **error);
 
 typedef enum {
-  FLATPAK_RUN_FLAG_DEVEL           = (1 << 0),
-  FLATPAK_RUN_FLAG_BACKGROUND      = (1 << 1),
-  FLATPAK_RUN_FLAG_LOG_SESSION_BUS = (1 << 2),
-  FLATPAK_RUN_FLAG_LOG_SYSTEM_BUS  = (1 << 3),
+  FLATPAK_RUN_FLAG_DEVEL              = (1 << 0),
+  FLATPAK_RUN_FLAG_BACKGROUND         = (1 << 1),
+  FLATPAK_RUN_FLAG_LOG_SESSION_BUS    = (1 << 2),
+  FLATPAK_RUN_FLAG_LOG_SYSTEM_BUS     = (1 << 3),
+  FLATPAK_RUN_FLAG_NO_SESSION_HELPER  = (1 << 4),
 } FlatpakRunFlags;
 
 gboolean flatpak_run_setup_base_argv (GPtrArray      *argv_array,

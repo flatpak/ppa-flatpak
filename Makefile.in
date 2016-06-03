@@ -152,7 +152,7 @@ check_PROGRAMS = $(am__EXEEXT_4)
 @HAVE_INTROSPECTION_TRUE@am__append_15 = Flatpak-1.0.gir
 @HAVE_INTROSPECTION_TRUE@am__append_16 = $(nodist_gir_DATA) \
 @HAVE_INTROSPECTION_TRUE@	$(nodist_typelib_DATA)
-bwrap_PROGRAMS = bwrap$(EXEEXT)
+bwrap_PROGRAMS = flatpak-bwrap$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/glibtests.m4 \
@@ -290,15 +290,6 @@ am__EXEEXT_3 = $(am__EXEEXT_2)
 PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(installed_test_PROGRAMS) $(libexec_PROGRAMS) \
 	$(noinst_PROGRAMS)
-am_bwrap_OBJECTS = ./bubblewrap/bwrap-bubblewrap.$(OBJEXT) \
-	./bubblewrap/bwrap-bind-mount.$(OBJEXT) \
-	./bubblewrap/bwrap-network.$(OBJEXT) \
-	./bubblewrap/bwrap-utils.$(OBJEXT) $(am__objects_3)
-bwrap_OBJECTS = $(am_bwrap_OBJECTS)
-bwrap_LDADD = $(LDADD)
-bwrap_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(bwrap_CFLAGS) $(CFLAGS) \
-	$(bwrap_LDFLAGS) $(LDFLAGS) -o $@
 am__objects_6 = document-portal/flatpak-xdp-dbus.$(OBJEXT)
 am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-add-remote.$(OBJEXT) \
@@ -357,6 +348,16 @@ flatpak_builder_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_builder_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
+am__objects_7 = ./bubblewrap/flatpak_bwrap-bubblewrap.$(OBJEXT) \
+	./bubblewrap/flatpak_bwrap-bind-mount.$(OBJEXT) \
+	./bubblewrap/flatpak_bwrap-network.$(OBJEXT) \
+	./bubblewrap/flatpak_bwrap-utils.$(OBJEXT) $(am__objects_3)
+am_flatpak_bwrap_OBJECTS = $(am__objects_7)
+flatpak_bwrap_OBJECTS = $(am_flatpak_bwrap_OBJECTS)
+flatpak_bwrap_LDADD = $(LDADD)
+flatpak_bwrap_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(flatpak_bwrap_CFLAGS) \
+	$(CFLAGS) $(flatpak_bwrap_LDFLAGS) $(LDFLAGS) -o $@
 am_flatpak_dbus_proxy_OBJECTS =  \
 	dbus-proxy/flatpak_dbus_proxy-flatpak-proxy.$(OBJEXT) \
 	dbus-proxy/flatpak_dbus_proxy-dbus-proxy.$(OBJEXT) \
@@ -387,10 +388,10 @@ flatpak_system_helper_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_system_helper_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am__objects_7 = document-portal/test_doc_portal-xdp-dbus.$(OBJEXT)
+am__objects_8 = document-portal/test_doc_portal-xdp-dbus.$(OBJEXT)
 am_test_doc_portal_OBJECTS =  \
 	tests/test_doc_portal-test-doc-portal.$(OBJEXT) \
-	$(am__objects_7)
+	$(am__objects_8)
 test_doc_portal_OBJECTS = $(am_test_doc_portal_OBJECTS)
 test_doc_portal_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) libglnx.la libflatpak-common.la \
@@ -415,12 +416,12 @@ testdb_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 testdb_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(testdb_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_8 =  \
+am__objects_9 =  \
 	document-portal/xdg_document_portal-xdp-dbus.$(OBJEXT)
-am__objects_9 = permission-store/xdg_document_portal-permission-store-dbus.$(OBJEXT)
+am__objects_10 = permission-store/xdg_document_portal-permission-store-dbus.$(OBJEXT)
 am_xdg_document_portal_OBJECTS =  \
 	document-portal/xdg_document_portal-xdp-main.$(OBJEXT) \
-	$(am__objects_8) $(am__objects_9) \
+	$(am__objects_9) $(am__objects_10) \
 	document-portal/xdg_document_portal-xdp-util.$(OBJEXT) \
 	document-portal/xdg_document_portal-xdp-fuse.$(OBJEXT) \
 	$(am__objects_3)
@@ -431,8 +432,8 @@ xdg_document_portal_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(xdg_document_portal_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am__objects_10 = permission-store/xdg_permission_store-permission-store-dbus.$(OBJEXT)
-am_xdg_permission_store_OBJECTS = $(am__objects_10) \
+am__objects_11 = permission-store/xdg_permission_store-permission-store-dbus.$(OBJEXT)
+am_xdg_permission_store_OBJECTS = $(am__objects_11) \
 	permission-store/xdg_permission_store-permission-store.$(OBJEXT) \
 	permission-store/xdg_permission_store-xdg-permission-store.$(OBJEXT) \
 	$(am__objects_3)
@@ -480,16 +481,17 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libflatpak_common_la_SOURCES) $(libflatpak_la_SOURCES) \
-	$(libglnx_la_SOURCES) $(bwrap_SOURCES) $(flatpak_SOURCES) \
-	$(flatpak_builder_SOURCES) $(flatpak_dbus_proxy_SOURCES) \
+	$(libglnx_la_SOURCES) $(flatpak_SOURCES) \
+	$(flatpak_builder_SOURCES) $(flatpak_bwrap_SOURCES) \
+	$(flatpak_dbus_proxy_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
 	$(flatpak_system_helper_SOURCES) $(test_doc_portal_SOURCES) \
 	$(test_libflatpak_SOURCES) $(testdb_SOURCES) \
 	$(xdg_document_portal_SOURCES) $(xdg_permission_store_SOURCES)
 DIST_SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(libflatpak_la_SOURCES) $(libglnx_la_SOURCES) \
-	$(bwrap_SOURCES) $(flatpak_SOURCES) $(flatpak_builder_SOURCES) \
-	$(flatpak_dbus_proxy_SOURCES) \
+	$(flatpak_SOURCES) $(flatpak_builder_SOURCES) \
+	$(flatpak_bwrap_SOURCES) $(flatpak_dbus_proxy_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
 	$(flatpak_system_helper_SOURCES) $(test_doc_portal_SOURCES) \
 	$(test_libflatpak_SOURCES) $(testdb_SOURCES) \
@@ -822,7 +824,6 @@ FLATPAK_VERSION = @FLATPAK_VERSION@
 FUSE_CFLAGS = @FUSE_CFLAGS@
 FUSE_LIBS = @FUSE_LIBS@
 GDBUS_CODEGEN = @GDBUS_CODEGEN@
-GETTEXT_PACKAGE = @GETTEXT_PACKAGE@
 GLIB_COMPILE_RESOURCES = @GLIB_COMPILE_RESOURCES@
 GLIB_MKENUMS = @GLIB_MKENUMS@
 GMOFILES = @GMOFILES@
@@ -1027,13 +1028,13 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	$(installed_test_keyring_DATA) $(installed_test_dbs_DATA) \
 	tests/flatpak-valgrind.supp $(completion_DATA) \
 	profile/flatpak.sh.in $(NULL) env.d/flatpak.env.in \
-	flatpak.pc.in
+	flatpak.pc.in README.md
 TESTS_ENVIRONMENT = G_TEST_SRCDIR="$(abs_srcdir)/tests" \
 	G_TEST_BUILDDIR="$(abs_builddir)/tests" UNINSTALLEDTESTS=1 \
 	G_DEBUG=gc-friendly MALLOC_CHECK_=2 \
 	MALLOC_PERTURB_=$$(($${RANDOM:-256} % 256)) OT_TESTS_DEBUG=1 \
 	FLATPAK_TRIGGERSDIR=$$(cd $(top_srcdir) && pwd)/triggers \
-	FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/bwrap \
+	FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap \
 	FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && \
 	pwd)/flatpak-dbus-proxy GI_TYPELIB_PATH=$$(cd $(top_builddir) \
 	&& pwd) LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && pwd) \
@@ -1053,7 +1054,7 @@ check_SCRIPTS = $(am__append_7)
 check_DATA = $(am__append_8)
 
 # Note: build even the installed-only targets during 'make check' to ensure that they still work.
-# We need to do a bit of trickery here and manage disting via EXTRA_DIST instead of using dist_ prefixes to
+# We need to do a bit of trickery here and manage dist-ing via EXTRA_DIST instead of using dist_ prefixes to
 # prevent automake from mistreating gmake functions like $(wildcard ...) and $(addprefix ...) as if they were
 # filenames, including removing duplicate instances of the opening part before the space, eg. '$(addprefix'.
 all_test_programs = $(test_programs) $(uninstalled_test_programs) $(installed_test_programs) \
@@ -1102,7 +1103,7 @@ AM_CPPFLAGS = \
 	-DFLATPAK_BASEDIR=\"$(pkgdatadir)\"			\
 	-DFLATPAK_TRIGGERDIR=\"$(pkgdatadir)/triggers\"		\
 	-DSYSTEM_FONTS_DIR=\"$(SYSTEM_FONTS_DIR)\"		\
-	-DHELPER=\"$(libdir)/flatpak/bwrap\"			\
+	-DHELPER=\"$(libexecdir)/flatpak-bwrap\"		\
 	-DDBUSPROXY=\"$(libexecdir)/flatpak-dbus-proxy\"	\
 	-DG_LOG_DOMAIN=\"flatpak\"				\
 	-I$(srcdir)/libglnx					\
@@ -1464,7 +1465,10 @@ test_scripts = \
 
 test_programs = testdb test-doc-portal
 VALGRIND_SUPPRESSIONS_FILES = tests/flatpak-valgrind.supp
-bwrapdir = $(libdir)/flatpak
+flatpak_bwrap_SOURCES = $(bwrap_SOURCES)
+flatpak_bwrap_CFLAGS = $(bwrap_CFLAGS)
+flatpak_bwrap_LDFLAGS = $(bwrap_LDFLAGS)
+bwrapdir = $(libexecdir)
 bwrap_SOURCES = \
 	./bubblewrap/bubblewrap.c \
 	./bubblewrap/bind-mount.h \
@@ -1485,7 +1489,7 @@ envdir = $(datadir)/gdm/env.d
 env_DATA = flatpak.env
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = flatpak.pc
-DISTCHECK_CONFIGURE_FLAGS = \
+AM_DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-documentation		\
 	--disable-maintainer-mode	\
 	--enable-introspection
@@ -1947,24 +1951,6 @@ clean-noinstPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-bubblewrap/$(am__dirstamp):
-	@$(MKDIR_P) ./bubblewrap
-	@: > bubblewrap/$(am__dirstamp)
-bubblewrap/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) ./bubblewrap/$(DEPDIR)
-	@: > bubblewrap/$(DEPDIR)/$(am__dirstamp)
-./bubblewrap/bwrap-bubblewrap.$(OBJEXT): bubblewrap/$(am__dirstamp) \
-	bubblewrap/$(DEPDIR)/$(am__dirstamp)
-./bubblewrap/bwrap-bind-mount.$(OBJEXT): bubblewrap/$(am__dirstamp) \
-	bubblewrap/$(DEPDIR)/$(am__dirstamp)
-./bubblewrap/bwrap-network.$(OBJEXT): bubblewrap/$(am__dirstamp) \
-	bubblewrap/$(DEPDIR)/$(am__dirstamp)
-./bubblewrap/bwrap-utils.$(OBJEXT): bubblewrap/$(am__dirstamp) \
-	bubblewrap/$(DEPDIR)/$(am__dirstamp)
-
-bwrap$(EXEEXT): $(bwrap_OBJECTS) $(bwrap_DEPENDENCIES) $(EXTRA_bwrap_DEPENDENCIES) 
-	@rm -f bwrap$(EXEEXT)
-	$(AM_V_CCLD)$(bwrap_LINK) $(bwrap_OBJECTS) $(bwrap_LDADD) $(LIBS)
 app/$(am__dirstamp):
 	@$(MKDIR_P) app
 	@: > app/$(am__dirstamp)
@@ -2070,6 +2056,28 @@ builder/flatpak_builder-builder-utils.$(OBJEXT):  \
 flatpak-builder$(EXEEXT): $(flatpak_builder_OBJECTS) $(flatpak_builder_DEPENDENCIES) $(EXTRA_flatpak_builder_DEPENDENCIES) 
 	@rm -f flatpak-builder$(EXEEXT)
 	$(AM_V_CCLD)$(flatpak_builder_LINK) $(flatpak_builder_OBJECTS) $(flatpak_builder_LDADD) $(LIBS)
+bubblewrap/$(am__dirstamp):
+	@$(MKDIR_P) ./bubblewrap
+	@: > bubblewrap/$(am__dirstamp)
+bubblewrap/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) ./bubblewrap/$(DEPDIR)
+	@: > bubblewrap/$(DEPDIR)/$(am__dirstamp)
+./bubblewrap/flatpak_bwrap-bubblewrap.$(OBJEXT):  \
+	bubblewrap/$(am__dirstamp) \
+	bubblewrap/$(DEPDIR)/$(am__dirstamp)
+./bubblewrap/flatpak_bwrap-bind-mount.$(OBJEXT):  \
+	bubblewrap/$(am__dirstamp) \
+	bubblewrap/$(DEPDIR)/$(am__dirstamp)
+./bubblewrap/flatpak_bwrap-network.$(OBJEXT):  \
+	bubblewrap/$(am__dirstamp) \
+	bubblewrap/$(DEPDIR)/$(am__dirstamp)
+./bubblewrap/flatpak_bwrap-utils.$(OBJEXT):  \
+	bubblewrap/$(am__dirstamp) \
+	bubblewrap/$(DEPDIR)/$(am__dirstamp)
+
+flatpak-bwrap$(EXEEXT): $(flatpak_bwrap_OBJECTS) $(flatpak_bwrap_DEPENDENCIES) $(EXTRA_flatpak_bwrap_DEPENDENCIES) 
+	@rm -f flatpak-bwrap$(EXEEXT)
+	$(AM_V_CCLD)$(flatpak_bwrap_LINK) $(flatpak_bwrap_OBJECTS) $(flatpak_bwrap_LDADD) $(LIBS)
 dbus-proxy/$(am__dirstamp):
 	@$(MKDIR_P) dbus-proxy
 	@: > dbus-proxy/$(am__dirstamp)
@@ -2273,10 +2281,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./bubblewrap/$(DEPDIR)/bwrap-network.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./bubblewrap/$(DEPDIR)/bwrap-utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./bubblewrap/$(DEPDIR)/flatpak_bwrap-bind-mount.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./bubblewrap/$(DEPDIR)/flatpak_bwrap-bubblewrap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./bubblewrap/$(DEPDIR)/flatpak_bwrap-network.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo@am__quote@
@@ -2589,62 +2597,6 @@ lib/libflatpak_la-flatpak-installation.lo: lib/flatpak-installation.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./libglnx/glnx-shutil.c' object='./libglnx/libglnx_la-glnx-shutil.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o ./libglnx/libglnx_la-glnx-shutil.lo `test -f './libglnx/glnx-shutil.c' || echo '$(srcdir)/'`./libglnx/glnx-shutil.c
-
-./bubblewrap/bwrap-bubblewrap.o: ./bubblewrap/bubblewrap.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-bubblewrap.o -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Tpo -c -o ./bubblewrap/bwrap-bubblewrap.o `test -f './bubblewrap/bubblewrap.c' || echo '$(srcdir)/'`./bubblewrap/bubblewrap.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Tpo ./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/bubblewrap.c' object='./bubblewrap/bwrap-bubblewrap.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-bubblewrap.o `test -f './bubblewrap/bubblewrap.c' || echo '$(srcdir)/'`./bubblewrap/bubblewrap.c
-
-./bubblewrap/bwrap-bubblewrap.obj: ./bubblewrap/bubblewrap.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-bubblewrap.obj -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Tpo -c -o ./bubblewrap/bwrap-bubblewrap.obj `if test -f './bubblewrap/bubblewrap.c'; then $(CYGPATH_W) './bubblewrap/bubblewrap.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/bubblewrap.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Tpo ./bubblewrap/$(DEPDIR)/bwrap-bubblewrap.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/bubblewrap.c' object='./bubblewrap/bwrap-bubblewrap.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-bubblewrap.obj `if test -f './bubblewrap/bubblewrap.c'; then $(CYGPATH_W) './bubblewrap/bubblewrap.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/bubblewrap.c'; fi`
-
-./bubblewrap/bwrap-bind-mount.o: ./bubblewrap/bind-mount.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-bind-mount.o -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Tpo -c -o ./bubblewrap/bwrap-bind-mount.o `test -f './bubblewrap/bind-mount.c' || echo '$(srcdir)/'`./bubblewrap/bind-mount.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Tpo ./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/bind-mount.c' object='./bubblewrap/bwrap-bind-mount.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-bind-mount.o `test -f './bubblewrap/bind-mount.c' || echo '$(srcdir)/'`./bubblewrap/bind-mount.c
-
-./bubblewrap/bwrap-bind-mount.obj: ./bubblewrap/bind-mount.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-bind-mount.obj -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Tpo -c -o ./bubblewrap/bwrap-bind-mount.obj `if test -f './bubblewrap/bind-mount.c'; then $(CYGPATH_W) './bubblewrap/bind-mount.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/bind-mount.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Tpo ./bubblewrap/$(DEPDIR)/bwrap-bind-mount.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/bind-mount.c' object='./bubblewrap/bwrap-bind-mount.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-bind-mount.obj `if test -f './bubblewrap/bind-mount.c'; then $(CYGPATH_W) './bubblewrap/bind-mount.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/bind-mount.c'; fi`
-
-./bubblewrap/bwrap-network.o: ./bubblewrap/network.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-network.o -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-network.Tpo -c -o ./bubblewrap/bwrap-network.o `test -f './bubblewrap/network.c' || echo '$(srcdir)/'`./bubblewrap/network.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-network.Tpo ./bubblewrap/$(DEPDIR)/bwrap-network.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/network.c' object='./bubblewrap/bwrap-network.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-network.o `test -f './bubblewrap/network.c' || echo '$(srcdir)/'`./bubblewrap/network.c
-
-./bubblewrap/bwrap-network.obj: ./bubblewrap/network.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-network.obj -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-network.Tpo -c -o ./bubblewrap/bwrap-network.obj `if test -f './bubblewrap/network.c'; then $(CYGPATH_W) './bubblewrap/network.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/network.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-network.Tpo ./bubblewrap/$(DEPDIR)/bwrap-network.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/network.c' object='./bubblewrap/bwrap-network.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-network.obj `if test -f './bubblewrap/network.c'; then $(CYGPATH_W) './bubblewrap/network.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/network.c'; fi`
-
-./bubblewrap/bwrap-utils.o: ./bubblewrap/utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-utils.o -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-utils.Tpo -c -o ./bubblewrap/bwrap-utils.o `test -f './bubblewrap/utils.c' || echo '$(srcdir)/'`./bubblewrap/utils.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-utils.Tpo ./bubblewrap/$(DEPDIR)/bwrap-utils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/utils.c' object='./bubblewrap/bwrap-utils.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-utils.o `test -f './bubblewrap/utils.c' || echo '$(srcdir)/'`./bubblewrap/utils.c
-
-./bubblewrap/bwrap-utils.obj: ./bubblewrap/utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/bwrap-utils.obj -MD -MP -MF ./bubblewrap/$(DEPDIR)/bwrap-utils.Tpo -c -o ./bubblewrap/bwrap-utils.obj `if test -f './bubblewrap/utils.c'; then $(CYGPATH_W) './bubblewrap/utils.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/utils.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/bwrap-utils.Tpo ./bubblewrap/$(DEPDIR)/bwrap-utils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/utils.c' object='./bubblewrap/bwrap-utils.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/bwrap-utils.obj `if test -f './bubblewrap/utils.c'; then $(CYGPATH_W) './bubblewrap/utils.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/utils.c'; fi`
 
 app/flatpak-flatpak-main.o: app/flatpak-main.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-main.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-main.Tpo -c -o app/flatpak-flatpak-main.o `test -f 'app/flatpak-main.c' || echo '$(srcdir)/'`app/flatpak-main.c
@@ -3191,6 +3143,62 @@ builder/flatpak_builder-builder-utils.obj: builder/builder-utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-utils.c' object='builder/flatpak_builder-builder-utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-utils.obj `if test -f 'builder/builder-utils.c'; then $(CYGPATH_W) 'builder/builder-utils.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-utils.c'; fi`
+
+./bubblewrap/flatpak_bwrap-bubblewrap.o: ./bubblewrap/bubblewrap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/flatpak_bwrap-bubblewrap.o -MD -MP -MF ./bubblewrap/$(DEPDIR)/flatpak_bwrap-bubblewrap.Tpo -c -o ./bubblewrap/flatpak_bwrap-bubblewrap.o `test -f './bubblewrap/bubblewrap.c' || echo '$(srcdir)/'`./bubblewrap/bubblewrap.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/flatpak_bwrap-bubblewrap.Tpo ./bubblewrap/$(DEPDIR)/flatpak_bwrap-bubblewrap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/bubblewrap.c' object='./bubblewrap/flatpak_bwrap-bubblewrap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/flatpak_bwrap-bubblewrap.o `test -f './bubblewrap/bubblewrap.c' || echo '$(srcdir)/'`./bubblewrap/bubblewrap.c
+
+./bubblewrap/flatpak_bwrap-bubblewrap.obj: ./bubblewrap/bubblewrap.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/flatpak_bwrap-bubblewrap.obj -MD -MP -MF ./bubblewrap/$(DEPDIR)/flatpak_bwrap-bubblewrap.Tpo -c -o ./bubblewrap/flatpak_bwrap-bubblewrap.obj `if test -f './bubblewrap/bubblewrap.c'; then $(CYGPATH_W) './bubblewrap/bubblewrap.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/bubblewrap.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/flatpak_bwrap-bubblewrap.Tpo ./bubblewrap/$(DEPDIR)/flatpak_bwrap-bubblewrap.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/bubblewrap.c' object='./bubblewrap/flatpak_bwrap-bubblewrap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/flatpak_bwrap-bubblewrap.obj `if test -f './bubblewrap/bubblewrap.c'; then $(CYGPATH_W) './bubblewrap/bubblewrap.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/bubblewrap.c'; fi`
+
+./bubblewrap/flatpak_bwrap-bind-mount.o: ./bubblewrap/bind-mount.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/flatpak_bwrap-bind-mount.o -MD -MP -MF ./bubblewrap/$(DEPDIR)/flatpak_bwrap-bind-mount.Tpo -c -o ./bubblewrap/flatpak_bwrap-bind-mount.o `test -f './bubblewrap/bind-mount.c' || echo '$(srcdir)/'`./bubblewrap/bind-mount.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/flatpak_bwrap-bind-mount.Tpo ./bubblewrap/$(DEPDIR)/flatpak_bwrap-bind-mount.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/bind-mount.c' object='./bubblewrap/flatpak_bwrap-bind-mount.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/flatpak_bwrap-bind-mount.o `test -f './bubblewrap/bind-mount.c' || echo '$(srcdir)/'`./bubblewrap/bind-mount.c
+
+./bubblewrap/flatpak_bwrap-bind-mount.obj: ./bubblewrap/bind-mount.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/flatpak_bwrap-bind-mount.obj -MD -MP -MF ./bubblewrap/$(DEPDIR)/flatpak_bwrap-bind-mount.Tpo -c -o ./bubblewrap/flatpak_bwrap-bind-mount.obj `if test -f './bubblewrap/bind-mount.c'; then $(CYGPATH_W) './bubblewrap/bind-mount.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/bind-mount.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/flatpak_bwrap-bind-mount.Tpo ./bubblewrap/$(DEPDIR)/flatpak_bwrap-bind-mount.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/bind-mount.c' object='./bubblewrap/flatpak_bwrap-bind-mount.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/flatpak_bwrap-bind-mount.obj `if test -f './bubblewrap/bind-mount.c'; then $(CYGPATH_W) './bubblewrap/bind-mount.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/bind-mount.c'; fi`
+
+./bubblewrap/flatpak_bwrap-network.o: ./bubblewrap/network.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/flatpak_bwrap-network.o -MD -MP -MF ./bubblewrap/$(DEPDIR)/flatpak_bwrap-network.Tpo -c -o ./bubblewrap/flatpak_bwrap-network.o `test -f './bubblewrap/network.c' || echo '$(srcdir)/'`./bubblewrap/network.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/flatpak_bwrap-network.Tpo ./bubblewrap/$(DEPDIR)/flatpak_bwrap-network.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/network.c' object='./bubblewrap/flatpak_bwrap-network.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/flatpak_bwrap-network.o `test -f './bubblewrap/network.c' || echo '$(srcdir)/'`./bubblewrap/network.c
+
+./bubblewrap/flatpak_bwrap-network.obj: ./bubblewrap/network.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/flatpak_bwrap-network.obj -MD -MP -MF ./bubblewrap/$(DEPDIR)/flatpak_bwrap-network.Tpo -c -o ./bubblewrap/flatpak_bwrap-network.obj `if test -f './bubblewrap/network.c'; then $(CYGPATH_W) './bubblewrap/network.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/network.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/flatpak_bwrap-network.Tpo ./bubblewrap/$(DEPDIR)/flatpak_bwrap-network.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/network.c' object='./bubblewrap/flatpak_bwrap-network.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/flatpak_bwrap-network.obj `if test -f './bubblewrap/network.c'; then $(CYGPATH_W) './bubblewrap/network.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/network.c'; fi`
+
+./bubblewrap/flatpak_bwrap-utils.o: ./bubblewrap/utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/flatpak_bwrap-utils.o -MD -MP -MF ./bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Tpo -c -o ./bubblewrap/flatpak_bwrap-utils.o `test -f './bubblewrap/utils.c' || echo '$(srcdir)/'`./bubblewrap/utils.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Tpo ./bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/utils.c' object='./bubblewrap/flatpak_bwrap-utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/flatpak_bwrap-utils.o `test -f './bubblewrap/utils.c' || echo '$(srcdir)/'`./bubblewrap/utils.c
+
+./bubblewrap/flatpak_bwrap-utils.obj: ./bubblewrap/utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -MT ./bubblewrap/flatpak_bwrap-utils.obj -MD -MP -MF ./bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Tpo -c -o ./bubblewrap/flatpak_bwrap-utils.obj `if test -f './bubblewrap/utils.c'; then $(CYGPATH_W) './bubblewrap/utils.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/utils.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ./bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Tpo ./bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='./bubblewrap/utils.c' object='./bubblewrap/flatpak_bwrap-utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -c -o ./bubblewrap/flatpak_bwrap-utils.obj `if test -f './bubblewrap/utils.c'; then $(CYGPATH_W) './bubblewrap/utils.c'; else $(CYGPATH_W) '$(srcdir)/./bubblewrap/utils.c'; fi`
 
 dbus-proxy/flatpak_dbus_proxy-flatpak-proxy.o: dbus-proxy/flatpak-proxy.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_dbus_proxy_CFLAGS) $(CFLAGS) -MT dbus-proxy/flatpak_dbus_proxy-flatpak-proxy.o -MD -MP -MF dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Tpo -c -o dbus-proxy/flatpak_dbus_proxy-flatpak-proxy.o `test -f 'dbus-proxy/flatpak-proxy.c' || echo '$(srcdir)/'`dbus-proxy/flatpak-proxy.c
@@ -4698,9 +4706,9 @@ tests/test-basic.sh: tests/package_version.txt
 # NOTE: bwrap is install-bwrapPROGS which is run from install-data, not install-exec, this data-hook is used
 install-data-hook:
 	$(MAKE) $(AM_MAKEFLAGS) install-test-data-hook
-@PRIV_MODE_SETUID_TRUE@	$(SUDO_BIN) chown root $(DESTDIR)$(libdir)/flatpak/bwrap
-@PRIV_MODE_SETUID_TRUE@	$(SUDO_BIN) chmod u+s $(DESTDIR)$(libdir)/flatpak/bwrap
-@PRIV_MODE_FILECAPS_TRUE@@PRIV_MODE_SETUID_FALSE@	$(SUDO_BIN) setcap cap_sys_admin,cap_net_admin,cap_sys_chroot,cap_setuid,cap_setgid+ep $(DESTDIR)$(libdir)/flatpak/bwrap
+@PRIV_MODE_SETUID_TRUE@	$(SUDO_BIN) chown root $(DESTDIR)$(libexecdir)/flatpak-bwrap
+@PRIV_MODE_SETUID_TRUE@	$(SUDO_BIN) chmod u+s $(DESTDIR)$(libexecdir)/flatpak-bwrap
+@PRIV_MODE_FILECAPS_TRUE@@PRIV_MODE_SETUID_FALSE@	$(SUDO_BIN) setcap cap_sys_admin,cap_net_admin,cap_sys_chroot,cap_setuid,cap_setgid+ep $(DESTDIR)$(libexecdir)/flatpak-bwrap
 
 flatpak.sh: profile/flatpak.sh.in
 	$(AM_V_GEN) $(SED) -e "s|\@localstatedir\@|$(localstatedir)|" \

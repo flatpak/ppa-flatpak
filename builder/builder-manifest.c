@@ -842,7 +842,14 @@ builder_manifest_start (BuilderManifest *self,
                         BuilderContext  *context,
                         GError         **error)
 {
-  g_autofree char *arch_option;
+  g_autofree char *arch_option = NULL;
+
+  if (self->sdk == NULL)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                   "sdk not specified");
+      return FALSE;
+    }
 
   arch_option = g_strdup_printf ("--arch=%s", builder_context_get_arch (context));
 
@@ -1984,6 +1991,7 @@ builder_manifest_create_platform (BuilderManifest *self,
 gboolean
 builder_manifest_run (BuilderManifest *self,
                       BuilderContext  *context,
+                      FlatpakContext  *arg_context,
                       char           **argv,
                       int              argc,
                       GError         **error)
@@ -2044,6 +2052,8 @@ builder_manifest_run (BuilderManifest *self,
         }
     }
 
+  flatpak_context_to_args (arg_context, args);
+
   g_ptr_array_add (args, g_file_get_path (builder_context_get_app_dir (context)));
 
   for (i = 0; i < argc; i++)
@@ -2052,7 +2062,7 @@ builder_manifest_run (BuilderManifest *self,
 
   commandline = g_strjoinv (" ", (char **) args->pdata);
 
-  if (!execvp ((char *) args->pdata[0], (char **) args->pdata))
+  if (execvp ((char *) args->pdata[0], (char **) args->pdata) == -1)
     {
       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno), "Unable to start flatpak build");
       return FALSE;

@@ -34,6 +34,11 @@
 #include "flatpak-utils.h"
 #include "flatpak-chain-input-stream.h"
 
+#define FLATPAK_REPO_GROUP "Flatpak Repo"
+#define FLATPAK_REPO_URL_KEY "Url"
+#define FLATPAK_REPO_TITLE_KEY "Title"
+#define FLATPAK_REPO_GPGKEY_KEY "GPGKey"
+
 static gboolean opt_no_gpg_verify;
 static gboolean opt_do_gpg_verify;
 static gboolean opt_do_enumerate;
@@ -44,11 +49,13 @@ static gboolean opt_disable;
 static int opt_prio = -1;
 static char *opt_title;
 static char *opt_url;
+static char *opt_from;
 static char **opt_gpg_import;
 
 
 static GOptionEntry add_options[] = {
   { "if-not-exists", 0, 0, G_OPTION_ARG_NONE, &opt_if_not_exists, "Do nothing if the provided remote exists", NULL },
+  { "from", 0, 0, G_OPTION_ARG_FILENAME, &opt_from, "Load options from file", "FILE" },
   { NULL }
 };
 
@@ -190,6 +197,56 @@ get_config_from_opts (FlatpakDir *dir, const char *remote_name)
   return config;
 }
 
+static void
+load_options (char *filename,
+              GBytes **gpg_data)
+{
+  g_autoptr(GError) error = NULL;
+  g_autoptr(GKeyFile) keyfile = g_key_file_new ();
+  char *str;
+
+  if (!g_key_file_load_from_file (keyfile, filename, 0, &error))
+    {
+      g_printerr ("Can't load file %s: %s\n", filename, error->message);
+      exit (1);
+    }
+
+  if (!g_key_file_has_group (keyfile, FLATPAK_REPO_GROUP))
+    {
+      g_printerr ("Invalid file format");
+      exit (1);
+    }
+
+  str = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                               FLATPAK_REPO_URL_KEY, NULL);
+  if (str != NULL)
+    opt_url = str;
+
+  str = g_key_file_get_locale_string (keyfile, FLATPAK_REPO_GROUP,
+                                      FLATPAK_REPO_TITLE_KEY, NULL, NULL);
+  if (str != NULL)
+    opt_title = str;
+
+  str = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                               FLATPAK_REPO_GPGKEY_KEY, NULL);
+  if (str != NULL)
+    {
+      guchar *decoded;
+      gsize decoded_len;
+
+      str = g_strstrip (str);
+      decoded = g_base64_decode (str, &decoded_len);
+      if (decoded_len < 10) /* Check some minimal size so we don't get crap */
+        {
+          g_printerr ("Invalid gpg key");
+          exit (1);
+        }
+
+      *gpg_data = g_bytes_new_take (decoded, decoded_len);
+      opt_do_gpg_verify = TRUE;
+    }
+}
+
 gboolean
 flatpak_builtin_add_remote (int argc, char **argv,
                             GCancellable *cancellable, GError **error)
@@ -201,23 +258,27 @@ flatpak_builtin_add_remote (int argc, char **argv,
   g_autofree char *title = NULL;
   g_autofree char *remote_url = NULL;
   const char *remote_name;
-  const char *url_or_path;
-  g_autofree char *prio_as_string = NULL;
+  const char *url_or_path = NULL;
   g_autoptr(GKeyFile) config = NULL;
   g_autoptr(GBytes) gpg_data = NULL;
 
-  context = g_option_context_new ("NAME LOCATION - Add a remote repository");
+  context = g_option_context_new ("NAME [LOCATION] - Add a remote repository");
 
   g_option_context_add_main_entries (context, common_options, NULL);
 
   if (!flatpak_option_context_parse (context, add_options, &argc, &argv, 0, &dir, cancellable, error))
     return FALSE;
 
-  if (argc < 3)
-    return usage_error (context, "NAME and LOCATION must be specified", error);
+  if (opt_from)
+    load_options (opt_from, &gpg_data);
+
+  if (argc < 2)
+    return usage_error (context, "NAME must be specified", error);
+
+  if (argc < 3 && opt_url == NULL)
+    return usage_error (context, "LOCATION must be specified", error);
 
   remote_name = argv[1];
-  url_or_path  = argv[2];
 
   remotes = flatpak_dir_list_remotes (dir, cancellable, error);
   if (remotes == NULL)
@@ -231,17 +292,21 @@ flatpak_builtin_add_remote (int argc, char **argv,
       return flatpak_fail (error, "Remote %s already exists", remote_name);
     }
 
-  file = g_file_new_for_commandline_arg (url_or_path);
-  if (g_file_is_native (file))
-    remote_url = g_file_get_uri (file);
-  else
-    remote_url = g_strdup (url_or_path);
+  if (opt_url == NULL)
+    {
+      url_or_path  = argv[2];
+      file = g_file_new_for_commandline_arg (url_or_path);
+      if (g_file_is_native (file))
+        remote_url = g_file_get_uri (file);
+      else
+        remote_url = g_strdup (url_or_path);
+      opt_url = remote_url;
+    }
 
   /* Default to gpg verify */
   if (!opt_no_gpg_verify)
     opt_do_gpg_verify = TRUE;
 
-  opt_url = remote_url;
 
   if (opt_title == NULL)
     {
@@ -263,6 +328,32 @@ flatpak_builtin_add_remote (int argc, char **argv,
     }
 
   return flatpak_dir_modify_remote (dir, remote_name, config, gpg_data, cancellable, error);
+}
+
+gboolean
+flatpak_complete_add_remote (FlatpakCompletion *completion)
+{
+  g_autoptr(GOptionContext) context = NULL;
+  g_autoptr(FlatpakDir) dir = NULL;
+
+  context = g_option_context_new ("");
+  g_option_context_add_main_entries (context, common_options, NULL);
+  if (!flatpak_option_context_parse (context, add_options, &completion->argc, &completion->argv, 0, &dir, NULL, NULL))
+    return FALSE;
+
+  switch (completion->argc)
+    {
+    case 0:
+    case 1:
+      flatpak_complete_options (completion, global_entries);
+      flatpak_complete_options (completion, common_options);
+      flatpak_complete_options (completion, add_options);
+      flatpak_complete_options (completion, user_entries);
+
+      break;
+    }
+
+  return TRUE;
 }
 
 gboolean
@@ -299,4 +390,39 @@ flatpak_builtin_modify_remote (int argc, char **argv, GCancellable *cancellable,
     }
 
   return flatpak_dir_modify_remote (dir, remote_name, config, gpg_data, cancellable, error);
+}
+
+gboolean
+flatpak_complete_modify_remote (FlatpakCompletion *completion)
+{
+  g_autoptr(GOptionContext) context = NULL;
+  g_autoptr(FlatpakDir) dir = NULL;
+  int i;
+
+  context = g_option_context_new ("");
+  g_option_context_add_main_entries (context, common_options, NULL);
+  if (!flatpak_option_context_parse (context, modify_options, &completion->argc, &completion->argv, 0, &dir, NULL, NULL))
+    return FALSE;
+
+  switch (completion->argc)
+    {
+    case 0:
+    case 1: /* REMOTE */
+      flatpak_complete_options (completion, global_entries);
+      flatpak_complete_options (completion, common_options);
+      flatpak_complete_options (completion, modify_options);
+      flatpak_complete_options (completion, user_entries);
+
+      {
+        g_auto(GStrv) remotes = flatpak_dir_list_remotes (dir, NULL, NULL);
+        if (remotes == NULL)
+          return FALSE;
+        for (i = 0; remotes[i] != NULL; i++)
+          flatpak_complete_word (completion, "%s ", remotes[i]);
+      }
+
+      break;
+    }
+
+  return TRUE;
 }

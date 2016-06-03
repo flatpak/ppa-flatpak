@@ -60,7 +60,7 @@ typedef enum {
 
 
 /* Same order as enum */
-static const char *flatpak_context_shares[] = {
+const char *flatpak_context_shares[] = {
   "network",
   "ipc",
   NULL
@@ -75,7 +75,7 @@ typedef enum {
 } FlatpakContextSockets;
 
 /* Same order as enum */
-static const char *flatpak_context_sockets[] = {
+const char *flatpak_context_sockets[] = {
   "x11",
   "wayland",
   "pulseaudio",
@@ -93,7 +93,7 @@ typedef enum {
   FLATPAK_CONTEXT_DEVICE_DRI         = 1 << 0,
 } FlatpakContextDevices;
 
-static const char *flatpak_context_devices[] = {
+const char *flatpak_context_devices[] = {
   "dri",
   NULL
 };
@@ -153,7 +153,6 @@ flatpak_context_bitmask_from_string (const char *name, const char **names)
   return 0;
 }
 
-
 static char **
 flatpak_context_bitmask_to_string (guint32 enabled, guint32 valid, const char **names)
 {
@@ -178,6 +177,27 @@ flatpak_context_bitmask_to_string (guint32 enabled, guint32 valid, const char **
   return (char **) g_ptr_array_free (array, FALSE);
 }
 
+static void
+flatpak_context_bitmask_to_args (guint32 enabled, guint32 valid, const char **names,
+                                 const char *enable_arg, const char *disable_arg,
+                                 GPtrArray *args)
+{
+  guint32 i;
+
+  for (i = 0; names[i] != NULL; i++)
+    {
+      guint32 bitmask = 1 << i;
+      if (valid & bitmask)
+        {
+          if (enabled & bitmask)
+            g_ptr_array_add (args, g_strdup_printf ("%s=%s", enable_arg, names[i]));
+          else
+            g_ptr_array_add (args, g_strdup_printf ("%s=%s", disable_arg, names[i]));
+        }
+    }
+}
+
+
 static FlatpakContextShares
 flatpak_context_share_from_string (const char *string, GError **error)
 {
@@ -195,6 +215,14 @@ flatpak_context_shared_to_string (FlatpakContextShares shares, FlatpakContextSha
   return flatpak_context_bitmask_to_string (shares, valid, flatpak_context_shares);
 }
 
+static void
+flatpak_context_shared_to_args (FlatpakContextShares shares,
+                                FlatpakContextShares valid,
+                                GPtrArray *args)
+{
+  return flatpak_context_bitmask_to_args (shares, valid, flatpak_context_shares, "--share", "--unshare", args);
+}
+
 static FlatpakPolicy
 flatpak_policy_from_string (const char *string, GError **error)
 {
@@ -208,7 +236,7 @@ flatpak_policy_from_string (const char *string, GError **error)
     return FLATPAK_POLICY_OWN;
 
   g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-               "Unknown socket type %s, valid types are: x11,wayland,pulseaudio,session-bus,system-bus\n", string);
+               "Unknown policy type %s, valid types are: none,see,talk,own\n", string);
   return -1;
 }
 
@@ -265,6 +293,14 @@ flatpak_context_sockets_to_string (FlatpakContextSockets sockets, FlatpakContext
   return flatpak_context_bitmask_to_string (sockets, valid, flatpak_context_sockets);
 }
 
+static void
+flatpak_context_sockets_to_args (FlatpakContextSockets sockets,
+                                 FlatpakContextSockets valid,
+                                 GPtrArray *args)
+{
+  return flatpak_context_bitmask_to_args (sockets, valid, flatpak_context_sockets, "--socket", "--nosocket", args);
+}
+
 static FlatpakContextDevices
 flatpak_context_device_from_string (const char *string, GError **error)
 {
@@ -280,6 +316,14 @@ static char **
 flatpak_context_devices_to_string (FlatpakContextDevices devices, FlatpakContextDevices valid)
 {
   return flatpak_context_bitmask_to_string (devices, valid, flatpak_context_devices);
+}
+
+static void
+flatpak_context_devices_to_args (FlatpakContextDevices devices,
+                                 FlatpakContextDevices valid,
+                                 GPtrArray *args)
+{
+  return flatpak_context_bitmask_to_args (devices, valid, flatpak_context_devices, "--device", "--nodevice", args);
 }
 
 static void
@@ -817,6 +861,12 @@ static GOptionEntry context_options[] = {
   { NULL }
 };
 
+void
+flatpak_context_complete (FlatpakContext *context, FlatpakCompletion *completion)
+{
+  flatpak_complete_options (completion, context_options);
+}
+
 GOptionGroup  *
 flatpak_context_get_options (FlatpakContext *context)
 {
@@ -1147,6 +1197,57 @@ void
 flatpak_context_allow_host_fs (FlatpakContext *context)
 {
   flatpak_context_add_filesystem (context, "host");
+}
+
+void
+flatpak_context_to_args (FlatpakContext *context,
+                         GPtrArray *args)
+{
+  GHashTableIter iter;
+  gpointer key, value;
+
+  flatpak_context_shared_to_args (context->shares, context->shares_valid, args);
+  flatpak_context_sockets_to_args (context->sockets, context->sockets_valid, args);
+  flatpak_context_devices_to_args (context->devices, context->devices_valid, args);
+
+  g_hash_table_iter_init (&iter, context->env_vars);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    g_ptr_array_add (args, g_strdup_printf ("--env=%s=%s", (char *)key, (char *)value));
+
+  g_hash_table_iter_init (&iter, context->persistent);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    g_ptr_array_add (args, g_strdup_printf ("--persist=%s", (char *)key));
+
+  g_hash_table_iter_init (&iter, context->session_bus_policy);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      const char *name = key;
+      FlatpakPolicy policy = GPOINTER_TO_INT (value);
+
+      g_ptr_array_add (args, g_strdup_printf ("--%s-name=%s", flatpak_policy_to_string (policy), name));
+    }
+
+  g_hash_table_iter_init (&iter, context->system_bus_policy);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      const char *name = key;
+      FlatpakPolicy policy = GPOINTER_TO_INT (value);
+
+      g_ptr_array_add (args, g_strdup_printf ("--system-%s-name=%s", flatpak_policy_to_string (policy), name));
+    }
+
+  g_hash_table_iter_init (&iter, context->filesystems);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      FlatpakFilesystemMode mode = GPOINTER_TO_INT (value);
+
+      if (mode == FLATPAK_FILESYSTEM_MODE_READ_ONLY)
+        g_ptr_array_add (args, g_strdup_printf ("--filesystem=%s:ro", (char *)key));
+      else if (mode == FLATPAK_FILESYSTEM_MODE_READ_WRITE)
+        g_ptr_array_add (args, g_strdup_printf ("--filesystem=%s", (char *)key));
+      else
+        g_ptr_array_add (args, g_strdup_printf ("--nofilesystem=%s", (char *)key));
+    }
 }
 
 static char *
@@ -1756,6 +1857,9 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
               continue;
             }
 
+          if (path == NULL)
+            continue; /* Unconfigured, ignore */
+
           if (strcmp (path, g_get_home_dir ()) == 0)
             {
               /* xdg-user-dirs sets disabled dirs to $HOME, and its in general not a good
@@ -1874,6 +1978,14 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
       !unrestricted_system_bus && system_bus_proxy_argv)
     flatpak_add_bus_filters (system_bus_proxy_argv, context->system_bus_policy, NULL, context);
 
+  if (g_environ_getenv (*envp_p, "LD_LIBRARY_PATH") != NULL)
+    {
+      /* LD_LIBRARY_PATH is overridden for setuid helper, so pass it as cmdline arg */
+      add_args (argv_array,
+                "--setenv", "LD_LIBRARY_PATH", g_environ_getenv (*envp_p, "LD_LIBRARY_PATH"),
+                NULL);
+      *envp_p = g_environ_unsetenv (*envp_p, "LD_LIBRARY_PATH");
+    }
 }
 
 static const struct {const char *env;
@@ -2272,18 +2384,22 @@ add_app_info_args (GPtrArray      *argv_array,
 }
 
 static void
-add_monitor_path_args (GPtrArray *argv_array,
-                       char    ***envp_p)
+add_monitor_path_args (gboolean use_session_helper,
+                       GPtrArray *argv_array)
 {
   g_autoptr(AutoFlatpakSessionHelper) session_helper = NULL;
   g_autofree char *monitor_path = NULL;
 
-  session_helper =
-    flatpak_session_helper_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
-                                                   G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES | G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
-                                                   "org.freedesktop.Flatpak",
-                                                   "/org/freedesktop/Flatpak/SessionHelper",
-                                                   NULL, NULL);
+  if (use_session_helper)
+    {
+      session_helper =
+        flatpak_session_helper_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
+                                                       G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES | G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS,
+                                                       "org.freedesktop.Flatpak",
+                                                       "/org/freedesktop/Flatpak/SessionHelper",
+                                                       NULL, NULL);
+    }
+
   if (session_helper &&
       flatpak_session_helper_call_request_monitor_sync (session_helper,
                                                         &monitor_path,
@@ -2581,7 +2697,7 @@ setup_seccomp (GPtrArray  *argv_array,
              native one. This is not ideal, because we'd like to only
              allow the target arch, but we can't really disallow the
              native arch at this point, because then bubblewrap
-             couldn't continue runnning. */
+             couldn't continue running. */
           r = seccomp_arch_add (seccomp, arch_id);
           if (r < 0 && r != -EEXIST)
             return flatpak_fail (error, "Failed to add architecture to seccomp filter");
@@ -2813,6 +2929,8 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
     return FALSE;
 #endif
 
+  add_monitor_path_args ((flags & FLATPAK_RUN_FLAG_NO_SESSION_HELPER) == 0, argv_array);
+
   return TRUE;
 }
 
@@ -2998,8 +3116,6 @@ flatpak_run_app (const char     *app_ref,
   if (!flatpak_run_add_extension_args (argv_array, runtime_metakey, runtime_ref, cancellable, error))
     return FALSE;
 
-  add_monitor_path_args (argv_array, &envp);
-
   add_document_portal_args (argv_array, app_ref_parts[1]);
 
   flatpak_run_add_environment_args (argv_array, fd_array, &envp,
@@ -3028,15 +3144,6 @@ flatpak_run_app (const char     *app_ref,
             "--symlink", "/app/lib/debug/source", "/run/build",
             "--symlink", "/usr/lib/debug/source", "/run/build-runtime",
             NULL);
-
-  if (g_environ_getenv (envp, "LD_LIBRARY_PATH") != NULL)
-    {
-      /* LD_LIBRARY_PATH is overridden for setuid helper, so pass it as cmdline arg */
-      add_args (argv_array,
-                "--setenv", "LD_LIBRARY_PATH", g_environ_getenv (envp, "LD_LIBRARY_PATH"),
-                NULL);
-      envp = g_environ_unsetenv (envp, "LD_LIBRARY_PATH");
-    }
 
   if (custom_command)
     {
