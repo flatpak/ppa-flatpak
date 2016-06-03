@@ -1,6 +1,8 @@
 flatpak (0.6.4-1) UNRELEASED; urgency=medium
 
   * New upstream release
+    - d/p/Correctly-handle-with-privileged-group.patch: drop, no longer
+      necessary
 
  -- Simon McVittie <smcv@debian.org>  Fri, 03 Jun 2016 15:48:44 +0100
 
