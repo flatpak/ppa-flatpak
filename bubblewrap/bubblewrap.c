@@ -471,7 +471,15 @@ write_uid_gid_map (uid_t sandbox_uid,
 
   if (deny_groups &&
       write_file_at (dir_fd, "setgroups", "deny\n") != 0)
-    die_with_error ("error writing to setgroups");
+    {
+      /* If /proc/[pid]/setgroups does not exist, assume we are
+       * running a linux kernel < 3.19, i.e. we live with the
+       * vulnerability known as CVE-2014-8989 in older kernels
+       * where setgroups does not exist.
+       */
+      if (errno != ENOENT)
+        die_with_error ("error writing to setgroups");
+    }
 
   if (map_root && parent_gid != 0 && sandbox_gid != 0)
     gid_map = xasprintf ("0 0 1\n"
@@ -1335,7 +1343,25 @@ main (int    argc,
 
   if (opt_unshare_user_try &&
       stat ("/proc/self/ns/user", &sbuf) == 0)
-    opt_unshare_user = TRUE;
+    {
+      bool disabled = FALSE;
+
+      /* RHEL7 has a kernel module parameter that lets you enable user namespaces */
+      if (stat ("/sys/module/user_namespace/parameters/enable", &sbuf) == 0)
+        {
+          cleanup_free char *enable = NULL;
+          enable = load_file_at (AT_FDCWD, "/sys/module/user_namespace/parameters/enable");
+          if (enable != NULL && enable[0] == 'N')
+            disabled = TRUE;
+        }
+
+      /* Debian lets you disable *unprivileged* user namespaces. However this is not
+         a problem if we're privileged, and if we're not opt_unshare_user is TRUE
+         already, and there is not much we can do, its just a non-working setup. */
+
+      if (!disabled)
+        opt_unshare_user = TRUE;
+    }
 
   if (argc == 0)
     usage (EXIT_FAILURE, stderr);

@@ -52,7 +52,7 @@ static GOptionEntry options[] = {
   { "app", 0, 0, G_OPTION_ARG_NONE, &opt_app, "Look for app with the specified name", },
   { "bundle", 0, 0, G_OPTION_ARG_NONE, &opt_bundle, "Install from local bundle file", },
   { "gpg-file", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_gpg_file, "Check bundle signatures with GPG key from FILE (- for stdin)", "FILE" },
-  { "subpath", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_subpaths, "Only install this subpath", "path" },
+  { "subpath", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_subpaths, "Only install this subpath", "PATH" },
   { NULL }
 };
 
@@ -200,14 +200,13 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
 {
   g_autoptr(GOptionContext) context = NULL;
   g_autoptr(FlatpakDir) dir = NULL;
-  g_autoptr(GFile) deploy_base = NULL;
   const char *repository;
   const char *name;
   const char *branch = NULL;
   g_autofree char *ref = NULL;
-  g_autofree char *installed_ref = NULL;
   gboolean is_app;
-  g_autoptr(GError) my_error = NULL;
+  g_autoptr(GFile) deploy_dir = NULL;
+  g_autoptr(GVariant) deploy_data = NULL;
 
   context = g_option_context_new ("REPOSITORY NAME [BRANCH] - Install an application or runtime");
 
@@ -228,30 +227,19 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
   if (!opt_app && !opt_runtime)
     opt_app = opt_runtime = TRUE;
 
-  installed_ref = flatpak_dir_find_installed_ref (dir,
-                                                  name,
-                                                  branch,
-                                                  opt_arch,
-                                                  opt_app, opt_runtime, &is_app,
-                                                  &my_error);
-  if (installed_ref != NULL)
-    return flatpak_fail (error, "%s %s, branch %s is already installed",
-                         is_app ? "App" : "Runtime", name, branch ? branch : "master");
-
-  if (!g_error_matches (my_error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED))
-    {
-      g_propagate_error (error, g_steal_pointer (&my_error));
-      return FALSE;
-    }
-
   ref = flatpak_dir_find_remote_ref (dir, repository, name, branch, opt_arch,
                                      opt_app, opt_runtime, &is_app, cancellable, error);
   if (ref == NULL)
     return FALSE;
 
-  deploy_base = flatpak_dir_get_deploy_dir (dir, ref);
-  if (g_file_query_exists (deploy_base, cancellable))
-    return flatpak_fail (error, "Ref %s already deployed", ref);
+  deploy_dir = flatpak_dir_get_if_deployed (dir, ref, NULL, cancellable);
+  if (deploy_dir != NULL)
+    {
+      g_auto(GStrv) parts =  flatpak_decompose_ref (ref, error);
+
+      return flatpak_fail (error, "%s %s, branch %s is already installed",
+                           is_app ? "App" : "Runtime", name, parts[3]);
+    }
 
   if (!flatpak_dir_install (dir,
                             opt_no_pull,
@@ -260,6 +248,79 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
                             NULL,
                             cancellable, error))
     return FALSE;
+
+  return TRUE;
+}
+
+gboolean
+flatpak_complete_install (FlatpakCompletion *completion)
+{
+  g_autoptr(GOptionContext) context = NULL;
+  g_autoptr(FlatpakDir) dir = NULL;
+  g_autoptr(GError) error = NULL;
+  g_auto(GStrv) refs = NULL;
+  int i;
+
+  context = g_option_context_new ("");
+  if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv, 0, &dir, NULL, NULL))
+    return FALSE;
+
+  if (!opt_app && !opt_runtime)
+    opt_app = opt_runtime = TRUE;
+
+  flatpak_completion_debug ("install argc %d", completion->argc);
+
+  switch (completion->argc)
+    {
+    case 0:
+    case 1: /* REMOTE */
+      flatpak_complete_options (completion, global_entries);
+      flatpak_complete_options (completion, options);
+      flatpak_complete_options (completion, user_entries);
+
+      {
+        g_auto(GStrv) remotes = flatpak_dir_list_remotes (dir, NULL, NULL);
+        if (remotes == NULL)
+          return FALSE;
+        for (i = 0; remotes[i] != NULL; i++)
+          flatpak_complete_word (completion, "%s ", remotes[i]);
+      }
+
+      break;
+
+    case 2: /* Name */
+      refs = flatpak_dir_find_remote_refs (dir, completion->argv[1], NULL, NULL,
+                                           opt_arch, opt_app, opt_runtime,
+                                           NULL, &error);
+      if (refs == NULL)
+        flatpak_completion_debug ("find remote refs error: %s", error->message);
+      for (i = 0; refs != NULL && refs[i] != NULL; i++)
+        {
+          g_auto(GStrv) parts = flatpak_decompose_ref (refs[i], NULL);
+          if (parts)
+            flatpak_complete_word (completion, "%s ", parts[1]);
+        }
+
+      break;
+
+    case 3: /* Branch */
+      refs = flatpak_dir_find_remote_refs (dir, completion->argv[1], completion->argv[2], NULL,
+                                           opt_arch, opt_app, opt_runtime,
+                                           NULL, &error);
+      if (refs == NULL)
+        flatpak_completion_debug ("find remote refs error: %s", error->message);
+      for (i = 0; refs != NULL && refs[i] != NULL; i++)
+        {
+          g_auto(GStrv) parts = flatpak_decompose_ref (refs[i], NULL);
+          if (parts)
+            flatpak_complete_word (completion, "%s ", parts[3]);
+        }
+
+      break;
+
+    default:
+      break;
+    }
 
   return TRUE;
 }

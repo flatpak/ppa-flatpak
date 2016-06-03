@@ -592,7 +592,7 @@ flatpak_dir_get_repo (FlatpakDir *self)
 
 /* This is an exclusive per flatpak installation file lock that is taken
  * whenever any config in the directory outside the repo is to be changed. For
- * instance deployements, overrides or active commit changes.
+ * instance deployments, overrides or active commit changes.
  *
  * For concurrency protection of the actual repository we rely on ostree
  * to do the right thing.
@@ -1537,13 +1537,40 @@ flatpak_dir_drop_current_ref (FlatpakDir   *self,
   g_autoptr(GFile) base = NULL;
   g_autoptr(GFile) dir = NULL;
   g_autoptr(GFile) current_link = NULL;
+  g_auto(GStrv) refs = NULL;
+  g_autofree char *current_ref = NULL;
+  const char *other_ref = NULL;
 
   base = g_file_get_child (flatpak_dir_get_path (self), "app");
   dir = g_file_get_child (base, name);
 
+  current_ref = flatpak_dir_current_ref (self, name, cancellable);
+
+  if (flatpak_dir_list_refs_for_name (self, "app", name, &refs, cancellable, NULL))
+    {
+      int i;
+      for (i = 0; refs[i] != NULL; i++)
+        {
+          if (g_strcmp0 (refs[i], current_ref) != 0)
+            {
+              other_ref = refs[i];
+              break;
+            }
+        }
+    }
+
   current_link = g_file_get_child (dir, "current");
 
-  return g_file_delete (current_link, cancellable, error);
+  if (!g_file_delete (current_link, cancellable, error))
+    return FALSE;
+
+  if (other_ref)
+    {
+      if (!flatpak_dir_make_current_ref (self, other_ref, cancellable, error))
+        return FALSE;
+    }
+
+  return TRUE;
 }
 
 gboolean
@@ -2496,9 +2523,9 @@ flatpak_dir_deploy (FlatpakDir          *self,
   g_autofree char *resolved_ref = NULL;
 
   g_autoptr(GFile) root = NULL;
-  g_autoptr(GFileInfo) file_info = NULL;
   g_autoptr(GFile) deploy_base = NULL;
   g_autoptr(GFile) checkoutdir = NULL;
+  g_autofree char *checkoutdirpath = NULL;
   g_autoptr(GFile) real_checkoutdir = NULL;
   g_autoptr(GFile) dotref = NULL;
   g_autoptr(GFile) files_etc = NULL;
@@ -2508,7 +2535,9 @@ flatpak_dir_deploy (FlatpakDir          *self,
   g_autoptr(GFile) export = NULL;
   g_autoptr(GKeyFile) keyfile = NULL;
   guint64 installed_size = 0;
+  OstreeRepoCheckoutOptions options = { 0, };
   const char *checksum;
+  glnx_fd_close int checkoutdir_dfd = -1;
   g_autoptr(GFile) tmp_dir_template = NULL;
   g_autofree char *tmp_dir_path = NULL;
 
@@ -2572,33 +2601,24 @@ flatpak_dir_deploy (FlatpakDir          *self,
   if (!flatpak_repo_collect_sizes (self->repo, root, &installed_size, NULL, cancellable, error))
     return FALSE;
 
-  file_info = g_file_query_info (root, OSTREE_GIO_FAST_QUERYINFO,
-                                 G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
-                                 cancellable, error);
-  if (file_info == NULL)
-    return FALSE;
+  options.mode = OSTREE_REPO_CHECKOUT_MODE_USER;
+  options.overwrite_mode = OSTREE_REPO_CHECKOUT_OVERWRITE_UNION_FILES;
+  options.disable_fsync = TRUE; /* We checkout to a temp dir and sync before moving it in place */
+  checkoutdirpath = g_file_get_path (checkoutdir);
 
   if (subpaths == NULL || *subpaths == NULL)
     {
-      if (!ostree_repo_checkout_tree (self->repo,
-                                      OSTREE_REPO_CHECKOUT_MODE_USER,
-                                      OSTREE_REPO_CHECKOUT_OVERWRITE_UNION_FILES,
-                                      checkoutdir,
-                                      OSTREE_REPO_FILE (root), file_info,
-                                      cancellable, error))
+      if (!ostree_repo_checkout_tree_at (self->repo, &options,
+                                         AT_FDCWD, checkoutdirpath,
+                                         checksum,
+                                         cancellable, error))
         {
-          g_autofree char *rootpath = NULL;
-          g_autofree char *checkoutpath = NULL;
-
-          rootpath = g_file_get_path (root);
-          checkoutpath = g_file_get_path (checkoutdir);
-          g_prefix_error (error, "While trying to checkout %s into %s: ", rootpath, checkoutpath);
+          g_prefix_error (error, "While trying to checkout %s into %s: ", checksum, checkoutdirpath);
           return FALSE;
         }
     }
   else
     {
-      OstreeRepoCheckoutOptions options = { 0, };
       g_autofree char *checkoutdirpath = g_file_get_path (checkoutdir);
       g_autoptr(GFile) files = g_file_get_child (checkoutdir, "files");
       int i;
@@ -2606,8 +2626,6 @@ flatpak_dir_deploy (FlatpakDir          *self,
       if (!g_file_make_directory_with_parents (files, cancellable, error))
         return FALSE;
 
-      options.mode = OSTREE_REPO_CHECKOUT_MODE_USER;
-      options.overwrite_mode = OSTREE_REPO_CHECKOUT_OVERWRITE_UNION_FILES;
       options.subpath = "/metadata";
 
       access ("checkout metadata", 0);
@@ -2723,6 +2741,15 @@ flatpak_dir_deploy (FlatpakDir          *self,
   if (!flatpak_variant_save (deploy_data_file, deploy_data, cancellable, error))
     return FALSE;
 
+  if (!glnx_opendirat (AT_FDCWD, checkoutdirpath, TRUE, &checkoutdir_dfd, error))
+    return FALSE;
+
+  if (syncfs (checkoutdir_dfd) != 0)
+    {
+      glnx_set_error_from_errno (error);
+      return FALSE;
+    }
+
   if (!g_file_move (checkoutdir, real_checkoutdir, G_FILE_COPY_NO_FALLBACK_FOR_MOVE,
                     cancellable, NULL, NULL, error))
     return FALSE;
@@ -2743,6 +2770,7 @@ flatpak_dir_deploy_install (FlatpakDir   *self,
 {
   g_auto(GLnxLockFile) lock = GLNX_LOCK_FILE_INIT;
   g_autoptr(GFile) deploy_base = NULL;
+  g_autoptr(GFile) old_deploy_dir = NULL;
   gboolean created_deploy_base = FALSE;
   gboolean ret = FALSE;
   g_autoptr(GError) local_error = NULL;
@@ -2752,22 +2780,24 @@ flatpak_dir_deploy_install (FlatpakDir   *self,
                          cancellable, error))
     goto out;
 
+  old_deploy_dir = flatpak_dir_get_if_deployed (self, ref, NULL, cancellable);
+  if (old_deploy_dir != NULL)
+    {
+      g_set_error (error, FLATPAK_ERROR,
+                   FLATPAK_ERROR_ALREADY_INSTALLED,
+                   "%s branch %s already installed",
+                   ref_parts[1], ref_parts[3]);
+      goto out;
+    }
+
   deploy_base = flatpak_dir_get_deploy_dir (self, ref);
   if (!g_file_make_directory_with_parents (deploy_base, cancellable, &local_error))
     {
-      if (g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_EXISTS))
-        {
-          g_set_error (error,
-                       G_IO_ERROR, G_IO_ERROR_EXISTS,
-                       "%s branch %s already installed",
-                       ref_parts[1], ref_parts[3]);
-        }
-      else
+      if (!g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_EXISTS))
         {
           g_propagate_error (error, g_steal_pointer (&local_error));
+          goto out;
         }
-
-      goto out;
     }
 
   /* After we create the deploy base we must goto out on errors */
@@ -3708,14 +3738,17 @@ flatpak_dir_lookup_cached_summary (FlatpakDir  *self,
   return res;
 }
 
-static GBytes *
+static void
 flatpak_dir_cache_summary (FlatpakDir  *self,
                            GBytes      *bytes,
                            const char  *name,
                            const char  *url)
 {
   CachedSummary *summary;
-  GBytes *res = NULL;
+
+  /* No sense caching the summary if there isn't one */
+  if (!bytes)
+      return;
 
   G_LOCK (cache);
 
@@ -3726,8 +3759,6 @@ flatpak_dir_cache_summary (FlatpakDir  *self,
   g_hash_table_insert (self->summary_cache, summary->remote, summary);
 
   G_UNLOCK (cache);
-
-  return res;
 }
 
 static gboolean
@@ -3790,7 +3821,8 @@ flatpak_dir_remote_list_refs (FlatpakDir       *self,
     return FALSE;
 
   if (summary_bytes == NULL)
-    return flatpak_fail (error, "Remote refs not available; server has no summary file\n");
+    return flatpak_fail (error, "Remote listing not available; server has no summary file\n" \
+                                "Check the URL passed to remote-add was valid\n");
 
   ret_all_refs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
   summary = g_variant_new_from_bytes (OSTREE_SUMMARY_GVARIANT_FORMAT,
@@ -3832,6 +3864,154 @@ flatpak_dir_remote_list_refs (FlatpakDir       *self,
   return TRUE;
 }
 
+GPtrArray *
+find_matching_refs (GHashTable *refs,
+                    const char   *opt_name,
+                    const char   *opt_branch,
+                    const char   *opt_arch,
+                    gboolean      app,
+                    gboolean      runtime,
+                    GError      **error)
+{
+  g_autoptr(GPtrArray) matched_refs = NULL;
+  const char *arch = NULL;
+  GHashTableIter hash_iter;
+  gpointer key;
+
+  if (opt_name && !flatpak_is_valid_name (opt_name))
+    {
+      flatpak_fail (error, "'%s' is not a valid name", opt_name);
+      return NULL;
+    }
+
+  if (opt_branch && !flatpak_is_valid_branch (opt_branch))
+    {
+      flatpak_fail (error, "'%s' is not a valid branch name", opt_branch);
+      return NULL;
+    }
+
+  matched_refs = g_ptr_array_new_with_free_func (g_free);
+
+  arch = opt_arch;
+  if (arch == NULL)
+    arch = flatpak_get_arch ();
+
+  g_hash_table_iter_init (&hash_iter, refs);
+  while (g_hash_table_iter_next (&hash_iter, &key, NULL))
+    {
+      g_autofree char *ref = NULL;
+      g_auto(GStrv) parts = NULL;
+      gboolean is_app, is_runtime;
+
+      /* Unprefix any remote name if needed */
+      ostree_parse_refspec (key, NULL, &ref, NULL);
+      if (ref == NULL)
+        continue;
+
+      is_app = g_str_has_prefix (ref, "app/");
+      is_runtime = g_str_has_prefix (ref, "runtime/");
+
+      if ((!app && is_app) ||
+          (!runtime && is_runtime) ||
+          (!is_app && !is_runtime))
+        continue;
+
+      parts = flatpak_decompose_ref (ref, NULL);
+      if (parts == NULL)
+        continue;
+
+      if (opt_name != NULL && strcmp (opt_name, parts[1]) != 0)
+        continue;
+
+      if (strcmp (parts[2], arch) != 0)
+        continue;
+
+      if (opt_branch != NULL && strcmp (opt_branch, parts[3]) != 0)
+        continue;
+
+      g_ptr_array_add (matched_refs, g_steal_pointer (&ref));
+    }
+
+  return g_steal_pointer (&matched_refs);
+}
+
+
+char *
+find_matching_ref (GHashTable *refs,
+                   const char   *name,
+                   const char   *opt_branch,
+                   const char   *opt_arch,
+                   gboolean      app,
+                   gboolean      runtime,
+                   GError      **error)
+{
+  g_autoptr(GPtrArray) matched_refs = NULL;
+
+  matched_refs = find_matching_refs (refs, name, opt_branch, opt_arch,
+                                     app, runtime, error);
+  if (matched_refs == NULL)
+    return NULL;
+
+  if (matched_refs->len == 0)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                   "Nothing matches %s", name);
+      return NULL;
+    }
+
+  if (matched_refs->len > 1)
+    {
+      int i;
+      g_autoptr(GString) err = g_string_new ("");
+      g_string_printf (err, "Multiple branches available for %s, you must specify one of: ", name);
+      for (i = 0; i < matched_refs->len; i++)
+        {
+          g_auto(GStrv) parts = flatpak_decompose_ref (g_ptr_array_index (matched_refs, i), NULL);
+          if (i != 0)
+            g_string_append (err, ", ");
+
+          g_string_append (err, parts[3]);
+        }
+
+      flatpak_fail (error, err->str);
+      return NULL;
+    }
+
+  return g_strdup (g_ptr_array_index (matched_refs, 0));
+}
+
+char **
+flatpak_dir_find_remote_refs (FlatpakDir   *self,
+                             const char   *remote,
+                             const char   *name,
+                             const char   *opt_branch,
+                             const char   *opt_arch,
+                             gboolean      app,
+                             gboolean      runtime,
+                             GCancellable *cancellable,
+                             GError      **error)
+{
+  g_autofree char *refspec_prefix = NULL;
+  g_autoptr(GHashTable) remote_refs = NULL;
+  GPtrArray *matched_refs;
+
+  if (!flatpak_dir_ensure_repo (self, NULL, error))
+    return NULL;
+
+  refspec_prefix = g_strconcat (remote, ":.", NULL);
+
+  if (!flatpak_dir_remote_list_refs (self, remote,
+                                     &remote_refs, cancellable, error))
+    return NULL;
+
+  matched_refs = find_matching_refs (remote_refs, name, opt_branch,
+                                      opt_arch, app, runtime, error);
+  if (matched_refs == NULL)
+    return NULL;
+
+  g_ptr_array_add (matched_refs, NULL);
+  return (char **)g_ptr_array_free (matched_refs, FALSE);
+}
 
 char *
 flatpak_dir_find_remote_ref (FlatpakDir   *self,
@@ -3845,92 +4025,115 @@ flatpak_dir_find_remote_ref (FlatpakDir   *self,
                              GCancellable *cancellable,
                              GError      **error)
 {
-  g_autofree char *app_ref = NULL;
-  g_autofree char *runtime_ref = NULL;
-  g_autofree char *app_ref_with_remote = NULL;
-  g_autofree char *runtime_ref_with_remote = NULL;
-
-  g_autoptr(GVariant) summary = NULL;
-  g_autoptr(GVariant) refs = NULL;
-  g_autoptr(GBytes) summary_bytes = NULL;
+  g_autofree char *refspec_prefix = NULL;
+  g_autofree char *remote_ref = NULL;
+  g_autoptr(GHashTable) remote_refs = NULL;
+  g_autoptr(GError) my_error = NULL;
 
   if (!flatpak_dir_ensure_repo (self, NULL, error))
     return NULL;
 
-  if (app)
-    {
-      app_ref = flatpak_compose_ref (TRUE, name, opt_branch, opt_arch, error);
-      if (app_ref == NULL)
-        return NULL;
-      app_ref_with_remote = g_strconcat (remote, ":", app_ref, NULL);
-    }
+  refspec_prefix = g_strconcat (remote, ":.", NULL);
 
-  if (runtime)
-    {
-      runtime_ref = flatpak_compose_ref (FALSE, name, opt_branch, opt_arch, error);
-      if (runtime_ref == NULL)
-        return NULL;
-      runtime_ref_with_remote = g_strconcat (remote, ":", app_ref, NULL);
-    }
-
-  /* First look for a local ref */
-
-  if (app_ref &&
-      ostree_repo_resolve_rev (self->repo, app_ref_with_remote,
-                               FALSE, NULL, NULL))
-    {
-      if (is_app)
-        *is_app = TRUE;
-      return g_steal_pointer (&app_ref);
-    }
-
-  if (runtime_ref &&
-      ostree_repo_resolve_rev (self->repo, runtime_ref_with_remote,
-                               FALSE, NULL, NULL))
-    {
-      if (is_app)
-        *is_app = FALSE;
-      return g_steal_pointer (&runtime_ref);
-    }
-
-  if (!flatpak_dir_remote_fetch_summary (self, remote,
-                                         &summary_bytes,
-                                         cancellable, error))
+  if (!flatpak_dir_remote_list_refs (self, remote,
+                                     &remote_refs, cancellable, error))
     return NULL;
 
-  if (summary_bytes == NULL)
+  remote_ref = find_matching_ref (remote_refs, name, opt_branch,
+                                  opt_arch, app, runtime, &my_error);
+  if (remote_ref == NULL)
     {
-      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-                   "Can't find %s in remote %s; server has no summary file", name, remote);
-      return NULL;
+      if (g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+        g_clear_error (&my_error);
+      else
+        {
+          g_propagate_error (error, g_steal_pointer (&my_error));
+          return NULL;
+        }
     }
-
-  summary = g_variant_ref_sink (g_variant_new_from_bytes (OSTREE_SUMMARY_GVARIANT_FORMAT, summary_bytes, FALSE));
-  refs = g_variant_get_child_value (summary, 0);
-
-  if (app_ref && flatpak_summary_lookup_ref (summary, app_ref, NULL))
+  else
     {
       if (is_app)
-        *is_app = TRUE;
-      return g_steal_pointer (&app_ref);
-    }
+        *is_app = g_str_has_prefix (remote_ref, "app/");
 
-  if (runtime_ref && flatpak_summary_lookup_ref (summary, runtime_ref, NULL))
-    {
-      if (is_app)
-        *is_app = FALSE;
-      return g_steal_pointer (&runtime_ref);
+      return g_steal_pointer (&remote_ref);
     }
 
   g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-               "Can't find %s %s in remote %s", name, opt_branch ? opt_branch : "master", remote);
+               "Can't find %s in remote %s", name, remote);
 
   return NULL;
 }
 
+
+static GHashTable *
+flatpak_dir_get_all_installed_refs (FlatpakDir *self,
+                                    gboolean    app,
+                                    gboolean    runtime,
+                                    GError    **error)
+{
+  g_autoptr(GHashTable) local_refs = NULL;
+  int i;
+
+  if (!flatpak_dir_ensure_repo (self, NULL, error))
+    return NULL;
+
+  local_refs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+  if (app)
+    {
+      g_auto(GStrv) app_refs = NULL;
+
+      if (!flatpak_dir_list_refs (self, "app", &app_refs, NULL, error))
+        return NULL;
+
+      for (i = 0; app_refs[i] != NULL; i++)
+        g_hash_table_insert (local_refs, g_strdup (app_refs[i]),
+                             GINT_TO_POINTER (1));
+    }
+  if (runtime)
+    {
+      g_auto(GStrv) runtime_refs = NULL;
+
+      if (!flatpak_dir_list_refs (self, "runtime", &runtime_refs, NULL, error))
+        return NULL;
+
+      for (i = 0; runtime_refs[i] != NULL; i++)
+        g_hash_table_insert (local_refs, g_strdup (runtime_refs[i]),
+                             GINT_TO_POINTER (1));
+    }
+
+  return g_steal_pointer (&local_refs);
+}
+
+char **
+flatpak_dir_find_installed_refs (FlatpakDir *self,
+                                 const char *opt_name,
+                                 const char *opt_branch,
+                                 const char *opt_arch,
+                                 gboolean    app,
+                                 gboolean    runtime,
+                                 GError    **error)
+{
+  g_autoptr(GHashTable) local_refs = NULL;
+  GPtrArray *matched_refs;
+
+  local_refs = flatpak_dir_get_all_installed_refs (self, app, runtime, error);
+  if (local_refs == NULL)
+    return NULL;
+
+  matched_refs = find_matching_refs (local_refs, opt_name, opt_branch,
+                                      opt_arch, app, runtime, error);
+  if (matched_refs == NULL)
+    return NULL;
+
+  g_ptr_array_add (matched_refs, NULL);
+  return (char **)g_ptr_array_free (matched_refs, FALSE);
+
+}
+
 char *
 flatpak_dir_find_installed_ref (FlatpakDir *self,
-                                const char *name,
+                                const char *opt_name,
                                 const char *opt_branch,
                                 const char *opt_arch,
                                 gboolean    app,
@@ -3938,45 +4141,36 @@ flatpak_dir_find_installed_ref (FlatpakDir *self,
                                 gboolean   *is_app,
                                 GError    **error)
 {
-  if (app)
+  g_autofree char *local_ref = NULL;
+  g_autoptr(GHashTable) local_refs = NULL;
+  g_autoptr(GError) my_error = NULL;
+
+  local_refs = flatpak_dir_get_all_installed_refs (self, app, runtime, error);
+  if (local_refs == NULL)
+    return NULL;
+
+  local_ref = find_matching_ref (local_refs, opt_name, opt_branch,
+                                  opt_arch, app, runtime, &my_error);
+  if (local_ref == NULL)
     {
-      g_autofree char *app_ref = NULL;
-      g_autoptr(GFile) deploy_base = NULL;
-
-      app_ref = flatpak_compose_ref (TRUE, name, opt_branch, opt_arch, error);
-      if (app_ref == NULL)
-        return NULL;
-
-
-      deploy_base = flatpak_dir_get_deploy_dir (self, app_ref);
-      if (g_file_query_exists (deploy_base, NULL))
+      if (g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+        g_clear_error (&my_error);
+      else
         {
-          if (is_app)
-            *is_app = TRUE;
-          return g_steal_pointer (&app_ref);
+          g_propagate_error (error, g_steal_pointer (&my_error));
+          return NULL;
         }
     }
-
-  if (runtime)
+  else
     {
-      g_autofree char *runtime_ref = NULL;
-      g_autoptr(GFile) deploy_base = NULL;
+      if (is_app)
+        *is_app = g_str_has_prefix (local_ref, "app/");
 
-      runtime_ref = flatpak_compose_ref (FALSE, name, opt_branch, opt_arch, error);
-      if (runtime_ref == NULL)
-        return NULL;
-
-      deploy_base = flatpak_dir_get_deploy_dir (self, runtime_ref);
-      if (g_file_query_exists (deploy_base, NULL))
-        {
-          if (is_app)
-            *is_app = FALSE;
-          return g_steal_pointer (&runtime_ref);
-        }
+      return g_steal_pointer (&local_ref);
     }
 
   g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
-               "%s %s not installed", name, opt_branch ? opt_branch : "master");
+               "%s %s not installed", opt_name ? opt_name : "*unspecified*", opt_branch ? opt_branch : "master");
   return NULL;
 }
 
