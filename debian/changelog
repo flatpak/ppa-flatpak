@@ -8,6 +8,7 @@ flatpak (0.6.4-1) UNRELEASED; urgency=medium
     - d/p/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch:
         drop, no longer necessary
   * d/control: update Homepage
+  * d/copyright: update Source
 
  -- Simon McVittie <smcv@debian.org>  Fri, 03 Jun 2016 15:48:44 +0100
 
