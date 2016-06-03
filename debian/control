@@ -36,7 +36,7 @@ Build-Depends:
  procps,
  xsltproc,
 Standards-Version: 3.9.8
-Homepage: https://wiki.freedesktop.org/www/Software/xdg-app/
+Homepage: http://flatpak.org/
 Vcs-Git: https://anonscm.debian.org/git/collab-maint/flatpak.git
 Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/flatpak.git
 
