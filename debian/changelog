@@ -11,6 +11,8 @@ flatpak (0.6.4-1) UNRELEASED; urgency=medium
         drop, no longer necessary
   * d/control: update Homepage
   * d/copyright: update Source
+  * tests: depend on attr, for setfattr, to get better test coverage
+    (if /var/tmp on the testbed supports xattrs)
 
  -- Simon McVittie <smcv@debian.org>  Fri, 03 Jun 2016 15:48:44 +0100
 

@@ -5,6 +5,7 @@ Depends:
 
 Tests: builder
 Depends:
+ attr,
  flatpak-builder,
  flatpak-tests,
  gnome-desktop-testing,
@@ -12,5 +13,6 @@ Depends:
 
 Tests: gnome-desktop-testing
 Depends:
+ attr,
  flatpak-tests,
  gnome-desktop-testing,
