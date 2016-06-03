@@ -5,11 +5,12 @@ exec 2>&1
 
 e=0
 
-gnome-desktop-testing-runner -l flatpak | while read t; do
+gnome-desktop-testing-runner -l Flatpak | while read t; do
 	t="${t%% *}"
 
 	case "$t" in
-		(flatpak/test-builder.sh.test)
+		(Flatpak/test-builder.sh.test)
+			# has more dependencies
 			continue
 			;;
 	esac

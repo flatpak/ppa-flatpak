@@ -4,6 +4,7 @@ flatpak (0.6.4-1) UNRELEASED; urgency=medium
     - d/p/Correctly-handle-with-privileged-group.patch: drop, no longer
       necessary
     - adjust packaging for new name and location of flatpak-bwrap
+    - adjust packaging for new location of installed-tests
   * Unconditionally recommend gtk-update-icon-cache now that it's in
     testing
     - d/p/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch:
