@@ -32,7 +32,7 @@ override_dh_install:
 override_dh_fixperms-arch:
 	dh_fixperms -a
 	if ! dpkg-vendor --is Ubuntu; then \
-		chmod 4755 debian/flatpak/usr/lib/*/flatpak/bwrap; \
+		chmod 4755 debian/flatpak/usr/lib/flatpak/flatpak-bwrap; \
 	fi
 
 override_dh_auto_test:
