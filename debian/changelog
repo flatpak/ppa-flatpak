@@ -12,7 +12,7 @@ flatpak (0.6.4-1) UNRELEASED; urgency=medium
   * d/control: update Homepage
   * d/copyright: update Source
   * tests: depend on attr, for setfattr, to get better test coverage
-    (if /var/tmp on the testbed supports xattrs)
+    (still skipped if /var/tmp on the testbed does not support xattrs)
   * d/p/flatpak-run-don-t-fail-if-there-are-no-system-fonts.patch:
     don't fail uses of flatpak-run or the builder test if the system
     has no fonts
