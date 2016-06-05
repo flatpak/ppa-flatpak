@@ -6,6 +6,7 @@ In a minimal environment (like the one where we run installed-tests
 in Debian), we might not have /usr/share/fonts.
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/flatpak/flatpak/pull/94
 ---
  common/flatpak-run.c | 9 ++++++---
  1 file changed, 6 insertions(+), 3 deletions(-)
