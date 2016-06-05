@@ -16,6 +16,12 @@ flatpak (0.6.4-1) UNRELEASED; urgency=medium
   * d/p/flatpak-run-don-t-fail-if-there-are-no-system-fonts.patch:
     don't fail uses of flatpak-run or the builder test if the system
     has no fonts
+  * debian/org.freedesktop.Flatpak.pkla: add an equivalent of the
+    upstream JavaScript polkit rules (used by polkit >= 0.106),
+    for use with polkit 0.105 as shipped in Debian. This allows members
+    of group 'sudo' to install apps and runtimes into the system-wide
+    location, from any remote that was previously added/trusted by a
+    privileged user, without re-authenticating. (Closes: #825766)
 
  -- Simon McVittie <smcv@debian.org>  Fri, 03 Jun 2016 15:48:44 +0100
 
