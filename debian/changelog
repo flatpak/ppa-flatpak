@@ -1,4 +1,4 @@
-flatpak (0.6.4-1) UNRELEASED; urgency=medium
+flatpak (0.6.4-1) experimental; urgency=medium
 
   * New upstream release
     - d/p/Correctly-handle-with-privileged-group.patch: drop, no longer
@@ -23,7 +23,7 @@ flatpak (0.6.4-1) UNRELEASED; urgency=medium
     location, from any remote that was previously added/trusted by a
     privileged user, without re-authenticating. (Closes: #825766)
 
- -- Simon McVittie <smcv@debian.org>  Fri, 03 Jun 2016 15:48:44 +0100
+ -- Simon McVittie <smcv@debian.org>  Sun, 05 Jun 2016 15:19:00 +0100
 
 flatpak (0.6.2-1) experimental; urgency=medium
 
