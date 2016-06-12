@@ -213,6 +213,13 @@ struct _FlatpakSystemHelperIface
     const gchar *arg_origin,
     const gchar *arg_arch);
 
+  gboolean (*handle_install_bundle) (
+    FlatpakSystemHelper *object,
+    GDBusMethodInvocation *invocation,
+    const gchar *arg_bundle_path,
+    guint arg_flags,
+    GVariant *arg_gpg_key);
+
   gboolean (*handle_uninstall) (
     FlatpakSystemHelper *object,
     GDBusMethodInvocation *invocation,
@@ -239,6 +246,11 @@ void flatpak_system_helper_complete_deploy_appstream (
 void flatpak_system_helper_complete_uninstall (
     FlatpakSystemHelper *object,
     GDBusMethodInvocation *invocation);
+
+void flatpak_system_helper_complete_install_bundle (
+    FlatpakSystemHelper *object,
+    GDBusMethodInvocation *invocation,
+    const gchar *ref);
 
 void flatpak_system_helper_complete_configure_remote (
     FlatpakSystemHelper *object,
@@ -312,6 +324,30 @@ gboolean flatpak_system_helper_call_uninstall_sync (
     FlatpakSystemHelper *proxy,
     guint arg_flags,
     const gchar *arg_ref,
+    GCancellable *cancellable,
+    GError **error);
+
+void flatpak_system_helper_call_install_bundle (
+    FlatpakSystemHelper *proxy,
+    const gchar *arg_bundle_path,
+    guint arg_flags,
+    GVariant *arg_gpg_key,
+    GCancellable *cancellable,
+    GAsyncReadyCallback callback,
+    gpointer user_data);
+
+gboolean flatpak_system_helper_call_install_bundle_finish (
+    FlatpakSystemHelper *proxy,
+    gchar **out_ref,
+    GAsyncResult *res,
+    GError **error);
+
+gboolean flatpak_system_helper_call_install_bundle_sync (
+    FlatpakSystemHelper *proxy,
+    const gchar *arg_bundle_path,
+    guint arg_flags,
+    GVariant *arg_gpg_key,
+    gchar **out_ref,
     GCancellable *cancellable,
     GError **error);
 

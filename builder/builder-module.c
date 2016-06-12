@@ -49,6 +49,7 @@ struct BuilderModule
   gboolean        rm_configure;
   gboolean        no_autogen;
   gboolean        no_parallel_make;
+  gboolean        no_python_timestamp_fix;
   gboolean        cmake;
   gboolean        builddir;
   BuilderOptions *build_options;
@@ -56,6 +57,7 @@ struct BuilderModule
   char          **cleanup;
   char          **cleanup_platform;
   GList          *sources;
+  GList          *modules;
 };
 
 typedef struct
@@ -76,6 +78,7 @@ enum {
   PROP_DISABLED,
   PROP_NO_AUTOGEN,
   PROP_NO_PARALLEL_MAKE,
+  PROP_NO_PYTHON_TIMESTAMP_FIX,
   PROP_CMAKE,
   PROP_BUILDDIR,
   PROP_CONFIG_OPTS,
@@ -86,6 +89,7 @@ enum {
   PROP_CLEANUP,
   PROP_CLEANUP_PLATFORM,
   PROP_POST_INSTALL,
+  PROP_MODULES,
   LAST_PROP
 };
 
@@ -105,6 +109,7 @@ builder_module_finalize (GObject *object)
   g_list_free_full (self->sources, g_object_unref);
   g_strfreev (self->cleanup);
   g_strfreev (self->cleanup_platform);
+  g_list_free_full (self->modules, g_object_unref);
 
   if (self->changes)
     g_ptr_array_unref (self->changes);
@@ -146,6 +151,10 @@ builder_module_get_property (GObject    *object,
       g_value_set_boolean (value, self->no_parallel_make);
       break;
 
+    case PROP_NO_PYTHON_TIMESTAMP_FIX:
+      g_value_set_boolean (value, self->no_python_timestamp_fix);
+      break;
+
     case PROP_CMAKE:
       g_value_set_boolean (value, self->cmake);
       break;
@@ -184,6 +193,10 @@ builder_module_get_property (GObject    *object,
 
     case PROP_CLEANUP_PLATFORM:
       g_value_set_boxed (value, self->cleanup_platform);
+      break;
+
+    case PROP_MODULES:
+      g_value_set_pointer (value, self->modules);
       break;
 
     default:
@@ -230,6 +243,10 @@ builder_module_set_property (GObject      *object,
 
     case PROP_NO_PARALLEL_MAKE:
       self->no_parallel_make = g_value_get_boolean (value);
+      break;
+
+    case PROP_NO_PYTHON_TIMESTAMP_FIX:
+      self->no_python_timestamp_fix = g_value_get_boolean (value);
       break;
 
     case PROP_CMAKE:
@@ -286,6 +303,12 @@ builder_module_set_property (GObject      *object,
       g_strfreev (tmp);
       break;
 
+    case PROP_MODULES:
+      g_list_free_full (self->modules, g_object_unref);
+      /* NOTE: This takes ownership of the list! */
+      self->modules = g_value_get_pointer (value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
     }
@@ -338,6 +361,13 @@ builder_module_class_init (BuilderModuleClass *klass)
   g_object_class_install_property (object_class,
                                    PROP_NO_PARALLEL_MAKE,
                                    g_param_spec_boolean ("no-parallel-make",
+                                                         "",
+                                                         "",
+                                                         FALSE,
+                                                         G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_NO_PYTHON_TIMESTAMP_FIX,
+                                   g_param_spec_boolean ("no-python-timestamp-fix",
                                                          "",
                                                          "",
                                                          FALSE,
@@ -411,6 +441,12 @@ builder_module_class_init (BuilderModuleClass *klass)
                                                        "",
                                                        G_TYPE_STRV,
                                                        G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_MODULES,
+                                   g_param_spec_pointer ("modules",
+                                                         "",
+                                                         "",
+                                                         G_PARAM_READWRITE));
 }
 
 static void
@@ -424,7 +460,31 @@ builder_module_serialize_property (JsonSerializable *serializable,
                                    const GValue     *value,
                                    GParamSpec       *pspec)
 {
-  if (strcmp (property_name, "sources") == 0)
+ if (strcmp (property_name, "modules") == 0)
+    {
+      BuilderModule *self = BUILDER_MODULE (serializable);
+      JsonNode *retval = NULL;
+      GList *l;
+
+      if (self->modules)
+        {
+          JsonArray *array;
+
+          array = json_array_sized_new (g_list_length (self->modules));
+
+          for (l = self->modules; l != NULL; l = l->next)
+            {
+              JsonNode *child = json_gobject_serialize (l->data);
+              json_array_add_element (array, child);
+            }
+
+          retval = json_node_init_array (json_node_alloc (), array);
+          json_array_unref (array);
+        }
+
+      return retval;
+    }
+  else if (strcmp (property_name, "sources") == 0)
     {
       BuilderModule *self = BUILDER_MODULE (serializable);
       JsonNode *retval = NULL;
@@ -464,7 +524,56 @@ builder_module_deserialize_property (JsonSerializable *serializable,
                                      GParamSpec       *pspec,
                                      JsonNode         *property_node)
 {
-  if (strcmp (property_name, "sources") == 0)
+ if (strcmp (property_name, "modules") == 0)
+    {
+      if (JSON_NODE_TYPE (property_node) == JSON_NODE_NULL)
+        {
+          g_value_set_pointer (value, NULL);
+          return TRUE;
+        }
+      else if (JSON_NODE_TYPE (property_node) == JSON_NODE_ARRAY)
+        {
+          JsonArray *array = json_node_get_array (property_node);
+          guint i, array_len = json_array_get_length (array);
+          GList *modules = NULL;
+          GObject *module;
+
+          for (i = 0; i < array_len; i++)
+            {
+              JsonNode *element_node = json_array_get_element (array, i);
+
+              module = NULL;
+
+              if (JSON_NODE_HOLDS_VALUE (element_node) &&
+                  json_node_get_value_type (element_node) == G_TYPE_STRING)
+                {
+                  const char *module_path = json_node_get_string (element_node);
+                  g_autofree char *json = NULL;
+
+                  if (g_file_get_contents (module_path, &json, NULL, NULL))
+                    module = json_gobject_from_data (BUILDER_TYPE_MODULE,
+                                                     json, -1, NULL);
+                }
+              else if (JSON_NODE_HOLDS_OBJECT (element_node))
+                module = json_gobject_deserialize (BUILDER_TYPE_MODULE, element_node);
+
+              if (module == NULL)
+                {
+                  g_list_free_full (modules, g_object_unref);
+                  return FALSE;
+                }
+
+              modules = g_list_prepend (modules, module);
+            }
+
+          g_value_set_pointer (value, g_list_reverse (modules));
+
+          return TRUE;
+        }
+
+      return FALSE;
+    }
+  else if (strcmp (property_name, "sources") == 0)
     {
       if (JSON_NODE_TYPE (property_node) == JSON_NODE_NULL)
         {
@@ -537,6 +646,12 @@ GList *
 builder_module_get_sources (BuilderModule *self)
 {
   return self->sources;
+}
+
+GList *
+builder_module_get_modules (BuilderModule *self)
+{
+  return self->modules;
 }
 
 gboolean
@@ -868,6 +983,124 @@ builder_module_handle_debuginfo (BuilderModule  *self,
   return TRUE;
 }
 
+static gboolean
+fixup_python_timestamp (int dfd,
+                        const char *rel_path,
+                        const char *full_path,
+                        GCancellable  *cancellable,
+                        GError       **error)
+{
+  g_auto(GLnxDirFdIterator) dfd_iter = { 0, };
+
+  glnx_dirfd_iterator_init_at (dfd, rel_path, FALSE, &dfd_iter, NULL);
+
+  while (TRUE)
+    {
+      struct dirent *dent;
+
+      if (!glnx_dirfd_iterator_next_dent_ensure_dtype (&dfd_iter, &dent, NULL, NULL) || dent == NULL)
+        break;
+
+      if (dent->d_type == DT_DIR)
+        {
+          g_autofree char *child_full_path = g_build_filename (full_path, dent->d_name, NULL);
+          if (!fixup_python_timestamp (dfd_iter.fd, dent->d_name, child_full_path,
+                                       cancellable, error))
+            return FALSE;
+        }
+      else if (dent->d_type == DT_REG &&
+               dfd != AT_FDCWD &&
+               (g_str_has_suffix (dent->d_name, ".pyc") ||
+                g_str_has_suffix (dent->d_name, ".pyo")))
+        {
+          glnx_fd_close int fd = -1;
+          guint8 buffer[8];
+          ssize_t res;
+          guint32 mtime;
+          g_autofree char *new_path = NULL;
+          struct stat stbuf;
+
+          fd = openat (dfd_iter.fd, dent->d_name, O_RDWR | O_CLOEXEC | O_NOFOLLOW);
+          if (fd == -1)
+            {
+              g_warning ("Can't open %s", dent->d_name);
+              continue;
+            }
+
+          res = read (fd, buffer, 8);
+          if (res != 8)
+            {
+              g_warning ("Short read for %s", dent->d_name);
+              continue;
+            }
+
+          if (buffer[2] != 0x0d || buffer[3] != 0x0a)
+            {
+              g_debug ("Not matching python magic: %s", dent->d_name);
+              continue;
+            }
+
+          mtime =
+            (buffer[4] << 8*0) |
+            (buffer[5] << 8*1) |
+            (buffer[6] << 8*2) |
+            (buffer[7] << 8*3);
+
+          if (mtime == 0)
+            continue; /* Already zero, ignore */
+
+          if (strcmp (rel_path, "__pycache__") == 0)
+            {
+              /* Python3 */
+              g_autofree char *base = g_strdup (dent->d_name);
+              char *dot;
+
+              dot = strrchr (base, '.');
+              if (dot == NULL)
+                continue;
+              *dot = 0;
+
+              dot = strrchr (base, '.');
+              if (dot == NULL)
+                continue;
+              *dot = 0;
+
+              new_path = g_strconcat ("../", base, ".py", NULL);
+            }
+          else
+            {
+              /* Python2 */
+              new_path = g_strndup (dent->d_name, strlen (dent->d_name) - 1);
+            }
+
+          if (fstatat (dfd_iter.fd, new_path, &stbuf, AT_SYMLINK_NOFOLLOW) != 0)
+            continue;
+
+          if (stbuf.st_mtime != mtime)
+            continue;
+
+          buffer[4] = buffer[5] = buffer[6] = buffer[7] = 0;
+
+          res = pwrite (fd, buffer, 8, 0);
+          if (res != 8)
+            {
+              glnx_set_error_from_errno (error);
+              return FALSE;
+            }
+
+          {
+            g_autofree char *child_full_path = g_build_filename (full_path, dent->d_name, NULL);
+            g_print ("Fixed up header mtime for %s\n", child_full_path);
+          }
+
+          /* The mtime will be zeroed on cache commit. We don't want to do that now, because multiple
+             files could reference one .py file and we need the mtimes to match for them all */
+        }
+    }
+
+  return TRUE;
+}
+
 gboolean
 builder_module_build (BuilderModule  *self,
                       BuilderCache   *cache,
@@ -1171,6 +1404,15 @@ builder_module_build (BuilderModule  *self,
         }
     }
 
+  if (!self->no_python_timestamp_fix)
+    {
+      if (!fixup_python_timestamp (AT_FDCWD,
+                                   gs_file_get_path_cached (app_dir), "/",
+                                   NULL,
+                                   error))
+        return FALSE;
+    }
+
   if (!builder_module_handle_debuginfo (self, app_dir, cache, context, error))
     return FALSE;
 
@@ -1233,6 +1475,7 @@ builder_module_checksum (BuilderModule  *self,
   builder_cache_checksum_boolean (cache, self->no_autogen);
   builder_cache_checksum_boolean (cache, self->disabled);
   builder_cache_checksum_boolean (cache, self->no_parallel_make);
+  builder_cache_checksum_boolean (cache, self->no_python_timestamp_fix);
   builder_cache_checksum_boolean (cache, self->cmake);
   builder_cache_checksum_boolean (cache, self->builddir);
 
@@ -1318,6 +1561,9 @@ builder_module_cleanup_collect (BuilderModule  *self,
   int i;
   const char **global_patterns;
   const char **local_patterns;
+
+  if (!self->changes)
+    return;
 
   if (platform)
     {

@@ -1557,7 +1557,7 @@ flatpak_run_add_system_dbus_args (FlatpakContext *context,
 {
   const char *dbus_address = g_getenv ("DBUS_SYSTEM_BUS_ADDRESS");
   g_autofree char *real_dbus_address = NULL;
-  char *dbus_system_socket = NULL;
+  g_autofree char *dbus_system_socket = NULL;
 
   if (dbus_address != NULL)
     dbus_system_socket = extract_unix_path_from_dbus_address (dbus_address);
@@ -1802,6 +1802,7 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
               path = g_build_filename ("/", dirent->d_name, NULL);
               add_file_arg (argv_array, fs_mode, path);
             }
+          closedir (dir);
         }
       add_file_arg (argv_array, fs_mode, "/run/media");
     }
@@ -2278,9 +2279,12 @@ add_font_path_args (GPtrArray *argv_array)
   g_autoptr(GFile) user_font1 = NULL;
   g_autoptr(GFile) user_font2 = NULL;
 
-  add_args (argv_array,
-            "--bind", SYSTEM_FONTS_DIR, "/run/host/fonts",
-            NULL);
+  if (g_file_test (SYSTEM_FONTS_DIR, G_FILE_TEST_EXISTS))
+    {
+      add_args (argv_array,
+                "--bind", SYSTEM_FONTS_DIR, "/run/host/fonts",
+                NULL);
+    }
 
   home = g_file_new_for_path (g_get_home_dir ());
   user_font1 = g_file_resolve_relative_path (home, ".local/share/fonts");
@@ -2304,7 +2308,7 @@ static void
 add_default_permissions (FlatpakContext *app_context)
 {
   flatpak_context_set_session_bus_policy (app_context,
-                                          "org.freedesktop.portal.Documents",
+                                          "org.freedesktop.portal.*",
                                           FLATPAK_POLICY_TALK);
 }
 
