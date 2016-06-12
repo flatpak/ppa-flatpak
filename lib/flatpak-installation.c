@@ -982,73 +982,94 @@ flatpak_installation_install_bundle (FlatpakInstallation    *self,
                                      GError                **error)
 {
   g_autoptr(FlatpakDir) dir = flatpak_installation_get_dir (self);
-  g_autofree char *ref = NULL;
-  gboolean added_remote = FALSE;
-  g_autoptr(GFile) deploy_base = NULL;
   g_autoptr(FlatpakDir) dir_clone = NULL;
+  g_autofree char *ref = NULL;
   FlatpakInstalledRef *result = NULL;
-  g_autoptr(GVariant) metadata = NULL;
-  g_autofree char *origin = NULL;
-  g_auto(GStrv) parts = NULL;
-  g_autofree char *basename = NULL;
-  g_autoptr(GBytes) gpg_data = NULL;
-  g_autofree char *to_checksum = NULL;
-  g_autofree char *remote = NULL;
-
-  metadata = flatpak_bundle_load (file, &to_checksum,
-                                  &ref,
-                                  &origin,
-                                  NULL,
-                                  &gpg_data,
-                                  error);
-  if (metadata == NULL)
-    return FALSE;
-
-  parts = flatpak_decompose_ref (ref, error);
-  if (parts == NULL)
-    return FALSE;
-
-  deploy_base = flatpak_dir_get_deploy_dir (dir, ref);
-
-  if (g_file_query_exists (deploy_base, cancellable))
-    {
-      g_set_error (error,
-                   FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED,
-                   "%s branch %s already installed", parts[1], parts[3]);
-      return NULL;
-    }
-
-  /* Add a remote for later updates */
-  basename = g_file_get_basename (file);
-  remote = flatpak_dir_create_origin_remote (dir,
-                                             origin,
-                                             parts[1],
-                                             basename,
-                                             gpg_data,
-                                             cancellable,
-                                             error);
-  if (remote == NULL)
-    return FALSE;
-
-  /* From here we need to goto out on error, to clean up */
-  added_remote = TRUE;
 
   /* Pull, prune, etc are not threadsafe, so we work on a copy */
   dir_clone = flatpak_dir_clone (dir);
 
-  if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
-    goto out;
+  if (!flatpak_dir_install_bundle (dir_clone, file, NULL, &ref,
+                                   cancellable, error))
+    return NULL;
 
-  if (!flatpak_pull_from_bundle (flatpak_dir_get_repo (dir_clone),
-                                 file,
-                                 remote,
-                                 ref,
-                                 gpg_data != NULL,
-                                 cancellable,
-                                 error))
-    goto out;
+  result = get_ref (dir, ref, cancellable, error);
+  if (result == NULL)
+    return NULL;
 
-  if (!flatpak_dir_deploy_install (dir_clone, ref, remote, NULL, cancellable, error))
+  return result;
+}
+
+/**
+ * flatpak_installation_install_full:
+ * @self: a #FlatpakInstallation
+ * @flags: set of #FlatpakInstallFlags flag
+ * @remote_name: name of the remote to use
+ * @kind: what this ref contains (an #FlatpakRefKind)
+ * @name: name of the app/runtime to fetch
+ * @arch: (nullable): which architecture to fetch (default: current architecture)
+ * @branch: (nullable): which branch to fetch (default: 'master')
+ * @subpaths: (nullable): A list of subpaths to fetch, or %NULL for everything
+ * @progress: (scope call): progress callback
+ * @progress_data: user data passed to @progress
+ * @cancellable: (nullable): a #GCancellable
+ * @error: return location for a #GError
+ *
+ * Install a new application or runtime.
+ *
+ * Returns: (transfer full): The ref for the newly installed app or %NULL on failure
+ */
+FlatpakInstalledRef *
+flatpak_installation_install_full (FlatpakInstallation    *self,
+                                   FlatpakInstallFlags     flags,
+                                   const char             *remote_name,
+                                   FlatpakRefKind          kind,
+                                   const char             *name,
+                                   const char             *arch,
+                                   const char             *branch,
+                                   const char * const     *subpaths,
+                                   FlatpakProgressCallback progress,
+                                   gpointer                progress_data,
+                                   GCancellable           *cancellable,
+                                   GError                **error)
+{
+  g_autoptr(FlatpakDir) dir = flatpak_installation_get_dir (self);
+  g_autofree char *ref = NULL;
+  g_autoptr(FlatpakDir) dir_clone = NULL;
+  g_autoptr(GMainContext) main_context = NULL;
+  g_autoptr(OstreeAsyncProgress) ostree_progress = NULL;
+  FlatpakInstalledRef *result = NULL;
+  g_autoptr(GFile) deploy_dir = NULL;
+
+  ref = flatpak_compose_ref (kind == FLATPAK_REF_KIND_APP, name, branch, arch, error);
+  if (ref == NULL)
+    return NULL;
+
+  deploy_dir = flatpak_dir_get_if_deployed (dir, ref, NULL, cancellable);
+  if (deploy_dir != NULL)
+    {
+      g_set_error (error,
+                   FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED,
+                   "%s branch %s already installed", name, branch ? branch : "master");
+      return NULL;
+    }
+
+  /* Pull, prune, etc are not threadsafe, so we work on a copy */
+  dir_clone = flatpak_dir_clone (dir);
+
+  /* Work around ostree-pull spinning the default main context for the sync calls */
+  main_context = g_main_context_new ();
+  g_main_context_push_thread_default (main_context);
+
+  if (progress)
+    {
+      ostree_progress = ostree_async_progress_new_and_connect (progress_cb, progress_data);
+      g_object_set_data (G_OBJECT (ostree_progress), "callback", progress);
+      g_object_set_data (G_OBJECT (ostree_progress), "last_progress", GUINT_TO_POINTER (0));
+    }
+
+  if (!flatpak_dir_install (dir_clone, FALSE, FALSE, ref, remote_name, (const char **)subpaths,
+                            ostree_progress, cancellable, error))
     goto out;
 
   result = get_ref (dir, ref, cancellable, error);
@@ -1056,9 +1077,11 @@ flatpak_installation_install_bundle (FlatpakInstallation    *self,
     goto out;
 
 out:
+  if (main_context)
+    g_main_context_pop_thread_default (main_context);
 
-  if (added_remote && result == NULL)
-    ostree_repo_remote_delete (flatpak_dir_get_repo (dir), remote, NULL, NULL);
+  if (ostree_progress)
+    ostree_async_progress_finish (ostree_progress);
 
   return result;
 }
@@ -1092,26 +1115,68 @@ flatpak_installation_install (FlatpakInstallation    *self,
                               GCancellable           *cancellable,
                               GError                **error)
 {
+  return flatpak_installation_install_full (self, FLATPAK_INSTALL_FLAGS_NONE,
+                                            remote_name, kind, name, arch, branch,
+                                            NULL, progress, progress_data,
+                                            cancellable, error);
+}
+
+/**
+ * flatpak_installation_update_full:
+ * @self: a #FlatpakInstallation
+ * @flags: set of #FlatpakUpdateFlags flag
+ * @kind: whether this is an app or runtime
+ * @name: name of the app or runtime to update
+ * @arch: (nullable): architecture of the app or runtime to update (default: current architecture)
+ * @branch: (nullable): name of the branch of the app or runtime to update (default: master)
+ * @subpaths: (nullable): A list of subpaths to fetch, or %NULL for everything
+ * @progress: (scope call): the callback
+ * @progress_data: user data passed to @progress
+ * @cancellable: (nullable): a #GCancellable
+ * @error: return location for a #GError
+ *
+ * Update an application or runtime.
+ *
+ * Returns: (transfer full): The ref for the newly updated app (or the same if no update) or %NULL on failure
+ */
+FlatpakInstalledRef *
+flatpak_installation_update_full (FlatpakInstallation    *self,
+                                  FlatpakUpdateFlags      flags,
+                                  FlatpakRefKind          kind,
+                                  const char             *name,
+                                  const char             *arch,
+                                  const char             *branch,
+                                  const char * const     *subpaths,
+                                  FlatpakProgressCallback progress,
+                                  gpointer                progress_data,
+                                  GCancellable           *cancellable,
+                                  GError                **error)
+{
   g_autoptr(FlatpakDir) dir = flatpak_installation_get_dir (self);
   g_autofree char *ref = NULL;
-  g_autoptr(GFile) deploy_base = NULL;
+  g_autoptr(GFile) deploy_dir = NULL;
   g_autoptr(FlatpakDir) dir_clone = NULL;
   g_autoptr(GMainContext) main_context = NULL;
   g_autoptr(OstreeAsyncProgress) ostree_progress = NULL;
+  g_autofree char *remote_name = NULL;
   FlatpakInstalledRef *result = NULL;
 
   ref = flatpak_compose_ref (kind == FLATPAK_REF_KIND_APP, name, branch, arch, error);
   if (ref == NULL)
     return NULL;
 
-  deploy_base = flatpak_dir_get_deploy_dir (dir, ref);
-  if (g_file_query_exists (deploy_base, cancellable))
+  deploy_dir = flatpak_dir_get_if_deployed (dir, ref, NULL, cancellable);
+  if (deploy_dir == NULL)
     {
       g_set_error (error,
-                   FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED,
-                   "%s branch %s already installed", name, branch ? branch : "master");
-      goto out;
+                   FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
+                   "%s branch %s is not installed", name, branch ? branch : "master");
+      return NULL;
     }
+
+  remote_name = flatpak_dir_get_origin (dir, ref, cancellable, error);
+  if (remote_name == NULL)
+    return NULL;
 
   /* Pull, prune, etc are not threadsafe, so we work on a copy */
   dir_clone = flatpak_dir_clone (dir);
@@ -1127,8 +1192,11 @@ flatpak_installation_install (FlatpakInstallation    *self,
       g_object_set_data (G_OBJECT (ostree_progress), "last_progress", GUINT_TO_POINTER (0));
     }
 
-  if (!flatpak_dir_install (dir_clone, FALSE, FALSE, ref, remote_name, NULL,
-                            ostree_progress, cancellable, error))
+  if (!flatpak_dir_update (dir_clone,
+                           (flags & FLATPAK_UPDATE_FLAGS_NO_PULL) != 0,
+                           (flags & FLATPAK_UPDATE_FLAGS_NO_DEPLOY) != 0,
+                           ref, remote_name, NULL, NULL,
+                           ostree_progress, cancellable, error))
     goto out;
 
   result = get_ref (dir, ref, cancellable, error);
@@ -1148,7 +1216,7 @@ out:
 /**
  * flatpak_installation_update:
  * @self: a #FlatpakInstallation
- * @flags: an #FlatpakUpdateFlags variable
+ * @flags: set of #FlatpakUpdateFlags flag
  * @kind: whether this is an app or runtime
  * @name: name of the app or runtime to update
  * @arch: (nullable): architecture of the app or runtime to update (default: current architecture)
@@ -1174,70 +1242,9 @@ flatpak_installation_update (FlatpakInstallation    *self,
                              GCancellable           *cancellable,
                              GError                **error)
 {
-  g_autoptr(FlatpakDir) dir = flatpak_installation_get_dir (self);
-  g_autofree char *ref = NULL;
-  g_autoptr(GFile) deploy_base = NULL;
-  g_autoptr(FlatpakDir) dir_clone = NULL;
-  g_autoptr(GMainContext) main_context = NULL;
-  g_autoptr(OstreeAsyncProgress) ostree_progress = NULL;
-  g_autofree char *remote_name = NULL;
-  FlatpakInstalledRef *result = NULL;
-  g_auto(GStrv) subpaths = NULL;
-
-  ref = flatpak_compose_ref (kind == FLATPAK_REF_KIND_APP, name, branch, arch, error);
-  if (ref == NULL)
-    return NULL;
-
-  deploy_base = flatpak_dir_get_deploy_dir (dir, ref);
-  if (!g_file_query_exists (deploy_base, cancellable))
-    {
-      g_set_error (error,
-                   FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
-                   "%s branch %s is not installed", name, branch ? branch : "master");
-      return NULL;
-    }
-
-  remote_name = flatpak_dir_get_origin (dir, ref, cancellable, error);
-  if (remote_name == NULL)
-    return NULL;
-
-  subpaths = flatpak_dir_get_subpaths (dir, ref, cancellable, error);
-  if (subpaths == NULL)
-    return FALSE;
-
-  /* Pull, prune, etc are not threadsafe, so we work on a copy */
-  dir_clone = flatpak_dir_clone (dir);
-
-  /* Work around ostree-pull spinning the default main context for the sync calls */
-  main_context = g_main_context_new ();
-  g_main_context_push_thread_default (main_context);
-
-  if (progress)
-    {
-      ostree_progress = ostree_async_progress_new_and_connect (progress_cb, progress_data);
-      g_object_set_data (G_OBJECT (ostree_progress), "callback", progress);
-      g_object_set_data (G_OBJECT (ostree_progress), "last_progress", GUINT_TO_POINTER (0));
-    }
-
-  if (!flatpak_dir_update (dir_clone,
-                           (flags & FLATPAK_UPDATE_FLAGS_NO_PULL) != 0,
-                           (flags & FLATPAK_UPDATE_FLAGS_NO_DEPLOY) != 0,
-                           ref, remote_name, NULL, subpaths,
-                           ostree_progress, cancellable, error))
-    goto out;
-
-  result = get_ref (dir, ref, cancellable, error);
-  if (result == NULL)
-    goto out;
-
-out:
-  if (main_context)
-    g_main_context_pop_thread_default (main_context);
-
-  if (ostree_progress)
-    ostree_async_progress_finish (ostree_progress);
-
-  return result;
+  return flatpak_installation_update_full (self, flags, kind, name, arch,
+                                           branch, NULL, progress, progress_data,
+                                           cancellable, error);
 }
 
 /**

@@ -113,14 +113,13 @@ build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = $(am__EXEEXT_1) flatpak$(EXEEXT) $(am__EXEEXT_1) \
 	flatpak-builder$(EXEEXT) $(am__EXEEXT_1)
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_6) \
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_7) \
 	test-libflatpak$(EXEEXT)
 libexec_PROGRAMS = $(am__EXEEXT_1) flatpak-session-helper$(EXEEXT) \
-	$(am__EXEEXT_1) flatpak-system-helper$(EXEEXT) $(am__EXEEXT_1) \
-	flatpak-dbus-proxy$(EXEEXT) $(am__EXEEXT_1) \
-	xdg-permission-store$(EXEEXT) $(am__EXEEXT_1) \
+	$(am__EXEEXT_1) $(am__EXEEXT_6) flatpak-dbus-proxy$(EXEEXT) \
+	$(am__EXEEXT_1) xdg-permission-store$(EXEEXT) $(am__EXEEXT_1) \
 	xdg-document-portal$(EXEEXT) $(am__EXEEXT_1)
-TESTS = $(am__EXEEXT_2) $(am__EXEEXT_7)
+TESTS = $(am__EXEEXT_2) $(am__EXEEXT_8)
 installed_test_PROGRAMS = $(am__EXEEXT_5)
 check_PROGRAMS = $(am__EXEEXT_4)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_1 = $(all_test_ltlibs)
@@ -152,6 +151,14 @@ check_PROGRAMS = $(am__EXEEXT_4)
 @HAVE_INTROSPECTION_TRUE@am__append_15 = Flatpak-1.0.gir
 @HAVE_INTROSPECTION_TRUE@am__append_16 = $(nodist_gir_DATA) \
 @HAVE_INTROSPECTION_TRUE@	$(nodist_typelib_DATA)
+@BUILD_SYSTEM_HELPER_TRUE@am__append_17 = \
+@BUILD_SYSTEM_HELPER_TRUE@	flatpak-system-helper \
+@BUILD_SYSTEM_HELPER_TRUE@	$(NULL)
+
+@BUILD_SYSTEM_HELPER_TRUE@am__append_18 = system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
+@BUILD_SYSTEM_HELPER_TRUE@	system-helper/flatpak-system-helper.service.in
+@BUILD_SYSTEM_HELPER_TRUE@am__append_19 = system-helper/org.freedesktop.Flatpak.policy.in system-helper/org.freedesktop.Flatpak.SystemHelper.conf system-helper/org.freedesktop.Flatpak.rules.in
+@BUILD_SYSTEM_HELPER_TRUE@am__append_20 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service
 bwrap_PROGRAMS = flatpak-bwrap$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -286,7 +293,10 @@ am__EXEEXT_2 = testdb$(EXEEXT) test-doc-portal$(EXEEXT)
 am__EXEEXT_3 = $(am__EXEEXT_2)
 @ENABLE_ALWAYS_BUILD_TESTS_FALSE@am__EXEEXT_4 = $(am__EXEEXT_3)
 @ENABLE_INSTALLED_TESTS_TRUE@am__EXEEXT_5 = $(am__EXEEXT_2)
-@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__EXEEXT_6 = $(am__EXEEXT_3)
+@BUILD_SYSTEM_HELPER_TRUE@am__EXEEXT_6 =  \
+@BUILD_SYSTEM_HELPER_TRUE@	flatpak-system-helper$(EXEEXT) \
+@BUILD_SYSTEM_HELPER_TRUE@	$(am__EXEEXT_1)
+@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__EXEEXT_7 = $(am__EXEEXT_3)
 PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(installed_test_PROGRAMS) $(libexec_PROGRAMS) \
 	$(noinst_PROGRAMS)
@@ -377,13 +387,17 @@ flatpak_session_helper_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_session_helper_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_flatpak_system_helper_OBJECTS = system-helper/flatpak_system_helper-flatpak-system-helper.$(OBJEXT) \
-	lib/flatpak_system_helper-flatpak-error.$(OBJEXT) \
-	$(am__objects_3)
+am__flatpak_system_helper_SOURCES_DIST =  \
+	system-helper/flatpak-system-helper.c lib/flatpak-error.c
+@BUILD_SYSTEM_HELPER_TRUE@am_flatpak_system_helper_OBJECTS = system-helper/flatpak_system_helper-flatpak-system-helper.$(OBJEXT) \
+@BUILD_SYSTEM_HELPER_TRUE@	lib/flatpak_system_helper-flatpak-error.$(OBJEXT) \
+@BUILD_SYSTEM_HELPER_TRUE@	$(am__objects_3)
 flatpak_system_helper_OBJECTS = $(am_flatpak_system_helper_OBJECTS)
-flatpak_system_helper_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	libflatpak-common.la
+@BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_DEPENDENCIES =  \
+@BUILD_SYSTEM_HELPER_TRUE@	$(am__DEPENDENCIES_1) \
+@BUILD_SYSTEM_HELPER_TRUE@	$(am__DEPENDENCIES_1) \
+@BUILD_SYSTEM_HELPER_TRUE@	$(am__DEPENDENCIES_1) \
+@BUILD_SYSTEM_HELPER_TRUE@	libflatpak-common.la
 flatpak_system_helper_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_system_helper_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
@@ -493,9 +507,10 @@ DIST_SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(flatpak_SOURCES) $(flatpak_builder_SOURCES) \
 	$(flatpak_bwrap_SOURCES) $(flatpak_dbus_proxy_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
-	$(flatpak_system_helper_SOURCES) $(test_doc_portal_SOURCES) \
-	$(test_libflatpak_SOURCES) $(testdb_SOURCES) \
-	$(xdg_document_portal_SOURCES) $(xdg_permission_store_SOURCES)
+	$(am__flatpak_system_helper_SOURCES_DIST) \
+	$(test_doc_portal_SOURCES) $(test_libflatpak_SOURCES) \
+	$(testdb_SOURCES) $(xdg_document_portal_SOURCES) \
+	$(xdg_permission_store_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -703,8 +718,10 @@ am__set_TESTS_bases = \
   bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
   bases=`echo $$bases`
 RECHECK_LOGS = $(TEST_LOGS)
-am__EXEEXT_7 = tests/test-basic.sh tests/test-run.sh \
-	tests/test-run-system.sh tests/test-builder.sh $(am__EXEEXT_1)
+am__EXEEXT_8 = tests/test-basic.sh tests/test-run.sh \
+	tests/test-run-system.sh tests/test-bundle.sh \
+	tests/test-bundle-system.sh tests/test-builder.sh \
+	$(am__EXEEXT_1)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
 LOG_COMPILE = $(LOG_COMPILER) $(AM_LOG_FLAGS) $(LOG_FLAGS)
@@ -998,11 +1015,7 @@ noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
 	$(systemduserunit_DATA) $(am__append_16)
 DISTCLEANFILES = $(NULL) lib/flatpak-enum-types.c \
-	lib/flatpak-enum-types.h $(NULL) \
-	system-helper/org.freedesktop.Flatpak.policy \
-	system-helper/org.freedesktop.Flatpak.rules \
-	system-helper/flatpak-system-helper.service \
-	system-helper/org.freedesktop.Flatpak.SystemHelper.service \
+	lib/flatpak-enum-types.h $(NULL) $(am__append_20) \
 	tests/services/org.freedesktop.Flatpak.service \
 	tests/services/org.freedesktop.portal.Documents.service \
 	tests/services/org.freedesktop.impl.portal.PermissionStore.service \
@@ -1020,22 +1033,19 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	data/org.freedesktop.systemd1.xml \
 	data/org.freedesktop.Flatpak.xml $(NULL) \
 	lib/flatpak-enum-types.c.template \
-	lib/flatpak-enum-types.h.template \
-	system-helper/org.freedesktop.Flatpak.policy.in \
-	system-helper/org.freedesktop.Flatpak.SystemHelper.conf \
-	system-helper/org.freedesktop.Flatpak.rules.in \
+	lib/flatpak-enum-types.h.template $(am__append_19) \
 	$(installed_test_SCRIPTS) $(installed_test_data) \
 	$(installed_test_keyring_DATA) $(installed_test_dbs_DATA) \
-	tests/flatpak-valgrind.supp $(completion_DATA) \
+	tests/flatpak.supp tests/glib.supp $(completion_DATA) \
 	profile/flatpak.sh.in $(NULL) env.d/flatpak.env.in \
 	flatpak.pc.in README.md
 TESTS_ENVIRONMENT = G_TEST_SRCDIR="$(abs_srcdir)/tests" \
 	G_TEST_BUILDDIR="$(abs_builddir)/tests" UNINSTALLEDTESTS=1 \
 	G_DEBUG=gc-friendly MALLOC_CHECK_=2 \
-	MALLOC_PERTURB_=$$(($${RANDOM:-256} % 256)) OT_TESTS_DEBUG=1 \
-	FLATPAK_TRIGGERSDIR=$$(cd $(top_srcdir) && pwd)/triggers \
-	FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap \
-	FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && \
+	MALLOC_PERTURB_=$$(($${RANDOM:-256} % 256)) \
+	FLATPAK_TESTS_DEBUG=1 FLATPAK_TRIGGERSDIR=$$(cd $(top_srcdir) \
+	&& pwd)/triggers FLATPAK_BWRAP=$$(cd $(top_builddir) && \
+	pwd)/flatpak-bwrap FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && \
 	pwd)/flatpak-dbus-proxy GI_TYPELIB_PATH=$$(cd $(top_builddir) \
 	&& pwd) LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && pwd) \
 	PATH=$$(cd $(top_builddir) && pwd):$${PATH} $(NULL)
@@ -1081,8 +1091,7 @@ dbus_servicedir = $(DBUS_SERVICE_DIR)
 service_in_files = $(NULL) \
 	session-helper/flatpak-session-helper.service.in \
 	session-helper/org.freedesktop.Flatpak.service.in \
-	system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
-	system-helper/flatpak-system-helper.service.in \
+	$(am__append_18) \
 	permission-store/xdg-permission-store.service.in \
 	permission-store/org.freedesktop.impl.portal.PermissionStore.service.in \
 	document-portal/xdg-document-portal.service.in \
@@ -1369,25 +1378,25 @@ flatpak_session_helper_SOURCES = \
 
 flatpak_session_helper_LDADD = $(BASE_LIBS) libflatpak-common.la
 flatpak_session_helper_CFLAGS = $(BASE_CFLAGS) $(SOUP_CFLAGS) $(OSTREE_CFLAGS) $(GSYSTEM_CFLAGS)
-dbussystemservicedir = $(datadir)/dbus-1/system-services
-dbussystemservice_DATA = system-helper/org.freedesktop.Flatpak.SystemHelper.service
-dbusconfdir = ${sysconfdir}/dbus-1/system.d
-dbusconf_DATA = system-helper/org.freedesktop.Flatpak.SystemHelper.conf
-systemdsystemunit_DATA = system-helper/flatpak-system-helper.service
-flatpak_system_helper_SOURCES = \
-	system-helper/flatpak-system-helper.c	\
-	lib/flatpak-error.c	\
-	$(NULL)
+@BUILD_SYSTEM_HELPER_TRUE@dbussystemservicedir = $(datadir)/dbus-1/system-services
+@BUILD_SYSTEM_HELPER_TRUE@dbussystemservice_DATA = system-helper/org.freedesktop.Flatpak.SystemHelper.service
+@BUILD_SYSTEM_HELPER_TRUE@dbusconfdir = ${sysconfdir}/dbus-1/system.d
+@BUILD_SYSTEM_HELPER_TRUE@dbusconf_DATA = system-helper/org.freedesktop.Flatpak.SystemHelper.conf
+@BUILD_SYSTEM_HELPER_TRUE@systemdsystemunit_DATA = system-helper/flatpak-system-helper.service
+@BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_SOURCES = \
+@BUILD_SYSTEM_HELPER_TRUE@	system-helper/flatpak-system-helper.c	\
+@BUILD_SYSTEM_HELPER_TRUE@	lib/flatpak-error.c	\
+@BUILD_SYSTEM_HELPER_TRUE@	$(NULL)
 
-flatpak_system_helper_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(POLKIT_LIBS) libflatpak-common.la
-flatpak_system_helper_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(POLKIT_CFLAGS)
-polkit_rulesdir = $(datadir)/polkit-1/rules.d
-polkit_rules_DATA = \
-	system-helper/org.freedesktop.Flatpak.rules
+@BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(POLKIT_LIBS) libflatpak-common.la
+@BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(POLKIT_CFLAGS)
+@BUILD_SYSTEM_HELPER_TRUE@polkit_rulesdir = $(datadir)/polkit-1/rules.d
+@BUILD_SYSTEM_HELPER_TRUE@polkit_rules_DATA = \
+@BUILD_SYSTEM_HELPER_TRUE@	system-helper/org.freedesktop.Flatpak.rules
 
-polkit_policydir = $(datadir)/polkit-1/actions
-polkit_policy_DATA = \
-	system-helper/org.freedesktop.Flatpak.policy
+@BUILD_SYSTEM_HELPER_TRUE@polkit_policydir = $(datadir)/polkit-1/actions
+@BUILD_SYSTEM_HELPER_TRUE@polkit_policy_DATA = \
+@BUILD_SYSTEM_HELPER_TRUE@	system-helper/org.freedesktop.Flatpak.policy
 
 flatpak_dbus_proxy_SOURCES = \
 	dbus-proxy/flatpak-proxy.c	\
@@ -1460,11 +1469,13 @@ test_scripts = \
 	tests/test-basic.sh \
 	tests/test-run.sh \
 	tests/test-run-system.sh \
+	tests/test-bundle.sh \
+	tests/test-bundle-system.sh \
 	tests/test-builder.sh \
 	$(NULL)
 
 test_programs = testdb test-doc-portal
-VALGRIND_SUPPRESSIONS_FILES = tests/flatpak-valgrind.supp
+VALGRIND_SUPPRESSIONS_FILES = tests/flatpak.supp tests/glib.supp
 flatpak_bwrap_SOURCES = $(bwrap_SOURCES)
 flatpak_bwrap_CFLAGS = $(bwrap_CFLAGS)
 flatpak_bwrap_LDFLAGS = $(bwrap_LDFLAGS)
@@ -1480,7 +1491,7 @@ bwrap_SOURCES = \
 	$(NULL)
 
 bwrap_CFLAGS = $(AM_CFLAGS)
-bwrap_LDFLAGS = $(SELINUX_LIBS)
+bwrap_LDADD = $(SELINUX_LIBS)
 completiondir = $(datadir)/bash-completion/completions
 completion_DATA = completion/flatpak
 profiledir = $(sysconfdir)/profile.d
@@ -4156,6 +4167,20 @@ tests/test-run-system.sh.log: tests/test-run-system.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-bundle.sh.log: tests/test-bundle.sh
+	@p='tests/test-bundle.sh'; \
+	b='tests/test-bundle.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-bundle-system.sh.log: tests/test-bundle-system.sh
+	@p='tests/test-bundle-system.sh'; \
+	b='tests/test-bundle-system.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 tests/test-builder.sh.log: tests/test-builder.sh
 	@p='tests/test-builder.sh'; \
 	b='tests/test-builder.sh'; \
@@ -4650,10 +4675,10 @@ lib/flatpak-enum-types.c: $(public_headers) lib/flatpak-enum-types.c.template
 
 @HAVE_INTROSPECTION_TRUE@Flatpak-1.0.gir: libflatpak.la Makefile
 
-system-helper/org.freedesktop.Flatpak.rules: system-helper/org.freedesktop.Flatpak.rules.in
-	$(AM_V_GEN) $(SED) -e "s|\@privileged_group\@|$(PRIVILEGED_GROUP)|" $< > $@
+@BUILD_SYSTEM_HELPER_TRUE@system-helper/org.freedesktop.Flatpak.rules: system-helper/org.freedesktop.Flatpak.rules.in
+@BUILD_SYSTEM_HELPER_TRUE@	$(AM_V_GEN) $(SED) -e "s|\@privileged_group\@|$(PRIVILEGED_GROUP)|" $< > $@
 
-@INTLTOOL_POLICY_RULE@
+@BUILD_SYSTEM_HELPER_TRUE@@INTLTOOL_POLICY_RULE@
 
 $(ps_dbus_built_sources) : data/org.freedesktop.impl.portal.PermissionStore.xml
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\

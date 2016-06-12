@@ -19,6 +19,8 @@ FLATPAK_EXTERN GType flatpak_error_get_type (void) G_GNUC_CONST;
 /* enumerations from "lib/flatpak-installation.h" */
 FLATPAK_EXTERN GType flatpak_update_flags_get_type (void) G_GNUC_CONST;
 #define FLATPAK_TYPE_UPDATE_FLAGS (flatpak_update_flags_get_type ())
+FLATPAK_EXTERN GType flatpak_install_flags_get_type (void) G_GNUC_CONST;
+#define FLATPAK_TYPE_INSTALL_FLAGS (flatpak_install_flags_get_type ())
 G_END_DECLS
 
 #endif /* __GIO_ENUM_TYPES_H__ */

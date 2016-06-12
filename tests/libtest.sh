@@ -57,12 +57,12 @@ export G_DEBUG=fatal-warnings
 # tarballs are predictable, except we don't want this in our tests.
 unset TAR_OPTIONS
 
-if test -n "${OT_TESTS_DEBUG:-}"; then
+if test -n "${FLATPAK_TESTS_DEBUG:-}"; then
     set -x
 fi
 
-if test -n "${OT_TESTS_VALGRIND:-}"; then
-    CMD_PREFIX="env G_SLICE=always-malloc valgrind -q --leak-check=full --num-callers=30 --suppressions=${test_srcdir}/flatpak-valgrind.supp"
+if test -n "${FLATPAK_TESTS_VALGRIND:-}"; then
+    CMD_PREFIX="env G_SLICE=always-malloc valgrind -q --leak-check=full --error-exitcode=1 --num-callers=30 --suppressions=${test_srcdir}/flatpak.supp --suppressions=${test_srcdir}/glib.supp"
 else
     CMD_PREFIX=""
 fi
@@ -167,7 +167,9 @@ export FL_GPGARGS="--gpg-homedir=${FL_GPG_HOMEDIR} --gpg-sign=${FL_GPG_ID}"
 setup_repo () {
     GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-runtime.sh org.test.Platform bash ls cat echo readlink > /dev/null
     GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-app.sh > /dev/null
-    flatpak remote-add ${U} --gpg-import=${FL_GPG_HOMEDIR}/pubring.gpg test-repo repo
+    ostree trivial-httpd --autoexit --daemonize -p httpd-port .
+    port=$(cat httpd-port)
+    flatpak remote-add ${U} --gpg-import=${FL_GPG_HOMEDIR}/pubring.gpg test-repo "http://127.0.0.1:${port}/repo"
 }
 
 make_updated_app () {

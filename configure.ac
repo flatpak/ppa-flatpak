@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [6])
-m4_define([flatpak_micro_version], [4])
-m4_define([flatpak_interface_age], [4])
+m4_define([flatpak_micro_version], [5])
+m4_define([flatpak_interface_age], [5])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -114,8 +114,16 @@ POLKIT_GOBJECT_REQUIRED=0.98
 PKG_CHECK_MODULES(BASE, [glib-2.0 gio-2.0 gio-unix-2.0])
 PKG_CHECK_MODULES(SOUP, [libsoup-2.4])
 
-PKG_CHECK_MODULES(POLKIT, \
-		  polkit-gobject-1 >= $POLKIT_GOBJECT_REQUIRED)
+AC_ARG_ENABLE([system-helper],
+              AC_HELP_STRING([--disable-system-helper],
+                             [Disable system helper]),
+              [],
+              [enable_system_helper=yes])
+if test "x$enable_system_helper" = "xyes"; then
+  PKG_CHECK_MODULES(POLKIT, \
+  		    polkit-gobject-1 >= $POLKIT_GOBJECT_REQUIRED)
+fi
+AM_CONDITIONAL(BUILD_SYSTEM_HELPER, test x$enable_system_helper = xyes)
 
 AC_ARG_ENABLE([xauth],
               AC_HELP_STRING([--disable-xauth],

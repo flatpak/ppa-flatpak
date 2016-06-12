@@ -82,7 +82,10 @@
             </itemizedlist>
 
             After this you will end up with a build of the application in <arg choice="plain">DIRECTORY</arg>, which you can
-            export to a repository with the <command>flatpak build-export</command> command.
+            export to a repository with the <command>flatpak build-export</command> command. If you use the <option>--repo</option>
+            option, flatpack-builder will do the export for you at the end of the build process. When flatpak-builder does the
+            export, it also stores the manifest that was used for the build in /app/manifest.json. The manifest is 'resolved',
+            i.e. git branch names are replaced by the actual commit IDs that were used in the build.
         </para>
         <para>
             At each of the above steps flatpak caches the result, and if you build the same file again, it will start
@@ -107,7 +110,7 @@
             </para>
             <variablelist>
                 <varlistentry>
-                    <term><option>id</option> (string)</term>
+                    <term><option>id</option> or <option>app-id</option> (string)</term>
                     <listitem><para>A string defining the application id.</para></listitem>
                 </varlistentry>
                 <varlistentry>
@@ -132,7 +135,7 @@
                 </varlistentry>
                 <varlistentry>
                     <term><option>command</option> (string)</term>
-                    <listitem><para>The filename or path to the main binary of the application.</para></listitem>
+                    <listitem><para>The filename or path to the main binary of the application. Note that this is really just a single file, not a commandline. If you want to pass arguments, install a shell script wrapper and use that as the command.</para></listitem>
                 </varlistentry>
                 <varlistentry>
                     <term><option>build-runtime</option> (boolean)</term>
@@ -176,8 +179,9 @@
                     <listitem><para>Object specifying the build environment. See below for details.</para></listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term><option>modules</option> (array of objects)</term>
+                    <term><option>modules</option> (array of objects or string)</term>
                     <listitem><para>An array of object specifying the modules to be built in order.
+                    String members in the array are interpreted as the name of a separate json file that contains a module.
                     See below for details.</para></listitem>
                 </varlistentry>
                 <varlistentry>
@@ -219,7 +223,7 @@
                     <listitem><para>This string will be prefixed to the Name key in the main application desktop file.</para></listitem>
                 </varlistentry>
                 <varlistentry>
-                    <term><option>desktop-file-name-suffixed</option> (string)</term>
+                    <term><option>desktop-file-name-suffix</option> (string)</term>
                     <listitem><para>This string will be suffixed to the Name key in the main application desktop file.</para></listitem>
                 </varlistentry>
             </variablelist>
@@ -277,6 +281,9 @@
                 the build options and a list of sources to download and extract before building.
             </para>
             <para>
+                Modules can be nested, in order to turn related modules on and off with a single key.
+            </para>
+            <para>
                 These are the properties that are accepted:
             </para>
             <variablelist>
@@ -317,6 +324,10 @@
                     <listitem><para>Don't call make with arguments to build in parallel</para></listitem>
                 </varlistentry>
                 <varlistentry>
+                    <term><option>no-python-timestamp-fix</option> (boolean)</term>
+                    <listitem><para>Don't fix up the *.py[oc] header timestamps for ostree use.</para></listitem>
+                </varlistentry>
+                <varlistentry>
                     <term><option>cmake</option> (boolean)</term>
                     <listitem><para>Use cmake instead of configure</para></listitem>
                 </varlistentry>
@@ -348,6 +359,11 @@
                 <varlistentry>
                     <term><option>cleanup-platform</option> (array of strings)</term>
                     <listitem><para>Extra files to clean up in the platform.</para></listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>modules</option> (array of objects or strings)</term>
+                    <listitem><para>An array of object specifying nested modules to be built before this one.
+                    String members in the array are interpreted as names of a separate json file that contains a module.</para></listitem>
                 </varlistentry>
             </variablelist>
         </refsect2>
@@ -801,7 +817,7 @@
         <para>
             <citerefentry><refentrytitle>flatpak</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
             <citerefentry><refentrytitle>flatpak-build-init</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
-            <citerefentry><refentrytitle>flatpak-build-build</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+            <citerefentry><refentrytitle>flatpak-build</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
             <citerefentry><refentrytitle>flatpak-build-finish</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
             <citerefentry><refentrytitle>flatpak-build-export</refentrytitle><manvolnum>1</manvolnum></citerefentry>
         </para>
