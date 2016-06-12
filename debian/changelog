@@ -3,6 +3,8 @@ flatpak (0.6.5-1) UNRELEASED; urgency=medium
   * New upstream release
     - d/p/flatpak-run-don-t-fail-if-there-are-no-system-fonts.patch:
       drop, applied upstream
+  * d/p/Link-libselinux-into-bwrap-if-enabled-with-LDADD-not-LDFL.patch:
+    make sure bwrap links even if the linker is pedantic
 
  -- Simon McVittie <smcv@debian.org>  Sun, 12 Jun 2016 09:14:13 -0400
 
