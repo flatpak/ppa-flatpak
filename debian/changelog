@@ -1,3 +1,11 @@
+flatpak (0.6.5-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    - d/p/flatpak-run-don-t-fail-if-there-are-no-system-fonts.patch:
+      drop, applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 12 Jun 2016 09:14:13 -0400
+
 flatpak (0.6.4-1) experimental; urgency=medium
 
   * New upstream release
