@@ -15,7 +15,11 @@ gnome-desktop-testing-runner -l Flatpak | while read t; do
 			;;
 	esac
 
-	gnome-desktop-testing-runner "$t" < /dev/null || e=$?
+	gnome-desktop-testing-runner "$t" < /dev/null || touch "$ADTTMP"/failed
 done
 
-exit "$e"
+if [ -e "$ADTTMP"/failed ]; then
+	exit 1
+fi
+
+exit 0
