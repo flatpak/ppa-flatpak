@@ -3,6 +3,7 @@ flatpak (0.6.5-1) UNRELEASED; urgency=medium
   * New upstream release
     - d/p/flatpak-run-don-t-fail-if-there-are-no-system-fonts.patch:
       drop, applied upstream
+    - update symbols file for new ABI
   * d/p/Link-libselinux-into-bwrap-if-enabled-with-LDADD-not-LDFL.patch:
     make sure bwrap links even if the linker is pedantic
   * d/tests/gnome-desktop-testing: correctly report failures

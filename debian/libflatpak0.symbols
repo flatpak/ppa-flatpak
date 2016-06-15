@@ -11,6 +11,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_error_get_type@Base 0.5.2
  flatpak_error_quark@Base 0.5.2
  flatpak_get_default_arch@Base 0.5.2+git20160516
+ flatpak_install_flags_get_type@Base 0.6.5
  flatpak_installation_create_monitor@Base 0.5.2
  flatpak_installation_drop_caches@Base 0.5.2+git20160516
  flatpak_installation_fetch_remote_metadata_sync@Base 0.5.2
@@ -24,6 +25,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_get_type@Base 0.5.2
  flatpak_installation_install@Base 0.5.2
  flatpak_installation_install_bundle@Base 0.5.2
+ flatpak_installation_install_full@Base 0.6.5
  flatpak_installation_launch@Base 0.5.2
  flatpak_installation_list_installed_refs@Base 0.5.2
  flatpak_installation_list_installed_refs_by_kind@Base 0.5.2
@@ -39,6 +41,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_uninstall@Base 0.5.2
  flatpak_installation_update@Base 0.5.2
  flatpak_installation_update_appstream_sync@Base 0.5.2
+ flatpak_installation_update_full@Base 0.6.5
  flatpak_installed_ref_get_deploy_dir@Base 0.5.2
  flatpak_installed_ref_get_installed_size@Base 0.5.2
  flatpak_installed_ref_get_is_current@Base 0.5.2
