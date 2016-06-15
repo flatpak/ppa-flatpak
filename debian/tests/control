@@ -10,9 +10,11 @@ Depends:
  flatpak-tests,
  gnome-desktop-testing,
  make,
+ ostree,
 
 Tests: gnome-desktop-testing
 Depends:
  attr,
  flatpak-tests,
  gnome-desktop-testing,
+ ostree,
