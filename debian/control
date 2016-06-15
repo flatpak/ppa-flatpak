@@ -82,7 +82,9 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
+ binutils,
  bzr,
+ elfutils,
  git,
  patch,
  unzip,

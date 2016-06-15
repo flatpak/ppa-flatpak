@@ -8,6 +8,10 @@ flatpak (0.6.5-1) UNRELEASED; urgency=medium
   * d/tests/gnome-desktop-testing: correctly report failures
   * d/tests/control: depend on ostree, used to export a Flatpak repository
     for testing
+  * d/control: flatpak-builder Recommends binutils (for strip) and
+    elfutils (for eu-strip), which can be invoked outside the sandbox
+    by manifests that specify {'build-options': {'strip': true}}
+    or {'build-options': {'no-debuginfo': true}}
 
  -- Simon McVittie <smcv@debian.org>  Sun, 12 Jun 2016 09:14:13 -0400
 
