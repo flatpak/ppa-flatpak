@@ -5,6 +5,12 @@ exec 2>&1
 
 e=0
 
+# Don't pollute the home directory unless this looks like a dedicated
+# autopkgtest environment
+if [ "$(id -nu)" = adt ]; then
+	install -d ~/.flatpak-tests/
+fi
+
 gnome-desktop-testing-runner -l Flatpak | while read t; do
 	t="${t%% *}"
 

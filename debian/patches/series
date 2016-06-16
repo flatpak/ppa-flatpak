@@ -1,1 +1,3 @@
 Link-libselinux-into-bwrap-if-enabled-with-LDADD-not-LDFL.patch
+sandbox-Make-var-tmp-and-tmp-different-dirs-not-symlinks.patch
+test-run-avoid-testing-cases-of-filesystem-binding-that-w.patch
