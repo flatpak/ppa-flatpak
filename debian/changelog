@@ -1,4 +1,4 @@
-flatpak (0.6.5-1) UNRELEASED; urgency=medium
+flatpak (0.6.5-1) unstable; urgency=medium
 
   * New upstream release
     - d/p/flatpak-run-don-t-fail-if-there-are-no-system-fonts.patch:
@@ -17,8 +17,9 @@ flatpak (0.6.5-1) UNRELEASED; urgency=medium
     d/p/test-run-don-t-use-test_builddir-to-exercise-filesystem.patch:
     add patches to make the installed-tests test-run.sh and
     test-run-system.sh pass with --prefix=/usr
+  * Upload to unstable (LP: #1590411)
 
- -- Simon McVittie <smcv@debian.org>  Sun, 12 Jun 2016 09:14:13 -0400
+ -- Simon McVittie <smcv@debian.org>  Tue, 21 Jun 2016 10:22:13 +0100
 
 flatpak (0.6.4-1) experimental; urgency=medium
 
