@@ -25,8 +25,8 @@ usr/share/man/man1/flatpak-build-init.1
 usr/share/man/man1/flatpak-build-sign.1
 usr/share/man/man1/flatpak-build-update-repo.1
 usr/share/man/man1/flatpak-build.1
+usr/share/man/man1/flatpak-document-*.1
 usr/share/man/man1/flatpak-enter.1
-usr/share/man/man1/flatpak-export-file.1
 usr/share/man/man1/flatpak-info.1
 usr/share/man/man1/flatpak-install.1
 usr/share/man/man1/flatpak-list.1
