@@ -1,2 +1,3 @@
 document-portal-don-t-reply-to-GetMountPoint-until-ready.patch
 tests-don-t-treat-helper-scripts-as-though-they-were-test.patch
+Downgrade-failure-to-get-document-portal-from-warning-to-.patch

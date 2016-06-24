@@ -7,6 +7,8 @@ flatpak (0.6.6-1) UNRELEASED; urgency=medium
     optional for "flatpak run"
   * d/p/tests-don-t-treat-helper-scripts-as-though-they-were-test.patch:
     Add patch to avoid non-test helper scripts being run as tests
+  * d/p/Downgrade-failure-to-get-document-portal-from-warning-to-.patch:
+    Add patch to avoid test failure when FUSE is unusable
 
  -- Simon McVittie <smcv@debian.org>  Fri, 24 Jun 2016 20:52:38 +0100
 
