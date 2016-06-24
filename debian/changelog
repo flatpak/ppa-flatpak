@@ -5,6 +5,8 @@ flatpak (0.6.6-1) UNRELEASED; urgency=medium
   * d/p/document-portal-don-t-reply-to-GetMountPoint-until-ready.patch:
     Add patch to make the document portal (and hence FUSE support)
     optional for "flatpak run"
+  * d/p/tests-don-t-treat-helper-scripts-as-though-they-were-test.patch:
+    Add patch to avoid non-test helper scripts being run as tests
 
  -- Simon McVittie <smcv@debian.org>  Fri, 24 Jun 2016 20:52:38 +0100
 

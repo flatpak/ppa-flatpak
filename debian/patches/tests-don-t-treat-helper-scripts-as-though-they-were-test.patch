@@ -1,0 +1,39 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Fri, 24 Jun 2016 22:42:11 +0100
+Subject: tests: don't treat helper scripts as though they were tests
+
+We shouldn't install .test metadata for these, and run them as TAP
+test scripts. In glib-tap.mk jargon that makes them "extra scripts".
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ Makefile.am           | 2 +-
+ tests/Makefile.am.inc | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Makefile.am b/Makefile.am
+index cd3c8c8..f2b608c 100644
+--- a/Makefile.am
++++ b/Makefile.am
+@@ -1,7 +1,7 @@
+ NULL =
+ 
+ bin_PROGRAMS = $(NULL)
+-dist_installed_test_scripts = $(NULL)
++dist_installed_test_extra_scripts = $(NULL)
+ noinst_PROGRAMS = $(NULL)
+ noinst_LTLIBRARIES = $(NULL)
+ libexec_PROGRAMS = $(NULL)
+diff --git a/tests/Makefile.am.inc b/tests/Makefile.am.inc
+index 1d4a107..4bf16da 100644
+--- a/tests/Makefile.am.inc
++++ b/tests/Makefile.am.inc
+@@ -59,7 +59,7 @@ tests/package_version.txt: Makefile
+ 
+ tests/test-basic.sh: tests/package_version.txt
+ 
+-dist_installed_test_scripts += \
++dist_installed_test_extra_scripts += \
+ 	buildutil/tap-driver.sh \
+ 	tests/test-configure \
+ 	tests/make-test-app.sh \
