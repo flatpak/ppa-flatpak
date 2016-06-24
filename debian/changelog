@@ -13,6 +13,10 @@ flatpak (0.6.6-1) UNRELEASED; urgency=medium
     Add patch to run tests with a private XDG_RUNTIME_DIR, so the
     document portal under test works correctly even if the user is
     already running one
+  * d/p/debian/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch:
+    bring back compatibility with gtk-update-icon-cache-3.0, for backports
+    - d/control: libgtk-3-bin is an alternative to
+      gtk-update-icon-cache again
 
  -- Simon McVittie <smcv@debian.org>  Fri, 24 Jun 2016 20:52:38 +0100
 
