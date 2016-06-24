@@ -1,3 +1,10 @@
+flatpak (0.6.6-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    - drop patches, applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 24 Jun 2016 20:52:38 +0100
+
 flatpak (0.6.5-1) unstable; urgency=medium
 
   * New upstream release
