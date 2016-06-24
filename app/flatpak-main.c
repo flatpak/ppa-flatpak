@@ -36,6 +36,7 @@
 static gboolean opt_verbose;
 static gboolean opt_version;
 static gboolean opt_default_arch;
+static gboolean opt_supported_arches;
 static gboolean opt_user;
 
 typedef struct
@@ -61,9 +62,14 @@ static FlatpakCommand commands[] = {
   { "\n Running applications" },
   { "run", "Run an application", flatpak_builtin_run, flatpak_complete_run },
   { "override", "Override permissions for an application", flatpak_builtin_override, flatpak_complete_override },
-  { "export-file", "Grant an application access to a specific file", flatpak_builtin_export_file, flatpak_complete_export_file },
   { "make-current", "Specify default version to run", flatpak_builtin_make_current_app, flatpak_complete_make_current_app },
   { "enter", "Enter the namespace of a running application", flatpak_builtin_enter, flatpak_complete_enter },
+
+  { "\n Manage file access" },
+  { "document-export", "Grant an application access to a specific file", flatpak_builtin_document_export, flatpak_complete_document_export },
+  { "document-unexport", "Revoke access to a specific file", flatpak_builtin_document_unexport, flatpak_complete_document_unexport },
+  { "document-info", "Show information about a specific file", flatpak_builtin_document_info, flatpak_complete_document_info },
+  { "document-list", "List exported files", flatpak_builtin_document_list, flatpak_complete_document_list },
 
   { "\n Manage remote repositories" },
   { "remote-add", "Add a new remote repository (by URL)", flatpak_builtin_add_remote, flatpak_complete_add_remote },
@@ -94,6 +100,7 @@ GOptionEntry global_entries[] = {
 static GOptionEntry empty_entries[] = {
   { "version", 0, 0, G_OPTION_ARG_NONE, &opt_version, "Print version information and exit", NULL },
   { "default-arch", 0, 0, G_OPTION_ARG_NONE, &opt_default_arch, "Print default arch and exit", NULL },
+  { "supported-arches", 0, 0, G_OPTION_ARG_NONE, &opt_supported_arches, "Print supported arches and exit", NULL },
   { NULL }
 };
 
@@ -206,6 +213,15 @@ flatpak_option_context_parse (GOptionContext     *context,
   if (opt_default_arch)
     {
       g_print ("%s\n", flatpak_get_arch ());
+      exit (EXIT_SUCCESS);
+    }
+
+  if (opt_supported_arches)
+    {
+      const char **arches = flatpak_get_arches ();
+      int i;
+      for (i = 0; arches[i] != NULL; i++)
+        g_print ("%s\n", arches[i]);
       exit (EXIT_SUCCESS);
     }
 
