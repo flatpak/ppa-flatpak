@@ -91,10 +91,12 @@ const char *dont_mount_in_root[] = {
 
 typedef enum {
   FLATPAK_CONTEXT_DEVICE_DRI         = 1 << 0,
+  FLATPAK_CONTEXT_DEVICE_ALL         = 1 << 1,
 } FlatpakContextDevices;
 
 const char *flatpak_context_devices[] = {
   "dri",
+  "all",
   NULL
 };
 
@@ -1532,12 +1534,8 @@ flatpak_run_add_pulseaudio_args (GPtrArray *argv_array,
 static char *
 create_proxy_socket (char *template)
 {
-  g_autofree char *dir = g_build_filename (g_get_user_runtime_dir (), "bus-proxy", NULL);
-  g_autofree char *proxy_socket = g_build_filename (dir, template, NULL);
+  g_autofree char *proxy_socket = g_build_filename (g_get_user_runtime_dir (), template, NULL);
   int fd;
-
-  if (mkdir (dir, 0700) == -1 && errno != EEXIST)
-    return NULL;
 
   fd = g_mkstemp (proxy_socket);
   if (fd == -1)
@@ -1576,7 +1574,7 @@ flatpak_run_add_system_dbus_args (FlatpakContext *context,
   else if (dbus_proxy_argv &&
            g_hash_table_size (context->system_bus_policy) > 0)
     {
-      g_autofree char *proxy_socket = create_proxy_socket ("system-bus-proxy-XXXXXX");
+      g_autofree char *proxy_socket = create_proxy_socket (".system-bus-proxy-XXXXXX");
 
       if (proxy_socket == NULL)
         return FALSE;
@@ -1627,7 +1625,7 @@ flatpak_run_add_session_dbus_args (GPtrArray *argv_array,
     }
   else if (dbus_proxy_argv && dbus_address != NULL)
     {
-      g_autofree char *proxy_socket = create_proxy_socket ("session-bus-proxy-XXXXXX");
+      g_autofree char *proxy_socket = create_proxy_socket (".session-bus-proxy-XXXXXX");
 
       if (proxy_socket == NULL)
         return FALSE;
@@ -1765,17 +1763,29 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
       add_args (argv_array, "--unshare-net", NULL);
     }
 
-  if (context->devices & FLATPAK_CONTEXT_DEVICE_DRI)
+  if (context->devices & FLATPAK_CONTEXT_DEVICE_ALL)
     {
-      g_debug ("Allowing dri access");
-      if (g_file_test ("/dev/dri", G_FILE_TEST_IS_DIR))
-        add_args (argv_array, "--dev-bind", "/dev/dri", "/dev/dri", NULL);
-      if (g_file_test ("/dev/nvidiactl", G_FILE_TEST_EXISTS))
+      add_args (argv_array,
+                "--dev-bind", "/dev", "/dev",
+                NULL);
+    }
+  else
+    {
+      add_args (argv_array,
+                "--dev", "/dev",
+                NULL);
+      if (context->devices & FLATPAK_CONTEXT_DEVICE_DRI)
         {
-          add_args (argv_array,
-                    "--dev-bind", "/dev/nvidiactl", "/dev/nvidiactl",
-                    "--dev-bind", "/dev/nvidia0", "/dev/nvidia0",
-                    NULL);
+          g_debug ("Allowing dri access");
+          if (g_file_test ("/dev/dri", G_FILE_TEST_IS_DIR))
+            add_args (argv_array, "--dev-bind", "/dev/dri", "/dev/dri", NULL);
+          if (g_file_test ("/dev/nvidiactl", G_FILE_TEST_EXISTS))
+            {
+              add_args (argv_array,
+                        "--dev-bind", "/dev/nvidiactl", "/dev/nvidiactl",
+                        "--dev-bind", "/dev/nvidia0", "/dev/nvidia0",
+                        NULL);
+            }
         }
     }
 
@@ -2825,13 +2835,12 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
   add_args (argv_array,
             "--unshare-pid",
             "--unshare-user-try",
-            "--dev", "/dev",
             "--proc", "/proc",
             "--dir", "/tmp",
+            "--dir", "/var/tmp",
             "--dir", "/run/host",
             "--dir", run_dir,
             "--setenv", "XDG_RUNTIME_DIR", run_dir,
-            "--symlink", "/tmp", "/var/tmp",
             "--symlink", "/run", "/var/run",
             "--ro-bind", "/sys/block", "/sys/block",
             "--ro-bind", "/sys/bus", "/sys/bus",

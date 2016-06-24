@@ -97,6 +97,23 @@
                     Print version information and exit.
                 </para></listitem>
             </varlistentry>
+
+           <varlistentry>
+                <term><option>--default-arch</option></term>
+
+                <listitem><para>
+                    Print the default arch and exit.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--supported-arches</option></term>
+
+                <listitem><para>
+                    Print the supported arches in priority order and exit.
+                </para></listitem>
+            </varlistentry>
+
         </variablelist>
     </refsect1>
 
@@ -162,13 +179,6 @@
                 </para></listitem>
             </varlistentry>
             <varlistentry>
-                <term><citerefentry><refentrytitle>flatpak-export-file</refentrytitle><manvolnum>1</manvolnum></citerefentry></term>
-
-                <listitem><para>
-                    Grant an application access to a specific file.
-                </para></listitem>
-            </varlistentry>
-            <varlistentry>
                 <term><citerefentry><refentrytitle>flatpak-enter</refentrytitle><manvolnum>1</manvolnum></citerefentry></term>
 
                 <listitem><para>
@@ -176,6 +186,40 @@
                 </para></listitem>
             </varlistentry>
         </variablelist>
+
+        <para>Commands for managing file access:</para>
+
+        <variablelist>
+            <varlistentry>
+                <term><citerefentry><refentrytitle>flatpak-document-export</refentrytitle><manvolnum>1</manvolnum></citerefentry></term>
+
+                <listitem><para>
+                    Grant an application access to a specific file.
+                </para></listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><citerefentry><refentrytitle>flatpak-document-unexport</refentrytitle><manvolnum>1</manvolnum></citerefentry></term>
+
+                <listitem><para>
+                    Revoke access to a specific file.
+                </para></listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><citerefentry><refentrytitle>flatpak-document-info</refentrytitle><manvolnum>1</manvolnum></citerefentry></term>
+
+                <listitem><para>
+                    Show information about a specific file.
+                </para></listitem>
+            </varlistentry>
+            <varlistentry>
+                <term><citerefentry><refentrytitle>flatpak-document-list</refentrytitle><manvolnum>1</manvolnum></citerefentry></term>
+
+                <listitem><para>
+                    List exported files.
+                </para></listitem>
+            </varlistentry>
+        </variablelist>
+
 
         <para>Commands for managing remote repositories:</para>
 

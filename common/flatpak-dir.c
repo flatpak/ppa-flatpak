@@ -1147,6 +1147,7 @@ flatpak_dir_update_appstream (FlatpakDir          *self,
 
       if (!flatpak_dir_pull (self, remote, branch, NULL,
                              child_repo, OSTREE_REPO_PULL_FLAGS_MIRROR,
+                             /* TODO: forcing no-deltas due to issue #144 */ TRUE,
                              progress, cancellable, error))
         return FALSE;
 
@@ -1175,7 +1176,7 @@ flatpak_dir_update_appstream (FlatpakDir          *self,
       return TRUE;
     }
 
-  if (!flatpak_dir_pull (self, remote, branch, NULL, NULL, OSTREE_REPO_PULL_FLAGS_NONE, progress,
+  if (!flatpak_dir_pull (self, remote, branch, NULL, NULL, OSTREE_REPO_PULL_FLAGS_NONE, FALSE, progress,
                          cancellable, error))
     return FALSE;
 
@@ -1206,6 +1207,7 @@ repo_pull_one_dir (OstreeRepo          *self,
                    const char          *dir_to_pull,
                    char               **refs_to_fetch,
                    OstreeRepoPullFlags  flags,
+                   gboolean             force_disable_deltas,
                    OstreeAsyncProgress *progress,
                    GCancellable        *cancellable,
                    GError             **error)
@@ -1218,9 +1220,12 @@ repo_pull_one_dir (OstreeRepo          *self,
     {
       g_variant_builder_add (&builder, "{s@v}", "subdir",
                              g_variant_new_variant (g_variant_new_string (dir_to_pull)));
-      g_variant_builder_add (&builder, "{s@v}", "disable-static-deltas",
-                             g_variant_new_variant (g_variant_new_boolean (TRUE)));
+      force_disable_deltas = TRUE;
     }
+
+  if (force_disable_deltas)
+    g_variant_builder_add (&builder, "{s@v}", "disable-static-deltas",
+                           g_variant_new_variant (g_variant_new_boolean (TRUE)));
 
   g_variant_builder_add (&builder, "{s@v}", "flags",
                          g_variant_new_variant (g_variant_new_int32 (flags)));
@@ -1240,6 +1245,7 @@ flatpak_dir_pull (FlatpakDir          *self,
                   const char         **subpaths,
                   OstreeRepo          *repo,
                   OstreeRepoPullFlags  flags,
+                  gboolean             force_disable_deltas,
                   OstreeAsyncProgress *progress,
                   GCancellable        *cancellable,
                   GError             **error)
@@ -1283,10 +1289,10 @@ flatpak_dir_pull (FlatpakDir          *self,
 
   if (subpaths == NULL || subpaths[0] == NULL)
     {
-      if (!ostree_repo_pull (repo, repository,
-                             (char **) refs, flags,
-                             progress,
-                             cancellable, error))
+      if (!repo_pull_one_dir (repo, repository, NULL,
+                              (char **) refs, flags, force_disable_deltas,
+                              progress,
+                              cancellable, error))
         {
           g_prefix_error (error, "While pulling %s from remote %s: ", ref, repository);
           goto out;
@@ -1298,7 +1304,7 @@ flatpak_dir_pull (FlatpakDir          *self,
 
       if (!repo_pull_one_dir (repo, repository,
                               "/metadata",
-                              (char **) refs, flags,
+                              (char **) refs, flags, force_disable_deltas,
                               progress,
                               cancellable, error))
         {
@@ -1312,7 +1318,7 @@ flatpak_dir_pull (FlatpakDir          *self,
           g_autofree char *subpath = g_build_filename ("/files", subpaths[i], NULL);
           if (!repo_pull_one_dir (repo, repository,
                                   subpath,
-                                  (char **) refs, flags,
+                                  (char **) refs, flags, force_disable_deltas,
                                   progress,
                                   cancellable, error))
             {
@@ -3085,7 +3091,7 @@ flatpak_dir_install (FlatpakDir          *self,
             return FALSE;
 
           if (!flatpak_dir_pull (self, remote_name, ref, subpaths,
-                                 child_repo, OSTREE_REPO_PULL_FLAGS_MIRROR,
+                                 child_repo, OSTREE_REPO_PULL_FLAGS_MIRROR, FALSE,
                                  progress, cancellable, error))
             return FALSE;
 
@@ -3111,7 +3117,7 @@ flatpak_dir_install (FlatpakDir          *self,
 
   if (!no_pull)
     {
-      if (!flatpak_dir_pull (self, remote_name, ref, opt_subpaths, NULL, OSTREE_REPO_PULL_FLAGS_NONE, progress,
+      if (!flatpak_dir_pull (self, remote_name, ref, opt_subpaths, NULL, OSTREE_REPO_PULL_FLAGS_NONE, FALSE, progress,
                              cancellable, error))
         return FALSE;
     }
@@ -3328,6 +3334,7 @@ flatpak_dir_update (FlatpakDir          *self,
 
           if (!flatpak_dir_pull (self, remote_name, ref, subpaths,
                                  child_repo, OSTREE_REPO_PULL_FLAGS_MIRROR,
+                                 /* TODO: forcing no-deltas due to issue #144 */ TRUE,
                                  progress, cancellable, error))
             return FALSE;
 
@@ -3361,7 +3368,7 @@ flatpak_dir_update (FlatpakDir          *self,
   if (!no_pull)
     {
       if (!flatpak_dir_pull (self, remote_name, ref, subpaths,
-                             NULL, OSTREE_REPO_PULL_FLAGS_NONE, progress,
+                             NULL, OSTREE_REPO_PULL_FLAGS_NONE, FALSE, progress,
                              cancellable, error))
         return FALSE;
     }
@@ -4118,7 +4125,7 @@ flatpak_dir_remote_list_refs (FlatpakDir       *self,
   return TRUE;
 }
 
-GPtrArray *
+static GPtrArray *
 find_matching_refs (GHashTable *refs,
                     const char   *opt_name,
                     const char   *opt_branch,
@@ -4128,9 +4135,13 @@ find_matching_refs (GHashTable *refs,
                     GError      **error)
 {
   g_autoptr(GPtrArray) matched_refs = NULL;
-  const char *arch = NULL;
+  const char **arches = flatpak_get_arches ();
+  const char *opt_arches[] = {opt_arch, NULL};
   GHashTableIter hash_iter;
   gpointer key;
+
+  if (opt_arch != NULL)
+    arches = opt_arches;
 
   if (opt_name && !flatpak_is_valid_name (opt_name))
     {
@@ -4145,10 +4156,6 @@ find_matching_refs (GHashTable *refs,
     }
 
   matched_refs = g_ptr_array_new_with_free_func (g_free);
-
-  arch = opt_arch;
-  if (arch == NULL)
-    arch = flatpak_get_arch ();
 
   g_hash_table_iter_init (&hash_iter, refs);
   while (g_hash_table_iter_next (&hash_iter, &key, NULL))
@@ -4177,7 +4184,7 @@ find_matching_refs (GHashTable *refs,
       if (opt_name != NULL && strcmp (opt_name, parts[1]) != 0)
         continue;
 
-      if (strcmp (parts[2], arch) != 0)
+      if (!g_strv_contains (arches, parts[2]))
         continue;
 
       if (opt_branch != NULL && strcmp (opt_branch, parts[3]) != 0)
@@ -4190,7 +4197,7 @@ find_matching_refs (GHashTable *refs,
 }
 
 
-char *
+static char *
 find_matching_ref (GHashTable *refs,
                    const char   *name,
                    const char   *opt_branch,
@@ -4199,39 +4206,50 @@ find_matching_ref (GHashTable *refs,
                    gboolean      runtime,
                    GError      **error)
 {
-  g_autoptr(GPtrArray) matched_refs = NULL;
+  const char **arches = flatpak_get_arches ();
+  const char *opt_arches[] = {opt_arch, NULL};
+  int i;
 
-  matched_refs = find_matching_refs (refs, name, opt_branch, opt_arch,
-                                     app, runtime, error);
-  if (matched_refs == NULL)
-    return NULL;
+  if (opt_arch != NULL)
+    arches = opt_arches;
 
-  if (matched_refs->len == 0)
+  /* We stop at the first arch (in prio order) that has a match */
+  for (i = 0; arches[i] != NULL; i++)
     {
-      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-                   "Nothing matches %s", name);
-      return NULL;
-    }
+      g_autoptr(GPtrArray) matched_refs = NULL;
 
-  if (matched_refs->len > 1)
-    {
-      int i;
-      g_autoptr(GString) err = g_string_new ("");
-      g_string_printf (err, "Multiple branches available for %s, you must specify one of: ", name);
-      for (i = 0; i < matched_refs->len; i++)
+      matched_refs = find_matching_refs (refs, name, opt_branch, arches[i],
+                                         app, runtime, error);
+      if (matched_refs == NULL)
+        return NULL;
+
+      if (matched_refs->len == 0)
+        continue;
+
+      if (matched_refs->len > 1)
         {
-          g_auto(GStrv) parts = flatpak_decompose_ref (g_ptr_array_index (matched_refs, i), NULL);
-          if (i != 0)
-            g_string_append (err, ", ");
+          int i;
+          g_autoptr(GString) err = g_string_new ("");
+          g_string_printf (err, "Multiple branches available for %s, you must specify one of: ", name);
+          for (i = 0; i < matched_refs->len; i++)
+            {
+              g_auto(GStrv) parts = flatpak_decompose_ref (g_ptr_array_index (matched_refs, i), NULL);
+              if (i != 0)
+                g_string_append (err, ", ");
 
-          g_string_append (err, parts[3]);
+              g_string_append (err, parts[3]);
+            }
+
+          flatpak_fail (error, err->str);
+          return NULL;
         }
 
-      flatpak_fail (error, err->str);
-      return NULL;
+      return g_strdup (g_ptr_array_index (matched_refs, 0));
     }
 
-  return g_strdup (g_ptr_array_index (matched_refs, 0));
+  g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+               "Nothing matches %s", name);
+  return NULL;
 }
 
 char **
@@ -4803,7 +4821,7 @@ flatpak_dir_modify_remote (FlatpakDir   *self,
         g_key_file_set_value (new_config, group, keys[i], value);
     }
 
-  if (!ostree_repo_write_config (self->repo, config, error))
+  if (!ostree_repo_write_config (self->repo, new_config, error))
     return FALSE;
 
   if (gpg_data != NULL)

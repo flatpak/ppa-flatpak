@@ -172,6 +172,8 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
 	$(am__configure_deps) $(dist_triggers_SCRIPTS) \
+	$(am__dist_installed_test_dbs_DATA_DIST) \
+	$(am__dist_installed_test_keyring_DATA_DIST) \
 	$(flatpakinclude_HEADERS) $(am__DIST_COMMON)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
@@ -212,10 +214,10 @@ am__installdirs = "$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(completiondir)" \
 	"$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbusconfdir)" \
-	"$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(envdir)" \
-	"$(DESTDIR)$(installed_testdir)" \
+	"$(DESTDIR)$(dbussystemservicedir)" \
 	"$(DESTDIR)$(installed_test_dbsdir)" \
-	"$(DESTDIR)$(installed_test_keyringdir)" \
+	"$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(envdir)" \
+	"$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(installed_test_metadir)" \
 	"$(DESTDIR)$(introspectiondir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" \
@@ -223,6 +225,7 @@ am__installdirs = "$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" \
 	"$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" \
 	"$(DESTDIR)$(systemduserunitdir)" \
+	"$(DESTDIR)$(flatpakincludedir)" \
 	"$(DESTDIR)$(flatpakincludedir)"
 LTLIBRARIES = $(installed_test_LTLIBRARIES) $(lib_LTLIBRARIES) \
 	$(noinst_LTLIBRARIES)
@@ -231,9 +234,7 @@ libflatpak_common_la_DEPENDENCIES = libglnx.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am__dirstamp = $(am__leading_dot)dirstamp
-am__objects_1 = common/libflatpak_common_la-flatpak-dbus.lo
-am__objects_2 = common/libflatpak_common_la-flatpak-systemd-dbus.lo
-am__objects_3 =
+am__objects_1 =
 am_libflatpak_common_la_OBJECTS =  \
 	common/libflatpak_common_la-flatpak-dir.lo \
 	common/libflatpak_common_la-flatpak-run.lo \
@@ -242,9 +243,13 @@ am_libflatpak_common_la_OBJECTS =  \
 	common/libflatpak_common_la-flatpak-chain-input-stream.lo \
 	common/gvdb/libflatpak_common_la-gvdb-reader.lo \
 	common/gvdb/libflatpak_common_la-gvdb-builder.lo \
-	common/libflatpak_common_la-flatpak-db.lo $(am__objects_1) \
-	$(am__objects_2) $(am__objects_3)
-libflatpak_common_la_OBJECTS = $(am_libflatpak_common_la_OBJECTS)
+	common/libflatpak_common_la-flatpak-db.lo $(am__objects_1)
+am__objects_2 = common/libflatpak_common_la-flatpak-dbus.lo
+am__objects_3 = common/libflatpak_common_la-flatpak-systemd-dbus.lo
+nodist_libflatpak_common_la_OBJECTS = $(am__objects_2) \
+	$(am__objects_3) $(am__objects_1)
+libflatpak_common_la_OBJECTS = $(am_libflatpak_common_la_OBJECTS) \
+	$(nodist_libflatpak_common_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -256,19 +261,18 @@ libflatpak_common_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 libflatpak_la_DEPENDENCIES = libflatpak-common.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am__objects_4 = $(am__objects_3)
-am__objects_5 = lib/libflatpak_la-flatpak.lo \
-	lib/libflatpak_la-flatpak-enum-types.lo \
+am_libflatpak_la_OBJECTS = lib/libflatpak_la-flatpak.lo \
 	lib/libflatpak_la-flatpak-ref.lo \
 	lib/libflatpak_la-flatpak-installed-ref.lo \
 	lib/libflatpak_la-flatpak-remote-ref.lo \
 	lib/libflatpak_la-flatpak-bundle-ref.lo \
 	lib/libflatpak_la-flatpak-remote.lo \
 	lib/libflatpak_la-flatpak-error.lo \
-	lib/libflatpak_la-flatpak-installation.lo $(am__objects_3)
-am_libflatpak_la_OBJECTS = $(am__objects_4) $(am__objects_4) \
-	$(am__objects_5) $(am__objects_3)
-libflatpak_la_OBJECTS = $(am_libflatpak_la_OBJECTS)
+	lib/libflatpak_la-flatpak-installation.lo $(am__objects_1)
+nodist_libflatpak_la_OBJECTS =  \
+	lib/libflatpak_la-flatpak-enum-types.lo $(am__objects_1)
+libflatpak_la_OBJECTS = $(am_libflatpak_la_OBJECTS) \
+	$(nodist_libflatpak_la_OBJECTS)
 libflatpak_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libflatpak_la_CFLAGS) \
 	$(CFLAGS) $(libflatpak_la_LDFLAGS) $(LDFLAGS) -o $@
@@ -283,7 +287,7 @@ am_libglnx_la_OBJECTS = ./libglnx/libglnx_la-glnx-backports.lo \
 	./libglnx/libglnx_la-glnx-lockfile.lo \
 	./libglnx/libglnx_la-glnx-libcontainer.lo \
 	./libglnx/libglnx_la-glnx-xattrs.lo \
-	./libglnx/libglnx_la-glnx-shutil.lo $(am__objects_3)
+	./libglnx/libglnx_la-glnx-shutil.lo $(am__objects_1)
 libglnx_la_OBJECTS = $(am_libglnx_la_OBJECTS)
 libglnx_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libglnx_la_CFLAGS) \
@@ -300,7 +304,7 @@ am__EXEEXT_3 = $(am__EXEEXT_2)
 PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(installed_test_PROGRAMS) $(libexec_PROGRAMS) \
 	$(noinst_PROGRAMS)
-am__objects_6 = document-portal/flatpak-xdp-dbus.$(OBJEXT)
+am__objects_4 = document-portal/flatpak-xdp-dbus.$(OBJEXT)
 am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-add-remote.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-delete-remote.$(OBJEXT) \
@@ -323,8 +327,11 @@ am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-build-import-bundle.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-build-sign.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-repo-update.$(OBJEXT) \
-	app/flatpak-flatpak-builtins-document.$(OBJEXT) \
-	$(am__objects_6) $(am__objects_3)
+	app/flatpak-flatpak-builtins-document-export.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-document-unexport.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-document-info.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-document-list.$(OBJEXT) \
+	$(am__objects_4) $(am__objects_1)
 flatpak_OBJECTS = $(am_flatpak_OBJECTS)
 flatpak_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libglnx.la \
@@ -348,7 +355,7 @@ am_flatpak_builder_OBJECTS =  \
 	builder/flatpak_builder-builder-context.$(OBJEXT) \
 	builder/flatpak_builder-builder-cache.$(OBJEXT) \
 	builder/flatpak_builder-builder-utils.$(OBJEXT) \
-	$(am__objects_3)
+	$(am__objects_1)
 flatpak_builder_OBJECTS = $(am_flatpak_builder_OBJECTS)
 flatpak_builder_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -358,20 +365,20 @@ flatpak_builder_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_builder_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-am__objects_7 = ./bubblewrap/flatpak_bwrap-bubblewrap.$(OBJEXT) \
+am__objects_5 = ./bubblewrap/flatpak_bwrap-bubblewrap.$(OBJEXT) \
 	./bubblewrap/flatpak_bwrap-bind-mount.$(OBJEXT) \
 	./bubblewrap/flatpak_bwrap-network.$(OBJEXT) \
-	./bubblewrap/flatpak_bwrap-utils.$(OBJEXT) $(am__objects_3)
-am_flatpak_bwrap_OBJECTS = $(am__objects_7)
+	./bubblewrap/flatpak_bwrap-utils.$(OBJEXT) $(am__objects_1)
+am_flatpak_bwrap_OBJECTS = $(am__objects_5)
 flatpak_bwrap_OBJECTS = $(am_flatpak_bwrap_OBJECTS)
-flatpak_bwrap_LDADD = $(LDADD)
+flatpak_bwrap_DEPENDENCIES = $(am__DEPENDENCIES_1)
 flatpak_bwrap_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(flatpak_bwrap_CFLAGS) \
-	$(CFLAGS) $(flatpak_bwrap_LDFLAGS) $(LDFLAGS) -o $@
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_flatpak_dbus_proxy_OBJECTS =  \
 	dbus-proxy/flatpak_dbus_proxy-flatpak-proxy.$(OBJEXT) \
 	dbus-proxy/flatpak_dbus_proxy-dbus-proxy.$(OBJEXT) \
-	$(am__objects_3)
+	$(am__objects_1)
 flatpak_dbus_proxy_OBJECTS = $(am_flatpak_dbus_proxy_OBJECTS)
 flatpak_dbus_proxy_DEPENDENCIES = $(am__DEPENDENCIES_1) libglnx.la
 flatpak_dbus_proxy_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
@@ -379,7 +386,7 @@ flatpak_dbus_proxy_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(flatpak_dbus_proxy_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_flatpak_session_helper_OBJECTS = session-helper/flatpak_session_helper-flatpak-session-helper.$(OBJEXT) \
-	$(am__objects_3)
+	$(am__objects_1)
 flatpak_session_helper_OBJECTS = $(am_flatpak_session_helper_OBJECTS)
 flatpak_session_helper_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	libflatpak-common.la
@@ -391,7 +398,7 @@ am__flatpak_system_helper_SOURCES_DIST =  \
 	system-helper/flatpak-system-helper.c lib/flatpak-error.c
 @BUILD_SYSTEM_HELPER_TRUE@am_flatpak_system_helper_OBJECTS = system-helper/flatpak_system_helper-flatpak-system-helper.$(OBJEXT) \
 @BUILD_SYSTEM_HELPER_TRUE@	lib/flatpak_system_helper-flatpak-error.$(OBJEXT) \
-@BUILD_SYSTEM_HELPER_TRUE@	$(am__objects_3)
+@BUILD_SYSTEM_HELPER_TRUE@	$(am__objects_1)
 flatpak_system_helper_OBJECTS = $(am_flatpak_system_helper_OBJECTS)
 @BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_DEPENDENCIES =  \
 @BUILD_SYSTEM_HELPER_TRUE@	$(am__DEPENDENCIES_1) \
@@ -402,10 +409,10 @@ flatpak_system_helper_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_system_helper_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am__objects_8 = document-portal/test_doc_portal-xdp-dbus.$(OBJEXT)
+am__objects_6 = document-portal/test_doc_portal-xdp-dbus.$(OBJEXT)
 am_test_doc_portal_OBJECTS =  \
 	tests/test_doc_portal-test-doc-portal.$(OBJEXT) \
-	$(am__objects_8)
+	$(am__objects_6)
 test_doc_portal_OBJECTS = $(am_test_doc_portal_OBJECTS)
 test_doc_portal_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) libglnx.la libflatpak-common.la \
@@ -415,7 +422,7 @@ test_doc_portal_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(test_doc_portal_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 am_test_libflatpak_OBJECTS = lib/test_libflatpak-test-lib.$(OBJEXT) \
-	$(am__objects_3)
+	$(am__objects_1)
 test_libflatpak_OBJECTS = $(am_test_libflatpak_OBJECTS)
 test_libflatpak_DEPENDENCIES = $(am__DEPENDENCIES_1) libflatpak.la \
 	$(am__DEPENDENCIES_1)
@@ -430,28 +437,31 @@ testdb_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 testdb_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(testdb_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-am__objects_9 =  \
-	document-portal/xdg_document_portal-xdp-dbus.$(OBJEXT)
-am__objects_10 = permission-store/xdg_document_portal-permission-store-dbus.$(OBJEXT)
 am_xdg_document_portal_OBJECTS =  \
 	document-portal/xdg_document_portal-xdp-main.$(OBJEXT) \
-	$(am__objects_9) $(am__objects_10) \
 	document-portal/xdg_document_portal-xdp-util.$(OBJEXT) \
 	document-portal/xdg_document_portal-xdp-fuse.$(OBJEXT) \
-	$(am__objects_3)
-xdg_document_portal_OBJECTS = $(am_xdg_document_portal_OBJECTS)
+	$(am__objects_1)
+am__objects_7 =  \
+	document-portal/xdg_document_portal-xdp-dbus.$(OBJEXT)
+am__objects_8 = permission-store/xdg_document_portal-permission-store-dbus.$(OBJEXT)
+am__objects_9 = $(am__objects_8)
+nodist_xdg_document_portal_OBJECTS = $(am__objects_7) $(am__objects_9) \
+	$(am__objects_1)
+xdg_document_portal_OBJECTS = $(am_xdg_document_portal_OBJECTS) \
+	$(nodist_xdg_document_portal_OBJECTS)
 xdg_document_portal_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) libflatpak-common.la
 xdg_document_portal_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(xdg_document_portal_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am__objects_11 = permission-store/xdg_permission_store-permission-store-dbus.$(OBJEXT)
-am_xdg_permission_store_OBJECTS = $(am__objects_11) \
-	permission-store/xdg_permission_store-permission-store.$(OBJEXT) \
+am_xdg_permission_store_OBJECTS = permission-store/xdg_permission_store-permission-store.$(OBJEXT) \
 	permission-store/xdg_permission_store-xdg-permission-store.$(OBJEXT) \
-	$(am__objects_3)
-xdg_permission_store_OBJECTS = $(am_xdg_permission_store_OBJECTS)
+	$(am__objects_1)
+nodist_xdg_permission_store_OBJECTS = permission-store/xdg_permission_store-permission-store-dbus.$(OBJEXT)
+xdg_permission_store_OBJECTS = $(am_xdg_permission_store_OBJECTS) \
+	$(nodist_xdg_permission_store_OBJECTS)
 xdg_permission_store_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	libflatpak-common.la
 xdg_permission_store_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
@@ -494,14 +504,19 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libflatpak_common_la_SOURCES) $(libflatpak_la_SOURCES) \
+SOURCES = $(libflatpak_common_la_SOURCES) \
+	$(nodist_libflatpak_common_la_SOURCES) \
+	$(libflatpak_la_SOURCES) $(nodist_libflatpak_la_SOURCES) \
 	$(libglnx_la_SOURCES) $(flatpak_SOURCES) \
 	$(flatpak_builder_SOURCES) $(flatpak_bwrap_SOURCES) \
 	$(flatpak_dbus_proxy_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
 	$(flatpak_system_helper_SOURCES) $(test_doc_portal_SOURCES) \
 	$(test_libflatpak_SOURCES) $(testdb_SOURCES) \
-	$(xdg_document_portal_SOURCES) $(xdg_permission_store_SOURCES)
+	$(xdg_document_portal_SOURCES) \
+	$(nodist_xdg_document_portal_SOURCES) \
+	$(xdg_permission_store_SOURCES) \
+	$(nodist_xdg_permission_store_SOURCES)
 DIST_SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(libflatpak_la_SOURCES) $(libglnx_la_SOURCES) \
 	$(flatpak_SOURCES) $(flatpak_builder_SOURCES) \
@@ -524,15 +539,19 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+am__dist_installed_test_dbs_DATA_DIST = tests/dbs/no_tables
+am__dist_installed_test_keyring_DATA_DIST = tests/test-keyring/README \
+	tests/test-keyring/pubring.gpg tests/test-keyring/secring.gpg
 DATA = $(completion_DATA) $(dbus_service_DATA) $(dbusconf_DATA) \
-	$(dbussystemservice_DATA) $(env_DATA) $(installed_test_DATA) \
-	$(installed_test_dbs_DATA) $(installed_test_keyring_DATA) \
-	$(installed_test_meta_DATA) $(introspection_DATA) \
-	$(nobase_installed_test_DATA) $(nodist_gir_DATA) \
-	$(nodist_typelib_DATA) $(noinst_DATA) $(pkgconfig_DATA) \
-	$(polkit_policy_DATA) $(polkit_rules_DATA) $(profile_DATA) \
-	$(systemdsystemunit_DATA) $(systemduserunit_DATA)
-HEADERS = $(flatpakinclude_HEADERS)
+	$(dbussystemservice_DATA) $(dist_installed_test_dbs_DATA) \
+	$(dist_installed_test_keyring_DATA) $(env_DATA) \
+	$(installed_test_DATA) $(installed_test_meta_DATA) \
+	$(introspection_DATA) $(nobase_installed_test_DATA) \
+	$(nodist_gir_DATA) $(nodist_typelib_DATA) $(noinst_DATA) \
+	$(pkgconfig_DATA) $(polkit_policy_DATA) $(polkit_rules_DATA) \
+	$(profile_DATA) $(systemdsystemunit_DATA) \
+	$(systemduserunit_DATA)
+HEADERS = $(flatpakinclude_HEADERS) $(nodist_flatpakinclude_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 am__recursive_targets = \
@@ -1010,20 +1029,25 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 NULL = 
+dist_installed_test_scripts = $(NULL) buildutil/tap-driver.sh \
+	tests/test-configure tests/make-test-app.sh \
+	tests/make-test-runtime.sh tests/make-test-bundles.sh $(NULL)
 noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
-	$(systemduserunit_DATA) $(am__append_16)
-DISTCLEANFILES = $(NULL) lib/flatpak-enum-types.c \
-	lib/flatpak-enum-types.h $(NULL) $(am__append_20) \
+	$(systemduserunit_DATA) $(nodist_libflatpak_common_la_SOURCES) \
+	$(am__append_16) $(nodist_xdg_permission_store_SOURCES)
+DISTCLEANFILES = $(NULL) $(nodist_flatpakinclude_HEADERS) \
+	$(nodist_libflatpak_la_SOURCES) $(NULL) $(am__append_20) \
 	tests/services/org.freedesktop.Flatpak.service \
 	tests/services/org.freedesktop.portal.Documents.service \
 	tests/services/org.freedesktop.impl.portal.PermissionStore.service \
 	tests/services/org.freedesktop.Flatpak.SystemHelper.service \
 	tests/package_version.txt $(NULL) flatpak.sh flatpak.env
-BUILT_SOURCES = $(NULL) $(dbus_built_sources) \
-	$(systemd_dbus_built_sources) lib/flatpak-enum-types.c \
-	lib/flatpak-enum-types.h $(NULL) $(ps_dbus_built_sources) \
+BUILT_SOURCES = $(NULL) $(nodist_libflatpak_common_la_SOURCES) \
+	$(nodist_flatpakinclude_HEADERS) \
+	$(nodist_libflatpak_la_SOURCES) $(NULL) \
+	$(nodist_xdg_permission_store_SOURCES) \
 	$(xdp_dbus_built_sources)
 EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	$(all_dist_test_scripts) $(all_dist_test_data) \
@@ -1034,11 +1058,9 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	data/org.freedesktop.Flatpak.xml $(NULL) \
 	lib/flatpak-enum-types.c.template \
 	lib/flatpak-enum-types.h.template $(am__append_19) \
-	$(installed_test_SCRIPTS) $(installed_test_data) \
-	$(installed_test_keyring_DATA) $(installed_test_dbs_DATA) \
-	tests/flatpak.supp tests/glib.supp $(completion_DATA) \
-	profile/flatpak.sh.in $(NULL) env.d/flatpak.env.in \
-	flatpak.pc.in README.md
+	$(installed_test_data) tests/flatpak.supp tests/glib.supp \
+	$(completion_DATA) profile/flatpak.sh.in $(NULL) \
+	env.d/flatpak.env.in flatpak.pc.in README.md
 TESTS_ENVIRONMENT = G_TEST_SRCDIR="$(abs_srcdir)/tests" \
 	G_TEST_BUILDDIR="$(abs_builddir)/tests" UNINSTALLEDTESTS=1 \
 	G_DEBUG=gc-friendly MALLOC_CHECK_=2 \
@@ -1052,9 +1074,7 @@ TESTS_ENVIRONMENT = G_TEST_SRCDIR="$(abs_srcdir)/tests" \
 LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/buildutil/tap-driver.sh
 LOG_COMPILER = $(top_srcdir)/buildutil/tap-test
 installed_test_LTLIBRARIES = $(am__append_12)
-installed_test_SCRIPTS = $(am__append_10) buildutil/tap-driver.sh \
-	tests/test-configure tests/make-test-app.sh \
-	tests/make-test-runtime.sh tests/make-test-bundles.sh $(NULL)
+installed_test_SCRIPTS = $(am__append_10)
 installed_test_DATA = $(am__append_11)
 nobase_installed_test_DATA = 
 noinst_SCRIPTS = $(am__append_3)
@@ -1168,6 +1188,11 @@ libglnx_la_LDFLAGS = -avoid-version -Bsymbolic-functions -export-symbols-regex "
 libglnx_la_LIBADD = $(libglnx_libs)
 dbus_built_sources = common/flatpak-dbus.c common/flatpak-dbus.h
 systemd_dbus_built_sources = common/flatpak-systemd-dbus.c common/flatpak-systemd-dbus.h
+nodist_libflatpak_common_la_SOURCES = \
+	$(dbus_built_sources)		\
+	$(systemd_dbus_built_sources)	\
+	$(NULL)
+
 libflatpak_common_la_SOURCES = \
 	common/flatpak-common-types.h \
 	common/flatpak-dir.c \
@@ -1187,8 +1212,6 @@ libflatpak_common_la_SOURCES = \
 	common/gvdb/gvdb-builder.c	\
 	common/flatpak-db.c \
 	common/flatpak-db.h \
-	$(dbus_built_sources)		\
-	$(systemd_dbus_built_sources)	\
 	$(NULL)
 
 libflatpak_common_la_CFLAGS = \
@@ -1234,13 +1257,17 @@ flatpak_SOURCES = \
 	app/flatpak-builtins-build-import-bundle.c \
 	app/flatpak-builtins-build-sign.c \
 	app/flatpak-builtins-repo-update.c \
-	app/flatpak-builtins-document.c \
+	app/flatpak-builtins-document-export.c \
+	app/flatpak-builtins-document-unexport.c \
+	app/flatpak-builtins-document-info.c \
+	app/flatpak-builtins-document-list.c \
 	$(xdp_dbus_built_sources)	\
 	$(NULL)
 
 flatpak_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(LIBARCHIVE_LIBS) libglnx.la libflatpak-common.la
 flatpak_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(LIBARCHIVE_CFLAGS)
-public_headers = \
+flatpakincludedir = $(includedir)/flatpak
+flatpakinclude_HEADERS = \
 	lib/flatpak.h \
 	lib/flatpak-ref.h \
 	lib/flatpak-error.h \
@@ -1252,15 +1279,12 @@ public_headers = \
 	lib/flatpak-version-macros.h \
 	$(NULL)
 
-generated_public_headers = \
+nodist_flatpakinclude_HEADERS = \
 	lib/flatpak-enum-types.h \
 	$(NULL)
 
-flatpakincludedir = $(includedir)/flatpak
-flatpakinclude_HEADERS = $(public_headers) $(generated_public_headers)
-sources = \
+libflatpak_la_SOURCES = \
 	lib/flatpak.c \
-	lib/flatpak-enum-types.c \
 	lib/flatpak-ref.c \
 	lib/flatpak-installed-ref.c \
 	lib/flatpak-installed-ref-private.h \
@@ -1273,10 +1297,13 @@ sources = \
 	lib/flatpak-installation.c \
 	$(NULL)
 
-libflatpak_la_SOURCES = \
-	$(public_headers) \
-	$(generated_public_headers) \
-	$(sources) \
+nodist_libflatpak_la_SOURCES = \
+	lib/flatpak-enum-types.c \
+	$(NULL)
+
+sources = \
+	$(libflatpak_la_SOURCES) \
+	$(nodist_libflatpak_la_SOURCES) \
 	$(NULL)
 
 libflatpak_la_CFLAGS = \
@@ -1319,7 +1346,11 @@ test_libflatpak_LDADD = \
 	$(NULL)
 
 INTROSPECTION_GIRS = $(am__append_15)
-@HAVE_INTROSPECTION_TRUE@introspected_headers = $(public_headers)
+@HAVE_INTROSPECTION_TRUE@introspected_headers = \
+@HAVE_INTROSPECTION_TRUE@	$(flatpakinclude_HEADERS) \
+@HAVE_INTROSPECTION_TRUE@	$(nodist_flatpakinclude_HEADERS) \
+@HAVE_INTROSPECTION_TRUE@	$(NULL)
+
 @HAVE_INTROSPECTION_TRUE@introspected_sources = $(filter-out %-private.h,$(sources))
 @HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_NAMESPACE = Flatpak
 @HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_VERSION = 1.0
@@ -1406,9 +1437,11 @@ flatpak_dbus_proxy_SOURCES = \
 
 flatpak_dbus_proxy_LDADD = $(BASE_LIBS) libglnx.la
 flatpak_dbus_proxy_CFLAGS = $(BASE_CFLAGS) -I$(srcdir)/dbus-proxy
-ps_dbus_built_sources = permission-store/permission-store-dbus.c permission-store/permission-store-dbus.h
+nodist_xdg_permission_store_SOURCES = permission-store/permission-store-dbus.c permission-store/permission-store-dbus.h
+
+# also used by the document portal
+ps_dbus_built_sources = $(nodist_xdg_permission_store_SOURCES)
 xdg_permission_store_SOURCES = \
-	$(ps_dbus_built_sources)		\
 	permission-store/permission-store.c	\
 	permission-store/xdg-permission-store.c	\
 	permission-store/xdg-permission-store.h	\
@@ -1417,11 +1450,14 @@ xdg_permission_store_SOURCES = \
 xdg_permission_store_LDADD = $(BASE_LIBS) libflatpak-common.la
 xdg_permission_store_CFLAGS = $(BASE_CFLAGS) $(SOUP_CFLAGS) $(OSTREE_CFLAGS) $(GSYSTEM_CFLAGS) -I$(srcdir)/permission-store -I$(builddir)/permission-store
 xdp_dbus_built_sources = document-portal/xdp-dbus.c document-portal/xdp-dbus.h
+nodist_xdg_document_portal_SOURCES = \
+	$(xdp_dbus_built_sources)		\
+	$(ps_dbus_built_sources)		\
+	$(NULL)
+
 xdg_document_portal_SOURCES = \
 	document-portal/xdp-main.c		\
 	document-portal/xdp-enums.h		\
-	$(xdp_dbus_built_sources)		\
-	$(ps_dbus_built_sources)		\
 	document-portal/xdp-util.h		\
 	document-portal/xdp-util.c		\
 	document-portal/xdp-fuse.h		\
@@ -1459,13 +1495,14 @@ installed_test_data = \
 
 installed_test_keyringdir = $(installed_testdir)/test-keyring
 installed_test_dbsdir = $(installed_testdir)/dbs
-@ENABLE_INSTALLED_TESTS_TRUE@installed_test_keyring_DATA = \
+@ENABLE_INSTALLED_TESTS_TRUE@dist_installed_test_keyring_DATA = \
+@ENABLE_INSTALLED_TESTS_TRUE@	tests/test-keyring/README \
 @ENABLE_INSTALLED_TESTS_TRUE@	tests/test-keyring/pubring.gpg \
 @ENABLE_INSTALLED_TESTS_TRUE@	tests/test-keyring/secring.gpg \
 @ENABLE_INSTALLED_TESTS_TRUE@	$(NULL)
 
-@ENABLE_INSTALLED_TESTS_TRUE@installed_test_dbs_DATA = tests/dbs/no_tables
-test_scripts = \
+@ENABLE_INSTALLED_TESTS_TRUE@dist_installed_test_dbs_DATA = tests/dbs/no_tables
+dist_test_scripts = \
 	tests/test-basic.sh \
 	tests/test-run.sh \
 	tests/test-run-system.sh \
@@ -1478,7 +1515,7 @@ test_programs = testdb test-doc-portal
 VALGRIND_SUPPRESSIONS_FILES = tests/flatpak.supp tests/glib.supp
 flatpak_bwrap_SOURCES = $(bwrap_SOURCES)
 flatpak_bwrap_CFLAGS = $(bwrap_CFLAGS)
-flatpak_bwrap_LDFLAGS = $(bwrap_LDFLAGS)
+flatpak_bwrap_LDADD = $(bwrap_LDADD)
 bwrapdir = $(libexecdir)
 bwrap_SOURCES = \
 	./bubblewrap/bubblewrap.c \
@@ -1700,8 +1737,6 @@ lib/$(DEPDIR)/$(am__dirstamp):
 	@: > lib/$(DEPDIR)/$(am__dirstamp)
 lib/libflatpak_la-flatpak.lo: lib/$(am__dirstamp) \
 	lib/$(DEPDIR)/$(am__dirstamp)
-lib/libflatpak_la-flatpak-enum-types.lo: lib/$(am__dirstamp) \
-	lib/$(DEPDIR)/$(am__dirstamp)
 lib/libflatpak_la-flatpak-ref.lo: lib/$(am__dirstamp) \
 	lib/$(DEPDIR)/$(am__dirstamp)
 lib/libflatpak_la-flatpak-installed-ref.lo: lib/$(am__dirstamp) \
@@ -1715,6 +1750,8 @@ lib/libflatpak_la-flatpak-remote.lo: lib/$(am__dirstamp) \
 lib/libflatpak_la-flatpak-error.lo: lib/$(am__dirstamp) \
 	lib/$(DEPDIR)/$(am__dirstamp)
 lib/libflatpak_la-flatpak-installation.lo: lib/$(am__dirstamp) \
+	lib/$(DEPDIR)/$(am__dirstamp)
+lib/libflatpak_la-flatpak-enum-types.lo: lib/$(am__dirstamp) \
 	lib/$(DEPDIR)/$(am__dirstamp)
 
 libflatpak.la: $(libflatpak_la_OBJECTS) $(libflatpak_la_DEPENDENCIES) $(EXTRA_libflatpak_la_DEPENDENCIES) 
@@ -2012,8 +2049,14 @@ app/flatpak-flatpak-builtins-build-sign.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-repo-update.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
-app/flatpak-flatpak-builtins-document.$(OBJEXT): app/$(am__dirstamp) \
-	app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-document-export.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-document-unexport.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-document-info.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-document-list.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 document-portal/$(am__dirstamp):
 	@$(MKDIR_P) document-portal
 	@: > document-portal/$(am__dirstamp)
@@ -2163,6 +2206,12 @@ testdb$(EXEEXT): $(testdb_OBJECTS) $(testdb_DEPENDENCIES) $(EXTRA_testdb_DEPENDE
 document-portal/xdg_document_portal-xdp-main.$(OBJEXT):  \
 	document-portal/$(am__dirstamp) \
 	document-portal/$(DEPDIR)/$(am__dirstamp)
+document-portal/xdg_document_portal-xdp-util.$(OBJEXT):  \
+	document-portal/$(am__dirstamp) \
+	document-portal/$(DEPDIR)/$(am__dirstamp)
+document-portal/xdg_document_portal-xdp-fuse.$(OBJEXT):  \
+	document-portal/$(am__dirstamp) \
+	document-portal/$(DEPDIR)/$(am__dirstamp)
 document-portal/xdg_document_portal-xdp-dbus.$(OBJEXT):  \
 	document-portal/$(am__dirstamp) \
 	document-portal/$(DEPDIR)/$(am__dirstamp)
@@ -2175,23 +2224,17 @@ permission-store/$(DEPDIR)/$(am__dirstamp):
 permission-store/xdg_document_portal-permission-store-dbus.$(OBJEXT):  \
 	permission-store/$(am__dirstamp) \
 	permission-store/$(DEPDIR)/$(am__dirstamp)
-document-portal/xdg_document_portal-xdp-util.$(OBJEXT):  \
-	document-portal/$(am__dirstamp) \
-	document-portal/$(DEPDIR)/$(am__dirstamp)
-document-portal/xdg_document_portal-xdp-fuse.$(OBJEXT):  \
-	document-portal/$(am__dirstamp) \
-	document-portal/$(DEPDIR)/$(am__dirstamp)
 
 xdg-document-portal$(EXEEXT): $(xdg_document_portal_OBJECTS) $(xdg_document_portal_DEPENDENCIES) $(EXTRA_xdg_document_portal_DEPENDENCIES) 
 	@rm -f xdg-document-portal$(EXEEXT)
 	$(AM_V_CCLD)$(xdg_document_portal_LINK) $(xdg_document_portal_OBJECTS) $(xdg_document_portal_LDADD) $(LIBS)
-permission-store/xdg_permission_store-permission-store-dbus.$(OBJEXT):  \
-	permission-store/$(am__dirstamp) \
-	permission-store/$(DEPDIR)/$(am__dirstamp)
 permission-store/xdg_permission_store-permission-store.$(OBJEXT):  \
 	permission-store/$(am__dirstamp) \
 	permission-store/$(DEPDIR)/$(am__dirstamp)
 permission-store/xdg_permission_store-xdg-permission-store.$(OBJEXT):  \
+	permission-store/$(am__dirstamp) \
+	permission-store/$(DEPDIR)/$(am__dirstamp)
+permission-store/xdg_permission_store-permission-store-dbus.$(OBJEXT):  \
 	permission-store/$(am__dirstamp) \
 	permission-store/$(DEPDIR)/$(am__dirstamp)
 
@@ -2315,7 +2358,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build-sign.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-delete-remote.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-document.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-document-export.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-document-info.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-document-list.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-document-unexport.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-enter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-install.Po@am__quote@
@@ -2483,13 +2529,6 @@ lib/libflatpak_la-flatpak.lo: lib/flatpak.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak.lo `test -f 'lib/flatpak.c' || echo '$(srcdir)/'`lib/flatpak.c
 
-lib/libflatpak_la-flatpak-enum-types.lo: lib/flatpak-enum-types.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak-enum-types.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak-enum-types.Tpo -c -o lib/libflatpak_la-flatpak-enum-types.lo `test -f 'lib/flatpak-enum-types.c' || echo '$(srcdir)/'`lib/flatpak-enum-types.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libflatpak_la-flatpak-enum-types.Tpo lib/$(DEPDIR)/libflatpak_la-flatpak-enum-types.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-enum-types.c' object='lib/libflatpak_la-flatpak-enum-types.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak-enum-types.lo `test -f 'lib/flatpak-enum-types.c' || echo '$(srcdir)/'`lib/flatpak-enum-types.c
-
 lib/libflatpak_la-flatpak-ref.lo: lib/flatpak-ref.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak-ref.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak-ref.Tpo -c -o lib/libflatpak_la-flatpak-ref.lo `test -f 'lib/flatpak-ref.c' || echo '$(srcdir)/'`lib/flatpak-ref.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libflatpak_la-flatpak-ref.Tpo lib/$(DEPDIR)/libflatpak_la-flatpak-ref.Plo
@@ -2538,6 +2577,13 @@ lib/libflatpak_la-flatpak-installation.lo: lib/flatpak-installation.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-installation.c' object='lib/libflatpak_la-flatpak-installation.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak-installation.lo `test -f 'lib/flatpak-installation.c' || echo '$(srcdir)/'`lib/flatpak-installation.c
+
+lib/libflatpak_la-flatpak-enum-types.lo: lib/flatpak-enum-types.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak-enum-types.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak-enum-types.Tpo -c -o lib/libflatpak_la-flatpak-enum-types.lo `test -f 'lib/flatpak-enum-types.c' || echo '$(srcdir)/'`lib/flatpak-enum-types.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libflatpak_la-flatpak-enum-types.Tpo lib/$(DEPDIR)/libflatpak_la-flatpak-enum-types.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-enum-types.c' object='lib/libflatpak_la-flatpak-enum-types.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak-enum-types.lo `test -f 'lib/flatpak-enum-types.c' || echo '$(srcdir)/'`lib/flatpak-enum-types.c
 
 ./libglnx/libglnx_la-glnx-backports.lo: ./libglnx/glnx-backports.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT ./libglnx/libglnx_la-glnx-backports.lo -MD -MP -MF ./libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Tpo -c -o ./libglnx/libglnx_la-glnx-backports.lo `test -f './libglnx/glnx-backports.c' || echo '$(srcdir)/'`./libglnx/glnx-backports.c
@@ -2917,19 +2963,61 @@ app/flatpak-flatpak-builtins-repo-update.obj: app/flatpak-builtins-repo-update.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-repo-update.obj `if test -f 'app/flatpak-builtins-repo-update.c'; then $(CYGPATH_W) 'app/flatpak-builtins-repo-update.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-repo-update.c'; fi`
 
-app/flatpak-flatpak-builtins-document.o: app/flatpak-builtins-document.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-document.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-document.Tpo -c -o app/flatpak-flatpak-builtins-document.o `test -f 'app/flatpak-builtins-document.c' || echo '$(srcdir)/'`app/flatpak-builtins-document.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-document.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-document.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-document.c' object='app/flatpak-flatpak-builtins-document.o' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-document-export.o: app/flatpak-builtins-document-export.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-document-export.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-document-export.Tpo -c -o app/flatpak-flatpak-builtins-document-export.o `test -f 'app/flatpak-builtins-document-export.c' || echo '$(srcdir)/'`app/flatpak-builtins-document-export.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-document-export.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-document-export.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-document-export.c' object='app/flatpak-flatpak-builtins-document-export.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-document.o `test -f 'app/flatpak-builtins-document.c' || echo '$(srcdir)/'`app/flatpak-builtins-document.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-document-export.o `test -f 'app/flatpak-builtins-document-export.c' || echo '$(srcdir)/'`app/flatpak-builtins-document-export.c
 
-app/flatpak-flatpak-builtins-document.obj: app/flatpak-builtins-document.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-document.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-document.Tpo -c -o app/flatpak-flatpak-builtins-document.obj `if test -f 'app/flatpak-builtins-document.c'; then $(CYGPATH_W) 'app/flatpak-builtins-document.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-document.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-document.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-document.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-document.c' object='app/flatpak-flatpak-builtins-document.obj' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-document-export.obj: app/flatpak-builtins-document-export.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-document-export.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-document-export.Tpo -c -o app/flatpak-flatpak-builtins-document-export.obj `if test -f 'app/flatpak-builtins-document-export.c'; then $(CYGPATH_W) 'app/flatpak-builtins-document-export.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-document-export.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-document-export.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-document-export.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-document-export.c' object='app/flatpak-flatpak-builtins-document-export.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-document.obj `if test -f 'app/flatpak-builtins-document.c'; then $(CYGPATH_W) 'app/flatpak-builtins-document.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-document.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-document-export.obj `if test -f 'app/flatpak-builtins-document-export.c'; then $(CYGPATH_W) 'app/flatpak-builtins-document-export.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-document-export.c'; fi`
+
+app/flatpak-flatpak-builtins-document-unexport.o: app/flatpak-builtins-document-unexport.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-document-unexport.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-document-unexport.Tpo -c -o app/flatpak-flatpak-builtins-document-unexport.o `test -f 'app/flatpak-builtins-document-unexport.c' || echo '$(srcdir)/'`app/flatpak-builtins-document-unexport.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-document-unexport.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-document-unexport.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-document-unexport.c' object='app/flatpak-flatpak-builtins-document-unexport.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-document-unexport.o `test -f 'app/flatpak-builtins-document-unexport.c' || echo '$(srcdir)/'`app/flatpak-builtins-document-unexport.c
+
+app/flatpak-flatpak-builtins-document-unexport.obj: app/flatpak-builtins-document-unexport.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-document-unexport.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-document-unexport.Tpo -c -o app/flatpak-flatpak-builtins-document-unexport.obj `if test -f 'app/flatpak-builtins-document-unexport.c'; then $(CYGPATH_W) 'app/flatpak-builtins-document-unexport.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-document-unexport.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-document-unexport.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-document-unexport.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-document-unexport.c' object='app/flatpak-flatpak-builtins-document-unexport.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-document-unexport.obj `if test -f 'app/flatpak-builtins-document-unexport.c'; then $(CYGPATH_W) 'app/flatpak-builtins-document-unexport.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-document-unexport.c'; fi`
+
+app/flatpak-flatpak-builtins-document-info.o: app/flatpak-builtins-document-info.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-document-info.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-document-info.Tpo -c -o app/flatpak-flatpak-builtins-document-info.o `test -f 'app/flatpak-builtins-document-info.c' || echo '$(srcdir)/'`app/flatpak-builtins-document-info.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-document-info.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-document-info.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-document-info.c' object='app/flatpak-flatpak-builtins-document-info.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-document-info.o `test -f 'app/flatpak-builtins-document-info.c' || echo '$(srcdir)/'`app/flatpak-builtins-document-info.c
+
+app/flatpak-flatpak-builtins-document-info.obj: app/flatpak-builtins-document-info.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-document-info.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-document-info.Tpo -c -o app/flatpak-flatpak-builtins-document-info.obj `if test -f 'app/flatpak-builtins-document-info.c'; then $(CYGPATH_W) 'app/flatpak-builtins-document-info.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-document-info.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-document-info.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-document-info.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-document-info.c' object='app/flatpak-flatpak-builtins-document-info.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-document-info.obj `if test -f 'app/flatpak-builtins-document-info.c'; then $(CYGPATH_W) 'app/flatpak-builtins-document-info.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-document-info.c'; fi`
+
+app/flatpak-flatpak-builtins-document-list.o: app/flatpak-builtins-document-list.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-document-list.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-document-list.Tpo -c -o app/flatpak-flatpak-builtins-document-list.o `test -f 'app/flatpak-builtins-document-list.c' || echo '$(srcdir)/'`app/flatpak-builtins-document-list.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-document-list.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-document-list.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-document-list.c' object='app/flatpak-flatpak-builtins-document-list.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-document-list.o `test -f 'app/flatpak-builtins-document-list.c' || echo '$(srcdir)/'`app/flatpak-builtins-document-list.c
+
+app/flatpak-flatpak-builtins-document-list.obj: app/flatpak-builtins-document-list.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-document-list.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-document-list.Tpo -c -o app/flatpak-flatpak-builtins-document-list.obj `if test -f 'app/flatpak-builtins-document-list.c'; then $(CYGPATH_W) 'app/flatpak-builtins-document-list.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-document-list.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-document-list.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-document-list.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-document-list.c' object='app/flatpak-flatpak-builtins-document-list.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-document-list.obj `if test -f 'app/flatpak-builtins-document-list.c'; then $(CYGPATH_W) 'app/flatpak-builtins-document-list.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-document-list.c'; fi`
 
 document-portal/flatpak-xdp-dbus.o: document-portal/xdp-dbus.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT document-portal/flatpak-xdp-dbus.o -MD -MP -MF document-portal/$(DEPDIR)/flatpak-xdp-dbus.Tpo -c -o document-portal/flatpak-xdp-dbus.o `test -f 'document-portal/xdp-dbus.c' || echo '$(srcdir)/'`document-portal/xdp-dbus.c
@@ -3351,34 +3439,6 @@ document-portal/xdg_document_portal-xdp-main.obj: document-portal/xdp-main.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -c -o document-portal/xdg_document_portal-xdp-main.obj `if test -f 'document-portal/xdp-main.c'; then $(CYGPATH_W) 'document-portal/xdp-main.c'; else $(CYGPATH_W) '$(srcdir)/document-portal/xdp-main.c'; fi`
 
-document-portal/xdg_document_portal-xdp-dbus.o: document-portal/xdp-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -MT document-portal/xdg_document_portal-xdp-dbus.o -MD -MP -MF document-portal/$(DEPDIR)/xdg_document_portal-xdp-dbus.Tpo -c -o document-portal/xdg_document_portal-xdp-dbus.o `test -f 'document-portal/xdp-dbus.c' || echo '$(srcdir)/'`document-portal/xdp-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) document-portal/$(DEPDIR)/xdg_document_portal-xdp-dbus.Tpo document-portal/$(DEPDIR)/xdg_document_portal-xdp-dbus.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='document-portal/xdp-dbus.c' object='document-portal/xdg_document_portal-xdp-dbus.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -c -o document-portal/xdg_document_portal-xdp-dbus.o `test -f 'document-portal/xdp-dbus.c' || echo '$(srcdir)/'`document-portal/xdp-dbus.c
-
-document-portal/xdg_document_portal-xdp-dbus.obj: document-portal/xdp-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -MT document-portal/xdg_document_portal-xdp-dbus.obj -MD -MP -MF document-portal/$(DEPDIR)/xdg_document_portal-xdp-dbus.Tpo -c -o document-portal/xdg_document_portal-xdp-dbus.obj `if test -f 'document-portal/xdp-dbus.c'; then $(CYGPATH_W) 'document-portal/xdp-dbus.c'; else $(CYGPATH_W) '$(srcdir)/document-portal/xdp-dbus.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) document-portal/$(DEPDIR)/xdg_document_portal-xdp-dbus.Tpo document-portal/$(DEPDIR)/xdg_document_portal-xdp-dbus.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='document-portal/xdp-dbus.c' object='document-portal/xdg_document_portal-xdp-dbus.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -c -o document-portal/xdg_document_portal-xdp-dbus.obj `if test -f 'document-portal/xdp-dbus.c'; then $(CYGPATH_W) 'document-portal/xdp-dbus.c'; else $(CYGPATH_W) '$(srcdir)/document-portal/xdp-dbus.c'; fi`
-
-permission-store/xdg_document_portal-permission-store-dbus.o: permission-store/permission-store-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -MT permission-store/xdg_document_portal-permission-store-dbus.o -MD -MP -MF permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Tpo -c -o permission-store/xdg_document_portal-permission-store-dbus.o `test -f 'permission-store/permission-store-dbus.c' || echo '$(srcdir)/'`permission-store/permission-store-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Tpo permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='permission-store/permission-store-dbus.c' object='permission-store/xdg_document_portal-permission-store-dbus.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -c -o permission-store/xdg_document_portal-permission-store-dbus.o `test -f 'permission-store/permission-store-dbus.c' || echo '$(srcdir)/'`permission-store/permission-store-dbus.c
-
-permission-store/xdg_document_portal-permission-store-dbus.obj: permission-store/permission-store-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -MT permission-store/xdg_document_portal-permission-store-dbus.obj -MD -MP -MF permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Tpo -c -o permission-store/xdg_document_portal-permission-store-dbus.obj `if test -f 'permission-store/permission-store-dbus.c'; then $(CYGPATH_W) 'permission-store/permission-store-dbus.c'; else $(CYGPATH_W) '$(srcdir)/permission-store/permission-store-dbus.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Tpo permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='permission-store/permission-store-dbus.c' object='permission-store/xdg_document_portal-permission-store-dbus.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -c -o permission-store/xdg_document_portal-permission-store-dbus.obj `if test -f 'permission-store/permission-store-dbus.c'; then $(CYGPATH_W) 'permission-store/permission-store-dbus.c'; else $(CYGPATH_W) '$(srcdir)/permission-store/permission-store-dbus.c'; fi`
-
 document-portal/xdg_document_portal-xdp-util.o: document-portal/xdp-util.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -MT document-portal/xdg_document_portal-xdp-util.o -MD -MP -MF document-portal/$(DEPDIR)/xdg_document_portal-xdp-util.Tpo -c -o document-portal/xdg_document_portal-xdp-util.o `test -f 'document-portal/xdp-util.c' || echo '$(srcdir)/'`document-portal/xdp-util.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) document-portal/$(DEPDIR)/xdg_document_portal-xdp-util.Tpo document-portal/$(DEPDIR)/xdg_document_portal-xdp-util.Po
@@ -3407,19 +3467,33 @@ document-portal/xdg_document_portal-xdp-fuse.obj: document-portal/xdp-fuse.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -c -o document-portal/xdg_document_portal-xdp-fuse.obj `if test -f 'document-portal/xdp-fuse.c'; then $(CYGPATH_W) 'document-portal/xdp-fuse.c'; else $(CYGPATH_W) '$(srcdir)/document-portal/xdp-fuse.c'; fi`
 
-permission-store/xdg_permission_store-permission-store-dbus.o: permission-store/permission-store-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_permission_store_CFLAGS) $(CFLAGS) -MT permission-store/xdg_permission_store-permission-store-dbus.o -MD -MP -MF permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Tpo -c -o permission-store/xdg_permission_store-permission-store-dbus.o `test -f 'permission-store/permission-store-dbus.c' || echo '$(srcdir)/'`permission-store/permission-store-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Tpo permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='permission-store/permission-store-dbus.c' object='permission-store/xdg_permission_store-permission-store-dbus.o' libtool=no @AMDEPBACKSLASH@
+document-portal/xdg_document_portal-xdp-dbus.o: document-portal/xdp-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -MT document-portal/xdg_document_portal-xdp-dbus.o -MD -MP -MF document-portal/$(DEPDIR)/xdg_document_portal-xdp-dbus.Tpo -c -o document-portal/xdg_document_portal-xdp-dbus.o `test -f 'document-portal/xdp-dbus.c' || echo '$(srcdir)/'`document-portal/xdp-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) document-portal/$(DEPDIR)/xdg_document_portal-xdp-dbus.Tpo document-portal/$(DEPDIR)/xdg_document_portal-xdp-dbus.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='document-portal/xdp-dbus.c' object='document-portal/xdg_document_portal-xdp-dbus.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_permission_store_CFLAGS) $(CFLAGS) -c -o permission-store/xdg_permission_store-permission-store-dbus.o `test -f 'permission-store/permission-store-dbus.c' || echo '$(srcdir)/'`permission-store/permission-store-dbus.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -c -o document-portal/xdg_document_portal-xdp-dbus.o `test -f 'document-portal/xdp-dbus.c' || echo '$(srcdir)/'`document-portal/xdp-dbus.c
 
-permission-store/xdg_permission_store-permission-store-dbus.obj: permission-store/permission-store-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_permission_store_CFLAGS) $(CFLAGS) -MT permission-store/xdg_permission_store-permission-store-dbus.obj -MD -MP -MF permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Tpo -c -o permission-store/xdg_permission_store-permission-store-dbus.obj `if test -f 'permission-store/permission-store-dbus.c'; then $(CYGPATH_W) 'permission-store/permission-store-dbus.c'; else $(CYGPATH_W) '$(srcdir)/permission-store/permission-store-dbus.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Tpo permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='permission-store/permission-store-dbus.c' object='permission-store/xdg_permission_store-permission-store-dbus.obj' libtool=no @AMDEPBACKSLASH@
+document-portal/xdg_document_portal-xdp-dbus.obj: document-portal/xdp-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -MT document-portal/xdg_document_portal-xdp-dbus.obj -MD -MP -MF document-portal/$(DEPDIR)/xdg_document_portal-xdp-dbus.Tpo -c -o document-portal/xdg_document_portal-xdp-dbus.obj `if test -f 'document-portal/xdp-dbus.c'; then $(CYGPATH_W) 'document-portal/xdp-dbus.c'; else $(CYGPATH_W) '$(srcdir)/document-portal/xdp-dbus.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) document-portal/$(DEPDIR)/xdg_document_portal-xdp-dbus.Tpo document-portal/$(DEPDIR)/xdg_document_portal-xdp-dbus.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='document-portal/xdp-dbus.c' object='document-portal/xdg_document_portal-xdp-dbus.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_permission_store_CFLAGS) $(CFLAGS) -c -o permission-store/xdg_permission_store-permission-store-dbus.obj `if test -f 'permission-store/permission-store-dbus.c'; then $(CYGPATH_W) 'permission-store/permission-store-dbus.c'; else $(CYGPATH_W) '$(srcdir)/permission-store/permission-store-dbus.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -c -o document-portal/xdg_document_portal-xdp-dbus.obj `if test -f 'document-portal/xdp-dbus.c'; then $(CYGPATH_W) 'document-portal/xdp-dbus.c'; else $(CYGPATH_W) '$(srcdir)/document-portal/xdp-dbus.c'; fi`
+
+permission-store/xdg_document_portal-permission-store-dbus.o: permission-store/permission-store-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -MT permission-store/xdg_document_portal-permission-store-dbus.o -MD -MP -MF permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Tpo -c -o permission-store/xdg_document_portal-permission-store-dbus.o `test -f 'permission-store/permission-store-dbus.c' || echo '$(srcdir)/'`permission-store/permission-store-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Tpo permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='permission-store/permission-store-dbus.c' object='permission-store/xdg_document_portal-permission-store-dbus.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -c -o permission-store/xdg_document_portal-permission-store-dbus.o `test -f 'permission-store/permission-store-dbus.c' || echo '$(srcdir)/'`permission-store/permission-store-dbus.c
+
+permission-store/xdg_document_portal-permission-store-dbus.obj: permission-store/permission-store-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -MT permission-store/xdg_document_portal-permission-store-dbus.obj -MD -MP -MF permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Tpo -c -o permission-store/xdg_document_portal-permission-store-dbus.obj `if test -f 'permission-store/permission-store-dbus.c'; then $(CYGPATH_W) 'permission-store/permission-store-dbus.c'; else $(CYGPATH_W) '$(srcdir)/permission-store/permission-store-dbus.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Tpo permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='permission-store/permission-store-dbus.c' object='permission-store/xdg_document_portal-permission-store-dbus.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_document_portal_CFLAGS) $(CFLAGS) -c -o permission-store/xdg_document_portal-permission-store-dbus.obj `if test -f 'permission-store/permission-store-dbus.c'; then $(CYGPATH_W) 'permission-store/permission-store-dbus.c'; else $(CYGPATH_W) '$(srcdir)/permission-store/permission-store-dbus.c'; fi`
 
 permission-store/xdg_permission_store-permission-store.o: permission-store/permission-store.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_permission_store_CFLAGS) $(CFLAGS) -MT permission-store/xdg_permission_store-permission-store.o -MD -MP -MF permission-store/$(DEPDIR)/xdg_permission_store-permission-store.Tpo -c -o permission-store/xdg_permission_store-permission-store.o `test -f 'permission-store/permission-store.c' || echo '$(srcdir)/'`permission-store/permission-store.c
@@ -3448,6 +3522,20 @@ permission-store/xdg_permission_store-xdg-permission-store.obj: permission-store
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='permission-store/xdg-permission-store.c' object='permission-store/xdg_permission_store-xdg-permission-store.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_permission_store_CFLAGS) $(CFLAGS) -c -o permission-store/xdg_permission_store-xdg-permission-store.obj `if test -f 'permission-store/xdg-permission-store.c'; then $(CYGPATH_W) 'permission-store/xdg-permission-store.c'; else $(CYGPATH_W) '$(srcdir)/permission-store/xdg-permission-store.c'; fi`
+
+permission-store/xdg_permission_store-permission-store-dbus.o: permission-store/permission-store-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_permission_store_CFLAGS) $(CFLAGS) -MT permission-store/xdg_permission_store-permission-store-dbus.o -MD -MP -MF permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Tpo -c -o permission-store/xdg_permission_store-permission-store-dbus.o `test -f 'permission-store/permission-store-dbus.c' || echo '$(srcdir)/'`permission-store/permission-store-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Tpo permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='permission-store/permission-store-dbus.c' object='permission-store/xdg_permission_store-permission-store-dbus.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_permission_store_CFLAGS) $(CFLAGS) -c -o permission-store/xdg_permission_store-permission-store-dbus.o `test -f 'permission-store/permission-store-dbus.c' || echo '$(srcdir)/'`permission-store/permission-store-dbus.c
+
+permission-store/xdg_permission_store-permission-store-dbus.obj: permission-store/permission-store-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_permission_store_CFLAGS) $(CFLAGS) -MT permission-store/xdg_permission_store-permission-store-dbus.obj -MD -MP -MF permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Tpo -c -o permission-store/xdg_permission_store-permission-store-dbus.obj `if test -f 'permission-store/permission-store-dbus.c'; then $(CYGPATH_W) 'permission-store/permission-store-dbus.c'; else $(CYGPATH_W) '$(srcdir)/permission-store/permission-store-dbus.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Tpo permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='permission-store/permission-store-dbus.c' object='permission-store/xdg_permission_store-permission-store-dbus.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(xdg_permission_store_CFLAGS) $(CFLAGS) -c -o permission-store/xdg_permission_store-permission-store-dbus.obj `if test -f 'permission-store/permission-store-dbus.c'; then $(CYGPATH_W) 'permission-store/permission-store-dbus.c'; else $(CYGPATH_W) '$(srcdir)/permission-store/permission-store-dbus.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -3545,6 +3633,48 @@ uninstall-dbussystemserviceDATA:
 	@list='$(dbussystemservice_DATA)'; test -n "$(dbussystemservicedir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(dbussystemservicedir)'; $(am__uninstall_files_from_dir)
+install-dist_installed_test_dbsDATA: $(dist_installed_test_dbs_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(dist_installed_test_dbs_DATA)'; test -n "$(installed_test_dbsdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(installed_test_dbsdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(installed_test_dbsdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(installed_test_dbsdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(installed_test_dbsdir)" || exit $$?; \
+	done
+
+uninstall-dist_installed_test_dbsDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_installed_test_dbs_DATA)'; test -n "$(installed_test_dbsdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(installed_test_dbsdir)'; $(am__uninstall_files_from_dir)
+install-dist_installed_test_keyringDATA: $(dist_installed_test_keyring_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(dist_installed_test_keyring_DATA)'; test -n "$(installed_test_keyringdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(installed_test_keyringdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(installed_test_keyringdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(installed_test_keyringdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(installed_test_keyringdir)" || exit $$?; \
+	done
+
+uninstall-dist_installed_test_keyringDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_installed_test_keyring_DATA)'; test -n "$(installed_test_keyringdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(installed_test_keyringdir)'; $(am__uninstall_files_from_dir)
 install-envDATA: $(env_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(env_DATA)'; test -n "$(envdir)" || list=; \
@@ -3587,48 +3717,6 @@ uninstall-installed_testDATA:
 	@list='$(installed_test_DATA)'; test -n "$(installed_testdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(installed_testdir)'; $(am__uninstall_files_from_dir)
-install-installed_test_dbsDATA: $(installed_test_dbs_DATA)
-	@$(NORMAL_INSTALL)
-	@list='$(installed_test_dbs_DATA)'; test -n "$(installed_test_dbsdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(installed_test_dbsdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(installed_test_dbsdir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(installed_test_dbsdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(installed_test_dbsdir)" || exit $$?; \
-	done
-
-uninstall-installed_test_dbsDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(installed_test_dbs_DATA)'; test -n "$(installed_test_dbsdir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(installed_test_dbsdir)'; $(am__uninstall_files_from_dir)
-install-installed_test_keyringDATA: $(installed_test_keyring_DATA)
-	@$(NORMAL_INSTALL)
-	@list='$(installed_test_keyring_DATA)'; test -n "$(installed_test_keyringdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(installed_test_keyringdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(installed_test_keyringdir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(installed_test_keyringdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(installed_test_keyringdir)" || exit $$?; \
-	done
-
-uninstall-installed_test_keyringDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(installed_test_keyring_DATA)'; test -n "$(installed_test_keyringdir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(installed_test_keyringdir)'; $(am__uninstall_files_from_dir)
 install-installed_test_metaDATA: $(installed_test_meta_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(installed_test_meta_DATA)'; test -n "$(installed_test_metadir)" || list=; \
@@ -3882,6 +3970,27 @@ install-flatpakincludeHEADERS: $(flatpakinclude_HEADERS)
 uninstall-flatpakincludeHEADERS:
 	@$(NORMAL_UNINSTALL)
 	@list='$(flatpakinclude_HEADERS)'; test -n "$(flatpakincludedir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(flatpakincludedir)'; $(am__uninstall_files_from_dir)
+install-nodist_flatpakincludeHEADERS: $(nodist_flatpakinclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	@list='$(nodist_flatpakinclude_HEADERS)'; test -n "$(flatpakincludedir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(flatpakincludedir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(flatpakincludedir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_HEADER) $$files '$(DESTDIR)$(flatpakincludedir)'"; \
+	  $(INSTALL_HEADER) $$files "$(DESTDIR)$(flatpakincludedir)" || exit $$?; \
+	done
+
+uninstall-nodist_flatpakincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_flatpakinclude_HEADERS)'; test -n "$(flatpakincludedir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(flatpakincludedir)'; $(am__uninstall_files_from_dir)
 
@@ -4402,7 +4511,7 @@ install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_dbsdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(flatpakincludedir)"; do \
+	for dir in "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(installed_test_dbsdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -4497,14 +4606,16 @@ info-am:
 
 install-data-am: install-bwrapPROGRAMS install-completionDATA \
 	install-dbus_serviceDATA install-dbusconfDATA \
-	install-dbussystemserviceDATA install-dist_triggersSCRIPTS \
-	install-envDATA install-flatpakincludeHEADERS \
-	install-installed_testDATA install-installed_testLTLIBRARIES \
+	install-dbussystemserviceDATA \
+	install-dist_installed_test_dbsDATA \
+	install-dist_installed_test_keyringDATA \
+	install-dist_triggersSCRIPTS install-envDATA \
+	install-flatpakincludeHEADERS install-installed_testDATA \
+	install-installed_testLTLIBRARIES \
 	install-installed_testPROGRAMS install-installed_testSCRIPTS \
-	install-installed_test_dbsDATA \
-	install-installed_test_keyringDATA \
 	install-installed_test_metaDATA install-introspectionDATA \
-	install-nobase_installed_testDATA install-nodist_girDATA \
+	install-nobase_installed_testDATA \
+	install-nodist_flatpakincludeHEADERS install-nodist_girDATA \
 	install-nodist_typelibDATA install-pkgconfigDATA \
 	install-polkit_policyDATA install-polkit_rulesDATA \
 	install-profileDATA install-systemdsystemunitDATA \
@@ -4561,20 +4672,21 @@ ps-am:
 uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-completionDATA uninstall-dbus_serviceDATA \
 	uninstall-dbusconfDATA uninstall-dbussystemserviceDATA \
+	uninstall-dist_installed_test_dbsDATA \
+	uninstall-dist_installed_test_keyringDATA \
 	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
 	uninstall-flatpakincludeHEADERS uninstall-installed_testDATA \
 	uninstall-installed_testLTLIBRARIES \
 	uninstall-installed_testPROGRAMS \
 	uninstall-installed_testSCRIPTS \
-	uninstall-installed_test_dbsDATA \
-	uninstall-installed_test_keyringDATA \
 	uninstall-installed_test_metaDATA uninstall-introspectionDATA \
 	uninstall-libLTLIBRARIES uninstall-libexecPROGRAMS \
-	uninstall-nobase_installed_testDATA uninstall-nodist_girDATA \
-	uninstall-nodist_typelibDATA uninstall-pkgconfigDATA \
-	uninstall-polkit_policyDATA uninstall-polkit_rulesDATA \
-	uninstall-profileDATA uninstall-systemdsystemunitDATA \
-	uninstall-systemduserunitDATA
+	uninstall-nobase_installed_testDATA \
+	uninstall-nodist_flatpakincludeHEADERS \
+	uninstall-nodist_girDATA uninstall-nodist_typelibDATA \
+	uninstall-pkgconfigDATA uninstall-polkit_policyDATA \
+	uninstall-polkit_rulesDATA uninstall-profileDATA \
+	uninstall-systemdsystemunitDATA uninstall-systemduserunitDATA
 
 .MAKE: $(am__recursive_targets) all check check-am install install-am \
 	install-data-am install-strip
@@ -4595,17 +4707,18 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	install-completionDATA install-data install-data-am \
 	install-data-hook install-dbus_serviceDATA \
 	install-dbusconfDATA install-dbussystemserviceDATA \
+	install-dist_installed_test_dbsDATA \
+	install-dist_installed_test_keyringDATA \
 	install-dist_triggersSCRIPTS install-dvi install-dvi-am \
 	install-envDATA install-exec install-exec-am \
 	install-flatpakincludeHEADERS install-html install-html-am \
 	install-info install-info-am install-installed_testDATA \
 	install-installed_testLTLIBRARIES \
 	install-installed_testPROGRAMS install-installed_testSCRIPTS \
-	install-installed_test_dbsDATA \
-	install-installed_test_keyringDATA \
 	install-installed_test_metaDATA install-introspectionDATA \
 	install-libLTLIBRARIES install-libexecPROGRAMS install-man \
-	install-nobase_installed_testDATA install-nodist_girDATA \
+	install-nobase_installed_testDATA \
+	install-nodist_flatpakincludeHEADERS install-nodist_girDATA \
 	install-nodist_typelibDATA install-pdf install-pdf-am \
 	install-pkgconfigDATA install-polkit_policyDATA \
 	install-polkit_rulesDATA install-profileDATA install-ps \
@@ -4618,20 +4731,21 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-completionDATA uninstall-dbus_serviceDATA \
 	uninstall-dbusconfDATA uninstall-dbussystemserviceDATA \
+	uninstall-dist_installed_test_dbsDATA \
+	uninstall-dist_installed_test_keyringDATA \
 	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
 	uninstall-flatpakincludeHEADERS uninstall-installed_testDATA \
 	uninstall-installed_testLTLIBRARIES \
 	uninstall-installed_testPROGRAMS \
 	uninstall-installed_testSCRIPTS \
-	uninstall-installed_test_dbsDATA \
-	uninstall-installed_test_keyringDATA \
 	uninstall-installed_test_metaDATA uninstall-introspectionDATA \
 	uninstall-libLTLIBRARIES uninstall-libexecPROGRAMS \
-	uninstall-nobase_installed_testDATA uninstall-nodist_girDATA \
-	uninstall-nodist_typelibDATA uninstall-pkgconfigDATA \
-	uninstall-polkit_policyDATA uninstall-polkit_rulesDATA \
-	uninstall-profileDATA uninstall-systemdsystemunitDATA \
-	uninstall-systemduserunitDATA
+	uninstall-nobase_installed_testDATA \
+	uninstall-nodist_flatpakincludeHEADERS \
+	uninstall-nodist_girDATA uninstall-nodist_typelibDATA \
+	uninstall-pkgconfigDATA uninstall-polkit_policyDATA \
+	uninstall-polkit_rulesDATA uninstall-profileDATA \
+	uninstall-systemdsystemunitDATA uninstall-systemduserunitDATA
 
 .PRECIOUS: Makefile
 
@@ -4662,11 +4776,11 @@ $(systemd_dbus_built_sources) : data/org.freedesktop.systemd1.xml
 		$(srcdir)/data/org.freedesktop.systemd1.xml	\
 		$(NULL)
 
-lib/flatpak-enum-types.h: $(public_headers) lib/flatpak-enum-types.h.template
+lib/flatpak-enum-types.h: $(flatpakinclude_HEADERS) lib/flatpak-enum-types.h.template
 	$(AM_V_GEN) $(GLIB_MKENUMS) --template $(filter %.template,$^) $(filter-out %.template,$^) > \
 	    lib/flatpak-enum-types.h.tmp && mv lib/flatpak-enum-types.h.tmp lib/flatpak-enum-types.h
 
-lib/flatpak-enum-types.c: $(public_headers) lib/flatpak-enum-types.c.template
+lib/flatpak-enum-types.c: $(flatpakinclude_HEADERS) lib/flatpak-enum-types.c.template
 	$(AM_V_GEN) $(GLIB_MKENUMS) --template $(filter %.template,$^) $(filter-out %.template,$^) > \
 	    lib/flatpak-enum-types.c.tmp && mv lib/flatpak-enum-types.c.tmp lib/flatpak-enum-types.c
 
@@ -4680,7 +4794,7 @@ lib/flatpak-enum-types.c: $(public_headers) lib/flatpak-enum-types.c.template
 
 @BUILD_SYSTEM_HELPER_TRUE@@INTLTOOL_POLICY_RULE@
 
-$(ps_dbus_built_sources) : data/org.freedesktop.impl.portal.PermissionStore.xml
+$(nodist_xdg_permission_store_SOURCES) : data/org.freedesktop.impl.portal.PermissionStore.xml
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.impl.portal.	\
 		--c-namespace Xdg				\
