@@ -11,6 +11,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_error_get_type@Base 0.5.2
  flatpak_error_quark@Base 0.5.2
  flatpak_get_default_arch@Base 0.5.2+git20160516
+ flatpak_get_supported_arches@Base 0.6.6
  flatpak_install_flags_get_type@Base 0.6.5
  flatpak_installation_create_monitor@Base 0.5.2
  flatpak_installation_drop_caches@Base 0.5.2+git20160516

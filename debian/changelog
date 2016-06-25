@@ -2,6 +2,7 @@ flatpak (0.6.6-1) UNRELEASED; urgency=medium
 
   * New upstream release
     - drop patches, applied upstream
+    - d/libflatpak0.symbols: update
   * d/p/document-portal-don-t-reply-to-GetMountPoint-until-ready.patch:
     Add patch to make the document portal (and hence FUSE support)
     optional for "flatpak run"
