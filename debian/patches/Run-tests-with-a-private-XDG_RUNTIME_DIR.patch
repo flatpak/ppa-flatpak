@@ -11,6 +11,7 @@ We need to unmount the document portal before removing the private
 XDG_RUNTIME_DIR.
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Applied-upstream: 0.6.7, commit:https://github.com/flatpak/flatpak/commit/6f9915eade97a6f487a490af0980847d208e03ec
 ---
  tests/libtest.sh | 9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)

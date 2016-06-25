@@ -5,6 +5,7 @@ Subject: Downgrade failure to get document portal from warning to message
 Otherwise, the tests all abort when run without FUSE.
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Applied-upstream: 0.6.7, commit:https://github.com/flatpak/flatpak/commit/58bd3e3ec8e348b08ce4ce3cb339d42f0d49d197
 ---
  common/flatpak-run.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

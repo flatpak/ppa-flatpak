@@ -10,6 +10,7 @@ with no document portal; it currently tries and fails to bind-mount the
 nonexistent document portal mount-point into the container.
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Applied-upstream: 0.6.7, commit:https://github.com/flatpak/flatpak/commit/dab1d99c469b5c01990be27f07af85589b610c83
 ---
  document-portal/xdp-main.c | 63 +++++++++++++++++++++++++++++++++++-----------
  1 file changed, 48 insertions(+), 15 deletions(-)

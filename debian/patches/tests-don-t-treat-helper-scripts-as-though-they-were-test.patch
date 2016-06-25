@@ -6,6 +6,7 @@ We shouldn't install .test metadata for these, and run them as TAP
 test scripts. In glib-tap.mk jargon that makes them "extra scripts".
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Applied-upstream: 0.6.7, commit:https://github.com/flatpak/flatpak/commit/c59fba9be382595cc484e2fc73af9647b4632599
 ---
  Makefile.am           | 2 +-
  tests/Makefile.am.inc | 2 +-
