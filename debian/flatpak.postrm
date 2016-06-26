@@ -6,6 +6,7 @@ set -e
 
 if [ "$1" = "purge" ] ; then
     rm -fr /var/lib/flatpak/repo
+    rm -f /var/lib/flatpak/.changed
     rmdir --ignore-fail-on-non-empty /var/lib/flatpak
 fi
 
