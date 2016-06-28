@@ -2,6 +2,8 @@ flatpak (0.6.6-2) UNRELEASED; urgency=medium
 
   * d/flatpak.postrm: delete /var/lib/flatpak/.changed on purge, fixing
     piuparts error
+  * d/p/test-basic-do-not-fail-in-non-English-locales.patch: fix FTBFS
+    in non-English locales, for instance during reproducible build testing
 
  -- Simon McVittie <smcv@debian.org>  Sun, 26 Jun 2016 17:18:16 +0100
 
