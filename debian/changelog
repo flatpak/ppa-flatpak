@@ -7,6 +7,8 @@ flatpak (0.6.7-1) UNRELEASED; urgency=medium
     - d/tests/control: flatpak-builder test now needs git
   * Depend on system bubblewrap (Closes: #824647)
   * Remove obsolete note about requiring unprivileged user namespaces
+  * d/p/build-run-install-test-data-hook-even-if-using-system-bwr.patch:
+    add patch to fix installed-tests with system bwrap
 
  -- Simon McVittie <smcv@debian.org>  Wed, 06 Jul 2016 10:35:01 +0100
 
