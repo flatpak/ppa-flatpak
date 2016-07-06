@@ -1,4 +1,4 @@
-flatpak (0.6.7-1) UNRELEASED; urgency=medium
+flatpak (0.6.7-1) unstable; urgency=medium
 
   * New upstream release
     - drop all patches except d/p/debian/*, applied upstream
@@ -10,7 +10,7 @@ flatpak (0.6.7-1) UNRELEASED; urgency=medium
   * d/p/build-run-install-test-data-hook-even-if-using-system-bwr.patch:
     add patch to fix installed-tests with system bwrap
 
- -- Simon McVittie <smcv@debian.org>  Wed, 06 Jul 2016 10:35:01 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 06 Jul 2016 12:45:03 +0100
 
 flatpak (0.6.6-2) unstable; urgency=medium
 
