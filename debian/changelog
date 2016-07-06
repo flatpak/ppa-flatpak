@@ -3,6 +3,7 @@ flatpak (0.6.7-1) UNRELEASED; urgency=medium
   * New upstream release
     - drop all patches except d/p/debian/*, applied upstream
     - d/libflatpak0.symbols: update for new ABIs
+    - d/control: depend and build-depend on OSTree 2016.6
 
  -- Simon McVittie <smcv@debian.org>  Wed, 06 Jul 2016 10:35:01 +0100
 

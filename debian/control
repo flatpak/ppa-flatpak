@@ -27,7 +27,7 @@ Build-Depends:
  libglib2.0-dev,
  libgsystem-dev,
  libjson-glib-dev,
- libostree-dev,
+ libostree-dev (>= 2016.6),
  libpolkit-gobject-1-dev,
  libseccomp-dev,
  libsoup2.4-dev,
@@ -138,7 +138,7 @@ Depends:
  libflatpak0 (= ${binary:Version}),
  libglib2.0-dev,
  libgsystem-dev,
- libostree-dev,
+ libostree-dev (>= 2016.6),
  pkg-config,
  ${misc:Depends},
 Description: Application deployment framework for desktop apps (development)
