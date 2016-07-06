@@ -41,5 +41,6 @@ usr/share/man/man1/flatpak-run.1
 usr/share/man/man1/flatpak-uninstall.1
 usr/share/man/man1/flatpak-update.1
 usr/share/man/man1/flatpak.1
+usr/share/man/man5/flatpak-metadata.5
 usr/share/polkit-1/actions
 usr/share/polkit-1/rules.d
