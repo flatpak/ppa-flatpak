@@ -31,7 +31,9 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_list_installed_refs@Base 0.5.2
  flatpak_installation_list_installed_refs_by_kind@Base 0.5.2
  flatpak_installation_list_installed_refs_for_update@Base 0.5.2
+ flatpak_installation_list_installed_related_refs_sync@Base 0.6.7
  flatpak_installation_list_remote_refs_sync@Base 0.5.2
+ flatpak_installation_list_remote_related_refs_sync@Base 0.6.7
  flatpak_installation_list_remotes@Base 0.5.2
  flatpak_installation_load_app_overrides@Base 0.5.2
  flatpak_installation_modify_remote@Base 0.5.2+git20160516
@@ -61,6 +63,10 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_ref_get_type@Base 0.5.2
  flatpak_ref_kind_get_type@Base 0.5.2
  flatpak_ref_parse@Base 0.5.2
+ flatpak_related_ref_get_subpaths@Base 0.6.7
+ flatpak_related_ref_get_type@Base 0.6.7
+ flatpak_related_ref_should_delete@Base 0.6.7
+ flatpak_related_ref_should_download@Base 0.6.7
  flatpak_remote_get_appstream_dir@Base 0.5.2
  flatpak_remote_get_appstream_timestamp@Base 0.5.2
  flatpak_remote_get_disabled@Base 0.5.2+git20160516
