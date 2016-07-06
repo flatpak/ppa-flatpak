@@ -6,6 +6,7 @@ Uploaders:
  Matthias Klumpp <mak@debian.org>,
  Simon McVittie <smcv@debian.org>,
 Build-Depends:
+ bubblewrap (>= 0.1.0),
  dbus,
  dbus-x11,
  debhelper (>= 9),
@@ -43,6 +44,7 @@ Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/flatpak.git
 Package: flatpak
 Architecture: linux-any
 Depends:
+ bubblewrap (>= 0.1.0),
  fuse,
  libpam-systemd,
  ${misc:Depends},
@@ -166,6 +168,7 @@ Package: libflatpak0
 Architecture: linux-any
 Section: libs
 Depends:
+ bubblewrap (>= 0.1.0),
  ${misc:Depends},
  ${shlibs:Depends},
 Pre-Depends:

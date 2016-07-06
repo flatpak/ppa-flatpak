@@ -17,6 +17,7 @@ override_dh_auto_configure:
 		--with-priv-mode=none \
 		--with-html-dir=/usr/share/doc/libflatpak-doc \
 		--with-privileged-group=sudo \
+		--with-system-bubblewrap=bwrap \
 		--with-systemdsystemunitdir=/lib/systemd/system \
 		--enable-gtk-doc \
 		$(NULL)
@@ -24,16 +25,6 @@ override_dh_auto_configure:
 override_dh_install:
 	rm -f debian/tmp/usr/lib/*/*.la
 	dh_install --fail-missing
-
-# On Debian, unprivileged user namespaces are not available by default,
-# so install bwrap setuid. On Ubuntu, they're available by default, so
-# don't install it setuid. Assume that derivatives are like Debian, since
-# that will make Flatpak work regardless.
-override_dh_fixperms-arch:
-	dh_fixperms -a
-	if ! dpkg-vendor --is Ubuntu; then \
-		chmod 4755 debian/flatpak/usr/lib/flatpak/flatpak-bwrap; \
-	fi
 
 override_dh_auto_test:
 	VERBOSE=1 dh_auto_test
