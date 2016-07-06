@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [6])
-m4_define([flatpak_micro_version], [6])
-m4_define([flatpak_interface_age], [6])
+m4_define([flatpak_micro_version], [7])
+m4_define([flatpak_interface_age], [7])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -100,6 +100,20 @@ AC_ARG_WITH(system_fonts_dir,
 SYSTEM_FONTS_DIR=$with_system_fonts_dir
 AC_SUBST(SYSTEM_FONTS_DIR)
 
+AC_ARG_VAR([BWRAP], [Bubblewrap executable])
+AC_ARG_WITH([system-bubblewrap],
+            [AS_HELP_STRING([--with-system-bubblewrap], [Use system bwrap executable [default=check $BWRAP]])],
+            [BWRAP="$withval"],
+            [BWRAP="${BWRAP:-false}"])
+AS_CASE([$BWRAP],
+        [yes],
+            [BWRAP=bwrap],
+        [no],
+            [BWRAP=false],
+        [auto],
+            [AC_CHECK_PROG([BWRAP], [bwrap], [bwrap], [false])])
+AM_CONDITIONAL([WITH_SYSTEM_BWRAP], [test "x$BWRAP" != xfalse])
+
 AC_CHECK_FUNCS(fdwalk)
 
 AC_CHECK_HEADER([sys/xattr.h], [], AC_MSG_ERROR([You must have sys/xattr.h from glibc]))
@@ -146,7 +160,7 @@ if test "x$enable_sandboxed_triggers" = "xno"; then
       [Define if sandboxed triggers are disabled])
 fi
 
-PKG_CHECK_MODULES(OSTREE, [libgsystem >= 2015.1 ostree-1 >= 2016.5])
+PKG_CHECK_MODULES(OSTREE, [libgsystem >= 2015.1 ostree-1 >= 2016.6])
 save_LIBS=$LIBS
 save_CFLAGS=$CFLAGS
 LIBS=$OSTREE_LIBS

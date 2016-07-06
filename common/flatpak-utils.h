@@ -46,6 +46,8 @@ const char ** flatpak_get_arches (void);
 
 const char * flatpak_get_bwrap (void);
 
+char ** flatpak_get_current_locale_subpaths (void);
+
 void flatpak_migrate_from_xdg_app (void);
 
 GBytes * flatpak_read_stream (GInputStream *in,
@@ -59,6 +61,8 @@ gboolean flatpak_variant_save (GFile        *dest,
 gboolean flatpak_variant_bsearch_str (GVariant   *array,
                                       const char *str,
                                       int        *out_pos);
+char **  flatpak_summary_match_subrefs (GVariant *summary,
+                                        const char *ref);
 gboolean flatpak_summary_lookup_ref (GVariant   *summary,
                                      const char *ref,
                                      char      **out_checksum);
@@ -86,9 +90,9 @@ char * flatpak_build_runtime_ref (const char *runtime,
 char * flatpak_build_app_ref (const char *app,
                               const char *branch,
                               const char *arch);
-GFile * flatpak_find_deploy_dir_for_ref (const char   *ref,
-                                         GCancellable *cancellable,
-                                         GError      **error);
+GFile * flatpak_find_files_dir_for_ref (const char   *ref,
+                                        GCancellable *cancellable,
+                                        GError      **error);
 FlatpakDeploy * flatpak_find_deploy_for_ref (const char   *ref,
                                              GCancellable *cancellable,
                                              GError      **error);
@@ -231,6 +235,8 @@ typedef struct
   char *installed_id;
   char *ref;
   char *directory;
+  char *files_path;
+  gboolean needs_tmpfs;
 } FlatpakExtension;
 
 void flatpak_extension_free (FlatpakExtension *extension);
@@ -244,6 +250,11 @@ gboolean            flatpak_spawn (GFile       *dir,
                                    GError     **error,
                                    const gchar *argv0,
                                    va_list      args);
+
+gboolean            flatpak_spawnv (GFile                *dir,
+                                    char                **output,
+                                    GError              **error,
+                                    const gchar * const  *argv);
 
 typedef enum {
   FLATPAK_CP_FLAGS_NONE = 0,

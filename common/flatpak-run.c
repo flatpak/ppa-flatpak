@@ -1531,6 +1531,26 @@ flatpak_run_add_pulseaudio_args (GPtrArray *argv_array,
     }
 }
 
+static void
+flatpak_run_add_journal_args (GPtrArray *argv_array)
+{
+  const char *journal_socket_socket = g_strdup ("/run/systemd/journal/socket");
+  const char *journal_stdout_socket = g_strdup ("/run/systemd/journal/stdout");
+
+  if (g_file_test (journal_socket_socket, G_FILE_TEST_EXISTS))
+    {
+      add_args (argv_array,
+                "--bind", journal_socket_socket, journal_socket_socket,
+                NULL);
+    }
+  if (g_file_test (journal_stdout_socket, G_FILE_TEST_EXISTS))
+    {
+      add_args (argv_array,
+                "--bind", journal_stdout_socket, journal_stdout_socket,
+                NULL);
+    }
+}
+
 static char *
 create_proxy_socket (char *template)
 {
@@ -1693,20 +1713,26 @@ flatpak_run_add_extension_args (GPtrArray    *argv_array,
   for (l = extensions; l != NULL; l = l->next)
     {
       FlatpakExtension *ext = l->data;
-      g_autoptr(GFile) deploy = NULL;
+      g_autofree char *full_directory = g_build_filename (is_app ? "/app" : "/usr", ext->directory, NULL);
+      g_autofree char *ref = g_build_filename (full_directory, ".ref", NULL);
+      g_autofree char *real_ref = g_build_filename (ext->files_path, ext->directory, ".ref", NULL);
 
-      deploy = flatpak_find_deploy_dir_for_ref (ext->ref, cancellable, NULL);
-      if (deploy != NULL)
+      if (ext->needs_tmpfs)
         {
-          g_autoptr(GFile) files = g_file_get_child (deploy, "files");
-          g_autofree char *full_directory = g_build_filename (is_app ? "/app" : "/usr", ext->directory, NULL);
-          g_autofree char *ref = g_build_filename (full_directory, ".ref", NULL);
-
+          g_autofree char *parent = g_path_get_dirname (full_directory);
           add_args (argv_array,
-                    "--bind", gs_file_get_path_cached (files), full_directory,
-                    "--lock-file", ref,
+                    "--tmpfs", parent,
                     NULL);
         }
+
+      add_args (argv_array,
+                "--bind", ext->files_path, full_directory,
+                NULL);
+
+      if (g_file_test (real_ref, G_FILE_TEST_EXISTS))
+        add_args (argv_array,
+                  "--lock-file", ref,
+                  NULL);
     }
 
   g_list_free_full (extensions, (GDestroyNotify) flatpak_extension_free);
@@ -2481,7 +2507,7 @@ add_document_portal_args (GPtrArray  *argv_array,
         {
           if (g_dbus_message_to_gerror (reply, &local_error))
             {
-              g_warning ("Can't get document portal: %s\n", local_error->message);
+              g_message ("Can't get document portal: %s\n", local_error->message);
             }
           else
             {
@@ -3135,7 +3161,7 @@ flatpak_run_app (const char     *app_ref,
                                     session_bus_proxy_argv,
                                     system_bus_proxy_argv,
                                     app_ref_parts[1], app_context, app_id_dir);
-
+  flatpak_run_add_journal_args (argv_array);
   add_font_path_args (argv_array);
 
   /* Must run this before spawning the dbus proxy, to ensure it

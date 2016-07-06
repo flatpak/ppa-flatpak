@@ -15,33 +15,33 @@
 # Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-EXTRA_DIST += ./libglnx/README.md ./libglnx/COPYING
+EXTRA_DIST += libglnx/README.md libglnx/COPYING
 
 libglnx_la_SOURCES = \
-	./libglnx/glnx-alloca.h \
-	./libglnx/glnx-backport-autocleanups.h \
-	./libglnx/glnx-backport-autoptr.h \
-	./libglnx/glnx-backports.h \
-	./libglnx/glnx-backports.c \
-	./libglnx/glnx-local-alloc.h \
-	./libglnx/glnx-local-alloc.c \
-	./libglnx/glnx-errors.h \
-	./libglnx/glnx-errors.c \
-	./libglnx/glnx-console.h \
-	./libglnx/glnx-console.c \
-	./libglnx/glnx-dirfd.h \
-	./libglnx/glnx-dirfd.c \
-	./libglnx/glnx-fdio.h \
-	./libglnx/glnx-fdio.c \
-	./libglnx/glnx-lockfile.h \
-	./libglnx/glnx-lockfile.c \
-	./libglnx/glnx-libcontainer.h \
-	./libglnx/glnx-libcontainer.c \
-	./libglnx/glnx-xattrs.h \
-	./libglnx/glnx-xattrs.c \
-	./libglnx/glnx-shutil.h \
-	./libglnx/glnx-shutil.c \
-	./libglnx/libglnx.h \
+	libglnx/glnx-alloca.h \
+	libglnx/glnx-backport-autocleanups.h \
+	libglnx/glnx-backport-autoptr.h \
+	libglnx/glnx-backports.h \
+	libglnx/glnx-backports.c \
+	libglnx/glnx-local-alloc.h \
+	libglnx/glnx-local-alloc.c \
+	libglnx/glnx-errors.h \
+	libglnx/glnx-errors.c \
+	libglnx/glnx-console.h \
+	libglnx/glnx-console.c \
+	libglnx/glnx-dirfd.h \
+	libglnx/glnx-dirfd.c \
+	libglnx/glnx-fdio.h \
+	libglnx/glnx-fdio.c \
+	libglnx/glnx-lockfile.h \
+	libglnx/glnx-lockfile.c \
+	libglnx/glnx-libcontainer.h \
+	libglnx/glnx-libcontainer.c \
+	libglnx/glnx-xattrs.h \
+	libglnx/glnx-xattrs.c \
+	libglnx/glnx-shutil.h \
+	libglnx/glnx-shutil.c \
+	libglnx/libglnx.h \
 	$(NULL)
 
 libglnx_la_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)

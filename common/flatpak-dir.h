@@ -37,8 +37,20 @@
 GType flatpak_dir_get_type (void);
 GType flatpak_deploy_get_type (void);
 
+typedef struct
+{
+  char           *ref;
+  char           *commit;
+  char          **subpaths;
+  gboolean        download;
+  gboolean        delete;
+} FlatpakRelated;
+
+void         flatpak_related_free (FlatpakRelated *related);
+
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakDir, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakDeploy, g_object_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakRelated, flatpak_related_free)
 
 typedef enum {
   FLATPAK_HELPER_DEPLOY_FLAGS_NONE = 0,
@@ -312,6 +324,15 @@ gboolean   flatpak_dir_update (FlatpakDir          *self,
                                OstreeAsyncProgress *progress,
                                GCancellable        *cancellable,
                                GError             **error);
+gboolean flatpak_dir_install_or_update (FlatpakDir          *self,
+                                        gboolean             no_pull,
+                                        gboolean             no_deploy,
+                                        const char          *ref,
+                                        const char          *remote_name,
+                                        const char         **opt_subpaths,
+                                        OstreeAsyncProgress *progress,
+                                        GCancellable        *cancellable,
+                                        GError             **error);
 gboolean flatpak_dir_uninstall (FlatpakDir          *self,
                                 const char          *ref,
                                 FlatpakHelperUninstallFlags flags,
@@ -390,17 +411,6 @@ char *   flatpak_dir_fetch_remote_title (FlatpakDir   *self,
                                          const char   *remote,
                                          GCancellable *cancellable,
                                          GError      **error);
-GBytes * flatpak_dir_fetch_remote_object (FlatpakDir   *self,
-                                          const char   *remote,
-                                          const char   *checksum,
-                                          const char   *type,
-                                          GCancellable *cancellable,
-                                          GError      **error);
-GBytes * flatpak_dir_fetch_metadata (FlatpakDir   *self,
-                                     const char   *remote_name,
-                                     const char   *commit,
-                                     GCancellable *cancellable,
-                                     GError      **error);
 gboolean flatpak_dir_fetch_ref_cache (FlatpakDir   *self,
                                       const char   *remote_name,
                                       const char   *ref,
@@ -409,5 +419,15 @@ gboolean flatpak_dir_fetch_ref_cache (FlatpakDir   *self,
                                       char        **metadata,
                                       GCancellable *cancellable,
                                       GError      **error);
+GPtrArray * flatpak_dir_find_remote_related (FlatpakDir *dir,
+                                             const char *remote_name,
+                                             const char *ref,
+                                             GCancellable *cancellable,
+                                             GError **error);
+GPtrArray * flatpak_dir_find_local_related (FlatpakDir *self,
+                                            const char *remote_name,
+                                            const char *ref,
+                                            GCancellable *cancellable,
+                                            GError **error);
 
 #endif /* __FLATPAK_DIR_H__ */

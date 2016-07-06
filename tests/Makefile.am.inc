@@ -1,11 +1,14 @@
 TESTS_ENVIRONMENT += FLATPAK_TESTS_DEBUG=1 \
 	FLATPAK_TRIGGERSDIR=$$(cd $(top_srcdir) && pwd)/triggers \
-	FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap \
 	FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && pwd)/flatpak-dbus-proxy \
 	GI_TYPELIB_PATH=$$(cd $(top_builddir) && pwd) \
 	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && pwd) \
 	PATH=$$(cd $(top_builddir) && pwd):$${PATH} \
 	$(NULL)
+
+if !WITH_SYSTEM_BWRAP
+TESTS_ENVIRONMENT += FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
+endif
 
 testdb_CFLAGS = $(BASE_CFLAGS)
 testdb_LDADD = \
@@ -59,7 +62,7 @@ tests/package_version.txt: Makefile
 
 tests/test-basic.sh: tests/package_version.txt
 
-dist_installed_test_scripts += \
+dist_installed_test_extra_scripts += \
 	buildutil/tap-driver.sh \
 	tests/test-configure \
 	tests/make-test-app.sh \
@@ -73,6 +76,7 @@ installed_test_data = \
 	tests/package_version.txt \
 	tests/test.json \
 	tests/session.conf.in \
+	tests/0001-Add-test-logo.patch \
 	$(NULL)
 
 installed_test_keyringdir = $(installed_testdir)/test-keyring
@@ -93,6 +97,9 @@ dist_test_scripts = \
 	tests/test-basic.sh \
 	tests/test-run.sh \
 	tests/test-run-system.sh \
+	tests/test-run-deltas.sh \
+	tests/test-run-system-deltas.sh \
+	tests/test-extensions.sh \
 	tests/test-bundle.sh \
 	tests/test-bundle-system.sh \
 	tests/test-builder.sh \
