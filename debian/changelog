@@ -4,6 +4,7 @@ flatpak (0.6.7-1) UNRELEASED; urgency=medium
     - drop all patches except d/p/debian/*, applied upstream
     - d/libflatpak0.symbols: update for new ABIs
     - d/control: depend and build-depend on OSTree 2016.6
+    - d/tests/control: flatpak-builder test now needs git
   * Depend on system bubblewrap (Closes: #824647)
   * Remove obsolete note about requiring unprivileged user namespaces
 

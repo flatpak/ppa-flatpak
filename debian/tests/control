@@ -8,6 +8,7 @@ Depends:
  attr,
  flatpak-builder,
  flatpak-tests,
+ git,
  gnome-desktop-testing,
  make,
  ostree,
