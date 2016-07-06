@@ -70,11 +70,13 @@ fi
 # We need this to be in /var/tmp because /tmp has no xattr support
 TEST_DATA_DIR=`mktemp -d /var/tmp/test-flatpak-XXXXXX`
 mkdir -p ${TEST_DATA_DIR}/home
+mkdir -p ${TEST_DATA_DIR}/runtime
 mkdir -p ${TEST_DATA_DIR}/system
 export FLATPAK_SYSTEM_DIR=${TEST_DATA_DIR}/system
 export FLATPAK_SYSTEM_HELPER_ON_SESSION=1
 
 export XDG_DATA_HOME=${TEST_DATA_DIR}/home/share
+export XDG_RUNTIME_DIR=${TEST_DATA_DIR}/runtime
 
 export USERDIR=${TEST_DATA_DIR}/home/share/flatpak
 export SYSTEMDIR=${TEST_DATA_DIR}/system
@@ -86,6 +88,10 @@ if [ x${USE_SYSTEMDIR-} == xyes ] ; then
 else
     export FL_DIR=${USERDIR}
     export U="--user"
+fi
+
+if [ x${USE_DELTAS-} == xyes ] ; then
+    export UPDATE_REPO_ARGS="--generate-static-deltas"
 fi
 
 export FLATPAK="${CMD_PREFIX} flatpak"
@@ -167,17 +173,24 @@ export FL_GPGARGS="--gpg-homedir=${FL_GPG_HOMEDIR} --gpg-sign=${FL_GPG_ID}"
 setup_repo () {
     GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-runtime.sh org.test.Platform bash ls cat echo readlink > /dev/null
     GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-app.sh > /dev/null
+    update_repo
     ostree trivial-httpd --autoexit --daemonize -p httpd-port .
     port=$(cat httpd-port)
     flatpak remote-add ${U} --gpg-import=${FL_GPG_HOMEDIR}/pubring.gpg test-repo "http://127.0.0.1:${port}/repo"
 }
 
+update_repo () {
+    ${FLATPAK} build-update-repo $FL_GPGARGS ${UPDATE_REPO_ARGS-} repo
+}
+
 make_updated_app () {
     GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-app.sh UPDATED > /dev/null
+    update_repo
 }
 
 setup_sdk_repo () {
     GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-runtime.sh org.test.Sdk bash ls cat echo readlink make mkdir cp touch > /dev/null
+    update_repo
 }
 
 install_repo () {
@@ -220,4 +233,9 @@ skip_without_bwrap () {
 sed s#@testdir@#${test_builddir}# ${test_srcdir}/session.conf.in > session.conf
 eval `dbus-launch --config-file=session.conf --sh-syntax`
 
-trap "rm -rf $TEST_DATA_DIR; /bin/kill $DBUS_SESSION_BUS_PID" EXIT
+cleanup () {
+    /bin/kill $DBUS_SESSION_BUS_PID
+    fusermount -u $XDG_RUNTIME_DIR/doc || :
+    rm -rf $TEST_DATA_DIR
+}
+trap cleanup EXIT

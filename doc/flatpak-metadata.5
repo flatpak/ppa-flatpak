@@ -1,0 +1,222 @@
+'\" t
+.\"     Title: flatpak metadata
+.\"    Author: Alexander Larsson <alexl@redhat.com>
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 07/01/2016
+.\"    Manual: flatpak metadata
+.\"    Source: flatpak
+.\"  Language: English
+.\"
+.TH "FLATPAK METADATA" "5" "" "flatpak" "flatpak metadata"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+flatpak-metadata \- Information about an application or runtime
+.SH "DESCRIPTION"
+.PP
+Flatpak uses metadata files to describe applications and runtimes\&. The
+metadata
+file for a deployed application or runtime is placed in the toplevel deploy directory\&. For example, the metadata for the locally installed application org\&.gnome\&.Calculator is in
+~/\&.local/share/flatpak/app/org\&.gnome\&.Calculator/current/active/metadata\&.
+.PP
+Most aspects of the metadata configuration can be overridden when launching applications, either temporarily via options of the flatpak run command, or permanently with the flatpak override command\&.
+.PP
+A metadata file describing the effective configuration is available inside the running sandbox at
+/run/user/$UID/flatpak\-info\&.
+.SH "FILE FORMAT"
+.PP
+The metadata file is using the same \&.ini file format that is used for systemd unit files or application \&.desktop files\&.
+.SS "[Application] or [Runtime]"
+.PP
+Metadata for applications starts with an [Application] group, metadata for runtimes with a [Runtime] group\&.
+.PP
+The following keys can be present in these groups:
+.PP
+\fBname\fR (string)
+.RS 4
+The name of the application or runtime\&. This key is mandatory\&.
+.RE
+.PP
+\fBruntime\fR (string)
+.RS 4
+The fully qualified name of the runtime that is used by the application\&. This key is mandatory for applications\&.
+.RE
+.PP
+\fBsdk\fR (string)
+.RS 4
+The fully qualified name of the sdk that matches the runtime\&.
+.RE
+.PP
+\fBcommand\fR (string)
+.RS 4
+The command to run\&. Only relevant for applications\&.
+.RE
+.SS "[Context]"
+.PP
+This group determines various system resources that may be shared with the application when it is run in a flatpak sandbox\&.
+.PP
+All keys in this group (and the group itself) are optional\&.
+.PP
+\fBshared\fR (list)
+.RS 4
+List of subsystems to share with the host system\&. Possible subsystems: network, ipc\&.
+.RE
+.PP
+\fBsockets\fR (list)
+.RS 4
+List of well\-known sockets to make available in the sandbox\&. Possible sockets: x11, wayland, pulseaudio, session\-bus, system\-bus\&. When making a socket available, flatpak also sets well\-known environment variables like DISPLAY or DBUS_SYSTEM_BUS_ADDRESS to let the application find sockets that are not in a fixed location\&.
+.RE
+.PP
+\fBdevices\fR (list)
+.RS 4
+List of devices to make available in the sandbox\&. Possible values: dri, all\&.
+.RE
+.PP
+\fBfilesystems\fR (list)
+.RS 4
+List of filesystem subsets to make available to the application\&. Possible values: home, host, xdg\-desktop, xdg\-documents, xdg\-download xdg\-music, xdg\-pictures, xdg\-public\-share, xdg\-templates, xdg\-videos, xdg\-run, an absolute path, or a homedir\-relative path like ~/dir or paths relative to the xdg dirs, like xdg\-download/subdir\&. The xdg\-* arguments can also specify a subdirectory, such as xdg\-pictures/screenshots\&. Each entry can have a suffix of :ro or :rw to indicate if the path should be shared read\-only or read\-write (default is read\-write)\&.
+.RE
+.PP
+\fBpersistent\fR (list)
+.RS 4
+List of homedir\-relative paths to make available at the corresponding path in the per\-application home directory, allowing the locations to be used for persistent data when the application does not have access to the real homedir\&. For instance making "\&.myapp" persistent would make "~/\&.myapp" in the sandbox a bind mount to "~/\&.var/app/org\&.my\&.App/\&.myapp", thus allowing an unmodified application to save data in the per\-application location\&.
+.RE
+.SS "[Session Bus Policy]"
+.PP
+If the
+\fBsockets\fR
+key is not allowing full access to the D\-Bus session bus, then flatpak provides filtered access\&.
+.PP
+The default policy for the session bus only allows the application to own its own application ID and subnames\&. For instance if the app is called "org\&.my\&.App", it can only own "org\&.my\&.App" and "org\&.my\&.App\&.*"\&. Its also only allowed to talk to the bus itself (org\&.freedesktop\&.DBus) and the portal APIs APIs (bus names of the form org\&.freedesktop\&.portal\&.*)\&.
+.PP
+Additionally the app is always allowed to reply to messages sent to it, and emit broadcast signals (but these will not reach other sandboxed apps unless they are allowed to talk to your app\&.
+.PP
+If the [Session Bus Policy] group is present, it provides policy for session bus access\&.
+.PP
+Each key in this group has the form of a D\-Bus bus name or prefix thereof, for example
+\fBorg\&.gnome\&.SessionManager\fR
+or
+\fBorg\&.freedesktop\&.portal\&.*\fR
+.PP
+The possible values for entry are, in increasing order or access:
+.PP
+\fBnone\fR
+.RS 4
+The bus name or names in question is invisible to the application\&.
+.RE
+.PP
+\fBsee\fR
+.RS 4
+The bus name or names can be enumerated by the application\&.
+.RE
+.PP
+\fBtalk\fR
+.RS 4
+The application can send messages/ and receive replies and signals from the bus name or names\&.
+.RE
+.PP
+\fBown\fR
+.RS 4
+The application can own the bus name or names (as well as all the above)\&.
+.RE
+.SS "[System Bus Policy]"
+.PP
+If the
+\fBsockets\fR
+key is not allowing full access to the D\-Bus system bus, then flatpak does not make the system bus available unless the [System Bus Policy] group is present and provides a policy for filtered access\&.
+.PP
+Entries in this group have the same form as for the [Session Bus Policy] group\&. However, the app has no permissions by default\&.
+.SS "[Environment]"
+.PP
+The [Environment] group specifies environment variables to set when running the application\&.
+.PP
+Entries in this group have the form
+\fBVAR=VALUE\fR
+where
+\fBVAR\fR
+is the name of an environment variable to set\&.
+.SS "[Extension NAME]"
+.PP
+Runtimes and applications can define extensions, which are optional, additional runtimes to be mounted at a specified location inside the sandbox when they are present on the system\&. Typical uses for extensions include translations for applications, or debuginfo for sdks\&. The name of the extension is specified as part of the group heading\&.
+.PP
+\fBdirectory\fR (string)
+.RS 4
+The relative path at which the extension will be mounted in the sandbox\&. If the extension is for an application, the path is relative to
+/app, otherwise it is relative to
+/usr\&. This key is mandatory\&.
+.RE
+.PP
+\fBversion\fR (string)
+.RS 4
+The branch to use when looking for the extension\&. If this is not specified, it defaults to the branch of the application or runtime that the extension is for\&.
+.RE
+.PP
+\fBsubdirectories\fR (boolean)
+.RS 4
+If this key is set to true, then flatpak will look for extensions whose name is a prefix of the extension name, and mount them at the corresponding name below the subdirectory\&.
+.RE
+.PP
+\fBno\-autodownload\fR (boolean)
+.RS 4
+Whether to automatically download this extension when updating or installing a \*(Aqrelated\*(Aq application or runtime\&.
+.RE
+.PP
+\fBautodelete\fR (boolean)
+.RS 4
+Whether to automatically delete this extension when deleting a \*(Aqrelated\*(Aq application or runtime\&.
+.RE
+.SH "EXAMPLE"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+[Application]
+name=org\&.gnome\&.Calculator
+runtime=org\&.gnome\&.Platform/x86_64/3\&.20
+sdk=org\&.gnome\&.Sdk/x86_64/3\&.20
+command=gnome\-calculator
+
+[Context]
+shared=network;ipc;
+sockets=x11;wayland;
+filesystems=xdg\-run/dconf;~/\&.config/dconf:ro;
+
+[Session Bus Policy]
+ca\&.desrt\&.dconf=talk
+
+[Environment]
+DCONF_USER_CONFIG_DIR=\&.config/dconf
+
+[Extension org\&.gnome\&.Calculator\&.Locale]
+directory=share/runtime/locale
+subdirectories=true
+
+[Extension org\&.gnome\&.Calculator\&.Debug]
+directory=lib/debug
+.fi
+.if n \{\
+.RE
+.\}
+.SH "SEE ALSO"
+.PP
+\fBflatpak\fR(1),
+\fBflatpak-run\fR(1),
+\fBflatpak-override\fR(1)

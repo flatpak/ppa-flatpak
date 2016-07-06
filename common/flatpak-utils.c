@@ -277,7 +277,7 @@ flatpak_get_arches (void)
 
   if (g_once_init_enter (&arches))
     {
-      gsize new_arches = NULL;
+      gsize new_arches = 0;
       const char *main_arch = flatpak_get_arch ();
       const char *kernel_arch = flatpak_get_kernel_arch ();
       GPtrArray *array = g_ptr_array_new ();
@@ -672,13 +672,13 @@ out:
 }
 
 GFile *
-flatpak_find_deploy_dir_for_ref (const char   *ref,
-                                 GCancellable *cancellable,
-                                 GError      **error)
+flatpak_find_files_dir_for_ref (const char   *ref,
+                                GCancellable *cancellable,
+                                GError      **error)
 {
   g_autoptr(FlatpakDir) user_dir = NULL;
   g_autoptr(FlatpakDir) system_dir = NULL;
-  GFile *deploy = NULL;
+  g_autoptr(GFile) deploy = NULL;
 
   user_dir = flatpak_dir_get_user ();
   system_dir = flatpak_dir_get_system ();
@@ -692,8 +692,7 @@ flatpak_find_deploy_dir_for_ref (const char   *ref,
       return NULL;
     }
 
-  return deploy;
-
+  return g_file_get_child (deploy, "files");
 }
 
 FlatpakDeploy *
@@ -1299,20 +1298,35 @@ flatpak_spawn (GFile       *dir,
                const gchar *argv0,
                va_list      ap)
 {
-  g_autoptr(GSubprocessLauncher) launcher = NULL;
-  g_autoptr(GSubprocess) subp = NULL;
   GPtrArray *args;
   const gchar *arg;
-  GInputStream *in;
-  g_autoptr(GOutputStream) out = NULL;
-  g_autoptr(GMainLoop) loop = NULL;
-  SpawnData data = {0};
+  gboolean res;
 
   args = g_ptr_array_new ();
   g_ptr_array_add (args, (gchar *) argv0);
   while ((arg = va_arg (ap, const gchar *)))
     g_ptr_array_add (args, (gchar *) arg);
   g_ptr_array_add (args, NULL);
+
+  res = flatpak_spawnv (dir, output, error, (const gchar * const *) args->pdata);
+
+  g_ptr_array_free (args, TRUE);
+
+  return res;
+}
+
+gboolean
+flatpak_spawnv (GFile                *dir,
+                char                **output,
+                GError              **error,
+                const gchar * const  *argv)
+{
+  g_autoptr(GSubprocessLauncher) launcher = NULL;
+  g_autoptr(GSubprocess) subp = NULL;
+  GInputStream *in;
+  g_autoptr(GOutputStream) out = NULL;
+  g_autoptr(GMainLoop) loop = NULL;
+  SpawnData data = {0};
 
   launcher = g_subprocess_launcher_new (0);
 
@@ -1325,8 +1339,7 @@ flatpak_spawn (GFile       *dir,
       g_subprocess_launcher_set_cwd (launcher, path);
     }
 
-  subp = g_subprocess_launcher_spawnv (launcher, (const gchar * const *) args->pdata, error);
-  g_ptr_array_free (args, TRUE);
+  subp = g_subprocess_launcher_spawnv (launcher, argv, error);
 
   if (subp == NULL)
     return FALSE;
@@ -1377,7 +1390,6 @@ flatpak_spawn (GFile       *dir,
 
   return TRUE;
 }
-
 
 gboolean
 flatpak_cp_a (GFile         *src,
@@ -1544,9 +1556,10 @@ flatpak_zero_mtime (int parent_dfd,
         }
     }
 
-  if (stbuf.st_mtime != 0)
+  /* OSTree checks out to mtime 1, so we do the same */
+  if (stbuf.st_mtime != 1)
     {
-      const struct timespec times[2] = { { 0, UTIME_OMIT }, { 0, } };
+      const struct timespec times[2] = { { 0, UTIME_OMIT }, { 1, } };
 
       if (TEMP_FAILURE_RETRY (utimensat (parent_dfd, rel_path, times, AT_SYMLINK_NOFOLLOW)) != 0)
         {
@@ -1634,6 +1647,48 @@ flatpak_variant_bsearch_str (GVariant   *array,
 
   *out_pos = imid;
   return FALSE;
+}
+
+/* This matches all refs that have ref, followed by '.'  as prefix */
+char **
+flatpak_summary_match_subrefs (GVariant *summary, const char *ref)
+{
+  g_autoptr(GVariant) refs = g_variant_get_child_value (summary, 0);
+  GPtrArray *res = g_ptr_array_new ();
+  gsize n, i;
+  g_auto(GStrv) parts = NULL;
+  g_autofree char *parts_prefix = NULL;
+
+  parts = g_strsplit (ref, "/", 0);
+  parts_prefix = g_strconcat (parts[1], ".", NULL);
+
+  n = g_variant_n_children (refs);
+  for (i = 0; i < n; i++)
+    {
+      g_autoptr(GVariant) child = NULL;
+      g_auto(GStrv) cur_parts = NULL;
+      const char *cur;
+
+      child = g_variant_get_child_value (refs, i);
+      g_variant_get_child (child, 0, "&s", &cur, NULL);
+
+      cur_parts = g_strsplit (cur, "/", 0);
+
+      /* Must match type, arch, branch */
+      if (strcmp (parts[0], cur_parts[0]) != 0 ||
+          strcmp (parts[2], cur_parts[2]) != 0 ||
+          strcmp (parts[3], cur_parts[3]) != 0)
+        continue;
+
+      /* But only prefix of id */
+      if (!g_str_has_prefix (cur_parts[1], parts_prefix))
+        continue;
+
+      g_ptr_array_add (res, g_strdup (cur));
+    }
+
+  g_ptr_array_add (res, NULL);
+  return (char **)g_ptr_array_free (res, FALSE);
 }
 
 gboolean
@@ -2406,22 +2461,24 @@ flatpak_extension_free (FlatpakExtension *extension)
   g_free (extension->installed_id);
   g_free (extension->ref);
   g_free (extension->directory);
+  g_free (extension->files_path);
   g_free (extension);
 }
 
 static FlatpakExtension *
 flatpak_extension_new (const char *id,
                        const char *extension,
-                       const char *arch,
-                       const char *branch,
-                       const char *directory)
+                       const char *ref,
+                       const char *directory,
+                       GFile *files)
 {
   FlatpakExtension *ext = g_new0 (FlatpakExtension, 1);
 
   ext->id = g_strdup (id);
   ext->installed_id = g_strdup (extension);
-  ext->ref = g_build_filename ("runtime", extension, arch, branch, NULL);
+  ext->ref = g_strdup (ref);
   ext->directory = g_strdup (directory);
+  ext->files_path = g_file_get_path (files);
   return ext;
 }
 
@@ -2452,7 +2509,7 @@ flatpak_list_extensions (GKeyFile   *metakey,
           g_autofree char *version = g_key_file_get_string (metakey, groups[i], "version", NULL);
           g_autofree char *ref = NULL;
           const char *branch;
-          g_autoptr(GFile) deploy = NULL;
+          g_autoptr(GFile) files = NULL;
 
           if (directory == NULL)
             continue;
@@ -2464,11 +2521,11 @@ flatpak_list_extensions (GKeyFile   *metakey,
 
           ref = g_build_filename ("runtime", extension, arch, branch, NULL);
 
-          deploy = flatpak_find_deploy_dir_for_ref (ref, NULL, NULL);
+          files = flatpak_find_files_dir_for_ref (ref, NULL, NULL);
           /* Prefer a full extension (org.freedesktop.Locale) over subdirectory ones (org.freedesktop.Locale.sv) */
-          if (deploy != NULL)
+          if (files != NULL)
             {
-              ext = flatpak_extension_new (extension, extension, arch, branch, directory);
+              ext = flatpak_extension_new (extension, extension, ref, directory, files);
               res = g_list_prepend (res, ext);
             }
           else if (g_key_file_get_boolean (metakey, groups[i],
@@ -2477,21 +2534,29 @@ flatpak_list_extensions (GKeyFile   *metakey,
               g_autofree char *prefix = g_strconcat (extension, ".", NULL);
               g_auto(GStrv) refs = NULL;
               int j;
+              gboolean needs_tmpfs = TRUE;
 
               refs = flatpak_list_deployed_refs ("runtime", prefix, arch, branch,
                                                  NULL, NULL);
               for (j = 0; refs != NULL && refs[j] != NULL; j++)
                 {
                   g_autofree char *extended_dir = g_build_filename (directory, refs[j] + strlen (prefix), NULL);
+                  g_autofree char *dir_ref = g_build_filename ("runtime", refs[j], arch, branch, NULL);
+                  g_autoptr(GFile) subdir_files = flatpak_find_files_dir_for_ref (dir_ref, NULL, NULL);
 
-                  ext = flatpak_extension_new (extension, refs[j], arch, branch, extended_dir);
-                  res = g_list_prepend (res, ext);
+                  if (subdir_files)
+                    {
+                      ext = flatpak_extension_new (extension, refs[j], dir_ref, extended_dir, subdir_files);
+                      ext->needs_tmpfs = needs_tmpfs;
+                      needs_tmpfs = FALSE; /* Only first subdir needs a tmpfs */
+                      res = g_list_prepend (res, ext);
+                    }
                 }
             }
         }
     }
 
-  return res;
+  return g_list_reverse (res);
 }
 
 
@@ -3476,4 +3541,37 @@ flatpak_completion_free (FlatpakCompletion *completion)
   g_free (completion->argv);
   g_strfreev (completion->original_argv);
   g_free (completion);
+}
+
+char **
+flatpak_get_current_locale_subpaths (void)
+{
+  const gchar * const *langs = g_get_language_names ();
+  GPtrArray *subpaths = g_ptr_array_new ();
+  int i;
+
+  for (i = 0; langs[i] != NULL; i++)
+    {
+      g_autofree char *dir = g_strconcat ("/", langs[i], NULL);
+      char *c;
+
+      c = strchr (dir, '@');
+      if (c != NULL)
+        *c = 0;
+      c = strchr (dir, '_');
+      if (c != NULL)
+        *c = 0;
+      c = strchr (dir, '.');
+      if (c != NULL)
+        *c = 0;
+
+      if (strcmp (dir, "/C") == 0)
+        continue;
+
+      g_ptr_array_add (subpaths, g_steal_pointer (&dir));
+    }
+
+  g_ptr_array_add (subpaths, NULL);
+
+  return (char **)g_ptr_array_free (subpaths, FALSE);
 }
