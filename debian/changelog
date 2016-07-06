@@ -5,6 +5,7 @@ flatpak (0.6.7-1) UNRELEASED; urgency=medium
     - d/libflatpak0.symbols: update for new ABIs
     - d/control: depend and build-depend on OSTree 2016.6
   * Depend on system bubblewrap (Closes: #824647)
+  * Remove obsolete note about requiring unprivileged user namespaces
 
  -- Simon McVittie <smcv@debian.org>  Wed, 06 Jul 2016 10:35:01 +0100
 
