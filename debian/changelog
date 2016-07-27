@@ -2,6 +2,11 @@ flatpak (0.6.7-2) UNRELEASED; urgency=medium
 
   * d/p/libtest-replace-dbus-launch-with-dbus-daemon.patch:
     Add patch to stop using dbus-launch in the tests
+  * d/p/Wait-for-locks-in-TEST_DATA_DIR-to-be-released-before-del.patch:
+    Add patch to avoid a race condition during testing between the
+    container's "init" process shutting down, and libtest.sh proceeding
+    with cleanup in response to the container's main process (which
+    exits first) shutting down
 
  -- Simon McVittie <smcv@debian.org>  Wed, 27 Jul 2016 23:59:24 +0100
 
