@@ -8,7 +8,6 @@ Uploaders:
 Build-Depends:
  bubblewrap (>= 0.1.0),
  dbus,
- dbus-x11,
  debhelper (>= 9),
  dh-autoreconf,
  dh-exec,
@@ -102,7 +101,6 @@ Architecture: linux-any
 Section: misc
 Depends:
  ca-certificates,
- dbus-x11,
  desktop-file-utils,
  flatpak (= ${binary:Version}),
  hicolor-icon-theme,

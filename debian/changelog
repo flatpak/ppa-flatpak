@@ -1,3 +1,10 @@
+flatpak (0.6.7-2) UNRELEASED; urgency=medium
+
+  * d/p/libtest-replace-dbus-launch-with-dbus-daemon.patch:
+    Add patch to stop using dbus-launch in the tests
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 27 Jul 2016 23:59:24 +0100
+
 flatpak (0.6.7-1) unstable; urgency=medium
 
   * New upstream release
