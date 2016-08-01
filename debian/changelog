@@ -1,12 +1,12 @@
 flatpak (0.6.8-1) UNRELEASED; urgency=medium
 
   * New upstream release
-  * d/copyright: source files are now licensed as LGPL-2.1+
-  * d/flatpak.install: install systemd snippet to configure dbus.service
-    with flatpak in XDG_DATA_DIRS
-  * d/p/dist/Add-flatpak-metadata.xml-from-upstream-git.patch:
-    Add missing flatpak-metadata.xml from upstream git, which was not
-    included in the released tarball
+    - d/copyright: source files are now licensed as LGPL-2.1+
+    - d/flatpak.install: install systemd snippet to configure dbus.service
+      with flatpak in XDG_DATA_DIRS
+    - d/p/dist/Add-flatpak-metadata.xml-from-upstream-git.patch:
+      Add missing flatpak-metadata.xml from upstream git, which was not
+      included in the released tarball
   * d/p/unrpm-prevent-shell-injection.patch: Avoid shell injection
     when building a Flatpak from an RPM
   * d/p/Wait-for-locks-in-TEST_DATA_DIR-to-be-released-before-del.patch:
