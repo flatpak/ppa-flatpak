@@ -15,8 +15,11 @@ usr/lib/systemd/user/xdg-permission-store.service
 usr/share/bash-completion
 usr/share/dbus-1/services
 usr/share/dbus-1/system-services
+usr/share/doc/flatpak/docbook.css
+usr/share/doc/flatpak/flatpak-docs.html
 usr/share/flatpak
 usr/share/gdm/env.d
+usr/share/locale/*/LC_MESSAGES/flatpak.mo
 usr/share/man/man1/flatpak-build-bundle.1
 usr/share/man/man1/flatpak-build-export.1
 usr/share/man/man1/flatpak-build-finish.1

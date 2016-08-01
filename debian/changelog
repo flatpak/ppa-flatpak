@@ -4,6 +4,8 @@ flatpak (0.6.8-1) UNRELEASED; urgency=medium
     - d/copyright: source files are now licensed as LGPL-2.1+
     - d/flatpak.install: install systemd snippet to configure dbus.service
       with flatpak in XDG_DATA_DIRS
+    - d/flatpak.install: install documentation for the command-line tools,
+      and i18n
     - d/p/dist/Add-flatpak-metadata.xml-from-upstream-git.patch:
       Add missing flatpak-metadata.xml from upstream git, which was not
       included in the released tarball
