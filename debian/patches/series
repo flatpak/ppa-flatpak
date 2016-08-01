@@ -1,3 +1,4 @@
+dist/Add-flatpak-metadata.xml-from-upstream-git.patch
 build-run-install-test-data-hook-even-if-using-system-bwr.patch
 libtest-replace-dbus-launch-with-dbus-daemon.patch
 Wait-for-locks-in-TEST_DATA_DIR-to-be-released-before-del.patch

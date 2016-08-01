@@ -10,10 +10,10 @@ Signed-off-by: Simon McVittie <smcv@debian.org>
  1 file changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/Makefile.am b/Makefile.am
-index ee2e4e5..45a169d 100644
+index 0814d39..0fa2da8 100644
 --- a/Makefile.am
 +++ b/Makefile.am
-@@ -93,18 +93,20 @@ flatpak_bwrap_LDADD = $(bwrap_LDADD)
+@@ -95,18 +95,20 @@ flatpak_bwrap_LDADD = $(bwrap_LDADD)
  bwrapdir = $(libexecdir)
  include bubblewrap/Makefile-bwrap.am.inc
  
