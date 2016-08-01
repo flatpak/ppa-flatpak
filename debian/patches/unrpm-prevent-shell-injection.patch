@@ -1,0 +1,40 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Mon, 18 Jul 2016 14:32:14 +0100
+Subject: unrpm: prevent shell injection
+
+Substituting into a shell command-line without escaping is a bad idea.
+If the argument is attacker-controlled, it's a security vulnerability;
+if the argument is legitimate-user-controlled (as I think it is here)
+it's merely wrong.
+
+We could escape the filename with g_shell_quote(), but it's more
+straightforward to take advantage of the shell's argument processing.
+The first positional parameter (if given) is $0, and the rest are $@.
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/flatpak/flatpak/pull/194
+---
+ builder/builder-source-archive.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/builder/builder-source-archive.c b/builder/builder-source-archive.c
+index 5c49b81..bcbd00b 100644
+--- a/builder/builder-source-archive.c
++++ b/builder/builder-source-archive.c
+@@ -416,12 +416,12 @@ unrpm (GFile   *dir,
+        GError **error)
+ {
+   gboolean res;
+-  const gchar *argv[] = { "sh", "-c", NULL, NULL };
+-  char *unrpm_cmdline = g_strdup_printf("rpm2cpio %s | cpio -i -d", rpm_path);
++  const gchar *argv[] = { "sh", "-c", "rpm2cpio \"$1\" | cpio -i -d",
++      "sh", /* shell's $0 */
++      rpm_path, /* shell's $1 */
++      NULL };
+ 
+-  argv[2] = unrpm_cmdline;
+   res = flatpak_spawnv (dir, NULL, error, argv);
+-  g_free(unrpm_cmdline);
+ 
+   return res;
+ }

@@ -7,6 +7,8 @@ flatpak (0.6.8-1) UNRELEASED; urgency=medium
   * d/p/dist/Add-flatpak-metadata.xml-from-upstream-git.patch:
     Add missing flatpak-metadata.xml from upstream git, which was not
     included in the released tarball
+  * d/p/unrpm-prevent-shell-injection.patch: Avoid shell injection
+    when building a Flatpak from an RPM
 
  -- Simon McVittie <smcv@debian.org>  Mon, 01 Aug 2016 10:32:45 +0100
 
