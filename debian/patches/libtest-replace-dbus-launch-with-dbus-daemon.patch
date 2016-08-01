@@ -7,6 +7,8 @@ support X11 autolaunching. It should not be part of the Wayland
 (and/or Mir) future.
 
 Start a dbus-daemon directly instead.
+
+Forwarded: https://github.com/flatpak/flatpak/pull/228
 ---
  tests/libtest.sh | 9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)

@@ -5,6 +5,7 @@ Subject: build: run install-test-data-hook even if using system bwrap
 The !WITH_SYSTEM_BWRAP conditional was too broad here.
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/flatpak/flatpak/pull/227
 ---
  Makefile.am | 8 +++++---
  1 file changed, 5 insertions(+), 3 deletions(-)
