@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,6 +26,8 @@
 #include <unistd.h>
 #include <errno.h>
 
+#include <glib/gi18n.h>
+
 #include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
@@ -38,9 +40,9 @@ static char *opt_build_dir;
 static char **opt_bind_mounts;
 
 static GOptionEntry options[] = {
-  { "runtime", 'r', 0, G_OPTION_ARG_NONE, &opt_runtime, "Use non-devel runtime", NULL },
-  { "bind-mount", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_bind_mounts, "Add bind mount", "DEST=SRC" },
-  { "build-dir", 0, 0, G_OPTION_ARG_STRING, &opt_build_dir, "Start build in this directory", "DIR" },
+  { "runtime", 'r', 0, G_OPTION_ARG_NONE, &opt_runtime, N_("Use non-devel runtime"), NULL },
+  { "bind-mount", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_bind_mounts, N_("Add bind mount"), N_("DEST=SRC") },
+  { "build-dir", 0, 0, G_OPTION_ARG_STRING, &opt_build_dir, N_("Start build in this directory"), N_("DIR") },
   { NULL }
 };
 
@@ -85,7 +87,8 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   gboolean custom_usr;
   g_auto(GStrv) runtime_ref_parts = NULL;
 
-  context = g_option_context_new ("DIRECTORY [COMMAND [args...]] - Build in directory");
+  context = g_option_context_new (_("DIRECTORY [COMMAND [args...]] - Build in directory"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   rest_argc = 0;
   for (i = 1; i < argc; i++)
@@ -107,7 +110,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
     return FALSE;
 
   if (rest_argc == 0)
-    return usage_error (context, "DIRECTORY must be specified", error);
+    return usage_error (context, _("DIRECTORY must be specified"), error);
 
   directory = argv[rest_argv_start];
   if (rest_argc >= 2)
@@ -201,7 +204,8 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
       char *split = strchr (opt_bind_mounts[i], '=');
       if (split == NULL)
         {
-          g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT, "Missing '=' in bind mount option '%s'", opt_bind_mounts[i]);
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
+                       _("Missing '=' in bind mount option '%s'"), opt_bind_mounts[i]);
           return FALSE;
         }
 
@@ -226,7 +230,8 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
 
   if (execvpe (flatpak_get_bwrap (), (char **) argv_array->pdata, envp) == -1)
     {
-      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno), "Unable to start app");
+      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno),
+                   _("Unable to start app"));
       return FALSE;
     }
 

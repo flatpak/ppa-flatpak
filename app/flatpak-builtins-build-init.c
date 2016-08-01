@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,6 +25,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <glib/gi18n.h>
+
 #include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
@@ -40,13 +42,13 @@ static gboolean opt_writable_sdk;
 static gboolean opt_update;
 
 static GOptionEntry options[] = {
-  { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, "Arch to use", "ARCH" },
-  { "var", 'v', 0, G_OPTION_ARG_STRING, &opt_var, "Initialize var from named runtime", "RUNTIME" },
-  { "writable-sdk", 'w', 0, G_OPTION_ARG_NONE, &opt_writable_sdk, "Initialize /usr with a writable copy of the sdk",  },
-  { "tag", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_tags, "Add a tag",  },
-  { "sdk-extension", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_sdk_extensions, "include this sdk extension in /usr",  "EXTENSION"},
-  { "sdk-dir", 0, 0, G_OPTION_ARG_STRING, &opt_sdk_dir, "Where to store sdk (defaults to 'usr')", "DIR" },
-  { "update", 0, 0, G_OPTION_ARG_NONE, &opt_update, "Re-initialize the sdk/var",  },
+  { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to use"), N_("ARCH") },
+  { "var", 'v', 0, G_OPTION_ARG_STRING, &opt_var, N_("Initialize var from named runtime"), N_("RUNTIME") },
+  { "writable-sdk", 'w', 0, G_OPTION_ARG_NONE, &opt_writable_sdk, N_("Initialize /usr with a writable copy of the sdk"), NULL },
+  { "tag", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_tags, N_("Add a tag"), N_("TAG") },
+  { "sdk-extension", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_sdk_extensions, N_("Include this sdk extension in /usr"), N_("EXTENSION") },
+  { "sdk-dir", 0, 0, G_OPTION_ARG_STRING, &opt_sdk_dir, N_("Where to store sdk (defaults to 'usr')"), N_("DIR") },
+  { "update", 0, 0, G_OPTION_ARG_NONE, &opt_update, N_("Re-initialize the sdk/var"), NULL },
   { NULL }
 };
 
@@ -73,13 +75,14 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
   g_autofree char *sdk_ref = NULL;
   int i;
 
-  context = g_option_context_new ("DIRECTORY APPNAME SDK RUNTIME [BRANCH] - Initialize a directory for building");
+  context = g_option_context_new (_("DIRECTORY APPNAME SDK RUNTIME [BRANCH] - Initialize a directory for building"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv, FLATPAK_BUILTIN_FLAG_NO_DIR, NULL, cancellable, error))
     return FALSE;
 
   if (argc < 5)
-    return usage_error (context, "RUNTIME must be specified", error);
+    return usage_error (context, _("RUNTIME must be specified"), error);
 
   directory = argv[1];
   app_id = argv[2];
@@ -89,16 +92,16 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
     branch = argv[5];
 
   if (!flatpak_is_valid_name (app_id))
-    return flatpak_fail (error, "'%s' is not a valid application name", app_id);
+    return flatpak_fail (error, _("'%s' is not a valid application name"), app_id);
 
   if (!flatpak_is_valid_name (runtime))
-    return flatpak_fail (error, "'%s' is not a valid runtime name", runtime);
+    return flatpak_fail (error, _("'%s' is not a valid runtime name"), runtime);
 
   if (!flatpak_is_valid_name (sdk))
-    return flatpak_fail (error, "'%s' is not a valid sdk name", sdk);
+    return flatpak_fail (error, _("'%s' is not a valid sdk name"), sdk);
 
   if (!flatpak_is_valid_branch (branch))
-    return flatpak_fail (error, "'%s' is not a valid branch name", branch);
+    return flatpak_fail (error, _("'%s' is not a valid branch name"), branch);
 
   runtime_ref = flatpak_build_untyped_ref (runtime, branch, opt_arch);
   sdk_ref = flatpak_build_untyped_ref (sdk, branch, opt_arch);
@@ -120,7 +123,7 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
 
   if (!opt_update &&
       g_file_query_exists (files_dir, cancellable))
-    return flatpak_fail (error, "Build directory %s already initialized", directory);
+    return flatpak_fail (error, _("Build directory %s already initialized"), directory);
 
   if (opt_writable_sdk)
     {
@@ -191,7 +194,7 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
               if (!found)
                 {
                   g_list_free_full (extensions, (GDestroyNotify) flatpak_extension_free);
-                  return flatpak_fail (error, "Requested extension %s not installed\n", requested_extension);
+                  return flatpak_fail (error, _("Requested extension %s not installed"), requested_extension);
                 }
             }
           g_list_free_full (extensions, (GDestroyNotify) flatpak_extension_free);

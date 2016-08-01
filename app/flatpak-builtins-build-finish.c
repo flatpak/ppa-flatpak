@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,6 +26,8 @@
 #include <string.h>
 #include <ftw.h>
 
+#include <glib/gi18n.h>
+
 #include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
@@ -37,8 +39,8 @@ static char *opt_command;
 static gboolean opt_no_exports;
 
 static GOptionEntry options[] = {
-  { "command", 0, 0, G_OPTION_ARG_STRING, &opt_command, "Command to set", "COMMAND" },
-  { "no-exports", 0, 0, G_OPTION_ARG_NONE, &opt_no_exports, "Don't process exports" },
+  { "command", 0, 0, G_OPTION_ARG_STRING, &opt_command, N_("Command to set"), N_("COMMAND") },
+  { "no-exports", 0, 0, G_OPTION_ARG_NONE, &opt_no_exports, N_("Don't process exports"), NULL },
   { NULL }
 };
 
@@ -349,7 +351,8 @@ flatpak_builtin_build_finish (int argc, char **argv, GCancellable *cancellable, 
   g_autoptr(GKeyFile) metakey = NULL;
   g_autoptr(FlatpakContext) arg_context = NULL;
 
-  context = g_option_context_new ("DIRECTORY - Convert a directory to a bundle");
+  context = g_option_context_new (_("DIRECTORY - Convert a directory to a bundle"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   arg_context = flatpak_context_new ();
   g_option_context_add_group (context, flatpak_context_get_options (arg_context));
@@ -358,7 +361,7 @@ flatpak_builtin_build_finish (int argc, char **argv, GCancellable *cancellable, 
     return FALSE;
 
   if (argc < 2)
-    return usage_error (context, "DIRECTORY must be specified", error);
+    return usage_error (context, _("DIRECTORY must be specified"), error);
 
   directory = argv[1];
 
@@ -370,7 +373,7 @@ flatpak_builtin_build_finish (int argc, char **argv, GCancellable *cancellable, 
 
   if (!g_file_query_exists (files_dir, cancellable) ||
       !g_file_query_exists (metadata_file, cancellable))
-    return flatpak_fail (error, "Build directory %s not initialized", directory);
+    return flatpak_fail (error, _("Build directory %s not initialized"), directory);
 
   if (!g_file_load_contents (metadata_file, cancellable, &metadata_contents, &metadata_size, NULL, error))
     return FALSE;
@@ -384,12 +387,12 @@ flatpak_builtin_build_finish (int argc, char **argv, GCancellable *cancellable, 
     {
       id = g_key_file_get_string (metakey, "Runtime", "name", NULL);
       if (id == NULL)
-        return flatpak_fail (error, "No name specified in the metadata");
+        return flatpak_fail (error, _("No name specified in the metadata"));
       is_runtime = TRUE;
     }
 
   if (g_file_query_exists (export_dir, cancellable))
-    return flatpak_fail (error, "Build directory %s already finalized", directory);
+    return flatpak_fail (error, _("Build directory %s already finalized"), directory);
 
   g_debug ("Collecting exports");
   if (!collect_exports (base, id, is_runtime, cancellable, error))
@@ -399,7 +402,7 @@ flatpak_builtin_build_finish (int argc, char **argv, GCancellable *cancellable, 
   if (!update_metadata (base, arg_context, cancellable, error))
     return FALSE;
 
-  g_print ("Please review the exported files and the metadata\n");
+  g_print (_("Please review the exported files and the metadata\n"));
 
   return TRUE;
 }

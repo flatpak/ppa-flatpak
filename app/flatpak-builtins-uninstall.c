@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,6 +25,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <glib/gi18n.h>
+
 #include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
@@ -39,12 +41,12 @@ static gboolean opt_runtime;
 static gboolean opt_app;
 
 static GOptionEntry options[] = {
-  { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, "Arch to uninstall", "ARCH" },
-  { "keep-ref", 0, 0, G_OPTION_ARG_NONE, &opt_keep_ref, "Keep ref in local repository", NULL },
-  { "no-related", 0, 0, G_OPTION_ARG_NONE, &opt_no_related, "Don't uninstall related refs", },
-  { "force-remove", 0, 0, G_OPTION_ARG_NONE, &opt_force_remove, "Remove files even if running", NULL },
-  { "runtime", 0, 0, G_OPTION_ARG_NONE, &opt_runtime, "Look for runtime with the specified name", },
-  { "app", 0, 0, G_OPTION_ARG_NONE, &opt_app, "Look for app with the specified name", },
+  { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to uninstall"), N_("ARCH") },
+  { "keep-ref", 0, 0, G_OPTION_ARG_NONE, &opt_keep_ref, N_("Keep ref in local repository"), NULL },
+  { "no-related", 0, 0, G_OPTION_ARG_NONE, &opt_no_related, N_("Don't uninstall related refs"), NULL },
+  { "force-remove", 0, 0, G_OPTION_ARG_NONE, &opt_force_remove, N_("Remove files even if running"), NULL },
+  { "runtime", 0, 0, G_OPTION_ARG_NONE, &opt_runtime, N_("Look for runtime with the specified name"), NULL },
+  { "app", 0, 0, G_OPTION_ARG_NONE, &opt_app, N_("Look for app with the specified name"), NULL },
   { NULL }
 };
 
@@ -61,13 +63,14 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
   g_autoptr(GPtrArray) related = NULL;
   int i;
 
-  context = g_option_context_new ("NAME [BRANCH] - Uninstall an application");
+  context = g_option_context_new (_("NAME [BRANCH] - Uninstall an application"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv, 0, &dir, cancellable, error))
     return FALSE;
 
   if (argc < 2)
-    return usage_error (context, "APP must be specified", error);
+    return usage_error (context, _("APP must be specified"), error);
 
   name = argv[1];
   if (argc > 2)
@@ -103,7 +106,7 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
           related = flatpak_dir_find_local_related (dir, ref, origin,
                                                     NULL, &local_error);
           if (related == NULL)
-            g_printerr ("Warning: Problem looking for related refs: %s\n",
+            g_printerr (_("Warning: Problem looking for related refs: %s\n"),
                         local_error->message);
         }
     }
@@ -124,11 +127,11 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
             continue;
 
           parts = g_strsplit (rel->ref, "/", 0);
-          g_print ("Uninstalling related: %s\n", parts[1]);
+          g_print (_("Uninstalling related: %s\n"), parts[1]);
 
           if (!flatpak_dir_uninstall (dir, rel->ref, flags,
                                       cancellable, &local_error))
-            g_printerr ("Warning: Failed to uninstall related ref: %s\n",
+            g_printerr (_("Warning: Failed to uninstall related ref: %s\n"),
                         rel->ref);
         }
     }

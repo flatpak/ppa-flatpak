@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,6 +26,8 @@
 #include <sys/file.h>
 #include <sys/types.h>
 #include <utime.h>
+
+#include <glib/gi18n.h>
 
 #include <gio/gio.h>
 #include "libgsystem.h"
@@ -122,8 +124,8 @@ flatpak_deploy_finalize (GObject *object)
 
   g_clear_object (&self->dir);
   g_clear_pointer (&self->metadata, g_key_file_unref);
-  g_clear_pointer (&self->system_overrides, g_key_file_unref);
-  g_clear_pointer (&self->user_overrides, g_key_file_unref);
+  g_clear_pointer (&self->system_overrides, flatpak_context_free);
+  g_clear_pointer (&self->user_overrides, flatpak_context_free);
 
   G_OBJECT_CLASS (flatpak_deploy_parent_class)->finalize (object);
 }
@@ -432,7 +434,7 @@ flatpak_dir_load_override (FlatpakDir *self,
                              &metadata_contents, length, NULL, NULL))
     {
       g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-                   "No overrides found for %s", app_id);
+                   _("No overrides found for %s"), app_id);
       return NULL;
     }
 
@@ -538,7 +540,8 @@ flatpak_dir_load_deployed (FlatpakDir   *self,
   deploy_dir = flatpak_dir_get_if_deployed (self, ref, checksum, cancellable);
   if (deploy_dir == NULL)
     {
-      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED, "%s not installed", ref);
+      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
+                   _("%s not installed"), ref);
       return NULL;
     }
 
@@ -771,7 +774,8 @@ flatpak_dir_get_deploy_data (FlatpakDir   *self,
   deploy_dir = flatpak_dir_get_if_deployed (self, ref, NULL, cancellable);
   if (deploy_dir == NULL)
     {
-      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED, "%s not installed", ref);
+      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
+                   _("%s not installed"), ref);
       return NULL;
     }
 
@@ -806,7 +810,8 @@ flatpak_dir_get_origin (FlatpakDir   *self,
                                              cancellable, error);
   if (deploy_data == NULL)
     {
-      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED, "%s not installed", ref);
+      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
+                   _("%s not installed"), ref);
       return NULL;
     }
 
@@ -827,7 +832,8 @@ flatpak_dir_get_subpaths (FlatpakDir   *self,
                                              cancellable, error);
   if (deploy_data == NULL)
     {
-      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED, "%s not installed", ref);
+      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
+                   _("%s not installed"), ref);
       return NULL;
     }
 
@@ -904,7 +910,7 @@ flatpak_dir_ensure_repo (FlatpakDir   *self,
               g_autofree char *repopath = NULL;
 
               repopath = g_file_get_path (repodir);
-              g_prefix_error (error, "While opening repository %s: ", repopath);
+              g_prefix_error (error, _("While opening repository %s: "), repopath);
               goto out;
             }
         }
@@ -1036,7 +1042,8 @@ flatpak_dir_deploy_appstream (FlatpakDir          *self,
     checkout_dir_path = g_file_get_path (tmp_dir_template);
     if (g_mkdtemp_full (checkout_dir_path, 0755) == NULL)
       {
-        g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "Can't create deploy directory");
+        g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                     _("Can't create deploy directory"));
         return FALSE;
       }
   }
@@ -1147,7 +1154,6 @@ flatpak_dir_update_appstream (FlatpakDir          *self,
 
       if (!flatpak_dir_pull (self, remote, branch, NULL,
                              child_repo, OSTREE_REPO_PULL_FLAGS_MIRROR,
-                             /* TODO: forcing no-deltas due to issue #144 */ TRUE,
                              progress, cancellable, error))
         return FALSE;
 
@@ -1176,7 +1182,7 @@ flatpak_dir_update_appstream (FlatpakDir          *self,
       return TRUE;
     }
 
-  if (!flatpak_dir_pull (self, remote, branch, NULL, NULL, OSTREE_REPO_PULL_FLAGS_NONE, FALSE, progress,
+  if (!flatpak_dir_pull (self, remote, branch, NULL, NULL, OSTREE_REPO_PULL_FLAGS_NONE, progress,
                          cancellable, error))
     return FALSE;
 
@@ -1207,12 +1213,12 @@ repo_pull_one_dir (OstreeRepo          *self,
                    const char          *dir_to_pull,
                    char               **refs_to_fetch,
                    OstreeRepoPullFlags  flags,
-                   gboolean             force_disable_deltas,
                    OstreeAsyncProgress *progress,
                    GCancellable        *cancellable,
                    GError             **error)
 {
   GVariantBuilder builder;
+  gboolean force_disable_deltas = FALSE;
 
   g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
 
@@ -1245,7 +1251,6 @@ flatpak_dir_pull (FlatpakDir          *self,
                   const char         **subpaths,
                   OstreeRepo          *repo,
                   OstreeRepoPullFlags  flags,
-                  gboolean             force_disable_deltas,
                   OstreeAsyncProgress *progress,
                   GCancellable        *cancellable,
                   GError             **error)
@@ -1290,11 +1295,11 @@ flatpak_dir_pull (FlatpakDir          *self,
   if (subpaths == NULL || subpaths[0] == NULL)
     {
       if (!repo_pull_one_dir (repo, repository, NULL,
-                              (char **) refs, flags, force_disable_deltas,
+                              (char **) refs, flags,
                               progress,
                               cancellable, error))
         {
-          g_prefix_error (error, "While pulling %s from remote %s: ", ref, repository);
+          g_prefix_error (error, _("While pulling %s from remote %s: "), ref, repository);
           goto out;
         }
     }
@@ -1304,11 +1309,11 @@ flatpak_dir_pull (FlatpakDir          *self,
 
       if (!repo_pull_one_dir (repo, repository,
                               "/metadata",
-                              (char **) refs, flags, force_disable_deltas,
+                              (char **) refs, flags,
                               progress,
                               cancellable, error))
         {
-          g_prefix_error (error, "While pulling %s from remote %s, metadata: ",
+          g_prefix_error (error, _("While pulling %s from remote %s, metadata: "),
                           ref, repository);
           goto out;
         }
@@ -1318,11 +1323,11 @@ flatpak_dir_pull (FlatpakDir          *self,
           g_autofree char *subpath = g_build_filename ("/files", subpaths[i], NULL);
           if (!repo_pull_one_dir (repo, repository,
                                   subpath,
-                                  (char **) refs, flags, force_disable_deltas,
+                                  (char **) refs, flags,
                                   progress,
                                   cancellable, error))
             {
-              g_prefix_error (error, "While pulling %s from remote %s, subpath %s: ",
+              g_prefix_error (error, _("While pulling %s from remote %s, subpath %s: "),
                               ref, repository, subpaths[i]);
               goto out;
             }
@@ -1464,7 +1469,7 @@ flatpak_dir_pull_untrusted_local (FlatpakDir          *self,
                                    &checksum))
     {
       g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-                   "Can't find %sin remote %s", ref, remote_name);
+                   _("Can't find %s in remote %s"), ref, remote_name);
       return FALSE;
     }
 
@@ -1508,7 +1513,7 @@ flatpak_dir_pull_untrusted_local (FlatpakDir          *self,
                                     NULL, ref, checksum, progress,
                                     cancellable, error))
         {
-          g_prefix_error (error, "While pulling %s from remote %s: ", ref, remote_name);
+          g_prefix_error (error, _("While pulling %s from remote %s: "), ref, remote_name);
           goto out;
         }
     }
@@ -1520,7 +1525,7 @@ flatpak_dir_pull_untrusted_local (FlatpakDir          *self,
                                     "/metadata", ref, checksum, progress,
                                     cancellable, error))
         {
-          g_prefix_error (error, "While pulling %s from remote %s, metadata: ",
+          g_prefix_error (error, _("While pulling %s from remote %s, metadata: "),
                           ref, remote_name);
           goto out;
         }
@@ -1532,7 +1537,7 @@ flatpak_dir_pull_untrusted_local (FlatpakDir          *self,
                                         subpath, ref, checksum, progress,
                                         cancellable, error))
             {
-              g_prefix_error (error, "While pulling %s from remote %s, subpath %s: ",
+              g_prefix_error (error, _("While pulling %s from remote %s, subpath %s: "),
                               ref, remote_name, subpaths[i]);
               goto out;
             }
@@ -2047,10 +2052,8 @@ read_fd (int          fd,
 
   if (buf == NULL)
     {
-      g_set_error (error,
-                   G_FILE_ERROR,
-                   G_FILE_ERROR_NOMEM,
-                   "not enough memory");
+      g_set_error_literal (error, G_FILE_ERROR, G_FILE_ERROR_NOMEM,
+                           _("Not enough memory"));
       return FALSE;
     }
 
@@ -2068,10 +2071,8 @@ read_fd (int          fd,
               int save_errno = errno;
 
               g_free (buf);
-              g_set_error (error,
-                           G_FILE_ERROR,
-                           g_file_error_from_errno (save_errno),
-                           "Failed to read from exported file");
+              g_set_error_literal (error, G_FILE_ERROR, g_file_error_from_errno (save_errno),
+                                   _("Failed to read from exported file"));
               return FALSE;
             }
         }
@@ -2319,7 +2320,7 @@ rewrite_export_dir (const char   *app,
         {
           if (!flatpak_has_name_prefix (dent->d_name, app))
             {
-              g_warning ("Non-prefixed filename %s in app %s, removing.\n", dent->d_name, app);
+              g_warning ("Non-prefixed filename %s in app %s, removing.", dent->d_name, app);
               if (unlinkat (source_iter.fd, dent->d_name, 0) != 0 && errno != ENOENT)
                 {
                   glnx_set_error_from_errno (error);
@@ -2347,7 +2348,7 @@ rewrite_export_dir (const char   *app,
         }
       else
         {
-          g_warning ("Not exporting file %s of unsupported type\n", dent->d_name);
+          g_warning ("Not exporting file %s of unsupported type.", dent->d_name);
           if (unlinkat (source_iter.fd, dent->d_name, 0) != 0 && errno != ENOENT)
             {
               glnx_set_error_from_errno (error);
@@ -2601,7 +2602,7 @@ flatpak_dir_deploy (FlatpakDir          *self,
       resolved_ref = flatpak_dir_read_latest (self, origin, ref, cancellable, error);
       if (resolved_ref == NULL)
         {
-          g_prefix_error (error, "While trying to resolve ref %s: ", ref);
+          g_prefix_error (error, _("While trying to resolve ref %s: "), ref);
           return FALSE;
         }
 
@@ -2616,15 +2617,14 @@ flatpak_dir_deploy (FlatpakDir          *self,
       checksum = checksum_or_latest;
       g_debug ("Looking for checksum %s in local repo", checksum);
       if (!ostree_repo_read_commit (self->repo, checksum, &root, &commit, cancellable, NULL))
-        return flatpak_fail (error, "%s is not available", ref);
+        return flatpak_fail (error, _("%s is not available"), ref);
     }
 
   real_checkoutdir = g_file_get_child (deploy_base, checksum);
   if (g_file_query_exists (real_checkoutdir, cancellable))
     {
-      g_set_error (error, FLATPAK_ERROR,
-                   FLATPAK_ERROR_ALREADY_INSTALLED,
-                   "%s branch %s already installed", ref, checksum);
+      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED,
+                   _("%s branch %s already installed"), ref, checksum);
       return FALSE;
     }
 
@@ -2634,7 +2634,8 @@ flatpak_dir_deploy (FlatpakDir          *self,
 
   if (g_mkdtemp_full (tmp_dir_path, 0755) == NULL)
     {
-      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "Can't create deploy directory");
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           _("Can't create deploy directory"));
       return FALSE;
     }
 
@@ -2642,7 +2643,7 @@ flatpak_dir_deploy (FlatpakDir          *self,
 
   if (!ostree_repo_read_commit (self->repo, checksum, &root, NULL, cancellable, error))
     {
-      g_prefix_error (error, "Failed to read commit %s: ", checksum);
+      g_prefix_error (error, _("Failed to read commit %s: "), checksum);
       return FALSE;
     }
 
@@ -2661,7 +2662,7 @@ flatpak_dir_deploy (FlatpakDir          *self,
                                          checksum,
                                          cancellable, error))
         {
-          g_prefix_error (error, "While trying to checkout %s into %s: ", checksum, checkoutdirpath);
+          g_prefix_error (error, _("While trying to checkout %s into %s: "), checksum, checkoutdirpath);
           return FALSE;
         }
     }
@@ -2686,7 +2687,7 @@ flatpak_dir_deploy (FlatpakDir          *self,
                                          checksum,
                                          cancellable, error))
         {
-          g_prefix_error (error, "While trying to checkout metadata subpath: ");
+          g_prefix_error (error, _("While trying to checkout metadata subpath: "));
           return FALSE;
         }
 
@@ -2717,7 +2718,7 @@ flatpak_dir_deploy (FlatpakDir          *self,
                                              checksum,
                                              cancellable, error))
             {
-              g_prefix_error (error, "While trying to checkout metadata subpath: ");
+              g_prefix_error (error, _("While trying to checkout metadata subpath: "));
               return FALSE;
             }
         }
@@ -2845,10 +2846,8 @@ flatpak_dir_deploy_install (FlatpakDir   *self,
   old_deploy_dir = flatpak_dir_get_if_deployed (self, ref, NULL, cancellable);
   if (old_deploy_dir != NULL)
     {
-      g_set_error (error, FLATPAK_ERROR,
-                   FLATPAK_ERROR_ALREADY_INSTALLED,
-                   "%s branch %s already installed",
-                   ref_parts[1], ref_parts[3]);
+      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED,
+                   _("%s branch %s already installed"), ref_parts[1], ref_parts[3]);
       goto out;
     }
 
@@ -3091,7 +3090,7 @@ flatpak_dir_install (FlatpakDir          *self,
             return FALSE;
 
           if (!flatpak_dir_pull (self, remote_name, ref, subpaths,
-                                 child_repo, OSTREE_REPO_PULL_FLAGS_MIRROR, FALSE,
+                                 child_repo, OSTREE_REPO_PULL_FLAGS_MIRROR,
                                  progress, cancellable, error))
             return FALSE;
 
@@ -3117,7 +3116,7 @@ flatpak_dir_install (FlatpakDir          *self,
 
   if (!no_pull)
     {
-      if (!flatpak_dir_pull (self, remote_name, ref, opt_subpaths, NULL, OSTREE_REPO_PULL_FLAGS_NONE, FALSE, progress,
+      if (!flatpak_dir_pull (self, remote_name, ref, opt_subpaths, NULL, OSTREE_REPO_PULL_FLAGS_NONE, progress,
                              cancellable, error))
         return FALSE;
     }
@@ -3198,9 +3197,8 @@ flatpak_dir_install_bundle (FlatpakDir          *self,
   deploy_dir = flatpak_dir_get_if_deployed (self, ref, NULL, cancellable);
   if (deploy_dir != NULL)
     {
-      g_set_error (error,
-                   FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED,
-                   "%s branch %s already installed", parts[1], parts[3]);
+      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED,
+                   _("%s branch %s already installed"), parts[1], parts[3]);
       return FALSE;
     }
 
@@ -3333,7 +3331,6 @@ flatpak_dir_update (FlatpakDir          *self,
 
           if (!flatpak_dir_pull (self, remote_name, ref, subpaths,
                                  child_repo, OSTREE_REPO_PULL_FLAGS_MIRROR,
-                                 /* TODO: forcing no-deltas due to issue #144 */ TRUE,
                                  progress, cancellable, error))
             return FALSE;
 
@@ -3367,7 +3364,7 @@ flatpak_dir_update (FlatpakDir          *self,
   if (!no_pull)
     {
       if (!flatpak_dir_pull (self, remote_name, ref, subpaths,
-                             NULL, OSTREE_REPO_PULL_FLAGS_NONE, FALSE, progress,
+                             NULL, OSTREE_REPO_PULL_FLAGS_NONE, progress,
                              cancellable, error))
         return FALSE;
     }
@@ -3514,9 +3511,8 @@ flatpak_dir_uninstall (FlatpakDir          *self,
 
   if (!was_deployed)
     {
-      g_set_error (error,
-                   FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
-                   "%s branch %s is not installed", name, parts[3]);
+      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
+                   _("%s branch %s is not installed"), name, parts[3]);
     }
 
   return TRUE;
@@ -3701,9 +3697,8 @@ flatpak_dir_undeploy (FlatpakDir   *self,
   checkoutdir = g_file_get_child (deploy_base, checksum);
   if (!g_file_query_exists (checkoutdir, cancellable))
     {
-      g_set_error (error, FLATPAK_ERROR,
-                   FLATPAK_ERROR_NOT_INSTALLED,
-                   "%s branch %s not installed", ref, checksum);
+      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
+                   _("%s branch %s not installed"), ref, checksum);
       goto out;
     }
 
@@ -4284,7 +4279,7 @@ find_matching_ref (GHashTable *refs,
     }
 
   g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-               "Nothing matches %s", name);
+               _("Nothing matches %s"), name);
   return NULL;
 }
 
@@ -4368,7 +4363,7 @@ flatpak_dir_find_remote_ref (FlatpakDir   *self,
     }
 
   g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-               "Can't find %s in remote %s", name, remote);
+               _("Can't find %s in remote %s"), name, remote);
 
   return NULL;
 }
@@ -4478,7 +4473,7 @@ flatpak_dir_find_installed_ref (FlatpakDir *self,
     }
 
   g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
-               "%s %s not installed", opt_name ? opt_name : "*unspecified*", opt_branch ? opt_branch : "master");
+               _("%s %s not installed"), opt_name ? opt_name : "*unspecified*", opt_branch ? opt_branch : "master");
   return NULL;
 }
 
@@ -4970,8 +4965,8 @@ flatpak_dir_fetch_remote_title (FlatpakDir   *self,
 
   if (summary_bytes == NULL)
     {
-      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-                   "Remote title not available; server has no summary file");
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           _("Remote title not available; server has no summary file"));
       return FALSE;
     }
 
@@ -4985,8 +4980,8 @@ flatpak_dir_fetch_remote_title (FlatpakDir   *self,
 
   if (title == NULL)
     {
-      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-                   "Remote title not set");
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                           _("Remote title not set"));
       return FALSE;
     }
 
@@ -5013,8 +5008,8 @@ flatpak_dir_parse_summary_for_ref (FlatpakDir   *self,
   cache_v = g_variant_lookup_value (extensions, "xa.cache", NULL);
   if (cache_v == NULL)
     {
-      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-                   "Data not found");
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                           _("Data not found"));
       return FALSE;
     }
 
@@ -5023,7 +5018,7 @@ flatpak_dir_parse_summary_for_ref (FlatpakDir   *self,
   if (res == NULL)
     {
       g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-                   "Data not found for ref %s", ref);
+                   _("Data not found for ref %s"), ref);
       return FALSE;
     }
 
@@ -5070,8 +5065,8 @@ flatpak_dir_fetch_ref_cache (FlatpakDir   *self,
 
   if (summary_bytes == NULL)
     {
-      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-                   "Data not available; server has no summary file");
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           _("Data not available; server has no summary file"));
       return FALSE;
     }
 
@@ -5208,8 +5203,8 @@ flatpak_dir_find_remote_related (FlatpakDir *self,
 
   if (summary_bytes == NULL)
     {
-      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-                   "Data not available; server has no summary file");
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           _("Data not available; server has no summary file"));
       return NULL;
     }
 
@@ -5344,7 +5339,8 @@ flatpak_dir_find_local_related (FlatpakDir *self,
   deploy_dir = flatpak_dir_get_if_deployed (self, ref, NULL, cancellable);
   if (deploy_dir == NULL)
     {
-      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED, "%s not installed", ref);
+      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
+                   _("%s not installed"), ref);
       return NULL;
     }
 

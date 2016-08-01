@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,6 +26,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+
+#include <glib/gi18n.h>
 
 #include "libgsystem.h"
 #include "libglnx/libglnx.h"
@@ -146,7 +148,8 @@ flatpak_builtin_enter (int           argc,
   uid = getuid ();
   gid = getgid ();
 
-  context = g_option_context_new ("MONITORPID [COMMAND [args...]] - Run a command inside a running sandbox");
+  context = g_option_context_new (_("MONITORPID [COMMAND [args...]] - Run a command inside a running sandbox"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   rest_argc = 0;
   for (i = 1; i < argc; i++)
@@ -166,7 +169,7 @@ flatpak_builtin_enter (int           argc,
 
   if (rest_argc < 2)
     {
-      usage_error (context, "MONITORPID and COMMAND must be specified", error);
+      usage_error (context, _("MONITORPID and COMMAND must be specified"), error);
       return FALSE;
     }
 
@@ -174,7 +177,7 @@ flatpak_builtin_enter (int           argc,
 
   pid = atoi (pid_s);
   if (pid <= 0)
-    return flatpak_fail (error, "Invalid pid %s\n", pid_s);
+    return flatpak_fail (error, _("Invalid pid %s"), pid_s);
 
   environment_path = g_strdup_printf ("/proc/%d/environ", pid);
   if (!g_file_get_contents (environment_path, &environment, &environment_len, error))
@@ -187,12 +190,12 @@ flatpak_builtin_enter (int           argc,
 
       pid_ns_len = readlink (path, pid_ns, sizeof (pid_ns) - 1);
       if (pid_ns_len <= 0)
-        return flatpak_fail (error, "Invalid %s namespace for pid %d\n", ns_name[i], pid);
+        return flatpak_fail (error, _("Invalid %s namespace for pid %d"), ns_name[i], pid);
       pid_ns[pid_ns_len] = 0;
 
       self_ns_len = readlink (self_path, self_ns, sizeof (self_ns) - 1);
       if (self_ns_len <= 0)
-        return flatpak_fail (error, "Invalid %s namespace for self\n", ns_name[i]);
+        return flatpak_fail (error, _("Invalid %s namespace for self"), ns_name[i]);
       self_ns[self_ns_len] = 0;
 
       if (strcmp (self_ns, pid_ns) == 0)
@@ -204,7 +207,7 @@ flatpak_builtin_enter (int           argc,
         {
           ns_fd[i] = open (path, O_RDONLY);
           if (ns_fd[i] == -1)
-            return flatpak_fail (error, "Can't open %s namespace: %s", ns_name[i], strerror (errno));
+            return flatpak_fail (error, _("Can't open %s namespace: %s"), ns_name[i], strerror (errno));
         }
     }
 
@@ -213,7 +216,7 @@ flatpak_builtin_enter (int           argc,
       if (ns_fd[i] != -1)
         {
           if (setns (ns_fd[i], 0) == -1)
-            return flatpak_fail (error, "Can't enter %s namespace: %s", ns_name[i], strerror (errno));
+            return flatpak_fail (error, _("Can't enter %s namespace: %s"), ns_name[i], strerror (errno));
           close (ns_fd[i]);
         }
     }

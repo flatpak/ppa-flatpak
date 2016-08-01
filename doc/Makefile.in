@@ -13,6 +13,7 @@
 # PARTICULAR PURPOSE.
 
 @SET_MAKE@
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -87,20 +88,25 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@DOCBOOK_DOCS_ENABLED_TRUE@am__append_1 = flatpak-docs.html
 subdir = doc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/glibtests.m4 \
-	$(top_srcdir)/m4/gtk-doc.m4 $(top_srcdir)/m4/intltool.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
-	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/acinclude.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
+	$(top_srcdir)/m4/glibtests.m4 $(top_srcdir)/m4/gtk-doc.m4 \
+	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/intlmacosx.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/po.m4 \
+	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/acinclude.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = flatpak-docs.xml
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -157,10 +163,12 @@ am__uninstall_files_from_dir = { \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
 man1dir = $(mandir)/man1
-am__installdirs = "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man5dir)"
+am__installdirs = "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man5dir)" \
+	"$(DESTDIR)$(docdir)"
 man5dir = $(mandir)/man5
 NROFF = nroff
 MANS = $(man_MANS)
+DATA = $(doc_DATA)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 am__recursive_targets = \
@@ -189,7 +197,7 @@ am__define_uniq_tagged_files = \
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = $(SUBDIRS)
-am__DIST_COMMON = $(srcdir)/Makefile.in
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/flatpak-docs.xml.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -217,7 +225,6 @@ am__relativize = \
   done; \
   reldir="$$dir2"
 ACLOCAL = @ACLOCAL@
-ALL_LINGUAS = @ALL_LINGUAS@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
@@ -228,15 +235,12 @@ AWK = @AWK@
 BASE_CFLAGS = @BASE_CFLAGS@
 BASE_LIBS = @BASE_LIBS@
 BWRAP = @BWRAP@
-CATALOGS = @CATALOGS@
-CATOBJEXT = @CATOBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
-DATADIRNAME = @DATADIRNAME@
 DBUS_SERVICE_DIR = @DBUS_SERVICE_DIR@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -257,10 +261,11 @@ FLATPAK_VERSION = @FLATPAK_VERSION@
 FUSE_CFLAGS = @FUSE_CFLAGS@
 FUSE_LIBS = @FUSE_LIBS@
 GDBUS_CODEGEN = @GDBUS_CODEGEN@
+GETTEXT_MACRO_VERSION = @GETTEXT_MACRO_VERSION@
 GLIB_COMPILE_RESOURCES = @GLIB_COMPILE_RESOURCES@
 GLIB_MKENUMS = @GLIB_MKENUMS@
-GMOFILES = @GMOFILES@
 GMSGFMT = @GMSGFMT@
+GMSGFMT_015 = @GMSGFMT_015@
 GREP = @GREP@
 GTKDOC_CHECK = @GTKDOC_CHECK@
 GTKDOC_CHECK_PATH = @GTKDOC_CHECK_PATH@
@@ -275,16 +280,8 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-INSTOBJEXT = @INSTOBJEXT@
 INTLLIBS = @INTLLIBS@
-INTLTOOL_EXTRACT = @INTLTOOL_EXTRACT@
-INTLTOOL_MERGE = @INTLTOOL_MERGE@
-INTLTOOL_PERL = @INTLTOOL_PERL@
-INTLTOOL_UPDATE = @INTLTOOL_UPDATE@
-INTLTOOL_V_MERGE = @INTLTOOL_V_MERGE@
-INTLTOOL_V_MERGE_OPTIONS = @INTLTOOL_V_MERGE_OPTIONS@
-INTLTOOL__v_MERGE_ = @INTLTOOL__v_MERGE_@
-INTLTOOL__v_MERGE_0 = @INTLTOOL__v_MERGE_0@
+INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
 INTROSPECTION_CFLAGS = @INTROSPECTION_CFLAGS@
 INTROSPECTION_COMPILER = @INTROSPECTION_COMPILER@
 INTROSPECTION_GENERATE = @INTROSPECTION_GENERATE@
@@ -301,6 +298,8 @@ LIBARCHIVE_CFLAGS = @LIBARCHIVE_CFLAGS@
 LIBARCHIVE_LIBS = @LIBARCHIVE_LIBS@
 LIBELF_CFLAGS = @LIBELF_CFLAGS@
 LIBELF_LIBS = @LIBELF_LIBS@
+LIBICONV = @LIBICONV@
+LIBINTL = @LIBINTL@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBSECCOMP_CFLAGS = @LIBSECCOMP_CFLAGS@
@@ -308,6 +307,8 @@ LIBSECCOMP_LIBS = @LIBSECCOMP_LIBS@
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
+LTLIBICONV = @LTLIBICONV@
+LTLIBINTL = @LTLIBINTL@
 LTLIBOBJS = @LTLIBOBJS@
 LT_CURRENT_MINUS_AGE = @LT_CURRENT_MINUS_AGE@
 LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
@@ -316,9 +317,8 @@ MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
-MKINSTALLDIRS = @MKINSTALLDIRS@
 MSGFMT = @MSGFMT@
-MSGFMT_OPTS = @MSGFMT_OPTS@
+MSGFMT_015 = @MSGFMT_015@
 MSGMERGE = @MSGMERGE@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -339,12 +339,9 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
-POFILES = @POFILES@
 POLKIT_CFLAGS = @POLKIT_CFLAGS@
 POLKIT_LIBS = @POLKIT_LIBS@
 POSUB = @POSUB@
-PO_IN_DATADIR_FALSE = @PO_IN_DATADIR_FALSE@
-PO_IN_DATADIR_TRUE = @PO_IN_DATADIR_TRUE@
 PRIVILEGED_GROUP = @PRIVILEGED_GROUP@
 RANLIB = @RANLIB@
 SED = @SED@
@@ -364,7 +361,11 @@ VERSION = @VERSION@
 XAUTH_CFLAGS = @XAUTH_CFLAGS@
 XAUTH_LIBS = @XAUTH_LIBS@
 XGETTEXT = @XGETTEXT@
+XGETTEXT_015 = @XGETTEXT_015@
+XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
 XMLCATALOG = @XMLCATALOG@
+XMLTO = @XMLTO@
+XMLTO_FLAGS = @XMLTO_FLAGS@
 XML_CATALOG_FILE = @XML_CATALOG_FILE@
 XSLTPROC = @XSLTPROC@
 abs_builddir = @abs_builddir@
@@ -402,8 +403,6 @@ infodir = @infodir@
 install_sh = @install_sh@
 installed_test_metadir = @installed_test_metadir@
 installed_testdir = @installed_testdir@
-intltool__v_merge_options_ = @intltool__v_merge_options_@
-intltool__v_merge_options_0 = @intltool__v_merge_options_0@
 libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
@@ -469,8 +468,24 @@ man_MANS = \
 	$(NULL)
 
 xml_files = $(man_MANS:.1=.xml)
-EXTRA_DIST = $(xml_files)
-DISTCLEANFILES = $(man_MANS)
+EXTRA_DIST = \
+	$(xml_files) 		\
+	docbook.css		\
+	flatpak-docs.xml.in	\
+	xmlto-config.xsl	\
+	$(NULL)
+
+CLEANFILES = $(NULL) $(am__append_1)
+DISTCLEANFILES = \
+	$(man_MANS)		\
+	flatpak-docs.xml	\
+	$(NULL)
+
+@DOCBOOK_DOCS_ENABLED_TRUE@doc_DATA = \
+@DOCBOOK_DOCS_ENABLED_TRUE@        flatpak-docs.html	\
+@DOCBOOK_DOCS_ENABLED_TRUE@        docbook.css             \
+@DOCBOOK_DOCS_ENABLED_TRUE@        $(NULL)
+
 all: all-recursive
 
 .SUFFIXES:
@@ -504,6 +519,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+flatpak-docs.xml: $(top_builddir)/config.status $(srcdir)/flatpak-docs.xml.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -596,6 +613,27 @@ uninstall-man5:
 	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^5][0-9a-z]*$$,5,;x' \
 	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \
 	dir='$(DESTDIR)$(man5dir)'; $(am__uninstall_files_from_dir)
+install-docDATA: $(doc_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(doc_DATA)'; test -n "$(docdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(docdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(docdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(docdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(docdir)" || exit $$?; \
+	done
+
+uninstall-docDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(doc_DATA)'; test -n "$(docdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(docdir)'; $(am__uninstall_files_from_dir)
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
@@ -753,10 +791,10 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(MANS)
+all-am: Makefile $(MANS) $(DATA)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man5dir)"; do \
+	for dir in "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(docdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -781,6 +819,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -810,7 +849,7 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-man
+install-data-am: install-docDATA install-man
 
 install-dvi: install-dvi-recursive
 
@@ -854,7 +893,7 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-man
+uninstall-am: uninstall-docDATA uninstall-man
 
 uninstall-man: uninstall-man1 uninstall-man5
 
@@ -864,15 +903,16 @@ uninstall-man: uninstall-man1 uninstall-man5
 	check-am clean clean-generic clean-libtool cscopelist-am ctags \
 	ctags-am distclean distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-man1 install-man5 install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-man uninstall-man1 uninstall-man5
+	install install-am install-data install-data-am \
+	install-docDATA install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-man1 install-man5 \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
+	ps ps-am tags tags-am uninstall uninstall-am uninstall-docDATA \
+	uninstall-man uninstall-man1 uninstall-man5
 
 .PRECIOUS: Makefile
 
@@ -882,6 +922,9 @@ uninstall-man: uninstall-man1 uninstall-man5
 
 .xml.5:
 	$(AM_V_GEN) $(XSLTPROC) $(XSLTPROC_FLAGS) http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
+
+@DOCBOOK_DOCS_ENABLED_TRUE@flatpak-docs.html: flatpak-docs.xml $(xml_files) xmlto-config.xsl
+@DOCBOOK_DOCS_ENABLED_TRUE@	$(AM_V_GEN) $(XMLTO) $(XMLTO_FLAGS) --skip-validation xhtml-nochunks -m $(srcdir)/xmlto-config.xsl $<
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

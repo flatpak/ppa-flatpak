@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+
+#include <glib/gi18n.h>
 
 #include <gio/gunixinputstream.h>
 
@@ -46,11 +48,11 @@ static char **opt_gpg_file;
 static gboolean opt_oci = FALSE;
 
 static GOptionEntry options[] = {
-  { "runtime", 0, 0, G_OPTION_ARG_NONE, &opt_runtime, "Export runtime instead of app"},
-  { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, "Arch to bundle for", "ARCH" },
-  { "repo-url", 0, 0, G_OPTION_ARG_STRING, &opt_repo_url, "Url for repo", "URL" },
-  { "gpg-keys", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_gpg_file, "Add GPG key from FILE (- for stdin)", "FILE" },
-  { "oci", 0, 0, G_OPTION_ARG_NONE, &opt_oci, "Export oci image instead of flatpak bundle"},
+  { "runtime", 0, 0, G_OPTION_ARG_NONE, &opt_runtime, N_("Export runtime instead of app"), NULL },
+  { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to bundle for"), N_("ARCH") },
+  { "repo-url", 0, 0, G_OPTION_ARG_STRING, &opt_repo_url, N_("Url for repo"), N_("URL") },
+  { "gpg-keys", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_gpg_file, N_("Add GPG key from FILE (- for stdin)"), N_("FILE") },
+  { "oci", 0, 0, G_OPTION_ARG_NONE, &opt_oci, N_("Export oci image instead of flatpak bundle"), NULL },
 
   { NULL }
 };
@@ -893,13 +895,14 @@ flatpak_builtin_build_bundle (int argc, char **argv, GCancellable *cancellable, 
   const char *branch;
   g_autofree char *full_branch = NULL;
 
-  context = g_option_context_new ("LOCATION FILENAME NAME [BRANCH] - Create a single file bundle from a local repository");
+  context = g_option_context_new (_("LOCATION FILENAME NAME [BRANCH] - Create a single file bundle from a local repository"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv, FLATPAK_BUILTIN_FLAG_NO_DIR, NULL, cancellable, error))
     return FALSE;
 
   if (argc < 4)
-    return usage_error (context, "LOCATION, FILENAME and NAME must be specified", error);
+    return usage_error (context, _("LOCATION, FILENAME and NAME must be specified"), error);
 
   location = argv[1];
   filename = argv[2];
@@ -914,15 +917,15 @@ flatpak_builtin_build_bundle (int argc, char **argv, GCancellable *cancellable, 
   repo = ostree_repo_new (repofile);
 
   if (!g_file_query_exists (repofile, cancellable))
-    return flatpak_fail (error, "'%s' is not a valid repository", location);
+    return flatpak_fail (error, _("'%s' is not a valid repository"), location);
 
   file = g_file_new_for_commandline_arg (filename);
 
   if (!flatpak_is_valid_name (name))
-    return flatpak_fail (error, "'%s' is not a valid name", name);
+    return flatpak_fail (error, _("'%s' is not a valid name"), name);
 
   if (!flatpak_is_valid_branch (branch))
-    return flatpak_fail (error, "'%s' is not a valid branch name", branch);
+    return flatpak_fail (error, _("'%s' is not a valid branch name"), branch);
 
   if (opt_runtime)
     full_branch = flatpak_build_runtime_ref (name, branch, opt_arch);
