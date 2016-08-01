@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [6])
-m4_define([flatpak_micro_version], [7])
-m4_define([flatpak_interface_age], [7])
+m4_define([flatpak_micro_version], [8])
+m4_define([flatpak_interface_age], [8])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -28,9 +28,9 @@ AC_INIT([Flatpak],
         [flatpak],
         [http://flatpak.org/])
 
-AC_USE_SYSTEM_EXTENSIONS
+GLIB_REQS=2.40
 
-IT_PROG_INTLTOOL([0.35.0])
+AC_USE_SYSTEM_EXTENSIONS
 
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -45,9 +45,9 @@ AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([1.11 no-define no-dist-gzip dist-xz tar-ustar foreign subdir-objects])
 AC_PROG_SED
 
-AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE],["$PACKAGE_NAME"],[gettext domain])
-
-AM_GLIB_GNU_GETTEXT
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([0.18.2])
+AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$PACKAGE", [gettext domain])
 
 # Enable silent rules is available
 AM_SILENT_RULES([yes])
@@ -125,7 +125,7 @@ AC_SUBST([GDBUS_CODEGEN], [`$PKG_CONFIG --variable gdbus_codegen gio-2.0`])
 
 POLKIT_GOBJECT_REQUIRED=0.98
 
-PKG_CHECK_MODULES(BASE, [glib-2.0 gio-2.0 gio-unix-2.0])
+PKG_CHECK_MODULES(BASE, [glib-2.0 >= $GLIB_REQS gio-2.0 gio-unix-2.0])
 PKG_CHECK_MODULES(SOUP, [libsoup-2.4])
 
 AC_ARG_ENABLE([system-helper],
@@ -160,7 +160,7 @@ if test "x$enable_sandboxed_triggers" = "xno"; then
       [Define if sandboxed triggers are disabled])
 fi
 
-PKG_CHECK_MODULES(OSTREE, [libgsystem >= 2015.1 ostree-1 >= 2016.6])
+PKG_CHECK_MODULES(OSTREE, [libgsystem >= 2015.1 ostree-1 >= 2016.7])
 save_LIBS=$LIBS
 save_CFLAGS=$CFLAGS
 LIBS=$OSTREE_LIBS
@@ -324,6 +324,37 @@ AM_CONDITIONAL([ENABLE_GTK_DOC], [false])
 ])
 AM_CONDITIONAL([ENABLE_GTK_DOC_CHECK], [test "x$enable_gtk_doc_check" = xyes])
 
+
+AC_ARG_ENABLE(docbook-docs,
+        [AS_HELP_STRING([--enable-docbook-docs],[build documentation (requires xmlto)])],
+        enable_docbook_docs=$enableval, enable_docbook_docs=auto)
+AC_PATH_PROG(XMLTO, xmlto, no)
+AC_MSG_CHECKING([whether to build DocBook documentation])
+if test x$XMLTO = xno ; then
+        have_docbook=no
+else
+        have_docbook=yes
+fi
+if test x$enable_docbook_docs = xauto ; then
+        if test x$have_docbook = xno ; then
+                enable_docbook_docs=no
+        else
+                enable_docbook_docs=yes
+        fi
+fi
+if test x$enable_docbook_docs = xyes; then
+        if test x$have_docbook = xno; then
+                AC_MSG_ERROR([Building DocBook docs explicitly required, but DocBook not found])
+        fi
+        AC_MSG_RESULT(yes)
+else
+        AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(DOCBOOK_DOCS_ENABLED, test x$enable_docbook_docs = xyes)
+AC_ARG_VAR([XMLTO],[Define/override the 'xmlto' location.])
+AC_ARG_VAR([XMLTO_FLAGS],[Define/override 'xmlto' options, like '--skip-validation'.])
+
+
 ##################################################
 # Visibility handling
 ##################################################
@@ -389,6 +420,25 @@ doc/reference/Makefile
 flatpak.pc
 lib/flatpak-version-macros.h
 doc/reference/version.xml
+doc/flatpak-docs.xml
 po/Makefile.in
 ])
 AC_OUTPUT
+
+if test x$BWRAP = xfalse ; then
+  build_bwrap="yes"
+else
+  build_bwrap="no"
+fi
+
+echo ""
+echo "          Flatpak $FLATPAK_VERSION"
+echo "          ============="
+echo ""
+echo "          Build system helper:    $enable_system_helper"
+echo "          Build bubblewrap:       $build_bwrap"
+echo "          Use sandboxed triggers: $enable_sandboxed_triggers"
+echo "          Use seccomp:            $enable_seccomp"
+echo "          Privileged group:       $PRIVILEGED_GROUP"
+echo "          Privilege mode:         $with_priv_mode"
+echo ""

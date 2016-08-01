@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -243,7 +243,7 @@ handle_deploy (FlatpakSystemHelper   *object,
       g_main_context_push_thread_default (main_context);
 
       if (!flatpak_dir_pull (system, arg_origin, arg_ref, (const char **)arg_subpaths, NULL,
-                             OSTREE_REPO_PULL_FLAGS_UNTRUSTED, FALSE, NULL,
+                             OSTREE_REPO_PULL_FLAGS_UNTRUSTED, NULL,
                              NULL, &error))
         {
           g_main_context_pop_thread_default (main_context);

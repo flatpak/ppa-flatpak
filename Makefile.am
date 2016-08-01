@@ -46,6 +46,8 @@ AM_CPPFLAGS =							\
 	-I$(srcdir)/libglnx					\
 	-I$(srcdir)/common					\
 	-I$(builddir)/common					\
+	-I$(srcdir)/lib						\
+	-I$(builddir)/lib					\
 	$(NULL)
 
 if WITH_SYSTEM_BWRAP
@@ -128,6 +130,15 @@ EXTRA_DIST += env.d/flatpak.env.in
 DISTCLEANFILES += flatpak.env
 
 flatpak.env: env.d/flatpak.env.in
+	$(AM_V_GEN) $(SED) -e "s|\@localstatedir\@|$(localstatedir)|" \
+		-e "s|\@sysconfdir\@|$(sysconfdir)|" $< > $@
+
+dbussnippetdir = $(systemduserunitdir)/dbus.service.d
+dbussnippet_DATA = flatpak.conf
+EXTRA_DIST += dbus.service.d/flatpak.conf.in
+DISTCLEANFILES += flatpak.conf
+
+flatpak.conf: dbus.service.d/flatpak.conf.in
 	$(AM_V_GEN) $(SED) -e "s|\@localstatedir\@|$(localstatedir)|" \
 		-e "s|\@sysconfdir\@|$(sysconfdir)|" $< > $@
 

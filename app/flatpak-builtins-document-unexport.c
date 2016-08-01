@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,6 +25,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+
+#include <glib/gi18n.h>
 
 #include "libgsystem.h"
 #include "libglnx/libglnx.h"
@@ -51,7 +53,8 @@ flatpak_builtin_document_unexport (int argc, char **argv,
   const char *file;
   g_autofree char *doc_id = NULL;
 
-  context = g_option_context_new ("FILE - Unexport a file to apps");
+  context = g_option_context_new (_("FILE - Unexport a file to apps"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv,
                                      FLATPAK_BUILTIN_FLAG_NO_DIR,
@@ -59,7 +62,7 @@ flatpak_builtin_document_unexport (int argc, char **argv,
     return FALSE;
 
   if (argc < 2)
-    return usage_error (context, "FILE must be specified", error);
+    return usage_error (context, _("FILE must be specified"), error);
 
   file = argv[1];
 
@@ -79,7 +82,7 @@ flatpak_builtin_document_unexport (int argc, char **argv,
 
   if (strcmp (doc_id, "") == 0)
     {
-      g_print ("Not exported\n");
+      g_print (_("Not exported\n"));
       return TRUE;
     }
 

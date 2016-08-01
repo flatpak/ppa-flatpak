@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,6 +25,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <glib/gi18n.h>
+
 #include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
@@ -33,7 +35,7 @@
 static gboolean opt_force;
 
 static GOptionEntry delete_options[] = {
-  { "force", 0, 0, G_OPTION_ARG_NONE, &opt_force, "Remove remote even if in use",  },
+  { "force", 0, 0, G_OPTION_ARG_NONE, &opt_force, N_("Remove remote even if in use"), NULL },
   { NULL }
 };
 
@@ -45,7 +47,8 @@ flatpak_builtin_delete_remote (int argc, char **argv, GCancellable *cancellable,
   g_autoptr(FlatpakDir) dir = NULL;
   const char *remote_name;
 
-  context = g_option_context_new ("NAME - Delete a remote repository");
+  context = g_option_context_new (_("NAME - Delete a remote repository"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   g_option_context_add_main_entries (context, delete_options, NULL);
 
@@ -53,7 +56,7 @@ flatpak_builtin_delete_remote (int argc, char **argv, GCancellable *cancellable,
     return FALSE;
 
   if (argc < 2)
-    return usage_error (context, "NAME must be specified", error);
+    return usage_error (context, _("NAME must be specified"), error);
 
   remote_name = argv[1];
 

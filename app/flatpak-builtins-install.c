@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+
+#include <glib/gi18n.h>
 
 #include <gio/gunixinputstream.h>
 
@@ -46,15 +48,15 @@ static gboolean opt_app;
 static gboolean opt_bundle;
 
 static GOptionEntry options[] = {
-  { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, "Arch to install for", "ARCH" },
-  { "no-pull", 0, 0, G_OPTION_ARG_NONE, &opt_no_pull, "Don't pull, only install from local cache", },
-  { "no-deploy", 0, 0, G_OPTION_ARG_NONE, &opt_no_deploy, "Don't deploy, only download to local cache", },
-  { "no-related", 0, 0, G_OPTION_ARG_NONE, &opt_no_related, "Don't install related refs", },
-  { "runtime", 0, 0, G_OPTION_ARG_NONE, &opt_runtime, "Look for runtime with the specified name", },
-  { "app", 0, 0, G_OPTION_ARG_NONE, &opt_app, "Look for app with the specified name", },
-  { "bundle", 0, 0, G_OPTION_ARG_NONE, &opt_bundle, "Install from local bundle file", },
-  { "gpg-file", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_gpg_file, "Check bundle signatures with GPG key from FILE (- for stdin)", "FILE" },
-  { "subpath", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_subpaths, "Only install this subpath", "PATH" },
+  { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to install for"), N_("ARCH") },
+  { "no-pull", 0, 0, G_OPTION_ARG_NONE, &opt_no_pull, N_("Don't pull, only install from local cache"), NULL },
+  { "no-deploy", 0, 0, G_OPTION_ARG_NONE, &opt_no_deploy, N_("Don't deploy, only download to local cache"), NULL },
+  { "no-related", 0, 0, G_OPTION_ARG_NONE, &opt_no_related, N_("Don't install related refs"), NULL },
+  { "runtime", 0, 0, G_OPTION_ARG_NONE, &opt_runtime, N_("Look for runtime with the specified name"), NULL },
+  { "app", 0, 0, G_OPTION_ARG_NONE, &opt_app, N_("Look for app with the specified name"), NULL },
+  { "bundle", 0, 0, G_OPTION_ARG_NONE, &opt_bundle, N_("Install from local bundle file"), NULL },
+  { "gpg-file", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_gpg_file, N_("Check bundle signatures with GPG key from FILE (- for stdin)"), N_("FILE") },
+  { "subpath", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_subpaths, N_("Only install this subpath"), N_("PATH") },
   { NULL }
 };
 
@@ -112,7 +114,7 @@ install_bundle (FlatpakDir *dir,
   g_autoptr(GBytes) gpg_data = NULL;
 
   if (argc < 2)
-    return usage_error (context, "bundle filename must be specified", error);
+    return usage_error (context, _("Bundle filename must be specified"), error);
 
   filename = argv[1];
 
@@ -148,7 +150,8 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
   g_autoptr(GPtrArray) related = NULL;
   int i;
 
-  context = g_option_context_new ("REPOSITORY NAME [BRANCH] - Install an application or runtime");
+  context = g_option_context_new (_("REPOSITORY NAME [BRANCH] - Install an application or runtime"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv, 0, &dir, cancellable, error))
     return FALSE;
@@ -157,7 +160,7 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
     return install_bundle (dir, context, argc, argv, cancellable, error);
 
   if (argc < 3)
-    return usage_error (context, "REPOSITORY and NAME must be specified", error);
+    return usage_error (context, _("REPOSITORY and NAME must be specified"), error);
 
   repository = argv[1];
   name  = argv[2];
@@ -177,8 +180,10 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
     {
       g_auto(GStrv) parts =  flatpak_decompose_ref (ref, error);
 
-      return flatpak_fail (error, "%s %s, branch %s is already installed",
-                           is_app ? "App" : "Runtime", name, parts[3]);
+      return flatpak_fail (error,
+                           is_app ? _("App %s, branch %s is already installed")
+                                  : _("Runtime %s, branch %s is already installed"),
+                           name, parts[3]);
     }
 
   if (!flatpak_dir_install (dir,
@@ -199,7 +204,7 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
         related = flatpak_dir_find_remote_related (dir, ref, repository, NULL, &local_error);
       if (related == NULL)
         {
-          g_printerr ("Warning: Problem looking for related refs: %s\n", local_error->message);
+          g_printerr (_("Warning: Problem looking for related refs: %s\n"), local_error->message);
           g_clear_error (&local_error);
         }
       else
@@ -214,7 +219,7 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
 
               parts = g_strsplit (rel->ref, "/", 0);
 
-              g_print ("Installing related: %s\n", parts[1]);
+              g_print (_("Installing related: %s\n"), parts[1]);
 
               if (!flatpak_dir_install_or_update (dir,
                                                   opt_no_pull,
@@ -224,7 +229,7 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
                                                   NULL,
                                                   cancellable, &local_error))
                 {
-                  g_printerr ("Warning: Failed to install related ref: %s\n",
+                  g_printerr (_("Warning: Failed to install related ref: %s\n"),
                               rel->ref);
                   g_clear_error (&local_error);
                 }

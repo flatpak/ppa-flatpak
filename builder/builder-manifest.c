@@ -1553,8 +1553,10 @@ builder_manifest_cleanup (BuilderManifest *self,
 
           if (!found_icon)
             {
+              g_autofree char *icon_path = g_file_get_path (icons_dir);
               g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-                           "icon %s not found", self->rename_icon);
+                           "icon %s not found below %s",
+                           self->rename_icon, icon_path);
               return FALSE;
             }
         }
@@ -1575,7 +1577,8 @@ builder_manifest_cleanup (BuilderManifest *self,
           if (!g_file_load_contents (desktop, NULL,
                                      &desktop_contents, &desktop_size, NULL, error))
             {
-              g_prefix_error (error, "Can't load desktop file %s: ", desktop_basename);
+              g_autofree char *desktop_path = g_file_get_path (desktop);
+              g_prefix_error (error, "Can't load desktop file %s: ", desktop_path);
               return FALSE;
             }
 
@@ -1670,6 +1673,7 @@ builder_manifest_finish (BuilderManifest *self,
   g_autoptr(GFile) locale_parent_dir = NULL;
   g_autofree char *app_dir_path = g_file_get_path (app_dir);
   g_autofree char *json = NULL;
+  g_autofree char *commandline = NULL;
   g_autoptr(GPtrArray) args = NULL;
   g_autoptr(GSubprocess) subp = NULL;
   int i;
@@ -1725,6 +1729,9 @@ builder_manifest_finish (BuilderManifest *self,
 
       g_ptr_array_add (args, g_strdup (app_dir_path));
       g_ptr_array_add (args, NULL);
+
+      commandline = g_strjoinv (" ", (char **) args->pdata);
+      g_print ("Running: %s\n", commandline);
 
       subp =
         g_subprocess_newv ((const gchar * const *) args->pdata,

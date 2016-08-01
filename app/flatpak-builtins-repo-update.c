@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,6 +25,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <glib/gi18n.h>
+
 #include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
@@ -39,12 +41,12 @@ static gboolean opt_generate_deltas;
 static gint opt_prune_depth = -1;
 
 static GOptionEntry options[] = {
-  { "title", 0, 0, G_OPTION_ARG_STRING, &opt_title, "A nice name to use for this repository", "TITLE" },
-  { "gpg-sign", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_gpg_key_ids, "GPG Key ID to sign the summary with", "KEY-ID"},
-  { "gpg-homedir", 0, 0, G_OPTION_ARG_STRING, &opt_gpg_homedir, "GPG Homedir to use when looking for keyrings", "HOMEDIR"},
-  { "generate-static-deltas", 0, 0, G_OPTION_ARG_NONE, &opt_generate_deltas, "Generate delta files", NULL },
-  { "prune", 0, 0, G_OPTION_ARG_NONE, &opt_prune, "Prune unused objects", NULL },
-  { "prune-depth", 0, 0, G_OPTION_ARG_INT, &opt_prune_depth, "Only traverse DEPTH parents for each commit (default: -1=infinite)", "DEPTH" },
+  { "title", 0, 0, G_OPTION_ARG_STRING, &opt_title, N_("A nice name to use for this repository"), N_("TITLE") },
+  { "gpg-sign", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_gpg_key_ids, N_("GPG Key ID to sign the summary with"), N_("KEY-ID") },
+  { "gpg-homedir", 0, 0, G_OPTION_ARG_STRING, &opt_gpg_homedir, N_("GPG Homedir to use when looking for keyrings"), N_("HOMEDIR") },
+  { "generate-static-deltas", 0, 0, G_OPTION_ARG_NONE, &opt_generate_deltas, N_("Generate delta files"), NULL },
+  { "prune", 0, 0, G_OPTION_ARG_NONE, &opt_prune, N_("Prune unused objects"), NULL },
+  { "prune-depth", 0, 0, G_OPTION_ARG_INT, &opt_prune_depth, N_("Only traverse DEPTH parents for each commit (default: -1=infinite)"), N_("DEPTH") },
   { NULL }
 };
 
@@ -58,13 +60,14 @@ flatpak_builtin_build_update_repo (int argc, char **argv,
   const char *location;
   g_autoptr(GError) my_error = NULL;
 
-  context = g_option_context_new ("LOCATION - Update repository metadata");
+  context = g_option_context_new (_("LOCATION - Update repository metadata"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv, FLATPAK_BUILTIN_FLAG_NO_DIR, NULL, cancellable, error))
     return FALSE;
 
   if (argc < 2)
-    return usage_error (context, "LOCATION must be specified", error);
+    return usage_error (context, _("LOCATION must be specified"), error);
 
   location = argv[1];
 
@@ -78,12 +81,12 @@ flatpak_builtin_build_update_repo (int argc, char **argv,
       !flatpak_repo_set_title (repo, opt_title, error))
     return FALSE;
 
-  g_print ("Updating appstream branch\n");
+  g_print (_("Updating appstream branch\n"));
   if (!flatpak_repo_generate_appstream (repo, (const char **) opt_gpg_key_ids, opt_gpg_homedir, cancellable, &my_error))
     {
       if (g_error_matches (my_error, G_SPAWN_ERROR, G_SPAWN_ERROR_NOENT))
         {
-          g_print ("WARNING: Can't find appstream-builder, unable to update appstream branch\n");
+          g_print (_("Warning: Can't find appstream-builder, unable to update appstream branch\n"));
         }
       else
         {
@@ -150,10 +153,10 @@ flatpak_builtin_build_update_repo (int argc, char **argv,
 
 
           /* From empty */
-          g_print ("looking for %s\n", commit);
+          g_print (_("Looking for %s\n"), commit);
           if (!g_hash_table_contains (all_deltas_hash, commit))
             {
-              g_print ("Generating from-empty delta for %s (%s)\n", ref, commit);
+              g_print (_("Generating from-empty delta for %s (%s)\n"), ref, commit);
               if (!ostree_repo_static_delta_generate (repo, OSTREE_STATIC_DELTA_GENERATE_OPT_MAJOR,
                                                       NULL, commit, NULL,
                                                       params,
@@ -172,7 +175,7 @@ flatpak_builtin_build_update_repo (int argc, char **argv,
 
               if (!g_hash_table_contains (all_deltas_hash, from_parent))
                 {
-                  g_print ("Generating from-parent delta for %s (%s)\n", ref, from_parent);
+                  g_print (_("Generating from-parent delta for %s (%s)\n"), ref, from_parent);
                   if (!ostree_repo_static_delta_generate (repo, OSTREE_STATIC_DELTA_GENERATE_OPT_MAJOR,
                                                           parent_commit, commit, NULL,
                                                           params,
@@ -186,7 +189,7 @@ flatpak_builtin_build_update_repo (int argc, char **argv,
         }
     }
 
-  g_print ("Updating summary\n");
+  g_print (_("Updating summary\n"));
   if (!flatpak_repo_update (repo, (const char **) opt_gpg_key_ids, opt_gpg_homedir, cancellable, error))
     return FALSE;
 
@@ -204,11 +207,11 @@ flatpak_builtin_build_update_repo (int argc, char **argv,
 
       formatted_freed_size = g_format_size_full (objsize_total, 0);
 
-      g_print ("Total objects: %u\n", n_objects_total);
+      g_print (_("Total objects: %u\n"), n_objects_total);
       if (n_objects_pruned == 0)
-        g_print ("No unreachable objects\n");
+        g_print (_("No unreachable objects\n"));
       else
-        g_print ("Deleted %u objects, %s freed\n",
+        g_print (_("Deleted %u objects, %s freed\n"),
                  n_objects_pruned, formatted_freed_size);
     }
 

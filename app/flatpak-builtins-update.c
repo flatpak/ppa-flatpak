@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,6 +25,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <glib/gi18n.h>
+
 #include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
@@ -43,16 +45,16 @@ static gboolean opt_app;
 static gboolean opt_appstream;
 
 static GOptionEntry options[] = {
-  { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, "Arch to update for", "ARCH" },
-  { "commit", 0, 0, G_OPTION_ARG_STRING, &opt_commit, "Commit to deploy", "COMMIT" },
-  { "force-remove", 0, 0, G_OPTION_ARG_NONE, &opt_force_remove, "Remove old files even if running", NULL },
-  { "no-pull", 0, 0, G_OPTION_ARG_NONE, &opt_no_pull, "Don't pull, only update from local cache", },
-  { "no-deploy", 0, 0, G_OPTION_ARG_NONE, &opt_no_deploy, "Don't deploy, only download to local cache", },
-  { "no-related", 0, 0, G_OPTION_ARG_NONE, &opt_no_related, "Don't update related refs", },
-  { "runtime", 0, 0, G_OPTION_ARG_NONE, &opt_runtime, "Look for runtime with the specified name", },
-  { "app", 0, 0, G_OPTION_ARG_NONE, &opt_app, "Look for app with the specified name", },
-  { "appstream", 0, 0, G_OPTION_ARG_NONE, &opt_appstream, "Update appstream for remote", },
-  { "subpath", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_subpaths, "Only update this subpath", "PATH" },
+  { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to update for"), N_("ARCH") },
+  { "commit", 0, 0, G_OPTION_ARG_STRING, &opt_commit, N_("Commit to deploy"), N_("COMMIT") },
+  { "force-remove", 0, 0, G_OPTION_ARG_NONE, &opt_force_remove, N_("Remove old files even if running"), NULL },
+  { "no-pull", 0, 0, G_OPTION_ARG_NONE, &opt_no_pull, N_("Don't pull, only update from local cache"), NULL },
+  { "no-deploy", 0, 0, G_OPTION_ARG_NONE, &opt_no_deploy, N_("Don't deploy, only download to local cache"), NULL },
+  { "no-related", 0, 0, G_OPTION_ARG_NONE, &opt_no_related, N_("Don't update related refs"), NULL},
+  { "runtime", 0, 0, G_OPTION_ARG_NONE, &opt_runtime, N_("Look for runtime with the specified name"), NULL },
+  { "app", 0, 0, G_OPTION_ARG_NONE, &opt_app, N_("Look for app with the specified name"), NULL },
+  { "appstream", 0, 0, G_OPTION_ARG_NONE, &opt_appstream, N_("Update appstream for remote"), NULL },
+  { "subpath", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_subpaths, N_("Only update this subpath"), N_("PATH") },
   { NULL }
 };
 
@@ -156,13 +158,14 @@ flatpak_builtin_update (int           argc,
   gboolean failed = FALSE;
   int i;
 
-  context = g_option_context_new ("[NAME [BRANCH]] - Update an application or runtime");
+  context = g_option_context_new (_("[NAME [BRANCH]] - Update an application or runtime"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv, 0, &dir, cancellable, error))
     return FALSE;
 
   if (argc < 1)
-    return usage_error (context, "NAME must be specified", error);
+    return usage_error (context, _("NAME must be specified"), error);
 
   if (argc >= 2)
     name = argv[1];
@@ -202,7 +205,7 @@ flatpak_builtin_update (int           argc,
           if (branch != NULL && strcmp (parts[3], branch) != 0)
             continue;
 
-          g_print ("Updating application %s %s\n", parts[1], parts[3]);
+          g_print (_("Updating application %s %s\n"), parts[1], parts[3]);
 
           if (!do_update (dir, refs[i],
                           cancellable, error))
@@ -236,10 +239,10 @@ flatpak_builtin_update (int           argc,
           if (branch != NULL && strcmp (parts[3], branch) != 0)
             continue;
 
-          g_print ("Updating runtime %s %s\n", parts[1], parts[3]);
+          g_print (_("Updating runtime %s %s\n"), parts[1], parts[3]);
           if (!do_update (dir, refs[i], cancellable, &local_error))
             {
-              g_printerr ("error updating: %s\n", local_error->message);
+              g_printerr (_("Error updating: %s\n"), local_error->message);
               failed = TRUE;
             }
         }
@@ -248,7 +251,7 @@ flatpak_builtin_update (int           argc,
   flatpak_dir_cleanup_removed (dir, cancellable, NULL);
 
   if (failed)
-    return flatpak_fail (error, "One or more updates failed");
+    return flatpak_fail (error, _("One or more updates failed"));
 
   return TRUE;
 }

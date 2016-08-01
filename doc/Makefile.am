@@ -51,6 +51,30 @@ man_MANS = \
 
 xml_files = $(man_MANS:.1=.xml)
 
-EXTRA_DIST = $(xml_files)
+EXTRA_DIST = \
+	$(xml_files) 		\
+	docbook.css		\
+	flatpak-docs.xml.in	\
+	xmlto-config.xsl	\
+	$(NULL)
 
-DISTCLEANFILES = $(man_MANS)
+CLEANFILES = $(NULL)
+DISTCLEANFILES = \
+	$(man_MANS)		\
+	flatpak-docs.xml	\
+	$(NULL)
+
+if DOCBOOK_DOCS_ENABLED
+
+doc_DATA =                      \
+        flatpak-docs.html	\
+        docbook.css             \
+        $(NULL)
+
+CLEANFILES += flatpak-docs.html
+
+flatpak-docs.html: flatpak-docs.xml $(xml_files) xmlto-config.xsl
+	$(AM_V_GEN) $(XMLTO) $(XMLTO_FLAGS) --skip-validation xhtml-nochunks -m $(srcdir)/xmlto-config.xsl $<
+
+endif # DOCBOOK_DOCS_ENABLED
+

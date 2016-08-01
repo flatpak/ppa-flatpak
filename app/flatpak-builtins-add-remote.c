@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+
+#include <glib/gi18n.h>
 
 #include <gio/gunixinputstream.h>
 
@@ -54,26 +56,26 @@ static char **opt_gpg_import;
 
 
 static GOptionEntry add_options[] = {
-  { "if-not-exists", 0, 0, G_OPTION_ARG_NONE, &opt_if_not_exists, "Do nothing if the provided remote exists", NULL },
-  { "from", 0, 0, G_OPTION_ARG_FILENAME, &opt_from, "Load options from file", "FILE" },
+  { "if-not-exists", 0, 0, G_OPTION_ARG_NONE, &opt_if_not_exists, N_("Do nothing if the provided remote exists"), NULL },
+  { "from", 0, 0, G_OPTION_ARG_FILENAME, &opt_from, N_("Load options from file"), N_("FILE") },
   { NULL }
 };
 
 static GOptionEntry modify_options[] = {
-  { "gpg-verify", 0, 0, G_OPTION_ARG_NONE, &opt_do_gpg_verify, "Enable GPG verification", NULL },
-  { "enumerate", 0, 0, G_OPTION_ARG_NONE, &opt_do_enumerate, "Mark the remote as enumerate", NULL },
-  { "url", 0, 0, G_OPTION_ARG_STRING, &opt_url, "Set a new url", NULL },
-  { "enable", 0, 0, G_OPTION_ARG_NONE, &opt_enable, "Enable the remote",  },
+  { "gpg-verify", 0, 0, G_OPTION_ARG_NONE, &opt_do_gpg_verify, N_("Enable GPG verification"), NULL },
+  { "enumerate", 0, 0, G_OPTION_ARG_NONE, &opt_do_enumerate, N_("Mark the remote as enumerate"), NULL },
+  { "url", 0, 0, G_OPTION_ARG_STRING, &opt_url, N_("Set a new url"), N_("URL") },
+  { "enable", 0, 0, G_OPTION_ARG_NONE, &opt_enable, N_("Enable the remote"), NULL },
   { NULL }
 };
 
 static GOptionEntry common_options[] = {
-  { "no-gpg-verify", 0, 0, G_OPTION_ARG_NONE, &opt_no_gpg_verify, "Disable GPG verification", NULL },
-  { "no-enumerate", 0, 0, G_OPTION_ARG_NONE, &opt_no_enumerate, "Mark the remote as don't enumerate", NULL },
-  { "prio", 0, 0, G_OPTION_ARG_INT, &opt_prio, "Set priority (default 1, higher is more prioritized)", NULL },
-  { "title", 0, 0, G_OPTION_ARG_STRING, &opt_title, "A nice name to use for this remote", "TITLE" },
-  { "gpg-import", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_gpg_import, "Import GPG key from FILE (- for stdin)", "FILE" },
-  { "disable", 0, 0, G_OPTION_ARG_NONE, &opt_disable, "Disable the remote",  },
+  { "no-gpg-verify", 0, 0, G_OPTION_ARG_NONE, &opt_no_gpg_verify, N_("Disable GPG verification"), NULL },
+  { "no-enumerate", 0, 0, G_OPTION_ARG_NONE, &opt_no_enumerate, N_("Mark the remote as don't enumerate"), NULL },
+  { "prio", 0, 0, G_OPTION_ARG_INT, &opt_prio, N_("Set priority (default 1, higher is more prioritized)"), N_("PRIORITY") },
+  { "title", 0, 0, G_OPTION_ARG_STRING, &opt_title, N_("A nice name to use for this remote"), N_("TITLE") },
+  { "gpg-import", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_gpg_import, N_("Import GPG key from FILE (- for stdin)"), N_("FILE") },
+  { "disable", 0, 0, G_OPTION_ARG_NONE, &opt_disable, N_("Disable the remote"), NULL },
   { NULL }
 };
 
@@ -262,7 +264,8 @@ flatpak_builtin_add_remote (int argc, char **argv,
   g_autoptr(GKeyFile) config = NULL;
   g_autoptr(GBytes) gpg_data = NULL;
 
-  context = g_option_context_new ("NAME [LOCATION] - Add a remote repository");
+  context = g_option_context_new (_("NAME [LOCATION] - Add a remote repository"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   g_option_context_add_main_entries (context, common_options, NULL);
 
@@ -273,10 +276,10 @@ flatpak_builtin_add_remote (int argc, char **argv,
     load_options (opt_from, &gpg_data);
 
   if (argc < 2)
-    return usage_error (context, "NAME must be specified", error);
+    return usage_error (context, _("NAME must be specified"), error);
 
   if (argc < 3 && opt_url == NULL)
-    return usage_error (context, "LOCATION must be specified", error);
+    return usage_error (context, _("LOCATION must be specified"), error);
 
   remote_name = argv[1];
 
@@ -289,7 +292,7 @@ flatpak_builtin_add_remote (int argc, char **argv,
       if (opt_if_not_exists)
         return TRUE; /* Do nothing */
 
-      return flatpak_fail (error, "Remote %s already exists", remote_name);
+      return flatpak_fail (error, _("Remote %s already exists"), remote_name);
     }
 
   if (opt_url == NULL)
@@ -365,7 +368,8 @@ flatpak_builtin_modify_remote (int argc, char **argv, GCancellable *cancellable,
   g_autoptr(GBytes) gpg_data = NULL;
   const char *remote_name;
 
-  context = g_option_context_new ("NAME - Modify a remote repository");
+  context = g_option_context_new (_("NAME - Modify a remote repository"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   g_option_context_add_main_entries (context, common_options, NULL);
 
@@ -373,12 +377,12 @@ flatpak_builtin_modify_remote (int argc, char **argv, GCancellable *cancellable,
     return FALSE;
 
   if (argc < 2)
-    return usage_error (context, "remote NAME must be specified", error);
+    return usage_error (context, _("Remote NAME must be specified"), error);
 
   remote_name = argv[1];
 
   if (!ostree_repo_remote_get_url (flatpak_dir_get_repo (dir), remote_name, NULL, NULL))
-    return flatpak_fail (error, "No remote %s", remote_name);
+    return flatpak_fail (error, _("No remote %s"), remote_name);
 
   config = get_config_from_opts (dir, remote_name);
 

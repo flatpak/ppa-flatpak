@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -35,6 +35,8 @@
 #ifdef ENABLE_XAUTH
 #include <X11/Xauth.h>
 #endif
+
+#include <glib/gi18n.h>
 
 #include <gio/gio.h>
 #include "libgsystem.h"
@@ -206,8 +208,12 @@ flatpak_context_share_from_string (const char *string, GError **error)
   FlatpakContextShares shares = flatpak_context_bitmask_from_string (string, flatpak_context_shares);
 
   if (shares == 0)
-    g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-                 "Unknown share type %s, valid types are: network, ipc\n", string);
+    {
+      g_autofree char *values = g_strjoinv (", ", (char **)flatpak_context_shares);
+      g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+                   _("Unknown share type %s, valid types are: %s"), string, values);
+    }
+
   return shares;
 }
 
@@ -228,17 +234,20 @@ flatpak_context_shared_to_args (FlatpakContextShares shares,
 static FlatpakPolicy
 flatpak_policy_from_string (const char *string, GError **error)
 {
-  if (strcmp (string, "none") == 0)
-    return FLATPAK_POLICY_NONE;
-  if (strcmp (string, "see") == 0)
-    return FLATPAK_POLICY_SEE;
-  if (strcmp (string, "talk") == 0)
-    return FLATPAK_POLICY_TALK;
-  if (strcmp (string, "own") == 0)
-    return FLATPAK_POLICY_OWN;
+  const char *policies[] = { "none", "see", "talk", "own", NULL };
+  int i;
+  g_autofree char *values = NULL;
 
+  for (i = 0; policies[i]; i++)
+    {
+      if (strcmp (string, policies[i]) == 0)
+        return i;
+    }
+
+  values = g_strjoinv (", ", (char **)policies);
   g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-               "Unknown policy type %s, valid types are: none,see,talk,own\n", string);
+               _("Unknown policy type %s, valid types are: %s"), string, values);
+
   return -1;
 }
 
@@ -274,7 +283,8 @@ flatpak_verify_dbus_name (const char *name, GError **error)
   if (g_dbus_is_name (name_part) && !g_dbus_is_unique_name (name_part))
     return TRUE;
 
-  g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "Invalid dbus name %s\n", name);
+  g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+               _("Invalid dbus name %s\n"), name);
   return FALSE;
 }
 
@@ -284,8 +294,12 @@ flatpak_context_socket_from_string (const char *string, GError **error)
   FlatpakContextSockets sockets = flatpak_context_bitmask_from_string (string, flatpak_context_sockets);
 
   if (sockets == 0)
-    g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-                 "Unknown socket type %s, valid types are: x11,wayland,pulseaudio,session-bus,system-bus\n", string);
+    {
+      g_autofree char *values = g_strjoinv (", ", (char **)flatpak_context_sockets);
+      g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+                   _("Unknown socket type %s, valid types are: %s"), string, values);
+    }
+
   return sockets;
 }
 
@@ -309,8 +323,11 @@ flatpak_context_device_from_string (const char *string, GError **error)
   FlatpakContextDevices devices = flatpak_context_bitmask_from_string (string, flatpak_context_devices);
 
   if (devices == 0)
-    g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-                 "Unknown device type %s, valid types are: dri\n", string);
+    {
+      g_autofree char *values = g_strjoinv (", ", (char **)flatpak_context_devices);
+      g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+                   _("Unknown device type %s, valid types are: %s"), string, values);
+    }
   return devices;
 }
 
@@ -554,7 +571,7 @@ flatpak_context_verify_filesystem (const char *filesystem_and_mode,
     return TRUE;
 
   g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-               "Unknown filesystem location %s, valid types are: host,home,xdg-*[/...],~/dir,/dir,\n", filesystem);
+               _("Unknown filesystem location %s, valid types are: host, home, xdg-*[/...], ~/dir, /dir"), filesystem);
   return FALSE;
 }
 
@@ -765,7 +782,8 @@ option_env_cb (const gchar *option_name,
 
   if (split == NULL || split[0] == NULL || split[0][0] == 0 || split[1] == NULL)
     {
-      g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED, "Invalid env format %s", value);
+      g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+                   _("Invalid env format %s"), value);
       return FALSE;
     }
 
@@ -845,21 +863,24 @@ option_persist_cb (const gchar *option_name,
   return TRUE;
 }
 
+static gboolean option_no_desktop;
+
 static GOptionEntry context_options[] = {
-  { "share", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_share_cb, "Share with host", "SHARE" },
-  { "unshare", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_unshare_cb, "Unshare with host", "SHARE" },
-  { "socket", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_socket_cb, "Expose socket to app", "SOCKET" },
-  { "nosocket", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_nosocket_cb, "Don't expose socket to app", "SOCKET" },
-  { "device", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_device_cb, "Expose device to app", "DEVICE" },
-  { "nodevice", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_nodevice_cb, "Don't expose device to app", "DEVICE" },
-  { "filesystem", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_filesystem_cb, "Expose filesystem to app (:ro for read-only)", "FILESYSTEM[:ro]" },
-  { "nofilesystem", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_nofilesystem_cb, "Don't expose filesystem to app", "FILESYSTEM" },
-  { "env", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_env_cb, "Set environment variable", "VAR=VALUE" },
-  { "own-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_own_name_cb, "Allow app to own name on the session bus", "DBUS_NAME" },
-  { "talk-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_talk_name_cb, "Allow app to talk to name on the session bus", "DBUS_NAME" },
-  { "system-own-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_system_own_name_cb, "Allow app to own name on the system bus", "DBUS_NAME" },
-  { "system-talk-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_system_talk_name_cb, "Allow app to talk to name on the system bus", "DBUS_NAME" },
-  { "persist", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_persist_cb, "Persist home directory directory", "FILENAME" },
+  { "share", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_share_cb, N_("Share with host"), N_("SHARE") },
+  { "unshare", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_unshare_cb, N_("Unshare with host"), N_("SHARE") },
+  { "socket", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_socket_cb, N_("Expose socket to app"), N_("SOCKET") },
+  { "nosocket", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_nosocket_cb, N_("Don't expose socket to app"), N_("SOCKET") },
+  { "device", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_device_cb, N_("Expose device to app"), N_("DEVICE") },
+  { "nodevice", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_nodevice_cb, N_("Don't expose device to app"), N_("DEVICE") },
+  { "filesystem", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_filesystem_cb, N_("Expose filesystem to app (:ro for read-only)"), N_("FILESYSTEM[:ro]") },
+  { "nofilesystem", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_nofilesystem_cb, N_("Don't expose filesystem to app"), N_("FILESYSTEM") },
+  { "env", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_env_cb, N_("Set environment variable"), N_("VAR=VALUE") },
+  { "own-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_own_name_cb, N_("Allow app to own name on the session bus"), N_("DBUS_NAME") },
+  { "talk-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_talk_name_cb, N_("Allow app to talk to name on the session bus"), N_("DBUS_NAME") },
+  { "system-own-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_system_own_name_cb, N_("Allow app to own name on the system bus"), N_("DBUS_NAME") },
+  { "system-talk-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_system_talk_name_cb, N_("Allow app to talk to name on the system bus"), N_("DBUS_NAME") },
+  { "persist", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_persist_cb, N_("Persist home directory"), N_("FILENAME") },
+  { "no-desktop", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_NONE, &option_no_desktop, N_("Don't require a running session (no cgroups creation)"), NULL },
   { NULL }
 };
 
@@ -879,6 +900,7 @@ flatpak_context_get_options (FlatpakContext *context)
                               "Runtime Environment",
                               context,
                               NULL);
+  g_option_group_set_translation_domain (group, GETTEXT_PACKAGE);
 
   g_option_group_add_entries (group, context_options);
 
@@ -1355,13 +1377,15 @@ create_tmp_fd (const char *contents,
   fd = g_mkstemp (template);
   if (fd < 0)
     {
-      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno), "Failed to create temporary file");
+      g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),
+                           _("Failed to create temporary file"));
       return -1;
     }
 
   if (unlink (template) != 0)
     {
-      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno), "Failed to unlink temporary file");
+      g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),
+                           _("Failed to unlink temporary file"));
       close (fd);
       return -1;
     }
@@ -1378,7 +1402,8 @@ create_tmp_fd (const char *contents,
           if (saved_errno == EINTR)
             continue;
 
-          g_set_error (error, G_IO_ERROR, g_io_error_from_errno (saved_errno), "Failed to write to temporary file");
+          g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (saved_errno),
+                               _("Failed to write to temporary file"));
           close (fd);
           return -1;
         }
@@ -1400,7 +1425,7 @@ flatpak_run_add_x11_args (GPtrArray *argv_array,
                           char    ***envp_p,
                           gboolean allowed)
 {
-  char *x11_socket = NULL;
+  g_autofree char *x11_socket = NULL;
   const char *display;
 
   /* Always cover /tmp/.X11-unix, that way we never see the host one in case
@@ -1500,7 +1525,7 @@ flatpak_run_add_pulseaudio_args (GPtrArray *argv_array,
                                  GArray    *fd_array,
                                  char    ***envp_p)
 {
-  char *pulseaudio_socket = g_build_filename (g_get_user_runtime_dir (), "pulse/native", NULL);
+  g_autofree char *pulseaudio_socket = g_build_filename (g_get_user_runtime_dir (), "pulse/native", NULL);
 
   *envp_p = g_environ_unsetenv (*envp_p, "PULSE_SERVER");
   if (g_file_test (pulseaudio_socket, G_FILE_TEST_EXISTS))
@@ -1534,8 +1559,8 @@ flatpak_run_add_pulseaudio_args (GPtrArray *argv_array,
 static void
 flatpak_run_add_journal_args (GPtrArray *argv_array)
 {
-  const char *journal_socket_socket = g_strdup ("/run/systemd/journal/socket");
-  const char *journal_stdout_socket = g_strdup ("/run/systemd/journal/stdout");
+  g_autofree char *journal_socket_socket = g_strdup ("/run/systemd/journal/socket");
+  g_autofree char *journal_stdout_socket = g_strdup ("/run/systemd/journal/stdout");
 
   if (g_file_test (journal_socket_socket, G_FILE_TEST_EXISTS))
     {
@@ -2409,7 +2434,8 @@ add_app_info_args (GPtrArray      *argv_array,
       fd = open (tmp_path, O_RDONLY);
       if (fd == -1)
         {
-          g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno), "Failed to open temp file");
+          g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),
+                               _("Failed to open temp file"));
           return FALSE;
         }
       unlink (tmp_path);
@@ -2542,6 +2568,7 @@ add_dbus_proxy_args (GPtrArray *argv_array,
 {
   char x = 'x';
   const char *proxy;
+  g_autofree char *commandline = NULL;
 
   if (dbus_proxy_argv->len == 0)
     return TRUE;
@@ -2552,7 +2579,8 @@ add_dbus_proxy_args (GPtrArray *argv_array,
 
       if (pipe (sync_fds) < 0)
         {
-          g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno), "Unable to create sync pipe");
+          g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),
+                               _("Unable to create sync pipe"));
           return FALSE;
         }
 
@@ -2567,9 +2595,12 @@ add_dbus_proxy_args (GPtrArray *argv_array,
   g_ptr_array_insert (dbus_proxy_argv, 0, g_strdup (proxy));
   g_ptr_array_insert (dbus_proxy_argv, 1, g_strdup_printf ("--fd=%d", sync_fds[1]));
   if (enable_logging)
-    g_ptr_array_insert (dbus_proxy_argv, 2, g_strdup ("--log"));
+    g_ptr_array_add (dbus_proxy_argv, g_strdup ("--log"));
 
   g_ptr_array_add (dbus_proxy_argv, NULL); /* NULL terminate */
+
+  commandline = g_strjoinv (" ", (char **) dbus_proxy_argv->pdata);
+  g_debug ("Running %s", commandline);
 
   if (!g_spawn_async (NULL,
                       (char **) dbus_proxy_argv->pdata,
@@ -2587,7 +2618,8 @@ add_dbus_proxy_args (GPtrArray *argv_array,
   /* Sync with proxy, i.e. wait until its listening on the sockets */
   if (read (sync_fds[0], &x, 1) != 1)
     {
-      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno), "Failed to sync with dbus proxy");
+      g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),
+                           _("Failed to sync with dbus proxy"));
 
       close (sync_fds[0]);
       close (sync_fds[1]);
@@ -3166,7 +3198,7 @@ flatpak_run_app (const char     *app_ref,
 
   /* Must run this before spawning the dbus proxy, to ensure it
      ends up in the app cgroup */
-  if (!flatpak_run_in_transient_unit (app_ref_parts[1], error))
+  if (!option_no_desktop && !flatpak_run_in_transient_unit (app_ref_parts[1], error))
     return FALSE;
 
   if (!add_dbus_proxy_args (argv_array, session_bus_proxy_argv, (flags & FLATPAK_RUN_FLAG_LOG_SESSION_BUS) != 0, sync_fds, error))
@@ -3242,7 +3274,8 @@ flatpak_run_app (const char     *app_ref,
     {
       if (execvpe (flatpak_get_bwrap (), (char **) real_argv_array->pdata, envp) == -1)
         {
-          g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno), "Unable to start app");
+          g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),
+                               _("Unable to start app"));
           return FALSE;
         }
       /* Not actually reached... */

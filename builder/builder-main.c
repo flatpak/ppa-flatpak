@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -170,7 +170,7 @@ main (int    argc,
 
   g_autoptr(GError) error = NULL;
   g_autoptr(BuilderManifest) manifest = NULL;
-  GOptionContext *context;
+  g_autoptr(GOptionContext) context = NULL;
   const char *app_dir_path, *manifest_path;
   g_autofree gchar *json = NULL;
   g_autoptr(BuilderContext) build_context = NULL;
@@ -320,7 +320,7 @@ main (int    argc,
     {
       if (opt_force_clean)
         {
-          g_print ("Emptying app dir\n");
+          g_print ("Emptying app dir '%s'\n", app_dir_path);
           if (!gs_shutil_rm_rf (app_dir, NULL, &error))
             {
               g_printerr ("Couldn't empty app dir '%s': %s",

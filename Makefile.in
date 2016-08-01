@@ -165,11 +165,15 @@ check_PROGRAMS = $(am__EXEEXT_4)
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_PROGRAMS = flatpak-bwrap$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/glibtests.m4 \
-	$(top_srcdir)/m4/gtk-doc.m4 $(top_srcdir)/m4/intltool.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
-	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/acinclude.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
+	$(top_srcdir)/m4/glibtests.m4 $(top_srcdir)/m4/gtk-doc.m4 \
+	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/intlmacosx.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/po.m4 \
+	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/acinclude.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -217,6 +221,7 @@ am__installdirs = "$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(completiondir)" \
 	"$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbusconfdir)" \
+	"$(DESTDIR)$(dbussnippetdir)" \
 	"$(DESTDIR)$(dbussystemservicedir)" \
 	"$(DESTDIR)$(installed_test_dbsdir)" \
 	"$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(envdir)" \
@@ -461,7 +466,7 @@ nodist_xdg_document_portal_OBJECTS = $(am__objects_7) $(am__objects_9) \
 xdg_document_portal_OBJECTS = $(am_xdg_document_portal_OBJECTS) \
 	$(nodist_xdg_document_portal_OBJECTS)
 xdg_document_portal_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) libflatpak-common.la
+	$(am__DEPENDENCIES_1) libflatpak-common.la libflatpak.la
 xdg_document_portal_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(xdg_document_portal_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
@@ -554,7 +559,8 @@ am__dist_installed_test_dbs_DATA_DIST = tests/dbs/no_tables
 am__dist_installed_test_keyring_DATA_DIST = tests/test-keyring/README \
 	tests/test-keyring/pubring.gpg tests/test-keyring/secring.gpg
 DATA = $(completion_DATA) $(dbus_service_DATA) $(dbusconf_DATA) \
-	$(dbussystemservice_DATA) $(dist_installed_test_dbs_DATA) \
+	$(dbussnippet_DATA) $(dbussystemservice_DATA) \
+	$(dist_installed_test_dbs_DATA) \
 	$(dist_installed_test_keyring_DATA) $(env_DATA) \
 	$(installed_test_DATA) $(installed_test_meta_DATA) \
 	$(introspection_DATA) $(nobase_installed_test_DATA) \
@@ -787,9 +793,10 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/app/Makefile.am.inc \
 	$(srcdir)/system-helper/Makefile.am.inc \
 	$(srcdir)/tests/Makefile.am.inc \
 	$(top_srcdir)/buildutil/glib-tap.mk \
-	$(top_srcdir)/lib/flatpak-version-macros.h.in COPYING INSTALL \
-	NEWS compile config.guess config.sub depcomp install-sh \
-	ltmain.sh missing py-compile test-driver
+	$(top_srcdir)/lib/flatpak-version-macros.h.in ABOUT-NLS \
+	COPYING INSTALL NEWS compile config.guess config.rpath \
+	config.sub depcomp install-sh ltmain.sh missing py-compile \
+	test-driver
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -833,7 +840,6 @@ am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
-ALL_LINGUAS = @ALL_LINGUAS@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
@@ -844,15 +850,12 @@ AWK = @AWK@
 BASE_CFLAGS = @BASE_CFLAGS@
 BASE_LIBS = @BASE_LIBS@
 BWRAP = @BWRAP@
-CATALOGS = @CATALOGS@
-CATOBJEXT = @CATOBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
-DATADIRNAME = @DATADIRNAME@
 DBUS_SERVICE_DIR = @DBUS_SERVICE_DIR@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -873,10 +876,11 @@ FLATPAK_VERSION = @FLATPAK_VERSION@
 FUSE_CFLAGS = @FUSE_CFLAGS@
 FUSE_LIBS = @FUSE_LIBS@
 GDBUS_CODEGEN = @GDBUS_CODEGEN@
+GETTEXT_MACRO_VERSION = @GETTEXT_MACRO_VERSION@
 GLIB_COMPILE_RESOURCES = @GLIB_COMPILE_RESOURCES@
 GLIB_MKENUMS = @GLIB_MKENUMS@
-GMOFILES = @GMOFILES@
 GMSGFMT = @GMSGFMT@
+GMSGFMT_015 = @GMSGFMT_015@
 GREP = @GREP@
 GTKDOC_CHECK = @GTKDOC_CHECK@
 GTKDOC_CHECK_PATH = @GTKDOC_CHECK_PATH@
@@ -891,16 +895,8 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-INSTOBJEXT = @INSTOBJEXT@
 INTLLIBS = @INTLLIBS@
-INTLTOOL_EXTRACT = @INTLTOOL_EXTRACT@
-INTLTOOL_MERGE = @INTLTOOL_MERGE@
-INTLTOOL_PERL = @INTLTOOL_PERL@
-INTLTOOL_UPDATE = @INTLTOOL_UPDATE@
-INTLTOOL_V_MERGE = @INTLTOOL_V_MERGE@
-INTLTOOL_V_MERGE_OPTIONS = @INTLTOOL_V_MERGE_OPTIONS@
-INTLTOOL__v_MERGE_ = @INTLTOOL__v_MERGE_@
-INTLTOOL__v_MERGE_0 = @INTLTOOL__v_MERGE_0@
+INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
 INTROSPECTION_CFLAGS = @INTROSPECTION_CFLAGS@
 INTROSPECTION_COMPILER = @INTROSPECTION_COMPILER@
 INTROSPECTION_GENERATE = @INTROSPECTION_GENERATE@
@@ -917,6 +913,8 @@ LIBARCHIVE_CFLAGS = @LIBARCHIVE_CFLAGS@
 LIBARCHIVE_LIBS = @LIBARCHIVE_LIBS@
 LIBELF_CFLAGS = @LIBELF_CFLAGS@
 LIBELF_LIBS = @LIBELF_LIBS@
+LIBICONV = @LIBICONV@
+LIBINTL = @LIBINTL@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBSECCOMP_CFLAGS = @LIBSECCOMP_CFLAGS@
@@ -924,6 +922,8 @@ LIBSECCOMP_LIBS = @LIBSECCOMP_LIBS@
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
+LTLIBICONV = @LTLIBICONV@
+LTLIBINTL = @LTLIBINTL@
 LTLIBOBJS = @LTLIBOBJS@
 LT_CURRENT_MINUS_AGE = @LT_CURRENT_MINUS_AGE@
 LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
@@ -932,9 +932,8 @@ MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
-MKINSTALLDIRS = @MKINSTALLDIRS@
 MSGFMT = @MSGFMT@
-MSGFMT_OPTS = @MSGFMT_OPTS@
+MSGFMT_015 = @MSGFMT_015@
 MSGMERGE = @MSGMERGE@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -955,12 +954,9 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
-POFILES = @POFILES@
 POLKIT_CFLAGS = @POLKIT_CFLAGS@
 POLKIT_LIBS = @POLKIT_LIBS@
 POSUB = @POSUB@
-PO_IN_DATADIR_FALSE = @PO_IN_DATADIR_FALSE@
-PO_IN_DATADIR_TRUE = @PO_IN_DATADIR_TRUE@
 PRIVILEGED_GROUP = @PRIVILEGED_GROUP@
 RANLIB = @RANLIB@
 SED = @SED@
@@ -980,7 +976,11 @@ VERSION = @VERSION@
 XAUTH_CFLAGS = @XAUTH_CFLAGS@
 XAUTH_LIBS = @XAUTH_LIBS@
 XGETTEXT = @XGETTEXT@
+XGETTEXT_015 = @XGETTEXT_015@
+XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
 XMLCATALOG = @XMLCATALOG@
+XMLTO = @XMLTO@
+XMLTO_FLAGS = @XMLTO_FLAGS@
 XML_CATALOG_FILE = @XML_CATALOG_FILE@
 XSLTPROC = @XSLTPROC@
 abs_builddir = @abs_builddir@
@@ -1018,8 +1018,6 @@ infodir = @infodir@
 install_sh = @install_sh@
 installed_test_metadir = @installed_test_metadir@
 installed_testdir = @installed_testdir@
-intltool__v_merge_options_ = @intltool__v_merge_options_@
-intltool__v_merge_options_0 = @intltool__v_merge_options_0@
 libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
@@ -1056,7 +1054,8 @@ DISTCLEANFILES = $(NULL) $(nodist_flatpakinclude_HEADERS) \
 	tests/services/org.freedesktop.portal.Documents.service \
 	tests/services/org.freedesktop.impl.portal.PermissionStore.service \
 	tests/services/org.freedesktop.Flatpak.SystemHelper.service \
-	tests/package_version.txt $(NULL) flatpak.sh flatpak.env
+	tests/package_version.txt $(NULL) flatpak.sh flatpak.env \
+	flatpak.conf
 BUILT_SOURCES = $(NULL) $(nodist_libflatpak_common_la_SOURCES) \
 	$(nodist_flatpakinclude_HEADERS) \
 	$(nodist_libflatpak_la_SOURCES) $(NULL) \
@@ -1073,7 +1072,8 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	lib/flatpak-enum-types.h.template $(am__append_21) \
 	$(installed_test_data) tests/flatpak.supp tests/glib.supp \
 	$(completion_DATA) profile/flatpak.sh.in $(NULL) \
-	env.d/flatpak.env.in flatpak.pc.in README.md
+	env.d/flatpak.env.in dbus.service.d/flatpak.conf.in \
+	flatpak.pc.in README.md
 TESTS_ENVIRONMENT = G_TEST_SRCDIR="$(abs_srcdir)/tests" \
 	G_TEST_BUILDDIR="$(abs_builddir)/tests" UNINSTALLEDTESTS=1 \
 	G_DEBUG=gc-friendly MALLOC_CHECK_=2 \
@@ -1146,8 +1146,8 @@ AM_CPPFLAGS = -DFLATPAK_BINDIR=\"$(FLATPAK_BINDIR)\" \
 	-DSYSTEM_FONTS_DIR=\"$(SYSTEM_FONTS_DIR)\" \
 	-DDBUSPROXY=\"$(libexecdir)/flatpak-dbus-proxy\" \
 	-DG_LOG_DOMAIN=\"flatpak\" -I$(srcdir)/libglnx \
-	-I$(srcdir)/common -I$(builddir)/common $(NULL) \
-	$(am__append_15) $(am__append_16)
+	-I$(srcdir)/common -I$(builddir)/common -I$(srcdir)/lib \
+	-I$(builddir)/lib $(NULL) $(am__append_15) $(am__append_16)
 triggersdir = $(pkgdatadir)/triggers
 dist_triggers_SCRIPTS = \
 	triggers/gtk-icon-cache.trigger \
@@ -1273,7 +1273,9 @@ flatpak_SOURCES = \
 	$(NULL)
 
 flatpak_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(LIBARCHIVE_LIBS) libglnx.la libflatpak-common.la
-flatpak_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(LIBARCHIVE_CFLAGS)
+flatpak_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(LIBARCHIVE_CFLAGS) \
+        -DLOCALEDIR=\"$(localedir)\"
+
 flatpakincludedir = $(includedir)/flatpak
 flatpakinclude_HEADERS = \
 	lib/flatpak.h \
@@ -1475,8 +1477,8 @@ xdg_document_portal_SOURCES = \
 	document-portal/xdp-fuse.c		\
 	$(NULL)
 
-xdg_document_portal_LDADD = $(BASE_LIBS) $(FUSE_LIBS) libflatpak-common.la
-xdg_document_portal_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(FUSE_CFLAGS) -I$(srcdir)/document-portal -I$(builddir)/document-portal -I$(srcdir)/permission-store -I$(builddir)/permission-store
+xdg_document_portal_LDADD = $(BASE_LIBS) $(FUSE_LIBS) libflatpak-common.la libflatpak.la
+xdg_document_portal_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(FUSE_CFLAGS) -I$(srcdir)/document-portal -I$(builddir)/document-portal -I$(srcdir)/permission-store -I$(builddir)/permission-store -DFLATPAK_COMPILATION
 testdb_CFLAGS = $(BASE_CFLAGS)
 testdb_LDADD = \
              $(BASE_LIBS) \
@@ -1550,6 +1552,8 @@ profiledir = $(sysconfdir)/profile.d
 profile_DATA = flatpak.sh
 envdir = $(datadir)/gdm/env.d
 env_DATA = flatpak.env
+dbussnippetdir = $(systemduserunitdir)/dbus.service.d
+dbussnippet_DATA = flatpak.conf
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = flatpak.pc
 AM_DISTCHECK_CONFIGURE_FLAGS = \
@@ -3636,6 +3640,27 @@ uninstall-dbusconfDATA:
 	@list='$(dbusconf_DATA)'; test -n "$(dbusconfdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(dbusconfdir)'; $(am__uninstall_files_from_dir)
+install-dbussnippetDATA: $(dbussnippet_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(dbussnippet_DATA)'; test -n "$(dbussnippetdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(dbussnippetdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(dbussnippetdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(dbussnippetdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(dbussnippetdir)" || exit $$?; \
+	done
+
+uninstall-dbussnippetDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dbussnippet_DATA)'; test -n "$(dbussnippetdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(dbussnippetdir)'; $(am__uninstall_files_from_dir)
 install-dbussystemserviceDATA: $(dbussystemservice_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(dbussystemservice_DATA)'; test -n "$(dbussystemservicedir)" || list=; \
@@ -4556,7 +4581,7 @@ install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(installed_test_dbsdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
+	for dir in "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(dbussnippetdir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(installed_test_dbsdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -4652,7 +4677,7 @@ info-am:
 
 install-data-am: install-bwrapPROGRAMS install-completionDATA \
 	install-dbus_serviceDATA install-dbusconfDATA \
-	install-dbussystemserviceDATA \
+	install-dbussnippetDATA install-dbussystemserviceDATA \
 	install-dist_installed_test_dbsDATA \
 	install-dist_installed_test_keyringDATA \
 	install-dist_triggersSCRIPTS install-envDATA \
@@ -4717,7 +4742,8 @@ ps-am:
 
 uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-completionDATA uninstall-dbus_serviceDATA \
-	uninstall-dbusconfDATA uninstall-dbussystemserviceDATA \
+	uninstall-dbusconfDATA uninstall-dbussnippetDATA \
+	uninstall-dbussystemserviceDATA \
 	uninstall-dist_installed_test_dbsDATA \
 	uninstall-dist_installed_test_keyringDATA \
 	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
@@ -4752,7 +4778,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	install-binPROGRAMS install-bwrapPROGRAMS \
 	install-completionDATA install-data install-data-am \
 	install-data-hook install-dbus_serviceDATA \
-	install-dbusconfDATA install-dbussystemserviceDATA \
+	install-dbusconfDATA install-dbussnippetDATA \
+	install-dbussystemserviceDATA \
 	install-dist_installed_test_dbsDATA \
 	install-dist_installed_test_keyringDATA \
 	install-dist_triggersSCRIPTS install-dvi install-dvi-am \
@@ -4776,7 +4803,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	recheck tags tags-am uninstall uninstall-am \
 	uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-completionDATA uninstall-dbus_serviceDATA \
-	uninstall-dbusconfDATA uninstall-dbussystemserviceDATA \
+	uninstall-dbusconfDATA uninstall-dbussnippetDATA \
+	uninstall-dbussystemserviceDATA \
 	uninstall-dist_installed_test_dbsDATA \
 	uninstall-dist_installed_test_keyringDATA \
 	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
@@ -4838,7 +4866,8 @@ lib/flatpak-enum-types.c: $(flatpakinclude_HEADERS) lib/flatpak-enum-types.c.tem
 @BUILD_SYSTEM_HELPER_TRUE@system-helper/org.freedesktop.Flatpak.rules: system-helper/org.freedesktop.Flatpak.rules.in
 @BUILD_SYSTEM_HELPER_TRUE@	$(AM_V_GEN) $(SED) -e "s|\@privileged_group\@|$(PRIVILEGED_GROUP)|" $< > $@
 
-@BUILD_SYSTEM_HELPER_TRUE@@INTLTOOL_POLICY_RULE@
+@BUILD_SYSTEM_HELPER_TRUE@%.policy: %.policy.in
+@BUILD_SYSTEM_HELPER_TRUE@	$(AM_V_GEN) $(MSGFMT) --xml -d $(top_srcdir)/po --template $< -o $@ || cp $< $@
 
 $(nodist_xdg_permission_store_SOURCES) : data/org.freedesktop.impl.portal.PermissionStore.xml
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
@@ -4900,6 +4929,10 @@ flatpak.sh: profile/flatpak.sh.in
 		-e "s|\@sysconfdir\@|$(sysconfdir)|" $< > $@
 
 flatpak.env: env.d/flatpak.env.in
+	$(AM_V_GEN) $(SED) -e "s|\@localstatedir\@|$(localstatedir)|" \
+		-e "s|\@sysconfdir\@|$(sysconfdir)|" $< > $@
+
+flatpak.conf: dbus.service.d/flatpak.conf.in
 	$(AM_V_GEN) $(SED) -e "s|\@localstatedir\@|$(localstatedir)|" \
 		-e "s|\@sysconfdir\@|$(sysconfdir)|" $< > $@
 

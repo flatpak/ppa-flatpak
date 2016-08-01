@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,6 +25,8 @@
 #include "flatpak-dir.h"
 #include "flatpak-portal-error.h"
 #include "flatpak-run.h"
+
+#include <glib/gi18n.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -688,7 +690,7 @@ flatpak_find_files_dir_for_ref (const char   *ref,
     deploy = flatpak_dir_get_if_deployed (system_dir, ref, NULL, cancellable);
   if (deploy == NULL)
     {
-      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "%s not installed", ref);
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, _("%s not installed"), ref);
       return NULL;
     }
 
@@ -2201,7 +2203,8 @@ extract_appstream (OstreeRepo   *repo,
           component_id_text_node = flatpak_xml_find (component_id, NULL, NULL);
 
           component_id_text = g_strstrip (g_strdup (component_id_text_node->text));
-          if (!g_str_has_suffix (component_id_text, ".desktop"))
+          if (!g_str_has_prefix (component_id_text, id) ||
+              !g_str_has_suffix (component_id_text, ".desktop"))
             {
               component = component->next_sibling;
               continue;
@@ -2221,7 +2224,8 @@ extract_appstream (OstreeRepo   *repo,
               g_clear_error (&my_error);
             }
 
-          component = component->next_sibling;
+          /* We updated icons for our component, so we're done */
+          break;
         }
     }
 

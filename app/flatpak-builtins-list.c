@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,6 +25,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include <glib/gi18n.h>
+
 #include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
@@ -36,13 +38,15 @@ static gboolean opt_user;
 static gboolean opt_system;
 static gboolean opt_runtime;
 static gboolean opt_app;
+static char *opt_arch;
 
 static GOptionEntry options[] = {
-  { "user", 0, 0, G_OPTION_ARG_NONE, &opt_user, "Show user installations", NULL },
-  { "system", 0, 0, G_OPTION_ARG_NONE, &opt_system, "Show system-wide installations", NULL },
-  { "show-details", 'd', 0, G_OPTION_ARG_NONE, &opt_show_details, "Show arches and branches", NULL },
-  { "runtime", 0, 0, G_OPTION_ARG_NONE, &opt_runtime, "List installed runtimes", },
-  { "app", 0, 0, G_OPTION_ARG_NONE, &opt_app, "List installed applications", },
+  { "user", 0, 0, G_OPTION_ARG_NONE, &opt_user, N_("Show user installations"), NULL },
+  { "system", 0, 0, G_OPTION_ARG_NONE, &opt_system, N_("Show system-wide installations"), NULL },
+  { "show-details", 'd', 0, G_OPTION_ARG_NONE, &opt_show_details, N_("Show arches and branches"), NULL },
+  { "runtime", 0, 0, G_OPTION_ARG_NONE, &opt_runtime, N_("List installed runtimes"), NULL },
+  { "app", 0, 0, G_OPTION_ARG_NONE, &opt_app, N_("List installed applications"), NULL },
+  { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to show"), N_("ARCH") },
   { NULL }
 };
 
@@ -72,7 +76,7 @@ join_strv (char **a, char **b)
 }
 
 static gboolean
-print_installed_refs (gboolean app, gboolean runtime, gboolean print_system, gboolean print_user, GCancellable *cancellable, GError **error)
+print_installed_refs (gboolean app, gboolean runtime, gboolean print_system, gboolean print_user, const char *arch, GCancellable *cancellable, GError **error)
 {
   g_autofree char *last = NULL;
 
@@ -147,6 +151,9 @@ print_installed_refs (gboolean app, gboolean runtime, gboolean print_system, gbo
 
       parts = g_strsplit (ref, "/", -1);
       partial_ref = strchr (ref, '/') + 1;
+
+      if (arch != NULL && strcmp (arch, parts[1]) != 0)
+        continue;
 
       deploy_data = flatpak_dir_get_deploy_data (dir, ref, cancellable, error);
       if (deploy_data == NULL)
@@ -246,7 +253,8 @@ flatpak_builtin_list (int argc, char **argv, GCancellable *cancellable, GError *
 {
   g_autoptr(GOptionContext) context = NULL;
 
-  context = g_option_context_new (" - List installed apps and/or runtimes");
+  context = g_option_context_new (_(" - List installed apps and/or runtimes"));
+  g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv, FLATPAK_BUILTIN_FLAG_NO_DIR, NULL, cancellable, error))
     return FALSE;
@@ -257,6 +265,7 @@ flatpak_builtin_list (int argc, char **argv, GCancellable *cancellable, GError *
   if (!print_installed_refs (opt_app, opt_runtime,
                              opt_system || (!opt_user && !opt_system),
                              opt_user || (!opt_user && !opt_system),
+                             opt_arch,
                              cancellable, error))
     return FALSE;
 
