@@ -2,6 +2,8 @@ flatpak (0.6.8-1) UNRELEASED; urgency=medium
 
   * New upstream release
   * d/copyright: source files are now licensed as LGPL-2.1+
+  * d/flatpak.install: install systemd snippet to configure dbus.service
+    with flatpak in XDG_DATA_DIRS
 
  -- Simon McVittie <smcv@debian.org>  Mon, 01 Aug 2016 10:32:45 +0100
 
