@@ -19,3 +19,11 @@ Depends:
  flatpak-tests,
  gnome-desktop-testing,
  ostree,
+
+Tests: extensions
+Restrictions: isolation-machine
+Depends:
+ attr,
+ flatpak-tests,
+ gnome-desktop-testing,
+ ostree,
