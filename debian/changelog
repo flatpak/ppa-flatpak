@@ -1,4 +1,4 @@
-flatpak (0.6.8-1) UNRELEASED; urgency=medium
+flatpak (0.6.8-1) unstable; urgency=medium
 
   * New upstream release
     - d/copyright: source files are now licensed as LGPL-2.1+
@@ -19,7 +19,7 @@ flatpak (0.6.8-1) UNRELEASED; urgency=medium
     in the hope that when ci.debian.net gets a qemu runner, it will
     work there
 
- -- Simon McVittie <smcv@debian.org>  Mon, 01 Aug 2016 10:32:45 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 02 Aug 2016 15:19:41 +0100
 
 flatpak (0.6.7-2) unstable; urgency=medium
 
