@@ -1,9 +1,7 @@
 flatpak (0.6.8-2) UNRELEASED; urgency=medium
 
-  * Prune build-dependencies
-    - xmlto already depends on docbook-xml and docbook-xsl
-    - docbook-xsl-doc-html is documentation about docbook-xsl, so isn't
-      needed at build-time
+  * Drop unused build-dependency on docbook-xsl-doc-html.
+    It is documentation about docbook-xsl, so isn't needed at build-time.
 
  -- Simon McVittie <smcv@debian.org>  Thu, 04 Aug 2016 11:39:57 +0100
 

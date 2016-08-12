@@ -12,6 +12,8 @@ Build-Depends:
  dh-autoreconf,
  dh-exec,
  dh-systemd,
+ docbook-xml,
+ docbook-xsl,
  gobject-introspection,
  gtk-doc-tools,
  libarchive-dev (>= 2.8.0),
