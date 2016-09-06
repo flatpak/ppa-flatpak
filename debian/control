@@ -6,6 +6,7 @@ Uploaders:
  Matthias Klumpp <mak@debian.org>,
  Simon McVittie <smcv@debian.org>,
 Build-Depends:
+ attr,
  bubblewrap (>= 0.1.0),
  ca-certificates,
  dbus,
@@ -107,6 +108,7 @@ Package: flatpak-tests
 Architecture: linux-any
 Section: misc
 Depends:
+ attr,
  ca-certificates,
  desktop-file-utils,
  flatpak (= ${binary:Version}),

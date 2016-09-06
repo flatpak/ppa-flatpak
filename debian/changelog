@@ -10,6 +10,8 @@ flatpak (0.6.9-1) UNRELEASED; urgency=medium
     In practice buildds disallow some of what the tests do, but we shouldn't
     rely on that.
   * d/patches: cherry-pick various post-release bug fixes from upstream
+  * Build-depend on attr, and make flatpak-tests depend on it, for better
+    test coverage if /var/tmp supports xattrs
 
  -- Simon McVittie <smcv@debian.org>  Thu, 04 Aug 2016 11:39:57 +0100
 

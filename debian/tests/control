@@ -5,7 +5,6 @@ Depends:
 
 Tests: builder
 Depends:
- attr,
  flatpak-builder,
  flatpak-tests,
  git,
@@ -15,7 +14,6 @@ Depends:
 
 Tests: gnome-desktop-testing
 Depends:
- attr,
  flatpak-tests,
  gnome-desktop-testing,
  ostree,
@@ -23,7 +21,6 @@ Depends:
 Tests: extensions
 Restrictions: isolation-machine
 Depends:
- attr,
  flatpak-tests,
  gnome-desktop-testing,
  ostree,
