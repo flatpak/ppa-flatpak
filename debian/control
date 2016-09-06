@@ -17,6 +17,7 @@ Build-Depends:
  dh-systemd,
  docbook-xml,
  docbook-xsl,
+ fuse,
  git,
  gnome-desktop-testing,
  gobject-introspection,
