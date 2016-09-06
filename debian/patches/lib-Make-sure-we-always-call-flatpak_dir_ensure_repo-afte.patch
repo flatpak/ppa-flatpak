@@ -1,0 +1,61 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Mon, 29 Aug 2016 16:11:48 +0200
+Subject: lib: Make sure we always call flatpak_dir_ensure_repo after cloning
+ the dir
+
+Otherwise we're not guaranteed the new FlatpakDir has a repo.
+
+Origin: upstream, 0.6.10, commit:aa160aa111ec330c53d0580c44050b3848d75b76
+---
+ lib/flatpak-installation.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/lib/flatpak-installation.c b/lib/flatpak-installation.c
+index ccd8ff3..059b60d 100644
+--- a/lib/flatpak-installation.c
++++ b/lib/flatpak-installation.c
+@@ -1003,6 +1003,8 @@ flatpak_installation_install_bundle (FlatpakInstallation    *self,
+ 
+   /* Pull, prune, etc are not threadsafe, so we work on a copy */
+   dir_clone = flatpak_dir_clone (dir);
++  if (flatpak_dir_ensure_repo (dir_clone, cancellable, error))
++    return NULL;
+ 
+   if (!flatpak_dir_install_bundle (dir_clone, file, NULL, &ref,
+                                    cancellable, error))
+@@ -1071,6 +1073,8 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
+ 
+   /* Pull, prune, etc are not threadsafe, so we work on a copy */
+   dir_clone = flatpak_dir_clone (dir);
++  if (flatpak_dir_ensure_repo (dir_clone, cancellable, error))
++    return NULL;
+ 
+   /* Work around ostree-pull spinning the default main context for the sync calls */
+   main_context = g_main_context_new ();
+@@ -1195,6 +1199,8 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
+ 
+   /* Pull, prune, etc are not threadsafe, so we work on a copy */
+   dir_clone = flatpak_dir_clone (dir);
++  if (flatpak_dir_ensure_repo (dir_clone, cancellable, error))
++    return NULL;
+ 
+   /* Work around ostree-pull spinning the default main context for the sync calls */
+   main_context = g_main_context_new ();
+@@ -1299,6 +1305,8 @@ flatpak_installation_uninstall (FlatpakInstallation    *self,
+ 
+   /* prune, etc are not threadsafe, so we work on a copy */
+   dir_clone = flatpak_dir_clone (dir);
++  if (flatpak_dir_ensure_repo (dir_clone, cancellable, error))
++    return FALSE;
+ 
+   if (!flatpak_dir_uninstall (dir_clone, ref, FLATPAK_HELPER_UNINSTALL_FLAGS_NONE,
+                               cancellable, error))
+@@ -1520,6 +1528,8 @@ flatpak_installation_update_appstream_sync (FlatpakInstallation *self,
+ 
+   /* Pull, prune, etc are not threadsafe, so we work on a copy */
+   dir_clone = flatpak_dir_clone (dir);
++  if (flatpak_dir_ensure_repo (dir_clone, cancellable, error))
++    return FALSE;
+ 
+   if (main_context)
+     g_main_context_pop_thread_default (main_context);

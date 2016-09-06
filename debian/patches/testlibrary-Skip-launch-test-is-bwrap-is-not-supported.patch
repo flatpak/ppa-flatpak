@@ -1,0 +1,34 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Mon, 29 Aug 2016 12:32:31 +0200
+Subject: testlibrary: Skip launch test is bwrap is not supported
+
+Origin: upstream, 0.6.10, commit:6e37155a3ed507781a752d9e5104f51ed1cae142
+---
+ tests/testlibrary.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/tests/testlibrary.c b/tests/testlibrary.c
+index 61e3db7..abf5fb6 100644
+--- a/tests/testlibrary.c
++++ b/tests/testlibrary.c
+@@ -270,6 +270,20 @@ test_install_launch_uninstall (void)
+   g_autoptr(GMainLoop) loop = NULL;
+   guint quit_id;
+   gboolean res;
++  const char *bwrap = g_getenv ("FLATPAK_BWRAP");
++
++  if (bwrap != NULL)
++    {
++      gint exit_code = 0;
++      char *argv[] = { (char *)bwrap, "--ro-bind", "/", "/", "/bin/true", NULL };
++      g_spawn_sync (NULL, argv, NULL, 0, NULL, NULL, NULL, NULL, &exit_code, &error);
++      g_assert_no_error (error);
++      if (exit_code != 0)
++        {
++          g_test_skip ("bwrap not supported");
++          return;
++        }
++    }
+ 
+   inst = flatpak_installation_new_user (NULL, &error);
+   g_assert_no_error (error);

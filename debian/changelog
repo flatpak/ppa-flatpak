@@ -9,6 +9,7 @@ flatpak (0.6.9-1) UNRELEASED; urgency=medium
   * Expand build-dependencies to what we would use if no tests are skipped.
     In practice buildds disallow some of what the tests do, but we shouldn't
     rely on that.
+  * d/patches: cherry-pick various post-release bug fixes from upstream
 
  -- Simon McVittie <smcv@debian.org>  Thu, 04 Aug 2016 11:39:57 +0100
 

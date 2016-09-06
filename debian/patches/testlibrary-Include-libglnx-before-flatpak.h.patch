@@ -1,0 +1,26 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Mon, 29 Aug 2016 11:01:05 +0200
+Subject: testlibrary: Include libglnx before flatpak.h
+
+This makes the code use the backport of g_auot* so that we can build
+against older versions of glib.
+
+Origin: upstream, 0.6.10, commit:b1fcf792e1ae8196dfbc4e3105a5777bcb8caa64
+---
+ tests/testlibrary.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/testlibrary.c b/tests/testlibrary.c
+index acbba8f..61e3db7 100644
+--- a/tests/testlibrary.c
++++ b/tests/testlibrary.c
+@@ -1,8 +1,8 @@
+ #include "config.h"
+ #include <string.h>
+ #include <glib.h>
++#include "libglnx/libglnx.h"
+ #include "flatpak.h"
+-#include "glnx-shutil.h"
+ 
+ static char *testdir;
+ static char *flatpak_runtimedir;

@@ -13,6 +13,7 @@ The first positional parameter (if given) is $0, and the rest are $@.
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
 Forwarded: https://github.com/flatpak/flatpak/pull/194
+Applied-upstream: 0.6.10, commit:5b8fdb4998cfa8f878c6f1f26be6e1efc2ccda05
 ---
  builder/builder-source-archive.c | 8 ++++----
  1 file changed, 4 insertions(+), 4 deletions(-)

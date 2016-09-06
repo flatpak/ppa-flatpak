@@ -1,2 +1,10 @@
 unrpm-prevent-shell-injection.patch
+testlibrary-Include-libglnx-before-flatpak.h.patch
+Update-Don-t-double-call-flatpak_dir_cleanup_removed.patch
+Treat-remotes-with-empty-url-as-disabled.patch
+testlibrary-Skip-launch-test-is-bwrap-is-not-supported.patch
+lib-Make-sure-we-always-call-flatpak_dir_ensure_repo-afte.patch
+Fix-last-commit.patch
+update-Don-t-stop-the-entire-update-if-one-app-fails.patch
+utils-Fix-support-for-old-glib-without-g_autoptr.patch
 debian/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch
