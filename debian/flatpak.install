@@ -21,6 +21,7 @@ usr/share/flatpak
 usr/share/gdm/env.d
 usr/share/locale/*/LC_MESSAGES/flatpak.mo
 usr/share/man/man1/flatpak-build-bundle.1
+usr/share/man/man1/flatpak-build-commit-from.1
 usr/share/man/man1/flatpak-build-export.1
 usr/share/man/man1/flatpak-build-finish.1
 usr/share/man/man1/flatpak-build-import-bundle.1
