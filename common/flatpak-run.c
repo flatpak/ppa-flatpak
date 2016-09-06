@@ -39,7 +39,6 @@
 #include <glib/gi18n.h>
 
 #include <gio/gio.h>
-#include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
 #include "flatpak-run.h"
@@ -1896,6 +1895,20 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
         }
     }
 
+  {
+    g_autofree char *run_user_app_dst = g_strdup_printf ("/run/user/%d/app/%s", getuid (), app_id);
+    g_autofree char *run_user_app_src = g_build_filename (g_get_user_runtime_dir (), "app", app_id, NULL);
+
+    if (glnx_shutil_mkdir_p_at (AT_FDCWD,
+                                run_user_app_src,
+                                0700,
+                                NULL,
+                                NULL))
+        add_args (argv_array,
+                  "--bind", run_user_app_src, run_user_app_dst,
+                  NULL);
+  }
+
   g_hash_table_iter_init (&iter, context->filesystems);
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
@@ -1966,7 +1979,7 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
   /* Do this after setting up everything in the home dir, so its not overwritten */
   if (app_id_dir)
     add_args (argv_array,
-              "--bind", gs_file_get_path_cached (app_id_dir), gs_file_get_path_cached (app_id_dir),
+              "--bind", flatpak_file_get_path_cached (app_id_dir), flatpak_file_get_path_cached (app_id_dir),
               NULL);
 
   if (home_access  && app_id_dir != NULL)
@@ -1974,7 +1987,7 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
       g_autofree char *src_path = g_build_filename (g_get_user_config_dir (),
                                                     "user-dirs.dirs",
                                                     NULL);
-      g_autofree char *path = g_build_filename (gs_file_get_path_cached (app_id_dir),
+      g_autofree char *path = g_build_filename (flatpak_file_get_path_cached (app_id_dir),
                                                 "config/user-dirs.dirs", NULL);
       if (g_file_test (src_path, G_FILE_TEST_EXISTS))
         add_args (argv_array,
@@ -2000,7 +2013,7 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
                   g_autofree char *tmp_fd_str = g_strdup_printf ("%d", tmp_fd);
                   if (fd_array)
                     g_array_append_val (fd_array, tmp_fd);
-                  path = g_build_filename (gs_file_get_path_cached (app_id_dir),
+                  path = g_build_filename (flatpak_file_get_path_cached (app_id_dir),
                                            "config/user-dirs.dirs", NULL);
 
                   add_args (argv_array, "--file", tmp_fd_str, path, NULL);
@@ -2163,9 +2176,9 @@ flatpak_run_apply_env_appid (char **envp,
   app_dir_data = g_file_get_child (app_dir, "data");
   app_dir_config = g_file_get_child (app_dir, "config");
   app_dir_cache = g_file_get_child (app_dir, "cache");
-  envp = g_environ_setenv (envp, "XDG_DATA_HOME", gs_file_get_path_cached (app_dir_data), TRUE);
-  envp = g_environ_setenv (envp, "XDG_CONFIG_HOME", gs_file_get_path_cached (app_dir_config), TRUE);
-  envp = g_environ_setenv (envp, "XDG_CACHE_HOME", gs_file_get_path_cached (app_dir_cache), TRUE);
+  envp = g_environ_setenv (envp, "XDG_DATA_HOME", flatpak_file_get_path_cached (app_dir_data), TRUE);
+  envp = g_environ_setenv (envp, "XDG_CONFIG_HOME", flatpak_file_get_path_cached (app_dir_config), TRUE);
+  envp = g_environ_setenv (envp, "XDG_CACHE_HOME", flatpak_file_get_path_cached (app_dir_cache), TRUE);
 
   return envp;
 }
@@ -2210,13 +2223,13 @@ flatpak_ensure_data_dir (const char   *app_id,
   g_autoptr(GFile) cache_dir = g_file_get_child (dir, "cache");
   g_autoptr(GFile) config_dir = g_file_get_child (dir, "config");
 
-  if (!gs_file_ensure_directory (data_dir, TRUE, cancellable, error))
+  if (!flatpak_mkdir_p (data_dir, cancellable, error))
     return NULL;
 
-  if (!gs_file_ensure_directory (cache_dir, TRUE, cancellable, error))
+  if (!flatpak_mkdir_p (cache_dir, cancellable, error))
     return NULL;
 
-  if (!gs_file_ensure_directory (config_dir, TRUE, cancellable, error))
+  if (!flatpak_mkdir_p (config_dir, cancellable, error))
     return NULL;
 
   return g_object_ref (dir);
@@ -2354,13 +2367,13 @@ add_font_path_args (GPtrArray *argv_array)
   if (g_file_query_exists (user_font1, NULL))
     {
       add_args (argv_array,
-                "--bind", gs_file_get_path_cached (user_font1), "/run/host/user-fonts",
+                "--bind", flatpak_file_get_path_cached (user_font1), "/run/host/user-fonts",
                 NULL);
     }
   else if (g_file_query_exists (user_font2, NULL))
     {
       add_args (argv_array,
-                "--bind", gs_file_get_path_cached (user_font2), "/run/host/user-fonts",
+                "--bind", flatpak_file_get_path_cached (user_font2), "/run/host/user-fonts",
                 NULL);
     }
 }
@@ -2925,7 +2938,7 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
       char path_buffer[PATH_MAX + 1];
       ssize_t symlink_size;
 
-      glnx_dirfd_iterator_init_at (AT_FDCWD, gs_file_get_path_cached (etc), FALSE, &dfd_iter, NULL);
+      glnx_dirfd_iterator_init_at (AT_FDCWD, flatpak_file_get_path_cached (etc), FALSE, &dfd_iter, NULL);
 
       while (TRUE)
         {
@@ -2942,7 +2955,7 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
               strcmp (dent->d_name, "localtime") == 0)
             continue;
 
-          src = g_build_filename (gs_file_get_path_cached (etc), dent->d_name, NULL);
+          src = g_build_filename (flatpak_file_get_path_cached (etc), dent->d_name, NULL);
           dest = g_build_filename ("/etc", dent->d_name, NULL);
           if (dent->d_type == DT_LNK)
             {
@@ -2970,9 +2983,9 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
 
       add_args (argv_array,
                 /* These are nice to have as a fixed path */
-                "--bind", gs_file_get_path_cached (app_cache_dir), "/var/cache",
-                "--bind", gs_file_get_path_cached (app_data_dir), "/var/data",
-                "--bind", gs_file_get_path_cached (app_config_dir), "/var/config",
+                "--bind", flatpak_file_get_path_cached (app_cache_dir), "/var/cache",
+                "--bind", flatpak_file_get_path_cached (app_data_dir), "/var/data",
+                "--bind", flatpak_file_get_path_cached (app_config_dir), "/var/config",
                 NULL);
     }
 
@@ -3169,9 +3182,9 @@ flatpak_run_app (const char     *app_ref,
   envp = flatpak_run_apply_env_appid (envp, app_id_dir);
 
   add_args (argv_array,
-            "--ro-bind", gs_file_get_path_cached (runtime_files), "/usr",
+            "--ro-bind", flatpak_file_get_path_cached (runtime_files), "/usr",
             "--lock-file", "/usr/.ref",
-            "--ro-bind", gs_file_get_path_cached (app_files), "/app",
+            "--ro-bind", flatpak_file_get_path_cached (app_files), "/app",
             "--lock-file", "/app/.ref",
             NULL);
 

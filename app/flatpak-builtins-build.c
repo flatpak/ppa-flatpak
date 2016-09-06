@@ -28,7 +28,6 @@
 
 #include <glib/gi18n.h>
 
-#include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
@@ -40,7 +39,7 @@ static char *opt_build_dir;
 static char **opt_bind_mounts;
 
 static GOptionEntry options[] = {
-  { "runtime", 'r', 0, G_OPTION_ARG_NONE, &opt_runtime, N_("Use non-devel runtime"), NULL },
+  { "runtime", 'r', 0, G_OPTION_ARG_NONE, &opt_runtime, N_("Use Platform runtime rather than Sdk"), NULL },
   { "bind-mount", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_bind_mounts, N_("Add bind mount"), N_("DEST=SRC") },
   { "build-dir", 0, 0, G_OPTION_ARG_STRING, &opt_build_dir, N_("Start build in this directory"), N_("DIR") },
   { NULL }
@@ -147,7 +146,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   runtime_metakey = flatpak_deploy_get_metadata (runtime_deploy);
 
   var = g_file_get_child (app_deploy, "var");
-  if (!gs_file_ensure_directory (var, TRUE, cancellable, error))
+  if (!flatpak_mkdir_p (var, cancellable, error))
     return FALSE;
 
   app_files = g_file_get_child (app_deploy, "files");
@@ -168,8 +167,8 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
     }
 
   add_args (argv_array,
-            custom_usr ? "--bind" : "--ro-bind", gs_file_get_path_cached (runtime_files), "/usr",
-            "--bind", gs_file_get_path_cached (app_files), "/app",
+            custom_usr ? "--bind" : "--ro-bind", flatpak_file_get_path_cached (runtime_files), "/usr",
+            "--bind", flatpak_file_get_path_cached (app_files), "/app",
             NULL);
 
   if (!flatpak_run_setup_base_argv (argv_array, NULL, runtime_files, NULL, runtime_ref_parts[2],
@@ -179,7 +178,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
 
   /* After setup_base to avoid conflicts with /var symlinks */
   add_args (argv_array,
-            "--bind", gs_file_get_path_cached (var), "/var",
+            "--bind", flatpak_file_get_path_cached (var), "/var",
             NULL);
 
   app_context = flatpak_context_new ();

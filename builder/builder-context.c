@@ -39,6 +39,7 @@ struct BuilderContext
   GFile          *base_dir;
   SoupSession    *soup_session;
   char           *arch;
+  char           *stop_at;
 
   GFile          *download_dir;
   GFile          *state_dir;
@@ -53,6 +54,7 @@ struct BuilderContext
   gboolean        use_ccache;
   gboolean        build_runtime;
   gboolean        separate_locales;
+  gboolean        sandboxed;
 };
 
 typedef struct
@@ -85,6 +87,7 @@ builder_context_finalize (GObject *object)
   g_clear_object (&self->soup_session);
   g_clear_object (&self->options);
   g_free (self->arch);
+  g_free (self->stop_at);
   g_strfreev (self->cleanup);
   g_strfreev (self->cleanup_platform);
 
@@ -266,6 +269,20 @@ builder_context_set_arch (BuilderContext *self,
   self->arch = g_strdup (arch);
 }
 
+const char *
+builder_context_get_stop_at (BuilderContext *self)
+{
+  return self->stop_at;
+}
+
+void
+builder_context_set_stop_at (BuilderContext *self,
+                             const char     *module)
+{
+  g_free (self->stop_at);
+  self->stop_at = g_strdup (module);
+}
+
 BuilderOptions *
 builder_context_get_options (BuilderContext *self)
 {
@@ -324,6 +341,19 @@ gboolean
 builder_context_get_keep_build_dirs (BuilderContext *self)
 {
   return self->keep_build_dirs;
+}
+
+void
+builder_context_set_sandboxed (BuilderContext *self,
+                               gboolean        sandboxed)
+{
+  self->sandboxed = sandboxed;
+}
+
+gboolean
+builder_context_get_sandboxed (BuilderContext *self)
+{
+  return self->sandboxed;
 }
 
 gboolean

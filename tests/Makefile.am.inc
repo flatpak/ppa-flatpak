@@ -28,6 +28,14 @@ test_doc_portal_LDADD = \
              $(NULL)
 test_doc_portal_SOURCES = tests/test-doc-portal.c $(xdp_dbus_built_sources)
 
+testlibrary_CFLAGS = $(BASE_CFLAGS)
+testlibrary_LDADD = \
+             $(BASE_LIBS) \
+             libglnx.la \
+             libflatpak.la \
+             $(NULL)
+testlibrary_SOURCES = tests/testlibrary.c
+
 EXTRA_test_doc_portal_DEPENDENCIES = tests/services/org.freedesktop.impl.portal.PermissionStore.service tests/services/org.freedesktop.portal.Documents.service  tests/services/org.freedesktop.Flatpak.service tests/services/org.freedesktop.Flatpak.SystemHelper.service
 
 tests/services/org.freedesktop.portal.Documents.service: document-portal/org.freedesktop.portal.Documents.service.in
@@ -77,6 +85,11 @@ installed_test_data = \
 	tests/test.json \
 	tests/session.conf.in \
 	tests/0001-Add-test-logo.patch \
+	tests/org.test.Python.json \
+	tests/empty-configure \
+	tests/testpython.py \
+	tests/importme.py \
+	tests/importme2.py \
 	$(NULL)
 
 installed_test_keyringdir = $(installed_testdir)/test-keyring
@@ -103,9 +116,10 @@ dist_test_scripts = \
 	tests/test-bundle.sh \
 	tests/test-bundle-system.sh \
 	tests/test-builder.sh \
+	tests/test-builder-python.sh \
 	$(NULL)
 
-test_programs = testdb test-doc-portal
+test_programs = testdb test-doc-portal testlibrary
 
 @VALGRIND_CHECK_RULES@
 VALGRIND_SUPPRESSIONS_FILES=tests/flatpak.supp tests/glib.supp

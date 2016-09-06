@@ -28,7 +28,6 @@
 
 #include <glib/gi18n.h>
 
-#include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
@@ -75,9 +74,8 @@ export_dir (int           source_parent_fd,
         }
     }
 
-  if (!gs_file_open_dir_fd_at (destination_parent_fd, destination_name,
-                               &destination_dfd,
-                               cancellable, error))
+  if (!glnx_opendirat (destination_parent_fd, destination_name, TRUE,
+                       &destination_dfd, error))
     return FALSE;
 
   while (TRUE)
@@ -169,12 +167,12 @@ copy_exports (GFile        *source,
               GCancellable *cancellable,
               GError      **error)
 {
-  if (!gs_file_ensure_directory (destination, TRUE, cancellable, error))
+  if (!flatpak_mkdir_p (destination, cancellable, error))
     return FALSE;
 
   /* The fds are closed by this call */
-  if (!export_dir (AT_FDCWD, gs_file_get_path_cached (source), source_prefix,
-                   AT_FDCWD, gs_file_get_path_cached (destination),
+  if (!export_dir (AT_FDCWD, flatpak_file_get_path_cached (source), source_prefix,
+                   AT_FDCWD, flatpak_file_get_path_cached (destination),
                    required_prefix, cancellable, error))
     return FALSE;
 
@@ -212,7 +210,7 @@ collect_exports (GFile *base, const char *app_id, gboolean is_runtime, GCancella
 
   export = g_file_get_child (base, "export");
 
-  if (!gs_file_ensure_directory (export, TRUE, cancellable, error))
+  if (!flatpak_mkdir_p (export, cancellable, error))
     return FALSE;
 
   if (opt_no_exports)
@@ -230,7 +228,7 @@ collect_exports (GFile *base, const char *app_id, gboolean is_runtime, GCancella
           dest = g_file_resolve_relative_path (export, paths[i]);
           dest_parent = g_file_get_parent (dest);
           g_debug ("Ensuring export/%s parent exists", paths[i]);
-          if (!gs_file_ensure_directory (dest_parent, TRUE, cancellable, error))
+          if (!flatpak_mkdir_p (dest_parent, cancellable, error))
             return FALSE;
           g_debug ("Copying from files/%s", paths[i]);
           if (!copy_exports (src, dest, paths[i], app_id, cancellable, error))

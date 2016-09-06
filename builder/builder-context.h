@@ -46,10 +46,16 @@ SoupSession *   builder_context_get_soup_session (BuilderContext *self);
 const char *    builder_context_get_arch (BuilderContext *self);
 void            builder_context_set_arch (BuilderContext *self,
                                           const char     *arch);
+const char *    builder_context_get_stop_at (BuilderContext *self);
+void            builder_context_set_stop_at (BuilderContext *self,
+                                             const char     *module);
 int             builder_context_get_n_cpu (BuilderContext *self);
 void            builder_context_set_keep_build_dirs (BuilderContext *self,
                                                      gboolean        keep_build_dirs);
 gboolean        builder_context_get_keep_build_dirs (BuilderContext *self);
+void            builder_context_set_sandboxed (BuilderContext *self,
+                                               gboolean        sandboxed);
+gboolean        builder_context_get_sandboxed (BuilderContext *self);
 void            builder_context_set_global_cleanup (BuilderContext *self,
                                                     const char    **cleanup);
 const char **   builder_context_get_global_cleanup (BuilderContext *self);

@@ -27,7 +27,6 @@
 
 #include <glib/gi18n.h>
 
-#include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
@@ -35,10 +34,18 @@
 
 static char *opt_ref;
 static gboolean opt_oci = FALSE;
+static char **opt_gpg_key_ids;
+static char *opt_gpg_homedir;
+static gboolean opt_update_appstream;
+static gboolean opt_no_update_summary;
 
 static GOptionEntry options[] = {
   { "ref", 0, 0, G_OPTION_ARG_STRING, &opt_ref, N_("Override the ref used for the imported bundle"), N_("REF") },
   { "oci", 0, 0, G_OPTION_ARG_NONE, &opt_oci, N_("Import oci image instead of flatpak bundle"), NULL },
+  { "gpg-sign", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_gpg_key_ids, N_("GPG Key ID to sign the commit with"), N_("KEY-ID") },
+  { "gpg-homedir", 0, 0, G_OPTION_ARG_STRING, &opt_gpg_homedir, N_("GPG Homedir to use when looking for keyrings"), N_("HOMEDIR") },
+  { "update-appstream", 0, 0, G_OPTION_ARG_NONE, &opt_update_appstream, N_("Update the appstream branch"), NULL },
+  { "no-update-summary", 0, 0, G_OPTION_ARG_NONE, &opt_no_update_summary, N_("Don't update the summary"), NULL },
   { NULL }
 };
 
@@ -304,7 +311,7 @@ flatpak_builtin_build_import (int argc, char **argv, GCancellable *cancellable, 
   if (!ostree_repo_open (repo, cancellable, error))
     return FALSE;
 
-if (opt_oci)
+  if (opt_oci)
     {
       if (!import_oci (repo, file, cancellable, error))
         return FALSE;
@@ -314,6 +321,18 @@ if (opt_oci)
       if (!import_bundle (repo, file, cancellable, error))
         return FALSE;
     }
+
+  if (opt_update_appstream &&
+      !flatpak_repo_generate_appstream (repo, (const char **) opt_gpg_key_ids, opt_gpg_homedir, cancellable, error))
+    return FALSE;
+
+  if (!opt_no_update_summary &&
+      !flatpak_repo_update (repo,
+                            (const char **) opt_gpg_key_ids,
+                            opt_gpg_homedir,
+                            cancellable,
+                            error))
+    return FALSE;
 
   return TRUE;
 }

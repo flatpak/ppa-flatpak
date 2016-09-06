@@ -27,7 +27,6 @@
 
 #include <gio/gio.h>
 #include "libglnx/libglnx.h"
-#include "libgsystem.h"
 
 #include "builder-manifest.h"
 #include "builder-utils.h"
@@ -44,6 +43,8 @@ static gboolean opt_ccache;
 static gboolean opt_require_changes;
 static gboolean opt_keep_build_dirs;
 static gboolean opt_force_clean;
+static gboolean opt_sandboxed;
+static char *opt_stop_at;
 static char *opt_arch;
 static char *opt_repo;
 static char *opt_subject;
@@ -70,6 +71,8 @@ static GOptionEntry entries[] = {
   { "gpg-sign", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_key_ids, "GPG Key ID to sign the commit with", "KEY-ID"},
   { "gpg-homedir", 0, 0, G_OPTION_ARG_STRING, &opt_gpg_homedir, "GPG Homedir to use when looking for keyrings", "HOMEDIR"},
   { "force-clean", 0, 0, G_OPTION_ARG_NONE, &opt_force_clean, "Erase previous contents of DIRECTORY", NULL },
+  { "sandbox", 0, 0, G_OPTION_ARG_NONE, &opt_sandboxed, "Enforce sandboxing, disabling build-args", NULL },
+  { "stop-at", 0, 0, G_OPTION_ARG_STRING, &opt_stop_at, "Stop building at this module (implies --build-only)", "MODULENAME"},
   { NULL }
 };
 
@@ -281,9 +284,16 @@ main (int    argc,
   build_context = builder_context_new (base_dir, app_dir);
 
   builder_context_set_keep_build_dirs (build_context, opt_keep_build_dirs);
+  builder_context_set_sandboxed (build_context, opt_sandboxed);
 
   if (opt_arch)
     builder_context_set_arch (build_context, opt_arch);
+
+  if (opt_stop_at)
+    {
+      opt_build_only = TRUE;
+      builder_context_set_stop_at (build_context, opt_stop_at);
+    }
 
   if (opt_ccache &&
       !builder_context_enable_ccache (build_context, &error))
@@ -321,7 +331,7 @@ main (int    argc,
       if (opt_force_clean)
         {
           g_print ("Emptying app dir '%s'\n", app_dir_path);
-          if (!gs_shutil_rm_rf (app_dir, NULL, &error))
+          if (!flatpak_rm_rf (app_dir, NULL, &error))
             {
               g_printerr ("Couldn't empty app dir '%s': %s",
                           app_dir_path, error->message);

@@ -27,11 +27,11 @@
 
 #include <glib/gi18n.h>
 
-#include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
 #include "flatpak-utils.h"
+#include "flatpak-error.h"
 
 static char *opt_arch;
 static char *opt_commit;
@@ -76,24 +76,57 @@ do_update (FlatpakDir  * dir,
            GCancellable *cancellable,
            GError      **error)
 {
+  g_auto(GStrv) parts = flatpak_decompose_ref (ref, error);
   g_autofree char *repository = NULL;
   g_autoptr(GPtrArray) related = NULL;
+  g_autoptr(GError) update_error = NULL;
   int i;
+
+  if (parts == NULL)
+    return FALSE;
 
   repository = flatpak_dir_get_origin (dir, ref, cancellable, error);
   if (repository == NULL)
     return FALSE;
 
+  if (strcmp (parts[0], "app") == 0)
+    g_print (_("Updating application %s, branch %s\n"), parts[1], parts[3]);
+  else
+    g_print (_("Updating runtime %s, branch %s\n"), parts[1], parts[3]);
+
   if (flatpak_dir_get_remote_disabled (dir, repository))
-    g_print ("Not updating %s due to disabled remote %s\n", ref, repository);
+    {
+      g_print (_("Remote %s disabled\n"), repository);
+      return TRUE;
+    }
 
   if (!flatpak_dir_update (dir,
                            opt_no_pull,
                            opt_no_deploy,
                            ref, repository, opt_commit, (const char **)opt_subpaths,
                            NULL,
-                           cancellable, error))
-    return FALSE;
+                           cancellable, &update_error))
+    {
+      if (g_error_matches (update_error, FLATPAK_ERROR,
+                           FLATPAK_ERROR_ALREADY_INSTALLED))
+        {
+          g_print (_("No updates.\n"));
+        }
+      else
+        {
+          g_propagate_error (error, update_error);
+          update_error = NULL;
+          return FALSE;
+        }
+    }
+  else
+    {
+      g_autoptr(GVariant) deploy_data = NULL;
+      g_autofree char *commit = NULL;
+      deploy_data = flatpak_dir_get_deploy_data (dir, ref, NULL, NULL);
+      commit = g_strndup (flatpak_deploy_data_get_commit (deploy_data), 12);
+      g_print (_("Now at %s.\n"), commit);
+    }
 
 
   if (!opt_no_related)
@@ -108,7 +141,7 @@ do_update (FlatpakDir  * dir,
                                                    &local_error);
       if (related == NULL)
         {
-          g_printerr ("Warning: Problem looking for related refs: %s\n",
+          g_printerr (_("Warning: Problem looking for related refs: %s\n"),
                       local_error->message);
           g_clear_error (&local_error);
         }
@@ -125,7 +158,7 @@ do_update (FlatpakDir  * dir,
 
               parts = g_strsplit (rel->ref, "/", 0);
 
-              g_print ("Updating related: %s\n", parts[1]);
+              g_print (_("Updating related: %s\n"), parts[1]);
 
               if (!flatpak_dir_install_or_update (dir,
                                                   opt_no_pull,
@@ -135,8 +168,20 @@ do_update (FlatpakDir  * dir,
                                                   NULL,
                                                   cancellable, &local_error))
                 {
-                  g_printerr ("Warning: Failed to update related ref: %s\n", rel->ref);
+                  if (g_error_matches (local_error, FLATPAK_ERROR,
+                                       FLATPAK_ERROR_ALREADY_INSTALLED))
+                    g_print (_("No updates.\n"));
+                  else
+                    g_printerr ("%s\n", local_error->message);
                   g_clear_error (&local_error);
+                }
+              else
+                {
+                  g_autoptr(GVariant) deploy_data = NULL;
+                  g_autofree char *commit = NULL;
+                  deploy_data = flatpak_dir_get_deploy_data (dir, rel->ref, NULL, NULL);
+                  commit = g_strndup (flatpak_deploy_data_get_commit (deploy_data), 12);
+                  g_print (_("Now at %s.\n"), commit);
                 }
             }
         }
@@ -153,9 +198,10 @@ flatpak_builtin_update (int           argc,
 {
   g_autoptr(GOptionContext) context = NULL;
   g_autoptr(FlatpakDir) dir = NULL;
-  const char *name = NULL;
-  const char *branch = NULL;
+  char *name = NULL;
+  char *branch = NULL;
   gboolean failed = FALSE;
+  gboolean found = FALSE;
   int i;
 
   context = g_option_context_new (_("[NAME [BRANCH]] - Update an application or runtime"));
@@ -164,9 +210,6 @@ flatpak_builtin_update (int           argc,
   if (!flatpak_option_context_parse (context, options, &argc, &argv, 0, &dir, cancellable, error))
     return FALSE;
 
-  if (argc < 1)
-    return usage_error (context, _("NAME must be specified"), error);
-
   if (argc >= 2)
     name = argv[1];
   if (argc >= 3)
@@ -174,6 +217,9 @@ flatpak_builtin_update (int           argc,
 
   if (opt_arch == NULL)
     opt_arch = (char *)flatpak_get_arch ();
+
+  if (!flatpak_split_partial_ref_arg (name, &opt_arch, &branch, error))
+    return FALSE;
 
   if (!opt_app && !opt_runtime)
     opt_app = opt_runtime = TRUE;
@@ -205,10 +251,8 @@ flatpak_builtin_update (int           argc,
           if (branch != NULL && strcmp (parts[3], branch) != 0)
             continue;
 
-          g_print (_("Updating application %s %s\n"), parts[1], parts[3]);
-
-          if (!do_update (dir, refs[i],
-                          cancellable, error))
+          found = TRUE;
+          if (!do_update (dir, refs[i], cancellable, error))
             return FALSE;
         }
     }
@@ -239,13 +283,20 @@ flatpak_builtin_update (int           argc,
           if (branch != NULL && strcmp (parts[3], branch) != 0)
             continue;
 
-          g_print (_("Updating runtime %s %s\n"), parts[1], parts[3]);
+          found = TRUE;
           if (!do_update (dir, refs[i], cancellable, &local_error))
             {
               g_printerr (_("Error updating: %s\n"), local_error->message);
               failed = TRUE;
             }
         }
+    }
+
+  if (name && !found)
+    {
+      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
+                   "%s not installed", name);
+      return FALSE;
     }
 
   flatpak_dir_cleanup_removed (dir, cancellable, NULL);
