@@ -8,3 +8,4 @@ Fix-last-commit.patch
 update-Don-t-stop-the-entire-update-if-one-app-fails.patch
 utils-Fix-support-for-old-glib-without-g_autoptr.patch
 debian/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch
+debian/Skip-test_install_launch_uninstall-at-build-time.patch
