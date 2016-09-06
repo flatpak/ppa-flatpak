@@ -17,7 +17,7 @@ XSLTPROC_FLAGS = \
 .xml.5:
 	$(AM_V_GEN) $(XSLTPROC) $(XSLTPROC_FLAGS) http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl $<
 
-man_MANS = \
+man1 = \
 	flatpak.1			\
 	flatpak-remote-add.1		\
 	flatpak-remote-delete.1		\
@@ -45,11 +45,23 @@ man_MANS = \
 	flatpak-build-export.1		\
 	flatpak-build-update-repo.1	\
 	flatpak-build-sign.1		\
+	flatpak-build-commit-from.1	\
 	flatpak-builder.1		\
+	$(NULL)
+
+man5 = \
 	flatpak-metadata.5		\
 	$(NULL)
 
-xml_files = $(man_MANS:.1=.xml)
+man_MANS = \
+	$(man1) \
+	$(man5) \
+	$(NULL)
+
+xml_files = \
+	$(man1:.1=.xml) \
+	$(man5:.5=.xml) \
+	$(NULL)
 
 EXTRA_DIST = \
 	$(xml_files) 		\

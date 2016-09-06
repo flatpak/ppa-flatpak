@@ -27,7 +27,6 @@
 
 #include <glib/gi18n.h>
 
-#include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
@@ -38,6 +37,7 @@ static char *opt_body;
 static char *opt_arch;
 static gboolean opt_runtime;
 static gboolean opt_update_appstream;
+static gboolean opt_no_update_summary;
 static char **opt_gpg_key_ids;
 static char **opt_exclude;
 static char **opt_include;
@@ -51,6 +51,7 @@ static GOptionEntry options[] = {
   { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Architecture to export for (must be host compatible)"), N_("ARCH") },
   { "runtime", 'r', 0, G_OPTION_ARG_NONE, &opt_runtime, N_("Commit runtime (/usr), not /app"), NULL },
   { "update-appstream", 0, 0, G_OPTION_ARG_NONE, &opt_update_appstream, N_("Update the appstream branch"), NULL },
+  { "no-update-summary", 0, 0, G_OPTION_ARG_NONE, &opt_no_update_summary, N_("Don't update the summary"), NULL },
   { "files", 0, 0, G_OPTION_ARG_STRING, &opt_files, N_("Use alternative directory for the files"), N_("SUBDIR") },
   { "metadata", 0, 0, G_OPTION_ARG_STRING, &opt_metadata, N_("Use alternative file for the metadata"), N_("FILE") },
   { "gpg-sign", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_gpg_key_ids, N_("GPG Key ID to sign the commit with"), N_("KEY-ID") },
@@ -256,6 +257,24 @@ find_file_in_tree (GFile *base, const char *filename)
   return FALSE;
 }
 
+static GFile *
+convert_app_absolute_path (const char *path, GFile *files)
+{
+  g_autofree char *exec_path = NULL;
+
+  if (g_path_is_absolute (path))
+    {
+      if (g_str_has_prefix (path, "/app/"))
+        exec_path = g_strdup (path + 5);
+      else
+        exec_path = g_strdup (path);
+    }
+  else
+    exec_path = g_strconcat ("bin/", path, NULL);
+
+  return g_file_resolve_relative_path (files, exec_path);
+}
+
 static gboolean
 validate_desktop_file (GFile *desktop_file,
                        GFile *export,
@@ -273,7 +292,6 @@ validate_desktop_file (GFile *desktop_file,
   g_autoptr(GKeyFile) key_file = NULL;
   g_autofree char *command = NULL;
   g_auto(GStrv) argv = NULL;
-  g_autofree char *exec_path = NULL;
   g_autoptr(GFile) bin_file = NULL;
 
   if (!g_file_query_exists (desktop_file, NULL))
@@ -285,29 +303,22 @@ validate_desktop_file (GFile *desktop_file,
                                  &local_error, "desktop-file-validate", path, NULL);
   if (!subprocess)
     {
-      if (g_error_matches (local_error, G_SPAWN_ERROR, G_SPAWN_ERROR_NOENT))
-        goto check_refs;
+      if (!g_error_matches (local_error, G_SPAWN_ERROR, G_SPAWN_ERROR_NOENT))
+        g_print ("WARNING: Error running desktop-file-validate: %s\n", local_error->message);
 
-      g_propagate_error (error, local_error);
-      local_error = NULL;
-      return FALSE;
+      g_clear_error (&local_error);
+      goto check_refs;
     }
 
   if (!g_subprocess_communicate_utf8 (subprocess, NULL, NULL, &stdout_buf, &stderr_buf, &local_error))
     {
-      g_propagate_error (error, local_error);
-      local_error = NULL;
-      return FALSE;
+      g_print ("WARNING: Error reading from desktop-file-validate: %s\n", local_error->message);
+      g_clear_error (&local_error);
     }
 
-  if (g_subprocess_get_if_exited (subprocess))
-    {
-      if (g_subprocess_get_exit_status (subprocess) != 0)
-        {
-          g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "%s", stdout_buf);
-          return FALSE;
-        }
-    }
+  if (g_subprocess_get_if_exited (subprocess) &&
+      g_subprocess_get_exit_status (subprocess) != 0)
+    g_print ("WARNING: Failed to validate desktop file %s: %s\n", path, stdout_buf);
 
 check_refs:
   /* Test that references to other files are valid */
@@ -319,35 +330,25 @@ check_refs:
   command = g_key_file_get_string (key_file,
                                    G_KEY_FILE_DESKTOP_GROUP,
                                    G_KEY_FILE_DESKTOP_KEY_EXEC,
-                                   error);
+                                   &local_error);
   if (!command)
     {
-      g_prefix_error (error, "Invalid desktop file %s: ", path);
-      return FALSE;
+      g_print ("WARNING: Can't find Exec key in %s: %s\n", path, local_error->message);
+      g_clear_error (&local_error);
     }
 
   argv = g_strsplit (command, " ", 0);
-  exec_path = g_strconcat ("bin/", argv[0], NULL);
-  bin_file = g_file_resolve_relative_path (files, exec_path);
+
+  bin_file = convert_app_absolute_path (argv[0], files);
   if (!g_file_query_exists (bin_file, NULL))
-    {
-      g_set_error (error,
-                   G_IO_ERROR, G_IO_ERROR_FAILED,
-                   "Binary not found for Exec line in %s: %s", path, command);
-      return FALSE;
-    }
+    g_print ("WARNING: Binary not found for Exec line in %s: %s", path, command);
 
   *icon = g_key_file_get_string (key_file,
                                  G_KEY_FILE_DESKTOP_GROUP,
                                  G_KEY_FILE_DESKTOP_KEY_ICON,
                                  NULL);
   if (*icon && !g_str_has_prefix (*icon, app_id))
-    {
-      g_set_error (error,
-                   G_IO_ERROR, G_IO_ERROR_FAILED,
-                   "Icon not matching app id in %s: %s", path, *icon);
-      return FALSE;
-    }
+    g_print ("WARNING: Icon not matching app id in %s: %s", path, *icon);
 
   *activatable = g_key_file_get_boolean (key_file,
                                          G_KEY_FILE_DESKTOP_GROUP,
@@ -360,6 +361,7 @@ check_refs:
 static gboolean
 validate_icon (const char *icon,
                GFile *export,
+               const char *app_id,
                GError **error)
 {
   g_autoptr(GFile) icondir = NULL;
@@ -374,12 +376,7 @@ validate_icon (const char *icon,
   svg  = g_strconcat (icon, ".svg", NULL);
   if (!find_file_in_tree (icondir, png) &&
       !find_file_in_tree (icondir, svg))
-    {
-      g_set_error (error,
-                   G_IO_ERROR, G_IO_ERROR_FAILED,
-                   "Icon referenced in desktop file but not exported: %s", icon);
-      return FALSE;
-    }
+    g_print ("WARNING: Icon referenced in desktop file but not exported: %s", icon);
 
   return TRUE;
 }
@@ -396,7 +393,6 @@ validate_service_file (GFile *service_file,
   g_autofree char *name = NULL;
   g_autofree char *command = NULL;
   g_auto(GStrv) argv = NULL;
-  g_autofree char *exec_path = NULL;
   g_autoptr(GFile) bin_file = NULL;
 
   if (!g_file_query_exists (service_file, NULL))
@@ -437,17 +433,12 @@ validate_service_file (GFile *service_file,
       g_prefix_error (error, "Invalid service file %s: ", path);
       return FALSE;
     }
-  argv = g_strsplit (command, " ", 0);
-  exec_path = g_strconcat ("bin/", argv[0], NULL);
-  bin_file = g_file_resolve_relative_path (files, exec_path);
 
+  argv = g_strsplit (command, " ", 0);
+
+  bin_file = convert_app_absolute_path (argv[0], files);
   if (!g_file_query_exists (bin_file, NULL))
-    {
-      g_set_error (error,
-                   G_IO_ERROR, G_IO_ERROR_FAILED,
-                   "Binary not found for Exec line in %s: %s", path, command);
-      return FALSE;
-    }
+    g_print ("WARNING: Binary not found for Exec line in %s: %s", path, command);
 
   return TRUE;
 }
@@ -468,7 +459,7 @@ validate_exports (GFile *export, GFile *files, const char *app_id, GError **erro
   if (!validate_desktop_file (desktop_file, export, files, app_id, &icon, &activatable, error))
     return FALSE;
 
-  if (!validate_icon (icon, export, error))
+  if (!validate_icon (icon, export, app_id, error))
     return FALSE;
 
   service_path = g_strconcat ("share/dbus-1/services/", app_id, ".service", NULL);
@@ -688,25 +679,12 @@ flatpak_builtin_build_export (int argc, char **argv, GCancellable *cancellable, 
   if (!ostree_repo_commit_transaction (repo, &stats, cancellable, error))
     goto out;
 
-  if (opt_update_appstream)
-    {
-      g_autoptr(GError) my_error = NULL;
+  if (opt_update_appstream &&
+      !flatpak_repo_generate_appstream (repo, (const char **) opt_gpg_key_ids, opt_gpg_homedir, cancellable, error))
+    return FALSE;
 
-      if (!flatpak_repo_generate_appstream (repo, (const char **) opt_gpg_key_ids, opt_gpg_homedir, cancellable, &my_error))
-        {
-          if (g_error_matches (my_error, G_SPAWN_ERROR, G_SPAWN_ERROR_NOENT))
-            {
-              g_print ("WARNING: Can't find appstream-builder, unable to update appstream branch\n");
-            }
-          else
-            {
-              g_propagate_error (error, g_steal_pointer (&my_error));
-              return FALSE;
-            }
-        }
-    }
-
-  if (!flatpak_repo_update (repo,
+  if (!opt_no_update_summary &&
+      !flatpak_repo_update (repo,
                             (const char **) opt_gpg_key_ids,
                             opt_gpg_homedir,
                             cancellable,

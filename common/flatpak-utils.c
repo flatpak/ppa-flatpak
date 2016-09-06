@@ -39,9 +39,9 @@
 #include <sys/utsname.h>
 
 #include <glib.h>
-#include "libgsystem.h"
 #include "libglnx/libglnx.h"
 #include <libsoup/soup.h>
+#include <gio/gunixoutputstream.h>
 
 /* This is also here so the common code can report these errors to the lib */
 static const GDBusErrorEntry flatpak_error_entries[] = {
@@ -562,6 +562,60 @@ flatpak_decompose_ref (const char *full_ref,
   return g_steal_pointer (&parts);
 }
 
+gboolean
+flatpak_split_partial_ref_arg (char *partial_ref,
+                               char **inout_arch,
+                               char **inout_branch,
+                               GError    **error)
+{
+  char *slash;
+  char *arch = NULL;
+  char *branch = NULL;
+
+  if (partial_ref == NULL)
+    return TRUE;
+
+  slash = strchr (partial_ref, '/');
+  if (slash != NULL)
+    *slash = 0;
+
+  if (!flatpak_is_valid_name (partial_ref))
+    return flatpak_fail (error, "Invalid name %s", partial_ref);
+
+  if (slash == NULL)
+    goto out;
+
+  arch = slash + 1;
+  slash = strchr (arch, '/');
+  if (slash != NULL)
+    *slash = 0;
+
+  if (strlen (arch) == 0)
+    arch = NULL;
+
+  if (slash == NULL)
+    goto out;
+
+  branch = slash + 1;
+  if (strlen (branch) > 0)
+    {
+      if (!flatpak_is_valid_branch (branch))
+        return flatpak_fail (error, "Invalid branch %s", branch);
+    }
+  else
+    branch = NULL;
+
+ out:
+
+  if (*inout_arch == NULL)
+    *inout_arch = arch;
+
+  if (*inout_branch == NULL)
+    *inout_branch = branch;
+
+  return TRUE;
+}
+
 char *
 flatpak_compose_ref (gboolean    app,
                      const char *name,
@@ -754,9 +808,8 @@ overlay_symlink_tree_dir (int           source_parent_fd,
         }
     }
 
-  if (!gs_file_open_dir_fd_at (destination_parent_fd, destination_name,
-                               &destination_dfd,
-                               cancellable, error))
+  if (!glnx_opendirat (destination_parent_fd, destination_name, TRUE,
+                       &destination_dfd, error))
     goto out;
 
   while (TRUE)
@@ -808,13 +861,13 @@ flatpak_overlay_symlink_tree (GFile        *source,
 {
   gboolean ret = FALSE;
 
-  if (!gs_file_ensure_directory (destination, TRUE, cancellable, error))
+  if (!flatpak_mkdir_p (destination, cancellable, error))
     goto out;
 
   /* The fds are closed by this call */
-  if (!overlay_symlink_tree_dir (AT_FDCWD, gs_file_get_path_cached (source),
+  if (!overlay_symlink_tree_dir (AT_FDCWD, flatpak_file_get_path_cached (source),
                                  symlink_prefix,
-                                 AT_FDCWD, gs_file_get_path_cached (destination),
+                                 AT_FDCWD, flatpak_file_get_path_cached (destination),
                                  cancellable, error))
     goto out;
 
@@ -878,7 +931,7 @@ flatpak_remove_dangling_symlinks (GFile        *dir,
   gboolean ret = FALSE;
 
   /* The fd is closed by this call */
-  if (!remove_dangling_symlinks (AT_FDCWD, gs_file_get_path_cached (dir),
+  if (!remove_dangling_symlinks (AT_FDCWD, flatpak_file_get_path_cached (dir),
                                  cancellable, error))
     goto out;
 
@@ -1393,6 +1446,70 @@ flatpak_spawnv (GFile                *dir,
   return TRUE;
 }
 
+const char *
+flatpak_file_get_path_cached (GFile *file)
+{
+  const char *path;
+  static GQuark _file_path_quark = 0;
+
+  if (G_UNLIKELY (_file_path_quark) == 0)
+    _file_path_quark = g_quark_from_static_string ("flatpak-file-path");
+
+  do
+    {
+      path = g_object_get_qdata ((GObject*)file, _file_path_quark);
+      if (path == NULL)
+        {
+          g_autofree char *new_path = NULL;
+          new_path = g_file_get_path (file);
+          if (new_path == NULL)
+            return NULL;
+
+          if (g_object_replace_qdata ((GObject*)file, _file_path_quark,
+                                      NULL, new_path, g_free, NULL))
+            path = g_steal_pointer (&new_path);
+        }
+    }
+  while (path == NULL);
+
+  return path;
+}
+
+gboolean
+flatpak_openat_noatime (int            dfd,
+                        const char    *name,
+                        int           *ret_fd,
+                        GCancellable  *cancellable,
+                        GError       **error)
+{
+  int fd;
+  int flags = O_RDONLY | O_CLOEXEC;
+
+#ifdef O_NOATIME
+  do
+    fd = openat (dfd, name, flags | O_NOATIME, 0);
+  while (G_UNLIKELY (fd == -1 && errno == EINTR));
+  /* Only the owner or superuser may use O_NOATIME; so we may get
+   * EPERM.  EINVAL may happen if the kernel is really old...
+   */
+  if (fd == -1 && (errno == EPERM || errno == EINVAL))
+#endif
+    do
+      fd = openat (dfd, name, flags, 0);
+    while (G_UNLIKELY (fd == -1 && errno == EINTR));
+
+  if (fd == -1)
+    {
+      glnx_set_error_from_errno (error);
+      return FALSE;
+    }
+  else
+    {
+      *ret_fd = fd;
+      return TRUE;
+    }
+}
+
 gboolean
 flatpak_cp_a (GFile         *src,
               GFile         *dest,
@@ -1408,6 +1525,8 @@ flatpak_cp_a (GFile         *src,
   gboolean merge = (flags & FLATPAK_CP_FLAGS_MERGE) != 0;
   gboolean no_chown = (flags & FLATPAK_CP_FLAGS_NO_CHOWN) != 0;
   gboolean move = (flags & FLATPAK_CP_FLAGS_MOVE) != 0;
+  g_autoptr(GFileInfo) child_info = NULL;
+  GError *temp_error = NULL;
   int r;
 
   enumerator = g_file_enumerate_children (src, "standard::type,standard::name,unix::uid,unix::gid,unix::mode",
@@ -1424,7 +1543,7 @@ flatpak_cp_a (GFile         *src,
     goto out;
 
   do
-    r = mkdir (gs_file_get_path_cached (dest), 0755);
+    r = mkdir (flatpak_file_get_path_cached (dest), 0755);
   while (G_UNLIKELY (r == -1 && errno == EINTR));
   if (r == -1 &&
       (!merge || errno != EEXIST))
@@ -1433,10 +1552,9 @@ flatpak_cp_a (GFile         *src,
       goto out;
     }
 
-  if (!gs_file_open_dir_fd (dest, &dest_dfd,
-                            cancellable, error))
+  if (!glnx_opendirat (AT_FDCWD, flatpak_file_get_path_cached (dest), TRUE,
+                       &dest_dfd, error))
     goto out;
-
 
   if (!no_chown)
     {
@@ -1462,22 +1580,16 @@ flatpak_cp_a (GFile         *src,
       dest_dfd = -1;
     }
 
-  while (TRUE)
+  while ((child_info = g_file_enumerator_next_file (enumerator, cancellable, &temp_error)))
     {
-      GFileInfo *file_info = NULL;
-      GFile *src_child = NULL;
-
-      if (!gs_file_enumerator_iterate (enumerator, &file_info, &src_child,
-                                       cancellable, error))
-        goto out;
-      if (!file_info)
-        break;
+      const char *name = g_file_info_get_name (child_info);
+      g_autoptr(GFile) src_child = g_file_get_child (src, name);
 
       if (dest_child)
         g_object_unref (dest_child);
-      dest_child = g_file_get_child (dest, g_file_info_get_name (file_info));
+      dest_child = g_file_get_child (dest, name);
 
-      if (g_file_info_get_file_type (file_info) == G_FILE_TYPE_DIRECTORY)
+      if (g_file_info_get_file_type (child_info) == G_FILE_TYPE_DIRECTORY)
         {
           if (!flatpak_cp_a (src_child, dest_child, flags,
                              cancellable, error))
@@ -1485,7 +1597,7 @@ flatpak_cp_a (GFile         *src,
         }
       else
         {
-          (void) unlink (gs_file_get_path_cached (dest_child));
+          (void) unlink (flatpak_file_get_path_cached (dest_child));
           GFileCopyFlags copyflags = G_FILE_COPY_OVERWRITE | G_FILE_COPY_NOFOLLOW_SYMLINKS;
           if (!no_chown)
             copyflags |= G_FILE_COPY_ALL_METADATA;
@@ -1502,6 +1614,14 @@ flatpak_cp_a (GFile         *src,
                 goto out;
             }
         }
+
+      g_clear_object (&child_info);
+    }
+
+  if (temp_error != NULL)
+    {
+      g_propagate_error (error, temp_error);
+      goto out;
     }
 
   if (move &&
@@ -1569,6 +1689,91 @@ flatpak_zero_mtime (int parent_dfd,
           return FALSE;
         }
     }
+
+  return TRUE;
+}
+
+/* Make a directory, and its parent. Don't error if it already exists.
+ * If you want a failure mode with EEXIST, use g_file_make_directory_with_parents. */
+gboolean
+flatpak_mkdir_p (GFile         *dir,
+                 GCancellable  *cancellable,
+                 GError       **error)
+{
+  return glnx_shutil_mkdir_p_at (AT_FDCWD,
+                                 flatpak_file_get_path_cached (dir),
+                                 0777,
+                                 cancellable,
+                                 error);
+}
+
+gboolean
+flatpak_rm_rf (GFile         *dir,
+               GCancellable  *cancellable,
+               GError       **error)
+{
+  return glnx_shutil_rm_rf_at (AT_FDCWD,
+                               flatpak_file_get_path_cached (dir),
+                               cancellable, error);
+}
+
+gboolean flatpak_file_rename (GFile *from,
+                              GFile *to,
+                              GCancellable  *cancellable,
+                              GError       **error)
+{
+  if (g_cancellable_set_error_if_cancelled (cancellable, error))
+    return FALSE;
+
+  if (rename (flatpak_file_get_path_cached (from),
+              flatpak_file_get_path_cached (to)) < 0)
+    {
+      glnx_set_error_from_errno (error);
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+gboolean
+flatpak_open_in_tmpdir_at (int                tmpdir_fd,
+                           int                mode,
+                           char              *tmpl,
+                           GOutputStream    **out_stream,
+                           GCancellable      *cancellable,
+                           GError           **error)
+{
+  const int max_attempts = 128;
+  int i;
+  int fd;
+
+  /* 128 attempts seems reasonable... */
+  for (i = 0; i < max_attempts; i++)
+    {
+      glnx_gen_temp_name (tmpl);
+
+      do
+        fd = openat (tmpdir_fd, tmpl, O_WRONLY | O_CREAT | O_EXCL, mode);
+      while (fd == -1 && errno == EINTR);
+      if (fd < 0 && errno != EEXIST)
+        {
+          glnx_set_error_from_errno (error);
+          return FALSE;
+        }
+      else if (fd != -1)
+        break;
+    }
+  if (i == max_attempts)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                   "Exhausted attempts to open temporary file");
+      return FALSE;
+    }
+
+  if (out_stream)
+    *out_stream = g_unix_output_stream_new (fd, TRUE);
+  else
+    (void) close (fd);
 
   return TRUE;
 }
@@ -2110,13 +2315,23 @@ copy_icon (const char *id,
   g_autoptr(GFile) dest_file = g_file_get_child (dest_size_dir, icon_name);
   g_autoptr(GInputStream) in = NULL;
   g_autoptr(GOutputStream) out = NULL;
+  g_autoptr(GError) my_error = NULL;
   gssize n_bytes_written;
 
-  in = (GInputStream *) g_file_read (icon_file, NULL, error);
+  in = (GInputStream *) g_file_read (icon_file, NULL, &my_error);
   if (!in)
-    return FALSE;
+    {
+      if (g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+        {
+          g_debug ("No icon at size %s", size);
+          return TRUE;
+        }
 
-  if (!gs_file_ensure_directory (dest_size_dir, TRUE, NULL, error))
+      g_propagate_error (error, g_steal_pointer (&my_error));
+      return FALSE;
+    }
+
+  if (!flatpak_mkdir_p (dest_size_dir, NULL, error))
     return FALSE;
 
   out = (GOutputStream *) g_file_replace (dest_file, NULL, FALSE,
@@ -2361,7 +2576,8 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
                                   ref, split[1], tmpdir_file,
                                   cancellable, &my_error))
             {
-              g_print ("No appstream data for %s: %s\n", ref, my_error->message);
+              if (g_str_has_prefix (ref, "app/"))
+                g_print ("No appstream data for %s: %s\n", ref, my_error->message);
               continue;
             }
         }
@@ -2890,7 +3106,7 @@ flatpak_bundle_load (GFile   *file,
   guint8 endianness_char;
   gboolean byte_swap = FALSE;
 
-  GMappedFile *mfile = g_mapped_file_new (gs_file_get_path_cached (file), FALSE, error);
+  GMappedFile *mfile = g_mapped_file_new (flatpak_file_get_path_cached (file), FALSE, error);
 
   if (mfile == NULL)
     return NULL;
@@ -3287,6 +3503,32 @@ flatpak_complete_word (FlatpakCompletion *completion,
   flatpak_completion_debug ("completing word: '%s' (%s)", string, rest);
 
   g_print ("%s\n", rest);
+}
+
+void
+flatpak_complete_ref (FlatpakCompletion *completion,
+                      OstreeRepo *repo)
+{
+  g_autoptr(GHashTable) refs = NULL;
+  flatpak_completion_debug ("completing REF");
+
+  if (ostree_repo_list_refs (repo,
+                             NULL,
+                             &refs, NULL, NULL))
+    {
+      GHashTableIter hashiter;
+      gpointer hashkey, hashvalue;
+
+      g_hash_table_iter_init (&hashiter, refs);
+      while ((g_hash_table_iter_next (&hashiter, &hashkey, &hashvalue)))
+        {
+          const char *ref = (const char *)hashkey;
+          if (!(g_str_has_prefix (ref, "runtime/") ||
+                g_str_has_prefix (ref, "app/")))
+            continue;
+          flatpak_complete_word (completion, "%s", ref);
+        }
+    }
 }
 
 static gboolean

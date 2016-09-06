@@ -29,7 +29,6 @@
 
 #include <gio/gio.h>
 #include "libglnx/libglnx.h"
-#include "libgsystem.h"
 
 #include "flatpak-utils.h"
 #include "builder-utils.h"
@@ -937,7 +936,7 @@ builder_module_handle_debuginfo (BuilderModule  *self,
                               g_autoptr(GFile) dst_parent = g_file_get_parent (dst);
                               GFileType file_type;
 
-                              if (!gs_file_ensure_directory (dst_parent, TRUE, NULL, error))
+                              if (!flatpak_mkdir_p (dst_parent, NULL, error))
                                 {
                                   g_prefix_error (error, "module %s: ", self->name);
                                   return FALSE;
@@ -946,7 +945,7 @@ builder_module_handle_debuginfo (BuilderModule  *self,
                               file_type = g_file_query_file_type (src, 0, NULL);
                               if (file_type == G_FILE_TYPE_DIRECTORY)
                                 {
-                                  if (!gs_file_ensure_directory (dst, FALSE, NULL, error))
+                                  if (!flatpak_mkdir_p (dst, NULL, error))
                                     {
                                       g_prefix_error (error, "module %s: ", self->name);
                                       return FALSE;
@@ -1016,9 +1015,10 @@ fixup_python_timestamp (int dfd,
           glnx_fd_close int fd = -1;
           guint8 buffer[8];
           ssize_t res;
-          guint32 mtime;
-          g_autofree char *new_path = NULL;
+          guint32 pyc_mtime;
+          g_autofree char *py_path = NULL;
           struct stat stbuf;
+          gboolean remove_pyc = FALSE;
 
           fd = openat (dfd_iter.fd, dent->d_name, O_RDWR | O_CLOEXEC | O_NOFOLLOW);
           if (fd == -1)
@@ -1040,14 +1040,11 @@ fixup_python_timestamp (int dfd,
               continue;
             }
 
-          mtime =
+          pyc_mtime =
             (buffer[4] << 8*0) |
             (buffer[5] << 8*1) |
             (buffer[6] << 8*2) |
             (buffer[7] << 8*3);
-
-          if (mtime == 1)
-            continue; /* Already 1 (which is what ostree checkout uses), ignore */
 
           if (strcmp (rel_path, "__pycache__") == 0)
             {
@@ -1065,19 +1062,53 @@ fixup_python_timestamp (int dfd,
                 continue;
               *dot = 0;
 
-              new_path = g_strconcat ("../", base, ".py", NULL);
+              py_path = g_strconcat ("../", base, ".py", NULL);
             }
           else
             {
               /* Python2 */
-              new_path = g_strndup (dent->d_name, strlen (dent->d_name) - 1);
+              py_path = g_strndup (dent->d_name, strlen (dent->d_name) - 1);
             }
 
-          if (fstatat (dfd_iter.fd, new_path, &stbuf, AT_SYMLINK_NOFOLLOW) != 0)
-            continue;
+          /* Here we found a .pyc (or .pyo) file an a possible .py file that apply for it.
+           * There are several possible cases wrt their mtimes:
+           *
+           * py not existing: pyc is stale, remove it
+           * pyc mtime == 1: (.pyc is from an old commited module)
+           *     py mtime == 1: Do nothing, already correct
+           *     py mtime != 1: The py changed in this module, remove pyc
+           * pyc mtime != 1: (.pyc changed this module, or was never rewritten in base layer)
+           *     py == 1: Shouldn't happen in flatpak-builder, but could be an un-rewritten ctime lower layer, assume it matches and update timestamp
+           *     py mtime != pyc mtime: new pyc doesn't match last py written in this module, remove it
+           *     py mtime == pyc mtime: These match, but the py will be set to mtime 1 by ostree, so update timestamp in pyc.
+           */
 
-          if (stbuf.st_mtime != mtime)
-            continue;
+          if (fstatat (dfd_iter.fd, py_path, &stbuf, AT_SYMLINK_NOFOLLOW) != 0)
+            {
+              remove_pyc = TRUE;
+            }
+          else if (pyc_mtime == 1)
+            {
+              if (stbuf.st_mtime == 1)
+                continue; /* Previously handled pyc */
+
+              remove_pyc = TRUE;
+            }
+          else /* pyc_mtime != 1 */
+            {
+              if (pyc_mtime != stbuf.st_mtime && stbuf.st_mtime != 1)
+                remove_pyc = TRUE;
+              /* else change mtime */
+            }
+
+          if (remove_pyc)
+            {
+              g_autofree char *child_full_path = g_build_filename (full_path, dent->d_name, NULL);
+              g_print ("Removing stale python bytecode file %s\n", child_full_path);
+              if (unlinkat (dfd_iter.fd, dent->d_name, 0) != 0)
+                g_warning ("Unable to delete %s", child_full_path);
+              continue;
+            }
 
           /* Change to mtime 1 which is what ostree uses for checkouts */
           buffer[4] = 1;
@@ -1137,8 +1168,8 @@ builder_module_build (BuilderModule  *self,
 
   build_parent_dir = builder_context_get_build_dir (context);
 
-  if (!gs_file_ensure_directory (build_parent_dir, TRUE,
-                                 NULL, error))
+  if (!flatpak_mkdir_p (build_parent_dir,
+                        NULL, error))
     {
       g_prefix_error (error, "module %s: ", self->name);
       return FALSE;
@@ -1208,8 +1239,11 @@ builder_module_build (BuilderModule  *self,
       source_subdir = g_object_ref (source_dir);
     }
 
+  build_args = builder_options_get_build_args (self->build_options, context, error);
+  if (build_args == NULL)
+    return FALSE;
+
   env = builder_options_get_env (self->build_options, context);
-  build_args = builder_options_get_build_args (self->build_options, context);
   config_opts = builder_options_get_config_opts (self->build_options, context, self->config_opts);
 
   if (self->cmake)
@@ -1409,7 +1443,7 @@ builder_module_build (BuilderModule  *self,
   if (!self->no_python_timestamp_fix)
     {
       if (!fixup_python_timestamp (AT_FDCWD,
-                                   gs_file_get_path_cached (app_dir), "/",
+                                   flatpak_file_get_path_cached (app_dir), "/",
                                    NULL,
                                    error))
         return FALSE;
@@ -1428,7 +1462,7 @@ builder_module_build (BuilderModule  *self,
           return FALSE;
         }
 
-      if (!gs_shutil_rm_rf (source_dir, NULL, error))
+      if (!flatpak_rm_rf (source_dir, NULL, error))
         {
           g_prefix_error (error, "module %s: ", self->name);
           return FALSE;

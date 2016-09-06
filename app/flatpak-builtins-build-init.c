@@ -27,7 +27,6 @@
 
 #include <glib/gi18n.h>
 
-#include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
@@ -108,7 +107,7 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
 
   base = g_file_new_for_commandline_arg (directory);
 
-  if (!gs_file_ensure_directory (base, TRUE, cancellable, error))
+  if (!flatpak_mkdir_p (base, cancellable, error))
     return FALSE;
 
   files_dir = g_file_get_child (base, "files");
@@ -136,7 +135,7 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
       if (sdk_deploy == NULL)
         return FALSE;
 
-      if (!gs_shutil_rm_rf (usr_dir, NULL, &my_error))
+      if (!flatpak_rm_rf (usr_dir, NULL, &my_error))
         {
           if (!g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
             {
@@ -177,11 +176,11 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
                       g_autoptr(GFile) target = g_file_resolve_relative_path (usr_dir, ext->directory);
                       g_autoptr(GFile) target_parent = g_file_get_parent (target);
 
-                      if (!gs_file_ensure_directory (target_parent, TRUE, cancellable, error))
+                      if (!flatpak_mkdir_p (target_parent, cancellable, error))
                         return FALSE;
 
                       /* An extension overrides whatever is there before, so we clean up first */
-                      if (!gs_shutil_rm_rf (target, cancellable, error))
+                      if (!flatpak_rm_rf (target, cancellable, error))
                         return FALSE;
 
                       if (!flatpak_cp_a (ext_deploy_files, target, FLATPAK_CP_FLAGS_NO_CHOWN, cancellable, error))
@@ -218,7 +217,7 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
 
   if (var_deploy_files)
     {
-      if (!gs_shutil_cp_a (var_deploy_files, var_dir, cancellable, error))
+      if (!flatpak_cp_a (var_deploy_files, var_dir, FLATPAK_CP_FLAGS_NONE, cancellable, error))
         return FALSE;
     }
   else
@@ -227,7 +226,7 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
         return FALSE;
     }
 
-  if (!gs_file_ensure_directory (var_tmp_dir, FALSE, cancellable, error))
+  if (!flatpak_mkdir_p (var_tmp_dir, cancellable, error))
     return FALSE;
 
   if (!g_file_query_exists (var_run_dir, cancellable) &&

@@ -30,7 +30,6 @@
 #include <gio/gio.h>
 #include <ostree.h>
 #include "libglnx/libglnx.h"
-#include "libgsystem.h"
 
 #include "flatpak-utils.h"
 #include "builder-utils.h"
@@ -233,7 +232,7 @@ builder_cache_open (BuilderCache *self,
     {
       g_autoptr(GFile) parent = g_file_get_parent (self->cache_dir);
 
-      if (!gs_file_ensure_directory (parent, TRUE, NULL, error))
+      if (!flatpak_mkdir_p (parent, NULL, error))
         return FALSE;
 
       if (!ostree_repo_create (self->repo, OSTREE_REPO_MODE_BARE_USER, NULL, error))
@@ -308,7 +307,7 @@ builder_cache_checkout (BuilderCache *self, const char *commit, GError **error)
   /* There is a bug in ostree (https://github.com/ostreedev/ostree/issues/326) that
      causes it to not reset mtime to 1 in this case (mismatching modes). So
      we do that manually */
-  if (!flatpak_zero_mtime (AT_FDCWD, gs_file_get_path_cached (self->app_dir),
+  if (!flatpak_zero_mtime (AT_FDCWD, flatpak_file_get_path_cached (self->app_dir),
                            NULL, error))
     return FALSE;
 
@@ -421,7 +420,7 @@ builder_cache_commit (BuilderCache *self,
 
   /* We set all mtimes to 1 during a commit, to simulate what would happen when
      running via flatpak deploy (and also if we checked out from the cache). */
-  if (!flatpak_zero_mtime (AT_FDCWD, gs_file_get_path_cached (self->app_dir),
+  if (!flatpak_zero_mtime (AT_FDCWD, flatpak_file_get_path_cached (self->app_dir),
                            NULL, NULL))
     return FALSE;
 

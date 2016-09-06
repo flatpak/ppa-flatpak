@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [6])
-m4_define([flatpak_micro_version], [8])
-m4_define([flatpak_interface_age], [8])
+m4_define([flatpak_micro_version], [9])
+m4_define([flatpak_interface_age], [9])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -160,7 +160,7 @@ if test "x$enable_sandboxed_triggers" = "xno"; then
       [Define if sandboxed triggers are disabled])
 fi
 
-PKG_CHECK_MODULES(OSTREE, [libgsystem >= 2015.1 ostree-1 >= 2016.7])
+PKG_CHECK_MODULES(OSTREE, [ostree-1 >= 2016.7])
 save_LIBS=$LIBS
 save_CFLAGS=$CFLAGS
 LIBS=$OSTREE_LIBS

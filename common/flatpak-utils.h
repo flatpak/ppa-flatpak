@@ -23,7 +23,6 @@
 
 #include <string.h>
 
-#include "libgsystem.h"
 #include "libglnx/libglnx.h"
 #include <gio/gio.h>
 #include <libsoup/soup.h>
@@ -74,6 +73,11 @@ gboolean flatpak_is_valid_branch (const char *string);
 
 char **flatpak_decompose_ref (const char *ref,
                               GError    **error);
+
+gboolean flatpak_split_partial_ref_arg (char *partial_ref,
+                                        char **inout_arch,
+                                        char **inout_branch,
+                                        GError    **error);
 
 char * flatpak_compose_ref (gboolean    app,
                             const char *name,
@@ -256,6 +260,14 @@ gboolean            flatpak_spawnv (GFile                *dir,
                                     GError              **error,
                                     const gchar * const  *argv);
 
+const char *flatpak_file_get_path_cached (GFile *file);
+
+gboolean flatpak_openat_noatime (int            dfd,
+                                 const char    *name,
+                                 int           *ret_fd,
+                                 GCancellable  *cancellable,
+                                 GError       **error);
+
 typedef enum {
   FLATPAK_CP_FLAGS_NONE = 0,
   FLATPAK_CP_FLAGS_MERGE = 1<<0,
@@ -274,6 +286,26 @@ gboolean flatpak_zero_mtime (int parent_dfd,
                              GCancellable  *cancellable,
                              GError       **error);
 
+gboolean flatpak_mkdir_p (GFile         *dir,
+                          GCancellable  *cancellable,
+                          GError       **error);
+
+gboolean flatpak_rm_rf (GFile         *dir,
+                        GCancellable  *cancellable,
+                        GError       **error);
+
+gboolean flatpak_file_rename (GFile *from,
+                              GFile *to,
+                              GCancellable  *cancellable,
+                              GError       **error);
+
+gboolean flatpak_open_in_tmpdir_at (int                tmpdir_fd,
+                                    int                mode,
+                                    char              *tmpl,
+                                    GOutputStream    **out_stream,
+                                    GCancellable      *cancellable,
+                                    GError           **error);
+
 #define flatpak_autorm_rf _GLIB_CLEANUP (g_autoptr_cleanup_generic_gfree)
 
 static inline void
@@ -283,14 +315,40 @@ flatpak_temp_dir_destroy (void *p)
 
   if (dir)
     {
-      gs_shutil_rm_rf (dir, NULL, NULL);
+      flatpak_rm_rf (dir, NULL, NULL);
       g_object_unref (dir);
     }
 }
 
 typedef GFile FlatpakTempDir;
-
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakTempDir, flatpak_temp_dir_destroy)
+
+
+typedef OstreeRepo FlatpakRepoTransaction;
+
+static inline void
+flatpak_repo_transaction_cleanup (void *p)
+{
+  OstreeRepo *repo = p;
+
+  if (repo)
+    {
+      g_autoptr(GError) error = NULL;
+      if (!ostree_repo_abort_transaction (repo, NULL, &error))
+        g_warning ("Error aborting ostree transaction: %s", error->message);
+    }
+}
+
+static inline FlatpakRepoTransaction *
+flatpak_repo_transaction_start (OstreeRepo     *repo,
+                                GCancellable   *cancellable,
+                                GError        **error)
+{
+  if (!ostree_repo_prepare_transaction (repo, NULL, cancellable, error))
+    return NULL;
+  return (FlatpakRepoTransaction *)repo;
+}
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakRepoTransaction, flatpak_repo_transaction_cleanup)
 
 #define AUTOLOCK(name) G_GNUC_UNUSED __attribute__((cleanup (flatpak_auto_unlock_helper))) GMutex * G_PASTE (auto_unlock, __LINE__) = flatpak_auto_lock_helper (&G_LOCK_NAME (name))
 
@@ -392,6 +450,8 @@ FlatpakCompletion *flatpak_completion_new   (const char        *arg_line,
 void               flatpak_complete_word    (FlatpakCompletion *completion,
                                              char              *format,
                                              ...);
+void               flatpak_complete_ref     (FlatpakCompletion *completion,
+                                             OstreeRepo        *repo);
 void               flatpak_complete_file    (FlatpakCompletion *completion);
 void               flatpak_complete_dir     (FlatpakCompletion *completion);
 void               flatpak_complete_options (FlatpakCompletion *completion,

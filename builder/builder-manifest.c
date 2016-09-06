@@ -31,7 +31,6 @@
 #include "builder-utils.h"
 #include "flatpak-utils.h"
 
-#include "libgsystem.h"
 #include "libglnx/libglnx.h"
 
 #define LOCALES_SEPARATE_DIR "share/runtime/locale"
@@ -906,6 +905,7 @@ builder_manifest_start (BuilderManifest *self,
 {
   g_autofree char *arch_option = NULL;
   g_autoptr(GHashTable) names = g_hash_table_new (g_str_hash, g_str_equal);
+  const char *stop_at;
 
   if (self->sdk == NULL)
     {
@@ -932,6 +932,10 @@ builder_manifest_start (BuilderManifest *self,
 
   if (!expand_modules (self->modules, &self->expanded_modules, names, error))
     return FALSE;
+
+  stop_at = builder_context_get_stop_at (context);
+  if (stop_at != NULL && g_hash_table_lookup (names, stop_at) == NULL)
+    return flatpak_fail (error, "No module named %s (specified with --stop-at)", stop_at);
 
   return TRUE;
 }
@@ -1153,6 +1157,7 @@ builder_manifest_build (BuilderManifest *self,
                         BuilderContext  *context,
                         GError         **error)
 {
+  const char *stop_at = builder_context_get_stop_at (context);
   GList *l;
 
   builder_context_set_options (context, self->build_options);
@@ -1166,12 +1171,19 @@ builder_manifest_build (BuilderManifest *self,
     {
       BuilderModule *m = l->data;
       g_autoptr(GPtrArray) changes = NULL;
+      const char *name = builder_module_get_name (m);
 
-      g_autofree char *stage = g_strdup_printf ("build-%s", builder_module_get_name (m));
+      g_autofree char *stage = g_strdup_printf ("build-%s", name);
+
+      if (stop_at != NULL && strcmp (name, stop_at) == 0)
+        {
+          g_print ("Stopping at module %s\n", stop_at);
+          return TRUE;
+        }
 
       if (!builder_module_get_sources (m))
         {
-          g_print ("Skipping module %s (no sources)\n", builder_module_get_name (m));
+          g_print ("Skipping module %s (no sources)\n", name);
           continue;
         }
 
@@ -1180,7 +1192,7 @@ builder_manifest_build (BuilderManifest *self,
       if (!builder_cache_lookup (cache, stage))
         {
           g_autofree char *body =
-            g_strdup_printf ("Built %s\n", builder_module_get_name (m));
+            g_strdup_printf ("Built %s\n", name);
           if (!builder_module_build (m, cache, context, error))
             return FALSE;
           if (!builder_cache_commit (cache, body, error))
@@ -1188,8 +1200,7 @@ builder_manifest_build (BuilderManifest *self,
         }
       else
         {
-          g_print ("Cache hit for %s, skipping build\n",
-                   builder_module_get_name (m));
+          g_print ("Cache hit for %s, skipping build\n", name);
         }
 
       changes = builder_cache_get_changes (cache, error);
@@ -1328,8 +1339,8 @@ foreach_file (BuilderManifest *self,
               GError         **error)
 {
   return foreach_file_helper (self, func, AT_FDCWD,
-                              gs_file_get_path_cached (root),
-                              gs_file_get_path_cached (root),
+                              flatpak_file_get_path_cached (root),
+                              flatpak_file_get_path_cached (root),
                               "",
                               found, 0,
                               error);
@@ -1349,7 +1360,8 @@ rename_icon_cb (BuilderManifest *self,
   if (S_ISREG (stbuf->st_mode) &&
       depth == 3 &&
       g_str_has_prefix (source_name, self->rename_icon) &&
-      source_name[strlen (self->rename_icon)] == '.')
+      (g_str_has_prefix (source_name + strlen (self->rename_icon), ".") ||
+       g_str_has_prefix (source_name + strlen (self->rename_icon), "-symbolic.")))
     {
       const char *extension = source_name + strlen (self->rename_icon);
       g_autofree char *new_name = g_strconcat (self->id, extension, NULL);
@@ -1391,6 +1403,7 @@ appstream_compose (GFile   *app_dir,
   const gchar *arg;
   g_autofree char *commandline = NULL;
   va_list ap;
+  g_autoptr(GError) local_error = NULL;
 
   args = g_ptr_array_new_with_free_func (g_free);
   g_ptr_array_add (args, g_strdup ("flatpak"));
@@ -1410,12 +1423,12 @@ appstream_compose (GFile   *app_dir,
 
   launcher = g_subprocess_launcher_new (0);
 
-  subp = g_subprocess_launcher_spawnv (launcher, (const gchar * const *) args->pdata, error);
+  subp = g_subprocess_launcher_spawnv (launcher, (const gchar * const *) args->pdata, &local_error);
   g_ptr_array_free (args, TRUE);
 
   if (subp == NULL ||
-      !g_subprocess_wait_check (subp, NULL, error))
-    return FALSE;
+      !g_subprocess_wait_check (subp, NULL, &local_error))
+    g_print ("WARNING: appstream-compose failed: %s\n", local_error->message);
 
   return TRUE;
 }
@@ -1755,10 +1768,29 @@ builder_manifest_finish (BuilderManifest *self,
       else
         manifest_file = g_file_resolve_relative_path (app_dir, "files/manifest.json");
 
+      if (g_file_query_exists (manifest_file, NULL))
+        {
+          /* Move existing base manifest aside */
+          g_autoptr(GFile) manifest_dir = g_file_get_parent (manifest_file);
+          g_autoptr(GFile) old_manifest = NULL;
+          int ver = 0;
+
+          do
+            {
+              g_autofree char *basename = g_strdup_printf ("manifest-base-%d.json", ++ver);
+              g_clear_object (&old_manifest);
+              old_manifest = g_file_get_child (manifest_dir, basename);
+            }
+          while (g_file_query_exists (old_manifest, NULL));
+
+          if (!g_file_move (manifest_file, old_manifest, 0,
+                            NULL, NULL, NULL, error))
+            return FALSE;
+        }
+
       if (!g_file_replace_contents (manifest_file, json, strlen (json), NULL, FALSE,
                                     0, NULL, NULL, error))
         return FALSE;
-
 
       if (self->build_runtime)
         {
@@ -1996,14 +2028,14 @@ builder_manifest_create_platform (BuilderManifest *self,
 
           if (g_file_info_get_file_type (info) == G_FILE_TYPE_DIRECTORY)
             {
-              if (!gs_file_ensure_directory (dest, TRUE, NULL, error))
+              if (!flatpak_mkdir_p (dest, NULL, error))
                 return FALSE;
             }
           else
             {
               g_autoptr(GFile) dest_parent = g_file_get_parent (dest);
 
-              if (!gs_file_ensure_directory (dest_parent, TRUE, NULL, error))
+              if (!flatpak_mkdir_p (dest_parent, NULL, error))
                 return FALSE;
 
               if (!g_file_delete (dest, NULL, &my_error) &&
@@ -2101,8 +2133,8 @@ builder_manifest_run (BuilderManifest *self,
   g_auto(GStrv) build_args = NULL;
   int i;
 
-  if (!gs_file_ensure_directory (builder_context_get_build_dir (context), TRUE,
-                                 NULL, error))
+  if (!flatpak_mkdir_p (builder_context_get_build_dir (context),
+                        NULL, error))
     return FALSE;
 
   args = g_ptr_array_new_with_free_func (g_free);
@@ -2120,13 +2152,12 @@ builder_manifest_run (BuilderManifest *self,
       g_ptr_array_add (args, g_strdup_printf ("--bind-mount=/run/ccache=%s", ccache_dir_path));
     }
 
-  build_args = builder_options_get_build_args (self->build_options, context);
+  build_args = builder_options_get_build_args (self->build_options, context, error);
+  if (build_args == NULL)
+    return FALSE;
 
-  if (build_args)
-    {
-      for (i = 0; build_args[i] != NULL; i++)
-        g_ptr_array_add (args, g_strdup (build_args[i]));
-    }
+  for (i = 0; build_args[i] != NULL; i++)
+    g_ptr_array_add (args, g_strdup (build_args[i]));
 
   env = builder_options_get_env (self->build_options, context);
   if (env)
