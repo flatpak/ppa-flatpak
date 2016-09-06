@@ -1,5 +1,2 @@
-dist/Add-flatpak-metadata.xml-from-upstream-git.patch
 unrpm-prevent-shell-injection.patch
-build-run-install-test-data-hook-even-if-using-system-bwr.patch
-libtest-replace-dbus-launch-with-dbus-daemon.patch
 debian/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch

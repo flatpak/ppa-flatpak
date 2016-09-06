@@ -30,7 +30,6 @@ Build-Depends:
  libfuse-dev,
  libgirepository1.0-dev,
  libglib2.0-dev,
- libgsystem-dev,
  libjson-glib-dev,
  libostree-dev (>= 2016.6),
  libpolkit-gobject-1-dev,
@@ -141,7 +140,6 @@ Section: libdevel
 Depends:
  libflatpak0 (= ${binary:Version}),
  libglib2.0-dev,
- libgsystem-dev,
  libostree-dev (>= 2016.6),
  pkg-config,
  ${misc:Depends},
