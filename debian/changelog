@@ -13,6 +13,7 @@ flatpak (0.6.9-1) UNRELEASED; urgency=medium
   * Build-depend on attr, and make flatpak-tests depend on it, for better
     test coverage if /var/tmp supports xattrs
   * Build-depend on fuse, so we can run fusermount if supported
+  * Make flatpak-tests depend on ostree instead of using d/tests/control
 
  -- Simon McVittie <smcv@debian.org>  Thu, 04 Aug 2016 11:39:57 +0100
 

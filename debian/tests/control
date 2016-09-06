@@ -10,17 +10,14 @@ Depends:
  git,
  gnome-desktop-testing,
  make,
- ostree,
 
 Tests: gnome-desktop-testing
 Depends:
  flatpak-tests,
  gnome-desktop-testing,
- ostree,
 
 Tests: extensions
 Restrictions: isolation-machine
 Depends:
  flatpak-tests,
  gnome-desktop-testing,
- ostree,
