@@ -9,6 +9,7 @@ update-Don-t-stop-the-entire-update-if-one-app-fails.patch
 utils-Fix-support-for-old-glib-without-g_autoptr.patch
 lib-Look-for-bwrap-in-PATH-when-launching-from-libflatpak.patch
 test_install_launch_uninstall-consistently-check-for-GErr.patch
+document-portal-cope-with-multiple-events-that-would-caus.patch
 make-test-runtime-cope-with-Debian-s-Python-2.7-configura.patch
 Tell-build-time-tests-which-bwrap-we-are-going-to-use.patch
 debian/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch

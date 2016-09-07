@@ -21,6 +21,9 @@ flatpak (0.6.9-1) UNRELEASED; urgency=medium
     bwrap fails
   * d/p/test_install_launch_uninstall-consistently-check-for-GErr.patch:
     add patch to improve diagnostics on some test failures
+  * d/p/document-portal-cope-with-multiple-events-that-would-caus.patch:
+    in the document portal, don't crash if there is more than one reason
+    to exit
 
  -- Simon McVittie <smcv@debian.org>  Thu, 04 Aug 2016 11:39:57 +0100
 
