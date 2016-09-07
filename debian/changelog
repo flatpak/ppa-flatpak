@@ -1,4 +1,4 @@
-flatpak (0.6.9-1) UNRELEASED; urgency=medium
+flatpak (0.6.9-1) unstable; urgency=medium
 
   * New upstream release
     - d/control: libgsystem is no longer required
@@ -33,7 +33,7 @@ flatpak (0.6.9-1) UNRELEASED; urgency=medium
     add patch to terminate gpg-agent processes after use
   * Terminate any further stray gpg-agent processes when running tests
 
- -- Simon McVittie <smcv@debian.org>  Thu, 04 Aug 2016 11:39:57 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 07 Sep 2016 22:42:09 +0100
 
 flatpak (0.6.8-1) unstable; urgency=medium
 
