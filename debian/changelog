@@ -29,7 +29,9 @@ flatpak (0.6.9-1) UNRELEASED; urgency=medium
     It is deliberately missing an [Install] section (so enabling it for
     eager startup is not possible), because it is intended to be
     started via D-Bus activation.
-  * Terminate stray gpg-agent processes when running tests
+  * d/p/Terminate-gpg-agent-after-using-it-for-tests.patch:
+    add patch to terminate gpg-agent processes after use
+  * Terminate any further stray gpg-agent processes when running tests
 
  -- Simon McVittie <smcv@debian.org>  Thu, 04 Aug 2016 11:39:57 +0100
 

@@ -12,4 +12,5 @@ test_install_launch_uninstall-consistently-check-for-GErr.patch
 document-portal-cope-with-multiple-events-that-would-caus.patch
 make-test-runtime-cope-with-Debian-s-Python-2.7-configura.patch
 Tell-build-time-tests-which-bwrap-we-are-going-to-use.patch
+Terminate-gpg-agent-after-using-it-for-tests.patch
 debian/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch
