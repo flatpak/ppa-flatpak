@@ -1,0 +1,31 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Tue, 6 Sep 2016 11:10:55 +0100
+Subject: make-test-runtime: cope with Debian's Python 2.7 configuration
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ tests/make-test-runtime.sh | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/tests/make-test-runtime.sh b/tests/make-test-runtime.sh
+index 461d36e..2203155 100755
+--- a/tests/make-test-runtime.sh
++++ b/tests/make-test-runtime.sh
+@@ -33,8 +33,16 @@ for i in $@; do
+                        _sysconfigdata ; do
+             cp ${PYDIR}/$py.py ${DIR}/usr/lib/python2.7
+         done
++        # These might not exist, depending how Python was configured; and the
++        # part after ${so} might be "module" or ".x86_64-linux-gnu" or
++        # something else
+         for so in _locale strop ; do
+-            cp ${PYDIR}/lib-dynload/${so}module.so ${DIR}/usr/lib/python2.7/lib-dynload
++            cp ${PYDIR}/lib-dynload/${so}*.so ${DIR}/usr/lib/python2.7/lib-dynload || :
++        done
++        for plat in $( cd ${PYDIR} && echo plat-* ); do
++            test -e ${PYDIR}/${plat} || continue
++            mkdir -p ${DIR}/usr/lib/python2.7/${plat}
++            cp ${PYDIR}/${plat}/*.py ${DIR}/usr/lib/python2.7/${plat}/
+         done
+     fi
+ done

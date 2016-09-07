@@ -14,6 +14,13 @@ flatpak (0.6.9-1) UNRELEASED; urgency=medium
     test coverage if /var/tmp supports xattrs
   * Build-depend on fuse, so we can run fusermount if supported
   * Make flatpak-tests depend on ostree instead of using d/tests/control
+  * d/p/make-test-runtime-cope-with-Debian-s-Python-2.7-configura.patch,
+    add patch to make more build-time tests pass
+  * d/p/Tell-build-time-tests-which-bwrap-we-are-going-to-use.patch:
+    skip tests that cannot be run because we are in an environment where
+    bwrap fails
+  * d/p/test_install_launch_uninstall-consistently-check-for-GErr.patch:
+    add patch to improve diagnostics on some test failures
 
  -- Simon McVittie <smcv@debian.org>  Thu, 04 Aug 2016 11:39:57 +0100
 
