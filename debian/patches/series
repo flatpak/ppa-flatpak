@@ -7,5 +7,6 @@ lib-Make-sure-we-always-call-flatpak_dir_ensure_repo-afte.patch
 Fix-last-commit.patch
 update-Don-t-stop-the-entire-update-if-one-app-fails.patch
 utils-Fix-support-for-old-glib-without-g_autoptr.patch
+lib-Look-for-bwrap-in-PATH-when-launching-from-libflatpak.patch
 debian/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch
 debian/Skip-test_install_launch_uninstall-at-build-time.patch
