@@ -24,6 +24,7 @@ flatpak (0.6.9-1) UNRELEASED; urgency=medium
   * d/p/document-portal-cope-with-multiple-events-that-would-caus.patch:
     in the document portal, don't crash if there is more than one reason
     to exit
+  * Remove unused lintian overrides
 
  -- Simon McVittie <smcv@debian.org>  Thu, 04 Aug 2016 11:39:57 +0100
 

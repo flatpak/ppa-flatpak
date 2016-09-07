@@ -1,4 +1,0 @@
-# Expected: not everything uses enough string manipulation to end up using
-# any hardening functions.
-flatpak: hardening-no-fortify-functions usr/lib/flatpak/flatpak-*
-flatpak: hardening-no-fortify-functions usr/lib/flatpak/xdg-*
