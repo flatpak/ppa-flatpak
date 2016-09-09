@@ -33,7 +33,7 @@ Build-Depends:
  libgirepository1.0-dev,
  libglib2.0-dev,
  libjson-glib-dev,
- libostree-dev (>= 2016.6),
+ libostree-dev (>= 2016.10),
  libpolkit-gobject-1-dev,
  libseccomp-dev,
  libsoup2.4-dev,

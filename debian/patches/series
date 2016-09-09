@@ -8,6 +8,9 @@ Fix-last-commit.patch
 update-Don-t-stop-the-entire-update-if-one-app-fails.patch
 utils-Fix-support-for-old-glib-without-g_autoptr.patch
 lib-Look-for-bwrap-in-PATH-when-launching-from-libflatpak.patch
+Require-OSTree-2016.10-for-mtime-revert.patch
+Switch-back-to-mtime-0-for-ostree-checkouts.patch
+builder-Bump-manifest-version-to-trigger-rebuild-with-new.patch
 test_install_launch_uninstall-consistently-check-for-GErr.patch
 document-portal-cope-with-multiple-events-that-would-caus.patch
 make-test-runtime-cope-with-Debian-s-Python-2.7-configura.patch

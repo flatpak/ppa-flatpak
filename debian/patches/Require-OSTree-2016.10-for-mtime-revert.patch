@@ -1,0 +1,35 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Fri, 9 Sep 2016 14:35:12 +0100
+Subject: Require OSTree 2016.10 for mtime revert
+
+It seems OSTree switched back to 0 for mtimes, so we have to switch
+back too. We need to depend on this release to ensure that all
+created repos gets things right.
+
+[smcv: rebase without the bwrap >= 0.1.2 dependency]
+Origin: backport, 0.6.10, commit:cd3cccf1364321d658262e07ac024bf722f0cd94
+---
+ configure.ac | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index cb37e02..a9633ad 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -29,6 +29,7 @@ AC_INIT([Flatpak],
+         [http://flatpak.org/])
+ 
+ GLIB_REQS=2.40
++OSTREE_REQS=2016.10
+ 
+ AC_USE_SYSTEM_EXTENSIONS
+ 
+@@ -160,7 +161,7 @@ if test "x$enable_sandboxed_triggers" = "xno"; then
+       [Define if sandboxed triggers are disabled])
+ fi
+ 
+-PKG_CHECK_MODULES(OSTREE, [ostree-1 >= 2016.7])
++PKG_CHECK_MODULES(OSTREE, [ostree-1 >= $OSTREE_REQS])
+ save_LIBS=$LIBS
+ save_CFLAGS=$CFLAGS
+ LIBS=$OSTREE_LIBS

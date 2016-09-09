@@ -1,3 +1,11 @@
+flatpak (0.6.9-2) UNRELEASED; urgency=medium
+
+  * Add patches backported from 0.6.10 to adapt to OSTree >= 2016.10 mtime
+    behaviour.
+    - Build-depend on ostree 2016.10.
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 09 Sep 2016 16:52:09 +0100
+
 flatpak (0.6.9-1) unstable; urgency=medium
 
   * New upstream release
