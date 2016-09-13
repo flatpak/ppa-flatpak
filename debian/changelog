@@ -1,6 +1,7 @@
 flatpak (0.6.10-1) UNRELEASED; urgency=medium
 
   * New upstream release
+    - d/libflatpak0.symbols: update
     - Build-depend on ostree 2016.10
     - Bump bubblewrap (build-)dependencies to 0.1.2
     - Drop all patches except

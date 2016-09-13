@@ -27,6 +27,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_install@Base 0.5.2
  flatpak_installation_install_bundle@Base 0.5.2
  flatpak_installation_install_full@Base 0.6.5
+ flatpak_installation_install_ref_file@Base 0.6.10
  flatpak_installation_launch@Base 0.5.2
  flatpak_installation_list_installed_refs@Base 0.5.2
  flatpak_installation_list_installed_refs_by_kind@Base 0.5.2
