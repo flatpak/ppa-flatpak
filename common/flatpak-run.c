@@ -101,6 +101,15 @@ const char *flatpak_context_devices[] = {
   NULL
 };
 
+typedef enum {
+  FLATPAK_CONTEXT_FEATURE_DEVEL        = 1 << 0,
+} FlatpakContextFeatures;
+
+const char *flatpak_context_features[] = {
+  "devel",
+  NULL
+};
+
 struct FlatpakContext
 {
   FlatpakContextShares  shares;
@@ -109,6 +118,8 @@ struct FlatpakContext
   FlatpakContextSockets sockets_valid;
   FlatpakContextDevices devices;
   FlatpakContextDevices devices_valid;
+  FlatpakContextFeatures  features;
+  FlatpakContextFeatures  features_valid;
   GHashTable           *env_vars;
   GHashTable           *persistent;
   GHashTable           *filesystems;
@@ -344,6 +355,35 @@ flatpak_context_devices_to_args (FlatpakContextDevices devices,
   return flatpak_context_bitmask_to_args (devices, valid, flatpak_context_devices, "--device", "--nodevice", args);
 }
 
+static FlatpakContextFeatures
+flatpak_context_feature_from_string (const char *string, GError **error)
+{
+  FlatpakContextFeatures feature = flatpak_context_bitmask_from_string (string, flatpak_context_features);
+
+  if (feature == 0)
+    {
+      g_autofree char *values = g_strjoinv (", ", (char **)flatpak_context_features);
+      g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
+                   _("Unknown feature type %s, valid types are: %s"), string, values);
+    }
+
+  return feature;
+}
+
+static char **
+flatpak_context_features_to_string (FlatpakContextFeatures features, FlatpakContextFeatures valid)
+{
+  return flatpak_context_bitmask_to_string (features, valid, flatpak_context_features);
+}
+
+static void
+flatpak_context_features_to_args (FlatpakContextFeatures features,
+                                FlatpakContextFeatures valid,
+                                GPtrArray *args)
+{
+  return flatpak_context_bitmask_to_args (features, valid, flatpak_context_features, "--allow", "--disallow", args);
+}
+
 static void
 flatpak_context_add_shares (FlatpakContext      *context,
                             FlatpakContextShares shares)
@@ -390,6 +430,22 @@ flatpak_context_remove_devices (FlatpakContext       *context,
 {
   context->devices_valid |= devices;
   context->devices &= ~devices;
+}
+
+static void
+flatpak_context_add_features (FlatpakContext       *context,
+                           FlatpakContextFeatures   features)
+{
+  context->features_valid |= features;
+  context->features |= features;
+}
+
+static void
+flatpak_context_remove_features (FlatpakContext       *context,
+                               FlatpakContextFeatures  features)
+{
+  context->features_valid |= features;
+  context->features &= ~features;
 }
 
 static void
@@ -609,6 +665,9 @@ flatpak_context_merge (FlatpakContext *context,
   context->devices &= ~other->devices_valid;
   context->devices |= other->devices;
   context->devices_valid |= other->devices_valid;
+  context->features &= ~other->features_valid;
+  context->features |= other->features;
+  context->features_valid |= other->features_valid;
 
   g_hash_table_iter_init (&iter, other->env_vars);
   while (g_hash_table_iter_next (&iter, &key, &value))
@@ -740,6 +799,42 @@ option_nodevice_cb (const gchar *option_name,
 }
 
 static gboolean
+option_allow_cb (const gchar *option_name,
+                 const gchar *value,
+                 gpointer     data,
+                 GError     **error)
+{
+  FlatpakContext *context = data;
+  FlatpakContextFeatures feature;
+
+  feature = flatpak_context_feature_from_string (value, error);
+  if (feature == 0)
+    return FALSE;
+
+  flatpak_context_add_features (context, feature);
+
+  return TRUE;
+}
+
+static gboolean
+option_disallow_cb (const gchar *option_name,
+                    const gchar *value,
+                    gpointer     data,
+                    GError     **error)
+{
+  FlatpakContext *context = data;
+  FlatpakContextFeatures feature;
+
+  feature = flatpak_context_feature_from_string (value, error);
+  if (feature == 0)
+    return FALSE;
+
+  flatpak_context_remove_features (context, feature);
+
+  return TRUE;
+}
+
+static gboolean
 option_filesystem_cb (const gchar *option_name,
                       const gchar *value,
                       gpointer     data,
@@ -862,7 +957,7 @@ option_persist_cb (const gchar *option_name,
   return TRUE;
 }
 
-static gboolean option_no_desktop;
+static gboolean option_no_desktop_deprecated;
 
 static GOptionEntry context_options[] = {
   { "share", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_share_cb, N_("Share with host"), N_("SHARE") },
@@ -871,6 +966,8 @@ static GOptionEntry context_options[] = {
   { "nosocket", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_nosocket_cb, N_("Don't expose socket to app"), N_("SOCKET") },
   { "device", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_device_cb, N_("Expose device to app"), N_("DEVICE") },
   { "nodevice", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_nodevice_cb, N_("Don't expose device to app"), N_("DEVICE") },
+  { "allow", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_allow_cb, N_("Allow feature"), N_("FEATURE") },
+  { "disallow", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_disallow_cb, N_("Don't allow feature"), N_("FEATURE") },
   { "filesystem", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_filesystem_cb, N_("Expose filesystem to app (:ro for read-only)"), N_("FILESYSTEM[:ro]") },
   { "nofilesystem", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_nofilesystem_cb, N_("Don't expose filesystem to app"), N_("FILESYSTEM") },
   { "env", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_env_cb, N_("Set environment variable"), N_("VAR=VALUE") },
@@ -879,7 +976,8 @@ static GOptionEntry context_options[] = {
   { "system-own-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_system_own_name_cb, N_("Allow app to own name on the system bus"), N_("DBUS_NAME") },
   { "system-talk-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_system_talk_name_cb, N_("Allow app to talk to name on the system bus"), N_("DBUS_NAME") },
   { "persist", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_persist_cb, N_("Persist home directory"), N_("FILENAME") },
-  { "no-desktop", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_NONE, &option_no_desktop, N_("Don't require a running session (no cgroups creation)"), NULL },
+  /* This is not needed/used anymore, so hidden, but we accept it for backwards compat */
+  { "no-desktop", 0, G_OPTION_FLAG_IN_MAIN |  G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, &option_no_desktop_deprecated, N_("Don't require a running session (no cgroups creation)"), NULL },
   { NULL }
 };
 
@@ -990,6 +1088,26 @@ flatpak_context_load_metadata (FlatpakContext *context,
         }
     }
 
+  if (g_key_file_has_key (metakey, FLATPAK_METADATA_GROUP_CONTEXT, FLATPAK_METADATA_KEY_FEATURES, NULL))
+    {
+      g_auto(GStrv) features = g_key_file_get_string_list (metakey, FLATPAK_METADATA_GROUP_CONTEXT,
+                                                         FLATPAK_METADATA_KEY_FEATURES, NULL, error);
+      if (features == NULL)
+        return FALSE;
+
+
+      for (i = 0; features[i] != NULL; i++)
+        {
+          FlatpakContextFeatures feature = flatpak_context_feature_from_string (parse_negated (features[i], &remove), error);
+          if (feature == 0)
+            return FALSE;
+          if (remove)
+            flatpak_context_remove_features (context, feature);
+          else
+            flatpak_context_add_features (context, feature);
+        }
+    }
+
   if (g_key_file_has_key (metakey, FLATPAK_METADATA_GROUP_CONTEXT, FLATPAK_METADATA_KEY_FILESYSTEMS, NULL))
     {
       g_auto(GStrv) filesystems = g_key_file_get_string_list (metakey, FLATPAK_METADATA_GROUP_CONTEXT,
@@ -1086,13 +1204,48 @@ flatpak_context_load_metadata (FlatpakContext *context,
 
 void
 flatpak_context_save_metadata (FlatpakContext *context,
+                               gboolean        flatten,
                                GKeyFile       *metakey)
 {
-  g_auto(GStrv) shared = flatpak_context_shared_to_string (context->shares, context->shares_valid);
-  g_auto(GStrv) sockets = flatpak_context_sockets_to_string (context->sockets, context->sockets_valid);
-  g_auto(GStrv) devices = flatpak_context_devices_to_string (context->devices, context->devices_valid);
+  g_auto(GStrv) shared = NULL;
+  g_auto(GStrv) sockets = NULL;
+  g_auto(GStrv) devices = NULL;
+  g_auto(GStrv) features = NULL;
   GHashTableIter iter;
   gpointer key, value;
+  FlatpakContextShares shares_mask = context->shares;
+  FlatpakContextShares shares_valid = context->shares_valid;
+  FlatpakContextSockets sockets_mask = context->sockets;
+  FlatpakContextSockets sockets_valid = context->sockets_valid;
+  FlatpakContextDevices devices_mask = context->devices;
+  FlatpakContextDevices devices_valid = context->devices_valid;
+  FlatpakContextFeatures features_mask = context->features;
+  FlatpakContextFeatures features_valid = context->features;
+
+  if (flatten)
+    {
+      /* A flattened format means we don't expect this to be merged on top of
+         another context. In that case we never need to negate any flags.
+         We calculate this by removing the zero parts of the mask from the valid set.
+      */
+      /* First we make sure only the valid parts of the mask are set, in case we
+         got some leftover */
+      shares_mask &= shares_valid;
+      sockets_mask &= sockets_valid;
+      devices_mask &= devices_valid;
+      features_mask &= features_valid;
+
+      /* Then just set the valid set to be the mask set */
+      shares_valid = shares_mask;
+      sockets_valid = sockets_mask;
+      devices_valid = devices_mask;
+      features_valid = features_mask;
+    }
+
+  shared = flatpak_context_shared_to_string (shares_mask, shares_valid);
+  sockets = flatpak_context_sockets_to_string (sockets_mask, sockets_valid);
+  devices = flatpak_context_devices_to_string (devices_mask, devices_valid);
+  features = flatpak_context_features_to_string (features_mask, features_valid);
 
   if (shared[0] != NULL)
     {
@@ -1136,6 +1289,21 @@ flatpak_context_save_metadata (FlatpakContext *context,
       g_key_file_remove_key (metakey,
                              FLATPAK_METADATA_GROUP_CONTEXT,
                              FLATPAK_METADATA_KEY_DEVICES,
+                             NULL);
+    }
+
+  if (features[0] != NULL)
+    {
+      g_key_file_set_string_list (metakey,
+                                  FLATPAK_METADATA_GROUP_CONTEXT,
+                                  FLATPAK_METADATA_KEY_FEATURES,
+                                  (const char * const *) features, g_strv_length (features));
+    }
+  else
+    {
+      g_key_file_remove_key (metakey,
+                             FLATPAK_METADATA_GROUP_CONTEXT,
+                             FLATPAK_METADATA_KEY_FEATURES,
                              NULL);
     }
 
@@ -1232,6 +1400,7 @@ flatpak_context_to_args (FlatpakContext *context,
   flatpak_context_shared_to_args (context->shares, context->shares_valid, args);
   flatpak_context_sockets_to_args (context->sockets, context->sockets_valid, args);
   flatpak_context_devices_to_args (context->devices, context->devices_valid, args);
+  flatpak_context_features_to_args (context->features, context->features_valid, args);
 
   g_hash_table_iter_init (&iter, context->env_vars);
   while (g_hash_table_iter_next (&iter, &key, &value))
@@ -2406,58 +2575,74 @@ compute_permissions (GKeyFile *app_metadata,
   return g_steal_pointer (&app_context);
 }
 
-static gboolean
-add_app_info_args (GPtrArray      *argv_array,
-                   GArray         *fd_array,
-                   FlatpakDeploy  *deploy,
-                   const char     *app_id,
-                   const char     *runtime_ref,
-                   FlatpakContext *final_app_context,
-                   GError        **error)
+gboolean
+flatpak_run_add_app_info_args (GPtrArray      *argv_array,
+                               GArray         *fd_array,
+                               GFile          *app_files,
+                               GFile          *runtime_files,
+                               const char     *app_id,
+                               const char     *app_branch,
+                               const char     *runtime_ref,
+                               FlatpakContext *final_app_context,
+                               char          **app_info_path_out,
+                               GError        **error)
 {
   g_autofree char *tmp_path = NULL;
   int fd;
+  g_autoptr(GKeyFile) keyfile = NULL;
+  g_autofree char *app_path = NULL;
+  g_autofree char *runtime_path = NULL;
+  g_autofree char *fd_str = NULL;
+  g_autofree char *old_dest = g_strdup_printf ("/run/user/%d/flatpak-info", getuid ());
 
   fd = g_file_open_tmp ("flatpak-context-XXXXXX", &tmp_path, NULL);
-  if (fd >= 0)
+  if (fd < 0)
     {
-      g_autoptr(GKeyFile) keyfile = NULL;
-      g_autoptr(GFile) files = NULL;
-      g_autofree char *files_path = NULL;
-      g_autofree char *fd_str = NULL;
-      g_autofree char *dest = g_strdup_printf ("/run/user/%d/flatpak-info", getuid ());
-
-      close (fd);
-
-      keyfile = g_key_file_new ();
-
-      g_key_file_set_string (keyfile, "Application", "name", app_id);
-      g_key_file_set_string (keyfile, "Application", "runtime", runtime_ref);
-
-      files = flatpak_deploy_get_files (deploy);
-      files_path = g_file_get_path (files);
-
-      g_key_file_set_string (keyfile, "Application", "app-path", files_path);
-
-      flatpak_context_save_metadata (final_app_context, keyfile);
-
-      if (!g_key_file_save_to_file (keyfile, tmp_path, error))
-        return FALSE;
-
-      fd = open (tmp_path, O_RDONLY);
-      if (fd == -1)
-        {
-          g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),
-                               _("Failed to open temp file"));
-          return FALSE;
-        }
-      unlink (tmp_path);
-      fd_str = g_strdup_printf ("%d", fd);
-      if (fd_array)
-        g_array_append_val (fd_array, fd);
-
-      add_args (argv_array, "--file", fd_str, dest, NULL);
+      g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),
+                           _("Failed to open flatpak-info temp file"));
+      return FALSE;
     }
+
+  close (fd);
+
+  keyfile = g_key_file_new ();
+
+  g_key_file_set_string (keyfile, "Application", "name", app_id);
+  g_key_file_set_string (keyfile, "Application", "runtime", runtime_ref);
+
+  app_path = g_file_get_path (app_files);
+  g_key_file_set_string (keyfile, "Instance", "app-path", app_path);
+  runtime_path = g_file_get_path (runtime_files);
+  g_key_file_set_string (keyfile, "Instance", "runtime-path", runtime_path);
+  if (app_branch != NULL)
+    g_key_file_set_string (keyfile, "Instance", "branch", app_branch);
+
+  flatpak_context_save_metadata (final_app_context, TRUE, keyfile);
+
+  if (!g_key_file_save_to_file (keyfile, tmp_path, error))
+    return FALSE;
+
+  fd = open (tmp_path, O_RDONLY);
+  if (fd == -1)
+    {
+      g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),
+                           _("Failed to open temp file"));
+      return FALSE;
+    }
+
+  unlink (tmp_path);
+
+  fd_str = g_strdup_printf ("%d", fd);
+  if (fd_array)
+    g_array_append_val (fd_array, fd);
+
+  add_args (argv_array,
+            "--ro-bind-data", fd_str, "/.flatpak-info",
+            "--symlink", "../../../.flatpak-info", old_dest,
+            NULL);
+
+  if (app_info_path_out != NULL)
+    *app_info_path_out = g_strdup_printf ("/proc/self/fd/%d", fd);
 
   return TRUE;
 }
@@ -2564,12 +2749,122 @@ add_document_portal_args (GPtrArray  *argv_array,
     }
 }
 
+gchar *
+join_args (GPtrArray *argv_array, gsize *len_out)
+{
+  gchar *string;
+  gchar *ptr;
+  gint i;
+  gsize len = 0;
+
+  for (i = 0; i < argv_array->len; i++)
+    len +=  strlen (argv_array->pdata[i]) + 1;
+
+  string = g_new (gchar, len);
+  *string = 0;
+  ptr = string;
+  for (i = 0; i < argv_array->len; i++)
+    ptr = g_stpcpy (ptr, argv_array->pdata[i]) + 1;
+
+  *len_out = len;
+  return string;
+}
+
+typedef struct {
+  int sync_fd;
+  int app_info_fd;
+  int bwrap_args_fd;
+} DbusProxySpawnData;
+
 static void
 dbus_spawn_child_setup (gpointer user_data)
 {
-  int fd = GPOINTER_TO_INT (user_data);
+  DbusProxySpawnData *data = user_data;
 
-  fcntl (fd, F_SETFD, 0);
+  /* Unset CLOEXEC */
+  fcntl (data->sync_fd, F_SETFD, 0);
+  fcntl (data->app_info_fd, F_SETFD, 0);
+  fcntl (data->bwrap_args_fd, F_SETFD, 0);
+}
+
+/* This wraps the argv in a bwrap call, primary to allow the
+   command to be run with a proper /.flatpak-info with data
+   taken from app_info_fd */
+static gboolean
+prepend_bwrap_argv_wrapper (GPtrArray *argv,
+                            int app_info_fd,
+                            int *bwrap_fd_out,
+                            GError **error)
+{
+  int i = 0;
+  g_auto(GLnxDirFdIterator) dir_iter = { 0 };
+  struct dirent *dent;
+  g_autoptr(GPtrArray) bwrap_args = g_ptr_array_new_with_free_func (g_free);
+  gsize bwrap_args_len;
+  glnx_fd_close int bwrap_args_fd = -1;
+  g_autofree char *bwrap_args_data = NULL;
+
+  if (!glnx_dirfd_iterator_init_at (AT_FDCWD, "/", FALSE, &dir_iter, error))
+    return FALSE;
+
+  while (TRUE)
+    {
+      if (!glnx_dirfd_iterator_next_dent_ensure_dtype (&dir_iter, &dent, NULL, error))
+        return FALSE;
+
+      if (dent == NULL)
+        break;
+
+      if (strcmp (dent->d_name, ".flatpak-info") == 0)
+        continue;
+
+      if (dent->d_type == DT_DIR)
+        {
+          if (strcmp (dent->d_name, "tmp") == 0 ||
+              strcmp (dent->d_name, "var") == 0 ||
+              strcmp (dent->d_name, "run") == 0)
+            g_ptr_array_add (bwrap_args, g_strdup ("--bind"));
+          else
+            g_ptr_array_add (bwrap_args, g_strdup ("--ro-bind"));
+          g_ptr_array_add (bwrap_args, g_strconcat ("/", dent->d_name, NULL));
+          g_ptr_array_add (bwrap_args, g_strconcat ("/", dent->d_name, NULL));
+        }
+      else if (dent->d_type == DT_LNK)
+        {
+          ssize_t symlink_size;
+          char path_buffer[PATH_MAX + 1];
+
+          symlink_size = readlinkat (dir_iter.fd, dent->d_name, path_buffer, sizeof (path_buffer) - 1);
+          if (symlink_size < 0)
+            {
+              glnx_set_error_from_errno (error);
+              return FALSE;
+            }
+          path_buffer[symlink_size] = 0;
+
+          g_ptr_array_add (bwrap_args, g_strdup ("--symlink"));
+          g_ptr_array_add (bwrap_args, g_strdup (path_buffer));
+          g_ptr_array_add (bwrap_args, g_strconcat ("/", dent->d_name, NULL));
+        }
+    }
+
+  g_ptr_array_add (bwrap_args, g_strdup ("--ro-bind-data"));
+  g_ptr_array_add (bwrap_args, g_strdup_printf ("%d", app_info_fd));
+  g_ptr_array_add (bwrap_args, g_strdup ("/.flatpak-info"));
+
+  bwrap_args_data = join_args (bwrap_args, &bwrap_args_len);
+  bwrap_args_fd = create_tmp_fd (bwrap_args_data, bwrap_args_len, error);
+  if (bwrap_args_fd < 0)
+    return FALSE;
+
+  g_ptr_array_insert (argv, i++, g_strdup (flatpak_get_bwrap ()));
+  g_ptr_array_insert (argv, i++, g_strdup ("--args"));
+  g_ptr_array_insert (argv, i++, g_strdup_printf ("%d", bwrap_args_fd));
+
+  *bwrap_fd_out = bwrap_args_fd;
+  bwrap_args_fd = -1; /* Steal it */
+
+  return TRUE;
 }
 
 static gboolean
@@ -2577,11 +2872,15 @@ add_dbus_proxy_args (GPtrArray *argv_array,
                      GPtrArray *dbus_proxy_argv,
                      gboolean   enable_logging,
                      int        sync_fds[2],
+                     const char *app_info_path,
                      GError   **error)
 {
   char x = 'x';
   const char *proxy;
   g_autofree char *commandline = NULL;
+  DbusProxySpawnData spawn_data;
+  glnx_fd_close int app_info_fd = -1;
+  glnx_fd_close int bwrap_args_fd = -1;
 
   if (dbus_proxy_argv->len == 0)
     return TRUE;
@@ -2607,20 +2906,36 @@ add_dbus_proxy_args (GPtrArray *argv_array,
 
   g_ptr_array_insert (dbus_proxy_argv, 0, g_strdup (proxy));
   g_ptr_array_insert (dbus_proxy_argv, 1, g_strdup_printf ("--fd=%d", sync_fds[1]));
+
   if (enable_logging)
     g_ptr_array_add (dbus_proxy_argv, g_strdup ("--log"));
 
   g_ptr_array_add (dbus_proxy_argv, NULL); /* NULL terminate */
 
-  commandline = g_strjoinv (" ", (char **) dbus_proxy_argv->pdata);
-  g_debug ("Running %s", commandline);
+  app_info_fd = open (app_info_path, O_RDONLY);
+  if (app_info_fd == -1)
+    {
+      int errsv = errno;
+      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+                   _("Failed to open app info file: %s"), strerror (errsv));
+      return FALSE;
+    }
 
+  if (!prepend_bwrap_argv_wrapper (dbus_proxy_argv, app_info_fd, &bwrap_args_fd, error))
+    return FALSE;
+
+  commandline = g_strjoinv (" ", (char **) dbus_proxy_argv->pdata);
+  g_debug ("Running '%s'", commandline);
+
+  spawn_data.sync_fd = sync_fds[1];
+  spawn_data.app_info_fd = app_info_fd;
+  spawn_data.bwrap_args_fd = bwrap_args_fd;
   if (!g_spawn_async (NULL,
                       (char **) dbus_proxy_argv->pdata,
                       NULL,
                       G_SPAWN_SEARCH_PATH,
                       dbus_spawn_child_setup,
-                      GINT_TO_POINTER (sync_fds[1]),
+                      &spawn_data,
                       NULL, error))
     {
       close (sync_fds[0]);
@@ -3018,27 +3333,6 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
   return TRUE;
 }
 
-gchar *
-join_args (GPtrArray *argv_array, gsize *len_out)
-{
-  gchar *string;
-  gchar *ptr;
-  gint i;
-  gsize len = 0;
-
-  for (i = 0; i < argv_array->len; i++)
-    len +=  strlen (argv_array->pdata[i]) + 1;
-
-  string = g_new (gchar, len);
-  *string = 0;
-  ptr = string;
-  for (i = 0; i < argv_array->len; i++)
-    ptr = g_stpcpy (ptr, argv_array->pdata[i]) + 1;
-
-  *len_out = len;
-  return string;
-}
-
 static void
 clear_fd (gpointer data)
 {
@@ -3096,6 +3390,7 @@ flatpak_run_app (const char     *app_ref,
   g_autoptr(GError) my_error = NULL;
   g_auto(GStrv) runtime_parts = NULL;
   int i;
+  g_autofree char *app_info_path = NULL;
   g_autoptr(FlatpakContext) app_context = NULL;
   g_autoptr(FlatpakContext) overrides = NULL;
   g_auto(GStrv) app_ref_parts = NULL;
@@ -3188,10 +3483,14 @@ flatpak_run_app (const char     *app_ref,
             "--lock-file", "/app/.ref",
             NULL);
 
+  if (app_context->features & FLATPAK_CONTEXT_FEATURE_DEVEL)
+    flags |= FLATPAK_RUN_FLAG_DEVEL;
+
   if (!flatpak_run_setup_base_argv (argv_array, fd_array, runtime_files, app_id_dir, app_ref_parts[2], flags, error))
     return FALSE;
 
-  if (!add_app_info_args (argv_array, fd_array, app_deploy, app_ref_parts[1], runtime_ref, app_context, error))
+  if (!flatpak_run_add_app_info_args (argv_array, fd_array, app_files, runtime_files, app_ref_parts[1], app_ref_parts[3],
+                                      runtime_ref, app_context, &app_info_path, error))
     return FALSE;
 
   if (!flatpak_run_add_extension_args (argv_array, metakey, app_ref, cancellable, error))
@@ -3211,13 +3510,20 @@ flatpak_run_app (const char     *app_ref,
 
   /* Must run this before spawning the dbus proxy, to ensure it
      ends up in the app cgroup */
-  if (!option_no_desktop && !flatpak_run_in_transient_unit (app_ref_parts[1], error))
+  if (!flatpak_run_in_transient_unit (app_ref_parts[1], &my_error))
+    {
+      /* We still run along even if we don't get a cgroup, as nothing
+         really depends on it. Its just nice to have */
+      g_debug ("Failed to run in transient scope: %s\n", my_error->message);
+      g_clear_error (&my_error);
+    }
+
+  if (!add_dbus_proxy_args (argv_array, session_bus_proxy_argv, (flags & FLATPAK_RUN_FLAG_LOG_SESSION_BUS) != 0,
+                            sync_fds, app_info_path, error))
     return FALSE;
 
-  if (!add_dbus_proxy_args (argv_array, session_bus_proxy_argv, (flags & FLATPAK_RUN_FLAG_LOG_SESSION_BUS) != 0, sync_fds, error))
-    return FALSE;
-
-  if (!add_dbus_proxy_args (argv_array, system_bus_proxy_argv, (flags & FLATPAK_RUN_FLAG_LOG_SYSTEM_BUS) != 0, sync_fds, error))
+  if (!add_dbus_proxy_args (argv_array, system_bus_proxy_argv, (flags & FLATPAK_RUN_FLAG_LOG_SYSTEM_BUS) != 0,
+                            sync_fds, app_info_path, error))
     return FALSE;
 
   if (sync_fds[1] != -1)
@@ -3277,7 +3583,7 @@ flatpak_run_app (const char     *app_ref,
       if (!g_spawn_async (NULL,
                           (char **) real_argv_array->pdata,
                           envp,
-                          G_SPAWN_DEFAULT,
+                          G_SPAWN_SEARCH_PATH,
                           child_setup, fd_array,
                           NULL,
                           error))

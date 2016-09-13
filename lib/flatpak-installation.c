@@ -1003,6 +1003,8 @@ flatpak_installation_install_bundle (FlatpakInstallation    *self,
 
   /* Pull, prune, etc are not threadsafe, so we work on a copy */
   dir_clone = flatpak_dir_clone (dir);
+  if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
+    return NULL;
 
   if (!flatpak_dir_install_bundle (dir_clone, file, NULL, &ref,
                                    cancellable, error))
@@ -1013,6 +1015,45 @@ flatpak_installation_install_bundle (FlatpakInstallation    *self,
     return NULL;
 
   return result;
+}
+
+/**
+ * flatpak_installation_install_ref_file:
+ * @self: a #FlatpakInstallation
+ * @ref_file_data: The ref file contents
+ * @cancellable: (nullable): a #GCancellable
+ * @error: return location for a #GError
+ *
+ * Creates a remote based on the passed in .flatpakref file contents
+ * in @ref_file_data and returns the #FlatpakRemoteRef that can be used
+ * to install it.
+ *
+ * Note, the #FlatpakRemoteRef will not have the commit field set, to
+ * avoid unnecessary roundtrips. If you need that you have to resolve it
+ * explicitly with flatpak_installation_fetch_remote_ref_sync ().
+ *
+ * Returns: (transfer full): a #FlatpakRemoteRef if the remote has been added successfully, %NULL
+ * on error.
+ *
+ * Since: 0.6.10
+ */
+FlatpakRemoteRef *
+flatpak_installation_install_ref_file (FlatpakInstallation *self,
+                                       GBytes              *ref_file_data,
+                                       GCancellable        *cancellable,
+                                       GError             **error)
+{
+  g_autoptr(FlatpakDir) dir = flatpak_installation_get_dir (self);
+  g_autofree char *remote = NULL;
+  g_autofree char *ref = NULL;
+
+  if (!flatpak_dir_create_remote_for_ref_file (dir, ref_file_data, &remote, &ref, error))
+    return NULL;
+
+  if (!flatpak_installation_drop_caches (self, cancellable, error))
+    return NULL;
+
+  return flatpak_remote_ref_new (ref, NULL, remote);
 }
 
 /**
@@ -1071,6 +1112,8 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
 
   /* Pull, prune, etc are not threadsafe, so we work on a copy */
   dir_clone = flatpak_dir_clone (dir);
+  if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
+    return NULL;
 
   /* Work around ostree-pull spinning the default main context for the sync calls */
   main_context = g_main_context_new ();
@@ -1195,6 +1238,8 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
 
   /* Pull, prune, etc are not threadsafe, so we work on a copy */
   dir_clone = flatpak_dir_clone (dir);
+  if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
+    return NULL;
 
   /* Work around ostree-pull spinning the default main context for the sync calls */
   main_context = g_main_context_new ();
@@ -1299,6 +1344,8 @@ flatpak_installation_uninstall (FlatpakInstallation    *self,
 
   /* prune, etc are not threadsafe, so we work on a copy */
   dir_clone = flatpak_dir_clone (dir);
+  if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
+    return FALSE;
 
   if (!flatpak_dir_uninstall (dir_clone, ref, FLATPAK_HELPER_UNINSTALL_FLAGS_NONE,
                               cancellable, error))
@@ -1520,6 +1567,8 @@ flatpak_installation_update_appstream_sync (FlatpakInstallation *self,
 
   /* Pull, prune, etc are not threadsafe, so we work on a copy */
   dir_clone = flatpak_dir_clone (dir);
+  if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
+    return FALSE;
 
   if (main_context)
     g_main_context_pop_thread_default (main_context);

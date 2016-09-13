@@ -161,7 +161,8 @@ check_PROGRAMS = $(am__EXEEXT_4)
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/flatpak-system-helper.service.in
 @BUILD_SYSTEM_HELPER_TRUE@am__append_21 = system-helper/org.freedesktop.Flatpak.policy.in system-helper/org.freedesktop.Flatpak.SystemHelper.conf system-helper/org.freedesktop.Flatpak.rules.in
 @BUILD_SYSTEM_HELPER_TRUE@am__append_22 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service
-@WITH_SYSTEM_BWRAP_FALSE@am__append_23 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
+@WITH_SYSTEM_BWRAP_TRUE@am__append_23 = FLATPAK_BWRAP=$(BWRAP)
+@WITH_SYSTEM_BWRAP_FALSE@am__append_24 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_PROGRAMS = flatpak-bwrap$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -475,7 +476,7 @@ nodist_xdg_document_portal_OBJECTS = $(am__objects_7) $(am__objects_9) \
 xdg_document_portal_OBJECTS = $(am_xdg_document_portal_OBJECTS) \
 	$(nodist_xdg_document_portal_OBJECTS)
 xdg_document_portal_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) libflatpak-common.la libflatpak.la
+	$(am__DEPENDENCIES_1) libflatpak-common.la
 xdg_document_portal_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(xdg_document_portal_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
@@ -1051,8 +1052,9 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 NULL = 
 dist_installed_test_extra_scripts = $(NULL) buildutil/tap-driver.sh \
-	tests/test-configure tests/make-test-app.sh \
-	tests/make-test-runtime.sh tests/make-test-bundles.sh $(NULL)
+	tests/empty-configure tests/test-configure \
+	tests/make-test-app.sh tests/make-test-runtime.sh \
+	tests/make-test-bundles.sh $(NULL)
 noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
@@ -1080,10 +1082,9 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	data/org.freedesktop.Flatpak.xml $(NULL) \
 	lib/flatpak-enum-types.c.template \
 	lib/flatpak-enum-types.h.template $(am__append_21) \
-	$(installed_test_data) tests/flatpak.supp tests/glib.supp \
-	$(completion_DATA) profile/flatpak.sh.in $(NULL) \
-	env.d/flatpak.env.in dbus.service.d/flatpak.conf.in \
-	flatpak.pc.in README.md
+	tests/flatpak.supp tests/glib.supp $(completion_DATA) \
+	profile/flatpak.sh.in $(NULL) env.d/flatpak.env.in \
+	dbus.service.d/flatpak.conf.in flatpak.pc.in README.md
 TESTS_ENVIRONMENT = G_TEST_SRCDIR="$(abs_srcdir)/tests" \
 	G_TEST_BUILDDIR="$(abs_builddir)/tests" UNINSTALLEDTESTS=1 \
 	G_DEBUG=gc-friendly MALLOC_CHECK_=2 \
@@ -1093,7 +1094,7 @@ TESTS_ENVIRONMENT = G_TEST_SRCDIR="$(abs_srcdir)/tests" \
 	pwd)/flatpak-dbus-proxy GI_TYPELIB_PATH=$$(cd $(top_builddir) \
 	&& pwd) LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && pwd) \
 	PATH=$$(cd $(top_builddir) && pwd):$${PATH} $(NULL) \
-	$(am__append_23)
+	$(am__append_23) $(am__append_24)
 LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/buildutil/tap-driver.sh
 LOG_COMPILER = $(top_srcdir)/buildutil/tap-test
 installed_test_LTLIBRARIES = $(am__append_12)
@@ -1490,7 +1491,7 @@ xdg_document_portal_SOURCES = \
 	document-portal/xdp-fuse.c		\
 	$(NULL)
 
-xdg_document_portal_LDADD = $(BASE_LIBS) $(FUSE_LIBS) libflatpak-common.la libflatpak.la
+xdg_document_portal_LDADD = $(BASE_LIBS) $(FUSE_LIBS) libflatpak-common.la
 xdg_document_portal_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(FUSE_CFLAGS) -I$(srcdir)/document-portal -I$(builddir)/document-portal -I$(srcdir)/permission-store -I$(builddir)/permission-store -DFLATPAK_COMPILATION
 testdb_CFLAGS = $(BASE_CFLAGS)
 testdb_LDADD = \
@@ -1519,7 +1520,7 @@ testlibrary_LDADD = \
 
 testlibrary_SOURCES = tests/testlibrary.c
 EXTRA_test_doc_portal_DEPENDENCIES = tests/services/org.freedesktop.impl.portal.PermissionStore.service tests/services/org.freedesktop.portal.Documents.service  tests/services/org.freedesktop.Flatpak.service tests/services/org.freedesktop.Flatpak.SystemHelper.service
-installed_test_data = \
+dist_installed_test_data = \
 	tests/libtest.sh \
 	tests/org.test.Hello.png \
 	tests/package_version.txt \
@@ -1527,7 +1528,6 @@ installed_test_data = \
 	tests/session.conf.in \
 	tests/0001-Add-test-logo.patch \
 	tests/org.test.Python.json \
-	tests/empty-configure \
 	tests/testpython.py \
 	tests/importme.py \
 	tests/importme2.py \
@@ -4913,6 +4913,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(libexecdir)|" -e "s|\@extraargs\@||" $< > $@
 
 $(dbus_built_sources) : data/org.freedesktop.Flatpak.xml
+	mkdir -p $(builddir)/common
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.Flatpak.	\
 		--c-namespace Flatpak				\
@@ -4921,6 +4922,7 @@ $(dbus_built_sources) : data/org.freedesktop.Flatpak.xml
 		$(NULL)
 
 $(systemd_dbus_built_sources) : data/org.freedesktop.systemd1.xml
+	mkdir -p $(builddir)/common
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.systemd1.	\
 		--c-namespace Systemd				\
@@ -4948,6 +4950,7 @@ lib/flatpak-enum-types.c: $(flatpakinclude_HEADERS) lib/flatpak-enum-types.c.tem
 @BUILD_SYSTEM_HELPER_TRUE@	$(AM_V_GEN) $(MSGFMT) --xml -d $(top_srcdir)/po --template $< -o $@ || cp $< $@
 
 $(nodist_xdg_permission_store_SOURCES) : data/org.freedesktop.impl.portal.PermissionStore.xml
+	mkdir -p $(builddir)/permission-store
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.impl.portal.	\
 		--c-namespace Xdg				\
@@ -4956,6 +4959,7 @@ $(nodist_xdg_permission_store_SOURCES) : data/org.freedesktop.impl.portal.Permis
 		$(NULL)
 
 $(xdp_dbus_built_sources) : data/org.freedesktop.portal.Documents.xml
+	mkdir -p $(builddir)/document-portal
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.portal.	\
 		--c-namespace XdpDbus				\

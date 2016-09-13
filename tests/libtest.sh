@@ -67,6 +67,9 @@ else
     CMD_PREFIX=""
 fi
 
+export MALLOC_CHECK_=3
+export MALLOC_PERTURB_=$(($RANDOM % 255 + 1))
+
 # We need this to be in /var/tmp because /tmp has no xattr support
 TEST_DATA_DIR=`mktemp -d /var/tmp/test-flatpak-XXXXXX`
 mkdir -p ${TEST_DATA_DIR}/home
@@ -261,6 +264,7 @@ fi
 
 cleanup () {
     /bin/kill $DBUS_SESSION_BUS_PID
+    gpg-connect-agent --homedir "${FL_GPG_HOMEDIR}" killagent /bye || true
     fusermount -u $XDG_RUNTIME_DIR/doc || :
     rm -rf $TEST_DATA_DIR
 }

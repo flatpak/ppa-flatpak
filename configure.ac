@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [6])
-m4_define([flatpak_micro_version], [9])
-m4_define([flatpak_interface_age], [9])
+m4_define([flatpak_micro_version], [10])
+m4_define([flatpak_interface_age], [10])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -29,6 +29,8 @@ AC_INIT([Flatpak],
         [http://flatpak.org/])
 
 GLIB_REQS=2.40
+SYSTEM_BWRAP_REQS=0.1.2
+OSTREE_REQS=2016.10
 
 AC_USE_SYSTEM_EXTENSIONS
 
@@ -112,7 +114,14 @@ AS_CASE([$BWRAP],
             [BWRAP=false],
         [auto],
             [AC_CHECK_PROG([BWRAP], [bwrap], [bwrap], [false])])
-AM_CONDITIONAL([WITH_SYSTEM_BWRAP], [test "x$BWRAP" != xfalse])
+if test "x$BWRAP" != xfalse; then
+   BWRAP_VERSION=`$BWRAP --version | sed 's,.*\ \([0-9]*\.[0-9]*\.[0-9]*\)$,\1,'`
+   AX_COMPARE_VERSION([$SYSTEM_BWRAP_REQS],[gt],[$BWRAP_VERSION],
+         AC_MSG_ERROR([You need at least version $SYSTEM_BWRAP_REQS of bubblewrap to use the system installed version]))
+   AM_CONDITIONAL([WITH_SYSTEM_BWRAP], [true])
+else
+   AM_CONDITIONAL([WITH_SYSTEM_BWRAP], [false])
+fi
 
 AC_CHECK_FUNCS(fdwalk)
 
@@ -160,7 +169,7 @@ if test "x$enable_sandboxed_triggers" = "xno"; then
       [Define if sandboxed triggers are disabled])
 fi
 
-PKG_CHECK_MODULES(OSTREE, [ostree-1 >= 2016.7])
+PKG_CHECK_MODULES(OSTREE, [ostree-1 >= $OSTREE_REQS])
 save_LIBS=$LIBS
 save_CFLAGS=$CFLAGS
 LIBS=$OSTREE_LIBS
