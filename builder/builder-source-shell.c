@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <sys/statfs.h>
 
+#include "flatpak-utils.h"
 #include "builder-utils.h"
 #include "builder-source-shell.h"
 
@@ -112,18 +113,18 @@ builder_source_shell_download (BuilderSource  *source,
 
 static gboolean
 run_script (BuilderContext *context,
+            BuilderOptions *build_options,
             GFile          *source_dir,
             const gchar    *script,
             GError        **error)
 {
   GFile *app_dir = builder_context_get_app_dir (context);
-
-  g_autoptr(GSubprocessLauncher) launcher = NULL;
-  g_autoptr(GSubprocess) subp = NULL;
   g_autoptr(GPtrArray) args = NULL;
-  g_autofree char *commandline = NULL;
   g_autofree char *source_dir_path = g_file_get_path (source_dir);
   g_autofree char *source_dir_path_canonical = NULL;
+  g_autoptr(GFile) source_dir_path_canonical_file = NULL;
+  g_auto(GStrv) build_args = NULL;
+  int i;
 
   args = g_ptr_array_new_with_free_func (g_free);
   g_ptr_array_add (args, g_strdup ("flatpak"));
@@ -134,33 +135,29 @@ run_script (BuilderContext *context,
   g_ptr_array_add (args, g_strdup ("--nofilesystem=host"));
   g_ptr_array_add (args, g_strdup_printf ("--filesystem=%s", source_dir_path_canonical));
 
+  build_args = builder_options_get_build_args (build_options, context, error);
+  if (build_args == NULL)
+    return FALSE;
+
+  for (i = 0; build_args[i] != NULL; i++)
+    g_ptr_array_add (args, g_strdup (build_args[i]));
+
   g_ptr_array_add (args, g_file_get_path (app_dir));
   g_ptr_array_add (args, g_strdup ("/bin/sh"));
   g_ptr_array_add (args, g_strdup ("-c"));
   g_ptr_array_add (args, g_strdup (script));
   g_ptr_array_add (args, NULL);
 
-  commandline = g_strjoinv (" ", (char **) args->pdata);
-  g_print ("Running: %s\n", commandline);
+  source_dir_path_canonical_file = g_file_new_for_path (source_dir_path_canonical);
 
-  launcher = g_subprocess_launcher_new (0);
-
-  g_subprocess_launcher_set_cwd (launcher, source_dir_path_canonical);
-
-  subp = g_subprocess_launcher_spawnv (launcher, (const gchar * const *) args->pdata, error);
-  g_ptr_array_free (args, TRUE);
-
-  if (subp == NULL ||
-      !g_subprocess_wait_check (subp, NULL, error))
-    return FALSE;
-
-  return TRUE;
+  return builder_maybe_host_spawnv (source_dir_path_canonical_file, NULL, error, (const char * const *)args->pdata);
 }
 
 
 static gboolean
 builder_source_shell_extract (BuilderSource  *source,
                               GFile          *dest,
+                              BuilderOptions *build_options,
                               BuilderContext *context,
                               GError        **error)
 {
@@ -171,7 +168,7 @@ builder_source_shell_extract (BuilderSource  *source,
     {
       for (i = 0; self->commands[i] != NULL; i++)
         {
-          if (!run_script (context,
+          if (!run_script (context, build_options,
                            dest, self->commands[i], error))
             return FALSE;
         }

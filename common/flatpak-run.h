@@ -38,9 +38,11 @@ gboolean flatpak_run_in_transient_unit (const char *app_id,
 #define FLATPAK_METADATA_KEY_FILESYSTEMS "filesystems"
 #define FLATPAK_METADATA_KEY_PERSISTENT "persistent"
 #define FLATPAK_METADATA_KEY_DEVICES "devices"
+#define FLATPAK_METADATA_KEY_FEATURES "features"
 
 extern const char *flatpak_context_sockets[];
 extern const char *flatpak_context_devices[];
+extern const char *flatpak_context_features[];
 extern const char *flatpak_context_shares[];
 
 FlatpakContext *flatpak_context_new (void);
@@ -54,6 +56,7 @@ gboolean       flatpak_context_load_metadata (FlatpakContext *context,
                                               GKeyFile       *metakey,
                                               GError        **error);
 void           flatpak_context_save_metadata (FlatpakContext *context,
+                                              gboolean        flatten,
                                               GKeyFile       *metakey);
 void           flatpak_context_allow_host_fs (FlatpakContext *context);
 void           flatpak_context_set_session_bus_policy (FlatpakContext *context,
@@ -107,6 +110,17 @@ gboolean flatpak_run_setup_base_argv (GPtrArray      *argv_array,
                                       const char     *arch,
                                       FlatpakRunFlags flags,
                                       GError        **error);
+gboolean flatpak_run_add_app_info_args (GPtrArray      *argv_array,
+                                        GArray         *fd_array,
+                                        GFile          *app_files,
+                                        GFile          *runtime_files,
+                                        const char     *app_id,
+                                        const char     *app_branch,
+                                        const char     *runtime_ref,
+                                        FlatpakContext *final_app_context,
+                                        char          **app_info_path_out,
+                                        GError        **error);
+
 gboolean flatpak_run_app (const char     *app_ref,
                           FlatpakDeploy  *app_deploy,
                           FlatpakContext *extra_context,

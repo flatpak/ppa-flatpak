@@ -1005,7 +1005,7 @@ builder_manifest_init_app_dir (BuilderManifest *self,
   g_ptr_array_add (args, NULL);
 
   commandline = g_strjoinv (" ", (char **) args->pdata);
-  g_print ("Running: %s\n", commandline);
+  g_debug ("Running '%s'", commandline);
 
   subp =
     g_subprocess_newv ((const gchar * const *) args->pdata,
@@ -1221,8 +1221,6 @@ command (GFile      *app_dir,
          const char *commandline,
          GError    **error)
 {
-  g_autoptr(GSubprocessLauncher) launcher = NULL;
-  g_autoptr(GSubprocess) subp = NULL;
   g_autoptr(GPtrArray) args = NULL;
   int i;
 
@@ -1245,18 +1243,7 @@ command (GFile      *app_dir,
   g_ptr_array_add (args, g_strdup (commandline));
   g_ptr_array_add (args, NULL);
 
-  g_print ("Running: %s\n", commandline);
-
-  launcher = g_subprocess_launcher_new (0);
-
-  subp = g_subprocess_launcher_spawnv (launcher, (const gchar * const *) args->pdata, error);
-  g_ptr_array_free (args, TRUE);
-
-  if (subp == NULL ||
-      !g_subprocess_wait_check (subp, NULL, error))
-    return FALSE;
-
-  return TRUE;
+  return builder_maybe_host_spawnv (NULL, NULL, error, (const char * const *)args->pdata);
 }
 
 typedef gboolean (*ForeachFileFunc) (BuilderManifest *self,
@@ -1397,11 +1384,8 @@ appstream_compose (GFile   *app_dir,
                    GError **error,
                    ...)
 {
-  g_autoptr(GSubprocessLauncher) launcher = NULL;
-  g_autoptr(GSubprocess) subp = NULL;
   g_autoptr(GPtrArray) args = NULL;
   const gchar *arg;
-  g_autofree char *commandline = NULL;
   va_list ap;
   g_autoptr(GError) local_error = NULL;
 
@@ -1418,16 +1402,7 @@ appstream_compose (GFile   *app_dir,
   g_ptr_array_add (args, NULL);
   va_end (ap);
 
-  commandline = g_strjoinv (" ", (char **) args->pdata);
-  g_print ("Running: %s\n", commandline);
-
-  launcher = g_subprocess_launcher_new (0);
-
-  subp = g_subprocess_launcher_spawnv (launcher, (const gchar * const *) args->pdata, &local_error);
-  g_ptr_array_free (args, TRUE);
-
-  if (subp == NULL ||
-      !g_subprocess_wait_check (subp, NULL, &local_error))
+  if (!builder_maybe_host_spawnv (NULL, NULL, &local_error, (const char * const *)args->pdata))
     g_print ("WARNING: appstream-compose failed: %s\n", local_error->message);
 
   return TRUE;
@@ -1744,7 +1719,7 @@ builder_manifest_finish (BuilderManifest *self,
       g_ptr_array_add (args, NULL);
 
       commandline = g_strjoinv (" ", (char **) args->pdata);
-      g_print ("Running: %s\n", commandline);
+      g_debug ("Running '%s'", commandline);
 
       subp =
         g_subprocess_newv ((const gchar * const *) args->pdata,
@@ -1942,7 +1917,7 @@ builder_manifest_create_platform (BuilderManifest *self,
       g_ptr_array_add (args, NULL);
 
       commandline = g_strjoinv (" ", (char **) args->pdata);
-      g_print ("Running: %s\n", commandline);
+      g_debug ("Running '%s'", commandline);
 
       subp =
         g_subprocess_newv ((const gchar * const *) args->pdata,

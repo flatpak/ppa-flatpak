@@ -214,9 +214,25 @@ flatpak_get_system_base_dir_location (void)
 GFile *
 flatpak_get_user_base_dir_location (void)
 {
-  g_autofree char *base = g_build_filename (g_get_user_data_dir (), "flatpak", NULL);
+  static gsize file = 0;
 
-  return g_file_new_for_path (base);
+  if (g_once_init_enter (&file))
+    {
+      gsize setup_value = 0;
+      const char *path;
+      g_autofree char *free_me = NULL;
+      const char *user_dir = g_getenv ("FLATPAK_USER_DIR");
+      if (user_dir != NULL && *user_dir != 0)
+        path = user_dir;
+      else
+        path = free_me = g_build_filename (g_get_user_data_dir (), "flatpak", NULL);
+
+      setup_value = (gsize) g_file_new_for_path (path);
+
+      g_once_init_leave (&file, setup_value);
+    }
+
+  return g_object_ref ((GFile *)file);
 }
 
 GFile *
@@ -990,7 +1006,7 @@ flatpak_dir_deploy_appstream (FlatpakDir          *self,
   g_autoptr(GFile) active_tmp_link = NULL;
   g_autoptr(GError) tmp_error = NULL;
   g_autofree char *checkout_dir_path = NULL;
-  OstreeRepoCheckoutOptions options = { 0, };
+  OstreeRepoCheckoutAtOptions options = { 0, };
   glnx_fd_close int dfd = -1;
   g_autoptr(GFileInfo) file_info = NULL;
   g_autofree char *tmpname = g_strdup (".active-XXXXXX");
@@ -1055,11 +1071,11 @@ flatpak_dir_deploy_appstream (FlatpakDir          *self,
 
   options.mode = OSTREE_REPO_CHECKOUT_MODE_USER;
   options.overwrite_mode = OSTREE_REPO_CHECKOUT_OVERWRITE_UNION_FILES;
-  options.disable_fsync = TRUE; /* We checkout to a temp dir and sync before moving it in place */
+  options.enable_fsync = FALSE; /* We checkout to a temp dir and sync before moving it in place */
 
-  if (!ostree_repo_checkout_tree_at (self->repo, &options,
-                                     AT_FDCWD, checkout_dir_path, new_checksum,
-                                     cancellable, error))
+  if (!ostree_repo_checkout_at (self->repo, &options,
+                                AT_FDCWD, checkout_dir_path, new_checksum,
+                                cancellable, error))
     return FALSE;
 
   glnx_gen_temp_name (tmpname);
@@ -2574,7 +2590,7 @@ flatpak_dir_deploy (FlatpakDir          *self,
   g_autoptr(GFile) export = NULL;
   g_autoptr(GKeyFile) keyfile = NULL;
   guint64 installed_size = 0;
-  OstreeRepoCheckoutOptions options = { 0, };
+  OstreeRepoCheckoutAtOptions options = { 0, };
   const char *checksum;
   glnx_fd_close int checkoutdir_dfd = -1;
   g_autoptr(GFile) tmp_dir_template = NULL;
@@ -2642,15 +2658,15 @@ flatpak_dir_deploy (FlatpakDir          *self,
 
   options.mode = OSTREE_REPO_CHECKOUT_MODE_USER;
   options.overwrite_mode = OSTREE_REPO_CHECKOUT_OVERWRITE_UNION_FILES;
-  options.disable_fsync = TRUE; /* We checkout to a temp dir and sync before moving it in place */
+  options.enable_fsync = FALSE; /* We checkout to a temp dir and sync before moving it in place */
   checkoutdirpath = g_file_get_path (checkoutdir);
 
   if (subpaths == NULL || *subpaths == NULL)
     {
-      if (!ostree_repo_checkout_tree_at (self->repo, &options,
-                                         AT_FDCWD, checkoutdirpath,
-                                         checksum,
-                                         cancellable, error))
+      if (!ostree_repo_checkout_at (self->repo, &options,
+                                    AT_FDCWD, checkoutdirpath,
+                                    checksum,
+                                    cancellable, error))
         {
           g_prefix_error (error, _("While trying to checkout %s into %s: "), checksum, checkoutdirpath);
           return FALSE;
@@ -2672,10 +2688,10 @@ flatpak_dir_deploy (FlatpakDir          *self,
       if (!ostree_repo_read_commit (self->repo, checksum, &root,  &commit, cancellable, error))
         return FALSE;
 
-      if (!ostree_repo_checkout_tree_at (self->repo, &options,
-                                         AT_FDCWD, checkoutdirpath,
-                                         checksum,
-                                         cancellable, error))
+      if (!ostree_repo_checkout_at (self->repo, &options,
+                                    AT_FDCWD, checkoutdirpath,
+                                    checksum,
+                                    cancellable, error))
         {
           g_prefix_error (error, _("While trying to checkout metadata subpath: "));
           return FALSE;
@@ -2703,10 +2719,10 @@ flatpak_dir_deploy (FlatpakDir          *self,
             }
 
           options.subpath = subpath;
-          if (!ostree_repo_checkout_tree_at (self->repo, &options,
-                                             AT_FDCWD, dstpath,
-                                             checksum,
-                                             cancellable, error))
+          if (!ostree_repo_checkout_at (self->repo, &options,
+                                        AT_FDCWD, dstpath,
+                                        checksum,
+                                        cancellable, error))
             {
               g_prefix_error (error, _("While trying to checkout metadata subpath: "));
               return FALSE;
@@ -2893,7 +2909,6 @@ flatpak_dir_deploy_update (FlatpakDir   *self,
                            GCancellable *cancellable,
                            GError      **error)
 {
-  g_autoptr(GError) my_error = NULL;
   g_autoptr(GVariant) old_deploy_data = NULL;
   g_auto(GLnxLockFile) lock = GLNX_LOCK_FILE_INIT;
   g_autofree const char **old_subpaths = NULL;
@@ -2922,7 +2937,7 @@ flatpak_dir_deploy_update (FlatpakDir   *self,
     return FALSE;
 
   if (!flatpak_dir_undeploy (self, ref, old_active,
-                             FALSE,
+                             TRUE, FALSE,
                              cancellable, error))
     return FALSE;
 
@@ -3124,7 +3139,7 @@ flatpak_dir_install_bundle (FlatpakDir          *self,
 {
   g_autofree char *ref = NULL;
   gboolean added_remote = FALSE;
-  g_autoptr(GFile) deploy_dir = NULL;
+  g_autoptr(GVariant) deploy_data = NULL;
   g_autoptr(GVariant) metadata = NULL;
   g_autofree char *origin = NULL;
   g_auto(GStrv) parts = NULL;
@@ -3162,6 +3177,9 @@ flatpak_dir_install_bundle (FlatpakDir          *self,
       return TRUE;
     }
 
+  if (!flatpak_dir_ensure_repo (self, cancellable, error))
+    return FALSE;
+
   metadata = flatpak_bundle_load (file, &to_checksum,
                                   &ref,
                                   &origin,
@@ -3177,31 +3195,50 @@ flatpak_dir_install_bundle (FlatpakDir          *self,
   if (parts == NULL)
     return FALSE;
 
-  deploy_dir = flatpak_dir_get_if_deployed (self, ref, NULL, cancellable);
-  if (deploy_dir != NULL)
+  deploy_data = flatpak_dir_get_deploy_data (self, ref, cancellable, NULL);
+  if (deploy_data != NULL)
     {
-      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED,
-                   _("%s branch %s already installed"), parts[1], parts[3]);
-      return FALSE;
+      if (strcmp (flatpak_deploy_data_get_commit (deploy_data), to_checksum) == 0)
+        {
+          g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED,
+                       _("This version of %s is already installed"), parts[1]);
+          return FALSE;
+        }
+      remote = g_strdup (flatpak_deploy_data_get_origin (deploy_data));
+
+      /* We need to import any gpg keys because otherwise the pull will fail */
+      if (gpg_data != NULL)
+        {
+          g_autoptr(GInputStream) input_stream = g_memory_input_stream_new_from_bytes (gpg_data);
+          guint imported = 0;
+
+          if (!ostree_repo_remote_gpg_import (self->repo, remote, input_stream,
+                                              NULL, &imported, cancellable, error))
+            return FALSE;
+
+          /* XXX If we ever add internationalization, use ngettext() here. */
+          g_debug ("Imported %u GPG key%s to remote \"%s\"",
+                   imported, (imported == 1) ? "" : "s", remote);
+        }
     }
+  else
+    {
+      /* Add a remote for later updates */
+      basename = g_file_get_basename (file);
+      remote = flatpak_dir_create_origin_remote (self,
+                                                 origin,
+                                                 parts[1],
+                                                 basename,
+                                                 ref,
+                                                 gpg_data,
+                                                 cancellable,
+                                                 error);
+      if (remote == NULL)
+        return FALSE;
 
-  /* Add a remote for later updates */
-  basename = g_file_get_basename (file);
-  remote = flatpak_dir_create_origin_remote (self,
-                                             origin,
-                                             parts[1],
-                                             basename,
-                                             gpg_data,
-                                             cancellable,
-                                             error);
-  if (remote == NULL)
-    return FALSE;
-
-  /* From here we need to goto out on error, to clean up */
-  added_remote = TRUE;
-
-  if (!flatpak_dir_ensure_repo (self, cancellable, error))
-    goto out;
+      /* From here we need to goto out on error, to clean up */
+      added_remote = TRUE;
+    }
 
   if (!flatpak_pull_from_bundle (self->repo,
                                  file,
@@ -3212,8 +3249,45 @@ flatpak_dir_install_bundle (FlatpakDir          *self,
                                  error))
     goto out;
 
-  if (!flatpak_dir_deploy_install (self, ref, remote, NULL, cancellable, error))
-    goto out;
+  if (deploy_data != NULL)
+    {
+      g_autofree char *group = g_strdup_printf ("remote \"%s\"", remote);
+      g_autofree char *old_url = NULL;
+      g_autoptr(GKeyFile) new_config = NULL;
+
+      /* The pull succeeded, and this is an update. So, we need to update the repo config
+         if anything changed */
+
+      ostree_repo_remote_get_url (self->repo,
+                                  remote,
+                                  &old_url,
+                                  NULL);
+      if (origin != NULL &&
+          (old_url == NULL || strcmp (old_url, origin) != 0))
+        {
+          if (new_config == NULL)
+            new_config = ostree_repo_copy_config (self->repo);
+
+          g_key_file_set_value (new_config, group, "url", origin);
+        }
+
+      if (new_config)
+        {
+          if (!ostree_repo_write_config (self->repo, new_config, error))
+            return FALSE;
+        }
+    }
+
+  if (deploy_data)
+    {
+      if (!flatpak_dir_deploy_update (self, ref, NULL, NULL, cancellable, error))
+        goto out;
+    }
+  else
+    {
+      if (!flatpak_dir_deploy_install (self, ref, remote, NULL, cancellable, error))
+        goto out;
+    }
 
   if (out_ref)
     *out_ref = g_steal_pointer (&ref);
@@ -3282,6 +3356,9 @@ flatpak_dir_update (FlatpakDir          *self,
 
   if (!ostree_repo_remote_get_url (self->repo, remote_name, &url, error))
     return FALSE;
+
+  if (*url == 0)
+    return TRUE; /* Empty URL => disabled */
 
   is_local = g_str_has_prefix (url, "file:");
 
@@ -3720,6 +3797,7 @@ gboolean
 flatpak_dir_undeploy (FlatpakDir   *self,
                       const char   *ref,
                       const char   *checksum,
+                      gboolean      is_update,
                       gboolean      force_remove,
                       GCancellable *cancellable,
                       GError      **error)
@@ -3732,6 +3810,7 @@ flatpak_dir_undeploy (FlatpakDir   *self,
   g_autoptr(GFile) removed_dir = NULL;
   g_autofree char *tmpname = g_strdup_printf ("removed-%s-XXXXXX", checksum);
   g_autofree char *active = NULL;
+  g_autoptr(GFile) change_file = NULL;
   int i;
 
   g_assert (ref != NULL);
@@ -3790,6 +3869,13 @@ flatpak_dir_undeploy (FlatpakDir   *self,
                             cancellable, error))
     goto out;
 
+  if (is_update)
+    change_file = g_file_resolve_relative_path (removed_subdir, "files/.updated");
+  else
+    change_file = g_file_resolve_relative_path (removed_subdir, "files/.removed");
+  g_file_replace_contents (change_file, "", 0, NULL, FALSE,
+                           G_FILE_CREATE_REPLACE_DESTINATION, NULL, NULL, NULL);
+
   if (force_remove || !dir_is_locked (removed_subdir))
     {
       GError *tmp_error = NULL;
@@ -3828,7 +3914,7 @@ flatpak_dir_undeploy_all (FlatpakDir   *self,
   for (i = 0; deployed[i] != NULL; i++)
     {
       g_debug ("undeploying %s", deployed[i]);
-      if (!flatpak_dir_undeploy (self, ref, deployed[i], force_remove, cancellable, error))
+      if (!flatpak_dir_undeploy (self, ref, deployed[i], FALSE, force_remove, cancellable, error))
         return FALSE;
     }
 
@@ -4151,7 +4237,6 @@ flatpak_dir_remote_list_refs (FlatpakDir       *self,
   g_autoptr(GVariant) ref_map = NULL;
   GVariantIter iter;
   GVariant *child;
-
   if (!flatpak_dir_remote_fetch_summary (self, remote_name,
                                          &summary_bytes,
                                          cancellable, error))
@@ -4608,11 +4693,16 @@ flatpak_dir_get_remote_disabled (FlatpakDir *self,
 {
   GKeyFile *config = ostree_repo_get_config (self->repo);
   g_autofree char *group = get_group (remote_name);
+  g_autofree char *url = NULL;
 
-  if (config)
-    return g_key_file_get_boolean (config, group, "xa.disable", NULL);
+  if (config &&
+      g_key_file_get_boolean (config, group, "xa.disable", NULL))
+    return TRUE;
 
-  return TRUE;
+  if (ostree_repo_remote_get_url (self->repo, remote_name, &url, NULL) && *url == 0)
+    return TRUE; /* Empty URL => disabled */
+
+  return FALSE;
 }
 
 gint
@@ -4631,25 +4721,20 @@ cmp_remote (gconstpointer a,
   return prio_b - prio_a;
 }
 
-char *
-flatpak_dir_create_origin_remote (FlatpakDir   *self,
-                                  const char   *url,
-                                  const char   *id,
-                                  const char   *title,
-                                  GBytes       *gpg_data,
-                                  GCancellable *cancellable,
-                                  GError      **error)
+static char *
+create_origin_remote_config (OstreeRepo   *repo,
+                             const char   *url,
+                             const char   *id,
+                             const char   *title,
+                             const char   *main_ref,
+                             GKeyFile     *new_config)
 {
   g_autofree char *remote = NULL;
-
   g_auto(GStrv) remotes = NULL;
   int version = 0;
-  g_autoptr(GVariantBuilder) optbuilder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
+  g_autofree char *group = NULL;
 
-  if (!flatpak_dir_ensure_repo (self, cancellable, error))
-    return FALSE;
-
-  remotes = ostree_repo_remote_list (self->repo, NULL);
+  remotes = ostree_repo_remote_list (repo, NULL);
 
   do
     {
@@ -4666,38 +4751,164 @@ flatpak_dir_create_origin_remote (FlatpakDir   *self,
     }
   while (remote == NULL);
 
-  g_variant_builder_add (optbuilder, "{s@v}",
-                         "xa.title",
-                         g_variant_new_variant (g_variant_new_string (title)));
+  group = g_strdup_printf ("remote \"%s\"", remote);
 
-  g_variant_builder_add (optbuilder, "{s@v}",
-                         "xa.noenumerate",
-                         g_variant_new_variant (g_variant_new_boolean (TRUE)));
-
-  g_variant_builder_add (optbuilder, "{s@v}",
-                         "xa.prio",
-                         g_variant_new_variant (g_variant_new_string ("0")));
-
-  if (!ostree_repo_remote_add (self->repo,
-                               remote, url ? url : "", g_variant_builder_end (optbuilder), cancellable, error))
-    return NULL;
-
-  if (gpg_data)
-    {
-      g_autoptr(GInputStream) gpg_data_as_stream = g_memory_input_stream_new_from_bytes (gpg_data);
-
-      if (!ostree_repo_remote_gpg_import (self->repo, remote, gpg_data_as_stream,
-                                          NULL, NULL, cancellable, error))
-        {
-          ostree_repo_remote_delete (self->repo, remote,
-                                     NULL, NULL);
-          return NULL;
-        }
-    }
+  g_key_file_set_string (new_config, group, "url", url ? url : "");
+  g_key_file_set_string (new_config, group, "xa.title", title);
+  g_key_file_set_string (new_config, group, "xa.noenumerate", "true");
+  g_key_file_set_string (new_config, group, "xa.prio", "0");
+  g_key_file_set_string (new_config, group, "gpg-verify", "true");
+  g_key_file_set_string (new_config, group, "gpg-verify-summary", "true");
+  if (main_ref)
+    g_key_file_set_string (new_config, group, "xa.main-ref", main_ref);
 
   return g_steal_pointer (&remote);
 }
 
+char *
+flatpak_dir_create_origin_remote (FlatpakDir   *self,
+                                  const char   *url,
+                                  const char   *id,
+                                  const char   *title,
+                                  const char   *main_ref,
+                                  GBytes       *gpg_data,
+                                  GCancellable *cancellable,
+                                  GError      **error)
+{
+  g_autoptr(GKeyFile) new_config = g_key_file_new ();
+  g_autofree char *remote = NULL;
+
+  remote = create_origin_remote_config (self->repo, url, id, title, main_ref, new_config);
+
+  if (!flatpak_dir_modify_remote (self, remote, new_config,
+                                  gpg_data, cancellable, error))
+    return NULL;
+
+  return g_steal_pointer (&remote);
+}
+
+static gboolean
+parse_ref_file (GBytes *data,
+                char **name_out,
+                char **branch_out,
+                char **url_out,
+                char **title_out,
+                GBytes **gpg_data_out,
+                gboolean *is_runtime_out,
+                GError **error)
+{
+  g_autoptr(GKeyFile) keyfile = g_key_file_new ();
+  g_autofree char *url = NULL;
+  g_autofree char *title = NULL;
+  g_autofree char *name = NULL;
+  g_autofree char *branch = NULL;
+  g_autoptr(GBytes) gpg_data = NULL;
+  gboolean is_runtime = FALSE;
+  char *str;
+
+  *name_out = NULL;
+  *branch_out = NULL;
+  *url_out = NULL;
+  *title_out = NULL;
+  *gpg_data_out = NULL;
+  *is_runtime_out = FALSE;
+
+  if (!g_key_file_load_from_data (keyfile, g_bytes_get_data (data, NULL), g_bytes_get_size (data),
+                                  0, error))
+    return FALSE;
+
+  if (!g_key_file_has_group (keyfile, FLATPAK_REF_GROUP))
+    return flatpak_fail (error, "Invalid file format, no %s group", FLATPAK_REF_GROUP);
+
+  url = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP,
+                               FLATPAK_REF_URL_KEY, NULL);
+  if (url == NULL)
+    return flatpak_fail (error, "Invalid file format, no Url specified");
+
+  name = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP,
+                                FLATPAK_REF_NAME_KEY, NULL);
+  if (name == NULL)
+    return flatpak_fail (error, "Invalid file format, no Name specified");
+
+  branch = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP,
+                                  FLATPAK_REF_BRANCH_KEY, NULL);
+  if (branch == NULL)
+    branch = g_strdup ("master");
+
+  title = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP,
+                                 FLATPAK_REF_TITLE_KEY, NULL);
+
+  is_runtime = g_key_file_get_boolean (keyfile, FLATPAK_REF_GROUP,
+                                       FLATPAK_REF_IS_RUNTIME_KEY, NULL);
+
+  str = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP,
+                               FLATPAK_REF_GPGKEY_KEY, NULL);
+  if (str != NULL)
+    {
+      guchar *decoded;
+      gsize decoded_len;
+
+      str = g_strstrip (str);
+      decoded = g_base64_decode (str, &decoded_len);
+      if (decoded_len < 10) /* Check some minimal size so we don't get crap */
+        return flatpak_fail (error, "Invalid file format, gpg key invalid");
+
+      gpg_data = g_bytes_new_take (decoded, decoded_len);
+    }
+
+  *name_out = g_steal_pointer (&name);
+  *branch_out = g_steal_pointer (&branch);
+  *url_out = g_steal_pointer (&url);
+  *title_out = g_steal_pointer (&title);
+  *gpg_data_out = g_steal_pointer (&gpg_data);
+  *is_runtime_out = is_runtime;
+
+  return TRUE;
+}
+
+gboolean
+flatpak_dir_create_remote_for_ref_file (FlatpakDir *self,
+                                        GBytes     *data,
+                                        char      **remote_name_out,
+                                        char      **ref_out,
+                                        GError    **error)
+{
+  g_autoptr(GBytes) gpg_data = NULL;
+  g_autofree char *name = NULL;
+  g_autofree char *branch = NULL;
+  g_autofree char *url = NULL;
+  g_autofree char *title = NULL;
+  g_autofree char *ref = NULL;
+  g_autofree char *remote = NULL;
+  gboolean is_runtime = FALSE;
+  g_autoptr(GFile) deploy_dir = NULL;
+
+  if (!parse_ref_file (data, &name, &branch, &url, &title, &gpg_data, &is_runtime, error))
+    return FALSE;
+
+  ref = flatpak_compose_ref (!is_runtime, name, branch, NULL, error);
+  if (ref == NULL)
+    return FALSE;
+
+  deploy_dir = flatpak_dir_get_if_deployed (self, ref, NULL, NULL);
+  if (deploy_dir != NULL)
+    {
+      g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED,
+                   is_runtime ? _("Runtime %s, branch %s is already installed")
+                   : _("App %s, branch %s is already installed"),
+                   name, branch);
+      return FALSE;
+    }
+
+  remote = flatpak_dir_create_origin_remote (self, url, name, title, ref,
+                                             gpg_data, NULL, error);
+  if (remote == NULL)
+    return FALSE;
+
+  *remote_name_out = g_steal_pointer (&remote);
+  *ref_out = (char *)g_steal_pointer (&ref);
+  return TRUE;
+}
 
 char **
 flatpak_dir_list_remotes (FlatpakDir   *self,

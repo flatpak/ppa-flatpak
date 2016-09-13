@@ -691,7 +691,7 @@ builder_module_extract_sources (BuilderModule  *self,
     {
       BuilderSource *source = l->data;
 
-      if (!builder_source_extract (source, dest, context, error))
+      if (!builder_source_extract (source, dest, self->build_options, context, error))
         {
           g_prefix_error (error, "module %s: ", self->name);
           return FALSE;
@@ -716,15 +716,13 @@ build (GFile          *app_dir,
        const gchar    *argv1,
        ...)
 {
-  g_autoptr(GSubprocessLauncher) launcher = NULL;
-  g_autoptr(GSubprocess) subp = NULL;
   g_autoptr(GPtrArray) args = NULL;
   const gchar *arg;
   const gchar **argv;
-  g_autofree char *commandline = NULL;
   g_autofree char *source_dir_path = g_file_get_path (source_dir);
   g_autofree char *source_dir_path_canonical = NULL;
   g_autofree char *ccache_dir_path = NULL;
+  g_autoptr(GFile) source_dir_path_canonical_file = NULL;
   const char *builddir;
   va_list ap;
   int i;
@@ -788,18 +786,9 @@ build (GFile          *app_dir,
   g_ptr_array_add (args, NULL);
   va_end (ap);
 
-  commandline = g_strjoinv (" ", (char **) args->pdata);
-  g_print ("Running: %s\n", commandline);
+  source_dir_path_canonical_file = g_file_new_for_path (source_dir_path_canonical);
 
-  launcher = g_subprocess_launcher_new (0);
-
-  g_subprocess_launcher_set_cwd (launcher, source_dir_path_canonical);
-
-  subp = g_subprocess_launcher_spawnv (launcher, (const gchar * const *) args->pdata, error);
-  g_ptr_array_free (args, TRUE);
-
-  if (subp == NULL ||
-      !g_subprocess_wait_check (subp, NULL, error))
+  if (!builder_maybe_host_spawnv (source_dir_path_canonical_file, NULL, error, (const char * const *)args->pdata))
     {
       g_prefix_error (error, "module %s: ", module_name);
       return FALSE;
@@ -1074,29 +1063,29 @@ fixup_python_timestamp (int dfd,
            * There are several possible cases wrt their mtimes:
            *
            * py not existing: pyc is stale, remove it
-           * pyc mtime == 1: (.pyc is from an old commited module)
-           *     py mtime == 1: Do nothing, already correct
-           *     py mtime != 1: The py changed in this module, remove pyc
-           * pyc mtime != 1: (.pyc changed this module, or was never rewritten in base layer)
-           *     py == 1: Shouldn't happen in flatpak-builder, but could be an un-rewritten ctime lower layer, assume it matches and update timestamp
+           * pyc mtime == 0: (.pyc is from an old commited module)
+           *     py mtime == 0: Do nothing, already correct
+           *     py mtime != 0: The py changed in this module, remove pyc
+           * pyc mtime != 0: (.pyc changed this module, or was never rewritten in base layer)
+           *     py == 0: Shouldn't happen in flatpak-builder, but could be an un-rewritten ctime lower layer, assume it matches and update timestamp
            *     py mtime != pyc mtime: new pyc doesn't match last py written in this module, remove it
-           *     py mtime == pyc mtime: These match, but the py will be set to mtime 1 by ostree, so update timestamp in pyc.
+           *     py mtime == pyc mtime: These match, but the py will be set to mtime 0 by ostree, so update timestamp in pyc.
            */
 
           if (fstatat (dfd_iter.fd, py_path, &stbuf, AT_SYMLINK_NOFOLLOW) != 0)
             {
               remove_pyc = TRUE;
             }
-          else if (pyc_mtime == 1)
+          else if (pyc_mtime == OSTREE_TIMESTAMP)
             {
-              if (stbuf.st_mtime == 1)
+              if (stbuf.st_mtime == OSTREE_TIMESTAMP)
                 continue; /* Previously handled pyc */
 
               remove_pyc = TRUE;
             }
-          else /* pyc_mtime != 1 */
+          else /* pyc_mtime != 0 */
             {
-              if (pyc_mtime != stbuf.st_mtime && stbuf.st_mtime != 1)
+              if (pyc_mtime != stbuf.st_mtime && stbuf.st_mtime != OSTREE_TIMESTAMP)
                 remove_pyc = TRUE;
               /* else change mtime */
             }
@@ -1110,8 +1099,8 @@ fixup_python_timestamp (int dfd,
               continue;
             }
 
-          /* Change to mtime 1 which is what ostree uses for checkouts */
-          buffer[4] = 1;
+          /* Change to mtime 0 which is what ostree uses for checkouts */
+          buffer[4] = OSTREE_TIMESTAMP;
           buffer[5] = buffer[6] = buffer[7] = 0;
 
           res = pwrite (fd, buffer, 8, 0);

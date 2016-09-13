@@ -62,8 +62,15 @@ typedef enum {
   SETUP_MAKE_DIR,
   SETUP_MAKE_FILE,
   SETUP_MAKE_BIND_FILE,
+  SETUP_MAKE_RO_BIND_FILE,
   SETUP_MAKE_SYMLINK,
+  SETUP_REMOUNT_RO_NO_RECURSIVE,
+  SETUP_SET_HOSTNAME,
 } SetupOpType;
+
+typedef enum {
+  NO_CREATE_DEST = (1 << 0),
+} SetupOpFlag;
 
 typedef struct _SetupOp SetupOp;
 
@@ -73,6 +80,7 @@ struct _SetupOp
   const char *source;
   const char *dest;
   int         fd;
+  SetupOpFlag flags;
   SetupOp    *next;
 };
 
@@ -96,6 +104,8 @@ enum {
   PRIV_SEP_OP_TMPFS_MOUNT,
   PRIV_SEP_OP_DEVPTS_MOUNT,
   PRIV_SEP_OP_MQUEUE_MOUNT,
+  PRIV_SEP_OP_REMOUNT_RO_NO_RECURSIVE,
+  PRIV_SEP_OP_SET_HOSTNAME,
 };
 
 typedef struct
@@ -113,6 +123,7 @@ setup_op_new (SetupOpType type)
 
   op->type = type;
   op->fd = -1;
+  op->flags = 0;
   if (last_op != NULL)
     last_op->next = op;
   else
@@ -157,6 +168,7 @@ usage (int ecode, FILE *out)
            "    --unshare-cgroup-try         Create new cgroup namespace if possible else continue by skipping it\n"
            "    --uid UID                    Custom uid in the sandbox (requires --unshare-user)\n"
            "    --gid GID                    Custon gid in the sandbox (requires --unshare-user)\n"
+           "    --hostname NAME              Custom hostname in the sandbox (requires --unshare-uts)\n"
            "    --chdir DIR                  Change directory to DIR\n"
            "    --setenv VAR VALUE           Set an environment variable\n"
            "    --unsetenv VAR               Unset an environment variable\n"
@@ -165,6 +177,7 @@ usage (int ecode, FILE *out)
            "    --bind SRC DEST              Bind mount the host path SRC on DEST\n"
            "    --dev-bind SRC DEST          Bind mount the host path SRC on DEST, allowing device access\n"
            "    --ro-bind SRC DEST           Bind mount the host path SRC readonly on DEST\n"
+           "    --remount-ro DEST            Remount DEST as readonly, it doesn't recursively remount\n"
            "    --exec-label LABEL           Exec Label for the sandbox\n"
            "    --file-label LABEL           File label for temporary sandbox content\n"
            "    --proc DEST                  Mount procfs on DEST\n"
@@ -174,8 +187,11 @@ usage (int ecode, FILE *out)
            "    --dir DEST                   Create dir at DEST\n"
            "    --file FD DEST               Copy from FD to dest DEST\n"
            "    --bind-data FD DEST          Copy from FD to file which is bind-mounted on DEST\n"
+           "    --ro-bind-data FD DEST       Copy from FD to file which is readonly bind-mounted on DEST\n"
            "    --symlink SRC DEST           Create symlink at DEST with target SRC\n"
            "    --seccomp FD                 Load and use seccomp rules from FD\n"
+           "    --block-fd FD                Block on FD until some data to read is available\n"
+           "    --info-fd FD                 Write information about the running container to FD\n"
           );
   exit (ecode);
 }
@@ -541,6 +557,11 @@ privileged_op (int         privileged_op_socket,
     case PRIV_SEP_OP_DONE:
       break;
 
+    case PRIV_SEP_OP_REMOUNT_RO_NO_RECURSIVE:
+      if (bind_mount (proc_fd, arg1, arg2, flags) != 0)
+        die_with_error ("Can't bind mount %s on %s", arg1, arg2);
+      break;
+
     case PRIV_SEP_OP_BIND_MOUNT:
       /* We always bind directories recursively, otherwise this would let us
          access files that are otherwise covered on the host */
@@ -572,6 +593,11 @@ privileged_op (int         privileged_op_socket,
         die_with_error ("Can't mount mqueue on %s", arg1);
       break;
 
+    case PRIV_SEP_OP_SET_HOSTNAME:
+      if (sethostname (arg1, strlen(arg1)) != 0)
+        die_with_error ("Can't set hostname to %s", arg1);
+      break;
+
     default:
       die ("Unexpected privileged op %d", op);
     }
@@ -599,7 +625,8 @@ setup_newroot (bool unshare_pid,
             die_with_error ("Can't get type of source %s", op->source);
         }
 
-      if (op->dest)
+      if (op->dest &&
+          (op->flags & NO_CREATE_DEST) == 0)
         {
           dest = get_newroot_path (op->dest);
           if (mkdir_with_parents (dest, 0755, FALSE) != 0)
@@ -624,6 +651,11 @@ setup_newroot (bool unshare_pid,
                          (op->type == SETUP_RO_BIND_MOUNT ? BIND_READONLY : 0) |
                          (op->type == SETUP_DEV_BIND_MOUNT ? BIND_DEVICES : 0),
                          source, dest);
+          break;
+
+        case SETUP_REMOUNT_RO_NO_RECURSIVE:
+          privileged_op (privileged_op_socket,
+                         PRIV_SEP_OP_REMOUNT_RO_NO_RECURSIVE, BIND_READONLY, NULL, dest);
           break;
 
         case SETUP_MOUNT_PROC:
@@ -767,6 +799,7 @@ setup_newroot (bool unshare_pid,
           break;
 
         case SETUP_MAKE_BIND_FILE:
+        case SETUP_MAKE_RO_BIND_FILE:
           {
             cleanup_fd int dest_fd = -1;
             char tempfile[] = "/bindfileXXXXXX";
@@ -785,13 +818,25 @@ setup_newroot (bool unshare_pid,
 
             privileged_op (privileged_op_socket,
                            PRIV_SEP_OP_BIND_MOUNT,
-                           0, tempfile, dest);
+                           (op->type == SETUP_MAKE_RO_BIND_FILE ? BIND_READONLY : 0),
+                           tempfile, dest);
+
+            /* Remove the file so we're sure the app can't get to it in any other way.
+               Its outside the container chroot, so it shouldn't be possible, but lets
+               make it really sure. */
+            unlink (tempfile);
           }
           break;
 
         case SETUP_MAKE_SYMLINK:
           if (symlink (op->source, dest) != 0)
             die_with_error ("Can't make symlink at %s", op->dest);
+          break;
+
+        case SETUP_SET_HOSTNAME:
+          privileged_op (privileged_op_socket,
+                         PRIV_SEP_OP_SET_HOSTNAME, 0,
+                         op->dest, NULL);
           break;
 
         default:
@@ -860,7 +905,10 @@ bool opt_needs_devpts = FALSE;
 uid_t opt_sandbox_uid = -1;
 gid_t opt_sandbox_gid = -1;
 int opt_sync_fd = -1;
+int opt_block_fd = -1;
+int opt_info_fd = -1;
 int opt_seccomp_fd = -1;
+char *opt_sandbox_hostname = NULL;
 
 
 static void
@@ -1002,13 +1050,21 @@ parse_args_recurse (int    *argcp,
           argv++;
           argc--;
         }
+      else if (strcmp (arg, "--remount-ro") == 0)
+        {
+          SetupOp *op = setup_op_new (SETUP_REMOUNT_RO_NO_RECURSIVE);
+          op->dest = argv[1];
+
+          argv++;
+          argc--;
+        }
       else if (strcmp (arg, "--bind") == 0)
         {
           if (argc < 3)
             die ("--bind takes two arguments");
 
           op = setup_op_new (SETUP_BIND_MOUNT);
-          op->source = canonicalize_file_name (argv[1]);
+          op->source = realpath (argv[1], NULL);
           if (op->source == NULL)
             die_with_error ("Can't find source path %s", argv[1]);
           op->dest = argv[2];
@@ -1022,7 +1078,7 @@ parse_args_recurse (int    *argcp,
             die ("--ro-bind takes two arguments");
 
           op = setup_op_new (SETUP_RO_BIND_MOUNT);
-          op->source = canonicalize_file_name (argv[1]);
+          op->source = realpath (argv[1], NULL);
           if (op->source == NULL)
             die_with_error ("Can't find source path %s", argv[1]);
           op->dest = argv[2];
@@ -1036,7 +1092,7 @@ parse_args_recurse (int    *argcp,
             die ("--dev-bind takes two arguments");
 
           op = setup_op_new (SETUP_DEV_BIND_MOUNT);
-          op->source = canonicalize_file_name (argv[1]);
+          op->source = realpath (argv[1], NULL);
           if (op->source == NULL)
             die_with_error ("Can't find source path %s", argv[1]);
           op->dest = argv[2];
@@ -1160,6 +1216,25 @@ parse_args_recurse (int    *argcp,
           argv += 2;
           argc -= 2;
         }
+      else if (strcmp (arg, "--ro-bind-data") == 0)
+        {
+          int file_fd;
+          char *endptr;
+
+          if (argc < 3)
+            die ("--ro-bind-data takes two arguments");
+
+          file_fd = strtol (argv[1], &endptr, 10);
+          if (argv[1][0] == 0 || endptr[0] != 0 || file_fd < 0)
+            die ("Invalid fd: %s", argv[1]);
+
+          op = setup_op_new (SETUP_MAKE_RO_BIND_FILE);
+          op->fd = file_fd;
+          op->dest = argv[2];
+
+          argv += 2;
+          argc -= 2;
+        }
       else if (strcmp (arg, "--symlink") == 0)
         {
           if (argc < 3)
@@ -1195,6 +1270,40 @@ parse_args_recurse (int    *argcp,
             die ("Invalid fd: %s", argv[1]);
 
           opt_sync_fd = the_fd;
+
+          argv += 1;
+          argc -= 1;
+        }
+      else if (strcmp (arg, "--block-fd") == 0)
+        {
+          int the_fd;
+          char *endptr;
+
+          if (argc < 2)
+            die ("--block-fd takes an argument");
+
+          the_fd = strtol (argv[1], &endptr, 10);
+          if (argv[1][0] == 0 || endptr[0] != 0 || the_fd < 0)
+            die ("Invalid fd: %s", argv[1]);
+
+          opt_block_fd = the_fd;
+
+          argv += 1;
+          argc -= 1;
+        }
+      else if (strcmp (arg, "--info-fd") == 0)
+        {
+          int the_fd;
+          char *endptr;
+
+          if (argc < 2)
+            die ("--info-fd takes an argument");
+
+          the_fd = strtol (argv[1], &endptr, 10);
+          if (argv[1][0] == 0 || endptr[0] != 0 || the_fd < 0)
+            die ("Invalid fd: %s", argv[1]);
+
+          opt_info_fd = the_fd;
 
           argv += 1;
           argc -= 1;
@@ -1266,6 +1375,20 @@ parse_args_recurse (int    *argcp,
             die ("Invalid gid: %s", argv[1]);
 
           opt_sandbox_gid = the_gid;
+
+          argv += 1;
+          argc -= 1;
+        }
+      else if (strcmp (arg, "--hostname") == 0)
+        {
+          if (argc < 2)
+            die ("--hostname takes an argument");
+
+          op = setup_op_new (SETUP_SET_HOSTNAME);
+          op->dest = argv[1];
+          op->flags = NO_CREATE_DEST;
+
+          opt_sandbox_hostname = argv[1];
 
           argv += 1;
           argc -= 1;
@@ -1381,6 +1504,9 @@ main (int    argc,
   if (!opt_unshare_user && opt_sandbox_gid != gid)
     die ("Specifying --gid requires --unshare-user");
 
+  if (!opt_unshare_uts && opt_sandbox_hostname != NULL)
+    die ("Specifying --hostname requires --unshare-uts");
+
   /* We need to read stuff from proc during the pivot_root dance, etc.
      Lets keep a fd to it open */
   proc_fd = open ("/proc", O_RDONLY | O_PATH);
@@ -1476,6 +1602,15 @@ main (int    argc,
       /* We don't need any caps in the launcher, drop them immediately. */
       drop_caps ();
 
+      if (opt_info_fd != -1)
+        {
+          cleanup_free char *output = xasprintf ("{\n    \"child-pid\": %i\n}\n", pid);
+          size_t len = strlen (output);
+          if (write (opt_info_fd, output, len) != len)
+            die_with_error ("Write to info_fd");
+          close (opt_info_fd);
+        }
+
       /* Let child run */
       val = 1;
       res = write (child_wait_fd, &val, 8);
@@ -1485,6 +1620,9 @@ main (int    argc,
       monitor_child (event_fd);
       exit (0); /* Should not be reached, but better safe... */
     }
+
+  if (opt_info_fd != -1)
+    close (opt_info_fd);
 
   /* Wait for the parent to init uid/gid maps and drop caps */
   res = read (child_wait_fd, &val, 8);
@@ -1632,6 +1770,13 @@ main (int    argc,
   /* Now we have everything we need CAP_SYS_ADMIN for, so drop it */
   drop_caps ();
 
+  if (opt_block_fd != -1)
+    {
+      char b[1];
+      read (opt_block_fd, b, 1);
+      close (opt_block_fd);
+    }
+
   if (opt_seccomp_fd != -1)
     {
       cleanup_free char *seccomp_data = NULL;
@@ -1643,7 +1788,7 @@ main (int    argc,
         die_with_error ("Can't read seccomp data");
 
       if (seccomp_len % 8 != 0)
-        die ("Invalide seccomp data, must be multiple of 8");
+        die ("Invalid seccomp data, must be multiple of 8");
 
       prog.len = seccomp_len / 8;
       prog.filter = (struct sock_filter *) seccomp_data;

@@ -37,6 +37,14 @@
 GType flatpak_dir_get_type (void);
 GType flatpak_deploy_get_type (void);
 
+#define FLATPAK_REF_GROUP "Flatpak Ref"
+#define FLATPAK_REF_URL_KEY "Url"
+#define FLATPAK_REF_TITLE_KEY "Title"
+#define FLATPAK_REF_GPGKEY_KEY "GPGKey"
+#define FLATPAK_REF_IS_RUNTIME_KEY "IsRuntime"
+#define FLATPAK_REF_NAME_KEY "Name"
+#define FLATPAK_REF_BRANCH_KEY "Branch"
+
 typedef struct
 {
   char           *ref;
@@ -340,6 +348,7 @@ gboolean flatpak_dir_uninstall (FlatpakDir          *self,
 gboolean    flatpak_dir_undeploy (FlatpakDir   *self,
                                   const char   *ref,
                                   const char   *checksum,
+                                  gboolean      is_update,
                                   gboolean      force_remove,
                                   GCancellable *cancellable,
                                   GError      **error);
@@ -376,9 +385,16 @@ char      *flatpak_dir_create_origin_remote (FlatpakDir   *self,
                                              const char   *url,
                                              const char   *id,
                                              const char   *title,
+                                             const char   *main_ref,
                                              GBytes       *gpg_data,
                                              GCancellable *cancellable,
                                              GError      **error);
+gboolean   flatpak_dir_create_remote_for_ref_file (FlatpakDir   *self,
+                                                   GBytes  *data,
+                                                   char   **remote_name_out,
+                                                   char   **ref_out,
+                                                   GError **error);
+
 char     **flatpak_dir_list_remotes (FlatpakDir   *self,
                                      GCancellable *cancellable,
                                      GError      **error);

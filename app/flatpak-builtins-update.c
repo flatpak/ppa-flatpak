@@ -109,15 +109,9 @@ do_update (FlatpakDir  * dir,
     {
       if (g_error_matches (update_error, FLATPAK_ERROR,
                            FLATPAK_ERROR_ALREADY_INSTALLED))
-        {
-          g_print (_("No updates.\n"));
-        }
+        g_print (_("No updates.\n"));
       else
-        {
-          g_propagate_error (error, update_error);
-          update_error = NULL;
-          return FALSE;
-        }
+        g_printerr ("Error updating: %s\n", update_error->message);
     }
   else
     {
@@ -172,7 +166,7 @@ do_update (FlatpakDir  * dir,
                                        FLATPAK_ERROR_ALREADY_INSTALLED))
                     g_print (_("No updates.\n"));
                   else
-                    g_printerr ("%s\n", local_error->message);
+                    g_printerr ("Error updating: %s\n", local_error->message);
                   g_clear_error (&local_error);
                 }
               else
@@ -298,8 +292,6 @@ flatpak_builtin_update (int           argc,
                    "%s not installed", name);
       return FALSE;
     }
-
-  flatpak_dir_cleanup_removed (dir, cancellable, NULL);
 
   if (failed)
     return flatpak_fail (error, _("One or more updates failed"));

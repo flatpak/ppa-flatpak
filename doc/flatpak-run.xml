@@ -212,6 +212,28 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--allow=FEATURE</option></term>
+
+                <listitem><para>
+                    Allow access to a specific feature. This overrides to
+                    the Context section from the application metadata.
+                    FEATURE must be one of: devel.
+                    This option can be used multiple times.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--disallow=FEATURE</option></term>
+
+                <listitem><para>
+                    Disallow access to a specific feature. This overrides to
+                    the Context section from the application metadata.
+                    FEATURE must be one of: devel.
+                    This option can be used multiple times.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--filesystem=FS</option></term>
 
                 <listitem><para>
@@ -288,17 +310,6 @@
                     allowing that location to be used for persistent data.
                     This overrides to the Context section from the application metadata.
                     This option can be used multiple times.
-                </para></listitem>
-            </varlistentry>
-
-            <varlistentry>
-                <term><option>--no-desktop</option></term>
-
-                <listitem><para>
-                    Don't require a running session, meaning that no cgroups creation will happen. This can be
-                    useful for certain scenarios when you might want to run a flatpak without a valid user
-                    session available (e.g. from a socket-activated systemd service), and not having a
-                    properly sandboxed environment is not an issue.
                 </para></listitem>
             </varlistentry>
 

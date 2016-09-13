@@ -1,8 +1,8 @@
 #include "config.h"
 #include <string.h>
 #include <glib.h>
+#include "libglnx/libglnx.h"
 #include "flatpak.h"
-#include "glnx-shutil.h"
 
 static char *testdir;
 static char *flatpak_runtimedir;
@@ -270,6 +270,20 @@ test_install_launch_uninstall (void)
   g_autoptr(GMainLoop) loop = NULL;
   guint quit_id;
   gboolean res;
+  const char *bwrap = g_getenv ("FLATPAK_BWRAP");
+
+  if (bwrap != NULL)
+    {
+      gint exit_code = 0;
+      char *argv[] = { (char *)bwrap, "--ro-bind", "/", "/", "/bin/true", NULL };
+      g_spawn_sync (NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL, &exit_code, &error);
+      g_assert_no_error (error);
+      if (exit_code != 0)
+        {
+          g_test_skip ("bwrap not supported");
+          return;
+        }
+    }
 
   inst = flatpak_installation_new_user (NULL, &error);
   g_assert_no_error (error);
@@ -300,8 +314,8 @@ test_install_launch_uninstall (void)
                                       &progress_count,
                                       NULL,
                                       &error);
-  g_assert (FLATPAK_IS_INSTALLED_REF (ref));
   g_assert_no_error (error);
+  g_assert (FLATPAK_IS_INSTALLED_REF (ref));
   g_assert_cmpint (progress_count, >, 0);
 
   quit_id = g_timeout_add (500, quit, NULL);
@@ -345,8 +359,8 @@ test_install_launch_uninstall (void)
                                       &progress_count,
                                       NULL,
                                       &error);
-  g_assert (FLATPAK_IS_INSTALLED_REF (ref));
   g_assert_no_error (error);
+  g_assert (FLATPAK_IS_INSTALLED_REF (ref));
   g_assert_cmpint (progress_count, >, 0);
 
   quit_id = g_timeout_add (500, quit, loop);
@@ -370,8 +384,8 @@ test_install_launch_uninstall (void)
   g_ptr_array_unref (refs);
 
   res = flatpak_installation_launch (inst, "org.test.Hello", NULL, NULL, NULL, NULL, &error);
-  g_assert_true (res);
   g_assert_no_error (error);
+  g_assert_true (res);
 
   quit_id = g_timeout_add (500, quit, loop);
   g_main_loop_run (loop);
@@ -388,8 +402,8 @@ test_install_launch_uninstall (void)
                                         &progress_count,
                                         NULL,
                                         &error);
-  g_assert_true (res);
   g_assert_no_error (error);
+  g_assert_true (res);
   //FIXME: no progress for uninstall
   //g_assert_cmpint (progress_count, >, 0);
 
@@ -414,8 +428,8 @@ test_install_launch_uninstall (void)
                                         &progress_count,
                                         NULL,
                                         &error);
-  g_assert_true (res);
   g_assert_no_error (error);
+  g_assert_true (res);
   //FIXME: no progress for uninstall
   //g_assert_cmpint (progress_count, >, 0);
 
@@ -654,8 +668,32 @@ global_setup (void)
 static void
 global_teardown (void)
 {
+  int status;
+  g_autoptr (GError) error = NULL;
+  char *argv[] = { "gpg-connect-agent", "--homedir", "<placeholder>", "killagent", "/bye", NULL };
+  GSpawnFlags flags = G_SPAWN_SEARCH_PATH;
+
   if (g_getenv ("SKIP_TEARDOWN"))
     return;
+
+  argv[2] = gpg_homedir;
+
+  if (g_test_verbose ())
+    {
+      g_autofree char *commandline = g_strjoinv (" ", argv);
+      g_print ("running %s\n", commandline);
+    }
+  else
+    {
+      flags |= G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL;
+    }
+
+  /* mostly ignore failure here */
+  if (!g_spawn_sync (NULL, (char **)argv, NULL, flags, NULL, NULL, NULL, NULL, &status, &error) ||
+      !g_spawn_check_exit_status (status, &error))
+    {
+      g_print ("# failed to run gpg-connect-agent to stop gpg-agent: %s\n", error->message);
+    }
 
   glnx_shutil_rm_rf_at (-1, testdir, NULL, NULL);
   g_free (testdir);
