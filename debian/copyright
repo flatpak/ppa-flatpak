@@ -20,6 +20,13 @@ Copyright:
 License: LGPL-2.1+
 
 Files:
+ acinclude.m4
+Copyright:
+ © 2008 Tim Toolan
+ © 2014-2015 Philip Withnall
+License: Autoconf-permissive
+
+Files:
  builder/builder-utils.c
 Copyright:
  © 2001-2016 Red Hat, Inc
@@ -71,3 +78,9 @@ License: LGPL-2.1+
 Comment:
  On Debian systems, the full text of the GNU Lesser General Public License
  version 2.1 can be found in the file '/usr/share/common-licenses/LGPL-2.1'.
+
+License: Autoconf-permissive
+ Copying and distribution of this file, with or without modification, are
+ permitted in any medium without royalty provided the copyright notice
+ and this notice are preserved. This file is offered as-is, without any
+ warranty.
