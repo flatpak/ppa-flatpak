@@ -7,7 +7,7 @@ Uploaders:
  Simon McVittie <smcv@debian.org>,
 Build-Depends:
  attr,
- bubblewrap (>= 0.1.0),
+ bubblewrap (>= 0.1.2),
  ca-certificates,
  dbus,
  debhelper (>= 9),
@@ -52,15 +52,15 @@ Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/flatpak.git
 Package: flatpak
 Architecture: linux-any
 Depends:
- bubblewrap (>= 0.1.0),
+ bubblewrap (>= 0.1.2),
  fuse,
- libpam-systemd,
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
  desktop-file-utils,
  hicolor-icon-theme,
  gtk-update-icon-cache | libgtk-3-bin,
+ libpam-systemd,
  shared-mime-info,
 Conflicts:
  xdg-app,
@@ -172,7 +172,7 @@ Package: libflatpak0
 Architecture: linux-any
 Section: libs
 Depends:
- bubblewrap (>= 0.1.0),
+ bubblewrap (>= 0.1.2),
  ${misc:Depends},
  ${shlibs:Depends},
 Pre-Depends:
