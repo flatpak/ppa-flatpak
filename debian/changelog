@@ -12,6 +12,7 @@ flatpak (0.6.10-1) UNRELEASED; urgency=medium
       identifies contained processes via their
       /proc/$pid/root/.flatpak-info instead of via cgroups
   * d/copyright: mention the Autoconf permissive license of acinclude.m4
+  * Make libflatpak-dev Multi-Arch: same
 
  -- Simon McVittie <smcv@debian.org>  Fri, 09 Sep 2016 16:52:09 +0100
 

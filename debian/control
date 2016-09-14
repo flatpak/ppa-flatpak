@@ -140,6 +140,7 @@ Description: Application deployment framework for desktop apps (introspection)
 
 Package: libflatpak-dev
 Architecture: linux-any
+Multi-Arch: same
 Section: libdevel
 Depends:
  libflatpak0 (= ${binary:Version}),
