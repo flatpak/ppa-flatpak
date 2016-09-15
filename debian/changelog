@@ -1,4 +1,4 @@
-flatpak (0.6.10-1) UNRELEASED; urgency=medium
+flatpak (0.6.10-1) unstable; urgency=medium
 
   * New upstream release
     - d/libflatpak0.symbols: update
@@ -14,7 +14,7 @@ flatpak (0.6.10-1) UNRELEASED; urgency=medium
   * d/copyright: mention the Autoconf permissive license of acinclude.m4
   * Make libflatpak-dev Multi-Arch: same
 
- -- Simon McVittie <smcv@debian.org>  Fri, 09 Sep 2016 16:52:09 +0100
+ -- Simon McVittie <smcv@debian.org>  Thu, 15 Sep 2016 08:28:19 +0100
 
 flatpak (0.6.9-1) unstable; urgency=medium
 
