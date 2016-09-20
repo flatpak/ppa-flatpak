@@ -6,6 +6,7 @@ flatpak (0.6.11-1) UNRELEASED; urgency=medium
   * Make gir1.2-flatpak-1.0 Multi-arch: same
   * Make libflatpak-dev depend on gir1.2-flatpak-1.0 in accordance
     with the g-i mini-policy
+  * Relicense debian/ under LGPL, with permission from David King
 
  -- Simon McVittie <smcv@debian.org>  Mon, 19 Sep 2016 18:22:56 +0100
 
