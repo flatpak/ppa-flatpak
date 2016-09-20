@@ -4300,19 +4300,20 @@ find_matching_refs (GHashTable *refs,
   const char *opt_arches[] = {opt_arch, NULL};
   GHashTableIter hash_iter;
   gpointer key;
+  g_autoptr(GError) local_error = NULL;
 
   if (opt_arch != NULL)
     arches = opt_arches;
 
-  if (opt_name && !flatpak_is_valid_name (opt_name))
+  if (opt_name && !flatpak_is_valid_name (opt_name, &local_error))
     {
-      flatpak_fail (error, "'%s' is not a valid name", opt_name);
+      flatpak_fail (error, "'%s' is not a valid name: %s", opt_name, local_error->message);
       return NULL;
     }
 
-  if (opt_branch && !flatpak_is_valid_branch (opt_branch))
+  if (opt_branch && !flatpak_is_valid_branch (opt_branch, &local_error))
     {
-      flatpak_fail (error, "'%s' is not a valid branch name", opt_branch);
+      flatpak_fail (error, "'%s' is not a valid branch name: %s", opt_branch, local_error->message);
       return NULL;
     }
 
@@ -5080,9 +5081,9 @@ flatpak_dir_modify_remote (FlatpakDir   *self,
   else
     url = g_key_file_get_string (config, group, "url", NULL);
 
-  if (url == NULL || *url == 0)
-    return flatpak_fail (error, "No url for remote %s specified",
-                         remote_name);
+  /* No url => disabled */
+  if (url == NULL)
+    url = g_strdup ("");
 
   /* Add it if its not there yet */
   if (!ostree_repo_remote_change (self->repo, NULL,

@@ -355,7 +355,7 @@ flatpak_migrate_from_xdg_app (void)
           if (errno != ENOENT &&
               errno != ENOTEMPTY &&
               errno != EEXIST)
-            g_print ("Error during migration: %s\n", strerror (errno));
+            g_print ("Error during migration: %s\n", g_strerror (errno));
         }
     }
 }
@@ -366,7 +366,7 @@ is_valid_initial_name_character (gint c)
   return
     (c >= 'A' && c <= 'Z') ||
     (c >= 'a' && c <= 'z') ||
-    (c == '_');
+    (c == '_') || (c == '-');
 }
 
 static gboolean
@@ -377,8 +377,9 @@ is_valid_name_character (gint c)
     (c >= '0' && c <= '9');
 }
 
-/** flatpak_is_name:
+/** flatpak_is_valid_name:
  * @string: The string to check
+ * @error: Return location for an error
  *
  * Checks if @string is a valid application name.
  *
@@ -386,9 +387,11 @@ is_valid_name_character (gint c)
  * ('.') character. All elements must contain at least one character.
  *
  * Each element must only contain the ASCII characters
- * "[A-Z][a-z][0-9]_". Elements may not begin with a digit.
+ * "[A-Z][a-z][0-9]_-". Elements may not begin with a digit.
  *
  * App names must not begin with a '.' (period) character.
+ *
+ * App names must not end with "-symbolic".
  *
  * App names must not exceed 255 characters in length.
  *
@@ -402,7 +405,8 @@ is_valid_name_character (gint c)
  * Since: 2.26
  */
 gboolean
-flatpak_is_valid_name (const char *string)
+flatpak_is_valid_name (const char *string,
+                       GError **error)
 {
   guint len;
   gboolean ret;
@@ -415,17 +419,45 @@ flatpak_is_valid_name (const char *string)
   ret = FALSE;
 
   len = strlen (string);
-  if (G_UNLIKELY (len == 0 || len > 255))
-    goto out;
+  if (G_UNLIKELY (len == 0))
+    {
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           "Name can't be empty");
+      goto out;
+    }
+
+  if (G_UNLIKELY (len > 255))
+    {
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           "Name can't be longer than 255 characters");
+      goto out;
+    }
+
+  /* To special case symbolic icons we allow org.foo.Bar to export
+     files named "org.foo.Bar-symbolic.*". To avoid conflicts for
+     we then forbid app names ending with "-symbolic". */
+  if (G_UNLIKELY (g_str_has_suffix (string, "-symbolic")))
+    {
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           "Name are not allowed to end with '-symbolic'");
+      goto out;
+    }
 
   end = string + len;
 
   s = string;
   if (G_UNLIKELY (*s == '.'))
-    /* can't start with a . */
-    goto out;
+    {
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           "Name can't start with a period");
+      goto out;
+    }
   else if (G_UNLIKELY (!is_valid_initial_name_character (*s)))
-    goto out;
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                   "Name can't start with %c", *s);
+      goto out;
+    }
 
   s += 1;
   dot_count = 0;
@@ -434,19 +466,35 @@ flatpak_is_valid_name (const char *string)
       if (*s == '.')
         {
           s += 1;
-          if (G_UNLIKELY (s == end || !is_valid_initial_name_character (*s)))
-            goto out;
+          if (G_UNLIKELY (s == end))
+            {
+              g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                                   "Name can't end with a period");
+              goto out;
+            }
+          if (!is_valid_initial_name_character (*s))
+            {
+              g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           "Name segment can't start with %c", *s);
+              goto out;
+            }
           dot_count++;
         }
       else if (G_UNLIKELY (!is_valid_name_character (*s)))
         {
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                       "Name can't contain %c", *s);
           goto out;
         }
       s += 1;
     }
 
   if (G_UNLIKELY (dot_count < 2))
-    goto out;
+    {
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           "Names must contain at least 2 periods");
+      goto out;
+    }
 
   ret = TRUE;
 
@@ -467,9 +515,10 @@ flatpak_has_name_prefix (const char *string,
   return
     *rest == 0 ||
     *rest == '.' ||
-    !is_valid_name_character (*rest);
+    !is_valid_name_character (*rest) ||
+    /* Special case -symbolic icon names */
+    g_str_has_prefix (rest, "-symbolic.");
 }
-
 
 static gboolean
 is_valid_initial_branch_character (gint c)
@@ -492,6 +541,7 @@ is_valid_branch_character (gint c)
 
 /** flatpak_is_valid_branch:
  * @string: The string to check
+ * @error: return location for an error
  *
  * Checks if @string is a valid branch name.
  *
@@ -505,7 +555,8 @@ is_valid_branch_character (gint c)
  * Since: 2.26
  */
 gboolean
-flatpak_is_valid_branch (const char *string)
+flatpak_is_valid_branch (const char *string,
+                         GError **error)
 {
   guint len;
   gboolean ret;
@@ -518,19 +569,31 @@ flatpak_is_valid_branch (const char *string)
 
   len = strlen (string);
   if (G_UNLIKELY (len == 0))
-    goto out;
+    {
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           "Branch can't be empty");
+      goto out;
+    }
 
   end = string + len;
 
   s = string;
   if (G_UNLIKELY (!is_valid_initial_branch_character (*s)))
-    goto out;
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                   "Branch can't start with %c", *s);
+      goto out;
+    }
 
   s += 1;
   while (s != end)
     {
       if (G_UNLIKELY (!is_valid_branch_character (*s)))
-        goto out;
+        {
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                       "Branch can't contain %c", *s);
+          goto out;
+        }
       s += 1;
     }
 
@@ -545,6 +608,7 @@ flatpak_decompose_ref (const char *full_ref,
                        GError    **error)
 {
   g_auto(GStrv) parts = NULL;
+  g_autoptr(GError) local_error = NULL;
 
   parts = g_strsplit (full_ref, "/", 0);
   if (g_strv_length (parts) != 4)
@@ -559,9 +623,9 @@ flatpak_decompose_ref (const char *full_ref,
       return NULL;
     }
 
-  if (!flatpak_is_valid_name (parts[1]))
+  if (!flatpak_is_valid_name (parts[1], &local_error))
     {
-      flatpak_fail (error, "Invalid name %s", parts[1]);
+      flatpak_fail (error, "Invalid name %s: %s", parts[1], local_error->message);
       return NULL;
     }
 
@@ -571,9 +635,9 @@ flatpak_decompose_ref (const char *full_ref,
       return NULL;
     }
 
-  if (!flatpak_is_valid_branch (parts[3]))
+  if (!flatpak_is_valid_branch (parts[3], &local_error))
     {
-      flatpak_fail (error, "Invalid branch %s", parts[3]);
+      flatpak_fail (error, "Invalid branch %s: %s", parts[3], local_error->message);
       return NULL;
     }
 
@@ -589,6 +653,7 @@ flatpak_split_partial_ref_arg (char *partial_ref,
   char *slash;
   char *arch = NULL;
   char *branch = NULL;
+  g_autoptr(GError) local_error = NULL;
 
   if (partial_ref == NULL)
     return TRUE;
@@ -597,8 +662,8 @@ flatpak_split_partial_ref_arg (char *partial_ref,
   if (slash != NULL)
     *slash = 0;
 
-  if (!flatpak_is_valid_name (partial_ref))
-    return flatpak_fail (error, "Invalid name %s", partial_ref);
+  if (!flatpak_is_valid_name (partial_ref, &local_error))
+    return flatpak_fail (error, "Invalid name %s: %s", partial_ref, local_error->message);
 
   if (slash == NULL)
     goto out;
@@ -617,8 +682,8 @@ flatpak_split_partial_ref_arg (char *partial_ref,
   branch = slash + 1;
   if (strlen (branch) > 0)
     {
-      if (!flatpak_is_valid_branch (branch))
-        return flatpak_fail (error, "Invalid branch %s", branch);
+      if (!flatpak_is_valid_branch (branch, &local_error))
+        return flatpak_fail (error, "Invalid branch %s: %s", branch, local_error->message);
     }
   else
     branch = NULL;
@@ -641,15 +706,17 @@ flatpak_compose_ref (gboolean    app,
                      const char *arch,
                      GError    **error)
 {
-  if (!flatpak_is_valid_name (name))
+  g_autoptr(GError) local_error = NULL;
+
+  if (!flatpak_is_valid_name (name, &local_error))
     {
-      flatpak_fail (error, "'%s' is not a valid name", name);
+      flatpak_fail (error, "'%s' is not a valid name: %s", name, local_error->message);
       return NULL;
     }
 
-  if (branch && !flatpak_is_valid_branch (branch))
+  if (branch && !flatpak_is_valid_branch (branch, &local_error))
     {
-      flatpak_fail (error, "'%s' is not a valid branch name", branch);
+      flatpak_fail (error, "'%s' is not a valid branch name: %s", branch, local_error->message);
       return NULL;
     }
 
@@ -3663,6 +3730,7 @@ flatpak_complete_word (FlatpakCompletion *completion,
 {
   va_list args;
   const char *rest;
+  const char *shell_cur;
   g_autofree char *string = NULL;
 
   g_return_if_fail (format != NULL);
@@ -3674,11 +3742,13 @@ flatpak_complete_word (FlatpakCompletion *completion,
   if (!g_str_has_prefix (string, completion->cur))
     return;
 
+  shell_cur = completion->shell_cur ? completion->shell_cur : "";
+
   /* I'm not sure exactly what bash is doing here, but this seems to work... */
-  if (strcmp (completion->shell_cur, "=") == 0)
-    rest = string + strlen (completion->cur) - strlen (completion->shell_cur) + 1;
+  if (strcmp (shell_cur, "=") == 0)
+    rest = string + strlen (completion->cur) - strlen (shell_cur) + 1;
   else
-    rest = string + strlen (completion->cur) - strlen (completion->shell_cur);
+    rest = string + strlen (completion->cur) - strlen (shell_cur);
 
   flatpak_completion_debug ("completing word: '%s' (%s)", string, rest);
 
