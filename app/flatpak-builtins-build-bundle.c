@@ -888,6 +888,7 @@ flatpak_builtin_build_bundle (int argc, char **argv, GCancellable *cancellable, 
   g_autoptr(GFile) file = NULL;
   g_autoptr(GFile) repofile = NULL;
   g_autoptr(OstreeRepo) repo = NULL;
+  g_autoptr(GError) my_error = NULL;
   const char *location;
   const char *filename;
   const char *name;
@@ -920,11 +921,11 @@ flatpak_builtin_build_bundle (int argc, char **argv, GCancellable *cancellable, 
 
   file = g_file_new_for_commandline_arg (filename);
 
-  if (!flatpak_is_valid_name (name))
-    return flatpak_fail (error, _("'%s' is not a valid name"), name);
+  if (!flatpak_is_valid_name (name, &my_error))
+    return flatpak_fail (error, _("'%s' is not a valid name: %s"), name, my_error->message);
 
-  if (!flatpak_is_valid_branch (branch))
-    return flatpak_fail (error, _("'%s' is not a valid branch name"), branch);
+  if (!flatpak_is_valid_branch (branch, &my_error))
+    return flatpak_fail (error, _("'%s' is not a valid branch name: %s"), branch, &my_error);
 
   if (opt_runtime)
     full_branch = flatpak_build_runtime_ref (name, branch, opt_arch);

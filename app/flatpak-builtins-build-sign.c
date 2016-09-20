@@ -52,6 +52,7 @@ flatpak_builtin_build_sign (int argc, char **argv, GCancellable *cancellable, GE
   g_autoptr(GOptionContext) context = NULL;
   g_autoptr(GFile) repofile = NULL;
   g_autoptr(OstreeRepo) repo = NULL;
+  g_autoptr(GError) my_error = NULL;
   const char *location;
   const char *branch;
   const char *id;
@@ -79,11 +80,11 @@ flatpak_builtin_build_sign (int argc, char **argv, GCancellable *cancellable, GE
   else
     branch = "master";
 
-  if (!flatpak_is_valid_name (id))
-    return flatpak_fail (error, _("'%s' is not a valid name"), id);
+  if (!flatpak_is_valid_name (id, &my_error))
+    return flatpak_fail (error, _("'%s' is not a valid name: %s"), id, my_error->message);
 
-  if (!flatpak_is_valid_branch (branch))
-    return flatpak_fail (error, _("'%s' is not a valid branch name"), branch);
+  if (!flatpak_is_valid_branch (branch, &my_error))
+    return flatpak_fail (error, _("'%s' is not a valid branch name: %s"), branch, my_error->message);
 
   if (opt_gpg_key_ids == NULL)
     return flatpak_fail (error, _("No gpg key ids specified"));

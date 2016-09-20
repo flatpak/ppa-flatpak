@@ -976,7 +976,7 @@ xdp_fuse_lookup (fuse_req_t  req,
 
     case XDP_INODE_BY_APP:
       /* This lazily creates the app dir */
-      if (flatpak_is_valid_name (name))
+      if (flatpak_is_valid_name (name, NULL))
         child_inode = xdp_inode_get_dir (name, NULL, NULL);
       break;
 
@@ -1378,7 +1378,7 @@ xdp_inode_locked_close_unneeded_fds (XdpInode *inode)
               g_debug ("moving %s to %s", inode->trunc_filename, inode->backing_filename);
               if (renameat (inode->dir_fd, inode->trunc_filename,
                             inode->dir_fd, inode->backing_filename) != 0)
-                g_warning ("Unable to replace truncated document: %s", strerror (errno));
+                g_warning ("Unable to replace truncated document: %s", g_strerror (errno));
             }
 
           inode->truncated = FALSE;
