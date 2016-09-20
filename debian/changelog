@@ -1,5 +1,7 @@
-flatpak (0.6.10-2) UNRELEASED; urgency=medium
+flatpak (0.6.11-1) UNRELEASED; urgency=medium
 
+  * New upstream release
+    - install new man pages flatpak-flatpakrepo(5), flatpak-flatpakref(5)
   * Install Flatpak-1.0.typelib to multiarch path (Closes: #838308)
   * Make gir1.2-flatpak-1.0 Multi-arch: same
   * Make libflatpak-dev depend on gir1.2-flatpak-1.0 in accordance
