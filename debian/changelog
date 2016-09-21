@@ -7,6 +7,7 @@ flatpak (0.6.11-1) UNRELEASED; urgency=medium
   * Make libflatpak-dev depend on gir1.2-flatpak-1.0 in accordance
     with the g-i mini-policy
   * Relicense debian/ under LGPL, with permission from David King
+  * Register flatpak-docs.html in the Debian doc-base system
 
  -- Simon McVittie <smcv@debian.org>  Mon, 19 Sep 2016 18:22:56 +0100
 
