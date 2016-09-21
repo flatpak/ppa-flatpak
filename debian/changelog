@@ -1,4 +1,4 @@
-flatpak (0.6.11-1) UNRELEASED; urgency=medium
+flatpak (0.6.11-1) unstable; urgency=medium
 
   * New upstream release
     - install new man pages flatpak-flatpakrepo(5), flatpak-flatpakref(5)
@@ -9,7 +9,7 @@ flatpak (0.6.11-1) UNRELEASED; urgency=medium
   * Relicense debian/ under LGPL, with permission from David King
   * Register flatpak-docs.html in the Debian doc-base system
 
- -- Simon McVittie <smcv@debian.org>  Mon, 19 Sep 2016 18:22:56 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 21 Sep 2016 19:01:32 +0100
 
 flatpak (0.6.10-1) unstable; urgency=medium
 
