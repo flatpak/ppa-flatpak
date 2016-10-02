@@ -22,7 +22,7 @@ Build-Depends:
  gnome-desktop-testing,
  gobject-introspection,
  gtk-doc-tools,
- gtk-update-icon-cache | libgtk-3-bin,
+ gtk-update-icon-cache,
  hicolor-icon-theme,
  libarchive-dev (>= 2.8.0),
  libattr1-dev,
@@ -59,7 +59,7 @@ Depends:
 Recommends:
  desktop-file-utils,
  hicolor-icon-theme,
- gtk-update-icon-cache | libgtk-3-bin,
+ gtk-update-icon-cache,
  libpam-systemd,
  shared-mime-info,
 Conflicts:
@@ -114,7 +114,7 @@ Depends:
  desktop-file-utils,
  flatpak (= ${binary:Version}),
  hicolor-icon-theme,
- gtk-update-icon-cache | libgtk-3-bin,
+ gtk-update-icon-cache,
  ostree,
  shared-mime-info,
  ${misc:Depends},
