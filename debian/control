@@ -10,7 +10,7 @@ Build-Depends:
  bubblewrap (>= 0.1.2),
  ca-certificates,
  dbus,
- debhelper (>= 10),
+ debhelper (>= 10~),
  desktop-file-utils,
  dh-exec,
  docbook-xml,
