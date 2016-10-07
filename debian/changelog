@@ -1,4 +1,4 @@
-flatpak (0.6.12-1) UNRELEASED; urgency=medium
+flatpak (0.6.12-1) unstable; urgency=medium
 
   * This release drops source compatibility with Debian jessie. If
     you are building unofficial backports for older Debian derivatives,
@@ -17,7 +17,7 @@ flatpak (0.6.12-1) UNRELEASED; urgency=medium
   * New upstream release
     - d/libflatpak0.symbols: update
 
- -- Simon McVittie <smcv@debian.org>  Sun, 02 Oct 2016 13:20:36 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 07 Oct 2016 22:41:21 +0100
 
 flatpak (0.6.11-1) unstable; urgency=medium
 
