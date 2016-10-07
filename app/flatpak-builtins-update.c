@@ -63,9 +63,32 @@ update_appstream (FlatpakDir *dir, const char *remote, GCancellable *cancellable
 {
   gboolean changed;
 
-  if (!flatpak_dir_update_appstream (dir, remote, opt_arch, &changed,
-                                     NULL, cancellable, error))
-    return FALSE;
+  if (remote == NULL)
+    {
+      g_auto(GStrv) remotes = NULL;
+      int i;
+
+      remotes = flatpak_dir_list_remotes (dir, cancellable, error);
+      if (remotes == NULL)
+        return FALSE;
+
+      for (i = 0; remotes[i] != NULL; i++)
+        {
+          if (flatpak_dir_get_remote_disabled (dir, remotes[i]))
+            continue;
+
+          g_print (_("Updating appstream for remote %s\n"), remotes[i]);
+          if (!flatpak_dir_update_appstream (dir, remotes[i], opt_arch, &changed,
+                                             NULL, cancellable, error))
+            return FALSE;
+        }
+    }
+  else
+    {
+      if (!flatpak_dir_update_appstream (dir, remote, opt_arch, &changed,
+                                         NULL, cancellable, error))
+        return FALSE;
+    }
 
   return TRUE;
 }
@@ -208,6 +231,9 @@ flatpak_builtin_update (int           argc,
     name = argv[1];
   if (argc >= 3)
     branch = argv[2];
+
+  if (argc > 3)
+    return usage_error (context, _("Too many arguments"), error);
 
   if (opt_arch == NULL)
     opt_arch = (char *)flatpak_get_arch ();

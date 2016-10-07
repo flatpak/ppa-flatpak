@@ -76,6 +76,9 @@ flatpak_builtin_ls_remote (int argc, char **argv, GCancellable *cancellable, GEr
   if (argc < 2)
     return usage_error (context, _("REMOTE must be specified"), error);
 
+  if (argc > 2)
+    return usage_error (context, _("Too many arguments"), error);
+
   repository = argv[1];
 
 
@@ -146,13 +149,24 @@ flatpak_builtin_ls_remote (int argc, char **argv, GCancellable *cancellable, GEr
   keys = (const char **) g_hash_table_get_keys_as_array (names, &n_keys);
   g_qsort_with_data (keys, n_keys, sizeof (char *), (GCompareDataFunc) flatpak_strcmp0_ptr, NULL);
 
+  FlatpakTablePrinter *printer = flatpak_table_printer_new ();
+
   for (i = 0; i < n_keys; i++)
     {
+      flatpak_table_printer_add_column (printer, keys[i]);
       if (opt_show_details)
-        g_print ("%s %.12s\n", keys[i], (char *) g_hash_table_lookup (names, keys[i]));
-      else
-        g_print ("%s\n", keys[i]);
+        {
+          g_autofree char *value = NULL;
+
+          value = g_strdup ((char *) g_hash_table_lookup (names, keys[i]));
+          value[MIN (strlen (value), 12)] = 0;
+          flatpak_table_printer_add_column (printer, value);
+        }
+      flatpak_table_printer_finish_row (printer);
     }
+
+  flatpak_table_printer_print (printer);
+  flatpak_table_printer_free (printer);
 
   return TRUE;
 }
@@ -165,6 +179,7 @@ flatpak_complete_ls_remote (FlatpakCompletion *completion)
   int i;
 
   context = g_option_context_new ("");
+
   if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv, 0, &dir, NULL, NULL))
     return FALSE;
 
