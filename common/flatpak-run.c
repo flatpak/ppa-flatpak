@@ -93,20 +93,24 @@ const char *dont_mount_in_root[] = {
 typedef enum {
   FLATPAK_CONTEXT_DEVICE_DRI         = 1 << 0,
   FLATPAK_CONTEXT_DEVICE_ALL         = 1 << 1,
+  FLATPAK_CONTEXT_DEVICE_KVM         = 1 << 2,
 } FlatpakContextDevices;
 
 const char *flatpak_context_devices[] = {
   "dri",
   "all",
+  "kvm",
   NULL
 };
 
 typedef enum {
   FLATPAK_CONTEXT_FEATURE_DEVEL        = 1 << 0,
+  FLATPAK_CONTEXT_FEATURE_MULTIARCH    = 1 << 1,
 } FlatpakContextFeatures;
 
 const char *flatpak_context_features[] = {
   "devel",
+  "multiarch",
   NULL
 };
 
@@ -2006,6 +2010,12 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
                         NULL);
             }
         }
+      if (context->devices & FLATPAK_CONTEXT_DEVICE_KVM)
+        {
+          g_debug ("Allowing kvm access");
+          if (g_file_test ("/dev/kvm", G_FILE_TEST_EXISTS))
+            add_args (argv_array, "--dev-bind", "/dev/kvm", "/dev/kvm", NULL);
+        }
     }
 
   fs_mode = (FlatpakFilesystemMode) g_hash_table_lookup (context->filesystems, "host");
@@ -2962,6 +2972,12 @@ add_dbus_proxy_args (GPtrArray *argv_array,
 }
 
 #ifdef ENABLE_SECCOMP
+static const uint32_t seccomp_x86_64_extra_arches[] = { SCMP_ARCH_X86, 0, };
+
+#ifdef SCMP_ARCH_AARCH64
+static const uint32_t seccomp_aarch64_extra_arches[] = { SCMP_ARCH_ARM, 0 };
+#endif
+
 static inline void
 cleanup_seccomp (void *p)
 {
@@ -2975,6 +2991,7 @@ static gboolean
 setup_seccomp (GPtrArray  *argv_array,
                GArray     *fd_array,
                const char *arch,
+               gboolean    multiarch,
                gboolean    devel,
                GError    **error)
 {
@@ -3027,6 +3044,11 @@ setup_seccomp (GPtrArray  *argv_array,
     {SCMP_SYS (modify_ldt)},
     /* Don't allow reading current quota use */
     {SCMP_SYS (quotactl)},
+
+    /* Don't allow access to the kernel keyring */
+    {SCMP_SYS (add_key)},
+    {SCMP_SYS (keyctl)},
+    {SCMP_SYS (request_key)},
 
     /* Scary VM/NUMA ops */
     {SCMP_SYS (move_pages)},
@@ -3081,16 +3103,27 @@ setup_seccomp (GPtrArray  *argv_array,
   if (arch != NULL)
     {
       uint32_t arch_id = 0;
+      const uint32_t *extra_arches = NULL;
 
       if (strcmp (arch, "i386") == 0)
-        arch_id = SCMP_ARCH_X86;
+        {
+          arch_id = SCMP_ARCH_X86;
+        }
       else if (strcmp (arch, "x86_64") == 0)
-        arch_id = SCMP_ARCH_X86_64;
+        {
+          arch_id = SCMP_ARCH_X86_64;
+          extra_arches = seccomp_x86_64_extra_arches;
+        }
       else if (strcmp (arch, "arm") == 0)
-        arch_id = SCMP_ARCH_ARM;
+        {
+          arch_id = SCMP_ARCH_ARM;
+        }
 #ifdef SCMP_ARCH_AARCH64
       else if (strcmp (arch, "aarch64") == 0)
-        arch_id = SCMP_ARCH_AARCH64;
+        {
+          arch_id = SCMP_ARCH_AARCH64;
+          extra_arches = seccomp_aarch64_extra_arches;
+        }
 #endif
 
       /* We only really need to handle arches on multiarch systems.
@@ -3105,6 +3138,17 @@ setup_seccomp (GPtrArray  *argv_array,
           r = seccomp_arch_add (seccomp, arch_id);
           if (r < 0 && r != -EEXIST)
             return flatpak_fail (error, "Failed to add architecture to seccomp filter");
+
+          if (multiarch && extra_arches != NULL)
+            {
+              unsigned i;
+              for (i = 0; extra_arches[i] != 0; i++)
+                {
+                  r = seccomp_arch_add (seccomp, extra_arches[i]);
+                  if (r < 0 && r != -EEXIST)
+                    return flatpak_fail (error, "Failed to add multiarch architecture to seccomp filter");
+                }
+            }
         }
     }
 
@@ -3146,9 +3190,9 @@ setup_seccomp (GPtrArray  *argv_array,
     {
       int family = socket_family_blacklist[i];
       if (i == G_N_ELEMENTS (socket_family_blacklist) - 1)
-        r = seccomp_rule_add_exact (seccomp, SCMP_ACT_ERRNO (EAFNOSUPPORT), SCMP_SYS (socket), 1, SCMP_A0 (SCMP_CMP_GE, family));
+        seccomp_rule_add_exact (seccomp, SCMP_ACT_ERRNO (EAFNOSUPPORT), SCMP_SYS (socket), 1, SCMP_A0 (SCMP_CMP_GE, family));
       else
-        r = seccomp_rule_add_exact (seccomp, SCMP_ACT_ERRNO (EAFNOSUPPORT), SCMP_SYS (socket), 1, SCMP_A0 (SCMP_CMP_EQ, family));
+        seccomp_rule_add_exact (seccomp, SCMP_ACT_ERRNO (EAFNOSUPPORT), SCMP_SYS (socket), 1, SCMP_A0 (SCMP_CMP_EQ, family));
     }
 
   fd = g_file_open_tmp ("flatpak-seccomp-XXXXXX", &path, error);
@@ -3327,6 +3371,7 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
   if (!setup_seccomp (argv_array,
                       fd_array,
                       arch,
+                      (flags & FLATPAK_RUN_FLAG_MULTIARCH) != 0,
                       (flags & FLATPAK_RUN_FLAG_DEVEL) != 0,
                       error))
     return FALSE;
@@ -3489,6 +3534,9 @@ flatpak_run_app (const char     *app_ref,
 
   if (app_context->features & FLATPAK_CONTEXT_FEATURE_DEVEL)
     flags |= FLATPAK_RUN_FLAG_DEVEL;
+
+  if (app_context->features & FLATPAK_CONTEXT_FEATURE_MULTIARCH)
+    flags |= FLATPAK_RUN_FLAG_MULTIARCH;
 
   if (!flatpak_run_setup_base_argv (argv_array, fd_array, runtime_files, app_id_dir, app_ref_parts[2], flags, error))
     return FALSE;
