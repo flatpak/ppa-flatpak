@@ -2,6 +2,7 @@ flatpak (0.6.13-1) UNRELEASED; urgency=medium
 
   * New upstream release
     - update symbols file
+    - update ostree build-dependency to 2016.12
 
  -- Simon McVittie <smcv@debian.org>  Wed, 26 Oct 2016 00:29:24 +0100
 
