@@ -32,6 +32,8 @@
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
+#include "flatpak-builtins-utils.h"
+#include "flatpak-transaction.h"
 #include "flatpak-utils.h"
 #include "lib/flatpak-error.h"
 #include "flatpak-chain-input-stream.h"
@@ -42,6 +44,7 @@ static char **opt_subpaths;
 static gboolean opt_no_pull;
 static gboolean opt_no_deploy;
 static gboolean opt_no_related;
+static gboolean opt_no_deps;
 static gboolean opt_runtime;
 static gboolean opt_app;
 static gboolean opt_bundle;
@@ -52,10 +55,11 @@ static GOptionEntry options[] = {
   { "no-pull", 0, 0, G_OPTION_ARG_NONE, &opt_no_pull, N_("Don't pull, only install from local cache"), NULL },
   { "no-deploy", 0, 0, G_OPTION_ARG_NONE, &opt_no_deploy, N_("Don't deploy, only download to local cache"), NULL },
   { "no-related", 0, 0, G_OPTION_ARG_NONE, &opt_no_related, N_("Don't install related refs"), NULL },
+  { "no-deps", 0, 0, G_OPTION_ARG_NONE, &opt_no_deps, N_("Don't verify/install runtime dependencies"), NULL },
   { "runtime", 0, 0, G_OPTION_ARG_NONE, &opt_runtime, N_("Look for runtime with the specified name"), NULL },
   { "app", 0, 0, G_OPTION_ARG_NONE, &opt_app, N_("Look for app with the specified name"), NULL },
   { "bundle", 0, 0, G_OPTION_ARG_NONE, &opt_bundle, N_("Install from local bundle file"), NULL },
-  { "from", 0, 0, G_OPTION_ARG_NONE, &opt_from, N_("Load options from file"), NULL },
+  { "from", 0, 0, G_OPTION_ARG_NONE, &opt_from, N_("Load options from file or uri"), NULL },
   { "gpg-file", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_gpg_file, N_("Check bundle signatures with GPG key from FILE (- for stdin)"), N_("FILE") },
   { "subpath", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_subpaths, N_("Only install this subpath"), N_("PATH") },
   { NULL }
@@ -140,73 +144,6 @@ install_bundle (FlatpakDir *dir,
   return TRUE;
 }
 
-static gboolean
-do_install (FlatpakDir          *dir,
-            gboolean             no_pull,
-            gboolean             no_deploy,
-            const char          *ref,
-            const char          *remote_name,
-            const char         **opt_subpaths,
-            GCancellable        *cancellable,
-            GError             **error)
-{
-  g_autoptr(GPtrArray) related = NULL;
-  int i;
-
-  if (!flatpak_dir_install (dir,
-                            opt_no_pull,
-                            opt_no_deploy,
-                            ref, remote_name,
-                            (const char **)opt_subpaths,
-                            NULL,
-                            cancellable, error))
-    return FALSE;
-
-  if (!opt_no_related)
-    {
-      g_autoptr(GError) local_error = NULL;
-
-      if (opt_no_pull)
-        related = flatpak_dir_find_local_related (dir, ref, remote_name, NULL, &local_error);
-      else
-        related = flatpak_dir_find_remote_related (dir, ref, remote_name, NULL, &local_error);
-      if (related == NULL)
-        {
-          g_printerr (_("Warning: Problem looking for related refs: %s\n"), local_error->message);
-          g_clear_error (&local_error);
-        }
-      else
-        {
-          for (i = 0; i < related->len; i++)
-            {
-              FlatpakRelated *rel = g_ptr_array_index (related, i);
-              g_auto(GStrv) parts = NULL;
-
-              if (!rel->download)
-                continue;
-
-              parts = g_strsplit (rel->ref, "/", 0);
-
-              g_print (_("Installing related: %s\n"), parts[1]);
-
-              if (!flatpak_dir_install_or_update (dir,
-                                                  opt_no_pull,
-                                                  opt_no_deploy,
-                                                  rel->ref, remote_name,
-                                                  (const char **)rel->subpaths,
-                                                  NULL,
-                                                  cancellable, &local_error))
-                {
-                  g_printerr (_("Warning: Failed to install related ref: %s\n"),
-                              rel->ref);
-                  g_clear_error (&local_error);
-                }
-            }
-        }
-    }
-
-  return TRUE;
-}
 
 static gboolean
 install_from (FlatpakDir *dir,
@@ -223,22 +160,39 @@ install_from (FlatpakDir *dir,
   g_autofree char *remote = NULL;
   g_autofree char *ref = NULL;
   g_auto(GStrv) parts = NULL;
+  const char *slash;
   FlatpakDir *clone;
+  g_autoptr(FlatpakTransaction) transaction = NULL;
+  g_autoptr(GBytes) bytes = NULL;
 
   if (argc < 2)
-    return usage_error (context, _("Filename must be specified"), error);
+    return usage_error (context, _("Filename or uri must be specified"), error);
 
   if (argc > 2)
     return usage_error (context, _("Too many arguments"), error);
 
+
   filename = argv[1];
 
-  file = g_file_new_for_commandline_arg (filename);
+  if (g_str_has_prefix (filename, "http:") ||
+      g_str_has_prefix (filename, "https:"))
+    {
+      file_data = download_uri (filename, error);
+      if (file_data == NULL)
+        {
+          g_prefix_error (error, "Can't load uri %s", filename);
+          return FALSE;
+        }
+    }
+  else
+    {
+      file = g_file_new_for_commandline_arg (filename);
 
-  if (!g_file_load_contents (file, cancellable, &data, &data_len, NULL, error))
-      return FALSE;
+      if (!g_file_load_contents (file, cancellable, &data, &data_len, NULL, error))
+        return FALSE;
 
-  file_data = g_bytes_new_take (g_steal_pointer (&data), data_len);
+      file_data = g_bytes_new_take (g_steal_pointer (&data), data_len);
+    }
 
   if (!flatpak_dir_create_remote_for_ref_file (dir, file_data, &remote, &ref, error))
     return FALSE;
@@ -248,15 +202,16 @@ install_from (FlatpakDir *dir,
   if (!flatpak_dir_ensure_repo (clone, cancellable, error))
     return FALSE;
 
-  parts = g_strsplit (ref, "/", 0);
-  g_print (_("Installing: %s\n"), parts[1]);
+  slash = strchr (ref, '/');
+  g_print (_("Installing: %s\n"), slash + 1);
 
-  if (!do_install (clone,
-                   opt_no_pull,
-                   opt_no_deploy,
-                   ref, remote,
-                   (const char **)opt_subpaths,
-                   cancellable, error))
+  transaction = flatpak_transaction_new (clone, opt_no_pull, opt_no_deploy,
+                                         !opt_no_deps, !opt_no_related);
+
+  if (!flatpak_transaction_add_install (transaction, remote, ref, (const char **)opt_subpaths, error))
+    return FALSE;
+
+  if (!flatpak_transaction_run (transaction, TRUE, cancellable, error))
     return FALSE;
 
   return TRUE;
@@ -267,13 +222,17 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
 {
   g_autoptr(GOptionContext) context = NULL;
   g_autoptr(FlatpakDir) dir = NULL;
-  const char *repository;
-  char *name;
-  char *branch = NULL;
-  g_autofree char *ref = NULL;
-  gboolean is_app;
+  const char *remote;
+  char **prefs = NULL;
+  int i, n_prefs;
+  g_autofree char *target_branch = NULL;
+  g_autofree char *default_branch = NULL;
+  FlatpakKinds kinds;
+  g_autoptr(FlatpakTransaction) transaction = NULL;
+  g_autoptr(GPtrArray) refs = NULL;
+  g_autoptr(GHashTable) refs_hash = NULL;
 
-  context = g_option_context_new (_("REPOSITORY NAME [BRANCH] - Install an application or runtime"));
+  context = g_option_context_new (_("REMOTE REF... - Install applications or runtimes"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv, 0, &dir, cancellable, error))
@@ -286,33 +245,50 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
     return install_from (dir, context, argc, argv, cancellable, error);
 
   if (argc < 3)
-    return usage_error (context, _("REPOSITORY and NAME must be specified"), error);
+    return usage_error (context, _("REMOTE and REF must be specified"), error);
 
-  if (argc > 4)
-    return usage_error (context, _("Too many arguments"), error);
+  remote = argv[1];
+  prefs = &argv[2];
+  n_prefs = argc - 2;
 
-  repository = argv[1];
-  name  = argv[2];
-  if (argc >= 4)
-    branch = argv[3];
+  /* Backwards compat for old "REMOTE NAME [BRANCH]" argument version */
+  if (argc == 4 && looks_like_branch (argv[3]))
+    {
+      target_branch = g_strdup (argv[3]);
+      n_prefs = 1;
+    }
 
-  if (!flatpak_split_partial_ref_arg (name, &opt_arch, &branch, error))
-    return FALSE;
+  default_branch = flatpak_dir_get_remote_default_branch (dir, remote);
+  kinds = flatpak_kinds_from_bools (opt_app, opt_runtime);
 
-  if (!opt_app && !opt_runtime)
-    opt_app = opt_runtime = TRUE;
+  transaction = flatpak_transaction_new (dir, opt_no_pull, opt_no_deploy,
+                                         !opt_no_deps, !opt_no_related);
 
-  ref = flatpak_dir_find_remote_ref (dir, repository, name, branch, opt_arch,
-                                     opt_app, opt_runtime, &is_app, cancellable, error);
-  if (ref == NULL)
-    return FALSE;
+  for (i = 0; i < n_prefs; i++)
+    {
+      const char *pref = prefs[i];
+      FlatpakKinds matched_kinds;
+      g_autofree char *id = NULL;
+      g_autofree char *arch = NULL;
+      g_autofree char *branch = NULL;
+      FlatpakKinds kind;
+      g_autofree char *ref = NULL;
+      g_autofree char *runtime_ref = NULL;
 
-  if (!do_install (dir,
-                   opt_no_pull,
-                   opt_no_deploy,
-                   ref, repository,
-                   (const char **)opt_subpaths,
-                   cancellable, error))
+      if (!flatpak_split_partial_ref_arg (pref, kinds, opt_arch, target_branch,
+                                          &matched_kinds, &id, &arch, &branch, error))
+        return FALSE;
+
+      ref = flatpak_dir_find_remote_ref (dir, remote, id, branch, default_branch, arch,
+                                         matched_kinds, &kind, cancellable, error);
+      if (ref == NULL)
+        return FALSE;
+
+      if (!flatpak_transaction_add_install (transaction, remote, ref, (const char **)opt_subpaths, error))
+        return FALSE;
+    }
+
+  if (!flatpak_transaction_run (transaction, TRUE, cancellable, error))
     return FALSE;
 
   return TRUE;
@@ -323,18 +299,14 @@ flatpak_complete_install (FlatpakCompletion *completion)
 {
   g_autoptr(GOptionContext) context = NULL;
   g_autoptr(FlatpakDir) dir = NULL;
-  g_autoptr(GError) error = NULL;
-  g_auto(GStrv) refs = NULL;
+  FlatpakKinds kinds;
   int i;
 
   context = g_option_context_new ("");
   if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv, 0, &dir, NULL, NULL))
     return FALSE;
 
-  if (!opt_app && !opt_runtime)
-    opt_app = opt_runtime = TRUE;
-
-  flatpak_completion_debug ("install argc %d", completion->argc);
+  kinds = flatpak_kinds_from_bools (opt_app, opt_runtime);
 
   switch (completion->argc)
     {
@@ -354,37 +326,8 @@ flatpak_complete_install (FlatpakCompletion *completion)
 
       break;
 
-    case 2: /* Name */
-      refs = flatpak_dir_find_remote_refs (dir, completion->argv[1], NULL, NULL,
-                                           opt_arch, opt_app, opt_runtime,
-                                           NULL, &error);
-      if (refs == NULL)
-        flatpak_completion_debug ("find remote refs error: %s", error->message);
-      for (i = 0; refs != NULL && refs[i] != NULL; i++)
-        {
-          g_auto(GStrv) parts = flatpak_decompose_ref (refs[i], NULL);
-          if (parts)
-            flatpak_complete_word (completion, "%s ", parts[1]);
-        }
-
-      break;
-
-    case 3: /* Branch */
-      refs = flatpak_dir_find_remote_refs (dir, completion->argv[1], completion->argv[2], NULL,
-                                           opt_arch, opt_app, opt_runtime,
-                                           NULL, &error);
-      if (refs == NULL)
-        flatpak_completion_debug ("find remote refs error: %s", error->message);
-      for (i = 0; refs != NULL && refs[i] != NULL; i++)
-        {
-          g_auto(GStrv) parts = flatpak_decompose_ref (refs[i], NULL);
-          if (parts)
-            flatpak_complete_word (completion, "%s ", parts[3]);
-        }
-
-      break;
-
-    default:
+    default: /* REF */
+      flatpak_complete_partial_ref (completion, kinds, opt_arch, dir, completion->argv[1]);
       break;
     }
 

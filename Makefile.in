@@ -317,6 +317,8 @@ PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(noinst_PROGRAMS)
 am__objects_4 = document-portal/flatpak-xdp-dbus.$(OBJEXT)
 am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-utils.$(OBJEXT) \
+	app/flatpak-flatpak-transaction.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-add-remote.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-delete-remote.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-list-remotes.$(OBJEXT) \
@@ -1257,6 +1259,10 @@ introspection_DATA = \
 flatpak_SOURCES = \
 	app/flatpak-main.c \
 	app/flatpak-builtins.h \
+	app/flatpak-builtins-utils.h \
+	app/flatpak-builtins-utils.c \
+	app/flatpak-transaction.h \
+	app/flatpak-transaction.c \
 	app/flatpak-builtins-add-remote.c \
 	app/flatpak-builtins-delete-remote.c \
 	app/flatpak-builtins-list-remotes.c \
@@ -2055,6 +2061,10 @@ app/$(DEPDIR)/$(am__dirstamp):
 	@: > app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-main.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-utils.$(OBJEXT): app/$(am__dirstamp) \
+	app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-transaction.$(OBJEXT): app/$(am__dirstamp) \
+	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-add-remote.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-delete-remote.$(OBJEXT):  \
@@ -2416,7 +2426,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-run.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-uninstall.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-update.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-transaction.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-bind-mount.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-bubblewrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-network.Po@am__quote@
@@ -2733,6 +2745,34 @@ app/flatpak-flatpak-main.obj: app/flatpak-main.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-main.c' object='app/flatpak-flatpak-main.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-main.obj `if test -f 'app/flatpak-main.c'; then $(CYGPATH_W) 'app/flatpak-main.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-main.c'; fi`
+
+app/flatpak-flatpak-builtins-utils.o: app/flatpak-builtins-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-utils.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-utils.Tpo -c -o app/flatpak-flatpak-builtins-utils.o `test -f 'app/flatpak-builtins-utils.c' || echo '$(srcdir)/'`app/flatpak-builtins-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-utils.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-utils.c' object='app/flatpak-flatpak-builtins-utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-utils.o `test -f 'app/flatpak-builtins-utils.c' || echo '$(srcdir)/'`app/flatpak-builtins-utils.c
+
+app/flatpak-flatpak-builtins-utils.obj: app/flatpak-builtins-utils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-utils.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-utils.Tpo -c -o app/flatpak-flatpak-builtins-utils.obj `if test -f 'app/flatpak-builtins-utils.c'; then $(CYGPATH_W) 'app/flatpak-builtins-utils.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-utils.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-utils.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-utils.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-utils.c' object='app/flatpak-flatpak-builtins-utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-utils.obj `if test -f 'app/flatpak-builtins-utils.c'; then $(CYGPATH_W) 'app/flatpak-builtins-utils.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-utils.c'; fi`
+
+app/flatpak-flatpak-transaction.o: app/flatpak-transaction.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-transaction.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-transaction.Tpo -c -o app/flatpak-flatpak-transaction.o `test -f 'app/flatpak-transaction.c' || echo '$(srcdir)/'`app/flatpak-transaction.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-transaction.Tpo app/$(DEPDIR)/flatpak-flatpak-transaction.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-transaction.c' object='app/flatpak-flatpak-transaction.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-transaction.o `test -f 'app/flatpak-transaction.c' || echo '$(srcdir)/'`app/flatpak-transaction.c
+
+app/flatpak-flatpak-transaction.obj: app/flatpak-transaction.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-transaction.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-transaction.Tpo -c -o app/flatpak-flatpak-transaction.obj `if test -f 'app/flatpak-transaction.c'; then $(CYGPATH_W) 'app/flatpak-transaction.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-transaction.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-transaction.Tpo app/$(DEPDIR)/flatpak-flatpak-transaction.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-transaction.c' object='app/flatpak-flatpak-transaction.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-transaction.obj `if test -f 'app/flatpak-transaction.c'; then $(CYGPATH_W) 'app/flatpak-transaction.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-transaction.c'; fi`
 
 app/flatpak-flatpak-builtins-add-remote.o: app/flatpak-builtins-add-remote.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-add-remote.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-add-remote.Tpo -c -o app/flatpak-flatpak-builtins-add-remote.o `test -f 'app/flatpak-builtins-add-remote.c' || echo '$(srcdir)/'`app/flatpak-builtins-add-remote.c

@@ -44,6 +44,7 @@
 #include "flatpak-run.h"
 #include "flatpak-proxy.h"
 #include "flatpak-utils.h"
+#include "flatpak-dir.h"
 #include "flatpak-systemd-dbus.h"
 
 #define DEFAULT_SHELL "/bin/sh"
@@ -129,6 +130,7 @@ struct FlatpakContext
   GHashTable           *filesystems;
   GHashTable           *session_bus_policy;
   GHashTable           *system_bus_policy;
+  GHashTable           *generic_policy;
 };
 
 FlatpakContext *
@@ -142,6 +144,8 @@ flatpak_context_new (void)
   context->filesystems = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   context->session_bus_policy = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   context->system_bus_policy = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+  context->generic_policy = g_hash_table_new_full (g_str_hash, g_str_equal,
+                                                   g_free, (GDestroyNotify)g_strfreev);
 
   return context;
 }
@@ -154,6 +158,7 @@ flatpak_context_free (FlatpakContext *context)
   g_hash_table_destroy (context->filesystems);
   g_hash_table_destroy (context->session_bus_policy);
   g_hash_table_destroy (context->system_bus_policy);
+  g_hash_table_destroy (context->generic_policy);
   g_slice_free (FlatpakContext, context);
 }
 
@@ -476,6 +481,38 @@ flatpak_context_set_system_bus_policy (FlatpakContext *context,
   g_hash_table_insert (context->system_bus_policy, g_strdup (name), GINT_TO_POINTER (policy));
 }
 
+void
+flatpak_context_apply_generic_policy (FlatpakContext *context,
+                                      const char     *key,
+                                      const char     *value)
+{
+  GPtrArray *new = g_ptr_array_new ();
+  const char **old_v;
+  int i;
+
+  g_assert (strchr (key, '.') != NULL);
+
+  old_v = g_hash_table_lookup (context->generic_policy, key);
+  for (i = 0; old_v != NULL && old_v[i] != NULL; i++)
+    {
+      const char *old = old_v[i];
+      const char *cmp1 = old;
+      const char *cmp2 = value;
+      if (*cmp1 == '!')
+        cmp1++;
+      if (*cmp2 == '!')
+        cmp2++;
+      if (strcmp (cmp1, cmp2) != 0)
+        g_ptr_array_add (new, g_strdup (old));
+    }
+
+  g_ptr_array_add (new, g_strdup (value));
+  g_ptr_array_add (new, NULL);
+
+  g_hash_table_insert (context->generic_policy, g_strdup (key),
+                       g_ptr_array_free (new, FALSE));
+}
+
 static void
 flatpak_context_set_persistent (FlatpakContext *context,
                                 const char     *path)
@@ -692,6 +729,21 @@ flatpak_context_merge (FlatpakContext *context,
   g_hash_table_iter_init (&iter, other->system_bus_policy);
   while (g_hash_table_iter_next (&iter, &key, &value))
     g_hash_table_insert (context->system_bus_policy, g_strdup (key), value);
+
+  g_hash_table_iter_init (&iter, other->system_bus_policy);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    g_hash_table_insert (context->system_bus_policy, g_strdup (key), value);
+
+  g_hash_table_iter_init (&iter, other->generic_policy);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      const char **policy_values = (const char **)value;
+      int i;
+
+      for (i = 0; policy_values[i] != NULL; i++)
+        flatpak_context_apply_generic_policy (context, (char *)key, policy_values[i]);
+    }
+
 }
 
 static gboolean
@@ -950,6 +1002,63 @@ option_system_talk_name_cb (const gchar *option_name,
 }
 
 static gboolean
+option_add_generic_policy_cb (const gchar *option_name,
+                              const gchar *value,
+                              gpointer     data,
+                              GError     **error)
+{
+  FlatpakContext *context = data;
+  char *t;
+  g_autofree char *key = NULL;
+  const char *policy_value;
+
+  t = strchr (value, '=');
+  if (t == NULL)
+    return flatpak_fail (error, "--policy arguments must be in the form SUBSYSTEM.KEY=[!]VALUE");
+  policy_value = t + 1;
+  key = g_strndup (value, t - value);
+  if (strchr (key, '.') == NULL)
+    return flatpak_fail (error, "--policy arguments must be in the form SUBSYSTEM.KEY=[!]VALUE");
+
+  if (policy_value[0] == '!')
+    return flatpak_fail (error, "--policy values can't start with \"!\"");
+
+  flatpak_context_apply_generic_policy (context, key, policy_value);
+
+  return TRUE;
+}
+
+static gboolean
+option_remove_generic_policy_cb (const gchar *option_name,
+                                 const gchar *value,
+                                 gpointer     data,
+                                 GError     **error)
+{
+  FlatpakContext *context = data;
+  char *t;
+  g_autofree char *key = NULL;
+  const char *policy_value;
+  g_autofree char *extended_value = NULL;
+
+  t = strchr (value, '=');
+  if (t == NULL)
+    return flatpak_fail (error, "--policy arguments must be in the form SUBSYSTEM.KEY=[!]VALUE");
+  policy_value = t + 1;
+  key = g_strndup (value, t - value);
+  if (strchr (key, '.') == NULL)
+    return flatpak_fail (error, "--policy arguments must be in the form SUBSYSTEM.KEY=[!]VALUE");
+
+  if (policy_value[0] == '!')
+    return flatpak_fail (error, "--policy values can't start with \"!\"");
+
+  extended_value = g_strconcat ("!", policy_value, NULL);
+
+  flatpak_context_apply_generic_policy (context, key, extended_value);
+
+  return TRUE;
+}
+
+static gboolean
 option_persist_cb (const gchar *option_name,
                    const gchar *value,
                    gpointer     data,
@@ -979,6 +1088,8 @@ static GOptionEntry context_options[] = {
   { "talk-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_talk_name_cb, N_("Allow app to talk to name on the session bus"), N_("DBUS_NAME") },
   { "system-own-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_system_own_name_cb, N_("Allow app to own name on the system bus"), N_("DBUS_NAME") },
   { "system-talk-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_system_talk_name_cb, N_("Allow app to talk to name on the system bus"), N_("DBUS_NAME") },
+  { "add-policy", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_add_generic_policy_cb, N_("Add generic policy option"), N_("SUBSYSTEM.KEY=VALUE") },
+  { "remove-policy", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_remove_generic_policy_cb, N_("Remove generic policy option"), N_("SUBSYSTEM.KEY=VALUE") },
   { "persist", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_persist_cb, N_("Persist home directory"), N_("FILENAME") },
   /* This is not needed/used anymore, so hidden, but we accept it for backwards compat */
   { "no-desktop", 0, G_OPTION_FLAG_IN_MAIN |  G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, &option_no_desktop_deprecated, N_("Don't require a running session (no cgroups creation)"), NULL },
@@ -1030,6 +1141,7 @@ flatpak_context_load_metadata (FlatpakContext *context,
                                GError        **error)
 {
   gboolean remove;
+  g_auto(GStrv) groups = NULL;
   int i;
 
   if (g_key_file_has_key (metakey, FLATPAK_METADATA_GROUP_CONTEXT, FLATPAK_METADATA_KEY_SHARED, NULL))
@@ -1203,6 +1315,33 @@ flatpak_context_load_metadata (FlatpakContext *context,
         }
     }
 
+  groups = g_key_file_get_groups (metakey, NULL);
+  for (i = 0; groups[i] != NULL; i++)
+    {
+      const char *group = groups[i];
+      const char *subsystem;
+      int j;
+
+      if (g_str_has_prefix (group, FLATPAK_METADATA_GROUP_PREFIX_POLICY))
+        {
+          g_auto(GStrv) keys = NULL;
+          subsystem = group + strlen (FLATPAK_METADATA_GROUP_PREFIX_POLICY);
+          keys = g_key_file_get_keys (metakey, group, NULL, NULL);
+          for (j = 0; keys != NULL && keys[j] != NULL; j++)
+            {
+              const char *key = keys[j];
+              g_autofree char *policy_key = g_strdup_printf ("%s.%s", subsystem, key);
+              g_auto(GStrv) values = NULL;
+              int k;
+
+              values = g_key_file_get_string_list (metakey, group, key, NULL, NULL);
+              for (k = 0; values != NULL && values[k] != NULL; k++)
+                flatpak_context_apply_generic_policy (context, policy_key,
+                                                      values[k]);
+            }
+        }
+    }
+
   return TRUE;
 }
 
@@ -1225,6 +1364,8 @@ flatpak_context_save_metadata (FlatpakContext *context,
   FlatpakContextDevices devices_valid = context->devices_valid;
   FlatpakContextFeatures features_mask = context->features;
   FlatpakContextFeatures features_valid = context->features;
+  g_auto(GStrv) groups = NULL;
+  int i;
 
   if (flatten)
     {
@@ -1385,6 +1526,42 @@ flatpak_context_save_metadata (FlatpakContext *context,
       g_key_file_set_string (metakey,
                              FLATPAK_METADATA_GROUP_ENVIRONMENT,
                              (char *) key, (char *) value);
+    }
+
+
+  groups = g_key_file_get_groups (metakey, NULL);
+  for (i = 0; groups[i] != NULL; i++)
+    {
+      const char *group = groups[i];
+      if (g_str_has_prefix (group, FLATPAK_METADATA_GROUP_PREFIX_POLICY))
+        g_key_file_remove_group (metakey, group, NULL);
+    }
+
+  g_hash_table_iter_init (&iter, context->generic_policy);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      g_auto(GStrv) parts = g_strsplit ((const char *)key, ".", 2);
+      g_autofree char *group = NULL;
+      g_assert (parts[1] != NULL);
+      const char **policy_values = (const char **)value;
+      g_autoptr(GPtrArray) new = g_ptr_array_new ();
+
+      for (i = 0; policy_values[i] != NULL; i++)
+        {
+          const char *policy_value = policy_values[i];
+
+          if (!flatten || policy_value[0] != '!')
+            g_ptr_array_add (new, (char *)policy_value);
+        }
+
+      if (new->len > 0)
+        {
+          group = g_strconcat (FLATPAK_METADATA_GROUP_PREFIX_POLICY,
+                               parts[0], NULL);
+          g_key_file_set_string_list (metakey, group, parts[1],
+                                      (const char * const*)new->pdata,
+                                      new->len);
+        }
     }
 }
 
@@ -2579,7 +2756,8 @@ compute_permissions (GKeyFile *app_metadata,
   if (!flatpak_context_load_metadata (app_context, runtime_metadata, error))
     return NULL;
 
-  if (!flatpak_context_load_metadata (app_context, app_metadata, error))
+  if (app_metadata != NULL &&
+      !flatpak_context_load_metadata (app_context, app_metadata, error))
     return NULL;
 
   return g_steal_pointer (&app_context);
@@ -2600,10 +2778,10 @@ flatpak_run_add_app_info_args (GPtrArray      *argv_array,
   g_autofree char *tmp_path = NULL;
   int fd;
   g_autoptr(GKeyFile) keyfile = NULL;
-  g_autofree char *app_path = NULL;
   g_autofree char *runtime_path = NULL;
   g_autofree char *fd_str = NULL;
   g_autofree char *old_dest = g_strdup_printf ("/run/user/%d/flatpak-info", getuid ());
+  const char *group;
 
   fd = g_file_open_tmp ("flatpak-context-XXXXXX", &tmp_path, NULL);
   if (fd < 0)
@@ -2618,11 +2796,19 @@ flatpak_run_add_app_info_args (GPtrArray      *argv_array,
 
   keyfile = g_key_file_new ();
 
-  g_key_file_set_string (keyfile, "Application", "name", app_id);
-  g_key_file_set_string (keyfile, "Application", "runtime", runtime_ref);
+  if (app_files)
+    group = "Application";
+  else
+    group = "Runtime";
 
-  app_path = g_file_get_path (app_files);
-  g_key_file_set_string (keyfile, "Instance", "app-path", app_path);
+  g_key_file_set_string (keyfile, group, "name", app_id);
+  g_key_file_set_string (keyfile, group, "runtime", runtime_ref);
+
+  if (app_files)
+    {
+      g_autofree char *app_path = g_file_get_path (app_files);
+      g_key_file_set_string (keyfile, "Instance", "app-path", app_path);
+    }
   runtime_path = g_file_get_path (runtime_files);
   g_key_file_set_string (keyfile, "Instance", "runtime-path", runtime_path);
   if (app_branch != NULL)
@@ -3448,8 +3634,6 @@ flatpak_run_app (const char     *app_ref,
   if (app_ref_parts == NULL)
     return FALSE;
 
-  metakey = flatpak_deploy_get_metadata (app_deploy);
-
   argv_array = g_ptr_array_new_with_free_func (g_free);
   fd_array = g_array_new (FALSE, TRUE, sizeof (int));
   g_array_set_clear_func (fd_array, clear_fd);
@@ -3457,13 +3641,22 @@ flatpak_run_app (const char     *app_ref,
   session_bus_proxy_argv = g_ptr_array_new_with_free_func (g_free);
   system_bus_proxy_argv = g_ptr_array_new_with_free_func (g_free);
 
-  default_runtime = g_key_file_get_string (metakey, "Application",
-                                           (flags & FLATPAK_RUN_FLAG_DEVEL) != 0 ? "sdk" : "runtime",
-                                           &my_error);
-  if (my_error)
+  if (app_deploy == NULL)
     {
-      g_propagate_error (error, g_steal_pointer (&my_error));
-      return FALSE;
+      g_assert (g_str_has_prefix (app_ref, "runtime/"));
+      default_runtime = g_strdup (app_ref + strlen ("runtime/"));
+    }
+  else
+    {
+      metakey = flatpak_deploy_get_metadata (app_deploy);
+      default_runtime = g_key_file_get_string (metakey, "Application",
+                                               (flags & FLATPAK_RUN_FLAG_DEVEL) != 0 ? "sdk" : "runtime",
+                                               &my_error);
+      if (my_error)
+        {
+          g_propagate_error (error, g_steal_pointer (&my_error));
+          return FALSE;
+        }
     }
 
   runtime_parts = g_strsplit (default_runtime, "/", 0);
@@ -3508,29 +3701,43 @@ flatpak_run_app (const char     *app_ref,
   if (app_context == NULL)
     return FALSE;
 
-  overrides = flatpak_deploy_get_overrides (app_deploy);
-  flatpak_context_merge (app_context, overrides);
+  if (app_deploy != NULL)
+    {
+      overrides = flatpak_deploy_get_overrides (app_deploy);
+      flatpak_context_merge (app_context, overrides);
+    }
 
   if (extra_context)
     flatpak_context_merge (app_context, extra_context);
 
   runtime_files = flatpak_deploy_get_files (runtime_deploy);
-  app_files = flatpak_deploy_get_files (app_deploy);
-
-  if ((app_id_dir = flatpak_ensure_data_dir (app_ref_parts[1], cancellable, error)) == NULL)
-    return FALSE;
+  if (app_deploy != NULL)
+    {
+      app_files = flatpak_deploy_get_files (app_deploy);
+      if ((app_id_dir = flatpak_ensure_data_dir (app_ref_parts[1], cancellable, error)) == NULL)
+        return FALSE;
+    }
 
   envp = g_get_environ ();
   envp = flatpak_run_apply_env_default (envp);
   envp = flatpak_run_apply_env_vars (envp, app_context);
-  envp = flatpak_run_apply_env_appid (envp, app_id_dir);
+  if (app_id_dir != NULL)
+    envp = flatpak_run_apply_env_appid (envp, app_id_dir);
 
   add_args (argv_array,
             "--ro-bind", flatpak_file_get_path_cached (runtime_files), "/usr",
             "--lock-file", "/usr/.ref",
-            "--ro-bind", flatpak_file_get_path_cached (app_files), "/app",
-            "--lock-file", "/app/.ref",
             NULL);
+
+  if (app_files != NULL)
+    add_args (argv_array,
+              "--ro-bind", flatpak_file_get_path_cached (app_files), "/app",
+              "--lock-file", "/app/.ref",
+              NULL);
+  else
+    add_args (argv_array,
+              "--dir", "/app",
+              NULL);
 
   if (app_context->features & FLATPAK_CONTEXT_FEATURE_DEVEL)
     flags |= FLATPAK_RUN_FLAG_DEVEL;
@@ -3545,7 +3752,8 @@ flatpak_run_app (const char     *app_ref,
                                       runtime_ref, app_context, &app_info_path, error))
     return FALSE;
 
-  if (!flatpak_run_add_extension_args (argv_array, metakey, app_ref, cancellable, error))
+  if (metakey != NULL &&
+      !flatpak_run_add_extension_args (argv_array, metakey, app_ref, cancellable, error))
     return FALSE;
 
   if (!flatpak_run_add_extension_args (argv_array, runtime_metakey, runtime_ref, cancellable, error))
@@ -3591,7 +3799,7 @@ flatpak_run_app (const char     *app_ref,
     {
       command = custom_command;
     }
-  else
+  else if (metakey)
     {
       default_command = g_key_file_get_string (metakey, "Application", "command", &my_error);
       if (my_error)
@@ -3599,7 +3807,6 @@ flatpak_run_app (const char     *app_ref,
           g_propagate_error (error, g_steal_pointer (&my_error));
           return FALSE;
         }
-
       command = default_command;
     }
 

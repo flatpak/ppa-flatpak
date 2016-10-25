@@ -43,7 +43,7 @@
  *
  * An FlatpakInstallation object provides information about an installation
  * location for flatpak applications. Typical installation locations are either
- * system-wide (in /var/lib/flatpak) or per-user (in ~/.local/share/flatpak).
+ * system-wide (in $prefix/var/lib/flatpak) or per-user (in ~/.local/share/flatpak).
  *
  * FlatpakInstallation can list configured remotes as well as installed application
  * and runtime references (in short: refs). It can also run, install, update and
@@ -638,6 +638,9 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
       g_autoptr(GPtrArray) refs = NULL;
       g_autoptr(GError) local_error = NULL;
 
+      if (flatpak_remote_get_disabled (remote))
+        continue;
+
       /* We ignore errors here. we don't want one remote to fail us */
       refs = flatpak_installation_list_remote_refs_sync (self,
                                                          flatpak_remote_get_name (remote),
@@ -790,6 +793,45 @@ flatpak_installation_remove_remote (FlatpakInstallation *self,
 
   if (!flatpak_dir_remove_remote (dir, FALSE, name,
                                   cancellable, error))
+    return FALSE;
+
+  /* Make sure we pick up the new config */
+  flatpak_installation_drop_caches (self, NULL, NULL);
+
+  return TRUE;
+}
+
+/**
+ * flatpak_installation_update_remote_sync:
+ * @self: a #FlatpakInstallation
+ * @name: the name of the remote to update
+ * @cancellable: (nullable): a #GCancellable
+ * @error: return location for a #GError
+ *
+ * Updates the local configuration of a remote repository by fetching
+ * the related information from the summary file in the remote OSTree
+ * repository and committing the changes to the local installation.
+ *
+ * Returns: %TRUE if the remote has been updated successfully
+ *
+ * Since: 0.6.13
+ */
+gboolean
+flatpak_installation_update_remote_sync (FlatpakInstallation *self,
+                                         const char          *name,
+                                         GCancellable        *cancellable,
+                                         GError             **error)
+{
+  g_autoptr(FlatpakDir) dir = flatpak_installation_get_dir (self);
+  g_autoptr(FlatpakDir) dir_clone = NULL;
+
+  /* We clone the dir here to make sure we re-read the latest ostree repo config, in case
+     it has local changes */
+  dir_clone = flatpak_dir_clone (dir);
+  if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
+    return FALSE;
+
+  if (!flatpak_dir_update_remote_configuration (dir, name, cancellable, error))
     return FALSE;
 
   /* Make sure we pick up the new config */

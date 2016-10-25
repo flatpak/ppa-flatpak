@@ -646,60 +646,161 @@ flatpak_decompose_ref (const char *full_ref,
   return g_steal_pointer (&parts);
 }
 
-gboolean
-flatpak_split_partial_ref_arg (char *partial_ref,
-                               char **inout_arch,
-                               char **inout_branch,
-                               GError    **error)
+static const char *
+next_element (const char **partial_ref)
 {
-  char *slash;
-  char *arch = NULL;
-  char *branch = NULL;
-  g_autoptr(GError) local_error = NULL;
-
-  if (partial_ref == NULL)
-    return TRUE;
-
-  slash = strchr (partial_ref, '/');
+  const char *slash;
+  const char *end;
+  slash = (const char *)strchr (*partial_ref, '/');
   if (slash != NULL)
-    *slash = 0;
-
-  if (!flatpak_is_valid_name (partial_ref, &local_error))
-    return flatpak_fail (error, "Invalid name %s: %s", partial_ref, local_error->message);
-
-  if (slash == NULL)
-    goto out;
-
-  arch = slash + 1;
-  slash = strchr (arch, '/');
-  if (slash != NULL)
-    *slash = 0;
-
-  if (strlen (arch) == 0)
-    arch = NULL;
-
-  if (slash == NULL)
-    goto out;
-
-  branch = slash + 1;
-  if (strlen (branch) > 0)
     {
-      if (!flatpak_is_valid_branch (branch, &local_error))
-        return flatpak_fail (error, "Invalid branch %s: %s", branch, local_error->message);
+      end = slash;
+      *partial_ref = slash + 1;
     }
   else
-    branch = NULL;
+    {
+      end = *partial_ref + strlen (*partial_ref);
+      *partial_ref = end;
+    }
 
- out:
+  return end;
+}
 
-  if (*inout_arch == NULL)
-    *inout_arch = arch;
+FlatpakKinds
+flatpak_kinds_from_bools (gboolean app, gboolean runtime)
+{
+  FlatpakKinds kinds = 0;
 
-  if (*inout_branch == NULL)
-    *inout_branch = branch;
+  if (app)
+    kinds |= FLATPAK_KINDS_APP;
+
+  if (runtime)
+    kinds |= FLATPAK_KINDS_RUNTIME;
+
+  if (kinds == 0)
+    kinds = FLATPAK_KINDS_APP | FLATPAK_KINDS_RUNTIME;
+
+  return kinds;
+}
+
+gboolean
+_flatpak_split_partial_ref_arg (const char   *partial_ref,
+                                gboolean      validate,
+                                FlatpakKinds  default_kinds,
+                                const char   *default_arch,
+                                const char   *default_branch,
+                                FlatpakKinds *out_kinds,
+                                char        **out_id,
+                                char        **out_arch,
+                                char        **out_branch,
+                                GError      **error)
+{
+  const char *id_start = NULL;
+  const char *id_end = NULL;
+  g_autofree char *id = NULL;
+  const char *arch_start = NULL;
+  const char *arch_end = NULL;
+  g_autofree char *arch = NULL;
+  const char *branch_start = NULL;
+  const char *branch_end = NULL;
+  g_autofree char *branch = NULL;
+  g_autoptr(GError) local_error = NULL;
+  FlatpakKinds kinds = 0;
+
+  if (g_str_has_prefix (partial_ref, "app/"))
+    {
+      partial_ref += strlen ("app/");
+      kinds = FLATPAK_KINDS_APP;
+    }
+  else if (g_str_has_prefix (partial_ref, "runtime/"))
+    {
+      partial_ref += strlen ("runtime/");
+      kinds = FLATPAK_KINDS_RUNTIME;
+    }
+  else
+    kinds = default_kinds;
+
+  id_start = partial_ref;
+  id_end = next_element (&partial_ref);
+  id = g_strndup (id_start, id_end - id_start);
+
+  if (validate && !flatpak_is_valid_name (id, &local_error))
+    return flatpak_fail (error, "Invalid id %s: %s", id, local_error->message);
+
+  arch_start = partial_ref;
+  arch_end = next_element (&partial_ref);
+  if (arch_end != arch_start)
+    arch = g_strndup (arch_start, arch_end - arch_start);
+  else
+    arch = g_strdup (default_arch);
+
+  branch_start = partial_ref;
+  branch_end = next_element (&partial_ref);
+  if (branch_end != branch_start)
+    branch = g_strndup (branch_start, branch_end - branch_start);
+  else
+    branch = g_strdup (default_branch);
+
+  if (validate && branch != NULL && !flatpak_is_valid_branch (branch, &local_error))
+    return flatpak_fail (error, "Invalid branch %s: %s", branch, local_error->message);
+
+  if (out_kinds)
+    *out_kinds = kinds;
+  if (out_id != NULL)
+    *out_id = g_steal_pointer (&id);
+  if (out_arch != NULL)
+    *out_arch = g_steal_pointer (&arch);
+  if (out_branch != NULL)
+    *out_branch = g_steal_pointer (&branch);
 
   return TRUE;
 }
+
+gboolean
+flatpak_split_partial_ref_arg (const char   *partial_ref,
+                               FlatpakKinds  default_kinds,
+                               const char   *default_arch,
+                               const char   *default_branch,
+                               FlatpakKinds *out_kinds,
+                               char        **out_id,
+                               char        **out_arch,
+                               char        **out_branch,
+                               GError      **error)
+{
+  return _flatpak_split_partial_ref_arg (partial_ref,
+                                         TRUE,
+                                         default_kinds,
+                                         default_arch,
+                                         default_branch,
+                                         out_kinds,
+                                         out_id,
+                                         out_arch,
+                                         out_branch,
+                                         error);
+}
+
+gboolean
+flatpak_split_partial_ref_arg_novalidate (const char   *partial_ref,
+                                          FlatpakKinds  default_kinds,
+                                          const char   *default_arch,
+                                          const char   *default_branch,
+                                          FlatpakKinds *out_kinds,
+                                          char        **out_id,
+                                          char        **out_arch,
+                                          char        **out_branch)
+{
+  return _flatpak_split_partial_ref_arg (partial_ref,
+                                         FALSE,
+                                         default_kinds,
+                                         default_arch,
+                                         default_branch,
+                                         out_kinds,
+                                         out_id,
+                                         out_arch,
+                                         out_branch,
+                                         NULL);
+}
+
 
 char *
 flatpak_compose_ref (gboolean    app,
@@ -814,6 +915,50 @@ out:
   return ret;
 }
 
+char **
+flatpak_list_unmaintained_refs (const char   *name_prefix,
+                                const char   *branch,
+                                const char   *arch,
+                                GCancellable *cancellable,
+                                GError      **error)
+{
+  gchar **ret = NULL;
+
+  g_autoptr(GPtrArray) names = NULL;
+  g_autoptr(GHashTable) hash = NULL;
+  g_autoptr(FlatpakDir) user_dir = NULL;
+  g_autoptr(FlatpakDir) system_dir = NULL;
+  const char *key;
+  GHashTableIter iter;
+
+  hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+
+  user_dir = flatpak_dir_get_user ();
+  system_dir = flatpak_dir_get_system ();
+
+  if ((!flatpak_dir_collect_unmaintained_refs (user_dir, name_prefix,
+                                              branch, arch, hash, cancellable,
+                                              error)) &&
+      (!flatpak_dir_collect_unmaintained_refs (system_dir, name_prefix,
+                                              branch, arch, hash, cancellable,
+                                              error)))
+    goto out;
+
+  names = g_ptr_array_new ();
+  g_hash_table_iter_init (&iter, hash);
+  while (g_hash_table_iter_next (&iter, (gpointer *) &key, NULL))
+    g_ptr_array_add (names, g_strdup (key));
+
+  g_ptr_array_sort (names, flatpak_strcmp0_ptr);
+  g_ptr_array_add (names, NULL);
+
+  ret = (char **) g_ptr_array_free (names, FALSE);
+  names = NULL;
+
+out:
+  return ret;
+}
+
 GFile *
 flatpak_find_files_dir_for_ref (const char   *ref,
                                 GCancellable *cancellable,
@@ -836,6 +981,28 @@ flatpak_find_files_dir_for_ref (const char   *ref,
     }
 
   return g_file_get_child (deploy, "files");
+}
+
+GFile *
+flatpak_find_unmaintained_extension_dir_if_exists (const char   *name,
+                                                   const char   *arch,
+                                                   const char   *branch,
+                                                   GCancellable *cancellable)
+{
+  g_autoptr(FlatpakDir) user_dir = NULL;
+  g_autoptr(FlatpakDir) system_dir = NULL;
+  g_autoptr(GFile) extension_dir = NULL;
+
+  user_dir = flatpak_dir_get_user ();
+  system_dir = flatpak_dir_get_system ();
+
+  extension_dir = flatpak_dir_get_unmaintained_extension_dir_if_exists (user_dir, name, arch, branch, cancellable);
+  if (extension_dir == NULL)
+    extension_dir = flatpak_dir_get_unmaintained_extension_dir_if_exists (system_dir, name, arch, branch, cancellable);
+  if (extension_dir == NULL)
+    return NULL;
+
+  return g_steal_pointer(&extension_dir);
 }
 
 FlatpakDeploy *
@@ -2078,6 +2245,93 @@ flatpak_repo_set_title (OstreeRepo *repo,
   return TRUE;
 }
 
+
+gboolean
+flatpak_repo_set_default_branch (OstreeRepo *repo,
+                                 const char *branch,
+                                 GError    **error)
+{
+  g_autoptr(GKeyFile) config = NULL;
+
+  config = ostree_repo_copy_config (repo);
+
+  if (branch)
+    g_key_file_set_string (config, "flatpak", "default-branch", branch);
+  else
+    g_key_file_remove_key (config, "flatpak", "default-branch", NULL);
+
+  if (!ostree_repo_write_config (repo, config, error))
+    return FALSE;
+
+  return TRUE;
+}
+
+GVariant *
+flatpak_commit_get_extra_data_sources (GVariant *commitv,
+                                       GError      **error)
+{
+  g_autoptr(GVariant) commit_metadata = NULL;
+  g_autoptr(GVariant) extra_data_sources = NULL;
+
+  commit_metadata = g_variant_get_child_value (commitv, 0);
+  extra_data_sources = g_variant_lookup_value (commit_metadata,
+                                               "xa.extra-data-sources",
+                                               G_VARIANT_TYPE ("a(ayttays)"));
+
+  if (extra_data_sources == NULL)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                   _("No extra data sources"));
+      return NULL;
+    }
+
+  return g_steal_pointer (&extra_data_sources);
+}
+
+
+GVariant *
+flatpak_repo_get_extra_data_sources (OstreeRepo   *repo,
+                                     const char   *rev,
+                                     GCancellable *cancellable,
+                                     GError      **error)
+{
+  g_autoptr(GVariant) commitv = NULL;
+
+  if (!ostree_repo_load_variant (repo,
+                                 OSTREE_OBJECT_TYPE_COMMIT,
+                                 rev, &commitv, error))
+    return NULL;
+
+  return flatpak_commit_get_extra_data_sources (commitv, error);
+}
+
+void
+flatpak_repo_parse_extra_data_sources (GVariant *extra_data_sources,
+                                       int index,
+                                       const char **name,
+                                       guint64 *download_size,
+                                       guint64 *installed_size,
+                                       const guchar **sha256,
+                                       const char **uri)
+{
+  g_autoptr(GVariant) sha256_v = NULL;
+  g_variant_get_child (extra_data_sources, index, "(^aytt@ay&s)",
+                       name,
+                       download_size,
+                       installed_size,
+                       &sha256_v,
+                       uri);
+
+  if (download_size)
+    *download_size = GUINT64_FROM_BE (*download_size);
+
+  if (installed_size)
+    *installed_size = GUINT64_FROM_BE (*installed_size);
+
+  if (sha256)
+    *sha256 = ostree_checksum_bytes_peek (sha256_v);
+}
+
 #define OSTREE_GIO_FAST_QUERYINFO ("standard::name,standard::type,standard::size,standard::is-symlink,standard::symlink-target," \
                                    "unix::device,unix::inode,unix::mode,unix::uid,unix::gid,unix::rdev")
 
@@ -2148,6 +2402,42 @@ flatpak_repo_collect_sizes (OstreeRepo   *repo,
   return _flatpak_repo_collect_sizes (repo, root, NULL, installed_size, download_size, cancellable, error);
 }
 
+
+static void
+flatpak_repo_collect_extra_data_sizes (OstreeRepo   *repo,
+                                       const char   *rev,
+                                       guint64      *installed_size,
+                                       guint64      *download_size)
+{
+  g_autoptr(GVariant) extra_data_sources = NULL;
+  gsize n_extra_data;
+  int i;
+
+  extra_data_sources = flatpak_repo_get_extra_data_sources (repo, rev, NULL, NULL);
+  if (extra_data_sources == NULL)
+    return;
+
+  n_extra_data = g_variant_n_children (extra_data_sources);
+  if (n_extra_data == 0)
+    return;
+
+  for (i = 0; i < n_extra_data; i++)
+    {
+      guint64 extra_download_size;
+      guint64 extra_installed_size;
+
+      flatpak_repo_parse_extra_data_sources (extra_data_sources, i,
+                                             NULL,
+                                             &extra_download_size,
+                                             &extra_installed_size,
+                                             NULL, NULL);
+      if (installed_size)
+        *installed_size += extra_installed_size;
+      if (download_size)
+        *download_size += extra_download_size;
+    }
+}
+
 /* Loads a summary file from a local repo */
 GVariant *
 flatpak_repo_load_summary (OstreeRepo *repo,
@@ -2198,6 +2488,7 @@ flatpak_repo_update (OstreeRepo   *repo,
   GVariantBuilder ref_data_builder;
   GKeyFile *config;
   g_autofree char *title = NULL;
+  g_autofree char *default_branch = NULL;
   g_autoptr(GVariant) old_summary = NULL;
   g_autoptr(GHashTable) refs = NULL;
   const char *prefixes[] = { "appstream", "app", "runtime", NULL };
@@ -2211,12 +2502,18 @@ flatpak_repo_update (OstreeRepo   *repo,
   config = ostree_repo_get_config (repo);
 
   if (config)
-    title = g_key_file_get_string (config, "flatpak", "title", NULL);
+    {
+      title = g_key_file_get_string (config, "flatpak", "title", NULL);
+      default_branch = g_key_file_get_string (config, "flatpak", "default-branch", NULL);
+    }
 
   if (title)
     g_variant_builder_add (&builder, "{sv}", "xa.title",
                            g_variant_new_string (title));
 
+  if (default_branch)
+    g_variant_builder_add (&builder, "{sv}", "xa.default-branch",
+                           g_variant_new_string (default_branch));
 
   g_variant_builder_init (&ref_data_builder, G_VARIANT_TYPE ("a{s(tts)}"));
 
@@ -2315,6 +2612,8 @@ flatpak_repo_update (OstreeRepo   *repo,
 
       if (!flatpak_repo_collect_sizes (repo, root, &installed_size, &download_size, cancellable, error))
         return FALSE;
+
+      flatpak_repo_collect_extra_data_sizes (repo, rev, &installed_size, &download_size);
 
       metadata = g_file_get_child (root, "metadata");
       if (!g_file_load_contents (metadata, cancellable, &metadata_contents, NULL, NULL, NULL))
@@ -3007,7 +3306,13 @@ flatpak_list_extensions (GKeyFile   *metakey,
 
           ref = g_build_filename ("runtime", extension, arch, branch, NULL);
 
-          files = flatpak_find_files_dir_for_ref (ref, NULL, NULL);
+          files = flatpak_find_unmaintained_extension_dir_if_exists (extension, arch, branch, NULL);
+
+          if (files == NULL)
+            {
+              files = flatpak_find_files_dir_for_ref (ref, NULL, NULL);
+            }
+
           /* Prefer a full extension (org.freedesktop.Locale) over subdirectory ones (org.freedesktop.Locale.sv) */
           if (files != NULL)
             {
@@ -3019,6 +3324,7 @@ flatpak_list_extensions (GKeyFile   *metakey,
             {
               g_autofree char *prefix = g_strconcat (extension, ".", NULL);
               g_auto(GStrv) refs = NULL;
+              g_auto(GStrv) unmaintained_refs = NULL;
               int j;
               gboolean needs_tmpfs = TRUE;
 
@@ -3033,6 +3339,23 @@ flatpak_list_extensions (GKeyFile   *metakey,
                   if (subdir_files)
                     {
                       ext = flatpak_extension_new (extension, refs[j], dir_ref, extended_dir, subdir_files);
+                      ext->needs_tmpfs = needs_tmpfs;
+                      needs_tmpfs = FALSE; /* Only first subdir needs a tmpfs */
+                      res = g_list_prepend (res, ext);
+                    }
+                }
+
+              unmaintained_refs = flatpak_list_unmaintained_refs (prefix, arch, branch,
+                                                                  NULL, NULL);
+              for (j = 0; unmaintained_refs != NULL && unmaintained_refs[j] != NULL; j++)
+                {
+                  g_autofree char *extended_dir = g_build_filename (directory, unmaintained_refs[j] + strlen (prefix), NULL);
+                  g_autofree char *dir_ref = g_build_filename ("runtime", unmaintained_refs[j], arch, branch, NULL);
+                  g_autoptr(GFile) subdir_files = flatpak_find_unmaintained_extension_dir_if_exists (unmaintained_refs[j], arch, branch, NULL);
+
+                  if (subdir_files)
+                    {
+                      ext = flatpak_extension_new (extension, unmaintained_refs[j], dir_ref, extended_dir, subdir_files);
                       ext->needs_tmpfs = needs_tmpfs;
                       needs_tmpfs = FALSE; /* Only first subdir needs a tmpfs */
                       res = g_list_prepend (res, ext);
@@ -3694,6 +4017,223 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
   return TRUE;
 }
 
+gboolean
+flatpak_yes_no_prompt (const char *prompt, ...)
+{
+  char buf[512];
+  va_list var_args;
+  gchar *s;
+
+  va_start (var_args, prompt);
+  s = g_strdup_vprintf (prompt, var_args);
+
+  while (TRUE)
+    {
+      g_print ("%s %s: ", s, "[y/n]");
+      if (fgets (buf, sizeof (buf), stdin) == NULL)
+        return FALSE;
+
+      g_strstrip (buf);
+      if (g_ascii_strcasecmp  (buf, "y") == 0 ||
+          g_ascii_strcasecmp  (buf, "yes") == 0)
+        return TRUE;
+
+      if (g_ascii_strcasecmp  (buf, "n") == 0 ||
+          g_ascii_strcasecmp  (buf, "no") == 0)
+        return FALSE;
+    }
+}
+
+static gboolean
+is_number (const char *s)
+{
+  while (*s != 0)
+    {
+      if (!g_ascii_isdigit (*s))
+        return FALSE;
+      s++;
+    }
+
+  return TRUE;
+}
+
+long
+flatpak_number_prompt (int min, int max, const char *prompt, ...)
+{
+  char buf[512];
+  va_list var_args;
+  gchar *s;
+
+  va_start (var_args, prompt);
+  s = g_strdup_vprintf (prompt, var_args);
+
+  while (TRUE)
+    {
+      g_print ("%s [%d-%d]: ", s, min, max);
+      if (fgets (buf, sizeof (buf), stdin) == NULL)
+        return FALSE;
+
+      g_strstrip (buf);
+
+      if (is_number (buf))
+        {
+          long res = strtol (buf, NULL, 10);
+
+          if (res >= min && res <= max)
+            return res;
+        }
+    }
+}
+
+
+typedef struct {
+  GMainLoop *loop;
+  GError *error;
+  GString *content;
+  char buffer[16*1024];
+  FlatpakLoadUriProgress progress;
+  gpointer user_data;
+  guint64 last_progress_time;
+} LoadUriData;
+
+static void
+stream_closed (GObject *source, GAsyncResult *res, gpointer user_data)
+{
+  LoadUriData *data = user_data;
+  GInputStream *stream = G_INPUT_STREAM (source);
+  g_autoptr(GError) error = NULL;
+
+  if (!g_input_stream_close_finish (stream, res, &error))
+    g_warning ("Error closing http stream: %s\n", error->message);
+
+  g_main_loop_quit (data->loop);
+}
+
+static void
+load_uri_read_cb (GObject *source, GAsyncResult *res, gpointer user_data)
+{
+  LoadUriData *data = user_data;
+  GInputStream *stream = G_INPUT_STREAM (source);
+  gsize nread;
+
+  nread = g_input_stream_read_finish (stream, res, &data->error);
+  if (nread == -1 || nread == 0)
+    {
+      data->progress (data->content->len, data->user_data);
+      g_input_stream_close_async (stream,
+                                  G_PRIORITY_DEFAULT, NULL,
+                                  stream_closed, data);
+      return;
+    }
+
+  g_string_append_len (data->content, data->buffer, nread);
+
+  if (g_get_monotonic_time () - data->last_progress_time > 1 * G_USEC_PER_SEC)
+    {
+      data->progress (data->content->len, data->user_data);
+      data->last_progress_time = g_get_monotonic_time ();
+    }
+
+  g_input_stream_read_async (stream, data->buffer, sizeof (data->buffer),
+                             G_PRIORITY_DEFAULT, NULL,
+                             load_uri_read_cb, data);
+}
+
+static void
+load_uri_callback (GObject *source_object,
+                   GAsyncResult *res,
+                   gpointer user_data)
+{
+  SoupRequestHTTP *request = SOUP_REQUEST_HTTP(source_object);
+  g_autoptr(GError) error = NULL;
+  g_autoptr(GInputStream) in = NULL;
+  LoadUriData *data = user_data;
+
+  in = soup_request_send_finish (SOUP_REQUEST (request), res, &data->error);
+  if (in == NULL)
+    {
+      g_main_loop_quit (data->loop);
+      return;
+    }
+
+  g_autoptr(SoupMessage) msg = soup_request_http_get_message ((SoupRequestHTTP*) request);
+  if (!SOUP_STATUS_IS_SUCCESSFUL (msg->status_code))
+    {
+      GIOErrorEnum code;
+
+      switch (msg->status_code)
+        {
+        case 404:
+        case 410:
+          code = G_IO_ERROR_NOT_FOUND;
+          break;
+        default:
+          code = G_IO_ERROR_FAILED;
+        }
+
+      data->error = g_error_new (G_IO_ERROR, code,
+                                 "Server returned status %u: %s",
+                                 msg->status_code,
+                                 soup_status_get_phrase (msg->status_code));
+      g_main_loop_quit (data->loop);
+      return;
+    }
+
+  g_input_stream_read_async (in, data->buffer, sizeof (data->buffer),
+                             G_PRIORITY_DEFAULT, NULL,
+                             load_uri_read_cb, data);
+}
+
+GBytes *
+flatpak_load_http_uri (SoupSession *soup_session,
+                       const char   *uri,
+                       FlatpakLoadUriProgress progress,
+                       gpointer      user_data,
+                       GCancellable *cancellable,
+                       GError      **error)
+{
+  GBytes *bytes = NULL;
+  g_autoptr(SoupMessage) msg = NULL;
+  g_autoptr(SoupRequestHTTP) request = NULL;
+  g_autoptr(GMainLoop) loop = NULL;
+  g_autoptr(GString) content = g_string_new ("");
+  LoadUriData data = { NULL };
+
+  g_debug ("Loading %s using libsoup", uri);
+
+  loop = g_main_loop_new (NULL, TRUE);
+  data.loop = loop;
+  data.content = content;
+  data.progress = progress;
+  data.user_data = user_data;
+  data.last_progress_time = g_get_monotonic_time ();
+
+  request = soup_session_request_http (soup_session, "GET",
+                                       uri, error);
+  if (request == NULL)
+    return NULL;
+
+  soup_request_send_async (SOUP_REQUEST(request),
+                           cancellable,
+                           load_uri_callback, &data);
+
+  g_main_loop_run (loop);
+
+  if (data.error)
+    {
+      g_propagate_error (error, data.error);
+      return NULL;
+    }
+
+  bytes = g_string_free_to_bytes (g_steal_pointer (&content));
+  g_debug ("Received %" G_GSIZE_FORMAT " bytes", g_bytes_get_size (bytes));
+
+  return bytes;
+}
+
+
+
+
 /* Uncomment to get debug traces in /tmp/flatpak-completion-debug.txt (nice
  * to not have it interfere with stdout/stderr)
  */
@@ -3794,6 +4334,102 @@ flatpak_complete_ref (FlatpakCompletion *completion,
             continue;
           flatpak_complete_word (completion, "%s", ref);
         }
+    }
+}
+
+int
+find_current_element (const char *str)
+{
+  int count = 0;
+
+  if (g_str_has_prefix (str, "app/"))
+    str += strlen ("app/");
+  else if (g_str_has_prefix (str, "runtime/"))
+    str += strlen ("runtime/");
+
+  while (str != NULL && count <= 3)
+    {
+      str = strchr (str, '/');
+      count++;
+      if (str != NULL)
+        str = str + 1;
+    }
+
+  return count;
+}
+
+void
+flatpak_complete_partial_ref (FlatpakCompletion *completion,
+                              FlatpakKinds kinds,
+                              const char *only_arch,
+                              FlatpakDir *dir,
+                              const char *remote)
+{
+  FlatpakKinds matched_kinds;
+  const char *pref;
+  g_autofree char *id = NULL;
+  g_autofree char *arch = NULL;
+  g_autofree char *branch = NULL;
+  g_auto(GStrv) refs = NULL;
+  int element;
+  const char *cur_parts[4] = { NULL };
+  g_autoptr(GError) error = NULL;
+  int i;
+
+  pref = completion->cur;
+  element = find_current_element (pref);
+
+  flatpak_split_partial_ref_arg_novalidate (pref, kinds,
+                                            NULL, NULL,
+                                            &matched_kinds, &id, &arch, &branch);
+
+  cur_parts[1] = id;
+  cur_parts[2] = arch ? arch : "";
+  cur_parts[3] = branch ? branch : "";
+
+  if (remote)
+    {
+      refs = flatpak_dir_find_remote_refs (dir, completion->argv[1],
+                                           (element > 1) ? id : NULL,
+                                           (element > 3) ? branch : NULL,
+                                           (element > 2 )? arch : only_arch,
+                                           matched_kinds, NULL, &error);
+    }
+  else
+    {
+      refs = flatpak_dir_find_installed_refs (dir,
+                                              (element > 1) ? id : NULL,
+                                              (element > 3) ? branch : NULL,
+                                              (element > 2 )? arch : only_arch,
+                                              matched_kinds, &error);
+    }
+  if (refs == NULL)
+    flatpak_completion_debug ("find refs error: %s", error->message);
+  for (i = 0; refs != NULL && refs[i] != NULL; i++)
+    {
+      int j;
+      g_autoptr(GString) comp = NULL;
+      g_auto(GStrv) parts = flatpak_decompose_ref (refs[i], NULL);
+      if (parts == NULL)
+        continue;
+
+      if (!g_str_has_prefix (parts[element], cur_parts[element]))
+        continue;
+
+      comp = g_string_new (pref);
+      g_string_append (comp, parts[element] + strlen (cur_parts[element]));
+
+      /* Only complete on the last part if the user explicitly adds a / */
+      if (element >= 2)
+        {
+          for (j = element + 1; j < 4; j++)
+            {
+              g_string_append (comp, "/");
+              g_string_append (comp, parts[j]);
+            }
+        }
+
+      flatpak_complete_word (completion, "%s", comp->str);
     }
 }
 

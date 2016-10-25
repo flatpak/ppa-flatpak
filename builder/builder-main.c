@@ -37,6 +37,7 @@ static gboolean opt_run;
 static gboolean opt_disable_cache;
 static gboolean opt_download_only;
 static gboolean opt_build_only;
+static gboolean opt_finish_only;
 static gboolean opt_show_deps;
 static gboolean opt_disable_download;
 static gboolean opt_disable_updates;
@@ -44,6 +45,7 @@ static gboolean opt_ccache;
 static gboolean opt_require_changes;
 static gboolean opt_keep_build_dirs;
 static gboolean opt_force_clean;
+static gboolean opt_allow_missing_runtimes;
 static gboolean opt_sandboxed;
 static char *opt_stop_at;
 static char *opt_arch;
@@ -64,6 +66,8 @@ static GOptionEntry entries[] = {
   { "disable-updates", 0, 0, G_OPTION_ARG_NONE, &opt_disable_updates, "Only download missing sources, never update to latest vcs version", NULL },
   { "download-only", 0, 0, G_OPTION_ARG_NONE, &opt_download_only, "Only download sources, don't build", NULL },
   { "build-only", 0, 0, G_OPTION_ARG_NONE, &opt_build_only, "Stop after build, don't run clean and finish phases", NULL },
+  { "finish-only", 0, 0, G_OPTION_ARG_NONE, &opt_finish_only, "Only run clean and finish and export phases", NULL },
+  { "allow-missing-runtimes", 0, 0, G_OPTION_ARG_NONE, &opt_allow_missing_runtimes, "Don't fail if runtime and sdk missing", NULL },
   { "show-deps", 0, 0, G_OPTION_ARG_NONE, &opt_show_deps, "List the dependencies of the json file (see --show-deps --help)", NULL },
   { "require-changes", 0, 0, G_OPTION_ARG_NONE, &opt_require_changes, "Don't create app dir or export if no changes", NULL },
   { "keep-build-dirs", 0, 0, G_OPTION_ARG_NONE, &opt_keep_build_dirs, "Don't remove build directories after install", NULL },
@@ -197,6 +201,7 @@ main (int    argc,
   g_autofree char **orig_argv;
   gboolean is_run = FALSE;
   gboolean is_show_deps = FALSE;
+  gboolean app_dir_is_empty = FALSE;
   g_autoptr(FlatpakContext) arg_context = NULL;
   int i, first_non_arg, orig_argc;
   int argnr;
@@ -333,12 +338,14 @@ main (int    argc,
       return 1;
     }
 
+  app_dir_is_empty = !g_file_query_exists (app_dir, NULL) ||
+                     directory_is_empty (app_dir_path);
+
   if (is_run)
     {
       g_assert (opt_run);
 
-      if (!g_file_query_exists (app_dir, NULL) ||
-          directory_is_empty (app_dir_path))
+      if (app_dir_is_empty)
         {
           g_printerr ("App dir '%s' is empty or doesn't exist.\n", app_dir_path);
           return 1;
@@ -358,7 +365,7 @@ main (int    argc,
   g_assert (!opt_run);
   g_assert (!opt_show_deps);
 
-  if (g_file_query_exists (app_dir, NULL) && !directory_is_empty (app_dir_path))
+  if (!opt_finish_only && !app_dir_is_empty)
     {
       if (opt_force_clean)
         {
@@ -377,14 +384,20 @@ main (int    argc,
           return 1;
         }
     }
+  if (opt_finish_only && app_dir_is_empty)
+    {
+      g_printerr ("App dir '%s' is empty or doesn't exist.\n", app_dir_path);
+      return 1;
+    }
 
-  if (!builder_manifest_start (manifest, build_context, &error))
+  if (!builder_manifest_start (manifest, opt_allow_missing_runtimes, build_context, &error))
     {
       g_printerr ("Failed to init: %s\n", error->message);
       return 1;
     }
 
-  if (!opt_disable_download &&
+  if (!opt_finish_only &&
+      !opt_disable_download &&
       !builder_manifest_download (manifest, !opt_disable_updates, build_context, &error))
     {
       g_printerr ("Failed to download sources: %s\n", error->message);
@@ -408,28 +421,31 @@ main (int    argc,
 
   builder_manifest_checksum (manifest, cache, build_context);
 
-  if (!builder_cache_lookup (cache, "init"))
+  if (!opt_finish_only)
     {
-      g_autofree char *body =
-        g_strdup_printf ("Initialized %s\n",
-                         builder_manifest_get_id (manifest));
-      if (!builder_manifest_init_app_dir (manifest, build_context, &error))
+      if (!builder_cache_lookup (cache, "init"))
+        {
+          g_autofree char *body =
+            g_strdup_printf ("Initialized %s\n",
+                             builder_manifest_get_id (manifest));
+          if (!builder_manifest_init_app_dir (manifest, build_context, &error))
+            {
+              g_printerr ("Error: %s\n", error->message);
+              return 1;
+            }
+
+          if (!builder_cache_commit (cache, body, &error))
+            {
+              g_printerr ("Error: %s\n", error->message);
+              return 1;
+            }
+        }
+
+      if (!builder_manifest_build (manifest, cache, build_context, &error))
         {
           g_printerr ("Error: %s\n", error->message);
           return 1;
         }
-
-      if (!builder_cache_commit (cache, body, &error))
-        {
-          g_printerr ("Error: %s\n", error->message);
-          return 1;
-        }
-    }
-
-  if (!builder_manifest_build (manifest, cache, build_context, &error))
-    {
-      g_printerr ("Error: %s\n", error->message);
-      return 1;
     }
 
   if (!opt_build_only)

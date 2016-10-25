@@ -1,5 +1,5 @@
 /*
- * Copyright © 2015 Red Hat, Inc
+ * Copyright © 2014 Red Hat, Inc
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,16 +18,14 @@
  *       Alexander Larsson <alexl@redhat.com>
  */
 
-#ifndef __FLATPAK_COMMON_TYPES_H__
-#define __FLATPAK_COMMON_TYPES_H__
+#ifndef __FLATPAK_BUILTINS_UTILS_H__
+#define __FLATPAK_BUILTINS_UTILS_H__
 
-typedef enum {
-  FLATPAK_KINDS_APP = 1 << 0,
-  FLATPAK_KINDS_RUNTIME = 1 << 1,
-} FlatpakKinds;
+#include <glib.h>
+#include "libglnx/libglnx.h"
 
-typedef struct FlatpakDir     FlatpakDir;
-typedef struct FlatpakDeploy  FlatpakDeploy;
-typedef struct FlatpakContext FlatpakContext;
+gboolean    looks_like_branch (const char  *branch);
+GBytes *    download_uri      (const char  *url,
+                               GError     **error);
 
-#endif /* __FLATPAK_COMMON_TYPES_H__ */
+#endif /* __FLATPAK_BUILTINS_UTILS_H__ */

@@ -117,6 +117,15 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--no-use-for-deps</option></term>
+
+                <listitem><para>
+                    Mark the remote as not to be used for automatic runtime
+                    dependency resolution.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--disable</option></term>
 
                 <listitem><para>
@@ -143,6 +152,15 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--use-for-deps</option></term>
+
+                <listitem><para>
+                    Mark the remote as to be used for automatic runtime
+                    dependency resolution.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--title=TITLE</option></term>
 
                 <listitem><para>
@@ -155,6 +173,18 @@
 
                 <listitem><para>
                     A default branch to for the remote, mainly for use in a UI.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--update-metadata</option></term>
+
+                <listitem><para>
+                    A default branch to for the remote, mainly for use in a UI.
+                </para></listitem>
+                <listitem><para>
+                    Update the remote's extra metadata from the OSTree repository's summary
+                    file. Only xa.title and xa.default-branch are supported at the moment.
                 </para></listitem>
             </varlistentry>
 
