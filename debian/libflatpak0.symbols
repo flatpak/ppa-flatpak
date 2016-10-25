@@ -46,6 +46,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_update@Base 0.5.2
  flatpak_installation_update_appstream_sync@Base 0.5.2
  flatpak_installation_update_full@Base 0.6.5
+ flatpak_installation_update_remote_sync@Base 0.6.13
  flatpak_installed_ref_get_deploy_dir@Base 0.5.2
  flatpak_installed_ref_get_installed_size@Base 0.5.2
  flatpak_installed_ref_get_is_current@Base 0.5.2
@@ -74,6 +75,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_remote_get_disabled@Base 0.5.2+git20160516
  flatpak_remote_get_gpg_verify@Base 0.5.2
  flatpak_remote_get_name@Base 0.5.2
+ flatpak_remote_get_nodeps@Base 0.6.13
  flatpak_remote_get_noenumerate@Base 0.5.2
  flatpak_remote_get_prio@Base 0.5.2
  flatpak_remote_get_title@Base 0.5.2
@@ -86,6 +88,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_remote_set_disabled@Base 0.5.2+git20160516
  flatpak_remote_set_gpg_key@Base 0.5.2+git20160516
  flatpak_remote_set_gpg_verify@Base 0.5.2+git20160516
+ flatpak_remote_set_nodeps@Base 0.6.13
  flatpak_remote_set_noenumerate@Base 0.5.2+git20160516
  flatpak_remote_set_prio@Base 0.5.2+git20160516
  flatpak_remote_set_title@Base 0.5.2+git20160516
