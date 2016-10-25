@@ -84,6 +84,12 @@ typedef enum {
 
 #define FLATPAK_HELPER_CONFIGURE_REMOTE_FLAGS_ALL (FLATPAK_HELPER_CONFIGURE_REMOTE_FLAGS_FORCE_REMOVE)
 
+typedef enum {
+  FLATPAK_PULL_FLAGS_NONE = 0,
+  FLATPAK_PULL_FLAGS_DOWNLOAD_EXTRA_DATA = 1 << 0,
+  FLATPAK_PULL_FLAGS_SIDELOAD_EXTRA_DATA = 1 << 1,
+} FlatpakPullFlags;
+
 GQuark       flatpak_dir_error_quark (void);
 
 /**
@@ -135,6 +141,10 @@ GFile *     flatpak_dir_get_path (FlatpakDir *self);
 GFile *     flatpak_dir_get_changed_path (FlatpakDir *self);
 GFile *     flatpak_dir_get_deploy_dir (FlatpakDir *self,
                                         const char *ref);
+GFile *     flatpak_dir_get_unmaintained_extension_dir (FlatpakDir *self,
+                                                        const char *name,
+                                                        const char *arch,
+                                                        const char *branch);
 GVariant *  flatpak_dir_get_deploy_data (FlatpakDir   *dir,
                                          const char   *ref,
                                          GCancellable *cancellable,
@@ -153,14 +163,27 @@ GFile *     flatpak_dir_get_if_deployed (FlatpakDir   *self,
                                          const char   *ref,
                                          const char   *checksum,
                                          GCancellable *cancellable);
+GFile *     flatpak_dir_get_unmaintained_extension_dir_if_exists (FlatpakDir *self,
+                                                                  const char *name,
+                                                                  const char *arch,
+                                                                  const char *branch,
+                                                                  GCancellable *cancellable);
+
+gboolean    flatpak_dir_remote_has_ref (FlatpakDir   *self,
+                                        const char   *remote,
+                                        const char   *ref);
+char **     flatpak_dir_search_for_dependency (FlatpakDir   *self,
+                                               const char   *runtime_ref,
+                                               GCancellable *cancellable,
+                                               GError      **error);
 char *      flatpak_dir_find_remote_ref (FlatpakDir   *self,
                                          const char   *remote,
                                          const char   *name,
                                          const char   *opt_branch,
+                                         const char   *opt_default_branch,
                                          const char   *opt_arch,
-                                         gboolean      app,
-                                         gboolean      runtime,
-                                         gboolean     *is_app,
+                                         FlatpakKinds  kinds,
+                                         FlatpakKinds *out_kind,
                                          GCancellable *cancellable,
                                          GError      **error);
 char **     flatpak_dir_find_remote_refs (FlatpakDir   *self,
@@ -168,25 +191,22 @@ char **     flatpak_dir_find_remote_refs (FlatpakDir   *self,
                                           const char   *name,
                                           const char   *opt_branch,
                                           const char   *opt_arch,
-                                          gboolean      app,
-                                          gboolean      runtime,
+                                          FlatpakKinds  kinds,
                                           GCancellable *cancellable,
                                           GError      **error);
-char *      flatpak_dir_find_installed_ref (FlatpakDir *self,
-                                            const char *opt_name,
-                                            const char *opt_branch,
-                                            const char *opt_arch,
-                                            gboolean    app,
-                                            gboolean    runtime,
-                                            gboolean   *is_app,
-                                            GError    **error);
-char **     flatpak_dir_find_installed_refs (FlatpakDir *self,
-                                             const char *opt_name,
-                                             const char *opt_branch,
-                                             const char *opt_arch,
-                                             gboolean    app,
-                                             gboolean    runtime,
-                                             GError    **error);
+char *      flatpak_dir_find_installed_ref (FlatpakDir  *self,
+                                            const char  *opt_name,
+                                            const char  *opt_branch,
+                                            const char  *opt_arch,
+                                            FlatpakKinds kinds,
+                                            FlatpakKinds *out_kind,
+                                            GError     **error);
+char **     flatpak_dir_find_installed_refs (FlatpakDir  *self,
+                                             const char  *opt_name,
+                                             const char  *opt_branch,
+                                             const char  *opt_arch,
+                                             FlatpakKinds kinds,
+                                             GError     **error);
 FlatpakDeploy *flatpak_dir_load_deployed (FlatpakDir   *self,
                                           const char   *ref,
                                           const char   *checksum,
@@ -228,8 +248,10 @@ gboolean    flatpak_dir_update_appstream (FlatpakDir          *self,
 gboolean    flatpak_dir_pull (FlatpakDir          *self,
                               const char          *repository,
                               const char          *ref,
+                              const char          *opt_rev,
                               const char         **subpaths,
                               OstreeRepo          *repo,
+                              FlatpakPullFlags     flatpak_flags,
                               OstreeRepoPullFlags  flags,
                               OstreeAsyncProgress *progress,
                               GCancellable        *cancellable,
@@ -381,6 +403,13 @@ gboolean    flatpak_dir_collect_deployed_refs (FlatpakDir   *self,
                                                GHashTable   *hash,
                                                GCancellable *cancellable,
                                                GError      **error);
+gboolean    flatpak_dir_collect_unmaintained_refs (FlatpakDir   *self,
+                                                   const char   *name_prefix,
+                                                   const char   *arch,
+                                                   const char   *branch,
+                                                   GHashTable   *hash,
+                                                   GCancellable *cancellable,
+                                                   GError      **error);
 char      *flatpak_dir_create_origin_remote (FlatpakDir   *self,
                                              const char   *url,
                                              const char   *id,
@@ -398,6 +427,9 @@ gboolean   flatpak_dir_create_remote_for_ref_file (FlatpakDir   *self,
 char     **flatpak_dir_list_remotes (FlatpakDir   *self,
                                      GCancellable *cancellable,
                                      GError      **error);
+char     **flatpak_dir_list_enumerated_remotes (FlatpakDir   *self,
+                                                GCancellable *cancellable,
+                                                GError      **error);
 gboolean   flatpak_dir_modify_remote (FlatpakDir   *self,
                                       const char   *remote_name,
                                       GKeyFile     *config,
@@ -417,6 +449,8 @@ int        flatpak_dir_get_remote_prio (FlatpakDir *self,
                                         const char *remote_name);
 gboolean   flatpak_dir_get_remote_noenumerate (FlatpakDir *self,
                                                const char *remote_name);
+gboolean   flatpak_dir_get_remote_nodeps (FlatpakDir *self,
+                                          const char *remote_name);
 gboolean   flatpak_dir_get_remote_disabled (FlatpakDir *self,
                                             const char *remote_name);
 gboolean   flatpak_dir_list_remote_refs (FlatpakDir   *self,
@@ -428,6 +462,14 @@ char *   flatpak_dir_fetch_remote_title (FlatpakDir   *self,
                                          const char   *remote,
                                          GCancellable *cancellable,
                                          GError      **error);
+char *   flatpak_dir_fetch_remote_default_branch (FlatpakDir   *self,
+                                                  const char   *remote,
+                                                  GCancellable *cancellable,
+                                                  GError      **error);
+gboolean flatpak_dir_update_remote_configuration (FlatpakDir   *self,
+                                                  const char   *remote,
+                                                  GCancellable *cancellable,
+                                                  GError      **error);
 gboolean flatpak_dir_fetch_ref_cache (FlatpakDir   *self,
                                       const char   *remote_name,
                                       const char   *ref,

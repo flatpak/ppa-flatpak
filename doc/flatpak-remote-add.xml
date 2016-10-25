@@ -35,12 +35,6 @@
                 <arg choice="plain">NAME</arg>
                 <arg choice="plain">LOCATION</arg>
             </cmdsynopsis>
-            <cmdsynopsis>
-                <command>flatpak remote-add</command>
-                <arg choice="opt" rep="repeat">OPTION</arg>
-                <arg choice="plain">--from</arg>
-                <arg choice="plain">FILENAME</arg>
-            </cmdsynopsis>
     </refsynopsisdiv>
 
     <refsect1>
@@ -81,7 +75,7 @@
                 <term><option>--from</option></term>
 
                 <listitem><para>
-                    Add from a flatpakrepo file instead of from commandline arguments.
+                    Add from a flatpakrepo file (local or http uri) instead of from commandline arguments. This means the LOCATION argument specifies the filename/uri of a flatpakref rather than a repo url.
                 </para></listitem>
             </varlistentry>
 
@@ -125,6 +119,15 @@
                     Mark the remote as not enumerated. This means the remote will
                     not be used to list applications, for instance in graphical
                     installation tools.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--no-use-for-deps</option></term>
+
+                <listitem><para>
+                    Mark the remote as not to be used for automatic runtime
+                    dependency resolution.
                 </para></listitem>
             </varlistentry>
 

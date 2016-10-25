@@ -24,11 +24,11 @@
 #include <string.h>
 
 #include "libglnx/libglnx.h"
+#include <flatpak-common-types.h>
 #include <gio/gio.h>
 #include <gio/gunixfdlist.h>
 #include <libsoup/soup.h>
 #include "flatpak-dbus.h"
-#include "flatpak-dir.h"
 #include <ostree.h>
 
 typedef enum {
@@ -89,10 +89,25 @@ gboolean flatpak_is_valid_branch (const char *string,
 char **flatpak_decompose_ref (const char *ref,
                               GError    **error);
 
-gboolean flatpak_split_partial_ref_arg (char *partial_ref,
-                                        char **inout_arch,
-                                        char **inout_branch,
-                                        GError    **error);
+FlatpakKinds flatpak_kinds_from_bools (gboolean app, gboolean runtime);
+
+gboolean flatpak_split_partial_ref_arg (const char   *partial_ref,
+                                        FlatpakKinds  default_kinds,
+                                        const char   *default_arch,
+                                        const char   *default_branch,
+                                        FlatpakKinds *out_kinds,
+                                        char        **out_id,
+                                        char        **out_arch,
+                                        char        **out_branch,
+                                        GError      **error);
+gboolean flatpak_split_partial_ref_arg_novalidate (const char   *partial_ref,
+                                                   FlatpakKinds  default_kinds,
+                                                   const char   *default_arch,
+                                                   const char   *default_branch,
+                                                   FlatpakKinds *out_kinds,
+                                                   char        **out_id,
+                                                   char        **out_arch,
+                                                   char        **out_branch);
 
 char * flatpak_compose_ref (gboolean    app,
                             const char *name,
@@ -112,6 +127,10 @@ char * flatpak_build_app_ref (const char *app,
 GFile * flatpak_find_files_dir_for_ref (const char   *ref,
                                         GCancellable *cancellable,
                                         GError      **error);
+GFile * flatpak_find_unmaintained_extension_dir_if_exists (const char   *name,
+                                                           const char   *arch,
+                                                           const char   *branch,
+                                                           GCancellable *cancellable);
 FlatpakDeploy * flatpak_find_deploy_for_ref (const char   *ref,
                                              GCancellable *cancellable,
                                              GError      **error);
@@ -121,6 +140,11 @@ char ** flatpak_list_deployed_refs (const char   *type,
                                     const char   *arch,
                                     GCancellable *cancellable,
                                     GError      **error);
+char ** flatpak_list_unmaintained_refs (const char   *name_prefix,
+                                        const char   *branch,
+                                        const char   *arch,
+                                        GCancellable *cancellable,
+                                        GError      **error);
 
 gboolean flatpak_overlay_symlink_tree (GFile        *source,
                                        GFile        *destination,
@@ -214,6 +238,9 @@ void                flatpak_table_printer_print (FlatpakTablePrinter *printer);
 gboolean flatpak_repo_set_title (OstreeRepo *repo,
                                  const char *title,
                                  GError    **error);
+gboolean flatpak_repo_set_default_branch (OstreeRepo *repo,
+                                          const char *branch,
+                                          GError    **error);
 gboolean flatpak_repo_update (OstreeRepo   *repo,
                               const char  **gpg_key_ids,
                               const char   *gpg_homedir,
@@ -225,7 +252,19 @@ gboolean flatpak_repo_collect_sizes (OstreeRepo   *repo,
                                      guint64      *download_size,
                                      GCancellable *cancellable,
                                      GError      **error);
-
+GVariant *flatpak_commit_get_extra_data_sources (GVariant *commitv,
+                                                 GError  **error);
+GVariant *flatpak_repo_get_extra_data_sources (OstreeRepo   *repo,
+                                               const char   *rev,
+                                               GCancellable *cancellable,
+                                               GError      **error);
+void flatpak_repo_parse_extra_data_sources (GVariant *extra_data_sources,
+                                            int index,
+                                            const char **name,
+                                            guint64 *download_size,
+                                            guint64 *installed_size,
+                                            const guchar **sha256,
+                                            const char **uri);
 gboolean flatpak_mtree_create_root (OstreeRepo        *repo,
                                     OstreeMutableTree *mtree,
                                     GCancellable      *cancellable,
@@ -449,6 +488,19 @@ gboolean flatpak_allocate_tmpdir (int           tmpdir_dfd,
                                   GError      **error);
 
 
+gboolean flatpak_yes_no_prompt (const char *prompt, ...);
+long flatpak_number_prompt (int min, int max, const char *prompt, ...);
+
+typedef void (*FlatpakLoadUriProgress) (guint64 downloaded_bytes,
+                                        gpointer user_data);
+
+GBytes * flatpak_load_http_uri (SoupSession *soup_session,
+                                const char   *uri,
+                                FlatpakLoadUriProgress progress,
+                                gpointer      user_data,
+                                GCancellable *cancellable,
+                                GError      **error);
+
 typedef struct {
   char *shell_cur;
   char *cur;
@@ -471,6 +523,11 @@ void               flatpak_complete_word    (FlatpakCompletion *completion,
                                              ...);
 void               flatpak_complete_ref     (FlatpakCompletion *completion,
                                              OstreeRepo        *repo);
+void               flatpak_complete_partial_ref (FlatpakCompletion *completion,
+                                                 FlatpakKinds kinds,
+                                                 const char *only_arch,
+                                                 FlatpakDir *dir,
+                                                 const char *remote);
 void               flatpak_complete_file    (FlatpakCompletion *completion);
 void               flatpak_complete_dir     (FlatpakCompletion *completion);
 void               flatpak_complete_options (FlatpakCompletion *completion,
