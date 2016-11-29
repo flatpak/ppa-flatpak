@@ -81,13 +81,15 @@ update_appstream (FlatpakDir *dir, const char *remote, GCancellable *cancellable
 
       for (i = 0; remotes[i] != NULL; i++)
         {
+          g_autoptr(GError) local_error = NULL;
+
           if (flatpak_dir_get_remote_disabled (dir, remotes[i]))
             continue;
 
           g_print (_("Updating appstream for remote %s\n"), remotes[i]);
           if (!flatpak_dir_update_appstream (dir, remotes[i], opt_arch, &changed,
-                                             NULL, cancellable, error))
-            return FALSE;
+                                             NULL, cancellable, &local_error))
+            g_printerr ("Error updating: %s\n", local_error->message);
         }
     }
   else
@@ -121,7 +123,7 @@ flatpak_builtin_update (int           argc,
     return FALSE;
 
   if (opt_appstream)
-    return update_appstream (dir, argc >= 2 ? argv[2] : NULL, cancellable, error);
+    return update_appstream (dir, argc >= 2 ? argv[1] : NULL, cancellable, error);
 
   prefs = &argv[1];
   n_prefs = argc - 1;

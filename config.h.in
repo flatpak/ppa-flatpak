@@ -49,14 +49,8 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define if we have libarchive.pc */
-#undef HAVE_LIBARCHIVE
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
-
-/* Have OstreeRepoExportArchiveOptions.path_prefix */
-#undef HAVE_OSTREE_EXPORT_PATH_PREFIX
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

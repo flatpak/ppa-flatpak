@@ -63,7 +63,7 @@ static char **opt_gpg_import;
 
 static GOptionEntry add_options[] = {
   { "if-not-exists", 0, 0, G_OPTION_ARG_NONE, &opt_if_not_exists, N_("Do nothing if the provided remote exists"), NULL },
-  { "from", 0, 0, G_OPTION_ARG_NONE, &opt_from, N_("Load options from file or uri"), NULL },
+  { "from", 0, 0, G_OPTION_ARG_NONE, &opt_from, N_("LOCATION specifies a configuration file, not the repo location"), NULL },
   { NULL }
 };
 
@@ -115,7 +115,7 @@ open_source_stream (GInputStream **out_source_stream,
         }
       else
         {
-          g_autoptr(GFile) file = g_file_new_for_path (opt_gpg_import[ii]);
+          g_autoptr(GFile) file = g_file_new_for_commandline_arg (opt_gpg_import[ii]);
           input_stream = G_INPUT_STREAM (g_file_read (file, cancellable, error));
 
           if (input_stream == NULL)
@@ -304,7 +304,8 @@ load_options (const char *filename,
         }
 
       *gpg_data = g_bytes_new_take (decoded, decoded_len);
-      opt_do_gpg_verify = TRUE;
+      if (!opt_no_gpg_verify)
+        opt_do_gpg_verify = TRUE;
     }
 }
 
@@ -362,7 +363,7 @@ flatpak_builtin_add_remote (int argc, char **argv,
   g_autoptr(GKeyFile) config = NULL;
   g_autoptr(GBytes) gpg_data = NULL;
 
-  context = g_option_context_new (_("NAME [LOCATION] - Add a remote repository"));
+  context = g_option_context_new (_("NAME LOCATION - Add a remote repository"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   g_option_context_add_main_entries (context, common_options, NULL);

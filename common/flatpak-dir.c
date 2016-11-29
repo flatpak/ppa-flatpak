@@ -289,7 +289,10 @@ flatpak_dir_get_system_helper (FlatpakDir *self)
           g_warning ("Can't find org.freedesktop.Flatpak.SystemHelper: %s\n", error->message);
           system_helper = NO_SYSTEM_HELPER;
         }
-      g_dbus_proxy_set_default_timeout (G_DBUS_PROXY (system_helper), G_MAXINT);
+      else
+        {
+          g_dbus_proxy_set_default_timeout (G_DBUS_PROXY (system_helper), G_MAXINT);
+        }
       g_once_init_leave (&self->system_helper, system_helper);
     }
 
@@ -332,7 +335,8 @@ flatpak_dir_finalize (GObject *object)
   g_clear_object (&self->repo);
   g_clear_object (&self->basedir);
 
-  g_clear_object (&self->system_helper);
+  if (self->system_helper != NO_SYSTEM_HELPER)
+    g_clear_object (&self->system_helper);
 
   g_clear_object (&self->soup_session);
   g_clear_pointer (&self->summary_cache, g_hash_table_unref);
@@ -692,7 +696,7 @@ flatpak_deploy_data_get_subpaths (GVariant *deploy_data)
 {
   const char **subpaths;
 
-  g_variant_get_child (deploy_data, 2, "^as", &subpaths);
+  g_variant_get_child (deploy_data, 2, "^a&s", &subpaths);
   return subpaths;
 }
 
@@ -1321,18 +1325,6 @@ repo_pull_one_dir (OstreeRepo          *self,
   options = g_variant_ref_sink (g_variant_builder_end (&builder));
   res = ostree_repo_pull_with_options (self, remote_name, options,
                                        progress, cancellable, error);
-  if (res && dirs_to_pull != NULL)
-    {
-      /* This works around an issue with ostree where it doesn't pull
-       * all dependencies (stops are first locally available object)
-       * unless the commit itself is a commitpartial:
-       * https://github.com/ostreedev/ostree/issues/543
-       * The workaround works by pulling again, and on the new pull
-       * the commit *will* have a commitpartial.
-       */
-        res = ostree_repo_pull_with_options (self, remote_name, options,
-                                             progress, cancellable, error);
-    }
 
   return res;
 }
@@ -1595,6 +1587,13 @@ flatpak_dir_pull (FlatpakDir          *self,
                                              &summary_bytes,
                                              cancellable, error))
         return FALSE;
+
+      if (summary_bytes == NULL)
+        {
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                       "Failed to get repository summary");
+          return FALSE;
+        }
 
       summary = g_variant_ref_sink (g_variant_new_from_bytes (OSTREE_SUMMARY_GVARIANT_FORMAT,
                                                               summary_bytes, FALSE));
@@ -5219,6 +5218,7 @@ find_matching_ref (GHashTable *refs,
       /* Nothing to do other than reporting the different choices */
       g_autoptr(GString) err = g_string_new ("");
       g_string_printf (err, "Multiple branches available for %s, you must specify one of: ", name);
+      g_ptr_array_sort (matched_refs, flatpak_strcmp0_ptr);
       for (j = 0; j < matched_refs->len; j++)
         {
           g_auto(GStrv) parts = flatpak_decompose_ref (g_ptr_array_index (matched_refs, j), NULL);
@@ -5759,14 +5759,53 @@ flatpak_dir_create_remote_for_ref_file (FlatpakDir *self,
       return FALSE;
     }
 
-  remote = flatpak_dir_create_origin_remote (self, url, name, title, ref,
-                                             gpg_data, NULL, error);
+  /* First try to reuse existing remote */
+  remote = flatpak_dir_find_remote_by_uri (self, url);
+
   if (remote == NULL)
-    return FALSE;
+    {
+      remote = flatpak_dir_create_origin_remote (self, url, name, title, ref,
+                                                 gpg_data, NULL, error);
+      if (remote == NULL)
+        return FALSE;
+    }
 
   *remote_name_out = g_steal_pointer (&remote);
   *ref_out = (char *)g_steal_pointer (&ref);
   return TRUE;
+}
+
+char *
+flatpak_dir_find_remote_by_uri (FlatpakDir   *self,
+                                const char   *uri)
+{
+  g_auto(GStrv) remotes = NULL;
+
+  if (!flatpak_dir_ensure_repo (self, NULL, NULL))
+    return NULL;
+
+  remotes = flatpak_dir_list_enumerated_remotes (self, NULL, NULL);
+  if (remotes)
+    {
+      int i;
+
+      for (i = 0; remotes != NULL && remotes[i] != NULL; i++)
+        {
+          const char *remote = remotes[i];
+          g_autofree char *remote_uri = NULL;
+
+          if (!ostree_repo_remote_get_url (self->repo,
+                                           remote,
+                                           &remote_uri,
+                                           NULL))
+            continue;
+
+          if (strcmp (uri, remote_uri) == 0)
+            return g_strdup (remote);
+        }
+    }
+
+  return NULL;
 }
 
 char **
@@ -6219,9 +6258,10 @@ flatpak_dir_update_remote_configuration (FlatpakDir   *self,
 
   g_autoptr(GVariant) summary = NULL;
   g_autoptr(GVariant) extensions = NULL;
-  g_autoptr(GPtrArray) updated_params = g_ptr_array_new_with_free_func (g_free);
+  g_autoptr(GPtrArray) updated_params = NULL;
   GVariantIter iter;
 
+  updated_params = g_ptr_array_new_with_free_func (g_free);
   summary = fetch_remote_summary_file (self, remote, cancellable, error);
   if (summary == NULL)
     return FALSE;
@@ -6257,6 +6297,7 @@ flatpak_dir_update_remote_configuration (FlatpakDir   *self,
   {
     g_autoptr(GKeyFile) config = NULL;
     g_autofree char *group = NULL;
+    gboolean has_changed = FALSE;
     int i;
 
     config = ostree_repo_copy_config (flatpak_dir_get_repo (self));
@@ -6267,10 +6308,43 @@ flatpak_dir_update_remote_configuration (FlatpakDir   *self,
       {
         /* This array should have an even number of elements with
            keys in the odd positions and values on even ones. */
-        g_key_file_set_string (config, group,
-                               g_ptr_array_index (updated_params, i),
-                               g_ptr_array_index (updated_params, i+1));
+        const char *key = g_ptr_array_index (updated_params, i);
+        const char *new_val = g_ptr_array_index (updated_params, i+1);
+        g_autofree char *current_val = NULL;
+
+        current_val = g_key_file_get_string (config, group, key, NULL);
+        if (g_strcmp0 (current_val, new_val) != 0)
+          {
+            has_changed = TRUE;
+            g_key_file_set_string (config, group, key, new_val);
+          }
+
         i += 2;
+      }
+
+    if (!has_changed)
+      return TRUE;
+
+    if (flatpak_dir_use_system_helper (self))
+      {
+        FlatpakSystemHelper *system_helper;
+        g_autofree char *config_data = g_key_file_to_data (config, NULL, NULL);
+        g_autoptr(GVariant) gpg_data_v = NULL;
+
+        gpg_data_v = g_variant_ref_sink (g_variant_new_from_data (G_VARIANT_TYPE ("ay"), "", 0, TRUE, NULL, NULL));
+
+        system_helper = flatpak_dir_get_system_helper (self);
+        g_assert (system_helper != NULL);
+
+        g_debug ("Calling system helper: ConfigureRemote");
+        if (!flatpak_system_helper_call_configure_remote_sync (system_helper,
+                                                               0, remote,
+                                                               config_data,
+                                                               gpg_data_v,
+                                                               cancellable, error))
+          return FALSE;
+
+        return TRUE;
       }
 
     /* Update the local remote configuration with the updated info. */

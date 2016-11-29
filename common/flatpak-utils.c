@@ -92,6 +92,45 @@ flatpak_strcmp0_ptr (gconstpointer a,
   return g_strcmp0 (*(char * const *) a, *(char * const *) b);
 }
 
+/* Compares if str has a specific path prefix. This differs
+   from a regular prefix in two ways. First of all there may
+   be multiple slashes separating the path elements, and
+   secondly, if a prefix is matched that has to be en entire
+   path element. For instance /a/prefix matches /a/prefix/foo/bar,
+   but not /a/prefixfoo/bar. */
+gboolean
+flatpak_has_path_prefix (const char *str,
+                         const char *prefix)
+{
+  while (TRUE)
+    {
+      /* Skip consecutive slashes to reach next path
+         element */
+      while (*str == '/')
+        str++;
+      while (*prefix == '/')
+        prefix++;
+
+      /* No more prefix path elements? Done! */
+      if (*prefix == 0)
+        return TRUE;
+
+      /* Compare path element */
+      while (*prefix != 0 && *prefix != '/')
+        {
+          if (*str != *prefix)
+            return FALSE;
+          str++;
+          prefix++;
+        }
+
+      /* Matched prefix path element,
+         must be entire str path element */
+      if (*str != '/' && *str != 0)
+        return FALSE;
+    }
+}
+
 /* Returns end of matching path prefix, or NULL if no match */
 const char *
 flatpak_path_match_prefix (const char *pattern,
@@ -960,25 +999,48 @@ out:
 }
 
 GFile *
-flatpak_find_files_dir_for_ref (const char   *ref,
-                                GCancellable *cancellable,
-                                GError      **error)
+flatpak_find_deploy_dir_for_ref (const char   *ref,
+                                 FlatpakDir **dir_out,
+                                 GCancellable *cancellable,
+                                 GError      **error)
 {
   g_autoptr(FlatpakDir) user_dir = NULL;
   g_autoptr(FlatpakDir) system_dir = NULL;
+  FlatpakDir *dir = NULL;
   g_autoptr(GFile) deploy = NULL;
 
   user_dir = flatpak_dir_get_user ();
   system_dir = flatpak_dir_get_system ();
 
-  deploy = flatpak_dir_get_if_deployed (user_dir, ref, NULL, cancellable);
+  dir = user_dir;
+  deploy = flatpak_dir_get_if_deployed (dir, ref, NULL, cancellable);
   if (deploy == NULL)
-    deploy = flatpak_dir_get_if_deployed (system_dir, ref, NULL, cancellable);
+    {
+      dir = system_dir;
+      deploy = flatpak_dir_get_if_deployed (dir, ref, NULL, cancellable);
+    }
+
   if (deploy == NULL)
     {
       g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, _("%s not installed"), ref);
       return NULL;
     }
+
+  if (dir_out)
+    *dir_out = g_object_ref (dir);
+  return g_steal_pointer (&deploy);
+}
+
+GFile *
+flatpak_find_files_dir_for_ref (const char   *ref,
+                                GCancellable *cancellable,
+                                GError      **error)
+{
+  g_autoptr(GFile) deploy = NULL;
+
+  deploy = flatpak_find_deploy_dir_for_ref (ref, NULL, cancellable, error);
+  if (deploy == NULL)
+    return NULL;
 
   return g_file_get_child (deploy, "files");
 }
@@ -2001,6 +2063,41 @@ flatpak_rm_rf (GFile         *dir,
                                cancellable, error);
 }
 
+char *
+flatpak_readlink (const char *path,
+                  GError **error)
+{
+  char buf[PATH_MAX + 1];
+  ssize_t symlink_size;
+
+  symlink_size = readlink (path, buf, sizeof (buf) - 1);
+  if (symlink_size < 0)
+    {
+      glnx_set_error_from_errno (error);
+      return NULL;
+    }
+
+  buf[symlink_size] = 0;
+  return g_strdup (buf);
+}
+
+char *
+flatpak_resolve_link (const char *path,
+                      GError **error)
+{
+  g_autofree char *link = flatpak_readlink (path, error);
+  g_autofree char *dirname = NULL;
+
+  if (link == NULL)
+    return NULL;
+
+  if (g_path_is_absolute (link))
+    return g_steal_pointer (&link);
+
+  dirname = g_path_get_dirname (path);
+  return g_build_path (dirname, link, NULL);
+}
+
 gboolean flatpak_file_rename (GFile *from,
                               GFile *to,
                               GCancellable  *cancellable,
@@ -2346,7 +2443,7 @@ _flatpak_repo_collect_sizes (OstreeRepo   *repo,
 {
   g_autoptr(GFileEnumerator) dir_enum = NULL;
   GFileInfo *child_info_tmp;
-  GError *temp_error = NULL;
+  g_autoptr(GError) temp_error = NULL;
 
   if (file_info != NULL && g_file_info_get_file_type (file_info) == G_FILE_TYPE_REGULAR)
     {
@@ -2490,6 +2587,7 @@ flatpak_repo_update (OstreeRepo   *repo,
   g_autofree char *title = NULL;
   g_autofree char *default_branch = NULL;
   g_autoptr(GVariant) old_summary = NULL;
+  g_autoptr(GVariant) new_summary = NULL;
   g_autoptr(GHashTable) refs = NULL;
   const char *prefixes[] = { "appstream", "app", "runtime", NULL };
   const char **prefix;
@@ -2644,8 +2742,8 @@ flatpak_repo_update (OstreeRepo   *repo,
   g_variant_builder_add (&builder, "{sv}", "xa.cache",
                          g_variant_new_variant (g_variant_builder_end (&ref_data_builder)));
 
-  if (!ostree_repo_regenerate_summary (repo, g_variant_builder_end (&builder),
-                                       cancellable, error))
+  new_summary = g_variant_ref_sink (g_variant_builder_end (&builder));
+  if (!ostree_repo_regenerate_summary (repo, new_summary, cancellable, error))
     return FALSE;
 
   if (gpg_key_ids)
@@ -3255,7 +3353,8 @@ flatpak_extension_new (const char *id,
                        const char *extension,
                        const char *ref,
                        const char *directory,
-                       GFile *files)
+                       GFile *files,
+                       gboolean is_unmaintained)
 {
   FlatpakExtension *ext = g_new0 (FlatpakExtension, 1);
 
@@ -3264,6 +3363,7 @@ flatpak_extension_new (const char *id,
   ext->ref = g_strdup (ref);
   ext->directory = g_strdup (directory);
   ext->files_path = g_file_get_path (files);
+  ext->is_unmaintained = is_unmaintained;
   return ext;
 }
 
@@ -3294,6 +3394,7 @@ flatpak_list_extensions (GKeyFile   *metakey,
           g_autofree char *version = g_key_file_get_string (metakey, groups[i], "version", NULL);
           g_autofree char *ref = NULL;
           const char *branch;
+          gboolean is_unmaintained = FALSE;
           g_autoptr(GFile) files = NULL;
 
           if (directory == NULL)
@@ -3309,14 +3410,14 @@ flatpak_list_extensions (GKeyFile   *metakey,
           files = flatpak_find_unmaintained_extension_dir_if_exists (extension, arch, branch, NULL);
 
           if (files == NULL)
-            {
-              files = flatpak_find_files_dir_for_ref (ref, NULL, NULL);
-            }
+            files = flatpak_find_files_dir_for_ref (ref, NULL, NULL);
+          else
+            is_unmaintained = TRUE;
 
           /* Prefer a full extension (org.freedesktop.Locale) over subdirectory ones (org.freedesktop.Locale.sv) */
           if (files != NULL)
             {
-              ext = flatpak_extension_new (extension, extension, ref, directory, files);
+              ext = flatpak_extension_new (extension, extension, ref, directory, files, is_unmaintained);
               res = g_list_prepend (res, ext);
             }
           else if (g_key_file_get_boolean (metakey, groups[i],
@@ -3338,7 +3439,7 @@ flatpak_list_extensions (GKeyFile   *metakey,
 
                   if (subdir_files)
                     {
-                      ext = flatpak_extension_new (extension, refs[j], dir_ref, extended_dir, subdir_files);
+                      ext = flatpak_extension_new (extension, refs[j], dir_ref, extended_dir, subdir_files, FALSE);
                       ext->needs_tmpfs = needs_tmpfs;
                       needs_tmpfs = FALSE; /* Only first subdir needs a tmpfs */
                       res = g_list_prepend (res, ext);
@@ -3355,7 +3456,7 @@ flatpak_list_extensions (GKeyFile   *metakey,
 
                   if (subdir_files)
                     {
-                      ext = flatpak_extension_new (extension, unmaintained_refs[j], dir_ref, extended_dir, subdir_files);
+                      ext = flatpak_extension_new (extension, unmaintained_refs[j], dir_ref, extended_dir, subdir_files, TRUE);
                       ext->needs_tmpfs = needs_tmpfs;
                       needs_tmpfs = FALSE; /* Only first subdir needs a tmpfs */
                       res = g_list_prepend (res, ext);
@@ -4026,6 +4127,7 @@ flatpak_yes_no_prompt (const char *prompt, ...)
 
   va_start (var_args, prompt);
   s = g_strdup_vprintf (prompt, var_args);
+  va_end (var_args);
 
   while (TRUE)
     {
@@ -4066,6 +4168,7 @@ flatpak_number_prompt (int min, int max, const char *prompt, ...)
 
   va_start (var_args, prompt);
   s = g_strdup_vprintf (prompt, var_args);
+  va_end (var_args);
 
   while (TRUE)
     {
