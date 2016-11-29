@@ -1,3 +1,10 @@
+flatpak (0.6.14-2) unstable; urgency=medium
+
+  * d/p/pull-Exit-early-on-error-without-aborting-transaction.patch:
+    Add patch recommended by upstream to fix a GNOME Software crash
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 29 Nov 2016 17:53:34 +0000
+
 flatpak (0.6.14-1) unstable; urgency=medium
 
   * New upstream release
