@@ -15,7 +15,11 @@
 # Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
-EXTRA_DIST += libglnx/README.md libglnx/COPYING
+EXTRA_DIST += \
+	libglnx/README.md \
+	libglnx/COPYING \
+	libglnx/libglnx.m4 \
+	$(NULL)
 
 libglnx_la_SOURCES = \
 	libglnx/glnx-alloca.h \
@@ -35,8 +39,6 @@ libglnx_la_SOURCES = \
 	libglnx/glnx-fdio.c \
 	libglnx/glnx-lockfile.h \
 	libglnx/glnx-lockfile.c \
-	libglnx/glnx-libcontainer.h \
-	libglnx/glnx-libcontainer.c \
 	libglnx/glnx-missing-syscall.h \
 	libglnx/glnx-missing.h \
 	libglnx/glnx-xattrs.h \

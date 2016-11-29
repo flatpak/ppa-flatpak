@@ -46,8 +46,6 @@ static GError *exit_error = NULL;
 static dev_t fuse_dev = 0;
 static GQueue get_mount_point_invocations = G_QUEUE_INIT;
 static XdpDbusDocuments *dbus_api;
-FlatpakDir *user_dir = NULL;
-FlatpakDir *system_dir = NULL;
 
 G_LOCK_DEFINE (db);
 
@@ -389,7 +387,8 @@ validate_parent_dir (const char *path,
   name = g_path_get_basename (path);
   dir_fd = open (dirname, O_CLOEXEC | O_PATH);
 
-  if (fstat (dir_fd, real_parent_st_buf) < 0 ||
+  if (dir_fd < 0 ||
+      fstat (dir_fd, real_parent_st_buf) < 0 ||
       fstatat (dir_fd, name, &real_st_buf, AT_SYMLINK_NOFOLLOW) < 0 ||
       st_buf->st_dev != real_st_buf.st_dev ||
       st_buf->st_ino != real_st_buf.st_ino)
@@ -696,7 +695,7 @@ portal_lookup (GDBusMethodInvocation *invocation,
 {
   const char *filename;
   char path_buffer[PATH_MAX + 1];
-  int fd;
+  glnx_fd_close int fd = -1;
   struct stat st_buf, real_parent_st_buf;
   g_auto(GStrv) ids = NULL;
   g_autofree char *id = NULL;
@@ -1144,9 +1143,6 @@ main (int    argc,
       g_print ("No permission store: %s", error->message);
       do_exit (4);
     }
-
-  user_dir = flatpak_dir_get_user ();
-  system_dir = flatpak_dir_get_system ();
 
   /* We want do do our custom post-mainloop exit */
   g_dbus_connection_set_exit_on_close (session_bus, FALSE);

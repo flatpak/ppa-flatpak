@@ -30,6 +30,7 @@
 #include <libsoup/soup.h>
 #include "flatpak-dbus.h"
 #include <ostree.h>
+#include <json-glib/json-glib.h>
 
 typedef enum {
   FLATPAK_HOST_COMMAND_FLAGS_CLEAR_ENV = 1 << 0,
@@ -42,6 +43,9 @@ gboolean flatpak_fail (GError    **error,
 
 gint flatpak_strcmp0_ptr (gconstpointer a,
                           gconstpointer b);
+
+gboolean  flatpak_has_path_prefix (const char *str,
+                                   const char *prefix);
 
 const char * flatpak_path_match_prefix (const char *pattern,
                                         const char *path);
@@ -124,6 +128,10 @@ char * flatpak_build_runtime_ref (const char *runtime,
 char * flatpak_build_app_ref (const char *app,
                               const char *branch,
                               const char *arch);
+GFile *flatpak_find_deploy_dir_for_ref (const char   *ref,
+                                        FlatpakDir **dir_out,
+                                        GCancellable *cancellable,
+                                        GError      **error);
 GFile * flatpak_find_files_dir_for_ref (const char   *ref,
                                         GCancellable *cancellable,
                                         GError      **error);
@@ -295,6 +303,7 @@ typedef struct
   char *directory;
   char *files_path;
   gboolean needs_tmpfs;
+  gboolean is_unmaintained;
 } FlatpakExtension;
 
 void flatpak_extension_free (FlatpakExtension *extension);
@@ -347,6 +356,11 @@ gboolean flatpak_mkdir_p (GFile         *dir,
 gboolean flatpak_rm_rf (GFile         *dir,
                         GCancellable  *cancellable,
                         GError       **error);
+
+char * flatpak_readlink (const char *path,
+                         GError       **error);
+char * flatpak_resolve_link (const char *path,
+                             GError **error);
 
 gboolean flatpak_file_rename (GFile *from,
                               GFile *to,
@@ -416,7 +430,19 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeRepoCommitModifier, ostree_repo_commit_modi
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (SoupSession, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (SoupMessage, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (SoupRequest, g_object_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (SoupRequestHTTP, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (SoupURI, soup_uri_free)
+#endif
+
+#if !JSON_CHECK_VERSION(1,2,0)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (JsonArray, json_array_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (JsonBuilder, g_object_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (JsonGenerator, g_object_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (JsonNode, json_node_free)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (JsonObject, json_object_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (JsonParser, g_object_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (JsonPath, g_object_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (JsonReader, g_object_unref)
 #endif
 
 #if !GLIB_CHECK_VERSION(2, 43, 4)

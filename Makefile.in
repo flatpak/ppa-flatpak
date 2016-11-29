@@ -295,7 +295,6 @@ am_libglnx_la_OBJECTS = libglnx/libglnx_la-glnx-backports.lo \
 	libglnx/libglnx_la-glnx-dirfd.lo \
 	libglnx/libglnx_la-glnx-fdio.lo \
 	libglnx/libglnx_la-glnx-lockfile.lo \
-	libglnx/libglnx_la-glnx-libcontainer.lo \
 	libglnx/libglnx_la-glnx-xattrs.lo \
 	libglnx/libglnx_la-glnx-shutil.lo $(am__objects_1)
 libglnx_la_OBJECTS = $(am_libglnx_la_OBJECTS)
@@ -318,6 +317,7 @@ PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 am__objects_4 = document-portal/flatpak-xdp-dbus.$(OBJEXT)
 am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-utils.$(OBJEXT) \
+	app/flatpak-flatpak-oci.$(OBJEXT) \
 	app/flatpak-flatpak-transaction.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-add-remote.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-delete-remote.$(OBJEXT) \
@@ -373,8 +373,8 @@ am_flatpak_builder_OBJECTS =  \
 flatpak_builder_OBJECTS = $(am_flatpak_builder_OBJECTS)
 flatpak_builder_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) libglnx.la libflatpak-common.la
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libglnx.la \
+	libflatpak-common.la
 flatpak_builder_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_builder_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
@@ -922,8 +922,6 @@ JSON_CFLAGS = @JSON_CFLAGS@
 JSON_LIBS = @JSON_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
-LIBARCHIVE_CFLAGS = @LIBARCHIVE_CFLAGS@
-LIBARCHIVE_LIBS = @LIBARCHIVE_LIBS@
 LIBELF_CFLAGS = @LIBELF_CFLAGS@
 LIBELF_LIBS = @LIBELF_LIBS@
 LIBICONV = @LIBICONV@
@@ -1078,6 +1076,7 @@ BUILT_SOURCES = $(NULL) $(nodist_libflatpak_common_la_SOURCES) \
 EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	$(all_dist_test_scripts) $(all_dist_test_data) \
 	$(service_in_files) libglnx/README.md libglnx/COPYING \
+	libglnx/libglnx.m4 $(NULL) \
 	data/org.freedesktop.portal.Documents.xml \
 	data/org.freedesktop.impl.portal.PermissionStore.xml \
 	data/org.freedesktop.systemd1.xml \
@@ -1094,9 +1093,11 @@ TESTS_ENVIRONMENT = G_TEST_SRCDIR="$(abs_srcdir)/tests" \
 	FLATPAK_TESTS_DEBUG=1 FLATPAK_TRIGGERSDIR=$$(cd $(top_srcdir) \
 	&& pwd)/triggers FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && \
 	pwd)/flatpak-dbus-proxy GI_TYPELIB_PATH=$$(cd $(top_builddir) \
-	&& pwd) LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && pwd) \
-	PATH=$$(cd $(top_builddir) && pwd):$${PATH} $(NULL) \
-	$(am__append_23) $(am__append_24)
+	&& pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
+	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && \
+	pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} PATH=$$(cd \
+	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_23) \
+	$(am__append_24)
 LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/buildutil/tap-driver.sh
 LOG_COMPILER = $(top_srcdir)/buildutil/tap-test
 installed_test_LTLIBRARIES = $(am__append_12)
@@ -1195,8 +1196,6 @@ libglnx_la_SOURCES = \
 	libglnx/glnx-fdio.c \
 	libglnx/glnx-lockfile.h \
 	libglnx/glnx-lockfile.c \
-	libglnx/glnx-libcontainer.h \
-	libglnx/glnx-libcontainer.c \
 	libglnx/glnx-missing-syscall.h \
 	libglnx/glnx-missing.h \
 	libglnx/glnx-xattrs.h \
@@ -1243,6 +1242,7 @@ libflatpak_common_la_CFLAGS = \
 	$(HIDDEN_VISIBILITY_CFLAGS) \
 	$(OSTREE_CFLAGS) \
 	$(SOUP_CFLAGS) \
+	$(JSON_CFLAGS) \
 	$(XAUTH_CFLAGS) \
 	$(LIBSECCOMP_CFLAGS) \
 	-I$(srcdir)/dbus-proxy \
@@ -1261,6 +1261,8 @@ flatpak_SOURCES = \
 	app/flatpak-builtins.h \
 	app/flatpak-builtins-utils.h \
 	app/flatpak-builtins-utils.c \
+	app/flatpak-oci.h \
+	app/flatpak-oci.c \
 	app/flatpak-transaction.h \
 	app/flatpak-transaction.c \
 	app/flatpak-builtins-add-remote.c \
@@ -1292,8 +1294,8 @@ flatpak_SOURCES = \
 	$(xdp_dbus_built_sources)	\
 	$(NULL)
 
-flatpak_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(LIBARCHIVE_LIBS) libglnx.la libflatpak-common.la
-flatpak_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(LIBARCHIVE_CFLAGS) \
+flatpak_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) libglnx.la libflatpak-common.la
+flatpak_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) \
         -DLOCALEDIR=\"$(localedir)\"
 
 flatpakincludedir = $(includedir)/flatpak
@@ -1348,6 +1350,7 @@ libflatpak_la_CFLAGS = \
 	$(BASE_CFLAGS) \
 	$(OSTREE_CFLAGS) \
 	$(SOUP_CFLAGS) \
+	$(JSON_CFLAGS) \
 	$(NULL)
 
 libflatpak_la_LDFLAGS = \
@@ -1432,16 +1435,16 @@ flatpak_builder_SOURCES = \
 	builder/builder-utils.h \
 	$(NULL)
 
-flatpak_builder_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(JSON_LIBS) $(SOUP_LIBS) $(LIBARCHIVE_LIBS) $(LIBELF_LIBS) \
+flatpak_builder_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(JSON_LIBS) $(SOUP_LIBS) $(LIBELF_LIBS) \
 			libglnx.la libflatpak-common.la
 
-flatpak_builder_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(JSON_CFLAGS) $(SOUP_CFLAGS) $(LIBARCHIVE_CFLAGS)
+flatpak_builder_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(JSON_CFLAGS) $(SOUP_CFLAGS)
 flatpak_session_helper_SOURCES = \
 	session-helper/flatpak-session-helper.c	\
 	$(NULL)
 
 flatpak_session_helper_LDADD = $(BASE_LIBS) libflatpak-common.la
-flatpak_session_helper_CFLAGS = $(BASE_CFLAGS) $(SOUP_CFLAGS) $(OSTREE_CFLAGS) $(GSYSTEM_CFLAGS)
+flatpak_session_helper_CFLAGS = $(BASE_CFLAGS) $(SOUP_CFLAGS) $(OSTREE_CFLAGS) $(GSYSTEM_CFLAGS) $(JSON_CFLAGS)
 @BUILD_SYSTEM_HELPER_TRUE@dbussystemservicedir = $(datadir)/dbus-1/system-services
 @BUILD_SYSTEM_HELPER_TRUE@dbussystemservice_DATA = system-helper/org.freedesktop.Flatpak.SystemHelper.service
 @BUILD_SYSTEM_HELPER_TRUE@dbusconfdir = ${sysconfdir}/dbus-1/system.d
@@ -1481,7 +1484,7 @@ xdg_permission_store_SOURCES = \
 	$(NULL)
 
 xdg_permission_store_LDADD = $(BASE_LIBS) libflatpak-common.la
-xdg_permission_store_CFLAGS = $(BASE_CFLAGS) $(SOUP_CFLAGS) $(OSTREE_CFLAGS) $(GSYSTEM_CFLAGS) -I$(srcdir)/permission-store -I$(builddir)/permission-store
+xdg_permission_store_CFLAGS = $(BASE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(OSTREE_CFLAGS) $(GSYSTEM_CFLAGS) -I$(srcdir)/permission-store -I$(builddir)/permission-store
 xdp_dbus_built_sources = document-portal/xdp-dbus.c document-portal/xdp-dbus.h
 nodist_xdg_document_portal_SOURCES = \
 	$(xdp_dbus_built_sources)		\
@@ -1498,7 +1501,7 @@ xdg_document_portal_SOURCES = \
 	$(NULL)
 
 xdg_document_portal_LDADD = $(BASE_LIBS) $(FUSE_LIBS) libflatpak-common.la
-xdg_document_portal_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(FUSE_CFLAGS) -I$(srcdir)/document-portal -I$(builddir)/document-portal -I$(srcdir)/permission-store -I$(builddir)/permission-store -DFLATPAK_COMPILATION
+xdg_document_portal_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(FUSE_CFLAGS) -I$(srcdir)/document-portal -I$(builddir)/document-portal -I$(srcdir)/permission-store -I$(builddir)/permission-store -DFLATPAK_COMPILATION
 testdb_CFLAGS = $(BASE_CFLAGS)
 testdb_LDADD = \
              $(BASE_LIBS) \
@@ -1830,8 +1833,6 @@ libglnx/libglnx_la-glnx-fdio.lo: libglnx/$(am__dirstamp) \
 	libglnx/$(DEPDIR)/$(am__dirstamp)
 libglnx/libglnx_la-glnx-lockfile.lo: libglnx/$(am__dirstamp) \
 	libglnx/$(DEPDIR)/$(am__dirstamp)
-libglnx/libglnx_la-glnx-libcontainer.lo: libglnx/$(am__dirstamp) \
-	libglnx/$(DEPDIR)/$(am__dirstamp)
 libglnx/libglnx_la-glnx-xattrs.lo: libglnx/$(am__dirstamp) \
 	libglnx/$(DEPDIR)/$(am__dirstamp)
 libglnx/libglnx_la-glnx-shutil.lo: libglnx/$(am__dirstamp) \
@@ -2062,6 +2063,8 @@ app/$(DEPDIR)/$(am__dirstamp):
 app/flatpak-flatpak-main.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-utils.$(OBJEXT): app/$(am__dirstamp) \
+	app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-oci.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-transaction.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
@@ -2428,6 +2431,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-update.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-oci.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-transaction.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-bind-mount.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-bubblewrap.Po@am__quote@
@@ -2483,7 +2487,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-errors.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-fdio.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-libcontainer.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-local-alloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-lockfile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-shutil.Plo@am__quote@
@@ -2711,13 +2714,6 @@ libglnx/libglnx_la-glnx-lockfile.lo: libglnx/glnx-lockfile.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o libglnx/libglnx_la-glnx-lockfile.lo `test -f 'libglnx/glnx-lockfile.c' || echo '$(srcdir)/'`libglnx/glnx-lockfile.c
 
-libglnx/libglnx_la-glnx-libcontainer.lo: libglnx/glnx-libcontainer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT libglnx/libglnx_la-glnx-libcontainer.lo -MD -MP -MF libglnx/$(DEPDIR)/libglnx_la-glnx-libcontainer.Tpo -c -o libglnx/libglnx_la-glnx-libcontainer.lo `test -f 'libglnx/glnx-libcontainer.c' || echo '$(srcdir)/'`libglnx/glnx-libcontainer.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) libglnx/$(DEPDIR)/libglnx_la-glnx-libcontainer.Tpo libglnx/$(DEPDIR)/libglnx_la-glnx-libcontainer.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libglnx/glnx-libcontainer.c' object='libglnx/libglnx_la-glnx-libcontainer.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o libglnx/libglnx_la-glnx-libcontainer.lo `test -f 'libglnx/glnx-libcontainer.c' || echo '$(srcdir)/'`libglnx/glnx-libcontainer.c
-
 libglnx/libglnx_la-glnx-xattrs.lo: libglnx/glnx-xattrs.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT libglnx/libglnx_la-glnx-xattrs.lo -MD -MP -MF libglnx/$(DEPDIR)/libglnx_la-glnx-xattrs.Tpo -c -o libglnx/libglnx_la-glnx-xattrs.lo `test -f 'libglnx/glnx-xattrs.c' || echo '$(srcdir)/'`libglnx/glnx-xattrs.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) libglnx/$(DEPDIR)/libglnx_la-glnx-xattrs.Tpo libglnx/$(DEPDIR)/libglnx_la-glnx-xattrs.Plo
@@ -2759,6 +2755,20 @@ app/flatpak-flatpak-builtins-utils.obj: app/flatpak-builtins-utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-utils.c' object='app/flatpak-flatpak-builtins-utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-utils.obj `if test -f 'app/flatpak-builtins-utils.c'; then $(CYGPATH_W) 'app/flatpak-builtins-utils.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-utils.c'; fi`
+
+app/flatpak-flatpak-oci.o: app/flatpak-oci.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-oci.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-oci.Tpo -c -o app/flatpak-flatpak-oci.o `test -f 'app/flatpak-oci.c' || echo '$(srcdir)/'`app/flatpak-oci.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-oci.Tpo app/$(DEPDIR)/flatpak-flatpak-oci.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-oci.c' object='app/flatpak-flatpak-oci.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-oci.o `test -f 'app/flatpak-oci.c' || echo '$(srcdir)/'`app/flatpak-oci.c
+
+app/flatpak-flatpak-oci.obj: app/flatpak-oci.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-oci.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-oci.Tpo -c -o app/flatpak-flatpak-oci.obj `if test -f 'app/flatpak-oci.c'; then $(CYGPATH_W) 'app/flatpak-oci.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-oci.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-oci.Tpo app/$(DEPDIR)/flatpak-flatpak-oci.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-oci.c' object='app/flatpak-flatpak-oci.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-oci.obj `if test -f 'app/flatpak-oci.c'; then $(CYGPATH_W) 'app/flatpak-oci.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-oci.c'; fi`
 
 app/flatpak-flatpak-transaction.o: app/flatpak-transaction.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-transaction.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-transaction.Tpo -c -o app/flatpak-flatpak-transaction.o `test -f 'app/flatpak-transaction.c' || echo '$(srcdir)/'`app/flatpak-transaction.c

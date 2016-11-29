@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [6])
-m4_define([flatpak_micro_version], [13])
-m4_define([flatpak_interface_age], [13])
+m4_define([flatpak_micro_version], [14])
+m4_define([flatpak_interface_age], [14])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -30,7 +30,7 @@ AC_INIT([Flatpak],
 
 GLIB_REQS=2.40
 SYSTEM_BWRAP_REQS=0.1.2
-OSTREE_REQS=2016.12
+OSTREE_REQS=2016.14
 
 AC_USE_SYSTEM_EXTENSIONS
 
@@ -134,8 +134,13 @@ AC_SUBST([GDBUS_CODEGEN], [`$PKG_CONFIG --variable gdbus_codegen gio-2.0`])
 
 POLKIT_GOBJECT_REQUIRED=0.98
 
-PKG_CHECK_MODULES(BASE, [glib-2.0 >= $GLIB_REQS gio-2.0 gio-unix-2.0])
+PKG_CHECK_MODULES(BASE, [glib-2.0 >= $GLIB_REQS gio-2.0 gio-unix-2.0 libarchive >= 2.8.0])
 PKG_CHECK_MODULES(SOUP, [libsoup-2.4])
+
+save_LIBS=$LIBS
+LIBS=$BASE_LIBS
+AC_CHECK_FUNCS(archive_read_support_filter_all)
+LIBS=$save_LIBS
 
 AC_ARG_ENABLE([system-helper],
               AC_HELP_STRING([--disable-system-helper],
@@ -171,19 +176,6 @@ if test "x$enable_sandboxed_triggers" = "xno"; then
 fi
 
 PKG_CHECK_MODULES(OSTREE, [ostree-1 >= $OSTREE_REQS])
-save_LIBS=$LIBS
-save_CFLAGS=$CFLAGS
-LIBS=$OSTREE_LIBS
-CFLAGS=$OSTREE_CFLAGS
-
-AC_CHECK_MEMBER([OstreeRepoExportArchiveOptions.path_prefix],
-                [AC_DEFINE([HAVE_OSTREE_EXPORT_PATH_PREFIX], 1,
-                          [Have OstreeRepoExportArchiveOptions.path_prefix])],
-               , [[#include <ostree.h>]])
-
-LIBS=$save_LIBS
-CFLAGS=$save_CFLAGS
-
 
 PKG_CHECK_MODULES(FUSE, [fuse])
 
@@ -214,33 +206,6 @@ AC_ARG_ENABLE(sudo,
               AS_HELP_STRING([--enable-sudo],[Use sudo to set setuid flags on binaries during install (only needed if userns disabled)]),
               [SUDO_BIN="sudo"], [SUDO_BIN=""])
 AC_SUBST([SUDO_BIN])
-
-LIBARCHIVE_DEPENDENCY="libarchive >= 2.8.0"
-
-AC_ARG_WITH(libarchive,
-	    AS_HELP_STRING([--without-libarchive], [Do not use libarchive]),
-	    :, with_libarchive=maybe)
-
-AS_IF([ test x$with_libarchive != xno ], [
-    AC_MSG_CHECKING([for $LIBARCHIVE_DEPENDENCY])
-    PKG_CHECK_EXISTS($LIBARCHIVE_DEPENDENCY, have_libarchive=yes, have_libarchive=no)
-    AC_MSG_RESULT([$have_libarchive])
-    AS_IF([ test x$have_libarchive = xno && test x$with_libarchive != xmaybe ], [
-       AC_MSG_ERROR([libarchive is enabled but could not be found])
-    ])
-    AS_IF([ test x$have_libarchive = xyes], [
-        AC_DEFINE([HAVE_LIBARCHIVE], 1, [Define if we have libarchive.pc])
-	PKG_CHECK_MODULES(LIBARCHIVE, $LIBARCHIVE_DEPENDENCY)
-        save_LIBS=$LIBS
-        LIBS=$LIBARCHIVE_LIBS
-        AC_CHECK_FUNCS(archive_read_support_filter_all)
-        LIBS=$save_LIBS
-	with_libarchive=yes
-    ], [
-	with_libarchive=no
-    ])
-], [ with_libarchive=no ])
-AM_CONDITIONAL(USE_LIBARCHIVE, test $with_libarchive != no)
 
 dnl ************************
 dnl *** check for libelf ***
