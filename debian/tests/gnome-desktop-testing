@@ -19,12 +19,6 @@ gnome-desktop-testing-runner -l Flatpak | while read t; do
 			# has more dependencies
 			continue
 			;;
-
-		(Flatpak/test-extensions.sh.test)
-			# fails to clean up on ci.debian.net and I can't
-			# reproduce it under LXC locally
-			continue
-			;;
 	esac
 
 	gnome-desktop-testing-runner "$t" < /dev/null || touch "$ADTTMP"/failed

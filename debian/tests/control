@@ -4,6 +4,7 @@ Depends:
  libflatpak-dev,
 
 Tests: builder
+Restrictions: isolation-machine
 Depends:
  flatpak-builder,
  flatpak-tests,
@@ -12,11 +13,6 @@ Depends:
  make,
 
 Tests: gnome-desktop-testing
-Depends:
- flatpak-tests,
- gnome-desktop-testing,
-
-Tests: extensions
 Restrictions: isolation-machine
 Depends:
  flatpak-tests,

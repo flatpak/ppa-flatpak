@@ -1,3 +1,13 @@
+flatpak (0.6.14-3) UNRELEASED; urgency=medium
+
+  * d/tests/*: only run tests on a real or virtual machine, not in a
+    container. bubblewrap is effectively already a container, and
+    nesting containers doesn't work particularly well.
+    Unfortunately this means the tests won't work on ci.debian.net,
+    which uses LXC.
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 01 Dec 2016 12:41:08 +0000
+
 flatpak (0.6.14-2) unstable; urgency=medium
 
   * d/p/pull-Exit-early-on-error-without-aborting-transaction.patch:
