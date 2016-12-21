@@ -5,6 +5,8 @@ flatpak (0.8.0-1) UNRELEASED; urgency=medium
     - Bump ostree dependency to 2016.15 following upstream release notes
       (the minimal dependency is 2016.14, but 2016.15 is recommended)
     - debian/libflatpak0.symbols: add new ABIs
+    - d/p/pull-Exit-early-on-error-without-aborting-transaction.patch:
+      drop patch, applied upstream
   * debian/gbp.conf: switch upstream branch to debian/0.8.x to follow
     the first upstream stable-branch
   * debian/watch: only follow stable-branches
