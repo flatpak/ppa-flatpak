@@ -100,4 +100,5 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_remote_set_prio@Base 0.5.2+git20160516
  flatpak_remote_set_title@Base 0.5.2+git20160516
  flatpak_remote_set_url@Base 0.5.2+git20160516
+ flatpak_storage_type_get_type@Base 0.8.0
  flatpak_update_flags_get_type@Base 0.5.2
