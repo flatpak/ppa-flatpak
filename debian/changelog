@@ -14,6 +14,8 @@ flatpak (0.8.0-1) UNRELEASED; urgency=medium
     allow sudoers to uninstall apps and runtimes without re-authenticating,
     following upstream changes to the org.freedesktop.Flatpak.rules used in
     newer polkit versions
+  * d/p/Update-Polish-translation.patch: update translated strings from
+    upstream git
 
  -- Simon McVittie <smcv@debian.org>  Wed, 21 Dec 2016 13:10:23 +0000
 
