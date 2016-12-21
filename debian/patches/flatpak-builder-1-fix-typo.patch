@@ -1,0 +1,22 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Wed, 21 Dec 2016 14:12:54 +0000
+Subject: flatpak-builder(1): fix typo
+
+Found by Debian's Lintian tool.
+---
+ doc/flatpak-builder.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/doc/flatpak-builder.xml b/doc/flatpak-builder.xml
+index 39b9535..4e0f8c7 100644
+--- a/doc/flatpak-builder.xml
++++ b/doc/flatpak-builder.xml
+@@ -782,7 +782,7 @@
+ 
+                 <listitem><para>
+                      Limit the number of parallel jobs during the build.
+-                     The default is the nubmer of CPUs on the machine.
++                     The default is the number of CPUs on the machine.
+                 </para></listitem>
+             </varlistentry>
+ 

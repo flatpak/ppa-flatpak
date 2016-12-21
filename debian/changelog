@@ -16,6 +16,7 @@ flatpak (0.8.0-1) UNRELEASED; urgency=medium
     newer polkit versions
   * d/p/Update-Polish-translation.patch: update translated strings from
     upstream git
+  * d/p/flatpak-builder-1-fix-typo.patch: fix a typo in the man page
 
  -- Simon McVittie <smcv@debian.org>  Wed, 21 Dec 2016 13:10:23 +0000
 
