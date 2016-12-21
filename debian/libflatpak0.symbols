@@ -6,12 +6,14 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_bundle_ref_get_installed_size@Base 0.5.2
  flatpak_bundle_ref_get_metadata@Base 0.5.2
  flatpak_bundle_ref_get_origin@Base 0.5.2
+ flatpak_bundle_ref_get_runtime_repo_url@Base 0.8.0
  flatpak_bundle_ref_get_type@Base 0.5.2
  flatpak_bundle_ref_new@Base 0.5.2
  flatpak_error_get_type@Base 0.5.2
  flatpak_error_quark@Base 0.5.2
  flatpak_get_default_arch@Base 0.5.2+git20160516
  flatpak_get_supported_arches@Base 0.6.6
+ flatpak_get_system_installations@Base 0.8.0
  flatpak_install_flags_get_type@Base 0.6.5
  flatpak_installation_create_monitor@Base 0.5.2
  flatpak_installation_drop_caches@Base 0.5.2+git20160516
@@ -19,10 +21,14 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_fetch_remote_ref_sync@Base 0.5.2
  flatpak_installation_fetch_remote_size_sync@Base 0.5.2
  flatpak_installation_get_current_installed_app@Base 0.5.2
+ flatpak_installation_get_display_name@Base 0.8.0
+ flatpak_installation_get_id@Base 0.8.0
  flatpak_installation_get_installed_ref@Base 0.5.2
  flatpak_installation_get_is_user@Base 0.5.2
  flatpak_installation_get_path@Base 0.5.2
+ flatpak_installation_get_priority@Base 0.8.0
  flatpak_installation_get_remote_by_name@Base 0.5.2
+ flatpak_installation_get_storage_type@Base 0.8.0
  flatpak_installation_get_type@Base 0.5.2
  flatpak_installation_install@Base 0.5.2
  flatpak_installation_install_bundle@Base 0.5.2
@@ -40,6 +46,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_modify_remote@Base 0.5.2+git20160516
  flatpak_installation_new_for_path@Base 0.5.2
  flatpak_installation_new_system@Base 0.5.2
+ flatpak_installation_new_system_with_id@Base 0.8.0
  flatpak_installation_new_user@Base 0.5.2
  flatpak_installation_remove_remote@Base 0.5.2+git20160516
  flatpak_installation_uninstall@Base 0.5.2
