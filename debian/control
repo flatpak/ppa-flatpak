@@ -31,7 +31,7 @@ Build-Depends:
  libgirepository1.0-dev,
  libglib2.0-dev,
  libjson-glib-dev,
- libostree-dev (>= 2016.14),
+ libostree-dev (>= 2016.15),
  libpolkit-gobject-1-dev,
  libseccomp-dev,
  libsoup2.4-dev,
@@ -145,7 +145,7 @@ Depends:
  gir1.2-flatpak-1.0 (= ${binary:Version}),
  libflatpak0 (= ${binary:Version}),
  libglib2.0-dev,
- libostree-dev (>= 2016.6),
+ libostree-dev (>= 2016.15),
  pkg-config,
  ${misc:Depends},
 Description: Application deployment framework for desktop apps (development)
