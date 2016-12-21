@@ -1,6 +1,7 @@
 flatpak (0.8.0-1) UNRELEASED; urgency=medium
 
   * New upstream stable release
+    - Bump bubblewrap dependencies to 0.1.5 following configure.ac
   * debian/gbp.conf: switch upstream branch to debian/0.8.x to follow
     the first upstream stable-branch
   * debian/watch: only follow stable-branches

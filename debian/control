@@ -7,7 +7,7 @@ Uploaders:
  Simon McVittie <smcv@debian.org>,
 Build-Depends:
  attr,
- bubblewrap (>= 0.1.2),
+ bubblewrap (>= 0.1.5),
  ca-certificates,
  dbus,
  debhelper (>= 10~),
@@ -50,7 +50,7 @@ Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/flatpak.git
 Package: flatpak
 Architecture: linux-any
 Depends:
- bubblewrap (>= 0.1.2),
+ bubblewrap (>= 0.1.5),
  fuse,
  ${misc:Depends},
  ${shlibs:Depends},
@@ -173,7 +173,7 @@ Package: libflatpak0
 Architecture: linux-any
 Section: libs
 Depends:
- bubblewrap (>= 0.1.2),
+ bubblewrap (>= 0.1.5),
  ${misc:Depends},
  ${shlibs:Depends},
 Pre-Depends:
