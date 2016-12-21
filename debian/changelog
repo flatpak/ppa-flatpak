@@ -2,6 +2,7 @@ flatpak (0.6.14-4) UNRELEASED; urgency=medium
 
   * debian/gbp.conf: switch upstream branch to debian/0.8.x to follow
     the first upstream stable-branch
+  * debian/watch: only follow stable-branches
 
  -- Simon McVittie <smcv@debian.org>  Wed, 21 Dec 2016 13:10:23 +0000
 
