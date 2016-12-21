@@ -39,6 +39,7 @@ static gboolean opt_version;
 static gboolean opt_default_arch;
 static gboolean opt_supported_arches;
 static gboolean opt_user;
+static char *opt_installation;
 
 typedef struct
 {
@@ -55,7 +56,7 @@ typedef struct
 static FlatpakCommand commands[] = {
    /* translators: please keep the leading space */
   { N_(" Manage installed apps and runtimes") },
-  { "install", N_("Install an application or runtime from a remote"), flatpak_builtin_install, flatpak_complete_install },
+  { "install", N_("Install an application or runtime"), flatpak_builtin_install, flatpak_complete_install },
   { "update", N_("Update an installed application or runtime"), flatpak_builtin_update, flatpak_complete_update },
   { "uninstall", N_("Uninstall an installed application or runtime"), flatpak_builtin_uninstall, flatpak_complete_uninstall },
   { "list", N_("List installed apps and/or runtimes"), flatpak_builtin_list, flatpak_complete_list },
@@ -115,6 +116,7 @@ static GOptionEntry empty_entries[] = {
 GOptionEntry user_entries[] = {
   { "user", 0, 0, G_OPTION_ARG_NONE, &opt_user, N_("Work on user installations"), NULL },
   { "system", 0, G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &opt_user, N_("Work on system-wide installations (default)"), NULL },
+  { "installation", 0, 0, G_OPTION_ARG_STRING, &opt_installation, N_("Work on a specific system-wide installation"), NULL },
   { NULL }
 };
 
@@ -236,7 +238,16 @@ flatpak_option_context_parse (GOptionContext     *context,
 
   if (!(flags & FLATPAK_BUILTIN_FLAG_NO_DIR))
     {
-      dir = flatpak_dir_get (opt_user);
+      if (opt_user)
+        dir = flatpak_dir_get_user ();
+      else if (opt_installation == NULL)
+        dir = flatpak_dir_get_system_default ();
+      else
+        {
+          dir = flatpak_dir_get_system_by_id (opt_installation, cancellable, error);
+          if (dir == NULL)
+            return FALSE;
+        }
 
       if (!flatpak_dir_ensure_path (dir, cancellable, error))
         return FALSE;

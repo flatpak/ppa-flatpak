@@ -1918,11 +1918,13 @@ flatpak_run_add_x11_args (GPtrArray *argv_array,
                     g_array_append_val (fd_array, tmp_fd);
                   *envp_p = g_environ_setenv (*envp_p, "XAUTHORITY", dest, TRUE);
 
-                  lseek (tmp_fd, 0, SEEK_SET);
                 }
 
               fclose (output);
               unlink (tmp_path);
+
+              if (tmp_fd != -1)
+                lseek (tmp_fd, 0, SEEK_SET);
             }
           else
             {
@@ -2214,7 +2216,7 @@ path_is_visible (const char **keys,
   for (i = 0; i < n_keys; i++)
     {
       const char *mounted_path = keys[i];
-      FlatpakFilesystemMode mode;
+      guint mode;
       mode = GPOINTER_TO_INT (g_hash_table_lookup (hash_table, mounted_path));
 
       if (flatpak_has_path_prefix (path, mounted_path))
@@ -2242,7 +2244,7 @@ add_file_args (GPtrArray *argv_array,
   for (i = 0; i < n_keys; i++)
     {
       const char *path = keys[i];
-      FlatpakFilesystemMode mode;
+      guint mode;
 
       mode = GPOINTER_TO_INT (g_hash_table_lookup (hash_table, path));
 
@@ -2276,7 +2278,7 @@ static void
 add_hide_path (GHashTable *hash_table,
                const char           *path)
 {
-  FlatpakFilesystemMode old_mode;
+  guint old_mode;
 
   old_mode = GPOINTER_TO_INT (g_hash_table_lookup (hash_table, path));
   g_hash_table_insert (hash_table, g_strdup (path),
@@ -2298,14 +2300,19 @@ add_expose_path (GHashTable *hash_table,
       S_ISLNK (st.st_mode) ||
       S_ISSOCK (st.st_mode))
     {
-      FlatpakFilesystemMode old_mode;
+      guint old_mode;
 
       old_mode = GPOINTER_TO_INT (g_hash_table_lookup (hash_table, path));
 
       if (S_ISLNK (st.st_mode))
         {
           g_autofree char *resolved = flatpak_resolve_link (path, NULL);
-          if (resolved)
+          /* Don't keep symlinks into /app or /usr, as they are not the
+             same as on the host, and we generally can't create the parents
+             for them anyway */
+          if (resolved &&
+              !g_str_has_prefix (resolved, "/app/")  &&
+              !g_str_has_prefix (resolved, "/usr/"))
             {
               add_expose_path (hash_table, mode, resolved);
               mode = FAKE_MODE_SYMLINK;
@@ -3060,6 +3067,12 @@ flatpak_run_add_app_info_args (GPtrArray      *argv_array,
     g_key_file_set_string (keyfile, "Instance", "branch", app_branch);
 
   g_key_file_set_string (keyfile, "Instance", "flatpak-version", PACKAGE_VERSION);
+
+  if ((final_app_context->sockets & FLATPAK_CONTEXT_SOCKET_SESSION_BUS) == 0)
+    g_key_file_set_boolean (keyfile, "Instance", "session-bus-proxy", TRUE);
+
+  if ((final_app_context->sockets & FLATPAK_CONTEXT_SOCKET_SYSTEM_BUS) == 0)
+    g_key_file_set_boolean (keyfile, "Instance", "system-bus-proxy", TRUE);
 
   flatpak_context_save_metadata (final_app_context, TRUE, keyfile);
 

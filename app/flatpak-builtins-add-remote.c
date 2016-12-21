@@ -36,13 +36,6 @@
 #include "flatpak-utils.h"
 #include "flatpak-chain-input-stream.h"
 
-#define FLATPAK_REPO_GROUP "Flatpak Repo"
-#define FLATPAK_REPO_URL_KEY "Url"
-#define FLATPAK_REPO_TITLE_KEY "Title"
-#define FLATPAK_REPO_DEFAULT_BRANCH_KEY "DefaultBranch"
-#define FLATPAK_REPO_GPGKEY_KEY "GPGKey"
-#define FLATPAK_REPO_NODEPS_KEY "NoDeps"
-
 static gboolean opt_no_gpg_verify;
 static gboolean opt_do_gpg_verify;
 static gboolean opt_do_enumerate;
@@ -227,6 +220,7 @@ load_options (const char *filename,
   char *str;
   gboolean nodeps;
   g_autoptr(GBytes) bytes = NULL;
+  g_autofree char *version = NULL;
 
   if (g_str_has_prefix (filename, "http:") ||
       g_str_has_prefix (filename, "https:"))
@@ -262,6 +256,14 @@ load_options (const char *filename,
   if (!g_key_file_has_group (keyfile, FLATPAK_REPO_GROUP))
     {
       g_printerr ("Invalid file format");
+      exit (1);
+    }
+
+  version = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                   FLATPAK_REPO_VERSION_KEY, NULL);
+  if (version != NULL && strcmp (version, "1") != 0)
+    {
+      g_printerr ("Invalid version %s, only 1 supported", version);
       exit (1);
     }
 
@@ -428,6 +430,10 @@ flatpak_builtin_add_remote (int argc, char **argv,
   if (!flatpak_dir_modify_remote (dir, remote_name, config, gpg_data, cancellable, error))
     return FALSE;
 
+  /* Reload previously changed configuration */
+  if (!flatpak_dir_recreate_repo (dir, cancellable, error))
+    return FALSE;
+
   /* We can't retrieve the extra metadata until the remote has been added locally, since
      ostree_repo_remote_fetch_summary() works with the repository's name, not its URL. */
   return update_remote_with_extra_metadata (dir, remote_name, gpg_data, cancellable, error);
@@ -494,6 +500,10 @@ flatpak_builtin_modify_remote (int argc, char **argv, GCancellable *cancellable,
           g_printerr (_("Error updating extra metadata for '%s': %s\n"), remote_name, local_error->message);
           return flatpak_fail (error, _("Could not update extra metadata for %s"), remote_name);
         }
+
+      /* Reload changed configuration */
+      if (!flatpak_dir_recreate_repo (dir, cancellable, error))
+        return FALSE;
     }
 
   config = get_config_from_opts (dir, remote_name);

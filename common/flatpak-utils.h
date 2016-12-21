@@ -37,6 +37,15 @@ typedef enum {
 } FlatpakHostCommandFlags;
 
 
+/* https://bugzilla.gnome.org/show_bug.cgi?id=766370 */
+#if !GLIB_CHECK_VERSION(2, 49, 3)
+#define FLATPAK_VARIANT_BUILDER_INITIALIZER {{0,}}
+#define FLATPAK_VARIANT_DICT_INITIALIZER {{0,}}
+#else
+#define FLATPAK_VARIANT_BUILDER_INITIALIZER {{{0,}}}
+#define FLATPAK_VARIANT_DICT_INITIALIZER {{{0,}}}
+#endif
+
 gboolean flatpak_fail (GError    **error,
                        const char *format,
                        ...);
@@ -69,6 +78,7 @@ gboolean flatpak_variant_save (GFile        *dest,
                                GVariant     *variant,
                                GCancellable *cancellable,
                                GError      **error);
+GVariant * flatpak_gvariant_new_empty_string_dict (void);
 void    flatpak_variant_builder_init_from_variant (GVariantBuilder *builder,
                                                    const char      *type,
                                                    GVariant        *variant);
@@ -238,6 +248,9 @@ FlatpakTablePrinter *flatpak_table_printer_new (void);
 void                flatpak_table_printer_free (FlatpakTablePrinter *printer);
 void                flatpak_table_printer_add_column (FlatpakTablePrinter *printer,
                                                       const char          *text);
+void                flatpak_table_printer_add_column_len (FlatpakTablePrinter *printer,
+                                                          const char          *text,
+                                                          gsize                len);
 void                flatpak_table_printer_append_with_comma (FlatpakTablePrinter *printer,
                                                              const char          *text);
 void                flatpak_table_printer_finish_row (FlatpakTablePrinter *printer);
@@ -282,6 +295,8 @@ GVariant * flatpak_bundle_load (GFile   *file,
                                 char   **commit,
                                 char   **ref,
                                 char   **origin,
+                                char   **runtime_repo,
+                                char   **app_metadata,
                                 guint64 *installed_size,
                                 GBytes **gpg_keys,
                                 GError **error);
@@ -294,6 +309,13 @@ gboolean flatpak_pull_from_bundle (OstreeRepo   *repo,
                                    GCancellable *cancellable,
                                    GError      **error);
 
+char * flatpak_pull_from_oci (OstreeRepo   *repo,
+                              FlatpakOciRegistry *registry,
+                              const char *digest,
+                              FlatpakOciManifest *manifest,
+                              const char *ref,
+                              GCancellable *cancellable,
+                              GError      **error);
 
 typedef struct
 {
@@ -434,7 +456,7 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (SoupRequestHTTP, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (SoupURI, soup_uri_free)
 #endif
 
-#if !JSON_CHECK_VERSION(1,2,0)
+#if !JSON_CHECK_VERSION(1,1,2)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (JsonArray, json_array_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (JsonBuilder, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (JsonGenerator, g_object_unref)
@@ -520,12 +542,20 @@ long flatpak_number_prompt (int min, int max, const char *prompt, ...);
 typedef void (*FlatpakLoadUriProgress) (guint64 downloaded_bytes,
                                         gpointer user_data);
 
+SoupSession * flatpak_create_soup_session (const char *user_agent);
 GBytes * flatpak_load_http_uri (SoupSession *soup_session,
                                 const char   *uri,
                                 FlatpakLoadUriProgress progress,
                                 gpointer      user_data,
                                 GCancellable *cancellable,
                                 GError      **error);
+gboolean flatpak_download_http_uri (SoupSession *soup_session,
+                                    const char   *uri,
+                                    GOutputStream *out,
+                                    FlatpakLoadUriProgress progress,
+                                    gpointer      user_data,
+                                    GCancellable *cancellable,
+                                    GError      **error);
 
 typedef struct {
   char *shell_cur;
