@@ -8,6 +8,10 @@ flatpak (0.8.0-1) UNRELEASED; urgency=medium
   * debian/gbp.conf: switch upstream branch to debian/0.8.x to follow
     the first upstream stable-branch
   * debian/watch: only follow stable-branches
+  * debian/org.freedesktop.Flatpak.pkla: configure polkit 0.105 to
+    allow sudoers to uninstall apps and runtimes without re-authenticating,
+    following upstream changes to the org.freedesktop.Flatpak.rules used in
+    newer polkit versions
 
  -- Simon McVittie <smcv@debian.org>  Wed, 21 Dec 2016 13:10:23 +0000
 
