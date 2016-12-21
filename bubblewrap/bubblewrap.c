@@ -459,12 +459,13 @@ acquire_privs (void)
   uid_t euid, new_fsuid;
 
   euid = geteuid ();
-  if (euid == 0)
-    is_privileged = TRUE;
 
+  /* Are we setuid ? */
   if (real_uid != euid)
     {
-      if (euid != 0)
+      if (euid == 0)
+        is_privileged = TRUE;
+      else
         die ("Unexpected setuid user %d, should be 0", euid);
 
       /* We want to keep running as euid=0 until at the clone()
@@ -1630,8 +1631,9 @@ main (int    argc,
 
   parse_args (&argc, &argv);
 
-  /* We have to do this if we weren't installed setuid, so let's just DWIM */
-  if (!is_privileged)
+  /* We have to do this if we weren't installed setuid (and we're not
+   * root), so let's just DWIM */
+  if (!is_privileged && getuid () != 0)
     opt_unshare_user = TRUE;
 
   if (opt_unshare_user_try &&

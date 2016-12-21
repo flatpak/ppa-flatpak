@@ -35,11 +35,13 @@
 #include "flatpak-run.h"
 
 static char *opt_command;
+static char *opt_require_version;
 static char **opt_extra_data;
 static gboolean opt_no_exports;
 
 static GOptionEntry options[] = {
   { "command", 0, 0, G_OPTION_ARG_STRING, &opt_command, N_("Command to set"), N_("COMMAND") },
+  { "require-version", 0, 0, G_OPTION_ARG_STRING, &opt_require_version, N_("Flatpak version to require"), N_("MAJOR.MINOR.MICRO") },
   { "no-exports", 0, 0, G_OPTION_ARG_NONE, &opt_no_exports, N_("Don't process exports"), NULL },
   { "extra-data", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_extra_data, N_("Extra data info"),
     N_("NAME:SHA256:DOWNLOAD-SIZE:INSTALL-SIZE:URL") },
@@ -189,6 +191,7 @@ collect_exports (GFile *base, const char *app_id, gboolean is_runtime, GCancella
   g_autoptr(GFile) export = NULL;
   const char *app_paths[] = {
     "share/applications",                 /* Copy desktop files */
+    "share/mime/packages",                /* Copy MIME Type files */
     "share/icons",                        /* Icons */
     "share/dbus-1/services",              /* D-Bus service files */
     "share/gnome-shell/search-providers", /* Search providers */
@@ -318,6 +321,9 @@ update_metadata (GFile *base, FlatpakContext *arg_context, GCancellable *cancell
           g_print ("No executable found\n");
         }
     }
+
+  if (opt_require_version)
+    g_key_file_set_string (keyfile, "Application", "required-flatpak", opt_require_version);
 
   app_context = flatpak_context_new ();
   if (!flatpak_context_load_metadata (app_context, keyfile, error))

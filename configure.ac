@@ -14,9 +14,9 @@ AC_PREREQ([2.63])
 # on the unstable (ie master), interface age = 0
 
 m4_define([flatpak_major_version], [0])
-m4_define([flatpak_minor_version], [6])
-m4_define([flatpak_micro_version], [14])
-m4_define([flatpak_interface_age], [14])
+m4_define([flatpak_minor_version], [8])
+m4_define([flatpak_micro_version], [0])
+m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -29,7 +29,7 @@ AC_INIT([Flatpak],
         [http://flatpak.org/])
 
 GLIB_REQS=2.40
-SYSTEM_BWRAP_REQS=0.1.2
+SYSTEM_BWRAP_REQS=0.1.5
 OSTREE_REQS=2016.14
 
 AC_USE_SYSTEM_EXTENSIONS
@@ -372,6 +372,9 @@ AC_SUBST(FLATPAK_MINOR_VERSION)
 AC_SUBST(FLATPAK_MICRO_VERSION)
 AC_SUBST(FLATPAK_INTERFACE_AGE)
 AC_SUBST(FLATPAK_VERSION)
+AC_DEFINE_UNQUOTED([PACKAGE_MAJOR_VERSION], $FLATPAK_MAJOR_VERSION, [Major version])
+AC_DEFINE_UNQUOTED([PACKAGE_MINOR_VERSION], $FLATPAK_MINOR_VERSION, [Minor version])
+AC_DEFINE_UNQUOTED([PACKAGE_MICRO_VERSION], $FLATPAK_MICRO_VERSION, [Micro version])
 
 # libtool versioning
 #LT_RELEASE=$FLATPAK_MAJOR_VERSION.$FLATPAK_MINOR_VERSION

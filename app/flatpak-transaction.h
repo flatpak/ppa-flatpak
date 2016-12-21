@@ -29,6 +29,7 @@
 typedef struct FlatpakTransaction FlatpakTransaction;
 
 FlatpakTransaction *flatpak_transaction_new         (FlatpakDir          *dir,
+                                                     gboolean             no_interaction,
                                                      gboolean             no_pull,
                                                      gboolean             no_deploy,
                                                      gboolean             add_deps,
@@ -43,6 +44,14 @@ gboolean            flatpak_transaction_add_install (FlatpakTransaction  *self,
                                                      const char          *ref,
                                                      const char         **subpaths,
                                                      GError             **error);
+gboolean            flatpak_transaction_add_install_oci (FlatpakTransaction  *self,
+                                                         const char         *uri,
+                                                         const char         *tag,
+                                                         GError             **error);
+gboolean            flatpak_transaction_add_install_bundle (FlatpakTransaction  *self,
+                                                            GFile               *file,
+                                                            GBytes              *gpg_data,
+                                                            GError             **error);
 gboolean            flatpak_transaction_add_update  (FlatpakTransaction  *self,
                                                      const char          *ref,
                                                      const char         **subpaths,

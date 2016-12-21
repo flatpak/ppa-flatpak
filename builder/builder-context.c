@@ -49,6 +49,7 @@ struct BuilderContext
 
   BuilderOptions *options;
   gboolean        keep_build_dirs;
+  int             jobs;
   char          **cleanup;
   char          **cleanup_platform;
   gboolean        use_ccache;
@@ -229,25 +230,7 @@ SoupSession *
 builder_context_get_soup_session (BuilderContext *self)
 {
   if (self->soup_session == NULL)
-    {
-      const char *http_proxy;
-
-      self->soup_session = soup_session_new_with_options (SOUP_SESSION_USER_AGENT, "flatpak-builder ",
-                                                          SOUP_SESSION_SSL_USE_SYSTEM_CA_FILE, TRUE,
-                                                          SOUP_SESSION_USE_THREAD_CONTEXT, TRUE,
-                                                          SOUP_SESSION_TIMEOUT, 60,
-                                                          SOUP_SESSION_IDLE_TIMEOUT, 60,
-                                                          NULL);
-      http_proxy = g_getenv ("http_proxy");
-      if (http_proxy)
-        {
-          g_autoptr(SoupURI) proxy_uri = soup_uri_new (http_proxy);
-          if (!proxy_uri)
-            g_warning ("Invalid proxy URI '%s'", http_proxy);
-          else
-            g_object_set (self->soup_session, SOUP_SESSION_PROXY_URI, proxy_uri, NULL);
-        }
-    }
+    self->soup_session = flatpak_create_soup_session ("flatpak-builder");
 
   return self->soup_session;
 }
@@ -297,9 +280,18 @@ builder_context_set_options (BuilderContext *self,
 }
 
 int
-builder_context_get_n_cpu (BuilderContext *self)
+builder_context_get_jobs (BuilderContext *self)
 {
-  return (int) sysconf (_SC_NPROCESSORS_ONLN);
+  if (self->jobs == 0)
+    return (int) sysconf (_SC_NPROCESSORS_ONLN);
+  return self->jobs;
+}
+
+void
+builder_context_set_jobs (BuilderContext *self,
+                          int jobs)
+{
+  self->jobs = jobs;
 }
 
 void

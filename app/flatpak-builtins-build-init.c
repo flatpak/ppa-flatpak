@@ -211,7 +211,6 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
   if (opt_writable_sdk)
     {
       g_autofree char *full_sdk_ref = g_strconcat ("runtime/", sdk_ref, NULL);
-      g_autoptr(GError) my_error = NULL;
       g_autoptr(GFile) sdk_deploy_files = NULL;
       g_autoptr(FlatpakDeploy) sdk_deploy = NULL;
 
@@ -258,7 +257,6 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
     {
       const char *base_branch;
       g_autofree char *base_ref = NULL;
-      g_autoptr(GError) my_error = NULL;
       g_autoptr(GFile) base_deploy_files = NULL;
       g_autoptr(FlatpakDeploy) base_deploy = NULL;
 
@@ -369,7 +367,7 @@ flatpak_complete_build_init (FlatpakCompletion *completion)
           }
       }
 
-      system_dir = flatpak_dir_get_system ();
+      system_dir = flatpak_dir_get_system_default ();
       {
         g_auto(GStrv) refs = flatpak_dir_find_installed_refs (system_dir, NULL, NULL, opt_arch,
                                                               FLATPAK_KINDS_RUNTIME, &error);
@@ -400,7 +398,7 @@ flatpak_complete_build_init (FlatpakCompletion *completion)
           }
       }
 
-      system_dir = flatpak_dir_get_system ();
+      system_dir = flatpak_dir_get_system_default ();
       {
         g_auto(GStrv) refs = flatpak_dir_find_installed_refs (system_dir, completion->argv[3], NULL, opt_arch,
                                                               FLATPAK_KINDS_RUNTIME, &error);

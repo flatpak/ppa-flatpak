@@ -174,6 +174,63 @@ flatpak_get_supported_arches (void)
   return (const char * const *)flatpak_get_arches ();
 }
 
+/**
+ * flatpak_get_system_installations:
+ * @cancellable: (nullable): a #GCancellable
+ * @error: return location for a #GError
+ *
+ * Lists the system installations according to the current configuration and current
+ * availability (e.g. doesn't return a configured installation if not reachable).
+ *
+ * Returns: (transfer full) (element-type FlatpakInstallation): an GPtrArray of
+ *   #FlatpakInstallation instances
+ *
+ * Since: 0.8
+ */
+GPtrArray *
+flatpak_get_system_installations (GCancellable *cancellable,
+                                  GError      **error)
+{
+  g_autoptr(GPtrArray) system_dirs = NULL;
+  g_autoptr(GPtrArray) installs = NULL;
+  GPtrArray *ret = NULL;
+  int i;
+
+  system_dirs = flatpak_dir_get_system_list (cancellable, error);
+  if (system_dirs == NULL)
+    goto out;
+
+  installs = g_ptr_array_new ();
+  for (i = 0; i < system_dirs->len; i++)
+    {
+      g_autoptr(GError) local_error = NULL;
+      FlatpakDir *install_dir = g_ptr_array_index (system_dirs, i);
+      FlatpakInstallation *installation = NULL;
+
+      installation = flatpak_installation_new_for_dir (g_object_ref (install_dir),
+                                                       cancellable,
+                                                       &local_error);
+      if (installation != NULL)
+        g_ptr_array_add (installs, installation);
+      else
+        {
+          g_warning ("Unable to create FlatpakInstallation for: %s", local_error->message);
+          g_propagate_error (error, g_steal_pointer (&local_error));
+          goto out;
+        }
+    }
+
+  if (installs->len == 0)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                   "No system installations found");
+    }
+
+  ret = g_steal_pointer (&installs);
+
+ out:
+  return ret;
+}
 
 /**
  * flatpak_installation_new_system:
@@ -188,7 +245,45 @@ FlatpakInstallation *
 flatpak_installation_new_system (GCancellable *cancellable,
                                  GError      **error)
 {
-  return flatpak_installation_new_for_dir (flatpak_dir_get_system (), cancellable, error);
+  return flatpak_installation_new_for_dir (flatpak_dir_get_system_default (), cancellable, error);
+}
+
+/**
+ * flatpak_installation_new_system_with_id:
+ * @id: (nullable): the ID of the system-wide installation
+ * @cancellable: (nullable): a #GCancellable
+ * @error: return location for a #GError
+ *
+ * Creates a new #FlatpakInstallation for the system-wide installation @id.
+ *
+ * Returns: (transfer full): a new #FlatpakInstallation
+ *
+ * Since: 0.8
+ */
+FlatpakInstallation *
+flatpak_installation_new_system_with_id (const char   *id,
+                                         GCancellable *cancellable,
+                                         GError      **error)
+{
+  g_autoptr(FlatpakDir) install_dir = NULL;
+  g_autoptr(FlatpakInstallation) installation = NULL;
+  g_autoptr(GError) local_error = NULL;
+
+  install_dir = flatpak_dir_get_system_by_id (id, cancellable, error);
+  if (install_dir == NULL)
+    return NULL;
+
+  installation = flatpak_installation_new_for_dir (g_object_ref (install_dir),
+                                                   cancellable,
+                                                   &local_error);
+  if (installation == NULL)
+    {
+      g_debug ("Error creating Flatpak installation: %s", local_error->message);
+      g_propagate_error (error, g_steal_pointer (&local_error));
+    }
+
+  g_debug ("Found Flatpak installation for '%s'", id);
+  return g_steal_pointer (&installation);
 }
 
 /**
@@ -311,6 +406,92 @@ flatpak_installation_get_path (FlatpakInstallation *self)
 }
 
 /**
+ * flatpak_installation_get_id:
+ * @self: a #FlatpakInstallation
+ *
+ * Returns the ID of the system installation for @self.
+ *
+ * Returns: (transfer none): a string with the installation's ID
+ *
+ * Since: 0.8
+ */
+const char *
+flatpak_installation_get_id (FlatpakInstallation *self)
+{
+  g_autoptr(FlatpakDir) dir = flatpak_installation_get_dir (self);
+
+  return flatpak_dir_get_id (dir);
+}
+
+/**
+ * flatpak_installation_get_display_name:
+ * @self: a #FlatpakInstallation
+ *
+ * Returns the display name of the system installation for @self.
+ *
+ * Returns: (transfer none): a string with the installation's display name
+ *
+ * Since: 0.8
+ */
+const char *
+flatpak_installation_get_display_name (FlatpakInstallation *self)
+{
+  g_autoptr(FlatpakDir) dir = flatpak_installation_get_dir (self);
+
+  return flatpak_dir_get_display_name (dir);
+}
+
+/**
+ * flatpak_installation_get_priority:
+ * @self: a #FlatpakInstallation
+ *
+ * Returns the numeric priority of the system installation for @self.
+ *
+ * Returns: an integer with the configured priority value
+ *
+ * Since: 0.8
+ */
+gint
+flatpak_installation_get_priority (FlatpakInstallation *self)
+{
+  g_autoptr(FlatpakDir) dir = flatpak_installation_get_dir (self);
+
+  return flatpak_dir_get_priority (dir);
+}
+
+/**
+ * flatpak_installation_get_storage_type:
+ * @self: a #FlatpakInstallation
+ *
+ * Returns the type of storage of the system installation for @self.
+ *
+ * Returns: a #FlatpakStorageType
+ *
+ * Since: 0.8
+ */FlatpakStorageType
+flatpak_installation_get_storage_type (FlatpakInstallation *self)
+{
+  g_autoptr(FlatpakDir) dir = flatpak_installation_get_dir (self);
+
+  switch (flatpak_dir_get_storage_type (dir))
+    {
+    case FLATPAK_DIR_STORAGE_TYPE_HARD_DISK:
+      return FLATPAK_STORAGE_TYPE_HARD_DISK;
+
+    case FLATPAK_DIR_STORAGE_TYPE_SDCARD:
+      return FLATPAK_STORAGE_TYPE_SDCARD;
+
+    case FLATPAK_DIR_STORAGE_TYPE_MMC:
+      return FLATPAK_STORAGE_TYPE_MMC;
+
+    default:
+      return FLATPAK_STORAGE_TYPE_DEFAULT;
+    }
+
+  return FLATPAK_STORAGE_TYPE_DEFAULT;
+}
+
+/**
  * flatpak_installation_launch:
  * @self: a #FlatpakInstallation
  * @name: name of the app to launch
@@ -372,6 +553,8 @@ get_ref (FlatpakDir          *dir,
   g_auto(GStrv) parts = NULL;
   const char *origin = NULL;
   const char *commit = NULL;
+  const char *alt_id = NULL;
+  g_autofree char *latest_alt_id = NULL;
   g_autoptr(GFile) deploy_dir = NULL;
   g_autoptr(GFile) deploy_subdir = NULL;
   g_autofree char *deploy_path = NULL;
@@ -388,6 +571,7 @@ get_ref (FlatpakDir          *dir,
     return NULL;
   origin = flatpak_deploy_data_get_origin (deploy_data);
   commit = flatpak_deploy_data_get_commit (deploy_data);
+  alt_id = flatpak_deploy_data_get_alt_id (deploy_data);
   subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
   installed_size = flatpak_deploy_data_get_installed_size (deploy_data);
 
@@ -403,11 +587,11 @@ get_ref (FlatpakDir          *dir,
         is_current = TRUE;
     }
 
-  latest_commit = flatpak_dir_read_latest (dir, origin, full_ref, NULL, NULL);
+  latest_commit = flatpak_dir_read_latest (dir, origin, full_ref, &latest_alt_id, NULL, NULL);
 
   return flatpak_installed_ref_new (full_ref,
-                                    commit,
-                                    latest_commit,
+                                    alt_id ? alt_id : commit,
+                                    latest_alt_id ? latest_alt_id : latest_commit,
                                     origin, subpaths,
                                     deploy_path,
                                     installed_size,
@@ -1041,14 +1225,22 @@ flatpak_installation_install_bundle (FlatpakInstallation    *self,
   g_autoptr(FlatpakDir) dir = flatpak_installation_get_dir (self);
   g_autoptr(FlatpakDir) dir_clone = NULL;
   g_autofree char *ref = NULL;
+  g_autofree char *remote = NULL;
   FlatpakInstalledRef *result = NULL;
+
+  remote = flatpak_dir_ensure_bundle_remote (dir, file, NULL, &ref, NULL, NULL, cancellable, error);
+  if (remote == NULL)
+    return NULL;
+
+  /* Make sure we pick up the new config */
+  flatpak_installation_drop_caches (self, NULL, NULL);
 
   /* Pull, prune, etc are not threadsafe, so we work on a copy */
   dir_clone = flatpak_dir_clone (dir);
   if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
     return NULL;
 
-  if (!flatpak_dir_install_bundle (dir_clone, file, NULL, &ref,
+  if (!flatpak_dir_install_bundle (dir_clone, file, remote, NULL,
                                    cancellable, error))
     return NULL;
 

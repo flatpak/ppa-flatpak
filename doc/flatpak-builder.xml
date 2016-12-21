@@ -355,7 +355,11 @@
                 </varlistentry>
                 <varlistentry>
                     <term><option>cmake</option> (boolean)</term>
-                    <listitem><para>Use cmake instead of configure</para></listitem>
+                    <listitem><para>Use cmake instead of configure (deprecated: use buildsystem instead)</para></listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>buildsystem</option> (string)</term>
+                    <listitem><para>Build system to use: autotools, cmake, meson</para></listitem>
                 </varlistentry>
                 <varlistentry>
                     <term><option>builddir</option> (boolean)</term>
@@ -566,6 +570,10 @@
                         <term><option>use-git</option> (boolean)</term>
                         <listitem><para>Whether to use "git apply" rather than "patch" to apply the patch, required when the patch file contains binary diffs.</para></listitem>
                     </varlistentry>
+                    <varlistentry>
+                        <term><option>options</option> (array of strings)</term>
+                        <listitem><para>Extra options to pass to the patch command.</para></listitem>
+                    </varlistentry>
                 </variablelist>
             </refsect3>
         </refsect2>
@@ -766,6 +774,15 @@
                 <listitem><para>
                     GPG Homedir to use when looking for keyrings.
                     Used when exporting the build results.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--jobs=JOBS</option></term>
+
+                <listitem><para>
+                     Limit the number of parallel jobs during the build.
+                     The default is the nubmer of CPUs on the machine.
                 </para></listitem>
             </varlistentry>
 
