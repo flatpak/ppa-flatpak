@@ -1,4 +1,4 @@
-flatpak (0.8.0-1) UNRELEASED; urgency=medium
+flatpak (0.8.0-1) unstable; urgency=medium
 
   * New upstream stable release
     - Bump bubblewrap dependencies to 0.1.5 following configure.ac
@@ -18,7 +18,7 @@ flatpak (0.8.0-1) UNRELEASED; urgency=medium
     upstream git
   * d/p/flatpak-builder-1-fix-typo.patch: fix a typo in the man page
 
- -- Simon McVittie <smcv@debian.org>  Wed, 21 Dec 2016 13:10:23 +0000
+ -- Simon McVittie <smcv@debian.org>  Wed, 21 Dec 2016 14:13:52 +0000
 
 flatpak (0.6.14-3) unstable; urgency=medium
 
