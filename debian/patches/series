@@ -1,3 +1,4 @@
 Update-Polish-translation.patch
 flatpak-builder-1-fix-typo.patch
 Use-seccomp-to-filter-out-TIOCSTI-ioctl.patch
+Fix-update-of-standalone-bundle.patch
