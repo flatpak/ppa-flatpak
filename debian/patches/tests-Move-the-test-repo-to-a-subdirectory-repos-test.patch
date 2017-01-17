@@ -1,0 +1,277 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Thu, 12 Jan 2017 00:04:36 +0100
+Subject: tests: Move the test repo to a subdirectory (repos/test)
+
+This makes the ostree trivial-httpd --autoexit feature work better,
+because it seems to exit whenever the root directory changes (i.e. not
+only when its deleted).
+
+This means the root dir can't be the repo (because then we can't
+update the repo), or the base testdir (because we create files there
+too), so instead we make the repo $testdir/repos/test and
+$testdir/repos as the httpd root.
+
+Origin: upstream, 0.8.1, commit:0fb2f362a8fb23dc14deee67e2d04bea1334cc6e
+---
+ tests/libtest.sh           |  8 ++++----
+ tests/make-test-app.sh     |  3 ++-
+ tests/make-test-runtime.sh |  3 ++-
+ tests/test-builder.sh      |  2 +-
+ tests/test-bundle.sh       |  4 ++--
+ tests/test-extensions.sh   | 19 ++++++++++---------
+ tests/test-oci.sh          |  4 ++--
+ tests/test-run.sh          | 16 ++++++++--------
+ tests/testlibrary.c        |  6 +++---
+ 9 files changed, 34 insertions(+), 31 deletions(-)
+
+diff --git a/tests/libtest.sh b/tests/libtest.sh
+index bff6882..fe888b3 100644
+--- a/tests/libtest.sh
++++ b/tests/libtest.sh
+@@ -180,17 +180,17 @@ setup_repo () {
+     GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-runtime.sh org.test.Platform bash ls cat echo readlink > /dev/null
+     GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-app.sh > /dev/null
+     update_repo
+-    ostree trivial-httpd --autoexit --daemonize -p httpd-port .
++    ostree trivial-httpd --autoexit --daemonize -p httpd-port repos
+     port=$(cat httpd-port)
+-    flatpak remote-add ${U} --gpg-import=${FL_GPG_HOMEDIR}/pubring.gpg test-repo "http://127.0.0.1:${port}/repo"
++    flatpak remote-add ${U} --gpg-import=${FL_GPG_HOMEDIR}/pubring.gpg test-repo "http://127.0.0.1:${port}/test"
+ }
+ 
+ update_repo () {
+-    ${FLATPAK} build-update-repo $FL_GPGARGS ${UPDATE_REPO_ARGS-} repo
++    ${FLATPAK} build-update-repo $FL_GPGARGS ${UPDATE_REPO_ARGS-} repos/test
+ }
+ 
+ make_updated_app () {
+-    GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-app.sh UPDATED > /dev/null
++    GPGARGS="$FL_GPGARGS" . $(dirname $0)/make-test-app.sh ${1:-UPDATED} > /dev/null
+     update_repo
+ }
+ 
+diff --git a/tests/make-test-app.sh b/tests/make-test-app.sh
+index 2a9d44f..0873d6b 100755
+--- a/tests/make-test-app.sh
++++ b/tests/make-test-app.sh
+@@ -54,5 +54,6 @@ EOF
+ cp $(dirname $0)/org.test.Hello.png ${DIR}/files/share/app-info/icons/flatpak/64x64/
+ 
+ flatpak build-finish --command=hello.sh ${DIR}
+-flatpak build-export ${GPGARGS-} repo ${DIR}
++mkdir -p repos
++flatpak build-export ${GPGARGS-} repos/test ${DIR}
+ rm -rf ${DIR}
+diff --git a/tests/make-test-runtime.sh b/tests/make-test-runtime.sh
+index 2203155..10781c3 100755
+--- a/tests/make-test-runtime.sh
++++ b/tests/make-test-runtime.sh
+@@ -57,5 +57,6 @@ done
+ mkdir -p ${DIR}/usr/lib/locale/
+ cp -r /usr/lib/locale/C.* ${DIR}/usr/lib/locale/en_US
+ 
+-flatpak build-export --runtime ${GPGARGS-} repo ${DIR}
++mkdir -p repos
++flatpak build-export --runtime ${GPGARGS-} repos/test ${DIR}
+ rm -rf ${DIR}
+diff --git a/tests/test-builder.sh b/tests/test-builder.sh
+index 50324d2..375de37 100755
+--- a/tests/test-builder.sh
++++ b/tests/test-builder.sh
+@@ -32,7 +32,7 @@ setup_sdk_repo
+ install_sdk_repo
+ 
+ # Need /var/tmp cwd for xattrs
+-REPO=`pwd`/repo
++REPO=`pwd`/repos/test
+ cd $TEST_DATA_DIR/
+ 
+ cp -a $(dirname $0)/test-configure .
+diff --git a/tests/test-bundle.sh b/tests/test-bundle.sh
+index 7e0b5a0..581d881 100755
+--- a/tests/test-bundle.sh
++++ b/tests/test-bundle.sh
+@@ -30,10 +30,10 @@ mkdir bundles
+ 
+ setup_repo
+ 
+-${FLATPAK} build-bundle repo --repo-url=file://`pwd`/repo --gpg-keys=${FL_GPG_HOMEDIR}/pubring.gpg bundles/hello.flatpak org.test.Hello
++${FLATPAK} build-bundle repos/test --repo-url=file://`pwd`/repos/test --gpg-keys=${FL_GPG_HOMEDIR}/pubring.gpg bundles/hello.flatpak org.test.Hello
+ assert_has_file bundles/hello.flatpak
+ 
+-${FLATPAK} build-bundle repo --runtime --repo-url=file://`pwd`/repo --gpg-keys=${FL_GPG_HOMEDIR}/pubring.gpg bundles/platform.flatpak org.test.Platform
++${FLATPAK} build-bundle repos/test --runtime --repo-url=file://`pwd`/repos/test --gpg-keys=${FL_GPG_HOMEDIR}/pubring.gpg bundles/platform.flatpak org.test.Platform
+ assert_has_file bundles/platform.flatpak
+ 
+ echo "ok create bundles"
+diff --git a/tests/test-extensions.sh b/tests/test-extensions.sh
+index 1627285..147c26f 100755
+--- a/tests/test-extensions.sh
++++ b/tests/test-extensions.sh
+@@ -38,7 +38,7 @@ make_extension () {
+     touch ${DIR}/usr/exists
+     touch ${DIR}/usr/extension-$ID:$VERSION
+ 
+-    ${FLATPAK} build-export --runtime ${GPGARGS-} repo ${DIR} ${VERSION}
++    ${FLATPAK} build-export --runtime ${GPGARGS-} repos/test ${DIR} ${VERSION}
+     rm -rf ${DIR}
+ 
+     ${FLATPAK} --user install test-repo $ID $VERSION
+@@ -85,17 +85,18 @@ subdirectories=true
+ EOF
+ }
+ 
+-ostree init --repo=repo --mode=archive-z2
++mkdir -p repos
++ostree init --repo=repos/test --mode=archive-z2
+ . $(dirname $0)/make-test-runtime.sh org.test.Platform bash ls cat echo readlink > /dev/null
+ . $(dirname $0)/make-test-app.sh > /dev/null
+ 
+ # Modify platform metadata
+-ostree checkout -U --repo=repo runtime/org.test.Platform/${ARCH}/master platform
++ostree checkout -U --repo=repos/test runtime/org.test.Platform/${ARCH}/master platform
+ add_extensions platform
+-ostree commit --repo=repo --owner-uid=0 --owner-gid=0 --no-xattrs --branch=runtime/org.test.Platform/${ARCH}/master -s "modified metadata" platform
+-ostree summary -u --repo=repo
++ostree commit --repo=repos/test --owner-uid=0 --owner-gid=0 --no-xattrs --branch=runtime/org.test.Platform/${ARCH}/master -s "modified metadata" platform
++ostree summary -u --repo=repos/test
+ 
+-${FLATPAK} remote-add --user --no-gpg-verify test-repo repo
++${FLATPAK} remote-add --user --no-gpg-verify test-repo repos/test
+ ${FLATPAK} --user install test-repo org.test.Platform master
+ ${FLATPAK} --user install test-repo org.test.Hello master
+ 
+@@ -139,10 +140,10 @@ assert_not_has_extension_file /usr dir2/foo/exists
+ echo "ok runtime extensions"
+ 
+ # Modify app metadata
+-ostree checkout -U --repo=repo app/org.test.Hello/${ARCH}/master hello
++ostree checkout -U --repo=repos/test app/org.test.Hello/${ARCH}/master hello
+ add_extensions hello
+-ostree commit --repo=repo --owner-uid=0 --owner-gid=0 --no-xattrs --branch=app/org.test.Hello/${ARCH}/master -s "modified metadata" hello
+-ostree summary -u --repo=repo
++ostree commit --repo=repos/test --owner-uid=0 --owner-gid=0 --no-xattrs --branch=app/org.test.Hello/${ARCH}/master -s "modified metadata" hello
++ostree summary -u --repo=repos/test
+ 
+ ${FLATPAK} --user update org.test.Hello master
+ 
+diff --git a/tests/test-oci.sh b/tests/test-oci.sh
+index b3088a2..64a5864 100755
+--- a/tests/test-oci.sh
++++ b/tests/test-oci.sh
+@@ -30,7 +30,7 @@ setup_repo
+ 
+ ${FLATPAK} ${U} install test-repo org.test.Platform master
+ 
+-${FLATPAK} build-bundle --oci repo oci-dir org.test.Hello
++${FLATPAK} build-bundle --oci repos/test oci-dir org.test.Hello
+ 
+ assert_has_file oci-dir/oci-layout
+ assert_has_dir oci-dir/blobs/sha256
+@@ -64,7 +64,7 @@ assert_file_has_content hello_out '^Hello world, from a sandbox$'
+ echo "ok install oci"
+ 
+ make_updated_app
+-${FLATPAK} build-bundle --oci repo oci-dir org.test.Hello
++${FLATPAK} build-bundle --oci repos/test oci-dir org.test.Hello
+ 
+ ${FLATPAK} update ${U} org.test.Hello
+ run org.test.Hello > hello_out
+diff --git a/tests/test-run.sh b/tests/test-run.sh
+index 8910dfb..0a8d59b 100755
+--- a/tests/test-run.sh
++++ b/tests/test-run.sh
+@@ -220,7 +220,7 @@ echo "d" > ${DIR}/files/d/data
+ echo "nope" > ${DIR}/files/nope
+ 
+ ${FLATPAK} build-finish --command=hello.sh ${DIR}
+-${FLATPAK} build-export ${FL_GPGARGS} repo ${DIR}
++${FLATPAK} build-export ${FL_GPGARGS} repos/test ${DIR}
+ update_repo
+ 
+ ${FLATPAK} ${U} install test-repo org.test.Split --subpath=/a --subpath=/b --subpath=/nosuchdir master
+@@ -246,7 +246,7 @@ mkdir -p ${DIR}/files/f
+ echo "f" > ${DIR}/files/f/data
+ rm -rf  ${DIR}/files/b
+ 
+-${FLATPAK} build-export ${FL_GPGARGS} repo ${DIR}
++${FLATPAK} build-export ${FL_GPGARGS} repos/test ${DIR}
+ update_repo
+ 
+ ${FLATPAK} ${U} update --subpath=/a --subpath=/b --subpath=/e --subpath=/nosuchdir org.test.Split
+@@ -266,7 +266,7 @@ assert_has_file $FL_DIR/app/org.test.Split/$ARCH/master/active/files/e/data
+ assert_not_has_file $FL_DIR/app/org.test.Split/$ARCH/master/active/files/f
+ assert_not_has_file $FL_DIR/app/org.test.Split/$ARCH/master/active/files/nope
+ 
+-${FLATPAK} build-export ${FL_GPGARGS} repo ${DIR}
++${FLATPAK} build-export ${FL_GPGARGS} repos/test ${DIR}
+ update_repo
+ 
+ # Test reusing the old subpath list
+@@ -294,15 +294,15 @@ VERSION=`cat "$test_builddir/package_version.txt"`
+ DIR=`mktemp -d`
+ ${FLATPAK} build-init ${DIR} org.test.CurrentVersion org.test.Platform org.test.Platform
+ ${FLATPAK} build-finish --require-version=${VERSION} --command=hello.sh ${DIR}
+-${FLATPAK} build-export ${FL_GPGARGS} repo ${DIR}
++${FLATPAK} build-export ${FL_GPGARGS} repos/test ${DIR}
+ DIR=`mktemp -d`
+ ${FLATPAK} build-init ${DIR} org.test.OldVersion org.test.Platform org.test.Platform
+ ${FLATPAK} build-finish --require-version=0.6.10 --command=hello.sh ${DIR}
+-${FLATPAK} build-export ${FL_GPGARGS} repo ${DIR}
++${FLATPAK} build-export ${FL_GPGARGS} repos/test ${DIR}
+ DIR=`mktemp -d`
+ ${FLATPAK} build-init ${DIR} org.test.NewVersion org.test.Platform org.test.Platform
+ ${FLATPAK} build-finish --require-version=${VERSION}9 --command=hello.sh ${DIR}
+-${FLATPAK} build-export ${FL_GPGARGS} repo ${DIR}
++${FLATPAK} build-export ${FL_GPGARGS} repos/test ${DIR}
+ 
+ update_repo
+ 
+@@ -313,14 +313,14 @@ ${FLATPAK} ${U} install test-repo org.test.CurrentVersion master
+ DIR=`mktemp -d`
+ ${FLATPAK} build-init ${DIR} org.test.OldVersion org.test.Platform org.test.Platform
+ ${FLATPAK} build-finish --require-version=99.0.0 --command=hello.sh ${DIR}
+-${FLATPAK} build-export ${FL_GPGARGS} repo ${DIR}
++${FLATPAK} build-export ${FL_GPGARGS} repos/test ${DIR}
+ 
+ (! ${FLATPAK} ${U} update org.test.OldVersion)
+ 
+ DIR=`mktemp -d`
+ ${FLATPAK} build-init ${DIR} org.test.OldVersion org.test.Platform org.test.Platform
+ ${FLATPAK} build-finish --require-version=0.1.1 --command=hello.sh ${DIR}
+-${FLATPAK} build-export ${FL_GPGARGS} repo ${DIR}
++${FLATPAK} build-export ${FL_GPGARGS} repos/test ${DIR}
+ 
+ ${FLATPAK} ${U} update org.test.OldVersion
+ 
+diff --git a/tests/testlibrary.c b/tests/testlibrary.c
+index 3ff876e..e41df11 100644
+--- a/tests/testlibrary.c
++++ b/tests/testlibrary.c
+@@ -579,7 +579,7 @@ update_repo (void)
+ {
+   int status;
+   g_autoptr(GError) error = NULL;
+-  char *argv[] = { "flatpak", "build-update-repo", "--gpg-homedir=", "--gpg-sign=", "repo", NULL };
++  char *argv[] = { "flatpak", "build-update-repo", "--gpg-homedir=", "--gpg-sign=", "repos/test", NULL };
+   GSpawnFlags flags = G_SPAWN_SEARCH_PATH;
+   g_auto(GStrv) gpgargs = NULL;
+ 
+@@ -605,7 +605,7 @@ launch_httpd (void)
+ {
+   int status;
+   g_autoptr(GError) error = NULL;
+-  char *argv[] = { "ostree", "trivial-httpd", "--autoexit", "--daemonize", "-p", "http-port", ".", NULL };
++  char *argv[] = { "ostree", "trivial-httpd", "--autoexit", "--daemonize", "-p", "http-port", "repos", NULL };
+   GSpawnFlags flags = G_SPAWN_SEARCH_PATH;
+ 
+   if (g_test_verbose ())
+@@ -640,7 +640,7 @@ add_remote (void)
+     port[strlen (port) - 1] = '\0';
+ 
+   gpgimport = g_strdup_printf ("--gpg-import=%s/pubring.gpg", gpg_homedir);
+-  repo_url = g_strdup_printf ("http://127.0.0.1:%s/repo", port);
++  repo_url = g_strdup_printf ("http://127.0.0.1:%s/test", port);
+ 
+   argv[3] = gpgimport;
+   argv[4] = (char *)repo_name;

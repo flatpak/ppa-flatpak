@@ -5,3 +5,6 @@ Fix-update-of-standalone-bundle.patch
 Make-sure-var-tmp-is-not-on-tmpfs.patch
 Document-the-DefaultBranch-key.patch
 Document-RuntimeRepo-key.patch
+tests-Move-the-test-repo-to-a-subdirectory-repos-test.patch
+testlibrary-ensure-that-contents_array-is-NULL-terminated.patch
+tests-Install-testpython.py-executable.patch
