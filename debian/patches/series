@@ -2,3 +2,4 @@ Update-Polish-translation.patch
 flatpak-builder-1-fix-typo.patch
 Use-seccomp-to-filter-out-TIOCSTI-ioctl.patch
 Fix-update-of-standalone-bundle.patch
+Make-sure-var-tmp-is-not-on-tmpfs.patch
