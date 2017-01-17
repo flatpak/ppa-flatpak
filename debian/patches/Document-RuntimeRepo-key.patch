@@ -1,0 +1,26 @@
+From: Matthias Clasen <mclasen@redhat.com>
+Date: Fri, 13 Jan 2017 13:17:50 -0500
+Subject: Document RuntimeRepo key
+
+Not being documented makes it hard to know that this actually
+takes the url of a flatpakrepo file, as opposed to the other url
+key in this file, which takes the url to a remote.
+---
+ doc/flatpak-flatpakref.xml | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/doc/flatpak-flatpakref.xml b/doc/flatpak-flatpakref.xml
+index 63cd94e..9860ed2 100644
+--- a/doc/flatpak-flatpakref.xml
++++ b/doc/flatpak-flatpakref.xml
+@@ -90,6 +90,10 @@
+                     <term><option>GPGKey</option> (string)</term>
+                     <listitem><para>The base64-encoded gpg key for the remote.</para></listitem>
+                 </varlistentry>
++                <varlistentry>
++                    <term><option>RuntimeRepo</option> (string)</term>
++                    <listitem><para>The url for a .flatpakref file for the runtime.</para></listitem>
++                </varlistentry>
+             </variablelist>
+         </refsect2>
+     </refsect1>

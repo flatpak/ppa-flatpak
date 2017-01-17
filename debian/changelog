@@ -14,6 +14,9 @@ flatpak (0.8.0-2) UNRELEASED; urgency=medium
   * d/p/Make-sure-var-tmp-is-not-on-tmpfs.patch:
     Add patch from upstream to mount ~/.var/APP/cache/tmp at /var/tmp
     inside the sandbox, so apps can rely on /var/tmp being on disk
+  * d/p/Document-the-DefaultBranch-key.patch,
+    d/p/Document-RuntimeRepo-key.patch:
+    Add patches from upstream to fill in some missing documentation
 
  -- Simon McVittie <smcv@debian.org>  Tue, 17 Jan 2017 22:18:32 +0000
 

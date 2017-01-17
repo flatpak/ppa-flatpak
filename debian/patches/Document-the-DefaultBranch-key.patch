@@ -1,0 +1,25 @@
+From: Matthias Clasen <mclasen@redhat.com>
+Date: Fri, 13 Jan 2017 13:02:35 -0500
+Subject: Document the DefaultBranch key
+
+This can be set in .flatpakrepo files for a while.
+It just wasn't documented.
+---
+ doc/flatpak-flatpakrepo.xml | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/doc/flatpak-flatpakrepo.xml b/doc/flatpak-flatpakrepo.xml
+index 1edf7eb..6ba1df3 100644
+--- a/doc/flatpak-flatpakrepo.xml
++++ b/doc/flatpak-flatpakrepo.xml
+@@ -74,6 +74,10 @@
+                     <term><option>GPGKey</option> (string)</term>
+                     <listitem><para>The base64-encoded gpg key for the remote.</para></listitem>
+                 </varlistentry>
++                <varlistentry>
++                    <term><option>DefaultBranch</option> (string)</term>
++                    <listitem><para>The default branch to use for this remote.</para></listitem>
++                </varlistentry>
+             </variablelist>
+         </refsect2>
+     </refsect1>
