@@ -21,6 +21,8 @@ flatpak (0.8.0-2) UNRELEASED; urgency=medium
     d/p/tests-Install-testpython.py-executable.patch,
     d/p/tests-Move-the-test-repo-to-a-subdirectory-repos-test.patch:
     Fix some bugs in the tests
+  * debian/tests/: split out builder-python into a separate autopkgtest,
+    it too has more dependencies
 
  -- Simon McVittie <smcv@debian.org>  Tue, 17 Jan 2017 22:18:32 +0000
 

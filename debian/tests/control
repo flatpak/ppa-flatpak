@@ -12,6 +12,15 @@ Depends:
  gnome-desktop-testing,
  make,
 
+Tests: builder-python
+Restrictions: isolation-machine
+Depends:
+ flatpak-builder,
+ flatpak-tests,
+ gnome-desktop-testing,
+ make,
+ python,
+
 Tests: gnome-desktop-testing
 Restrictions: isolation-machine
 Depends:

@@ -19,6 +19,10 @@ gnome-desktop-testing-runner -l Flatpak | while read t; do
 			# has more dependencies
 			continue
 			;;
+		(Flatpak/test-builder-python.sh.test)
+			# has more dependencies
+			continue
+			;;
 	esac
 
 	gnome-desktop-testing-runner "$t" < /dev/null || touch "$ADTTMP"/failed
