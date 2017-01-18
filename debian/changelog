@@ -1,4 +1,4 @@
-flatpak (0.8.0-2) UNRELEASED; urgency=medium
+flatpak (0.8.0-2) unstable; urgency=medium
 
   * d/p/Use-seccomp-to-filter-out-TIOCSTI-ioctl.patch:
     Add patch from upstream to prevent contained apps from using
@@ -24,7 +24,7 @@ flatpak (0.8.0-2) UNRELEASED; urgency=medium
   * debian/tests/: split out builder-python into a separate autopkgtest,
     it too has more dependencies
 
- -- Simon McVittie <smcv@debian.org>  Tue, 17 Jan 2017 22:18:32 +0000
+ -- Simon McVittie <smcv@debian.org>  Wed, 18 Jan 2017 00:02:19 +0000
 
 flatpak (0.8.0-1) unstable; urgency=medium
 
