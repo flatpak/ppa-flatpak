@@ -447,6 +447,7 @@ flatpak_transaction_add_ref (FlatpakTransaction *self,
   const char *pref;
   g_autofree char *remote_metadata = NULL;
   g_autoptr(GKeyFile) metakey = NULL;
+  g_autoptr(GError) local_error = NULL;
 
   pref = strchr (ref, '/') + 1;
 
@@ -466,7 +467,7 @@ flatpak_transaction_add_ref (FlatpakTransaction *self,
         }
       remote = origin;
     }
-  else
+  else if (kind == FLATPAK_TRANSACTION_OP_KIND_INSTALL)
     {
       g_assert (remote != NULL);
       if (dir_ref_is_installed (self->dir, ref, NULL))
@@ -477,9 +478,16 @@ flatpak_transaction_add_ref (FlatpakTransaction *self,
         }
     }
 
-  if (metadata == NULL && remote != NULL &&
-      flatpak_dir_fetch_ref_cache (self->dir, remote, ref, NULL, NULL, &remote_metadata, NULL, NULL))
-    metadata = remote_metadata;
+  if (metadata == NULL && remote != NULL)
+    {
+      if (flatpak_dir_fetch_ref_cache (self->dir, remote, ref, NULL, NULL, &remote_metadata, NULL, &local_error))
+        metadata = remote_metadata;
+      else
+        {
+          g_print ("Warning: Can't find dependencies: %s\n", local_error->message);
+          g_clear_error (&local_error);
+        }
+    }
 
   if (metadata)
     {
