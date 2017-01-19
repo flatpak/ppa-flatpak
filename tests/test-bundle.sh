@@ -24,16 +24,16 @@ set -euo pipefail
 skip_without_bwrap
 skip_without_user_xattrs
 
-echo "1..6"
+echo "1..7"
 
 mkdir bundles
 
 setup_repo
 
-${FLATPAK} build-bundle repo --repo-url=file://`pwd`/repo --gpg-keys=${FL_GPG_HOMEDIR}/pubring.gpg bundles/hello.flatpak org.test.Hello
+${FLATPAK} build-bundle repos/test --repo-url=file://`pwd`/repos/test --gpg-keys=${FL_GPG_HOMEDIR}/pubring.gpg bundles/hello.flatpak org.test.Hello
 assert_has_file bundles/hello.flatpak
 
-${FLATPAK} build-bundle repo --runtime --repo-url=file://`pwd`/repo --gpg-keys=${FL_GPG_HOMEDIR}/pubring.gpg bundles/platform.flatpak org.test.Platform
+${FLATPAK} build-bundle repos/test --runtime --repo-url=file://`pwd`/repos/test --gpg-keys=${FL_GPG_HOMEDIR}/pubring.gpg bundles/platform.flatpak org.test.Platform
 assert_has_file bundles/platform.flatpak
 
 echo "ok create bundles"
@@ -147,3 +147,19 @@ run org.test.Hello > hello_out
 assert_file_has_content hello_out '^Hello world, from a sandboxUPDATED$'
 
 echo "ok update"
+
+make_updated_app UPDATED2
+
+${FLATPAK} build-bundle repos/test --repo-url=file://`pwd`/repos/test --gpg-keys=${FL_GPG_HOMEDIR}/pubring.gpg bundles/hello2.flatpak org.test.Hello
+assert_has_file bundles/hello2.flatpak
+
+${FLATPAK} install ${U} -y --bundle bundles/hello2.flatpak
+
+NEW2_COMMIT=`${FLATPAK} ${U} info --show-commit org.test.Hello`
+
+assert_not_streq "$NEW_COMMIT" "$NEW2_COMMIT"
+
+run org.test.Hello > hello_out
+assert_file_has_content hello_out '^Hello world, from a sandboxUPDATED2$'
+
+echo "ok update as bundle"

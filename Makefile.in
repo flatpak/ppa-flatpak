@@ -1059,12 +1059,13 @@ NULL =
 dist_installed_test_extra_scripts = $(NULL) buildutil/tap-driver.sh \
 	tests/empty-configure tests/test-configure \
 	tests/make-test-app.sh tests/make-test-runtime.sh \
-	tests/make-test-bundles.sh $(NULL)
+	tests/make-test-bundles.sh tests/testpython.py $(NULL)
 noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
 	$(systemduserunit_DATA) $(nodist_libflatpak_common_la_SOURCES) \
 	$(am__append_18) $(nodist_xdg_permission_store_SOURCES)
+MAINTAINERCLEANFILES = $(NULL)
 DISTCLEANFILES = $(NULL) $(nodist_flatpakinclude_HEADERS) \
 	$(nodist_libflatpak_la_SOURCES) $(NULL) $(am__append_22) \
 	tests/services/org.freedesktop.Flatpak.service \
@@ -1547,7 +1548,6 @@ dist_installed_test_data = \
 	tests/session.conf.in \
 	tests/0001-Add-test-logo.patch \
 	tests/org.test.Python.json \
-	tests/testpython.py \
 	tests/importme.py \
 	tests/importme2.py \
 	$(NULL)
@@ -4607,7 +4607,7 @@ distdir: $(DISTFILES)
 	  ! -type d ! -perm -444 -exec $(install_sh) -c -m a+r {} {} \; \
 	|| chmod -R a+r "$(distdir)"
 dist-gzip: distdir
-	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
+	tardir=$(distdir) && $(am__tar) | eval GZIP= gzip $(GZIP_ENV) -c >$(distdir).tar.gz
 	$(am__post_remove_distdir)
 
 dist-bzip2: distdir
@@ -4632,7 +4632,7 @@ dist-shar: distdir
 	@echo WARNING: "Support for shar distribution archives is" \
 	               "deprecated." >&2
 	@echo WARNING: "It will be removed altogether in Automake 2.0" >&2
-	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
+	shar $(distdir) | eval GZIP= gzip $(GZIP_ENV) -c >$(distdir).shar.gz
 	$(am__post_remove_distdir)
 
 dist-zip: distdir
@@ -4650,7 +4650,7 @@ dist dist-all:
 distcheck: dist
 	case '$(DIST_ARCHIVES)' in \
 	*.tar.gz*) \
-	  GZIP=$(GZIP_ENV) gzip -dc $(distdir).tar.gz | $(am__untar) ;;\
+	  eval GZIP= gzip $(GZIP_ENV) -dc $(distdir).tar.gz | $(am__untar) ;;\
 	*.tar.bz2*) \
 	  bzip2 -dc $(distdir).tar.bz2 | $(am__untar) ;;\
 	*.tar.lz*) \
@@ -4660,7 +4660,7 @@ distcheck: dist
 	*.tar.Z*) \
 	  uncompress -c $(distdir).tar.Z | $(am__untar) ;;\
 	*.shar.gz*) \
-	  GZIP=$(GZIP_ENV) gzip -dc $(distdir).shar.gz | unshar ;;\
+	  eval GZIP= gzip $(GZIP_ENV) -dc $(distdir).shar.gz | unshar ;;\
 	*.zip*) \
 	  unzip $(distdir).zip ;;\
 	esac
@@ -4807,6 +4807,7 @@ maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-recursive
 
 clean-am: clean-binPROGRAMS clean-bwrapPROGRAMS clean-checkLTLIBRARIES \
@@ -4991,7 +4992,10 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 @ENABLE_INSTALLED_TESTS_TRUE@	mv $@.tmp $@)
 
 %.service: %.service.in config.log
-	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(libexecdir)|" -e "s|\@extraargs\@||" $< > $@
+	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(libexecdir)|" \
+		-e "s|\@localstatedir\@|$(localstatedir)|" \
+		-e "s|\@externalinstalldir\@|$(EXTERNAL_INSTALL_DIR)|" \
+		-e "s|\@extraargs\@||" $< > $@
 
 $(dbus_built_sources) : data/org.freedesktop.Flatpak.xml
 	mkdir -p $(builddir)/common

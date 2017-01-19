@@ -579,7 +579,7 @@ update_repo (void)
 {
   int status;
   g_autoptr(GError) error = NULL;
-  char *argv[] = { "flatpak", "build-update-repo", "--gpg-homedir=", "--gpg-sign=", "repo", NULL };
+  char *argv[] = { "flatpak", "build-update-repo", "--gpg-homedir=", "--gpg-sign=", "repos/test", NULL };
   GSpawnFlags flags = G_SPAWN_SEARCH_PATH;
   g_auto(GStrv) gpgargs = NULL;
 
@@ -605,7 +605,7 @@ launch_httpd (void)
 {
   int status;
   g_autoptr(GError) error = NULL;
-  char *argv[] = { "ostree", "trivial-httpd", "--autoexit", "--daemonize", "-p", "http-port", ".", NULL };
+  char *argv[] = { "ostree", "trivial-httpd", "--autoexit", "--daemonize", "-p", "http-port", "repos", NULL };
   GSpawnFlags flags = G_SPAWN_SEARCH_PATH;
 
   if (g_test_verbose ())
@@ -640,7 +640,7 @@ add_remote (void)
     port[strlen (port) - 1] = '\0';
 
   gpgimport = g_strdup_printf ("--gpg-import=%s/pubring.gpg", gpg_homedir);
-  repo_url = g_strdup_printf ("http://127.0.0.1:%s/repo", port);
+  repo_url = g_strdup_printf ("http://127.0.0.1:%s/test", port);
 
   argv[3] = gpgimport;
   argv[4] = (char *)repo_name;
@@ -691,6 +691,7 @@ add_extra_installation (const char *id,
   if (priority != NULL)
     g_ptr_array_add (contents_array, g_strdup_printf ("Priority=%s", priority));
 
+  g_ptr_array_add (contents_array, NULL);
   contents_string = g_strjoinv ("\n", (char**)contents_array->pdata);
 
   conffile_path = g_strconcat (flatpak_installationsdir, "/", id, ".conf", NULL);

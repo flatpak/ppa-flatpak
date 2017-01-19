@@ -701,7 +701,7 @@ xdp_inode_create_file (XdpInode   *dir,
   inode->dir_fd = glnx_steal_fd (&dir_fd);
   inode->fd = glnx_steal_fd (&fd);
   inode->trunc_fd = glnx_steal_fd (&trunc_fd);
-  if (inode->trunc_fd != -1 && truncate)
+  if (inode->trunc_fd != -1 && (truncate || exclusive))
     {
       inode->truncated = TRUE;
       g_free (inode->backing_filename);
@@ -1876,7 +1876,7 @@ xdp_fuse_setattr (fuse_req_t             req,
 
   if (res != 0)
     {
-      fuse_reply_err (req, ENOSYS);
+      fuse_reply_err (req, res);
     }
   else
     {
@@ -1941,6 +1941,7 @@ xdp_fuse_write_buf (fuse_req_t             req,
   fd = xdp_inode_locked_get_write_fd (inode);
   if (fd == -1)
     {
+      g_debug ("xdp_fuse_write_buf <- error %s", strerror (errno));
       fuse_reply_err (req, errno);
     }
   else
@@ -2134,36 +2135,58 @@ xdp_fuse_access (fuse_req_t req, fuse_ino_t ino, int mask)
 
   if (inode->type != XDP_INODE_DOC_FILE)
     {
-      g_debug ("xdp_fuse_access <- not file ENOSYS");
-      fuse_reply_err (req, ENOSYS);
-      return;
-    }
+      int dir_mask = 0;
 
-  entry = xdp_lookup_doc (inode->doc_id);
-  if (entry == NULL ||
-      !app_can_see_doc (entry, inode->app_id))
-    {
-      g_debug ("xdp_fuse_access <- no entry error ENOENT");
-      fuse_reply_err (req, ENOENT);
-      return;
-    }
+      switch (inode->type)
+        {
+        case XDP_INODE_ROOT:
+        case XDP_INODE_BY_APP:
+        case XDP_INODE_APP_DIR:
+          dir_mask = R_OK | X_OK;
+          break;
+        case XDP_INODE_APP_DOC_DIR:
+        case XDP_INODE_DOC_DIR:
+          dir_mask = R_OK | X_OK | W_OK;
+          break;
 
-  if (mask == F_OK)
-    {
-      if (!app_can_see_doc (entry, inode->app_id))
+        default:
+          g_assert_not_reached ();
+        }
+
+      if (mask != F_OK && ((mask & dir_mask) != mask))
         {
           fuse_reply_err (req, EACCES);
           return;
         }
     }
-  else
+  else /* A file */
     {
-      if (((mask & R_OK) && !app_can_see_doc (entry, inode->app_id)) ||
-          ((mask & W_OK) && !app_can_write_doc (entry, inode->app_id)) ||
-           (mask & X_OK))
+      entry = xdp_lookup_doc (inode->doc_id);
+      if (entry == NULL ||
+          !app_can_see_doc (entry, inode->app_id))
         {
-          fuse_reply_err (req, EACCES);
+          g_debug ("xdp_fuse_access <- no entry error ENOENT");
+          fuse_reply_err (req, ENOENT);
           return;
+        }
+
+      if (mask == F_OK)
+        {
+          if (!app_can_see_doc (entry, inode->app_id))
+            {
+              fuse_reply_err (req, EACCES);
+              return;
+            }
+        }
+      else
+        {
+          if (((mask & R_OK) && !app_can_see_doc (entry, inode->app_id)) ||
+              ((mask & W_OK) && !app_can_write_doc (entry, inode->app_id)) ||
+              (mask & X_OK))
+            {
+              fuse_reply_err (req, EACCES);
+              return;
+            }
         }
     }
 

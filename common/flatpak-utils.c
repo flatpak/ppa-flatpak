@@ -2925,8 +2925,11 @@ validate_component (FlatpakXml *component,
     return FALSE;
 
   id_text = g_strstrip (g_strdup (id_text_node->text));
-  if (!g_str_has_prefix (id_text, id) ||
-      !g_str_has_suffix (id_text, ".desktop"))
+
+  if (g_str_has_suffix (id_text, ".desktop"))
+    id_text[strlen(id_text)-strlen(".desktop")] = 0;
+
+  if (!g_str_has_prefix (id_text, id))
     {
       g_warning ("Invalid id %s", id_text);
       return FALSE;
@@ -4579,6 +4582,7 @@ flatpak_load_http_uri (SoupSession *soup_session,
                        GError      **error)
 {
   GBytes *bytes = NULL;
+  g_autoptr(GMainContext) context = NULL;
   g_autoptr(SoupRequestHTTP) request = NULL;
   g_autoptr(GMainLoop) loop = NULL;
   g_autoptr(GString) content = g_string_new ("");
@@ -4586,7 +4590,10 @@ flatpak_load_http_uri (SoupSession *soup_session,
 
   g_debug ("Loading %s using libsoup", uri);
 
-  loop = g_main_loop_new (NULL, TRUE);
+  context = g_main_context_new ();
+  g_main_context_push_thread_default (context);
+
+  loop = g_main_loop_new (context, TRUE);
   data.loop = loop;
   data.content = content;
   data.progress = progress;
@@ -4603,6 +4610,7 @@ flatpak_load_http_uri (SoupSession *soup_session,
                            load_uri_callback, &data);
 
   g_main_loop_run (loop);
+  g_main_context_pop_thread_default (context);
 
   if (data.error)
     {
@@ -4627,11 +4635,15 @@ flatpak_download_http_uri (SoupSession *soup_session,
 {
   g_autoptr(SoupRequestHTTP) request = NULL;
   g_autoptr(GMainLoop) loop = NULL;
+  g_autoptr(GMainContext) context = NULL;
   LoadUriData data = { NULL };
 
   g_debug ("Loading %s using libsoup", uri);
 
-  loop = g_main_loop_new (NULL, TRUE);
+  context = g_main_context_new ();
+  g_main_context_push_thread_default (context);
+
+  loop = g_main_loop_new (context, TRUE);
   data.loop = loop;
   data.out = out;
   data.progress = progress;
@@ -4648,6 +4660,7 @@ flatpak_download_http_uri (SoupSession *soup_session,
                            load_uri_callback, &data);
 
   g_main_loop_run (loop);
+  g_main_context_pop_thread_default (context);
 
   if (data.error)
     {

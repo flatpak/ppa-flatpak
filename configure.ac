@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [8])
-m4_define([flatpak_micro_version], [0])
-m4_define([flatpak_interface_age], [0])
+m4_define([flatpak_micro_version], [1])
+m4_define([flatpak_interface_age], [1])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -247,7 +247,7 @@ provided, or it will be searched for in includedir])])],
             [with_dwarf_header=yes])
 
 AS_IF([test "x$with_dwarf_header" = "xyes"],
-      [CPPFLAGS="$CPPFLAGS -I$(eval echo \"$includedir\")/libdwarf"
+      [CPPFLAGS="$CPPFLAGS -I$(eval echo \"$includedir\")/libdwarf -I/usr/include/libdwarf"
        AC_CHECK_HEADER([dwarf.h])
        AS_IF([test "x$ac_cv_header_dwarf_h" != "xyes"],
              [AC_MSG_ERROR([dwarf.h is required but was not found; locate it using --with-dwarf-header=/path/containing/header])])],

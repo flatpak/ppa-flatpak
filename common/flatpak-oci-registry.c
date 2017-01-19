@@ -297,7 +297,7 @@ parse_json (GBytes *bytes, GCancellable *cancellable, GError **error)
       return NULL;
     }
 
-  return json_node_ref (root);
+  return json_node_copy (root);
 }
 
 static gboolean
@@ -1013,6 +1013,12 @@ flatpak_oci_registry_write_layer (FlatpakOciRegistry    *self,
                                       &tmp_path,
                                       error))
     return NULL;
+
+  if (fchmod (tmp_fd, 0644) != 0)
+    {
+      glnx_set_error_from_errno (error);
+      return NULL;
+    }
 
   a = archive_write_new ();
   if (archive_write_set_format_gnutar (a) != ARCHIVE_OK ||

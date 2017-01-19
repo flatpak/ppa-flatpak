@@ -64,6 +64,7 @@ bool opt_unshare_uts = FALSE;
 bool opt_unshare_cgroup = FALSE;
 bool opt_unshare_cgroup_try = FALSE;
 bool opt_needs_devpts = FALSE;
+bool opt_new_session = FALSE;
 uid_t opt_sandbox_uid = -1;
 gid_t opt_sandbox_gid = -1;
 int opt_sync_fd = -1;
@@ -179,6 +180,8 @@ usage (int ecode, FILE *out)
            "    --help                       Print this help\n"
            "    --version                    Print version\n"
            "    --args FD                    Parse nul-separated args from FD\n"
+           "    --unshare-all                Unshare every namespace we support by default\n"
+           "    --share-net                  Retain the network namespace (can only combine with --unshare-all)\n"
            "    --unshare-user               Create new user namespace (may be automatically implied if not setuid)\n"
            "    --unshare-user-try           Create new user namespace if possible else continue by skipping it\n"
            "    --unshare-ipc                Create new ipc namespace\n"
@@ -213,6 +216,7 @@ usage (int ecode, FILE *out)
            "    --seccomp FD                 Load and use seccomp rules from FD\n"
            "    --block-fd FD                Block on FD until some data to read is available\n"
            "    --info-fd FD                 Write information about the running container to FD\n"
+           "    --new-session                Create a new terminal session\n"
           );
   exit (ecode);
 }
@@ -221,12 +225,17 @@ static void
 block_sigchild (void)
 {
   sigset_t mask;
+  int status;
 
   sigemptyset (&mask);
   sigaddset (&mask, SIGCHLD);
 
   if (sigprocmask (SIG_BLOCK, &mask, NULL) == -1)
     die_with_error ("sigprocmask");
+
+  /* Reap any outstanding zombies that we may have inherited */
+  while (waitpid (-1, &status, WNOHANG) > 0)
+    ;
 }
 
 static void
@@ -259,6 +268,25 @@ close_extra_fds (void *data, int fd)
   return 0;
 }
 
+static int
+propagate_exit_status (int status)
+{
+  if (WIFEXITED (status))
+    return WEXITSTATUS (status);
+
+  /* The process died of a signal, we can't really report that, but we
+   * can at least be bash-compatible. The bash manpage says:
+   *   The return value of a simple command is its
+   *   exit status, or 128+n if the command is
+   *   terminated by signal n.
+   */
+  if (WIFSIGNALED (status))
+    return 128 + WTERMSIG (status);
+
+  /* Weird? */
+  return 255;
+}
+
 /* This stays around for as long as the initial process in the app does
  * and when that exits it exits, propagating the exit status. We do this
  * by having pid 1 in the sandbox detect this exit and tell the monitor
@@ -266,7 +294,7 @@ close_extra_fds (void *data, int fd)
  * pid 1 via a signalfd for SIGCHLD, and exit with an error in this case.
  * This is to catch e.g. problems during setup. */
 static void
-monitor_child (int event_fd)
+monitor_child (int event_fd, pid_t child_pid)
 {
   int res;
   uint64_t val;
@@ -277,6 +305,8 @@ monitor_child (int event_fd)
   int num_fds;
   struct signalfd_siginfo fdsi;
   int dont_close[] = { event_fd, -1 };
+  pid_t died_pid;
+  int died_status;
 
   /* Close all extra fds in the monitoring process.
      Any passed in fds have been passed on to the child anyway. */
@@ -318,16 +348,21 @@ monitor_child (int event_fd)
             exit ((int) val - 1);
         }
 
+      /* We need to read the signal_fd, or it will keep polling as read,
+       * however we ignore the details as we get them from waitpid
+       * below anway */
       s = read (signal_fd, &fdsi, sizeof (struct signalfd_siginfo));
       if (s == -1 && errno != EINTR && errno != EAGAIN)
+        die_with_error ("read signalfd");
+
+      /* We may actually get several sigchld compressed into one
+         SIGCHLD, so we have to handle all of them. */
+      while ((died_pid = waitpid (-1, &died_status, WNOHANG)) > 0)
         {
-          die_with_error ("read signalfd");
-        }
-      else if (s == sizeof (struct signalfd_siginfo))
-        {
-          if (fdsi.ssi_signo != SIGCHLD)
-            die ("Read unexpected signal\n");
-          exit (fdsi.ssi_status);
+          /* We may be getting sigchild from other children too. For instance if
+             someone created a child process, and then exec:ed bubblewrap. Ignore them */
+          if (died_pid == child_pid)
+            exit (propagate_exit_status (died_status));
         }
     }
 }
@@ -340,7 +375,7 @@ monitor_child (int event_fd)
  * When there are no other processes in the sandbox the wait will return
  * ECHILD, and we then exit pid 1 to clean up the sandbox. */
 static int
-do_init (int event_fd, pid_t initial_pid)
+do_init (int event_fd, pid_t initial_pid, struct sock_fprog *seccomp_prog)
 {
   int initial_exit_status = 1;
   LockFile *lock;
@@ -364,6 +399,10 @@ do_init (int event_fd, pid_t initial_pid)
       /* Keep fd open to hang on to lock */
     }
 
+  if (seccomp_prog != NULL &&
+      prctl (PR_SET_SECCOMP, SECCOMP_MODE_FILTER, seccomp_prog) != 0)
+    die_with_error ("prctl(PR_SET_SECCOMP)");
+
   while (TRUE)
     {
       pid_t child;
@@ -375,8 +414,7 @@ do_init (int event_fd, pid_t initial_pid)
           uint64_t val;
           int res UNUSED;
 
-          if (WIFEXITED (status))
-            initial_exit_status = WEXITSTATUS (status);
+          initial_exit_status = propagate_exit_status (status);
 
           val = initial_exit_status + 1;
           res = write (event_fd, &val, 8);
@@ -439,6 +477,19 @@ has_caps (void)
   return data[0].permitted != 0 || data[1].permitted != 0;
 }
 
+static void
+drop_cap_bounding_set (void)
+{
+  unsigned long cap;
+
+  for (cap = 0; cap <= 63; cap++)
+    {
+      int res = prctl (PR_CAPBSET_DROP, cap, 0, 0, 0);
+      if (res == -1 && errno != EINVAL)
+        die_with_error ("Dropping capability %ld from bounds", cap);
+    }
+}
+
 /* This acquires the privileges that the bwrap will need it to work.
  * If bwrap is not setuid, then this does nothing, and it relies on
  * unprivileged user namespaces to be used. This case is
@@ -487,6 +538,9 @@ acquire_privs (void)
       if (new_fsuid != real_uid)
         die ("Unable to set fsuid (was %d)", (int)new_fsuid);
 
+      /* We never need capabilies after execve(), so lets drop everything from the bounding set */
+      drop_cap_bounding_set ();
+
       /* Keep only the required capabilities for setup */
       set_required_caps ();
     }
@@ -505,6 +559,10 @@ acquire_privs (void)
 static void
 switch_to_user_with_privs (void)
 {
+  /* If we're in a new user namespace, we got back the bounding set, clear it again */
+  if (opt_unshare_user)
+    drop_cap_bounding_set ();
+
   if (!is_privileged)
     return;
 
@@ -1158,6 +1216,17 @@ parse_args_recurse (int    *argcp,
           argv += 1;
           argc -= 1;
         }
+      else if (strcmp (arg, "--unshare-all") == 0)
+        {
+          /* Keep this in order with the older (legacy) --unshare arguments,
+           * we use the --try variants of user and cgroup, since we want
+           * to support systems/kernels without support for those.
+           */
+          opt_unshare_user_try = opt_unshare_ipc = opt_unshare_pid =
+            opt_unshare_uts = opt_unshare_cgroup_try =
+            opt_unshare_net = TRUE;
+        }
+      /* Begin here the older individual --unshare variants */
       else if (strcmp (arg, "--unshare-user") == 0)
         {
           opt_unshare_user = TRUE;
@@ -1190,6 +1259,12 @@ parse_args_recurse (int    *argcp,
         {
           opt_unshare_cgroup_try = TRUE;
         }
+      /* Begin here the newer --share variants */
+      else if (strcmp (arg, "--share-net") == 0)
+        {
+          opt_unshare_net = FALSE;
+        }
+      /* End --share variants, other arguments begin */
       else if (strcmp (arg, "--chdir") == 0)
         {
           if (argc < 2)
@@ -1536,6 +1611,10 @@ parse_args_recurse (int    *argcp,
           argv += 1;
           argc -= 1;
         }
+      else if (strcmp (arg, "--new-session") == 0)
+        {
+          opt_new_session = TRUE;
+        }
       else if (*arg == '-')
         {
           die ("Unknown option %s", arg);
@@ -1602,6 +1681,9 @@ main (int    argc,
   struct stat sbuf;
   uint64_t val;
   int res UNUSED;
+  cleanup_free char *seccomp_data = NULL;
+  size_t seccomp_len;
+  struct sock_fprog seccomp_prog;
 
   real_uid = getuid ();
   real_gid = getgid ();
@@ -1792,7 +1874,7 @@ main (int    argc,
           close (opt_info_fd);
         }
 
-      monitor_child (event_fd);
+      monitor_child (event_fd, pid);
       exit (0); /* Should not be reached, but better safe... */
     }
 
@@ -1979,10 +2061,6 @@ main (int    argc,
 
   if (opt_seccomp_fd != -1)
     {
-      cleanup_free char *seccomp_data = NULL;
-      size_t seccomp_len;
-      struct sock_fprog prog;
-
       seccomp_data = load_file_data (opt_seccomp_fd, &seccomp_len);
       if (seccomp_data == NULL)
         die_with_error ("Can't read seccomp data");
@@ -1990,13 +2068,10 @@ main (int    argc,
       if (seccomp_len % 8 != 0)
         die ("Invalid seccomp data, must be multiple of 8");
 
-      prog.len = seccomp_len / 8;
-      prog.filter = (struct sock_filter *) seccomp_data;
+      seccomp_prog.len = seccomp_len / 8;
+      seccomp_prog.filter = (struct sock_filter *) seccomp_data;
 
       close (opt_seccomp_fd);
-
-      if (prctl (PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &prog) != 0)
-        die_with_error ("prctl(PR_SET_SECCOMP)");
     }
 
   umask (old_umask);
@@ -2023,6 +2098,13 @@ main (int    argc,
     }
   xsetenv ("PWD", new_cwd, 1);
   free (old_cwd);
+
+  if (opt_new_session &&
+      setsid () == (pid_t) -1)
+    die_with_error ("setsid");
+
+  if (label_exec (opt_exec_label) == -1)
+    die_with_error ("label_exec %s", argv[0]);
 
   __debug__ (("forking for child\n"));
 
@@ -2056,7 +2138,7 @@ main (int    argc,
             fdwalk (proc_fd, close_extra_fds, dont_close);
           }
 
-          return do_init (event_fd, pid);
+          return do_init (event_fd, pid, seccomp_data != NULL ? &seccomp_prog : NULL);
         }
     }
 
@@ -2071,8 +2153,9 @@ main (int    argc,
   /* We want sigchild in the child */
   unblock_sigchild ();
 
-  if (label_exec (opt_exec_label) == -1)
-    die_with_error ("label_exec %s", argv[0]);
+  if (seccomp_data != NULL &&
+      prctl (PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &seccomp_prog) != 0)
+    die_with_error ("prctl(PR_SET_SECCOMP)");
 
   if (execvp (argv[0], argv) == -1)
     die_with_error ("execvp %s", argv[0]);
