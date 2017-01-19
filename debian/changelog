@@ -1,11 +1,11 @@
-flatpak (0.8.1-1) UNRELEASED; urgency=medium
+flatpak (0.8.1-1) unstable; urgency=medium
 
   * New upstream release, very similar to 0.8.0-2
     - drop all patches
   * d/p/flatpak-system-helper-remove-dangling-reference-to-EXTERN.patch:
     do not search /export/share, which seems to have been unintended
 
- -- Simon McVittie <smcv@debian.org>  Thu, 19 Jan 2017 14:39:50 +0000
+ -- Simon McVittie <smcv@debian.org>  Thu, 19 Jan 2017 14:55:24 +0000
 
 flatpak (0.8.0-2) unstable; urgency=medium
 
