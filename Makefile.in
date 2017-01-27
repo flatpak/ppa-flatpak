@@ -874,6 +874,7 @@ CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
+DBUS_CONFIG_DIR = @DBUS_CONFIG_DIR@
 DBUS_SERVICE_DIR = @DBUS_SERVICE_DIR@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -974,6 +975,7 @@ POLKIT_CFLAGS = @POLKIT_CFLAGS@
 POLKIT_LIBS = @POLKIT_LIBS@
 POSUB = @POSUB@
 PRIVILEGED_GROUP = @PRIVILEGED_GROUP@
+PROFILE_DIR = @PROFILE_DIR@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -1458,7 +1460,7 @@ flatpak_session_helper_LDADD = $(BASE_LIBS) libflatpak-common.la
 flatpak_session_helper_CFLAGS = $(BASE_CFLAGS) $(SOUP_CFLAGS) $(OSTREE_CFLAGS) $(GSYSTEM_CFLAGS) $(JSON_CFLAGS)
 @BUILD_SYSTEM_HELPER_TRUE@dbussystemservicedir = $(datadir)/dbus-1/system-services
 @BUILD_SYSTEM_HELPER_TRUE@dbussystemservice_DATA = system-helper/org.freedesktop.Flatpak.SystemHelper.service
-@BUILD_SYSTEM_HELPER_TRUE@dbusconfdir = ${sysconfdir}/dbus-1/system.d
+@BUILD_SYSTEM_HELPER_TRUE@dbusconfdir = $(DBUS_CONFIG_DIR)
 @BUILD_SYSTEM_HELPER_TRUE@dbusconf_DATA = system-helper/org.freedesktop.Flatpak.SystemHelper.conf
 @BUILD_SYSTEM_HELPER_TRUE@systemdsystemunit_DATA = system-helper/flatpak-system-helper.service
 @BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_SOURCES = \
@@ -1595,7 +1597,7 @@ VALGRIND_SUPPRESSIONS_FILES = tests/flatpak.supp tests/glib.supp
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_LDADD = $(SELINUX_LIBS)
 completiondir = $(datadir)/bash-completion/completions
 completion_DATA = completion/flatpak
-profiledir = $(sysconfdir)/profile.d
+profiledir = $(PROFILE_DIR)
 profile_DATA = flatpak.sh
 envdir = $(datadir)/gdm/env.d
 env_DATA = flatpak.env
@@ -4994,7 +4996,6 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 %.service: %.service.in config.log
 	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(libexecdir)|" \
 		-e "s|\@localstatedir\@|$(localstatedir)|" \
-		-e "s|\@externalinstalldir\@|$(EXTERNAL_INSTALL_DIR)|" \
 		-e "s|\@extraargs\@||" $< > $@
 
 $(dbus_built_sources) : data/org.freedesktop.Flatpak.xml

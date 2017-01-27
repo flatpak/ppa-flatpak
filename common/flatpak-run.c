@@ -93,6 +93,12 @@ const char *dont_mount_in_root[] = {
   "tmp", "etc", "app", "run", "proc", "sys", "dev", "var", NULL
 };
 
+/* We don't want to export paths pointing into these, because they are readonly
+   (so we can't create mountpoints there) and don't match whats on the host anyway */
+const char *dont_export_in[] = {
+  "/lib/", "/lib32/", "/lib64/", "/bin/", "/sbin/", "/usr/", "/etc/", "/app/", NULL
+};
+
 typedef enum {
   FLATPAK_CONTEXT_DEVICE_DRI         = 1 << 0,
   FLATPAK_CONTEXT_DEVICE_ALL         = 1 << 1,
@@ -563,7 +569,7 @@ get_xdg_dir_from_string (const char *filesystem,
 {
   char *slash;
   const char *rest;
-  g_autofree char *prefix;
+  g_autofree char *prefix = NULL;
   const char *dir = NULL;
   gsize len;
 
@@ -597,7 +603,7 @@ get_xdg_user_dir_from_string (const char  *filesystem,
 {
   char *slash;
   const char *rest;
-  g_autofree char *prefix;
+  g_autofree char *prefix = NULL;
   gsize len;
 
   slash = strchr (filesystem, '/');
@@ -2015,8 +2021,12 @@ flatpak_run_add_journal_args (GPtrArray *argv_array)
 static char *
 create_proxy_socket (char *template)
 {
-  g_autofree char *proxy_socket = g_build_filename (g_get_user_runtime_dir (), template, NULL);
+  g_autofree char *proxy_socket_dir = g_build_filename (g_get_user_runtime_dir (), ".dbus-proxy", NULL);
+  g_autofree char *proxy_socket = g_build_filename (proxy_socket_dir, template, NULL);
   int fd;
+
+  if (!glnx_shutil_mkdir_p_at (AT_FDCWD, proxy_socket_dir, 0755, NULL, NULL))
+    return NULL;
 
   fd = g_mkstemp (proxy_socket);
   if (fd == -1)
@@ -2055,7 +2065,7 @@ flatpak_run_add_system_dbus_args (FlatpakContext *context,
   else if (dbus_proxy_argv &&
            g_hash_table_size (context->system_bus_policy) > 0)
     {
-      g_autofree char *proxy_socket = create_proxy_socket (".system-bus-proxy-XXXXXX");
+      g_autofree char *proxy_socket = create_proxy_socket ("system-bus-proxy-XXXXXX");
 
       if (proxy_socket == NULL)
         return FALSE;
@@ -2106,7 +2116,7 @@ flatpak_run_add_session_dbus_args (GPtrArray *argv_array,
     }
   else if (dbus_proxy_argv && dbus_address != NULL)
     {
-      g_autofree char *proxy_socket = create_proxy_socket (".session-bus-proxy-XXXXXX");
+      g_autofree char *proxy_socket = create_proxy_socket ("session-bus-proxy-XXXXXX");
 
       if (proxy_socket == NULL)
         return FALSE;
@@ -2187,7 +2197,7 @@ flatpak_run_add_extension_args (GPtrArray    *argv_array,
         }
 
       add_args (argv_array,
-                "--bind", ext->files_path, full_directory,
+                "--ro-bind", ext->files_path, full_directory,
                 NULL);
 
       if (g_file_test (real_ref, G_FILE_TEST_EXISTS))
@@ -2201,8 +2211,39 @@ flatpak_run_add_extension_args (GPtrArray    *argv_array,
   return TRUE;
 }
 
+static char *
+make_relative (const char *base, const char *path)
+{
+  GString *s = g_string_new ("");
+
+  while (*base != 0)
+    {
+      while (*base == '/')
+        base++;
+
+      if (*base != 0)
+        g_string_append (s, "../");
+
+      while (*base != '/' && *base != 0)
+        base++;
+    }
+
+  while (*path == '/')
+    path++;
+
+  g_string_append (s, path);
+
+  return g_string_free (s, FALSE);
+}
+
 #define FAKE_MODE_HIDDEN 0
 #define FAKE_MODE_SYMLINK G_MAXINT
+
+typedef struct {
+  char *path;
+  int level;
+  guint mode;
+} ExportedPath;
 
 static gboolean
 path_is_visible (const char **keys,
@@ -2217,19 +2258,28 @@ path_is_visible (const char **keys,
   for (i = 0; i < n_keys; i++)
     {
       const char *mounted_path = keys[i];
-      guint mode;
-      mode = GPOINTER_TO_INT (g_hash_table_lookup (hash_table, mounted_path));
+      ExportedPath *ep = g_hash_table_lookup (hash_table, mounted_path);
 
       if (flatpak_has_path_prefix (path, mounted_path))
         {
-          if (mode == FAKE_MODE_HIDDEN)
+          if (ep->mode == FAKE_MODE_HIDDEN)
             is_visible = FALSE;
-          else if (mode != FAKE_MODE_SYMLINK)
+          else if (ep->mode != FAKE_MODE_SYMLINK)
             is_visible = TRUE;
         }
     }
 
   return is_visible;
+}
+
+static gint
+compare_eps (const ExportedPath *a,
+             const ExportedPath *b)
+{
+  if (a->level == b->level)
+    return g_strcmp0 (a->path, b->path);
+  else
+    return b->level - a->level;
 }
 
 static void
@@ -2238,27 +2288,31 @@ add_file_args (GPtrArray *argv_array,
 {
   guint n_keys;
   g_autofree const char **keys = (const char **)g_hash_table_get_keys_as_array (hash_table, &n_keys);
-  guint i;
+  g_autoptr(GList) eps = NULL;
+  GList *l;
+
+  eps = g_hash_table_get_values (hash_table);
+  eps = g_list_sort (eps, (GCompareFunc)compare_eps);
 
   g_qsort_with_data (keys, n_keys, sizeof (char *), (GCompareDataFunc) flatpak_strcmp0_ptr, NULL);
 
-  for (i = 0; i < n_keys; i++)
+  for (l = eps; l != NULL; l = l->next)
     {
-      const char *path = keys[i];
-      guint mode;
+      ExportedPath *ep = l->data;
+      const char *path = ep->path;
 
-      mode = GPOINTER_TO_INT (g_hash_table_lookup (hash_table, path));
-
-      if (mode == FAKE_MODE_SYMLINK)
+      if (ep->mode == FAKE_MODE_SYMLINK)
         {
           if (!path_is_visible (keys, n_keys, hash_table, path))
             {
               g_autofree char *resolved = flatpak_resolve_link (path, NULL);
+              g_autofree char *parent = g_path_get_dirname (path);
+              g_autofree char *relative = make_relative (parent, resolved);
               if (resolved)
-                add_args (argv_array, "--symlink", resolved, path,  NULL);
+                add_args (argv_array, "--symlink", relative, path,  NULL);
             }
         }
-      else if (mode == FAKE_MODE_HIDDEN)
+      else if (ep->mode == FAKE_MODE_HIDDEN)
         {
           /* Mount a tmpfs to hide the subdirectory, but only if
              either its not visible (then we can always create the
@@ -2269,9 +2323,11 @@ add_file_args (GPtrArray *argv_array,
             add_args (argv_array, "--tmpfs", path, NULL);
         }
       else
-        add_args (argv_array,
-                  (mode == FLATPAK_FILESYSTEM_MODE_READ_ONLY) ? "--ro-bind" : "--bind",
-                  path, path, NULL);
+        {
+          add_args (argv_array,
+                    (ep->mode == FLATPAK_FILESYSTEM_MODE_READ_ONLY) ? "--ro-bind" : "--bind",
+                    path, path, NULL);
+        }
     }
 }
 
@@ -2280,50 +2336,100 @@ add_hide_path (GHashTable *hash_table,
                const char           *path)
 {
   guint old_mode;
+  ExportedPath *ep = g_new0 (ExportedPath, 1);
+  ExportedPath *old_ep;
 
-  old_mode = GPOINTER_TO_INT (g_hash_table_lookup (hash_table, path));
-  g_hash_table_insert (hash_table, g_strdup (path),
-                       GINT_TO_POINTER ( MAX (old_mode, FAKE_MODE_HIDDEN)));
+  old_ep = g_hash_table_lookup (hash_table, path);
+  if (old_ep)
+    old_mode = old_ep->mode;
+  else
+    old_mode = 0;
+
+  ep->path = g_strdup (path);
+  ep->level = 0;
+  ep->mode = MAX (old_mode, FAKE_MODE_HIDDEN);
+  g_hash_table_insert (hash_table, ep->path, ep);
 }
 
-static void
-add_expose_path (GHashTable *hash_table,
-                 FlatpakFilesystemMode mode,
-                 const char           *path)
+/* We use the level to make sure we get the ordering somewhat right.
+ * For instance if /symlink -> /z_dir is exported, then we want to create
+ * /z_dir before /symlink, because otherwise an export like /symlink/foo
+ * will fail. The approach we use is to just bump the sort prio based on the
+ * symlink resolve depth. This it not perfect, but gets the common situation
+ * such as --filesystem=/link --filesystem=/link/dir right.
+ */
+static gboolean
+_add_expose_path (GHashTable *hash_table,
+                  FlatpakFilesystemMode mode,
+                  const char *path,
+                  int level)
 {
+  g_autofree char *canonical = flatpak_canonicalize_filename (path);
   struct stat st;
+  int i;
+
+  if (!g_path_is_absolute (path))
+    {
+      g_debug ("Not exposing relative path %s", path);
+      return FALSE;
+    }
+
+  for (i = 0; dont_export_in[i] != NULL; i++)
+    {
+      /* Don't expose files in non-mounted dirs like /app or /usr, as
+         they are not the same as on the host, and we generally can't
+         create the parents for them anyway */
+      if (g_str_has_prefix (canonical, dont_export_in[i]))
+        {
+          g_debug ("skipping export for path %s", canonical);
+          return FALSE;
+        }
+    }
 
   if (lstat (path, &st) != 0)
-    return;
+    return FALSE;
 
   if (S_ISDIR (st.st_mode) ||
       S_ISREG (st.st_mode) ||
       S_ISLNK (st.st_mode) ||
       S_ISSOCK (st.st_mode))
     {
-      guint old_mode;
+      ExportedPath *old_ep = g_hash_table_lookup (hash_table, path);
+      guint old_mode = 0;
 
-      old_mode = GPOINTER_TO_INT (g_hash_table_lookup (hash_table, path));
+      if (old_ep != NULL)
+        old_mode = old_ep->mode;
 
       if (S_ISLNK (st.st_mode))
         {
           g_autofree char *resolved = flatpak_resolve_link (path, NULL);
-          /* Don't keep symlinks into /app or /usr, as they are not the
-             same as on the host, and we generally can't create the parents
-             for them anyway */
-          if (resolved &&
-              !g_str_has_prefix (resolved, "/app/")  &&
-              !g_str_has_prefix (resolved, "/usr/"))
-            {
-              add_expose_path (hash_table, mode, resolved);
-              mode = FAKE_MODE_SYMLINK;
-            }
+
+          if (resolved && _add_expose_path (hash_table, mode, resolved, level + 1))
+            mode = FAKE_MODE_SYMLINK;
           else
             mode = 0;
         }
+
       if (mode > 0)
-        g_hash_table_insert (hash_table, g_strdup (path), GINT_TO_POINTER ( MAX (old_mode, mode)));
+        {
+          ExportedPath *ep = g_new0 (ExportedPath, 1);
+          ep->path = g_strdup (path);
+          ep->mode = MAX (old_mode, mode);
+          ep->level = level;
+          g_hash_table_insert (hash_table, ep->path, ep);
+          return TRUE;
+        }
     }
+
+  return FALSE;
+}
+
+static gboolean
+add_expose_path (GHashTable *hash_table,
+                 FlatpakFilesystemMode mode,
+                 const char *path)
+{
+  return _add_expose_path (hash_table, mode, path, 0);
 }
 
 void
@@ -2344,7 +2450,7 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
   GString *xdg_dirs_conf = NULL;
   FlatpakFilesystemMode fs_mode, home_mode;
   g_autoptr(GFile) user_flatpak_dir = NULL;
-  g_autoptr(GHashTable) fs_paths = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+  g_autoptr(GHashTable) fs_paths = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 
   if ((context->shares & FLATPAK_CONTEXT_SHARED_IPC) == 0)
     {
@@ -2374,6 +2480,13 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
           g_debug ("Allowing dri access");
           if (g_file_test ("/dev/dri", G_FILE_TEST_IS_DIR))
             add_args (argv_array, "--dev-bind", "/dev/dri", "/dev/dri", NULL);
+          if (g_file_test ("/dev/mali", G_FILE_TEST_EXISTS))
+            {
+              add_args (argv_array,
+                        "--dev-bind", "/dev/mali", "/dev/mali",
+                        "--dev-bind", "/dev/umplock", "/dev/umplock",
+                        NULL);
+            }
           if (g_file_test ("/dev/nvidiactl", G_FILE_TEST_EXISTS))
             {
               add_args (argv_array,
@@ -2555,6 +2668,11 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
   /* This actually outputs the args for the hide/expose operations above */
   add_file_args (argv_array, fs_paths);
 
+  /* Ensure we always have a homedir */
+  add_args (argv_array,
+            "--dir", g_get_home_dir (),
+            NULL);
+
   /* Special case subdirectories of the cache, config and data xdg dirs.
    * If these are accessible explicilty, in a read-write fashion, then
    * we bind-mount these in the app-id dir. This allows applications to
@@ -2574,7 +2692,7 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
           xdg_path = get_xdg_dir_from_string (filesystem, &rest, &where);
 
           if (xdg_path != NULL && *rest != 0 &&
-              mode > FLATPAK_FILESYSTEM_MODE_READ_WRITE)
+              mode >= FLATPAK_FILESYSTEM_MODE_READ_WRITE)
             {
               g_autoptr(GFile) app_version = g_file_get_child (app_id_dir, where);
               g_autoptr(GFile) app_version_subdir = g_file_resolve_relative_path (app_version, rest);
@@ -2969,7 +3087,7 @@ add_font_path_args (GPtrArray *argv_array)
   if (g_file_test (SYSTEM_FONTS_DIR, G_FILE_TEST_EXISTS))
     {
       add_args (argv_array,
-                "--bind", SYSTEM_FONTS_DIR, "/run/host/fonts",
+                "--ro-bind", SYSTEM_FONTS_DIR, "/run/host/fonts",
                 NULL);
     }
 
@@ -2980,13 +3098,13 @@ add_font_path_args (GPtrArray *argv_array)
   if (g_file_query_exists (user_font1, NULL))
     {
       add_args (argv_array,
-                "--bind", flatpak_file_get_path_cached (user_font1), "/run/host/user-fonts",
+                "--ro-bind", flatpak_file_get_path_cached (user_font1), "/run/host/user-fonts",
                 NULL);
     }
   else if (g_file_query_exists (user_font2, NULL))
     {
       add_args (argv_array,
-                "--bind", flatpak_file_get_path_cached (user_font2), "/run/host/user-fonts",
+                "--ro-bind", flatpak_file_get_path_cached (user_font2), "/run/host/user-fonts",
                 NULL);
     }
 }
@@ -3133,7 +3251,7 @@ add_monitor_path_args (gboolean use_session_helper,
                                                         NULL, NULL))
     {
       add_args (argv_array,
-                "--bind", monitor_path, "/run/host/monitor",
+                "--ro-bind", monitor_path, "/run/host/monitor",
                 NULL);
       add_args (argv_array,
                 "--symlink", "/run/host/monitor/localtime", "/etc/localtime",
@@ -3164,7 +3282,7 @@ add_monitor_path_args (gboolean use_session_helper,
           else
             {
               add_args (argv_array,
-                        "--bind", "/etc/localtime", "/etc/localtime",
+                        "--ro-bind", "/etc/localtime", "/etc/localtime",
                         NULL);
             }
         }
@@ -3172,7 +3290,7 @@ add_monitor_path_args (gboolean use_session_helper,
       if (g_file_test ("/etc/resolv.conf", G_FILE_TEST_EXISTS))
         {
           add_args (argv_array,
-                    "--bind", "/etc/resolv.conf", "/etc/resolv.conf",
+                    "--ro-bind", "/etc/resolv.conf", "/etc/resolv.conf",
                     NULL);
         }
     }
@@ -3279,6 +3397,7 @@ prepend_bwrap_argv_wrapper (GPtrArray *argv,
   gsize bwrap_args_len;
   glnx_fd_close int bwrap_args_fd = -1;
   g_autofree char *bwrap_args_data = NULL;
+  g_autofree char *proxy_socket_dir = g_build_filename (g_get_user_runtime_dir (), ".dbus-proxy/", NULL);
 
   if (!glnx_dirfd_iterator_init_at (AT_FDCWD, "/", FALSE, &dir_iter, error))
     return FALSE;
@@ -3323,6 +3442,10 @@ prepend_bwrap_argv_wrapper (GPtrArray *argv,
           g_ptr_array_add (bwrap_args, g_strconcat ("/", dent->d_name, NULL));
         }
     }
+
+  g_ptr_array_add (bwrap_args, g_strdup ("--bind"));
+  g_ptr_array_add (bwrap_args, g_strdup (proxy_socket_dir));
+  g_ptr_array_add (bwrap_args, g_strdup (proxy_socket_dir));
 
   g_ptr_array_add (bwrap_args, g_strdup ("--ro-bind-data"));
   g_ptr_array_add (bwrap_args, g_strdup_printf ("%d", app_info_fd));
@@ -3746,19 +3869,27 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
             "--ro-bind", "/sys/class", "/sys/class",
             "--ro-bind", "/sys/dev", "/sys/dev",
             "--ro-bind", "/sys/devices", "/sys/devices",
+            NULL);
+
+  if (flags & FLATPAK_RUN_FLAG_WRITABLE_ETC)
+    add_args (argv_array,
+              "--dir", "/usr/etc",
+              "--symlink", "usr/etc", "/etc",
+              NULL);
+
+  add_args (argv_array,
             "--bind-data", passwd_fd_str, "/etc/passwd",
             "--bind-data", group_fd_str, "/etc/group",
-            /* Always create a homedir to start from, although it may be covered later */
-            "--dir", g_get_home_dir (),
             NULL);
 
   if (g_file_test ("/etc/machine-id", G_FILE_TEST_EXISTS))
-    add_args (argv_array, "--bind", "/etc/machine-id", "/etc/machine-id", NULL);
+    add_args (argv_array, "--ro-bind", "/etc/machine-id", "/etc/machine-id", NULL);
   else if (g_file_test ("/var/lib/dbus/machine-id", G_FILE_TEST_EXISTS))
-    add_args (argv_array, "--bind", "/var/lib/dbus/machine-id", "/etc/machine-id", NULL);
+    add_args (argv_array, "--ro-bind", "/var/lib/dbus/machine-id", "/etc/machine-id", NULL);
 
   etc = g_file_get_child (runtime_files, "etc");
-  if (g_file_query_exists (etc, NULL))
+  if ((flags & FLATPAK_RUN_FLAG_WRITABLE_ETC) == 0 &&
+      g_file_query_exists (etc, NULL))
     {
       g_auto(GLnxDirFdIterator) dfd_iter = { 0, };
       struct dirent *dent;
@@ -3843,7 +3974,8 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
     return FALSE;
 #endif
 
-  add_monitor_path_args ((flags & FLATPAK_RUN_FLAG_NO_SESSION_HELPER) == 0, argv_array);
+  if ((flags & FLATPAK_RUN_FLAG_WRITABLE_ETC) == 0)
+    add_monitor_path_args ((flags & FLATPAK_RUN_FLAG_NO_SESSION_HELPER) == 0, argv_array);
 
   return TRUE;
 }
