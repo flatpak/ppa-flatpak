@@ -1,4 +1,4 @@
-flatpak (0.8.2-1) UNRELEASED; urgency=medium
+flatpak (0.8.2-1) unstable; urgency=medium
 
   * New upstream bugfix release
     - drop remaining patch, applied upstream
@@ -7,7 +7,7 @@ flatpak (0.8.2-1) UNRELEASED; urgency=medium
   * d/control: flatpak-tests Recommends python, which is needed for
     one test (silencing a lintian warning)
 
- -- Simon McVittie <smcv@debian.org>  Fri, 27 Jan 2017 21:33:48 +0000
+ -- Simon McVittie <smcv@debian.org>  Fri, 27 Jan 2017 21:56:51 +0000
 
 flatpak (0.8.1-1) unstable; urgency=medium
 
