@@ -25,7 +25,6 @@ SUBDIRS += po
 %.service: %.service.in config.log
 	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(libexecdir)|" \
 		-e "s|\@localstatedir\@|$(localstatedir)|" \
-		-e "s|\@externalinstalldir\@|$(EXTERNAL_INSTALL_DIR)|" \
 		-e "s|\@extraargs\@||" $< > $@
 
 dbus_servicedir = $(DBUS_SERVICE_DIR)
@@ -119,7 +118,7 @@ completiondir = $(datadir)/bash-completion/completions
 completion_DATA = completion/flatpak
 EXTRA_DIST += $(completion_DATA)
 
-profiledir = $(sysconfdir)/profile.d
+profiledir = $(PROFILE_DIR)
 profile_DATA = flatpak.sh
 EXTRA_DIST += \
 	profile/flatpak.sh.in \

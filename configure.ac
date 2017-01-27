@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [8])
-m4_define([flatpak_micro_version], [1])
-m4_define([flatpak_interface_age], [1])
+m4_define([flatpak_micro_version], [2])
+m4_define([flatpak_interface_age], [2])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -78,6 +78,12 @@ AC_ARG_WITH(dbus_service_dir,
 DBUS_SERVICE_DIR=$with_dbus_service_dir
 AC_SUBST(DBUS_SERVICE_DIR)
 
+AC_ARG_WITH(dbus_config_dir,
+		AS_HELP_STRING([--with-dbus-config-dir=PATH],[choose directory for dbus config files, [default=SYSCONFDIR/dbus-1/system.d]]),
+            with_dbus_config_dir="$withval", with_dbus_config_dir=${sysconfdir}/dbus-1/system.d)
+DBUS_CONFIG_DIR=$with_dbus_config_dir
+AC_SUBST(DBUS_CONFIG_DIR)
+
 AC_ARG_WITH([systemduserunitdir],
             [AS_HELP_STRING([--with-systemduserunitdir=DIR],
                             [Directory for systemd user service files (default=PREFIX/lib/systemd/user)])],
@@ -101,6 +107,12 @@ AC_ARG_WITH(system_fonts_dir,
             with_system_fonts_dir="$withval", with_system_fonts_dir=/usr/share/fonts)
 SYSTEM_FONTS_DIR=$with_system_fonts_dir
 AC_SUBST(SYSTEM_FONTS_DIR)
+
+AC_ARG_WITH(profile_dir,
+		AS_HELP_STRING([--with-profile-dir=PATH],[choose directory for profile.d files, [default=SYSCONFDIR/profile.d]]),
+            with_profile_dir="$withval", with_profile_dir=${sysconfdir}/profile.d)
+PROFILE_DIR=$with_profile_dir
+AC_SUBST(PROFILE_DIR)
 
 AC_ARG_VAR([BWRAP], [Bubblewrap executable])
 AC_ARG_WITH([system-bubblewrap],
