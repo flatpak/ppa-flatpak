@@ -1,3 +1,12 @@
+flatpak (0.8.2-1) UNRELEASED; urgency=medium
+
+  * New upstream bugfix release
+    - drop remaining patch, applied upstream
+    - security fix: prevent writing to per-user-installed fonts
+      and Flatpak extensions (typically locales)
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 27 Jan 2017 21:33:48 +0000
+
 flatpak (0.8.1-1) unstable; urgency=medium
 
   * New upstream release, very similar to 0.8.0-2
