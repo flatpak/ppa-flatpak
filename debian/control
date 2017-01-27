@@ -117,6 +117,8 @@ Depends:
  shared-mime-info,
  ${misc:Depends},
  ${shlibs:Depends},
+Recommends:
+ python,
 Description: Application deployment framework for desktop apps (tests)
  Flatpak installs, manages and runs sandboxed desktop application bundles.
  See the flatpak package for a more comprehensive description.

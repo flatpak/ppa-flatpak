@@ -4,6 +4,8 @@ flatpak (0.8.2-1) UNRELEASED; urgency=medium
     - drop remaining patch, applied upstream
     - security fix: prevent writing to per-user-installed fonts
       and Flatpak extensions (typically locales)
+  * d/control: flatpak-tests Recommends python, which is needed for
+    one test (silencing a lintian warning)
 
  -- Simon McVittie <smcv@debian.org>  Fri, 27 Jan 2017 21:33:48 +0000
 
