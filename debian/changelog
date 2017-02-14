@@ -12,6 +12,11 @@ flatpak (0.8.3-1) UNRELEASED; urgency=medium
     - builder: Fix buildsystem=cmake builds
     - Add progress reporting to extra-data download
     - Fix uid/gid for directories in document portal
+  * Duplicate the profile.d snippet in /etc/X11/Xsession.d so it
+    applies to X11 sessions, not just login shells. This matches the
+    upstream intention: X11 sessions have traditionally run in a login
+    shell on Red Hat derivatives, but not in Debian derivatives.
+    (Closes: #846338)
 
  -- Simon McVittie <smcv@debian.org>  Tue, 14 Feb 2017 13:16:08 +0000
 

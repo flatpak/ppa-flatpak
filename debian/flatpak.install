@@ -1,4 +1,5 @@
 debian/org.freedesktop.Flatpak.pkla     var/lib/polkit-1/localauthority/10-vendor.d/
+etc/X11/Xsession.d
 etc/dbus-1/system.d
 etc/profile.d/
 lib/systemd/system/flatpak-system-helper.service
