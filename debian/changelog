@@ -1,4 +1,4 @@
-flatpak (0.8.3-1) UNRELEASED; urgency=medium
+flatpak (0.8.3-1) unstable; urgency=medium
 
   * New upstream bugfix release
     - fixes portals' ability to identify confined apps
@@ -18,7 +18,7 @@ flatpak (0.8.3-1) UNRELEASED; urgency=medium
     shell on Red Hat derivatives, but not in Debian derivatives.
     (Closes: #846338)
 
- -- Simon McVittie <smcv@debian.org>  Tue, 14 Feb 2017 13:16:08 +0000
+ -- Simon McVittie <smcv@debian.org>  Tue, 14 Feb 2017 14:14:45 +0000
 
 flatpak (0.8.2-1) unstable; urgency=medium
 
