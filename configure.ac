@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [8])
-m4_define([flatpak_micro_version], [2])
-m4_define([flatpak_interface_age], [2])
+m4_define([flatpak_micro_version], [3])
+m4_define([flatpak_interface_age], [3])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -206,12 +206,11 @@ if test "x$enable_seccomp" = "xyes"; then
 fi
 
 AC_ARG_WITH(priv-mode,
-            AS_HELP_STRING([--with-priv-mode=setuid/caps/none],
+            AS_HELP_STRING([--with-priv-mode=setuid/none],
                            [How to set privilege-raising during install (only needed if userns not working)]),
             [],
             [with_priv_mode="none"])
 
-AM_CONDITIONAL(PRIV_MODE_FILECAPS, test "x$with_priv_mode" = "xcaps")
 AM_CONDITIONAL(PRIV_MODE_SETUID, test "x$with_priv_mode" = "xsetuid")
 
 AC_ARG_ENABLE(sudo,

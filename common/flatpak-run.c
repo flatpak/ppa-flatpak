@@ -2163,6 +2163,7 @@ flatpak_add_bus_filters (GPtrArray      *dbus_proxy_argv,
 
 gboolean
 flatpak_run_add_extension_args (GPtrArray    *argv_array,
+                                char       ***envp_p,
                                 GKeyFile     *metakey,
                                 const char   *full_ref,
                                 GCancellable *cancellable,
@@ -2171,6 +2172,10 @@ flatpak_run_add_extension_args (GPtrArray    *argv_array,
   g_auto(GStrv) parts = NULL;
   gboolean is_app;
   GList *extensions, *l;
+  g_autoptr(GHashTable) mounted_tmpfs =
+    g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+  g_autoptr(GHashTable) created_symlink =
+    g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
   parts = g_strsplit (full_ref, "/", 0);
   if (g_strv_length (parts) != 4)
@@ -2184,16 +2189,23 @@ flatpak_run_add_extension_args (GPtrArray    *argv_array,
   for (l = extensions; l != NULL; l = l->next)
     {
       FlatpakExtension *ext = l->data;
-      g_autofree char *full_directory = g_build_filename (is_app ? "/app" : "/usr", ext->directory, NULL);
+      g_autofree char *directory = g_build_filename (is_app ? "/app" : "/usr", ext->directory, NULL);
+      g_autofree char *full_directory = g_build_filename (directory, ext->subdir_suffix, NULL);
       g_autofree char *ref = g_build_filename (full_directory, ".ref", NULL);
       g_autofree char *real_ref = g_build_filename (ext->files_path, ext->directory, ".ref", NULL);
+      int i;
 
       if (ext->needs_tmpfs)
         {
-          g_autofree char *parent = g_path_get_dirname (full_directory);
-          add_args (argv_array,
-                    "--tmpfs", parent,
-                    NULL);
+          g_autofree char *parent = g_path_get_dirname (directory);
+
+          if (g_hash_table_lookup (mounted_tmpfs, parent) == NULL)
+            {
+              add_args (argv_array,
+                        "--tmpfs", parent,
+                        NULL);
+              g_hash_table_insert (mounted_tmpfs, g_steal_pointer (&parent), "mounted");
+            }
         }
 
       add_args (argv_array,
@@ -2204,6 +2216,46 @@ flatpak_run_add_extension_args (GPtrArray    *argv_array,
         add_args (argv_array,
                   "--lock-file", ref,
                   NULL);
+
+      if (ext->add_ld_path)
+        {
+          g_autofree char *ld_path = g_build_filename (full_directory, ext->add_ld_path, NULL);
+          const gchar *old_ld_path = g_environ_getenv (*envp_p, "LD_LIBRARY_PATH");
+          g_autofree char *new_ld_path = NULL;
+
+          if (old_ld_path != NULL)
+            new_ld_path = g_strconcat (old_ld_path, ":", ld_path, NULL);
+          else
+            new_ld_path = g_strdup (new_ld_path);
+
+          *envp_p = g_environ_setenv (*envp_p, "LD_LIBRARY_PATH", new_ld_path , TRUE);
+        }
+
+      for (i = 0; ext->merge_dirs != NULL && ext->merge_dirs[i] != NULL; i++)
+        {
+          g_autofree char *parent = g_path_get_dirname (directory);
+          g_autofree char *merge_dir = g_build_filename (parent, ext->merge_dirs[i], NULL);
+          g_autofree char *source_dir = g_build_filename (ext->files_path, ext->merge_dirs[i], NULL);
+          g_auto(GLnxDirFdIterator) source_iter = { 0 };
+          struct dirent *dent;
+
+          if (glnx_dirfd_iterator_init_at (AT_FDCWD, source_dir, TRUE, &source_iter, NULL))
+            {
+              while (glnx_dirfd_iterator_next_dent (&source_iter, &dent, NULL, NULL) && dent != NULL)
+                {
+                  g_autofree char *symlink_path = g_build_filename (merge_dir, dent->d_name, NULL);
+                  /* Only create the first, because extensions are listed in prio order */
+                  if (g_hash_table_lookup (created_symlink, symlink_path) == NULL)
+                    {
+                      g_autofree char *symlink = g_build_filename (directory, ext->merge_dirs[i], dent->d_name, NULL);
+                      add_args (argv_array,
+                                "--symlink", symlink, symlink_path,
+                                NULL);
+                      g_hash_table_insert (created_symlink, g_steal_pointer (&symlink_path), "created");
+                    }
+                }
+            }
+        }
     }
 
   g_list_free_full (extensions, (GDestroyNotify) flatpak_extension_free);
@@ -2478,23 +2530,25 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
       if (context->devices & FLATPAK_CONTEXT_DEVICE_DRI)
         {
           g_debug ("Allowing dri access");
-          if (g_file_test ("/dev/dri", G_FILE_TEST_IS_DIR))
-            add_args (argv_array, "--dev-bind", "/dev/dri", "/dev/dri", NULL);
-          if (g_file_test ("/dev/mali", G_FILE_TEST_EXISTS))
+          int i;
+          char *dri_devices[] = {
+            "/dev/dri",
+            /* mali */
+            "/dev/mali",
+            "/dev/umplock",
+            /* nvidia */
+            "/dev/nvidiactl",
+            "/dev/nvidia0",
+            "/dev/nvidia-modeset",
+          };
+
+          for (i = 0; i < G_N_ELEMENTS(dri_devices); i++)
             {
-              add_args (argv_array,
-                        "--dev-bind", "/dev/mali", "/dev/mali",
-                        "--dev-bind", "/dev/umplock", "/dev/umplock",
-                        NULL);
-            }
-          if (g_file_test ("/dev/nvidiactl", G_FILE_TEST_EXISTS))
-            {
-              add_args (argv_array,
-                        "--dev-bind", "/dev/nvidiactl", "/dev/nvidiactl",
-                        "--dev-bind", "/dev/nvidia0", "/dev/nvidia0",
-                        NULL);
+              if (g_file_test (dri_devices[i], G_FILE_TEST_EXISTS))
+                add_args (argv_array, "--dev-bind", dri_devices[i], dri_devices[i], NULL);
             }
         }
+
       if (context->devices & FLATPAK_CONTEXT_DEVICE_KVM)
         {
           g_debug ("Allowing kvm access");
@@ -3856,7 +3910,6 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
 
   add_args (argv_array,
             "--unshare-pid",
-            "--unshare-user-try",
             "--proc", "/proc",
             "--dir", "/tmp",
             "--dir", "/var/tmp",
@@ -4165,10 +4218,10 @@ flatpak_run_app (const char     *app_ref,
     return FALSE;
 
   if (metakey != NULL &&
-      !flatpak_run_add_extension_args (argv_array, metakey, app_ref, cancellable, error))
+      !flatpak_run_add_extension_args (argv_array, &envp, metakey, app_ref, cancellable, error))
     return FALSE;
 
-  if (!flatpak_run_add_extension_args (argv_array, runtime_metakey, runtime_ref, cancellable, error))
+  if (!flatpak_run_add_extension_args (argv_array, &envp, runtime_metakey, runtime_ref, cancellable, error))
     return FALSE;
 
   add_document_portal_args (argv_array, app_ref_parts[1]);
