@@ -64,6 +64,11 @@ gboolean flatpak_is_in_sandbox (void);
 const char * flatpak_get_arch (void);
 const char ** flatpak_get_arches (void);
 
+const char ** flatpak_get_gl_drivers (void);
+gboolean flatpak_extension_matches_reason (const char *extension_id,
+                                           const char *reason,
+                                           gboolean default_value);
+
 const char * flatpak_get_bwrap (void);
 
 char ** flatpak_get_current_locale_subpaths (void);
@@ -324,6 +329,10 @@ typedef struct
   char *ref;
   char *directory;
   char *files_path;
+  char *subdir_suffix;
+  char *add_ld_path;
+  char **merge_dirs;
+  int priority;
   gboolean needs_tmpfs;
   gboolean is_unmaintained;
 } FlatpakExtension;

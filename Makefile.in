@@ -5090,7 +5090,6 @@ install-data-hook:
 	$(MAKE) $(AM_MAKEFLAGS) install-test-data-hook
 @PRIV_MODE_SETUID_TRUE@@WITH_SYSTEM_BWRAP_FALSE@	$(SUDO_BIN) chown root $(DESTDIR)$(libexecdir)/flatpak-bwrap
 @PRIV_MODE_SETUID_TRUE@@WITH_SYSTEM_BWRAP_FALSE@	$(SUDO_BIN) chmod u+s $(DESTDIR)$(libexecdir)/flatpak-bwrap
-@PRIV_MODE_FILECAPS_TRUE@@PRIV_MODE_SETUID_FALSE@@WITH_SYSTEM_BWRAP_FALSE@	$(SUDO_BIN) setcap cap_sys_admin,cap_net_admin,cap_sys_chroot,cap_setuid,cap_setgid+ep $(DESTDIR)$(libexecdir)/flatpak-bwrap
 
 flatpak.sh: profile/flatpak.sh.in
 	$(AM_V_GEN) $(SED) -e "s|\@localstatedir\@|$(localstatedir)|" \

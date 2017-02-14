@@ -359,6 +359,47 @@ flatpak_get_arches (void)
   return (const char **)arches;
 }
 
+const char **
+flatpak_get_gl_drivers (void)
+{
+  static gsize drivers = 0;
+  if (g_once_init_enter (&drivers))
+    {
+      gsize new_drivers;
+      char **new_drivers_c = 0;
+      const char *env = g_getenv ("FLATPAK_GL_DRIVERS");
+      if (env != NULL && *env != 0)
+        new_drivers_c = g_strsplit (env, ":", -1);
+      else
+        {
+          g_autofree char *nvidia_version = NULL;
+          char *dot;
+          GPtrArray *array = g_ptr_array_new ();
+
+          if (g_file_get_contents ("/sys/module/nvidia/version",
+                                   &nvidia_version, NULL, NULL))
+            {
+              g_strstrip (nvidia_version);
+              /* Convert dots to dashes */
+              while ((dot = strchr (nvidia_version, '.')) != NULL)
+                *dot = '-';
+              g_ptr_array_add (array, g_strconcat ("nvidia-", nvidia_version, NULL));
+            }
+
+          g_ptr_array_add (array, (char *)"default");
+          g_ptr_array_add (array, (char *)"host");
+
+          g_ptr_array_add (array, NULL);
+          new_drivers_c = (char **)g_ptr_array_free (array, FALSE);
+        }
+
+      new_drivers = (gsize)new_drivers_c;
+      g_once_init_leave (&drivers, new_drivers);
+    }
+
+  return (const char **)drivers;
+}
+
 gboolean
 flatpak_is_in_sandbox (void)
 {
@@ -3450,7 +3491,20 @@ flatpak_extension_free (FlatpakExtension *extension)
   g_free (extension->ref);
   g_free (extension->directory);
   g_free (extension->files_path);
+  g_free (extension->add_ld_path);
+  g_free (extension->subdir_suffix);
+  g_strfreev (extension->merge_dirs);
   g_free (extension);
+}
+
+static int
+flatpak_extension_compare (gconstpointer  _a,
+                           gconstpointer  _b)
+{
+  const FlatpakExtension *a = _a;
+  const FlatpakExtension *b = _b;
+
+  return b->priority - a->priority;
 }
 
 static FlatpakExtension *
@@ -3458,6 +3512,9 @@ flatpak_extension_new (const char *id,
                        const char *extension,
                        const char *ref,
                        const char *directory,
+                       const char *add_ld_path,
+                       const char *subdir_suffix,
+                       char **merge_dirs,
                        GFile *files,
                        gboolean is_unmaintained)
 {
@@ -3468,8 +3525,56 @@ flatpak_extension_new (const char *id,
   ext->ref = g_strdup (ref);
   ext->directory = g_strdup (directory);
   ext->files_path = g_file_get_path (files);
+  ext->add_ld_path = g_strdup (add_ld_path);
+  ext->subdir_suffix = g_strdup (subdir_suffix);
+  ext->merge_dirs = g_strdupv (merge_dirs);
   ext->is_unmaintained = is_unmaintained;
+
+  if (is_unmaintained)
+    ext->priority = 1000;
+  else
+    {
+      g_autoptr(GKeyFile) keyfile = g_key_file_new ();
+      g_autofree char *metadata_path = g_build_filename (ext->files_path, "../metadata", NULL);
+
+      if (g_key_file_load_from_file (keyfile, metadata_path, G_KEY_FILE_NONE, NULL))
+        ext->priority = g_key_file_get_integer (keyfile, "ExtensionOf", "priority", NULL);
+    }
+
   return ext;
+}
+
+gboolean
+flatpak_extension_matches_reason (const char *extension_id,
+                                  const char *reason,
+                                  gboolean default_value)
+{
+  const char *extension_basename;
+
+  if (reason == NULL || *reason == 0)
+    return default_value;
+
+  extension_basename = strrchr (extension_id, '.');
+  if (extension_basename == NULL)
+    return FALSE;
+  extension_basename += 1;
+
+  if (strcmp (reason, "active-gl-driver") == 0)
+    {
+      /* handled below */
+      const char **gl_drivers = flatpak_get_gl_drivers ();
+      int i;
+
+      for (i = 0; gl_drivers[i] != NULL; i++)
+        {
+          if (strcmp (gl_drivers[i], extension_basename) == 0)
+            return TRUE;
+        }
+
+      return FALSE;
+    }
+
+  return FALSE;
 }
 
 GList *
@@ -3497,6 +3602,10 @@ flatpak_list_extensions (GKeyFile   *metakey,
         {
           g_autofree char *directory = g_key_file_get_string (metakey, groups[i], "directory", NULL);
           g_autofree char *version = g_key_file_get_string (metakey, groups[i], "version", NULL);
+          g_autofree char *add_ld_path = g_key_file_get_string (metakey, groups[i], "add-ld-path", NULL);
+          g_auto(GStrv) merge_dirs = g_key_file_get_string_list (metakey, groups[i], "merge-dirs", NULL, NULL);
+          g_autofree char *enable_if = g_key_file_get_string (metakey, groups[i], "enable-if", NULL);
+          g_autofree char *subdir_suffix = g_key_file_get_string (metakey, groups[i], "subdirectory-suffix", NULL);
           g_autofree char *ref = NULL;
           const char *branch;
           gboolean is_unmaintained = FALSE;
@@ -3522,8 +3631,11 @@ flatpak_list_extensions (GKeyFile   *metakey,
           /* Prefer a full extension (org.freedesktop.Locale) over subdirectory ones (org.freedesktop.Locale.sv) */
           if (files != NULL)
             {
-              ext = flatpak_extension_new (extension, extension, ref, directory, files, is_unmaintained);
-              res = g_list_prepend (res, ext);
+              if (flatpak_extension_matches_reason (extension, enable_if, TRUE))
+                {
+                  ext = flatpak_extension_new (extension, extension, ref, directory, add_ld_path, subdir_suffix, merge_dirs, files, is_unmaintained);
+                  res = g_list_prepend (res, ext);
+                }
             }
           else if (g_key_file_get_boolean (metakey, groups[i],
                                            "subdirectories", NULL))
@@ -3532,7 +3644,6 @@ flatpak_list_extensions (GKeyFile   *metakey,
               g_auto(GStrv) refs = NULL;
               g_auto(GStrv) unmaintained_refs = NULL;
               int j;
-              gboolean needs_tmpfs = TRUE;
 
               refs = flatpak_list_deployed_refs ("runtime", prefix, arch, branch,
                                                  NULL, NULL);
@@ -3542,11 +3653,10 @@ flatpak_list_extensions (GKeyFile   *metakey,
                   g_autofree char *dir_ref = g_build_filename ("runtime", refs[j], arch, branch, NULL);
                   g_autoptr(GFile) subdir_files = flatpak_find_files_dir_for_ref (dir_ref, NULL, NULL);
 
-                  if (subdir_files)
+                  if (subdir_files && flatpak_extension_matches_reason (refs[j], enable_if, TRUE))
                     {
-                      ext = flatpak_extension_new (extension, refs[j], dir_ref, extended_dir, subdir_files, FALSE);
-                      ext->needs_tmpfs = needs_tmpfs;
-                      needs_tmpfs = FALSE; /* Only first subdir needs a tmpfs */
+                      ext = flatpak_extension_new (extension, refs[j], dir_ref, extended_dir, add_ld_path, subdir_suffix, merge_dirs, subdir_files, FALSE);
+                      ext->needs_tmpfs = TRUE;
                       res = g_list_prepend (res, ext);
                     }
                 }
@@ -3559,11 +3669,10 @@ flatpak_list_extensions (GKeyFile   *metakey,
                   g_autofree char *dir_ref = g_build_filename ("runtime", unmaintained_refs[j], arch, branch, NULL);
                   g_autoptr(GFile) subdir_files = flatpak_find_unmaintained_extension_dir_if_exists (unmaintained_refs[j], arch, branch, NULL);
 
-                  if (subdir_files)
+                  if (subdir_files && flatpak_extension_matches_reason (unmaintained_refs[j], enable_if, TRUE))
                     {
-                      ext = flatpak_extension_new (extension, unmaintained_refs[j], dir_ref, extended_dir, subdir_files, TRUE);
-                      ext->needs_tmpfs = needs_tmpfs;
-                      needs_tmpfs = FALSE; /* Only first subdir needs a tmpfs */
+                      ext = flatpak_extension_new (extension, unmaintained_refs[j], dir_ref, extended_dir, add_ld_path, subdir_suffix, merge_dirs, subdir_files, TRUE);
+                      ext->needs_tmpfs = TRUE;
                       res = g_list_prepend (res, ext);
                     }
                 }
@@ -3571,9 +3680,8 @@ flatpak_list_extensions (GKeyFile   *metakey,
         }
     }
 
-  return g_list_reverse (res);
+  return g_list_sort (g_list_reverse (res), flatpak_extension_compare);
 }
-
 
 typedef struct
 {
@@ -4441,6 +4549,7 @@ typedef struct {
   GString *content;
   char buffer[16*1024];
   FlatpakLoadUriProgress progress;
+  GCancellable *cancellable;
   gpointer user_data;
   guint64 last_progress_time;
 } LoadUriData;
@@ -4506,7 +4615,7 @@ load_uri_read_cb (GObject *source, GAsyncResult *res, gpointer user_data)
     }
 
   g_input_stream_read_async (stream, data->buffer, sizeof (data->buffer),
-                             G_PRIORITY_DEFAULT, NULL,
+                             G_PRIORITY_DEFAULT, data->cancellable,
                              load_uri_read_cb, data);
 }
 
@@ -4550,7 +4659,7 @@ load_uri_callback (GObject *source_object,
     }
 
   g_input_stream_read_async (in, data->buffer, sizeof (data->buffer),
-                             G_PRIORITY_DEFAULT, NULL,
+                             G_PRIORITY_DEFAULT, data->cancellable,
                              load_uri_read_cb, data);
 }
 
@@ -4597,13 +4706,13 @@ flatpak_load_http_uri (SoupSession *soup_session,
 
   g_debug ("Loading %s using libsoup", uri);
 
-  context = g_main_context_new ();
-  g_main_context_push_thread_default (context);
+  context = g_main_context_ref_thread_default ();
 
   loop = g_main_loop_new (context, TRUE);
   data.loop = loop;
   data.content = content;
   data.progress = progress;
+  data.cancellable = cancellable;
   data.user_data = user_data;
   data.last_progress_time = g_get_monotonic_time ();
 
@@ -4617,7 +4726,6 @@ flatpak_load_http_uri (SoupSession *soup_session,
                            load_uri_callback, &data);
 
   g_main_loop_run (loop);
-  g_main_context_pop_thread_default (context);
 
   if (data.error)
     {
@@ -4647,13 +4755,13 @@ flatpak_download_http_uri (SoupSession *soup_session,
 
   g_debug ("Loading %s using libsoup", uri);
 
-  context = g_main_context_new ();
-  g_main_context_push_thread_default (context);
+  context = g_main_context_ref_thread_default ();
 
   loop = g_main_loop_new (context, TRUE);
   data.loop = loop;
   data.out = out;
   data.progress = progress;
+  data.cancellable = cancellable;
   data.user_data = user_data;
   data.last_progress_time = g_get_monotonic_time ();
 
@@ -4667,7 +4775,6 @@ flatpak_download_http_uri (SoupSession *soup_session,
                            load_uri_callback, &data);
 
   g_main_loop_run (loop);
-  g_main_context_pop_thread_default (context);
 
   if (data.error)
     {

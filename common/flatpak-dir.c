@@ -1843,6 +1843,7 @@ flatpak_dir_pull_extra_data (FlatpakDir          *self,
 
   if (progress)
     {
+      ostree_async_progress_set_uint64 (progress, "start-time-extra-data", g_get_monotonic_time ());
       ostree_async_progress_set_uint (progress, "outstanding-extra-data", n_extra_data);
       ostree_async_progress_set_uint (progress, "total-extra-data", n_extra_data);
       ostree_async_progress_set_uint64 (progress, "total-extra-data-bytes", total_download_size);
@@ -2123,8 +2124,7 @@ flatpak_dir_pull (FlatpakDir          *self,
       goto out;
     }
 
-  if (g_str_has_prefix (ref, "app/") &&
-      !flatpak_dir_pull_extra_data (self, repo,
+  if (!flatpak_dir_pull_extra_data (self, repo,
                                     repository,
                                     ref, rev,
                                     flatpak_flags,
@@ -3414,13 +3414,24 @@ extract_extra_data (FlatpakDir          *self,
   g_autoptr(GVariant) detached_metadata = NULL;
   g_autoptr(GVariant) extra_data = NULL;
   g_autoptr(GVariant) extra_data_sources = NULL;
+  g_autoptr(GError) local_error = NULL;
   gsize i, n_extra_data = 0;
   gsize n_extra_data_sources;
 
   extra_data_sources = flatpak_repo_get_extra_data_sources (self->repo, checksum,
-                                                            cancellable, NULL);
+                                                            cancellable, &local_error);
   if (extra_data_sources == NULL)
-    return TRUE;
+    {
+      /* This should protect us against potential errors at the OSTree level
+         (e.g. ostree_repo_load_variant), so that we don't report success. */
+      if (!g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+        {
+          g_propagate_error (error, g_steal_pointer (&local_error));
+          return FALSE;
+        }
+
+      return TRUE;
+    }
 
   n_extra_data_sources = g_variant_n_children (extra_data_sources);
   if (n_extra_data_sources == 0)
@@ -3572,7 +3583,7 @@ apply_extra_data (FlatpakDir          *self,
   g_autofree char *metadata_contents = NULL;
   gsize metadata_size;
   g_autoptr(GKeyFile) metakey = NULL;
-  g_autofree char *app_id = NULL;
+  g_autofree char *id = NULL;
   g_autofree char *runtime = NULL;
   g_autofree char *runtime_ref = NULL;
   g_autoptr(FlatpakDeploy) runtime_deploy = NULL;
@@ -3588,6 +3599,8 @@ apply_extra_data (FlatpakDir          *self,
   g_autoptr(GArray) fd_array = NULL;
   g_auto(GStrv) envp = NULL;
   int exit_status;
+  const char *group = "Application";
+  g_autoptr(GError) local_error = NULL;
 
   apply_extra_file = g_file_resolve_relative_path (checkoutdir, "files/bin/apply_extra");
   if (!g_file_query_exists (apply_extra_file, cancellable))
@@ -3602,11 +3615,20 @@ apply_extra_data (FlatpakDir          *self,
   if (!g_key_file_load_from_data (metakey, metadata_contents, metadata_size, 0, error))
     return FALSE;
 
-  app_id = g_key_file_get_string (metakey, "Application", "name", error);
-  if (app_id == NULL)
-    return FALSE;
+  id = g_key_file_get_string (metakey, group, "name", &local_error);
+  if (id == NULL)
+    {
+      group = "Runtime";
+      id = g_key_file_get_string (metakey, group, "name", NULL);
+      if (id == NULL)
+        {
+          g_propagate_error (error, g_steal_pointer (&local_error));
+          return FALSE;
+        }
+      g_clear_error (&local_error);
+    }
 
-  runtime = g_key_file_get_string (metakey, "Application", "runtime", error);
+  runtime = g_key_file_get_string (metakey, group, "runtime", error);
   if (runtime == NULL)
     return FALSE;
 
@@ -3647,7 +3669,7 @@ apply_extra_data (FlatpakDir          *self,
   app_context = flatpak_context_new ();
 
   envp = flatpak_run_get_minimal_env (FALSE);
-  flatpak_run_add_environment_args (argv_array, fd_array, &envp, NULL, NULL, app_id,
+  flatpak_run_add_environment_args (argv_array, fd_array, &envp, NULL, NULL, id,
                                     app_context, NULL);
 
   g_ptr_array_add (argv_array, g_strdup ("/app/bin/apply_extra"));
@@ -7377,6 +7399,7 @@ add_related (FlatpakDir *self,
              const char *extension_ref,
              const char *checksum,
              gboolean no_autodownload,
+             const char *download_if,
              gboolean autodelete)
 {
   g_autoptr(GVariant) deploy_data = NULL;
@@ -7384,19 +7407,20 @@ add_related (FlatpakDir *self,
   g_autoptr(GPtrArray) subpaths = g_ptr_array_new_with_free_func (g_free);
   int i;
   FlatpakRelated *rel;
-  gboolean download = TRUE;
+  gboolean download;
   gboolean delete = autodelete;
+  g_auto(GStrv) ref_parts = g_strsplit (extension_ref, "/", -1);
 
   deploy_data = flatpak_dir_get_deploy_data (self, extension_ref, NULL, NULL);
 
   if (deploy_data)
     old_subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
 
-  /* Only apply no-autodownload for uninstalled refs, we want to update
-     if you manually installed them */
-
-  if (no_autodownload && deploy_data == NULL)
-    download = FALSE;
+  /* Only respect no-autodownload/download-if for uninstalled refs, we
+     always want to update if you manually installed something */
+  download =
+    flatpak_extension_matches_reason (ref_parts[1], download_if, !no_autodownload) ||
+    deploy_data != NULL;
 
   if (g_str_has_suffix (extension, ".Debug"))
     {
@@ -7502,6 +7526,8 @@ flatpak_dir_find_remote_related (FlatpakDir *self,
                                                                 "subdirectories", NULL);
               gboolean no_autodownload = g_key_file_get_boolean (metakey, groups[i],
                                                                  "no-autodownload", NULL);
+              g_autofree char *download_if = g_key_file_get_string (metakey, groups[i],
+                                                                    "download-if", NULL);
               gboolean autodelete = g_key_file_get_boolean (metakey, groups[i],
                                                             "autodelete", NULL);
               const char *branch;
@@ -7519,7 +7545,7 @@ flatpak_dir_find_remote_related (FlatpakDir *self,
                                               extension_ref,
                                               &checksum))
                 {
-                  add_related (self, related, extension, extension_ref, checksum, no_autodownload, autodelete);
+                  add_related (self, related, extension, extension_ref, checksum, no_autodownload, download_if, autodelete);
                 }
               else if (subdirectories)
                 {
@@ -7530,7 +7556,7 @@ flatpak_dir_find_remote_related (FlatpakDir *self,
                       if (flatpak_summary_lookup_ref (summary,
                                                       refs[j],
                                                       &checksum))
-                        add_related (self, related, extension, refs[j], checksum, no_autodownload, autodelete);
+                        add_related (self, related, extension, refs[j], checksum, no_autodownload, download_if, autodelete);
                     }
                 }
             }
@@ -7636,6 +7662,8 @@ flatpak_dir_find_local_related (FlatpakDir *self,
                                                                 "subdirectories", NULL);
               gboolean no_autodownload = g_key_file_get_boolean (metakey, groups[i],
                                                                  "no-autodownload", NULL);
+              g_autofree char *download_if = g_key_file_get_string (metakey, groups[i],
+                                                                    "download-if", NULL);
               gboolean autodelete = g_key_file_get_boolean (metakey, groups[i],
                                                             "autodelete", NULL);
               const char *branch;
@@ -7657,7 +7685,7 @@ flatpak_dir_find_local_related (FlatpakDir *self,
                                            NULL))
                 {
                   add_related (self, related, extension, extension_ref,
-                               checksum, no_autodownload, autodelete);
+                               checksum, no_autodownload, download_if, autodelete);
                 }
               else if (subdirectories)
                 {
@@ -7679,7 +7707,7 @@ flatpak_dir_find_local_related (FlatpakDir *self,
                         {
                           add_related (self, related, extension,
                                        match, match_checksum,
-                                       no_autodownload, autodelete);
+                                       no_autodownload, download_if, autodelete);
                         }
                     }
                 }
