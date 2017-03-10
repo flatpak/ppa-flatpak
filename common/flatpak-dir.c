@@ -354,8 +354,7 @@ append_locations_from_config_file (GPtrArray    *locations,
 
   keyfile = g_key_file_new ();
 
-  g_key_file_load_from_file (keyfile, file_path, G_KEY_FILE_NONE, &my_error);
-  if (my_error != NULL)
+  if (!g_key_file_load_from_file (keyfile, file_path, G_KEY_FILE_NONE, &my_error))
     {
       g_debug ("Could not get list of system installations: %s\n", my_error->message);
       g_propagate_error (error, g_steal_pointer (&my_error));
@@ -1792,26 +1791,18 @@ extra_data_progress_report (guint64 downloaded_bytes,
 }
 
 static gboolean
-flatpak_dir_pull_extra_data (FlatpakDir          *self,
-                             OstreeRepo          *repo,
-                             const char          *repository,
-                             const char          *ref,
-                             const char          *rev,
-                             FlatpakPullFlags     flatpak_flags,
-                             OstreeAsyncProgress *progress,
-                             GCancellable        *cancellable,
-                             GError             **error)
+flatpak_dir_setup_extra_data (FlatpakDir           *self,
+                              OstreeRepo           *repo,
+                              const char           *rev,
+                              FlatpakPullFlags      flatpak_flags,
+                              OstreeAsyncProgress  *progress,
+                              GCancellable         *cancellable,
+                              GError              **error)
 {
   g_autoptr(GVariant) extra_data_sources = NULL;
-  g_autoptr(GVariant) detached_metadata = NULL;
-  g_auto(GVariantDict) new_metadata_dict = FLATPAK_VARIANT_DICT_INITIALIZER;
-  g_autoptr(GVariantBuilder) extra_data_builder = NULL;
-  g_autoptr(GVariant) new_detached_metadata = NULL;
-  g_autoptr(GVariant) extra_data = NULL;
   int i;
   gsize n_extra_data;
   guint64 total_download_size;
-  ExtraDataProgress extra_data_progress = { NULL };
 
   extra_data_sources = flatpak_repo_get_extra_data_sources (repo, rev, cancellable, NULL);
   if (extra_data_sources == NULL)
@@ -1823,8 +1814,6 @@ flatpak_dir_pull_extra_data (FlatpakDir          *self,
 
   if ((flatpak_flags & FLATPAK_PULL_FLAGS_DOWNLOAD_EXTRA_DATA) == 0)
     return flatpak_fail (error, "extra data not supported for non-gpg-verified local system installs");
-
-  extra_data_builder = g_variant_builder_new (G_VARIANT_TYPE ("a(ayay)"));
 
   total_download_size = 0;
   for (i = 0; i < n_extra_data; i++)
@@ -1843,12 +1832,52 @@ flatpak_dir_pull_extra_data (FlatpakDir          *self,
 
   if (progress)
     {
-      ostree_async_progress_set_uint64 (progress, "start-time-extra-data", g_get_monotonic_time ());
       ostree_async_progress_set_uint (progress, "outstanding-extra-data", n_extra_data);
       ostree_async_progress_set_uint (progress, "total-extra-data", n_extra_data);
       ostree_async_progress_set_uint64 (progress, "total-extra-data-bytes", total_download_size);
       ostree_async_progress_set_uint64 (progress, "transferred-extra-data-bytes", 0);
     }
+
+  return TRUE;
+}
+
+static gboolean
+flatpak_dir_pull_extra_data (FlatpakDir          *self,
+                             OstreeRepo          *repo,
+                             const char          *repository,
+                             const char          *ref,
+                             const char          *rev,
+                             FlatpakPullFlags     flatpak_flags,
+                             OstreeAsyncProgress *progress,
+                             GCancellable        *cancellable,
+                             GError             **error)
+{
+  g_autoptr(GVariant) extra_data_sources = NULL;
+  g_autoptr(GVariant) detached_metadata = NULL;
+  g_auto(GVariantDict) new_metadata_dict = FLATPAK_VARIANT_DICT_INITIALIZER;
+  g_autoptr(GVariantBuilder) extra_data_builder = NULL;
+  g_autoptr(GVariant) new_detached_metadata = NULL;
+  g_autoptr(GVariant) extra_data = NULL;
+  int i;
+  gsize n_extra_data;
+  ExtraDataProgress extra_data_progress = { NULL };
+
+  extra_data_sources = flatpak_repo_get_extra_data_sources (repo, rev, cancellable, NULL);
+  if (extra_data_sources == NULL)
+    return TRUE;
+
+  n_extra_data = g_variant_n_children (extra_data_sources);
+  if (n_extra_data == 0)
+    return TRUE;
+
+  if ((flatpak_flags & FLATPAK_PULL_FLAGS_DOWNLOAD_EXTRA_DATA) == 0)
+    return flatpak_fail (error, "extra data not supported for non-gpg-verified local system installs");
+
+  extra_data_builder = g_variant_builder_new (G_VARIANT_TYPE ("a(ayay)"));
+
+  /* Other fields were already set in flatpak_dir_setup_extra_data() */
+  if (progress)
+    ostree_async_progress_set_uint64 (progress, "start-time-extra-data", g_get_monotonic_time ());
 
   extra_data_progress.progress = progress;
 
@@ -2099,6 +2128,15 @@ flatpak_dir_pull (FlatpakDir          *self,
 
   /* Past this we must use goto out, so we clean up console and
      abort the transaction on error */
+
+  /* Setup extra data information before starting to pull, so we can have precise
+   * progress reports */
+  if (!flatpak_dir_setup_extra_data (self, repo, rev,
+                                     flatpak_flags,
+                                     progress,
+                                     cancellable,
+                                     error))
+    goto out;
 
   if (subpaths != NULL && subpaths[0] != NULL)
     {
@@ -3638,24 +3676,31 @@ apply_extra_data (FlatpakDir          *self,
   if (runtime_ref_parts == NULL)
     return FALSE;
 
-  runtime_deploy = flatpak_find_deploy_for_ref (runtime_ref, cancellable, error);
-  if (runtime_deploy == NULL)
-    return FALSE;
+  if (!g_key_file_get_boolean (metakey, "Extra Data", "NoRuntime", NULL))
+    {
+      runtime_deploy = flatpak_find_deploy_for_ref (runtime_ref, cancellable, error);
+      if (runtime_deploy == NULL)
+        return FALSE;
+      runtime_files = flatpak_deploy_get_files (runtime_deploy);
+    }
 
   app_files = g_file_get_child (checkoutdir, "files");
   app_export_file = g_file_get_child (checkoutdir, "export");
   extra_files = g_file_get_child (app_files, "extra");
   extra_export_file = g_file_get_child (extra_files, "export");
-  runtime_files = flatpak_deploy_get_files (runtime_deploy);
 
   argv_array = g_ptr_array_new_with_free_func (g_free);
   fd_array = g_array_new (FALSE, TRUE, sizeof (int));
   g_array_set_clear_func (fd_array, clear_fd);
   g_ptr_array_add (argv_array, g_strdup (flatpak_get_bwrap ()));
 
-  add_args (argv_array,
-            "--ro-bind", flatpak_file_get_path_cached (runtime_files), "/usr",
+  if (runtime_files)
+    add_args (argv_array,
+              "--ro-bind", flatpak_file_get_path_cached (runtime_files), "/usr",
             "--lock-file", "/usr/.ref",
+              NULL);
+
+  add_args (argv_array,
             "--ro-bind", flatpak_file_get_path_cached (app_files), "/app",
             "--bind", flatpak_file_get_path_cached (extra_files), "/app/extra",
             "--chdir", "/app/extra",
@@ -4909,7 +4954,8 @@ flatpak_dir_uninstall (FlatpakDir          *self,
 
   if (repository != NULL &&
       g_str_has_suffix (repository, "-origin") &&
-      flatpak_dir_get_remote_noenumerate (self, repository))
+      flatpak_dir_get_remote_noenumerate (self, repository) &&
+      !flatpak_dir_remote_has_deploys (self, repository))
     ostree_repo_remote_delete (self->repo, repository, NULL, NULL);
 
   if (!keep_ref)
@@ -6381,6 +6427,31 @@ flatpak_dir_get_remote_disabled (FlatpakDir *self,
       oci_uri = flatpak_dir_get_remote_oci_uri (self, remote_name);
       if (oci_uri == NULL)
         return TRUE; /* Empty URL => disabled */
+    }
+
+  return FALSE;
+}
+
+gboolean
+flatpak_dir_remote_has_deploys (FlatpakDir   *self,
+                                const char   *remote)
+{
+  g_autoptr(GHashTable) refs = NULL;
+  GHashTableIter hash_iter;
+  gpointer key;
+
+  refs = flatpak_dir_get_all_installed_refs (self, FLATPAK_KINDS_APP | FLATPAK_KINDS_RUNTIME, NULL);
+  if (refs == NULL)
+    return FALSE;
+
+  g_hash_table_iter_init (&hash_iter, refs);
+  while (g_hash_table_iter_next (&hash_iter, &key, NULL))
+    {
+      const char *ref = (const char *)key;
+      g_autofree char *origin = flatpak_dir_get_origin (self, ref, NULL, NULL);
+
+      if (strcmp (remote, origin) == 0)
+        return TRUE;
     }
 
   return FALSE;

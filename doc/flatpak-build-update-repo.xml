@@ -78,6 +78,14 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--default-branch=BRANCH</option></term>
+
+                <listitem><para>
+                    A default branch for the repository, mainly for use in a UI.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--gpg-sign=KEYID</option></term>
 
                 <listitem><para>
@@ -107,7 +115,7 @@
                 <term><option>--prune</option></term>
 
                 <listitem><para>
-                    Remove unreferences objects in repo.
+                    Remove unreferenced objects in repo.
                 </para></listitem>
             </varlistentry>
 
