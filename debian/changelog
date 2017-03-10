@@ -1,6 +1,28 @@
 flatpak (0.8.4-1) UNRELEASED; urgency=medium
 
   * New upstream bugfix release
+    - Don't add flatpak directories to XDG_DATA_DIRS if already present
+    - Do add flatpak directories to XDG_DATA_DIRS if it already has
+      a non-default value
+    - Improve progress estimates and reporting for UI frontends
+    - Fill in many missing options in man pages
+    - Support extensions that apply to multiple versions, particularly
+      useful for OpenGL drivers
+    - Support extensions that do not depend on any specific runtime,
+      particularly useful for proprietary OpenGL drivers packaged with
+      a static binary helper
+    - Various fixes for error checking and crashes
+    - Make flatpak_get_system_installations() return an array that owns
+      (takes responsibility for freeing) its contents. This is
+      technically an ABI break, but it makes this function consistent
+      with others that have a similar signature, and nothing in Debian
+      uses it yet.
+    - Disable spliced reads in the FUSE file system, which don't appear
+      to work
+    - Make FamilyWild xauth tokens available in the sandbox, not
+      just FamilyLocal
+    - Fix a misleading message on systems without systemd --user:
+      it now disables an optional feature without breaking sandboxing
   * Add patch simplifying profile.d snippet
 
  -- Simon McVittie <smcv@debian.org>  Fri, 10 Mar 2017 20:16:33 +0000
