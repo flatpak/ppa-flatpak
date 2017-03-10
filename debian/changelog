@@ -1,3 +1,9 @@
+flatpak (0.8.4-1) UNRELEASED; urgency=medium
+
+  * New upstream bugfix release
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 10 Mar 2017 20:16:33 +0000
+
 flatpak (0.8.3-1) unstable; urgency=medium
 
   * New upstream bugfix release
