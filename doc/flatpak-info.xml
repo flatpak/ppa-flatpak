@@ -114,6 +114,14 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--arch=ARCH</option></term>
+
+                <listitem><para>
+                    Query for this architecture.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>-r</option></term>
                 <term><option>--show-ref</option></term>
 
@@ -163,14 +171,8 @@
         <title>Examples</title>
 
         <para>
-            <command>$ flatpak --user list</command>
+            <command>$ flatpak info org.gnome.Builder//master</command>
         </para>
-<programlisting>
-org.gnome.Builder
-org.freedesktop.glxgears
-org.gnome.MyApp
-org.gnome.GEdit
-</programlisting>
 
     </refsect1>
 

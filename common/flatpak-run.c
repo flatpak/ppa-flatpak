@@ -1745,6 +1745,26 @@ auth_streq (char *str,
   return au_len == strlen (str) && memcmp (str, au_str, au_len) == 0;
 }
 
+static gboolean
+xauth_entry_should_propagate (Xauth *xa,
+                              char  *hostname,
+                              char  *number)
+{
+  /* ensure entry isn't for remote access */
+  if (xa->family != FamilyLocal && xa->family != FamilyWild)
+    return FALSE;
+
+  /* ensure entry is for this machine */
+  if (xa->family == FamilyLocal && !auth_streq (hostname, xa->address, xa->address_length))
+    return FALSE;
+
+  /* ensure entry is for this session */
+  if (xa->number != NULL && !auth_streq (number, xa->number, xa->number_length))
+    return FALSE;
+
+  return TRUE;
+}
+
 static void
 write_xauth (char *number, FILE *output)
 {
@@ -1769,9 +1789,7 @@ write_xauth (char *number, FILE *output)
       xa = XauReadAuth (f);
       if (xa == NULL)
         break;
-      if (xa->family == FamilyLocal &&
-          auth_streq (unames.nodename, xa->address, xa->address_length) &&
-          (xa->number == NULL || auth_streq (number, xa->number, xa->number_length)))
+      if (xauth_entry_should_propagate (xa, unames.nodename, number))
         {
           local_xa = *xa;
           if (local_xa.number)
@@ -2358,10 +2376,12 @@ add_file_args (GPtrArray *argv_array,
           if (!path_is_visible (keys, n_keys, hash_table, path))
             {
               g_autofree char *resolved = flatpak_resolve_link (path, NULL);
-              g_autofree char *parent = g_path_get_dirname (path);
-              g_autofree char *relative = make_relative (parent, resolved);
               if (resolved)
-                add_args (argv_array, "--symlink", relative, path,  NULL);
+                {
+                  g_autofree char *parent = g_path_get_dirname (path);
+                  g_autofree char *relative = make_relative (parent, resolved);
+                  add_args (argv_array, "--symlink", relative, path,  NULL);
+                }
             }
         }
       else if (ep->mode == FAKE_MODE_HIDDEN)
@@ -3060,7 +3080,7 @@ flatpak_run_in_transient_unit (const char *appid, GError **error)
 
   if (!g_file_test (path, G_FILE_TEST_EXISTS))
     return flatpak_fail (error,
-                         "No systemd user session available, sandboxing not available");
+                         "No systemd user session available, cgroups not available");
 
   main_context = g_main_context_new ();
   main_loop = g_main_loop_new (main_context, FALSE);
@@ -3940,18 +3960,21 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
   else if (g_file_test ("/var/lib/dbus/machine-id", G_FILE_TEST_EXISTS))
     add_args (argv_array, "--ro-bind", "/var/lib/dbus/machine-id", "/etc/machine-id", NULL);
 
-  etc = g_file_get_child (runtime_files, "etc");
-  if ((flags & FLATPAK_RUN_FLAG_WRITABLE_ETC) == 0 &&
+  if (runtime_files)
+    etc = g_file_get_child (runtime_files, "etc");
+  if (etc != NULL &&
+      (flags & FLATPAK_RUN_FLAG_WRITABLE_ETC) == 0 &&
       g_file_query_exists (etc, NULL))
     {
       g_auto(GLnxDirFdIterator) dfd_iter = { 0, };
       struct dirent *dent;
       char path_buffer[PATH_MAX + 1];
       ssize_t symlink_size;
+      gboolean inited;
 
-      glnx_dirfd_iterator_init_at (AT_FDCWD, flatpak_file_get_path_cached (etc), FALSE, &dfd_iter, NULL);
+      inited = glnx_dirfd_iterator_init_at (AT_FDCWD, flatpak_file_get_path_cached (etc), FALSE, &dfd_iter, NULL);
 
-      while (TRUE)
+      while (inited)
         {
           g_autofree char *src = NULL;
           g_autofree char *dest = NULL;
@@ -4002,7 +4025,7 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
                 NULL);
     }
 
-  for (i = 0; i < G_N_ELEMENTS (usr_links); i++)
+  for (i = 0; runtime_files != NULL && i < G_N_ELEMENTS (usr_links); i++)
     {
       const char *subdir = usr_links[i];
       g_autoptr(GFile) runtime_subdir = g_file_get_child (runtime_files, subdir);
