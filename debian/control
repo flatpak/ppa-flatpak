@@ -7,6 +7,7 @@ Uploaders:
  Simon McVittie <smcv@debian.org>,
 Build-Depends:
  attr,
+ automake (>= 1.14.1),
  bubblewrap (>= 0.1.5),
  ca-certificates,
  dbus,

@@ -1,3 +1,15 @@
+flatpak (0.8.4-2) experimental; urgency=medium
+
+  * Explicitly build-depend on automake. Otherwise, the aspcud resolver
+    used in experimental sometimes chooses automake1.11 as the best
+    solution to dh-autoreconf's dependency on automake | automaken,
+    causing FTBFS.
+    - Set the dependency to 1.14.1 since flatpak is known to build
+      successfully with that version in jessie-backports, whereas older
+      versions are not known to work.
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 12 Mar 2017 13:59:18 +0000
+
 flatpak (0.8.4-1) experimental; urgency=medium
 
   * New upstream bugfix release
