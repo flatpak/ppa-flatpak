@@ -1,6 +1,7 @@
-flatpak (0.8.4-4) UNRELEASED; urgency=medium
+flatpak (0.9.1-1) UNRELEASED; urgency=medium
 
   * d/gbp.conf, d/watch: switch to development branch for experimental
+  * New upstream development release
 
  -- Simon McVittie <smcv@debian.org>  Wed, 15 Mar 2017 22:40:55 +0000
 
