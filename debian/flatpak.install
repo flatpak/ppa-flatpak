@@ -39,9 +39,9 @@ usr/share/man/man1/flatpak-make-current.1
 usr/share/man/man1/flatpak-override.1
 usr/share/man/man1/flatpak-remote-add.1
 usr/share/man/man1/flatpak-remote-delete.1
-usr/share/man/man1/flatpak-remote-list.1
 usr/share/man/man1/flatpak-remote-ls.1
 usr/share/man/man1/flatpak-remote-modify.1
+usr/share/man/man1/flatpak-remotes.1
 usr/share/man/man1/flatpak-run.1
 usr/share/man/man1/flatpak-uninstall.1
 usr/share/man/man1/flatpak-update.1

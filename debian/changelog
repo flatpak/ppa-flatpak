@@ -5,6 +5,8 @@ flatpak (0.9.1-1) UNRELEASED; urgency=medium
     - Drop patch, applied upstream
     - d/copyright: Update
     - Add flatpak-bisect to the flatpak-builder package
+    - Adjust install files for rename of `flatpak remote-list` to
+      `flatpak remotes`
   * flatpak Recommends xdg-desktop-portal-gtk | xdg-desktop-portal-backend,
     so that sandboxed apps can communicate with the outside world
 
