@@ -188,6 +188,14 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--url=URL</option></term>
+
+                <listitem><para>
+                    Set a new URL.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--update-metadata</option></term>
 
                 <listitem><para>
@@ -251,7 +259,7 @@
                 <citerefentry><refentrytitle>flatpak</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
                 <citerefentry><refentrytitle>flatpak-remote-add</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
                 <citerefentry><refentrytitle>flatpak-remote-delete</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
-                <citerefentry><refentrytitle>flatpak-remote-list</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+                <citerefentry><refentrytitle>flatpak-remotes</refentrytitle><manvolnum>1</manvolnum></citerefentry>
             </para>
     </refsect1>
 

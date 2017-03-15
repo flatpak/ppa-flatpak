@@ -36,6 +36,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/file.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
 
@@ -72,6 +73,74 @@ flatpak_error_quark (void)
                                       flatpak_error_entries,
                                       G_N_ELEMENTS (flatpak_error_entries));
   return (GQuark) quark_volatile;
+}
+
+GFile *
+flatpak_file_new_tmp_in (GFile *dir,
+                         const char *template,
+                         GError        **error)
+{
+  glnx_fd_close int tmp_fd = -1;
+  g_autofree char *tmpl = g_build_filename (flatpak_file_get_path_cached (dir), template, NULL);
+
+  tmp_fd = g_mkstemp_full (tmpl, O_RDWR, 0644);
+  if (tmp_fd == -1)
+    {
+      glnx_set_error_from_errno (error);
+      return NULL;
+    }
+
+  return g_file_new_for_path (tmpl);
+}
+
+gboolean
+flatpak_write_update_checksum (GOutputStream  *out,
+                               gconstpointer   data,
+                               gsize           len,
+                               gsize          *out_bytes_written,
+                               GChecksum      *checksum,
+                               GCancellable   *cancellable,
+                               GError        **error)
+{
+  if (out)
+    {
+      if (!g_output_stream_write_all (out, data, len, out_bytes_written,
+                                      cancellable, error))
+        return FALSE;
+    }
+  else if (out_bytes_written)
+    {
+      *out_bytes_written = len;
+    }
+
+  if (checksum)
+    g_checksum_update (checksum, data, len);
+
+  return TRUE;
+}
+
+gboolean
+flatpak_splice_update_checksum (GOutputStream  *out,
+                                GInputStream   *in,
+                                GChecksum      *checksum,
+                                GCancellable   *cancellable,
+                                GError        **error)
+{
+  gsize bytes_read, bytes_written;
+  char buf[32*1024];
+
+  do
+    {
+      if (!g_input_stream_read_all (in, buf, sizeof buf, &bytes_read, cancellable, error))
+        return FALSE;
+
+      if (!flatpak_write_update_checksum (out, buf, bytes_read, &bytes_written, checksum,
+                                          cancellable, error))
+        return FALSE;
+    }
+  while (bytes_read > 0);
+
+  return TRUE;
 }
 
 GBytes *
@@ -428,6 +497,36 @@ flatpak_get_bwrap (void)
   if (e != NULL)
     return e;
   return HELPER;
+}
+
+gboolean
+flatpak_break_hardlink (GFile *file, GError **error)
+{
+  g_autofree char *path = g_file_get_path (file);
+  struct stat st_buf;
+
+  if (stat (path, &st_buf) == 0 && st_buf.st_nlink > 1)
+    {
+      g_autoptr(GFile) dir = g_file_get_parent (file);
+      g_autoptr(GFile) tmp = NULL;
+
+      tmp = flatpak_file_new_tmp_in (dir, ".breaklinkXXXXXX", error);
+      if (tmp == NULL)
+        return FALSE;
+
+      if (!g_file_copy (file, tmp,
+                        G_FILE_COPY_OVERWRITE,
+                        NULL, NULL, NULL, error))
+        return FALSE;
+
+      if (rename (flatpak_file_get_path_cached (tmp), path) != 0)
+        {
+          glnx_set_error_from_errno (error);
+          return FALSE;
+        }
+    }
+
+  return TRUE;
 }
 
 /* We only migrate the user dir, because thats what most people used with xdg-app,
@@ -1814,6 +1913,45 @@ spawn_exit_cb (GObject      *obj,
   spawn_data_exit (data);
 }
 
+static gboolean
+needs_quoting (const char *arg)
+{
+  while (*arg != 0)
+    {
+      char c = *arg;
+      if (!g_ascii_isalnum (c) &&
+          !(c == '-' || c == '/' || c == '~' ||
+            c == ':' || c == '.' || c == '_' ||
+            c == '='))
+        return TRUE;
+      arg++;
+    }
+  return FALSE;
+}
+
+char *
+flatpak_quote_argv (const char *argv[])
+{
+  GString *res = g_string_new ("");
+  int i;
+
+  for (i = 0; argv[i] != NULL; i++)
+    {
+      if (i != 0)
+        g_string_append_c (res, ' ');
+
+      if (needs_quoting (argv[i]))
+        {
+          g_autofree char *quoted = g_shell_quote (argv[i]);
+          g_string_append (res, quoted);
+        }
+      else
+        g_string_append (res, argv[i]);
+    }
+
+  return g_string_free (res, FALSE);
+}
+
 gboolean
 flatpak_spawn (GFile       *dir,
                char       **output,
@@ -1863,8 +2001,8 @@ flatpak_spawnv (GFile                *dir,
       g_subprocess_launcher_set_cwd (launcher, path);
     }
 
-  commandline = g_strjoinv (" ", (gchar **) argv);
-  g_debug ("Running '%s'", commandline);
+  commandline = flatpak_quote_argv ((const char **)argv);
+  g_debug ("Running: %s", commandline);
 
   subp = g_subprocess_launcher_spawnv (launcher, argv, error);
 
@@ -1980,6 +2118,44 @@ flatpak_openat_noatime (int            dfd,
       *ret_fd = fd;
       return TRUE;
     }
+}
+
+#define COPY_BUFFER_SIZE (16*1024)
+gboolean
+flatpak_copy_bytes (int fdf,
+                    int fdt,
+                    GError **error)
+{
+  char buf[COPY_BUFFER_SIZE];
+  int r;
+
+  g_return_val_if_fail (fdf >= 0, FALSE);
+  g_return_val_if_fail (fdt >= 0, FALSE);
+
+  for (;;)
+    {
+      size_t m = COPY_BUFFER_SIZE;
+      ssize_t n;
+
+      n = read (fdf, buf, m);
+      if (n < 0)
+        {
+          glnx_set_error_from_errno (error);
+          return FALSE;
+        }
+      if (n == 0) /* EOF */
+        break;
+
+      r = glnx_loop_write (fdt, buf, (size_t) n);
+      if (r < 0)
+        {
+          errno = r;
+          glnx_set_error_from_errno (error);
+          return FALSE;
+        }
+    }
+
+  return TRUE;
 }
 
 gboolean
@@ -3306,6 +3482,7 @@ gboolean
 flatpak_repo_generate_appstream (OstreeRepo   *repo,
                                  const char  **gpg_key_ids,
                                  const char   *gpg_homedir,
+                                 guint64       timestamp,
                                  GCancellable *cancellable,
                                  GError      **error)
 {
@@ -3441,10 +3618,22 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
 
       if (!skip_commit)
         {
-          if (!ostree_repo_write_commit (repo, parent, "Update", NULL, NULL,
-                                         OSTREE_REPO_FILE (root),
-                                         &commit_checksum, cancellable, error))
-            goto out;
+          if (timestamp > 0)
+            {
+              if (!ostree_repo_write_commit_with_time (repo, parent, "Update", NULL, NULL,
+                                                       OSTREE_REPO_FILE (root),
+                                                       timestamp,
+                                                       &commit_checksum,
+                                                       cancellable, error))
+                goto out;
+            }
+          else
+            {
+              if (!ostree_repo_write_commit (repo, parent, "Update", NULL, NULL,
+                                             OSTREE_REPO_FILE (root),
+                                             &commit_checksum, cancellable, error))
+                goto out;
+            }
 
           if (gpg_key_ids)
             {
@@ -4229,12 +4418,35 @@ flatpak_pull_from_bundle (OstreeRepo   *repo,
   return TRUE;
 }
 
+typedef struct {
+  FlatpakOciPullProgress progress_cb;
+  gpointer progress_user_data;
+  guint64 total_size;
+  guint64 previous_layers_size;
+  guint32 n_layers;
+  guint32 pulled_layers;
+} FlatpakOciPullProgressData;
+
+static void
+oci_layer_progress (guint64 downloaded_bytes,
+                    gpointer user_data)
+{
+  FlatpakOciPullProgressData *progress_data = user_data;
+
+  if (progress_data->progress_cb)
+    progress_data->progress_cb (progress_data->total_size, progress_data->previous_layers_size + downloaded_bytes,
+                                progress_data->n_layers, progress_data->pulled_layers,
+                                progress_data->progress_user_data);
+}
+
 char *
 flatpak_pull_from_oci (OstreeRepo   *repo,
                        FlatpakOciRegistry *registry,
                        const char *digest,
                        FlatpakOciManifest *manifest,
                        const char *ref,
+                       FlatpakOciPullProgress progress_cb,
+                       gpointer progress_user_data,
                        GCancellable *cancellable,
                        GError      **error)
 {
@@ -4245,6 +4457,7 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
   g_autofree char *subject = NULL;
   g_autofree char *body = NULL;
   guint64 timestamp = 0;
+  FlatpakOciPullProgressData progress_data = { progress_cb, progress_user_data };
   g_autoptr(GVariantBuilder) metadata_builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
   g_autoptr(GVariant) metadata = NULL;
   GHashTable *annotations;
@@ -4273,6 +4486,18 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
   for (i = 0; manifest->layers[i] != NULL; i++)
     {
       FlatpakOciDescriptor *layer = manifest->layers[i];
+      progress_data.total_size += layer->size;
+      progress_data.n_layers++;
+    }
+
+  if (progress_cb)
+    progress_cb (progress_data.total_size, 0,
+                 progress_data.n_layers, progress_data.pulled_layers,
+                 progress_user_data);
+
+  for (i = 0; manifest->layers[i] != NULL; i++)
+    {
+      FlatpakOciDescriptor *layer = manifest->layers[i];
       OstreeRepoImportArchiveOptions opts = { 0, };
       free_read_archive struct archive *a = NULL;
       glnx_fd_close int layer_fd = -1;
@@ -4281,7 +4506,7 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
       opts.ignore_unsupported_content = TRUE;
 
       layer_fd = flatpak_oci_registry_download_blob (registry, layer->digest,
-                                                     NULL, NULL,
+                                                     oci_layer_progress, &progress_data,
                                                      cancellable, error);
       if (layer_fd == -1)
         goto error;
@@ -4307,6 +4532,9 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
           propagate_libarchive_error (error, a);
           goto error;
         }
+
+      progress_data.pulled_layers++;
+      progress_data.previous_layers_size += layer->size;
     }
 
   if (!ostree_repo_write_mtree (repo, archive_mtree, &archive_root, cancellable, error))
@@ -4573,6 +4801,7 @@ typedef struct {
   GCancellable *cancellable;
   gpointer user_data;
   guint64 last_progress_time;
+  char *etag;
 } LoadUriData;
 
 static void
@@ -4659,10 +4888,15 @@ load_uri_callback (GObject *source_object,
   g_autoptr(SoupMessage) msg = soup_request_http_get_message ((SoupRequestHTTP*) request);
   if (!SOUP_STATUS_IS_SUCCESSFUL (msg->status_code))
     {
-      GIOErrorEnum code;
+      int code;
+      GQuark domain = G_IO_ERROR;
 
       switch (msg->status_code)
         {
+        case 304:
+          domain = FLATPAK_OCI_ERROR;
+          code = FLATPAK_OCI_ERROR_NOT_CHANGED;
+          break;
         case 404:
         case 410:
           code = G_IO_ERROR_NOT_FOUND;
@@ -4671,13 +4905,15 @@ load_uri_callback (GObject *source_object,
           code = G_IO_ERROR_FAILED;
         }
 
-      data->error = g_error_new (G_IO_ERROR, code,
+      data->error = g_error_new (domain, code,
                                  "Server returned status %u: %s",
                                  msg->status_code,
                                  soup_status_get_phrase (msg->status_code));
       g_main_loop_quit (data->loop);
       return;
     }
+
+  data->etag = g_strdup (soup_message_headers_get_one (msg->response_headers, "ETag"));
 
   g_input_stream_read_async (in, data->buffer, sizeof (data->buffer),
                              G_PRIORITY_DEFAULT, data->cancellable,
@@ -4712,7 +4948,9 @@ flatpak_create_soup_session (const char *user_agent)
 
 GBytes *
 flatpak_load_http_uri (SoupSession *soup_session,
-                       const char   *uri,
+                       const char *uri,
+                       const char *etag,
+                       char      **out_etag,
                        FlatpakLoadUriProgress progress,
                        gpointer      user_data,
                        GCancellable *cancellable,
@@ -4742,6 +4980,12 @@ flatpak_load_http_uri (SoupSession *soup_session,
   if (request == NULL)
     return NULL;
 
+  if (etag)
+    {
+      SoupMessage *m = soup_request_http_get_message (request);
+      soup_message_headers_replace (m->request_headers, "If-None-Match", etag);
+    }
+
   soup_request_send_async (SOUP_REQUEST(request),
                            cancellable,
                            load_uri_callback, &data);
@@ -4751,11 +4995,17 @@ flatpak_load_http_uri (SoupSession *soup_session,
   if (data.error)
     {
       g_propagate_error (error, data.error);
+      g_free (data.etag);
       return NULL;
     }
 
   bytes = g_string_free_to_bytes (g_steal_pointer (&content));
   g_debug ("Received %" G_GSIZE_FORMAT " bytes", data.downloaded_bytes);
+
+  if (out_etag)
+    *out_etag = g_steal_pointer (&data.etag);
+
+  g_free (data.etag);
 
   return bytes;
 }

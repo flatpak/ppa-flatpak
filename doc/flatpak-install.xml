@@ -50,14 +50,6 @@
                 <arg choice="opt">--bundle</arg>
                 <arg choice="plain">FILENAME</arg>
             </cmdsynopsis>
-            <para>Install from an OCI registry:</para>
-            <cmdsynopsis>
-                <command>flatpak install</command>
-                <arg choice="opt" rep="repeat">OPTION</arg>
-                <arg choice="plain">--oci</arg>
-                <arg choice="plain">LOCATION</arg>
-                <arg choice="opt">TAG</arg>
-            </cmdsynopsis>
     </refsynopsisdiv>
 
     <refsect1>
@@ -83,11 +75,10 @@
             --runtime option, or by supplying the initial element in the REF.
         </para>
         <para>
-            The alternative form of the command (<arg>--from</arg>,
-            <arg>--bundle</arg> or <arg>--oci</arg>) allows you to
+            The alternative form of the command (<arg>--from</arg> or
+            <arg>--bundle</arg> allows you to
             install directly from a source such as a .flatpak
-            single-file bundle, a .flatpakref app description or an
-            OCI registry. The options are optional if the first
+            single-file bundle, a .flatpakref app description. The options are optional if the first
             argument have the right extension.
         </para>
         <para>
@@ -138,14 +129,6 @@
             </varlistentry>
 
             <varlistentry>
-                <term><option>--oci</option></term>
-
-                <listitem><para>
-                    Install from a oci registry with a given uri and optionally a tag (defaults to latest).
-                </para></listitem>
-            </varlistentry>
-
-            <varlistentry>
                 <term><option>--user</option></term>
 
                 <listitem><para>
@@ -187,6 +170,14 @@
                 <listitem><para>
                   Install only a subpath of the ref. This is mainly used to install a subset of locales.
                   This can be added multiple times to install multiple subpaths.,
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--gpg-file=FILE</option></term>
+
+                <listitem><para>
+                  Check bundle signatures with GPG key from FILE (- for stdin).
                 </para></listitem>
             </varlistentry>
 
@@ -234,6 +225,14 @@
                 <term><option>--runtime</option></term>
                 <listitem><para>
                     Assume that all <arg choice="plain">REF</arg>s are runtimes if not explicitly specified.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>-y</option></term>
+                <term><option>--assumeyes</option></term>
+                <listitem><para>
+                    Automatically answer yes to all questions (or pick the most prioritized answer). This is useful for automation.
                 </para></listitem>
             </varlistentry>
 

@@ -75,6 +75,25 @@ char ** flatpak_get_current_locale_subpaths (void);
 
 void flatpak_migrate_from_xdg_app (void);
 
+GFile *flatpak_file_new_tmp_in (GFile *dir,
+                                const char *templatename,
+                                GError        **error);
+gboolean flatpak_break_hardlink (GFile *file, GError **error);
+
+gboolean flatpak_write_update_checksum (GOutputStream  *out,
+                                        gconstpointer   data,
+                                        gsize           len,
+                                        gsize          *out_bytes_written,
+                                        GChecksum      *checksum,
+                                        GCancellable   *cancellable,
+                                        GError        **error);
+
+gboolean flatpak_splice_update_checksum (GOutputStream  *out,
+                                         GInputStream   *in,
+                                         GChecksum      *checksum,
+                                         GCancellable   *cancellable,
+                                         GError        **error);
+
 GBytes * flatpak_read_stream (GInputStream *in,
                               gboolean      null_terminate,
                               GError      **error);
@@ -314,11 +333,17 @@ gboolean flatpak_pull_from_bundle (OstreeRepo   *repo,
                                    GCancellable *cancellable,
                                    GError      **error);
 
+typedef void (*FlatpakOciPullProgress) (guint64 total_size, guint64 pulled_size,
+                                        guint32 n_layers, guint32 pulled_layers,
+                                        gpointer data);
+
 char * flatpak_pull_from_oci (OstreeRepo   *repo,
                               FlatpakOciRegistry *registry,
                               const char *digest,
                               FlatpakOciManifest *manifest,
                               const char *ref,
+                              FlatpakOciPullProgress progress_cb,
+                              gpointer progress_data,
                               GCancellable *cancellable,
                               GError      **error);
 
@@ -343,6 +368,8 @@ GList *flatpak_list_extensions (GKeyFile   *metakey,
                                 const char *arch,
                                 const char *branch);
 
+char * flatpak_quote_argv (const char *argv[]);
+
 gboolean            flatpak_spawn (GFile       *dir,
                                    char       **output,
                                    GError     **error,
@@ -361,6 +388,10 @@ gboolean flatpak_openat_noatime (int            dfd,
                                  int           *ret_fd,
                                  GCancellable  *cancellable,
                                  GError       **error);
+
+gboolean flatpak_copy_bytes (int fdf,
+                             int fdt,
+                             GError **error);
 
 typedef enum {
   FLATPAK_CP_FLAGS_NONE = 0,
@@ -405,8 +436,6 @@ gboolean flatpak_open_in_tmpdir_at (int                tmpdir_fd,
                                     GOutputStream    **out_stream,
                                     GCancellable      *cancellable,
                                     GError           **error);
-
-#define flatpak_autorm_rf _GLIB_CLEANUP (g_autoptr_cleanup_generic_gfree)
 
 static inline void
 flatpak_temp_dir_destroy (void *p)
@@ -457,6 +486,7 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeMutableTree, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeAsyncProgress, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeGpgVerifyResult, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeRepoCommitModifier, ostree_repo_commit_modifier_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeRepoDevInoCache, ostree_repo_devino_cache_unref)
 
 #ifndef SOUP_AUTOCLEANUPS_H
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (SoupSession, g_object_unref)
@@ -532,6 +562,7 @@ GBytes *flatpak_appstream_xml_root_to_data (FlatpakXml *appstream_root,
 gboolean   flatpak_repo_generate_appstream (OstreeRepo   *repo,
                                             const char  **gpg_key_ids,
                                             const char   *gpg_homedir,
+                                            guint64       timestamp,
                                             GCancellable *cancellable,
                                             GError      **error);
 
@@ -555,6 +586,8 @@ typedef void (*FlatpakLoadUriProgress) (guint64 downloaded_bytes,
 SoupSession * flatpak_create_soup_session (const char *user_agent);
 GBytes * flatpak_load_http_uri (SoupSession *soup_session,
                                 const char   *uri,
+                                const char   *etag,
+                                char        **out_etag,
                                 FlatpakLoadUriProgress progress,
                                 gpointer      user_data,
                                 GCancellable *cancellable,

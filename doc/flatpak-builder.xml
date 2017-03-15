@@ -224,6 +224,10 @@
                     <listitem><para>Extra files to clean up in the platform.</para></listitem>
                 </varlistentry>
                 <varlistentry>
+                    <term><option>cleanup-platform-commands</option> (array of strings)</term>
+                    <listitem><para>An array of commandlines that are run during the cleanup phase of the platform.</para></listitem>
+                </varlistentry>
+               <varlistentry>
                     <term><option>finish-args</option> (array of strings)</term>
                     <listitem><para>An array of arguments passed to the <command>flatpak build-finish</command> command.</para></listitem>
                 </varlistentry>
@@ -266,11 +270,15 @@
             <variablelist>
                 <varlistentry>
                     <term><option>cflags</option> (string)</term>
-                    <listitem><para>This is set in the environment variable CFLAGS during the build.</para></listitem>
+                    <listitem><para>This is set in the environment variable CFLAGS during the build. Multiple specifications of this (in e.g. per-arch area) are concatinated with spaces inbetween.</para></listitem>
                 </varlistentry>
                 <varlistentry>
                     <term><option>cxxflags</option> (string)</term>
-                    <listitem><para>This is set in the environment variable CXXFLAGS during the build.</para></listitem>
+                    <listitem><para>This is set in the environment variable CXXFLAGS during the build. Multiple specifications of this (in e.g. per-arch area) are concatinated with spaces inbetween.</para></listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>ldflags</option> (string)</term>
+                    <listitem><para>This is set in the environment variable LDFLAGS during the build. Multiple specifications of this (in e.g. per-arch area) are concatinated with spaces inbetween.</para></listitem>
                 </varlistentry>
                 <varlistentry>
                     <term><option>prefix</option> (string)</term>
@@ -354,6 +362,10 @@
                     <listitem><para>Don't call make with arguments to build in parallel</para></listitem>
                 </varlistentry>
                 <varlistentry>
+                    <term><option>no-make-install</option> (boolean)</term>
+                    <listitem><para>Don't run the make install (or equivalent) stage</para></listitem>
+                </varlistentry>
+                <varlistentry>
                     <term><option>no-python-timestamp-fix</option> (boolean)</term>
                     <listitem><para>Don't fix up the *.py[oc] header timestamps for ostree use.</para></listitem>
                 </varlistentry>
@@ -363,7 +375,7 @@
                 </varlistentry>
                 <varlistentry>
                     <term><option>buildsystem</option> (string)</term>
-                    <listitem><para>Build system to use: autotools, cmake, meson</para></listitem>
+                    <listitem><para>Build system to use: autotools, cmake, cmake-ninja, meson, simple</para></listitem>
                 </varlistentry>
                 <varlistentry>
                     <term><option>builddir</option> (boolean)</term>
@@ -378,6 +390,12 @@
                     <listitem><para>A build options object that can override global options</para></listitem>
                 </varlistentry>
                 <varlistentry>
+                    <term><option>build-commands</option> (array of strings)</term>
+                    <listitem><para>An array of commands to run during build (between make and make install if those are used).
+                    This is primarily useful when using the "simple" buildsystem.
+                    </para></listitem>
+                </varlistentry>
+                <varlistentry>
                     <term><option>post-install</option> (array of strings)</term>
                     <listitem><para>An array of shell commands that are run after the install phase. Can for example
                     clean up the install dir, or install extra files.
@@ -389,6 +407,22 @@
                     Patterns starting with / are taken to be full pathnames (without the /app prefix), otherwise they just match
                     the basename. Note that any patterns will only match files installed by this module.
                     </para></listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>ensure-writable</option> (array of strings)</term>
+                    <listitem><para>The way the builder works is that files in the install directory
+                    are hard-links to the cached files, so you're not allowed to modify them in-place.
+                    If you list a file in this then the hardlink will be broken and you can modify it.
+                    This is a workaround, ideally installing files should replace files, not modify
+                    existing ones.</para></listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>only-arches</option> (array of strings)</term>
+                    <listitem><para>If non-empty, only build the module on the arches listed.</para></listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>skip-arches</option> (array of strings)</term>
+                    <listitem><para>Don't build on any of the arches listed.</para></listitem>
                 </varlistentry>
                 <varlistentry>
                     <term><option>cleanup-platform</option> (array of strings)</term>
@@ -407,6 +441,23 @@
                 These contain a pointer to the source that will be extracted into the source directory before
                 the build starts. They can be of several types, distinguished by the type property.
             </para>
+            <refsect3>
+                <title>All sources</title>
+                <variablelist>
+                  <varlistentry>
+                    <term><option>only-arches</option> (array of strings)</term>
+                    <listitem><para>If non-empty, only build the module on the arches listed.</para></listitem>
+                  </varlistentry>
+                  <varlistentry>
+                    <term><option>skip-arches</option> (array of strings)</term>
+                    <listitem><para>Don't build on any of the arches listed.</para></listitem>
+                  </varlistentry>
+                    <varlistentry>
+                        <term><option>dest</option> (string)</term>
+                        <listitem><para>Directory inside the source dir where this source will be extracted.</para></listitem>
+                    </varlistentry>
+                </variablelist>
+            </refsect3>
             <refsect3>
                 <title>Archive sources (tar, zip)</title>
                 <variablelist>
@@ -430,10 +481,6 @@
                         <term><option>strip-components</option> (integer)</term>
                         <listitem><para>The number of initial pathname components to strip during extraction. Defaults to 1.</para></listitem>
                     </varlistentry>
-                    <varlistentry>
-                        <term><option>dest</option> (string)</term>
-                        <listitem><para>Directory inside the source dir where the archive will be extracted.</para></listitem>
-                    </varlistentry>
                 </variablelist>
             </refsect3>
             <refsect3>
@@ -455,10 +502,6 @@
                         <term><option>branch</option> (string)</term>
                         <listitem><para>The branch/tag/commit to use from the git repository</para></listitem>
                     </varlistentry>
-                    <varlistentry>
-                        <term><option>dest</option> (string)</term>
-                        <listitem><para>Directory inside the source dir where the repository will be checked out.</para></listitem>
-                    </varlistentry>
                 </variablelist>
             </refsect3>
             <refsect3>
@@ -475,10 +518,6 @@
                     <varlistentry>
                         <term><option>revision</option> (string)</term>
                         <listitem><para>A specific revision to use in the branch</para></listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term><option>dest</option> (string)</term>
-                        <listitem><para>Directory inside the source dir where the repository will be checked out.</para></listitem>
                     </varlistentry>
                 </variablelist>
             </refsect3>
@@ -505,10 +544,6 @@
                         <term><option>dest-filename</option> (string)</term>
                         <listitem><para>Filename to use inside the source dir, default to the basename of path.</para></listitem>
                     </varlistentry>
-                    <varlistentry>
-                        <term><option>dest</option> (string)</term>
-                        <listitem><para>Directory inside the source dir where the file will be copied.</para></listitem>
-                    </varlistentry>
                 </variablelist>
             </refsect3>
             <refsect3>
@@ -528,10 +563,6 @@
                     <varlistentry>
                         <term><option>dest-filename</option> (string)</term>
                         <listitem><para>Filename to use inside the source dir, default to the basename of path.</para></listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term><option>dest</option> (string)</term>
-                        <listitem><para>Directory inside the source dir where the file will be copied.</para></listitem>
                     </varlistentry>
                 </variablelist>
             </refsect3>
@@ -565,10 +596,6 @@
                     <varlistentry>
                         <term><option>strip-components</option> (integer)</term>
                         <listitem><para>The value of the -p argument to patch, defaults to 1.</para></listitem>
-                    </varlistentry>
-                    <varlistentry>
-                        <term><option>dest</option> (string)</term>
-                        <listitem><para>Directory inside the source dir where the patch will be applied.</para></listitem>
                     </varlistentry>
                     <varlistentry>
                         <term><option>use-git</option> (boolean)</term>
@@ -632,6 +659,14 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--disable-rofiles-fuse</option></term>
+
+                <listitem><para>
+                    Disable the use of rofiles-fuse to optimize the cache use via hardlink checkouts.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--disable-download</option></term>
 
                 <listitem><para>
@@ -658,6 +693,16 @@
                   arguments to give the same environment as the build, and the same permissions the final app
                   will have. The command to run must be the last argument passed to
                   flatpak-builder, after the directory and the manifest.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--build-shell=MODULENAME</option></term>
+
+                <listitem><para>
+                  Extract and prepare the sources for the named module, and then start
+                  a shell in a sandbox identical to the one flatpak-builder would use for buildng the module.
+                  This is useful to debug a module.
                 </para></listitem>
             </varlistentry>
 
@@ -822,6 +867,41 @@
                 </para></listitem>
             </varlistentry>
 
+            <varlistentry>
+                <term><option>--rebuild-on-sdk-change</option></term>
+
+                <listitem><para>
+                  Record the exact version of the sdk in the cache, and rebuild everything
+                  if it changes. This is useful if you're building against an API-unstable
+                  runtime, like a nightly build.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--skip-if-unchanged</option></term>
+
+                <listitem><para>
+                  If the json is unchanged since the last build of this filename, then
+                  do nothing, and return exit code 42.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--from-git=GIT</option></term>
+
+                <listitem><para>
+                  Look for the manifest in the given git repository. If this option is
+                  given, MANIFEST is interpreted as a relative path inside the repository.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--from-git-branch=BRANCH</option></term>
+
+                <listitem><para>
+                  The branch to use with --from-git.
+                </para></listitem>
+            </varlistentry>
           </variablelist>
     </refsect1>
 

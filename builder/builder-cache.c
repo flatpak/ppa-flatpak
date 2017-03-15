@@ -34,12 +34,13 @@
 #include "flatpak-utils.h"
 #include "builder-utils.h"
 #include "builder-cache.h"
+#include "builder-context.h"
 
 struct BuilderCache
 {
   GObject     parent;
+  BuilderContext *context;
   GChecksum  *checksum;
-  GFile      *cache_dir;
   GFile      *app_dir;
   char       *branch;
   char       *stage;
@@ -47,6 +48,7 @@ struct BuilderCache
   char       *last_parent;
   OstreeRepo *repo;
   gboolean    disabled;
+  OstreeRepoDevInoCache *devino_to_csum_cache;
 };
 
 typedef struct
@@ -58,7 +60,7 @@ G_DEFINE_TYPE (BuilderCache, builder_cache, G_TYPE_OBJECT);
 
 enum {
   PROP_0,
-  PROP_CACHE_DIR,
+  PROP_CONTEXT,
   PROP_APP_DIR,
   PROP_BRANCH,
   LAST_PROP
@@ -72,7 +74,7 @@ builder_cache_finalize (GObject *object)
 {
   BuilderCache *self = (BuilderCache *) object;
 
-  g_clear_object (&self->cache_dir);
+  g_clear_object (&self->context);
   g_clear_object (&self->app_dir);
   g_clear_object (&self->repo);
   g_checksum_free (self->checksum);
@@ -81,6 +83,9 @@ builder_cache_finalize (GObject *object)
   g_free (self->stage);
   if (self->unused_stages)
     g_hash_table_unref (self->unused_stages);
+
+  if (self->devino_to_csum_cache)
+    ostree_repo_devino_cache_unref (self->devino_to_csum_cache);
 
   G_OBJECT_CLASS (builder_cache_parent_class)->finalize (object);
 }
@@ -95,8 +100,8 @@ builder_cache_get_property (GObject    *object,
 
   switch (prop_id)
     {
-    case PROP_CACHE_DIR:
-      g_value_set_object (value, self->cache_dir);
+    case PROP_CONTEXT:
+      g_value_set_object (value, self->context);
       break;
 
     case PROP_APP_DIR:
@@ -127,8 +132,8 @@ builder_cache_set_property (GObject      *object,
       self->branch = g_value_dup_string (value);
       break;
 
-    case PROP_CACHE_DIR:
-      g_set_object (&self->cache_dir, g_value_get_object (value));
+    case PROP_CONTEXT:
+      g_set_object (&self->context, g_value_get_object (value));
       break;
 
     case PROP_APP_DIR:
@@ -150,11 +155,11 @@ builder_cache_class_init (BuilderCacheClass *klass)
   object_class->set_property = builder_cache_set_property;
 
   g_object_class_install_property (object_class,
-                                   PROP_CACHE_DIR,
-                                   g_param_spec_object ("cache-dir",
+                                   PROP_CONTEXT,
+                                   g_param_spec_object ("context",
                                                         "",
                                                         "",
-                                                        G_TYPE_FILE,
+                                                        BUILDER_TYPE_CONTEXT,
                                                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
   g_object_class_install_property (object_class,
                                    PROP_APP_DIR,
@@ -176,15 +181,16 @@ static void
 builder_cache_init (BuilderCache *self)
 {
   self->checksum = g_checksum_new (G_CHECKSUM_SHA256);
+  self->devino_to_csum_cache = ostree_repo_devino_cache_new ();
 }
 
 BuilderCache *
-builder_cache_new (GFile      *cache_dir,
+builder_cache_new (BuilderContext *context,
                    GFile      *app_dir,
                    const char *branch)
 {
   return g_object_new (BUILDER_TYPE_CACHE,
-                       "cache-dir", cache_dir,
+                       "context", context,
                        "app-dir", app_dir,
                        "branch", branch,
                        NULL);
@@ -222,15 +228,15 @@ gboolean
 builder_cache_open (BuilderCache *self,
                     GError      **error)
 {
-  self->repo = ostree_repo_new (self->cache_dir);
+  self->repo = ostree_repo_new (builder_context_get_cache_dir (self->context));
 
   /* We don't need fsync on checkouts as they are transient, and we
      rely on the syncfs() in the transaction commit for commits. */
   ostree_repo_set_disable_fsync (self->repo, TRUE);
 
-  if (!g_file_query_exists (self->cache_dir, NULL))
+  if (!g_file_query_exists (builder_context_get_cache_dir (self->context), NULL))
     {
-      g_autoptr(GFile) parent = g_file_get_parent (self->cache_dir);
+      g_autoptr(GFile) parent = g_file_get_parent (builder_context_get_cache_dir (self->context));
 
       if (!flatpak_mkdir_p (parent, NULL, error))
         return FALSE;
@@ -269,45 +275,48 @@ builder_cache_get_current (BuilderCache *self)
 }
 
 static gboolean
-builder_cache_checkout (BuilderCache *self, const char *commit, GError **error)
+builder_cache_checkout (BuilderCache *self, const char *commit, gboolean delete_dir, GError **error)
 {
-  g_autoptr(GFile) root = NULL;
-  g_autoptr(GFileInfo) file_info = NULL;
   g_autoptr(GError) my_error = NULL;
+  OstreeRepoCheckoutMode mode = OSTREE_REPO_CHECKOUT_MODE_NONE;
+  OstreeRepoCheckoutAtOptions options = { 0, };
 
-  if (!ostree_repo_read_commit (self->repo, commit, &root, NULL, NULL, error))
-    return FALSE;
-
-  file_info = g_file_query_info (root, OSTREE_GIO_FAST_QUERYINFO,
-                                 G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
-                                 NULL, error);
-  if (file_info == NULL)
-    return FALSE;
-
-  if (!g_file_delete (self->app_dir, NULL, &my_error) &&
-      !g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+  if (delete_dir)
     {
-      g_propagate_error (error, g_steal_pointer (&my_error));
-      return FALSE;
+      if (!g_file_delete (self->app_dir, NULL, &my_error) &&
+          !g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+        {
+          g_propagate_error (error, g_steal_pointer (&my_error));
+          return FALSE;
+        }
+
+      if (!flatpak_mkdir_p (self->app_dir, NULL, error))
+        return FALSE;
     }
 
-  /* We check out without user mode, not necessarily because we care
-     about uids not owned by the user (they are all from the build,
-     so should be creatable by the user, but because we want to
-     force the checkout to not use hardlinks. Hard links into the
-     cache are not safe, as the build could mutate these. */
-  if (!ostree_repo_checkout_tree (self->repo,
-                                  OSTREE_REPO_CHECKOUT_MODE_NONE,
-                                  OSTREE_REPO_CHECKOUT_OVERWRITE_NONE,
-                                  self->app_dir,
-                                  OSTREE_REPO_FILE (root), file_info,
-                                  NULL, error))
+  /* If rofiles-fuse is disabled, we check out without user mode, not
+     necessarily because we care about uids not owned by the user
+     (they are all from the build, so should be creatable by the user,
+     but because we want to force the checkout to not use
+     hardlinks. Hard links into the cache without rofiles-fuse are not
+     safe, as the build could mutate the cache. */
+  if (builder_context_get_use_rofiles (self->context))
+    mode = OSTREE_REPO_CHECKOUT_MODE_USER;
+
+  options.mode = mode;
+  options.overwrite_mode = OSTREE_REPO_CHECKOUT_OVERWRITE_UNION_FILES;
+  options.devino_to_csum_cache = self->devino_to_csum_cache;
+
+  if (!ostree_repo_checkout_at (self->repo, &options,
+                                AT_FDCWD, flatpak_file_get_path_cached (self->app_dir),
+                                commit, NULL, error))
     return FALSE;
 
   /* There is a bug in ostree (https://github.com/ostreedev/ostree/issues/326) that
-     causes it to not reset mtime to 0 in this case (mismatching modes). So
-     we do that manually */
-  if (!flatpak_zero_mtime (AT_FDCWD, flatpak_file_get_path_cached (self->app_dir),
+     causes it to not reset mtime to 0 in themismatching modes case. So we do that
+     manually */
+  if (mode == OSTREE_REPO_CHECKOUT_MODE_NONE &&
+      !flatpak_zero_mtime (AT_FDCWD, flatpak_file_get_path_cached (self->app_dir),
                            NULL, error))
     return FALSE;
 
@@ -331,7 +340,7 @@ builder_cache_ensure_checkout (BuilderCache *self)
       g_autoptr(GError) error = NULL;
       g_print ("Everything cached, checking out from cache\n");
 
-      if (!builder_cache_checkout (self, self->last_parent, &error))
+      if (!builder_cache_checkout (self, self->last_parent, TRUE, &error))
         g_error ("Failed to check out cache: %s", error->message);
     }
 
@@ -393,13 +402,103 @@ checkout:
       g_autoptr(GError) error = NULL;
       g_print ("Cache miss, checking out last cache hit\n");
 
-      if (!builder_cache_checkout (self, self->last_parent, &error))
+      if (!builder_cache_checkout (self, self->last_parent, TRUE, &error))
         g_error ("Failed to check out cache: %s", error->message);
     }
 
   self->disabled = TRUE; /* Don't use cache any more after first miss */
 
   return FALSE;
+}
+
+static gboolean
+mtree_empty (OstreeMutableTree *mtree)
+{
+  GHashTable *files = ostree_mutable_tree_get_files (mtree);
+  GHashTable *subdirs = ostree_mutable_tree_get_subdirs (mtree);
+
+  return
+    g_hash_table_size (files) == 0 &&
+    g_hash_table_size (subdirs) == 0;
+}
+
+/* This takes a mutable tree and an existing OstreeRepoFile, and recursively
+ * removes all mtree files that already exists in the OstreeRepoFile.
+ * This is very useful to create a commit with just the new files, which
+ * we can then check out in order to get a the new hardlinks to the
+ * cache repo.
+ */
+static gboolean
+mtree_prune_old_files (OstreeMutableTree *mtree,
+                       OstreeRepoFile *old,
+                       GError **error)
+{
+  GHashTable *files = ostree_mutable_tree_get_files (mtree);
+  GHashTable *subdirs = ostree_mutable_tree_get_subdirs (mtree);
+  GHashTableIter iter;
+  gpointer key, value;
+
+  ostree_mutable_tree_set_contents_checksum (mtree, NULL);
+
+  if (old != NULL && !ostree_repo_file_ensure_resolved (old, error))
+    return FALSE;
+
+  g_hash_table_iter_init (&iter, files);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      const char *name = key;
+      const char *csum = value;
+      int n = -1;
+      gboolean is_dir;
+      g_autoptr(GVariant) container = NULL;
+      gboolean same = FALSE;
+
+      if (old)
+        n = ostree_repo_file_tree_find_child  (old, name, &is_dir, &container);
+
+      if (n >= 0)
+        {
+          if (!is_dir)
+            {
+              g_autoptr(GVariant) old_csum_bytes = NULL;
+              g_autofree char *old_csum = NULL;
+
+              g_variant_get_child (container, n,
+                                   "(@s@ay)", NULL, &old_csum_bytes);
+              old_csum = ostree_checksum_from_bytes_v (old_csum_bytes);
+
+              if (strcmp (old_csum, csum) == 0)
+                same = TRUE; /* Modified file */
+            }
+        }
+
+      if (same)
+        g_hash_table_iter_remove (&iter);
+    }
+
+  g_hash_table_iter_init (&iter, subdirs);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    {
+      const char *name = key;
+      OstreeMutableTree *subdir = value;
+      g_autoptr(GFile) old_subdir = NULL;
+      int n = -1;
+      gboolean is_dir;
+
+      if (old)
+        n = ostree_repo_file_tree_find_child  (old, name, &is_dir, NULL);
+
+      if (n >= 0 && is_dir)
+        old_subdir = g_file_get_child (G_FILE (old), name);
+
+      if (!mtree_prune_old_files (subdir, OSTREE_REPO_FILE (old_subdir), error))
+        return FALSE;
+
+      if (mtree_empty (subdir))
+        g_hash_table_iter_remove (&iter);
+    }
+
+  return TRUE;
 }
 
 gboolean
@@ -413,8 +512,11 @@ builder_cache_commit (BuilderCache *self,
   g_autoptr(OstreeMutableTree) mtree = NULL;
   g_autoptr(GFile) root = NULL;
   g_autofree char *commit_checksum = NULL;
+  g_autofree char *new_commit_checksum = NULL;
   gboolean res = FALSE;
   g_autofree char *ref = NULL;
+  g_autoptr(GFile) last_root = NULL;
+  g_autoptr(GFile) new_root = NULL;
 
   g_print ("Committing stage %s to cache\n", self->stage);
 
@@ -431,6 +533,9 @@ builder_cache_commit (BuilderCache *self,
 
   modifier = ostree_repo_commit_modifier_new (OSTREE_REPO_COMMIT_MODIFIER_FLAGS_SKIP_XATTRS,
                                               NULL, NULL, NULL);
+  if (self->devino_to_csum_cache)
+    ostree_repo_commit_modifier_set_devino_cache (modifier, self->devino_to_csum_cache);
+
   if (!ostree_repo_write_directory_to_mtree (self->repo, self->app_dir,
                                              mtree, modifier, NULL, error))
     goto out;
@@ -448,7 +553,27 @@ builder_cache_commit (BuilderCache *self,
   ref = builder_cache_get_current_ref (self);
   ostree_repo_transaction_set_ref (self->repo, NULL, ref, commit_checksum);
 
+  if (self->last_parent &&
+      !ostree_repo_read_commit (self->repo, self->last_parent, &last_root, NULL, NULL, error))
+    goto out;
+
+  if (!mtree_prune_old_files (mtree, OSTREE_REPO_FILE (last_root), error))
+    goto out;
+
+  if (!ostree_repo_write_mtree (self->repo, mtree, &new_root, NULL, error))
+    goto out;
+
+  if (!ostree_repo_write_commit (self->repo, NULL, current, body, NULL,
+                                 OSTREE_REPO_FILE (new_root),
+                                 &new_commit_checksum, NULL, error))
+    goto out;
+
   if (!ostree_repo_commit_transaction (self->repo, NULL, NULL, error))
+    goto out;
+
+  /* Check out the just commited cache so we hardlinks to the cache */
+  if (builder_context_get_use_rofiles (self->context) &&
+      !builder_cache_checkout (self, new_commit_checksum, FALSE, error))
     goto out;
 
   g_free (self->last_parent);
@@ -468,85 +593,386 @@ out:
   return res;
 }
 
+typedef struct {
+  dev_t dev;
+  ino_t ino;
+  char checksum[OSTREE_SHA256_STRING_LEN+1];
+} OstreeDevIno;
+
+static const char *
+devino_cache_lookup (OstreeRepoDevInoCache *devino_to_csum_cache,
+                     guint32               device,
+                     guint32               inode)
+{
+  OstreeDevIno dev_ino_key;
+  OstreeDevIno *dev_ino_val;
+  GHashTable *cache = (GHashTable *)devino_to_csum_cache;
+
+  if (devino_to_csum_cache == NULL)
+    return NULL;
+
+  dev_ino_key.dev = device;
+  dev_ino_key.ino = inode;
+  dev_ino_val = g_hash_table_lookup (cache, &dev_ino_key);
+
+  if (!dev_ino_val)
+    return NULL;
+
+  return dev_ino_val->checksum;
+}
+
+static gboolean
+get_file_checksum (OstreeRepoDevInoCache *devino_to_csum_cache,
+                   GFile *f,
+                   GFileInfo *f_info,
+                   char  **out_checksum,
+                   GCancellable *cancellable,
+                   GError   **error)
+{
+  g_autofree char *ret_checksum = NULL;
+  g_autofree guchar *csum = NULL;
+
+  if (OSTREE_IS_REPO_FILE (f))
+    {
+      ret_checksum = g_strdup (ostree_repo_file_get_checksum ((OstreeRepoFile*)f));
+    }
+  else
+    {
+      const char *cached = devino_cache_lookup (devino_to_csum_cache,
+                                                g_file_info_get_attribute_uint32 (f_info, "unix::device"),
+                                                g_file_info_get_attribute_uint64 (f_info, "unix::inode"));
+      if (cached)
+        ret_checksum = g_strdup (cached);
+      else
+        {
+          g_autoptr(GInputStream) in = NULL;
+
+          if (g_file_info_get_file_type (f_info) == G_FILE_TYPE_REGULAR)
+            {
+              in = (GInputStream*)g_file_read (f, cancellable, error);
+              if (!in)
+                return FALSE;
+            }
+
+          if (!ostree_checksum_file_from_input (f_info, NULL, in,
+                                                OSTREE_OBJECT_TYPE_FILE,
+                                                &csum, cancellable, error))
+            return FALSE;
+
+          ret_checksum = ostree_checksum_from_bytes (csum);
+        }
+    }
+
+  *out_checksum = g_steal_pointer (&ret_checksum);
+  return TRUE;
+}
+
+static gboolean
+diff_files (OstreeRepoDevInoCache *devino_to_csum_cache,
+            GFile           *a,
+            GFileInfo       *a_info,
+            GFile           *b,
+            GFileInfo       *b_info,
+            gboolean        *was_changed,
+            GCancellable    *cancellable,
+            GError         **error)
+{
+  g_autofree char *checksum_a = NULL;
+  g_autofree char *checksum_b = NULL;
+
+  if (!get_file_checksum (devino_to_csum_cache, a, a_info, &checksum_a, cancellable, error))
+    return FALSE;
+
+  if (!get_file_checksum (devino_to_csum_cache, b, b_info, &checksum_b, cancellable, error))
+    return FALSE;
+
+  *was_changed = strcmp (checksum_a, checksum_b) != 0;
+
+  return TRUE;
+}
+
+static gboolean
+diff_add_dir_recurse (GFile          *d,
+                      GPtrArray      *added,
+                      GCancellable   *cancellable,
+                      GError        **error)
+{
+  GError *temp_error = NULL;
+  g_autoptr(GFileEnumerator) dir_enum = NULL;
+  g_autoptr(GFile) child = NULL;
+  g_autoptr(GFileInfo) child_info = NULL;
+
+  dir_enum = g_file_enumerate_children (d, OSTREE_GIO_FAST_QUERYINFO,
+                                        G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                        cancellable,
+                                        error);
+  if (!dir_enum)
+    return FALSE;
+
+  while ((child_info = g_file_enumerator_next_file (dir_enum, cancellable, &temp_error)) != NULL)
+    {
+      const char *name;
+
+      name = g_file_info_get_name (child_info);
+
+      g_clear_object (&child);
+      child = g_file_get_child (d, name);
+
+      g_ptr_array_add (added, g_object_ref (child));
+
+      if (g_file_info_get_file_type (child_info) == G_FILE_TYPE_DIRECTORY)
+        {
+          if (!diff_add_dir_recurse (child, added, cancellable, error))
+            return FALSE;
+        }
+
+      g_clear_object (&child_info);
+    }
+
+  if (temp_error != NULL)
+    {
+      g_propagate_error (error, temp_error);
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+
+static gboolean
+diff_dirs (OstreeRepoDevInoCache *devino_to_csum_cache,
+           GFile          *a,
+           GFile          *b,
+           GPtrArray      *changed,
+           GCancellable   *cancellable,
+           GError        **error)
+{
+  GError *temp_error = NULL;
+  g_autoptr(GFileEnumerator) dir_enum = NULL;
+  g_autoptr(GFile) child_a = NULL;
+  g_autoptr(GFile) child_b = NULL;
+  g_autoptr(GFileInfo) child_a_info = NULL;
+  g_autoptr(GFileInfo) child_b_info = NULL;
+
+  if (a == NULL)
+    {
+      if (!diff_add_dir_recurse (b, changed, cancellable, error))
+        return FALSE;
+
+      return TRUE;
+    }
+
+  dir_enum = g_file_enumerate_children (a, OSTREE_GIO_FAST_QUERYINFO,
+                                        G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                        cancellable, error);
+  if (!dir_enum)
+    return FALSE;
+
+  while ((child_a_info = g_file_enumerator_next_file (dir_enum, cancellable, &temp_error)) != NULL)
+    {
+      const char *name;
+      GFileType child_a_type;
+      GFileType child_b_type;
+
+      name = g_file_info_get_name (child_a_info);
+
+      g_clear_object (&child_a);
+      child_a = g_file_get_child (a, name);
+      child_a_type = g_file_info_get_file_type (child_a_info);
+
+      g_clear_object (&child_b);
+      child_b = g_file_get_child (b, name);
+
+      g_clear_object (&child_b_info);
+      child_b_info = g_file_query_info (child_b, OSTREE_GIO_FAST_QUERYINFO,
+                                        G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                        cancellable,
+                                        &temp_error);
+      if (!child_b_info)
+        {
+          if (g_error_matches (temp_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+            {
+              g_clear_error (&temp_error);
+              /* Removed, ignore */
+            }
+          else
+            {
+              g_propagate_error (error, temp_error);
+              return FALSE;
+            }
+        }
+      else
+        {
+          child_b_type = g_file_info_get_file_type (child_b_info);
+          if (child_a_type != child_b_type)
+            {
+              g_ptr_array_add (changed, g_object_ref (child_b));
+            }
+          else
+            {
+              gboolean was_changed = FALSE;
+
+              if (!diff_files (devino_to_csum_cache,
+                               child_a, child_a_info,
+                               child_b, child_b_info,
+                               &was_changed,
+                               cancellable, error))
+                return FALSE;
+
+              if (was_changed)
+                g_ptr_array_add (changed, g_object_ref (child_b));
+
+              if (child_a_type == G_FILE_TYPE_DIRECTORY)
+                {
+                  if (!diff_dirs (devino_to_csum_cache, child_a, child_b, changed,
+                                  cancellable, error))
+                    return FALSE;
+                }
+            }
+        }
+
+      g_clear_object (&child_a_info);
+    }
+  if (temp_error != NULL)
+    {
+      g_propagate_error (error, temp_error);
+      return FALSE;
+    }
+
+  g_clear_object (&dir_enum);
+  dir_enum = g_file_enumerate_children (b, OSTREE_GIO_FAST_QUERYINFO,
+                                        G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                        cancellable, error);
+  if (!dir_enum)
+    return FALSE;
+
+  g_clear_object (&child_b_info);
+  while ((child_b_info = g_file_enumerator_next_file (dir_enum, cancellable, &temp_error)) != NULL)
+    {
+      const char *name;
+
+      name = g_file_info_get_name (child_b_info);
+
+      g_clear_object (&child_a);
+      child_a = g_file_get_child (a, name);
+
+      g_clear_object (&child_b);
+      child_b = g_file_get_child (b, name);
+
+      g_clear_object (&child_a_info);
+      child_a_info = g_file_query_info (child_a, OSTREE_GIO_FAST_QUERYINFO,
+                                        G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                        cancellable,
+                                        &temp_error);
+      if (!child_a_info)
+        {
+          if (g_error_matches (temp_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+            {
+              g_clear_error (&temp_error);
+              g_ptr_array_add (changed, g_object_ref (child_b));
+              if (g_file_info_get_file_type (child_b_info) == G_FILE_TYPE_DIRECTORY)
+                {
+                  if (!diff_add_dir_recurse (child_b, changed, cancellable, error))
+                    return FALSE;
+                }
+            }
+          else
+            {
+              g_propagate_error (error, temp_error);
+              return FALSE;
+            }
+        }
+      g_clear_object (&child_b_info);
+    }
+  if (temp_error != NULL)
+    {
+      g_propagate_error (error, temp_error);
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
 gboolean
 builder_cache_get_outstanding_changes (BuilderCache *self,
-                                       GPtrArray   **added_out,
-                                       GPtrArray   **modified_out,
-                                       GPtrArray   **removed_out,
+                                       GPtrArray   **changed_out,
                                        GError      **error)
+{
+  g_autoptr(GPtrArray) changed = g_ptr_array_new_with_free_func (g_object_unref);
+  g_autoptr(GPtrArray) changed_paths = g_ptr_array_new_with_free_func (g_free);
+  g_autoptr(GFile) last_root = NULL;
+  int i;
+
+  if (self->last_parent &&
+      !ostree_repo_read_commit (self->repo, self->last_parent, &last_root, NULL, NULL, error))
+    return FALSE;
+
+  if (!diff_dirs (self->devino_to_csum_cache,
+                  last_root,
+                  self->app_dir,
+                  changed,
+                  NULL, error))
+    return FALSE;
+
+  for (i = 0; i < changed->len; i++)
+    {
+      GFile *changed_file = g_ptr_array_index (changed, i);
+      char *path = g_file_get_relative_path (self->app_dir, changed_file);
+      g_ptr_array_add (changed_paths, path);
+    }
+
+  if (changed_out)
+    *changed_out = g_steal_pointer (&changed_paths);
+
+  return TRUE;
+}
+
+static GPtrArray *
+get_changes (BuilderCache *self,
+             GFile       *from,
+             GFile       *to,
+             GError      **error)
 {
   g_autoptr(GPtrArray) added = g_ptr_array_new_with_free_func (g_object_unref);
   g_autoptr(GPtrArray) modified = g_ptr_array_new_with_free_func ((GDestroyNotify) ostree_diff_item_unref);
   g_autoptr(GPtrArray) removed = g_ptr_array_new_with_free_func (g_object_unref);
-  g_autoptr(GPtrArray) added_paths = g_ptr_array_new_with_free_func (g_free);
-  g_autoptr(GPtrArray) modified_paths = g_ptr_array_new_with_free_func (g_free);
-  g_autoptr(GPtrArray) removed_paths = g_ptr_array_new_with_free_func (g_free);
-  g_autoptr(GFile) last_root = NULL;
-  g_autoptr(GVariant) variant = NULL;
+  g_autoptr(GPtrArray) changed_paths = g_ptr_array_new_with_free_func (g_free);
   int i;
 
-  if (!ostree_repo_read_commit (self->repo, self->last_parent, &last_root, NULL, NULL, error))
-    return FALSE;
-
-  if (!ostree_repo_load_variant (self->repo, OSTREE_OBJECT_TYPE_COMMIT, self->last_parent,
-                                 &variant, NULL))
-    return FALSE;
-
-  if (!ostree_diff_dirs (OSTREE_DIFF_FLAGS_IGNORE_XATTRS,
-                         last_root,
-                         self->app_dir,
+  if (!ostree_diff_dirs (OSTREE_DIFF_FLAGS_NONE,
+                         from,
+                         to,
                          modified,
                          removed,
                          added,
                          NULL, error))
-    return FALSE;
+    return NULL;
 
   for (i = 0; i < added->len; i++)
     {
-      GFile *added_file = g_ptr_array_index (added, i);
-      char *path = g_file_get_relative_path (self->app_dir, added_file);
-      g_ptr_array_add (added_paths, path);
+      char *path = g_file_get_relative_path (to, g_ptr_array_index (added, i));
+      g_ptr_array_add (changed_paths, path);
     }
 
   for (i = 0; i < modified->len; i++)
     {
       OstreeDiffItem *modified_item = g_ptr_array_index (modified, i);
-      char *path = g_file_get_relative_path (self->app_dir, modified_item->target);
-      g_ptr_array_add (modified_paths, path);
+      char *path = g_file_get_relative_path (to, modified_item->target);
+      g_ptr_array_add (changed_paths, path);
     }
 
-  for (i = 0; i < removed->len; i++)
-    {
-      GFile *removed_file = g_ptr_array_index (removed, i);
-      char *path = g_file_get_relative_path (self->app_dir, removed_file);
-      g_ptr_array_add (removed_paths, path);
-    }
-
-  if (added_out)
-    *added_out = g_steal_pointer (&added_paths);
-
-  if (modified_out)
-    *modified_out = g_steal_pointer (&modified_paths);
-
-  if (removed_out)
-    *removed_out = g_steal_pointer (&removed_paths);
-
-  return TRUE;
+  return g_steal_pointer (&changed_paths);
 }
+
 
 GPtrArray *
 builder_cache_get_all_changes (BuilderCache *self,
                                GError      **error)
 {
-  g_autoptr(GPtrArray) added = g_ptr_array_new_with_free_func (g_object_unref);
-  g_autoptr(GPtrArray) modified = g_ptr_array_new_with_free_func ((GDestroyNotify) ostree_diff_item_unref);
-  g_autoptr(GPtrArray) removed = g_ptr_array_new_with_free_func (g_object_unref);
-  g_autoptr(GPtrArray) all_paths = g_ptr_array_new_with_free_func (g_free);
   g_autoptr(GFile) init_root = NULL;
   g_autoptr(GFile) finish_root = NULL;
   g_autofree char *init_commit = NULL;
   g_autofree char *finish_commit = NULL;
-  int i;
   g_autofree char *init_ref = get_ref (self, "init");
   g_autofree char *finish_ref = get_ref (self, "finish");
 
@@ -562,44 +988,17 @@ builder_cache_get_all_changes (BuilderCache *self,
   if (!ostree_repo_read_commit (self->repo, finish_commit, &finish_root, NULL, NULL, error))
     return NULL;
 
-  if (!ostree_diff_dirs (OSTREE_DIFF_FLAGS_NONE,
-                         init_root,
-                         finish_root,
-                         modified,
-                         removed,
-                         added,
-                         NULL, error))
-    return NULL;
-
-  for (i = 0; i < added->len; i++)
-    {
-      char *path = g_file_get_relative_path (finish_root, g_ptr_array_index (added, i));
-      g_ptr_array_add (all_paths, path);
-    }
-
-  for (i = 0; i < modified->len; i++)
-    {
-      OstreeDiffItem *modified_item = g_ptr_array_index (modified, i);
-      char *path = g_file_get_relative_path (finish_root, modified_item->target);
-      g_ptr_array_add (all_paths, path);
-    }
-
-  return g_steal_pointer (&all_paths);
+  return get_changes (self, init_root, finish_root, error);
 }
 
 GPtrArray   *
 builder_cache_get_changes (BuilderCache *self,
                            GError      **error)
 {
-  g_autoptr(GPtrArray) added = g_ptr_array_new_with_free_func (g_object_unref);
-  g_autoptr(GPtrArray) modified = g_ptr_array_new_with_free_func ((GDestroyNotify) ostree_diff_item_unref);
-  g_autoptr(GPtrArray) removed = g_ptr_array_new_with_free_func (g_object_unref);
-  g_autoptr(GPtrArray) changed_paths = g_ptr_array_new_with_free_func (g_free);
   g_autoptr(GFile) current_root = NULL;
   g_autoptr(GFile) parent_root = NULL;
   g_autoptr(GVariant) variant = NULL;
   g_autofree char *parent_commit = NULL;
-  int i;
 
   if (!ostree_repo_read_commit (self->repo, self->last_parent, &current_root, NULL, NULL, error))
     return NULL;
@@ -615,29 +1014,19 @@ builder_cache_get_changes (BuilderCache *self,
         return FALSE;
     }
 
-  if (!ostree_diff_dirs (OSTREE_DIFF_FLAGS_NONE,
-                         parent_root,
-                         current_root,
-                         modified,
-                         removed,
-                         added,
-                         NULL, error))
+  return get_changes (self, parent_root, current_root, error);
+}
+
+GPtrArray   *
+builder_cache_get_files (BuilderCache *self,
+                         GError      **error)
+{
+  g_autoptr(GFile) current_root = NULL;
+
+  if (!ostree_repo_read_commit (self->repo, self->last_parent, &current_root, NULL, NULL, error))
     return NULL;
 
-  for (i = 0; i < added->len; i++)
-    {
-      char *path = g_file_get_relative_path (current_root, g_ptr_array_index (added, i));
-      g_ptr_array_add (changed_paths, path);
-    }
-
-  for (i = 0; i < modified->len; i++)
-    {
-      OstreeDiffItem *modified_item = g_ptr_array_index (modified, i);
-      char *path = g_file_get_relative_path (current_root, modified_item->target);
-      g_ptr_array_add (changed_paths, path);
-    }
-
-  return g_steal_pointer (&changed_paths);
+  return get_changes (self, NULL, current_root, error);
 }
 
 void
@@ -696,6 +1085,19 @@ builder_cache_checksum_str (BuilderCache *self,
     g_checksum_update (self->checksum, (const guchar *) "\1", 1);
 }
 
+/* Only add to cache if non-empty. This means we can add
+   these things compatibly without invalidating the cache.
+   This is useful if empty means no change from what was
+   before */
+void
+builder_cache_checksum_compat_strv (BuilderCache *self,
+                                    char        **strv)
+{
+  if (strv != NULL && strv[0] != NULL)
+    builder_cache_checksum_strv (self, strv);
+}
+
+
 void
 builder_cache_checksum_strv (BuilderCache *self,
                              char        **strv)
@@ -722,6 +1124,18 @@ builder_cache_checksum_boolean (BuilderCache *self,
     g_checksum_update (self->checksum, (const guchar *) "\1", 1);
   else
     g_checksum_update (self->checksum, (const guchar *) "\0", 1);
+}
+
+/* Only add to cache if true. This means we can add
+   these things compatibly without invalidating the cache.
+   This is useful if false means no change from what was
+   before */
+void
+builder_cache_checksum_compat_boolean (BuilderCache *self,
+                                       gboolean      val)
+{
+  if (val)
+    builder_cache_checksum_boolean (self, val);
 }
 
 void
