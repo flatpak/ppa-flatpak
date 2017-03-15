@@ -4,6 +4,7 @@ flatpak (0.9.1-1) UNRELEASED; urgency=medium
   * New upstream development release
     - Drop patch, applied upstream
     - d/copyright: Update
+    - Add flatpak-bisect to the flatpak-builder package
 
  -- Simon McVittie <smcv@debian.org>  Wed, 15 Mar 2017 22:40:55 +0000
 

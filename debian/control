@@ -14,6 +14,7 @@ Build-Depends:
  debhelper (>= 10~),
  desktop-file-utils,
  dh-exec,
+ dh-python,
  docbook-xml,
  docbook-xsl,
  fuse,
@@ -40,6 +41,7 @@ Build-Depends:
  libxml2-utils,
  ostree,
  procps,
+ python3,
  shared-mime-info,
  xmlto,
  xsltproc,
@@ -87,8 +89,11 @@ Package: flatpak-builder
 Architecture: linux-any
 Section: devel
 Depends:
+ gir1.2-flatpak-1.0,
  flatpak (= ${binary:Version}),
+ python3-gi,
  ${misc:Depends},
+ ${python3:Depends},
  ${shlibs:Depends},
 Recommends:
  binutils,
@@ -103,6 +108,9 @@ Description: Flatpak application building helper
  .
  flatpak-builder is a tool that makes it easy to build applications and their
  dependencies by automating the configure && make && make install steps.
+ .
+ This package also contains the flatpak-bisect script, which can be used to
+ identify the first commit that had a particular regression.
 
 Package: flatpak-tests
 Architecture: linux-any
