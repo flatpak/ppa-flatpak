@@ -1,2 +1,2 @@
 version=4
-https://github.com/@PACKAGE@/@PACKAGE@/releases .*/@PACKAGE@-(\d+\.\d*[02468]\.\S*)@ARCHIVE_EXT@
+https://github.com/@PACKAGE@/@PACKAGE@/releases .*/@PACKAGE@-(\d+\.\d\.\S*)@ARCHIVE_EXT@
