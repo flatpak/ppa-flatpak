@@ -21,6 +21,7 @@ Fix some insufficient quoting that could have gone wrong if
 XDG_DATA_DIRS somehow contained spaces.
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Applied-upstream: 0.9.1, commit:e572311a26911b74e96c593987e250fb4bbc532b
 ---
  profile/flatpak.sh.in | 8 ++------
  1 file changed, 2 insertions(+), 6 deletions(-)
