@@ -5,6 +5,8 @@ flatpak (0.9.1-1) UNRELEASED; urgency=medium
     - Drop patch, applied upstream
     - d/copyright: Update
     - Add flatpak-bisect to the flatpak-builder package
+  * flatpak Recommends xdg-desktop-portal-gtk | xdg-desktop-portal-backend,
+    so that sandboxed apps can communicate with the outside world
 
  -- Simon McVittie <smcv@debian.org>  Wed, 15 Mar 2017 22:40:55 +0000
 

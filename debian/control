@@ -63,6 +63,7 @@ Recommends:
  gtk-update-icon-cache,
  libpam-systemd,
  shared-mime-info,
+ xdg-desktop-portal-gtk | xdg-desktop-portal-backend,
 Conflicts:
  xdg-app,
 Replaces:
