@@ -1,8 +1,9 @@
-flatpak (0.8.4-3) UNRELEASED; urgency=medium
+flatpak (0.8.4-3) unstable; urgency=medium
 
   * Mark the one remaining patch as applied in 0.9.1
+  * Upload to unstable
 
- -- Simon McVittie <smcv@debian.org>  Wed, 15 Mar 2017 18:42:50 +0000
+ -- Simon McVittie <smcv@debian.org>  Wed, 15 Mar 2017 18:43:51 +0000
 
 flatpak (0.8.4-2) experimental; urgency=medium
 
