@@ -6,8 +6,15 @@ DIR=`mktemp -d`
 
 EXTRA="${1-}"
 
+ARCH=`flatpak --default-arch`
+
 # Init dir
-flatpak build-init ${DIR} org.test.Hello org.test.Platform org.test.Platform
+cat > ${DIR}/metadata <<EOF
+[Application]
+name=org.test.Hello
+runtime=org.test.Platform/$ARCH/master
+sdk=org.test.Platform/$ARCH/master
+EOF
 
 mkdir -p ${DIR}/files/bin
 cat > ${DIR}/files/bin/hello.sh <<EOF

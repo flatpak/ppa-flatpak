@@ -14,9 +14,9 @@ AC_PREREQ([2.63])
 # on the unstable (ie master), interface age = 0
 
 m4_define([flatpak_major_version], [0])
-m4_define([flatpak_minor_version], [8])
-m4_define([flatpak_micro_version], [4])
-m4_define([flatpak_interface_age], [4])
+m4_define([flatpak_minor_version], [9])
+m4_define([flatpak_micro_version], [1])
+m4_define([flatpak_interface_age], [1])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -28,7 +28,7 @@ AC_INIT([Flatpak],
         [flatpak],
         [http://flatpak.org/])
 
-GLIB_REQS=2.40
+GLIB_REQS=2.44
 SYSTEM_BWRAP_REQS=0.1.5
 OSTREE_REQS=2016.14
 
@@ -44,7 +44,7 @@ LT_INIT([disable-static])
 AC_CONFIG_SRCDIR([common/flatpak-dir.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([1.11 no-define no-dist-gzip dist-xz tar-ustar foreign subdir-objects])
+AM_INIT_AUTOMAKE([1.13.4 no-define no-dist-gzip dist-xz tar-ustar foreign subdir-objects])
 AC_PROG_SED
 
 AM_GNU_GETTEXT([external])

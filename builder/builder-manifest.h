@@ -37,12 +37,14 @@ typedef struct BuilderManifest BuilderManifest;
 #define BUILDER_IS_MANIFEST(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), BUILDER_TYPE_MANIFEST))
 
 /* Bump this if format changes in incompatible ways to force rebuild */
-#define BUILDER_MANIFEST_CHECKSUM_VERSION "2"
+#define BUILDER_MANIFEST_CHECKSUM_VERSION "4"
 #define BUILDER_MANIFEST_CHECKSUM_CLEANUP_VERSION "1"
 #define BUILDER_MANIFEST_CHECKSUM_FINISH_VERSION "2"
 #define BUILDER_MANIFEST_CHECKSUM_PLATFORM_VERSION "1"
 
 GType builder_manifest_get_type (void);
+
+void builder_manifest_set_demarshal_buid_context (BuilderContext *build_context);
 
 const char *    builder_manifest_get_id (BuilderManifest *self);
 char *          builder_manifest_get_locale_id (BuilderManifest *self);
@@ -58,12 +60,18 @@ gboolean        builder_manifest_start (BuilderManifest *self,
                                         BuilderContext  *context,
                                         GError         **error);
 gboolean        builder_manifest_init_app_dir (BuilderManifest *self,
+                                               BuilderCache    *cache,
                                                BuilderContext  *context,
                                                GError         **error);
 gboolean        builder_manifest_download (BuilderManifest *self,
                                            gboolean         update_vcs,
+                                           const char      *only_module,
                                            BuilderContext  *context,
                                            GError         **error);
+gboolean        builder_manifest_build_shell (BuilderManifest *self,
+                                              BuilderContext  *context,
+                                              const char      *modulename,
+                                              GError         **error);
 gboolean        builder_manifest_build (BuilderManifest *self,
                                         BuilderCache    *cache,
                                         BuilderContext  *context,
@@ -75,6 +83,7 @@ gboolean        builder_manifest_run (BuilderManifest *self,
                                       int              argc,
                                       GError         **error);
 gboolean        builder_manifest_show_deps (BuilderManifest *self,
+                                            BuilderContext  *context,
                                             GError         **error);
 void            builder_manifest_checksum (BuilderManifest *self,
                                            BuilderCache    *cache,

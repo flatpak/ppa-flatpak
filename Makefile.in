@@ -220,9 +220,9 @@ am__installdirs = "$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
 	"$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" \
-	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(completiondir)" \
-	"$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbusconfdir)" \
-	"$(DESTDIR)$(dbussnippetdir)" \
+	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" \
+	"$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" \
+	"$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(dbussnippetdir)" \
 	"$(DESTDIR)$(dbussystemservicedir)" \
 	"$(DESTDIR)$(installed_test_dbsdir)" \
 	"$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(envdir)" \
@@ -363,6 +363,7 @@ am_flatpak_builder_OBJECTS =  \
 	builder/flatpak_builder-builder-manifest.$(OBJEXT) \
 	builder/flatpak_builder-builder-options.$(OBJEXT) \
 	builder/flatpak_builder-builder-module.$(OBJEXT) \
+	builder/flatpak_builder-builder-post-process.$(OBJEXT) \
 	builder/flatpak_builder-builder-source.$(OBJEXT) \
 	builder/flatpak_builder-builder-source-archive.$(OBJEXT) \
 	builder/flatpak_builder-builder-source-git.$(OBJEXT) \
@@ -374,7 +375,7 @@ am_flatpak_builder_OBJECTS =  \
 	builder/flatpak_builder-builder-context.$(OBJEXT) \
 	builder/flatpak_builder-builder-cache.$(OBJEXT) \
 	builder/flatpak_builder-builder-utils.$(OBJEXT) \
-	$(am__objects_1)
+	builder/flatpak_builder-builder-git.$(OBJEXT) $(am__objects_1)
 flatpak_builder_OBJECTS = $(am_flatpak_builder_OBJECTS)
 flatpak_builder_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -501,7 +502,7 @@ xdg_permission_store_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(xdg_permission_store_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SCRIPTS = $(dist_triggers_SCRIPTS) $(installed_test_SCRIPTS) \
-	$(noinst_SCRIPTS)
+	$(noinst_SCRIPTS) $(scripts_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -1093,7 +1094,8 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	lib/flatpak-enum-types.h.template $(am__append_21) \
 	tests/flatpak.supp tests/glib.supp $(completion_DATA) \
 	profile/flatpak.sh.in $(NULL) env.d/flatpak.env.in \
-	dbus.service.d/flatpak.conf.in flatpak.pc.in README.md
+	dbus.service.d/flatpak.conf.in flatpak.pc.in \
+	scripts/flatpak-bisect README.md
 TESTS_ENVIRONMENT = G_TEST_SRCDIR="$(abs_srcdir)/tests" \
 	G_TEST_BUILDDIR="$(abs_builddir)/tests" UNINSTALLEDTESTS=1 \
 	G_DEBUG=gc-friendly MALLOC_CHECK_=2 \
@@ -1424,6 +1426,8 @@ flatpak_builder_SOURCES = \
 	builder/builder-options.h \
 	builder/builder-module.c \
 	builder/builder-module.h \
+	builder/builder-post-process.c \
+	builder/builder-post-process.h \
 	builder/builder-source.c \
 	builder/builder-source.h \
 	builder/builder-source-archive.c \
@@ -1446,6 +1450,8 @@ flatpak_builder_SOURCES = \
 	builder/builder-cache.h \
 	builder/builder-utils.c \
 	builder/builder-utils.h \
+	builder/builder-git.c \
+	builder/builder-git.h \
 	$(NULL)
 
 flatpak_builder_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(JSON_LIBS) $(SOUP_LIBS) $(LIBELF_LIBS) \
@@ -1605,6 +1611,8 @@ dbussnippetdir = $(systemduserunitdir)/dbus.service.d
 dbussnippet_DATA = flatpak.conf
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = flatpak.pc
+scriptsdir = $(bindir)
+scripts_SCRIPTS = scripts/flatpak-bisect
 AM_DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-documentation		\
 	--disable-maintainer-mode	\
@@ -2164,6 +2172,8 @@ builder/flatpak_builder-builder-options.$(OBJEXT):  \
 	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
 builder/flatpak_builder-builder-module.$(OBJEXT):  \
 	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
+builder/flatpak_builder-builder-post-process.$(OBJEXT):  \
+	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
 builder/flatpak_builder-builder-source.$(OBJEXT):  \
 	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
 builder/flatpak_builder-builder-source-archive.$(OBJEXT):  \
@@ -2185,6 +2195,8 @@ builder/flatpak_builder-builder-context.$(OBJEXT):  \
 builder/flatpak_builder-builder-cache.$(OBJEXT):  \
 	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
 builder/flatpak_builder-builder-utils.$(OBJEXT):  \
+	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
+builder/flatpak_builder-builder-git.$(OBJEXT):  \
 	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
 
 flatpak-builder$(EXEEXT): $(flatpak_builder_OBJECTS) $(flatpak_builder_DEPENDENCIES) $(EXTRA_flatpak_builder_DEPENDENCIES) 
@@ -2396,6 +2408,41 @@ uninstall-installed_testSCRIPTS:
 	files=`for p in $$list; do echo "$$p"; done | \
 	       sed -e 's,.*/,,;$(transform)'`; \
 	dir='$(DESTDIR)$(installed_testdir)'; $(am__uninstall_files_from_dir)
+install-scriptsSCRIPTS: $(scripts_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	@list='$(scripts_SCRIPTS)'; test -n "$(scriptsdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(scriptsdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(scriptsdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n' \
+	    -e 'h;s|.*|.|' \
+	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
+	      if (++n[d] == $(am__install_max)) { \
+		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
+	    else { print "f", d "/" $$4, $$1 } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	     test -z "$$files" || { \
+	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(scriptsdir)$$dir'"; \
+	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(scriptsdir)$$dir" || exit $$?; \
+	     } \
+	; done
+
+uninstall-scriptsSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(scripts_SCRIPTS)'; test -n "$(scriptsdir)" || exit 0; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	       sed -e 's,.*/,,;$(transform)'`; \
+	dir='$(DESTDIR)$(scriptsdir)'; $(am__uninstall_files_from_dir)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -2455,10 +2502,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-cache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-context.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-git.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-manifest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-module.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-options.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-post-process.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-source-archive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-source-bzr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-source-file.Po@am__quote@
@@ -3244,6 +3293,20 @@ builder/flatpak_builder-builder-module.obj: builder/builder-module.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-module.obj `if test -f 'builder/builder-module.c'; then $(CYGPATH_W) 'builder/builder-module.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-module.c'; fi`
 
+builder/flatpak_builder-builder-post-process.o: builder/builder-post-process.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-post-process.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-post-process.Tpo -c -o builder/flatpak_builder-builder-post-process.o `test -f 'builder/builder-post-process.c' || echo '$(srcdir)/'`builder/builder-post-process.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-post-process.Tpo builder/$(DEPDIR)/flatpak_builder-builder-post-process.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-post-process.c' object='builder/flatpak_builder-builder-post-process.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-post-process.o `test -f 'builder/builder-post-process.c' || echo '$(srcdir)/'`builder/builder-post-process.c
+
+builder/flatpak_builder-builder-post-process.obj: builder/builder-post-process.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-post-process.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-post-process.Tpo -c -o builder/flatpak_builder-builder-post-process.obj `if test -f 'builder/builder-post-process.c'; then $(CYGPATH_W) 'builder/builder-post-process.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-post-process.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-post-process.Tpo builder/$(DEPDIR)/flatpak_builder-builder-post-process.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-post-process.c' object='builder/flatpak_builder-builder-post-process.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-post-process.obj `if test -f 'builder/builder-post-process.c'; then $(CYGPATH_W) 'builder/builder-post-process.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-post-process.c'; fi`
+
 builder/flatpak_builder-builder-source.o: builder/builder-source.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source.Tpo -c -o builder/flatpak_builder-builder-source.o `test -f 'builder/builder-source.c' || echo '$(srcdir)/'`builder/builder-source.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source.Po
@@ -3397,6 +3460,20 @@ builder/flatpak_builder-builder-utils.obj: builder/builder-utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-utils.c' object='builder/flatpak_builder-builder-utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-utils.obj `if test -f 'builder/builder-utils.c'; then $(CYGPATH_W) 'builder/builder-utils.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-utils.c'; fi`
+
+builder/flatpak_builder-builder-git.o: builder/builder-git.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-git.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-git.Tpo -c -o builder/flatpak_builder-builder-git.o `test -f 'builder/builder-git.c' || echo '$(srcdir)/'`builder/builder-git.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-git.Tpo builder/$(DEPDIR)/flatpak_builder-builder-git.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-git.c' object='builder/flatpak_builder-builder-git.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-git.o `test -f 'builder/builder-git.c' || echo '$(srcdir)/'`builder/builder-git.c
+
+builder/flatpak_builder-builder-git.obj: builder/builder-git.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-git.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-git.Tpo -c -o builder/flatpak_builder-builder-git.obj `if test -f 'builder/builder-git.c'; then $(CYGPATH_W) 'builder/builder-git.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-git.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-git.Tpo builder/$(DEPDIR)/flatpak_builder-builder-git.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-git.c' object='builder/flatpak_builder-builder-git.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-git.obj `if test -f 'builder/builder-git.c'; then $(CYGPATH_W) 'builder/builder-git.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-git.c'; fi`
 
 bubblewrap/flatpak_bwrap-bubblewrap.o: bubblewrap/bubblewrap.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -MT bubblewrap/flatpak_bwrap-bubblewrap.o -MD -MP -MF bubblewrap/$(DEPDIR)/flatpak_bwrap-bubblewrap.Tpo -c -o bubblewrap/flatpak_bwrap-bubblewrap.o `test -f 'bubblewrap/bubblewrap.c' || echo '$(srcdir)/'`bubblewrap/bubblewrap.c
@@ -4743,7 +4820,7 @@ install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(dbussnippetdir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(installed_test_dbsdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
+	for dir in "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(dbussnippetdir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(installed_test_dbsdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -4851,8 +4928,8 @@ install-data-am: install-bwrapPROGRAMS install-completionDATA \
 	install-nodist_flatpakincludeHEADERS install-nodist_girDATA \
 	install-nodist_typelibDATA install-pkgconfigDATA \
 	install-polkit_policyDATA install-polkit_rulesDATA \
-	install-profileDATA install-systemdsystemunitDATA \
-	install-systemduserunitDATA
+	install-profileDATA install-scriptsSCRIPTS \
+	install-systemdsystemunitDATA install-systemduserunitDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 install-dvi: install-dvi-recursive
@@ -4920,7 +4997,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-nodist_girDATA uninstall-nodist_typelibDATA \
 	uninstall-pkgconfigDATA uninstall-polkit_policyDATA \
 	uninstall-polkit_rulesDATA uninstall-profileDATA \
-	uninstall-systemdsystemunitDATA uninstall-systemduserunitDATA
+	uninstall-scriptsSCRIPTS uninstall-systemdsystemunitDATA \
+	uninstall-systemduserunitDATA
 
 .MAKE: $(am__recursive_targets) all check check-am install install-am \
 	install-data-am install-strip
@@ -4957,13 +5035,13 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	install-nodist_typelibDATA install-pdf install-pdf-am \
 	install-pkgconfigDATA install-polkit_policyDATA \
 	install-polkit_rulesDATA install-profileDATA install-ps \
-	install-ps-am install-strip install-systemdsystemunitDATA \
-	install-systemduserunitDATA installcheck installcheck-am \
-	installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	recheck tags tags-am uninstall uninstall-am \
-	uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
+	install-ps-am install-scriptsSCRIPTS install-strip \
+	install-systemdsystemunitDATA install-systemduserunitDATA \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am recheck tags tags-am uninstall \
+	uninstall-am uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-completionDATA uninstall-dbus_serviceDATA \
 	uninstall-dbusconfDATA uninstall-dbussnippetDATA \
 	uninstall-dbussystemserviceDATA \
@@ -4981,7 +5059,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-nodist_girDATA uninstall-nodist_typelibDATA \
 	uninstall-pkgconfigDATA uninstall-polkit_policyDATA \
 	uninstall-polkit_rulesDATA uninstall-profileDATA \
-	uninstall-systemdsystemunitDATA uninstall-systemduserunitDATA
+	uninstall-scriptsSCRIPTS uninstall-systemdsystemunitDATA \
+	uninstall-systemduserunitDATA
 
 .PRECIOUS: Makefile
 

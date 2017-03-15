@@ -27,7 +27,7 @@
 
 G_BEGIN_DECLS
 
-/* BuilderContext defined in builder-options.h to fix include loop */
+/* BuilderContext defined in builder-cache.h to fix include loop */
 
 #define BUILDER_TYPE_CONTEXT (builder_context_get_type ())
 #define BUILDER_CONTEXT(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), BUILDER_TYPE_CONTEXT, BuilderContext))
@@ -36,10 +36,17 @@ G_BEGIN_DECLS
 GType builder_context_get_type (void);
 
 GFile *         builder_context_get_app_dir (BuilderContext *self);
+GFile *         builder_context_get_app_dir_raw (BuilderContext *self);
+GFile *         builder_context_get_run_dir (BuilderContext *self);
 GFile *         builder_context_get_base_dir (BuilderContext *self);
+void            builder_context_set_base_dir (BuilderContext *self,
+                                              GFile          *base_dir);
 GFile *         builder_context_get_state_dir (BuilderContext *self);
 GFile *         builder_context_get_cache_dir (BuilderContext *self);
 GFile *         builder_context_get_build_dir (BuilderContext *self);
+GFile *         builder_context_allocate_build_subdir (BuilderContext *self,
+                                                       const char *name,
+                                                       GError **error);
 GFile *         builder_context_get_ccache_dir (BuilderContext *self);
 GFile *         builder_context_get_download_dir (BuilderContext *self);
 SoupSession *   builder_context_get_soup_session (BuilderContext *self);
@@ -70,14 +77,34 @@ void            builder_context_set_options (BuilderContext *self,
 gboolean        builder_context_get_build_runtime (BuilderContext *self);
 void            builder_context_set_build_runtime (BuilderContext *self,
                                                    gboolean        build_runtime);
+gboolean        builder_context_get_build_extension (BuilderContext *self);
+void            builder_context_set_build_extension (BuilderContext *self,
+                                                     gboolean        build_extension);
 gboolean        builder_context_get_separate_locales (BuilderContext *self);
 void            builder_context_set_separate_locales (BuilderContext *self,
                                                       gboolean        separate_locales);
+gboolean        builder_context_get_rebuild_on_sdk_change (BuilderContext *self);
+void            builder_context_set_rebuild_on_sdk_change (BuilderContext *self,
+                                                           gboolean        rebuild_on_sdk_change);
+char *          builder_context_get_checksum_for (BuilderContext *self,
+                                                  const char *name);
+void            builder_context_set_checksum_for (BuilderContext *self,
+                                                  const char *name,
+                                                  const char *checksum);
 
-BuilderContext *builder_context_new (GFile *base_dir,
+
+BuilderContext *builder_context_new (GFile *run_dir,
                                      GFile *app_dir);
 gboolean        builder_context_enable_ccache (BuilderContext *self,
                                                GError        **error);
+gboolean        builder_context_enable_rofiles (BuilderContext *self,
+                                                GError        **error);
+gboolean        builder_context_disable_rofiles (BuilderContext *self,
+                                                 GError        **error);
+gboolean        builder_context_get_rofiles_active (BuilderContext *self);
+gboolean        builder_context_get_use_rofiles (BuilderContext *self);
+void            builder_context_set_use_rofiles (BuilderContext *self,
+                                                 gboolean use_rofiles);
 char **         builder_context_extend_env (BuilderContext *self,
                                             char          **envp);
 

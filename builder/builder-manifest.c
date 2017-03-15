@@ -30,10 +30,19 @@
 #include "builder-manifest.h"
 #include "builder-utils.h"
 #include "flatpak-utils.h"
+#include "builder-post-process.h"
 
 #include "libglnx/libglnx.h"
 
 #define LOCALES_SEPARATE_DIR "share/runtime/locale"
+
+static BuilderContext *demarshal_build_context = NULL;
+
+void
+builder_manifest_set_demarshal_buid_context (BuilderContext *build_context)
+{
+  g_set_object (&demarshal_build_context, build_context);
+}
 
 struct BuilderManifest
 {
@@ -42,6 +51,7 @@ struct BuilderManifest
   char           *id;
   char           *id_platform;
   char           *branch;
+  char           *type;
   char           *runtime;
   char           *runtime_commit;
   char           *runtime_version;
@@ -58,6 +68,7 @@ struct BuilderManifest
   char          **cleanup;
   char          **cleanup_commands;
   char          **cleanup_platform;
+  char          **cleanup_platform_commands;
   char          **finish_args;
   char          **tags;
   char           *rename_desktop_file;
@@ -67,6 +78,7 @@ struct BuilderManifest
   char           *desktop_file_name_prefix;
   char           *desktop_file_name_suffix;
   gboolean        build_runtime;
+  gboolean        build_extension;
   gboolean        writable_sdk;
   gboolean        appstream_compose;
   char          **sdk_extensions;
@@ -110,8 +122,10 @@ enum {
   PROP_MODULES,
   PROP_CLEANUP,
   PROP_CLEANUP_COMMANDS,
+  PROP_CLEANUP_PLATFORM_COMMANDS,
   PROP_CLEANUP_PLATFORM,
   PROP_BUILD_RUNTIME,
+  PROP_BUILD_EXTENSION,
   PROP_SEPARATE_LOCALES,
   PROP_WRITABLE_SDK,
   PROP_APPSTREAM_COMPOSE,
@@ -153,6 +167,7 @@ builder_manifest_finalize (GObject *object)
   g_strfreev (self->cleanup);
   g_strfreev (self->cleanup_commands);
   g_strfreev (self->cleanup_platform);
+  g_strfreev (self->cleanup_platform_commands);
   g_strfreev (self->finish_args);
   g_strfreev (self->tags);
   g_free (self->rename_desktop_file);
@@ -165,7 +180,8 @@ builder_manifest_finalize (GObject *object)
 }
 
 static gboolean
-expand_modules (GList *modules, GList **expanded, GHashTable *names, GError **error)
+expand_modules (BuilderContext *context, GList *modules,
+                GList **expanded, GHashTable *names, GError **error)
 {
   GList *l;
 
@@ -175,10 +191,10 @@ expand_modules (GList *modules, GList **expanded, GHashTable *names, GError **er
       GList *submodules = NULL;
       const char *name;
 
-      if (builder_module_get_disabled (m))
+      if (!builder_module_is_enabled (m, context))
         continue;
 
-      if (!expand_modules (builder_module_get_modules (m), &submodules, names, error))
+      if (!expand_modules (context, builder_module_get_modules (m), &submodules, names, error))
         return FALSE;
 
       *expanded = g_list_concat (*expanded, submodules);
@@ -306,6 +322,10 @@ builder_manifest_get_property (GObject    *object,
       g_value_set_boxed (value, self->cleanup_platform);
       break;
 
+    case PROP_CLEANUP_PLATFORM_COMMANDS:
+      g_value_set_boxed (value, self->cleanup_platform_commands);
+      break;
+
     case PROP_FINISH_ARGS:
       g_value_set_boxed (value, self->finish_args);
       break;
@@ -316,6 +336,10 @@ builder_manifest_get_property (GObject    *object,
 
     case PROP_BUILD_RUNTIME:
       g_value_set_boolean (value, self->build_runtime);
+      break;
+
+    case PROP_BUILD_EXTENSION:
+      g_value_set_boolean (value, self->build_extension);
       break;
 
     case PROP_SEPARATE_LOCALES:
@@ -492,6 +516,12 @@ builder_manifest_set_property (GObject      *object,
       g_strfreev (tmp);
       break;
 
+    case PROP_CLEANUP_PLATFORM_COMMANDS:
+      tmp = self->cleanup_platform_commands;
+      self->cleanup_platform_commands = g_strdupv (g_value_get_boxed (value));
+      g_strfreev (tmp);
+      break;
+
     case PROP_FINISH_ARGS:
       tmp = self->finish_args;
       self->finish_args = g_strdupv (g_value_get_boxed (value));
@@ -506,6 +536,10 @@ builder_manifest_set_property (GObject      *object,
 
     case PROP_BUILD_RUNTIME:
       self->build_runtime = g_value_get_boolean (value);
+      break;
+
+    case PROP_BUILD_EXTENSION:
+      self->build_extension = g_value_get_boolean (value);
       break;
 
     case PROP_SEPARATE_LOCALES:
@@ -729,6 +763,13 @@ builder_manifest_class_init (BuilderManifestClass *klass)
                                                        G_TYPE_STRV,
                                                        G_PARAM_READWRITE));
   g_object_class_install_property (object_class,
+                                   PROP_CLEANUP_PLATFORM_COMMANDS,
+                                   g_param_spec_boxed ("cleanup-platform-commands",
+                                                       "",
+                                                       "",
+                                                       G_TYPE_STRV,
+                                                       G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
                                    PROP_FINISH_ARGS,
                                    g_param_spec_boxed ("finish-args",
                                                        "",
@@ -738,6 +779,13 @@ builder_manifest_class_init (BuilderManifestClass *klass)
   g_object_class_install_property (object_class,
                                    PROP_BUILD_RUNTIME,
                                    g_param_spec_boolean ("build-runtime",
+                                                         "",
+                                                         "",
+                                                         FALSE,
+                                                         G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_BUILD_EXTENSION,
+                                   g_param_spec_boolean ("build-extension",
                                                          "",
                                                          "",
                                                          FALSE,
@@ -904,7 +952,10 @@ builder_manifest_deserialize_property (JsonSerializable *serializable,
               if (JSON_NODE_HOLDS_VALUE (element_node) &&
                   json_node_get_value_type (element_node) == G_TYPE_STRING)
                 {
-                  const char *module_path = json_node_get_string (element_node);
+                  const char *module_relpath = json_node_get_string (element_node);
+                  g_autoptr(GFile) module_file =
+                    g_file_resolve_relative_path (builder_context_get_base_dir (demarshal_build_context), module_relpath);
+                  const char *module_path = flatpak_file_get_path_cached (module_file);
                   g_autofree char *json = NULL;
                   g_autoptr(GError) error = NULL;
 
@@ -1105,7 +1156,7 @@ builder_manifest_start (BuilderManifest *self,
                              self->base, builder_manifest_get_base_version (self));
     }
 
-  if (!expand_modules (self->modules, &self->expanded_modules, names, error))
+  if (!expand_modules (context, self->modules, &self->expanded_modules, names, error))
     return FALSE;
 
   stop_at = builder_context_get_stop_at (context);
@@ -1117,6 +1168,7 @@ builder_manifest_start (BuilderManifest *self,
 
 gboolean
 builder_manifest_init_app_dir (BuilderManifest *self,
+                               BuilderCache    *cache,
                                BuilderContext  *context,
                                GError         **error)
 {
@@ -1156,13 +1208,20 @@ builder_manifest_init_app_dir (BuilderManifest *self,
   g_ptr_array_add (args, g_strdup ("build-init"));
   if (self->writable_sdk || self->build_runtime)
     {
-      g_ptr_array_add (args, g_strdup ("-w"));
+      if (self->build_runtime)
+        g_ptr_array_add (args, g_strdup ("--type=runtime"));
+      else
+        g_ptr_array_add (args, g_strdup ("--writable-sdk"));
 
       for (i = 0; self->sdk_extensions != NULL && self->sdk_extensions[i] != NULL; i++)
         {
           const char *ext = self->sdk_extensions[i];
           g_ptr_array_add (args, g_strdup_printf ("--sdk-extension=%s", ext));
         }
+    }
+  if (self->build_extension)
+    {
+      g_ptr_array_add (args, g_strdup ("--type=extension"));
     }
   if (self->tags)
     {
@@ -1192,7 +1251,7 @@ builder_manifest_init_app_dir (BuilderManifest *self,
   g_ptr_array_add (args, g_strdup (builder_manifest_get_runtime_version (self)));
   g_ptr_array_add (args, NULL);
 
-  commandline = g_strjoinv (" ", (char **) args->pdata);
+  commandline = flatpak_quote_argv ((const char **) args->pdata);
   g_debug ("Running '%s'", commandline);
 
   subp =
@@ -1214,6 +1273,11 @@ builder_manifest_init_app_dir (BuilderManifest *self,
         return FALSE;
     }
 
+  /* Fix up any python timestamps from base */
+  if (!builder_post_process (BUILDER_POST_PROCESS_FLAGS_PYTHON_TIMESTAMPS, app_dir,
+                             cache, context, error))
+    return FALSE;
+
   return TRUE;
 }
 
@@ -1229,13 +1293,17 @@ builder_manifest_checksum (BuilderManifest *self,
   builder_cache_checksum_str (cache, self->runtime);
   builder_cache_checksum_str (cache, builder_manifest_get_runtime_version (self));
   builder_cache_checksum_str (cache, self->sdk);
-  builder_cache_checksum_str (cache, self->sdk_commit);
+  /* Always rebuild on sdk change if we're actually including the sdk in the cache */
+  if (self->writable_sdk || self->build_runtime ||
+      builder_context_get_rebuild_on_sdk_change (context))
+    builder_cache_checksum_str (cache, self->sdk_commit);
   builder_cache_checksum_str (cache, self->var);
   builder_cache_checksum_str (cache, self->metadata);
   builder_cache_checksum_strv (cache, self->tags);
   builder_cache_checksum_boolean (cache, self->writable_sdk);
   builder_cache_checksum_strv (cache, self->sdk_extensions);
   builder_cache_checksum_boolean (cache, self->build_runtime);
+  builder_cache_checksum_boolean (cache, self->build_extension);
   builder_cache_checksum_boolean (cache, self->separate_locales);
   builder_cache_checksum_str (cache, self->base);
   builder_cache_checksum_str (cache, self->base_version);
@@ -1301,11 +1369,14 @@ builder_manifest_checksum_for_platform (BuilderManifest *self,
                                         BuilderCache    *cache,
                                         BuilderContext  *context)
 {
+  GList *l;
+
   builder_cache_checksum_str (cache, BUILDER_MANIFEST_CHECKSUM_PLATFORM_VERSION);
   builder_cache_checksum_str (cache, self->id_platform);
   builder_cache_checksum_str (cache, self->runtime_commit);
   builder_cache_checksum_str (cache, self->metadata_platform);
   builder_cache_checksum_strv (cache, self->cleanup_platform);
+  builder_cache_checksum_strv (cache, self->cleanup_platform_commands);
   builder_cache_checksum_strv (cache, self->platform_extensions);
 
   if (self->metadata_platform)
@@ -1321,11 +1392,18 @@ builder_manifest_checksum_for_platform (BuilderManifest *self,
       else
         g_warning ("Can't load metadata-platform file %s: %s", self->metadata_platform, my_error->message);
     }
+
+  for (l = self->expanded_modules; l != NULL; l = l->next)
+    {
+      BuilderModule *m = l->data;
+      builder_module_checksum_for_platform (m, cache, context);
+    }
 }
 
 gboolean
 builder_manifest_download (BuilderManifest *self,
                            gboolean         update_vcs,
+                           const char      *only_module,
                            BuilderContext  *context,
                            GError         **error)
 {
@@ -1337,6 +1415,9 @@ builder_manifest_download (BuilderManifest *self,
     {
       BuilderModule *m = l->data;
       const char *name = builder_module_get_name (m);
+
+      if (only_module && strcmp (name, only_module) != 0)
+        continue;
 
       if (stop_at != NULL && strcmp (name, stop_at) == 0)
         {
@@ -1351,6 +1432,65 @@ builder_manifest_download (BuilderManifest *self,
   return TRUE;
 }
 
+static gboolean
+setup_context (BuilderManifest *self,
+               BuilderContext  *context,
+               GError         **error)
+{
+  builder_context_set_options (context, self->build_options);
+  builder_context_set_global_cleanup (context, (const char **) self->cleanup);
+  builder_context_set_global_cleanup_platform (context, (const char **) self->cleanup_platform);
+  if (self->build_runtime && self->build_extension)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                   "Can't build both a runtime and an extension");
+      return FALSE;
+    }
+  builder_context_set_build_runtime (context, self->build_runtime);
+  builder_context_set_build_extension (context, self->build_extension);
+  builder_context_set_separate_locales (context, self->separate_locales);
+  return TRUE;
+}
+
+gboolean
+builder_manifest_build_shell (BuilderManifest *self,
+                              BuilderContext  *context,
+                              const char      *modulename,
+                              GError         **error)
+{
+  GList *l;
+  BuilderModule *found = NULL;
+
+  if (!builder_context_enable_rofiles (context, error))
+    return FALSE;
+
+  if (!setup_context (self, context, error))
+    return FALSE;
+
+  for (l = self->expanded_modules; l != NULL; l = l->next)
+    {
+      BuilderModule *m = l->data;
+      const char *name = builder_module_get_name (m);
+
+      if (strcmp (name, modulename) == 0)
+        {
+          found = m;
+          break;
+        }
+    }
+
+  if (found == NULL)
+    return flatpak_fail (error, "Can't find module %s", modulename);
+
+  if (!builder_module_get_sources (found))
+    return flatpak_fail (error, "No sources for module %s", modulename);
+
+  if (!builder_module_build (found, NULL, context, TRUE, error))
+    return FALSE;
+
+  return TRUE;
+}
+
 gboolean
 builder_manifest_build (BuilderManifest *self,
                         BuilderCache    *cache,
@@ -1360,11 +1500,8 @@ builder_manifest_build (BuilderManifest *self,
   const char *stop_at = builder_context_get_stop_at (context);
   GList *l;
 
-  builder_context_set_options (context, self->build_options);
-  builder_context_set_global_cleanup (context, (const char **) self->cleanup);
-  builder_context_set_global_cleanup_platform (context, (const char **) self->cleanup_platform);
-  builder_context_set_build_runtime (context, self->build_runtime);
-  builder_context_set_separate_locales (context, self->separate_locales);
+  if (!setup_context (self, context, error))
+    return FALSE;
 
   g_print ("Starting build of %s\n", self->id ? self->id : "app");
   for (l = self->expanded_modules; l != NULL; l = l->next)
@@ -1393,7 +1530,13 @@ builder_manifest_build (BuilderManifest *self,
         {
           g_autofree char *body =
             g_strdup_printf ("Built %s\n", name);
-          if (!builder_module_build (m, cache, context, error))
+          if (!builder_module_ensure_writable (m, cache, context, error))
+            return FALSE;
+          if (!builder_context_enable_rofiles (context, error))
+            return FALSE;
+          if (!builder_module_build (m, cache, context, FALSE, error))
+            return FALSE;
+          if (!builder_context_disable_rofiles (context, error))
             return FALSE;
           if (!builder_cache_commit (cache, body, error))
             return FALSE;
@@ -1418,6 +1561,7 @@ builder_manifest_build (BuilderManifest *self,
 static gboolean
 command (GFile      *app_dir,
          char      **env_vars,
+         char      **extra_args,
          const char *commandline,
          GError    **error)
 {
@@ -1429,6 +1573,11 @@ command (GFile      *app_dir,
   g_ptr_array_add (args, g_strdup ("build"));
 
   g_ptr_array_add (args, g_strdup ("--nofilesystem=host"));
+  if (extra_args)
+    {
+      for (i = 0; extra_args[i] != NULL; i++)
+        g_ptr_array_add (args, g_strdup (extra_args[i]));
+    }
 
   if (env_vars)
     {
@@ -1615,8 +1764,6 @@ builder_manifest_cleanup (BuilderManifest *self,
                           BuilderContext  *context,
                           GError         **error)
 {
-  GFile *app_dir = builder_context_get_app_dir (context);
-
   g_autoptr(GFile) app_root = NULL;
   GList *l;
   g_auto(GStrv) env = NULL;
@@ -1631,16 +1778,23 @@ builder_manifest_cleanup (BuilderManifest *self,
     {
       g_autoptr(GHashTable) to_remove_ht = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
       g_autofree char **keys = NULL;
+      GFile *app_dir = NULL;
       guint n_keys;
 
       g_print ("Cleaning up\n");
+
+      if (!builder_context_enable_rofiles (context, error))
+        return FALSE;
+
+      /* Call after enabling rofiles */
+      app_dir = builder_context_get_app_dir (context);
 
       if (self->cleanup_commands)
         {
           env = builder_options_get_env (self->build_options, context);
           for (i = 0; self->cleanup_commands[i] != NULL; i++)
             {
-              if (!command (app_dir, env, self->cleanup_commands[i], error))
+              if (!command (app_dir, env, NULL, self->cleanup_commands[i], error))
                 return FALSE;
             }
         }
@@ -1727,14 +1881,10 @@ builder_manifest_cleanup (BuilderManifest *self,
 
               g_string_append (new_contents, to_replace);
 
-              if (!g_file_replace_contents (appdata_file,
-                                            new_contents->str,
-                                            new_contents->len,
-                                            NULL,
-                                            FALSE,
-                                            G_FILE_CREATE_NONE,
-                                            NULL,
-                                            NULL, error))
+              if (!g_file_set_contents (flatpak_file_get_path_cached (appdata_file),
+                                        new_contents->str,
+                                        new_contents->len,
+                                        error))
                 return FALSE;
             }
         }
@@ -1825,8 +1975,8 @@ builder_manifest_cleanup (BuilderManifest *self,
           if (desktop_contents == NULL)
             return FALSE;
 
-          if (!g_file_replace_contents (desktop, desktop_contents, desktop_size, NULL, FALSE,
-                                        0, NULL, NULL, error))
+          if (!g_file_set_contents (flatpak_file_get_path_cached (desktop),
+                                    desktop_contents, desktop_size, error))
             return FALSE;
         }
 
@@ -1843,6 +1993,9 @@ builder_manifest_cleanup (BuilderManifest *self,
                                   NULL))
             return FALSE;
         }
+
+      if (!builder_context_disable_rofiles (context, error))
+        return FALSE;
 
       if (!builder_cache_commit (cache, "Cleanup", error))
         return FALSE;
@@ -1862,12 +2015,9 @@ builder_manifest_finish (BuilderManifest *self,
                          BuilderContext  *context,
                          GError         **error)
 {
-  GFile *app_dir = builder_context_get_app_dir (context);
-
   g_autoptr(GFile) manifest_file = NULL;
   g_autoptr(GFile) debuginfo_dir = NULL;
   g_autoptr(GFile) locale_parent_dir = NULL;
-  g_autofree char *app_dir_path = g_file_get_path (app_dir);
   g_autofree char *json = NULL;
   g_autofree char *commandline = NULL;
   g_autoptr(GPtrArray) args = NULL;
@@ -1879,16 +2029,29 @@ builder_manifest_finish (BuilderManifest *self,
   builder_manifest_checksum_for_finish (self, cache, context);
   if (!builder_cache_lookup (cache, "finish"))
     {
+      GFile *app_dir = NULL;
       g_print ("Finishing app\n");
+
+      if (!builder_context_enable_rofiles (context, error))
+        return FALSE;
+
+      /* Call after enabling rofiles */
+      app_dir = builder_context_get_app_dir (context);
 
       if (self->metadata)
         {
           GFile *base_dir = builder_context_get_base_dir (context);
           g_autoptr(GFile) dest_metadata = g_file_get_child (app_dir, "metadata");
           g_autoptr(GFile) src_metadata = g_file_resolve_relative_path (base_dir, self->metadata);
+          g_autofree char *contents = NULL;
+          gsize length;
 
-          if (!g_file_copy (src_metadata, dest_metadata, G_FILE_COPY_OVERWRITE, NULL,
-                            NULL, NULL, error))
+          if (!g_file_get_contents (flatpak_file_get_path_cached (src_metadata),
+                                    &contents, &length, error))
+            return FALSE;
+
+          if (!g_file_set_contents (flatpak_file_get_path_cached (dest_metadata),
+                                    contents, length, error))
             return FALSE;
         }
 
@@ -1923,10 +2086,10 @@ builder_manifest_finish (BuilderManifest *self,
             g_ptr_array_add (args, g_strdup (self->finish_args[i]));
         }
 
-      g_ptr_array_add (args, g_strdup (app_dir_path));
+      g_ptr_array_add (args, g_file_get_path (app_dir));
       g_ptr_array_add (args, NULL);
 
-      commandline = g_strjoinv (" ", (char **) args->pdata);
+      commandline = flatpak_quote_argv ((const char **) args->pdata);
       g_debug ("Running '%s'", commandline);
 
       subp =
@@ -1971,8 +2134,8 @@ builder_manifest_finish (BuilderManifest *self,
             return FALSE;
         }
 
-      if (!g_file_replace_contents (manifest_file, json, strlen (json), NULL, FALSE,
-                                    0, NULL, NULL, error))
+      if (!g_file_set_contents (flatpak_file_get_path_cached (manifest_file),
+                                json, strlen (json), error))
         return FALSE;
 
       if (self->build_runtime)
@@ -2017,11 +2180,9 @@ builder_manifest_finish (BuilderManifest *self,
           metadata_locale_file = g_file_get_child (app_dir, "metadata.locale");
           metadata_contents = g_strdup_printf ("[Runtime]\n"
                                                "name=%s\n", locale_id);
-          if (!g_file_replace_contents (metadata_locale_file,
-                                        metadata_contents, strlen (metadata_contents),
-                                        NULL, FALSE,
-                                        G_FILE_CREATE_REPLACE_DESTINATION,
-                                        NULL, NULL, error))
+          if (!g_file_set_contents (flatpak_file_get_path_cached (metadata_locale_file),
+                                    metadata_contents, strlen (metadata_contents),
+                                    error))
             return FALSE;
         }
 
@@ -2055,12 +2216,13 @@ builder_manifest_finish (BuilderManifest *self,
 
           metadata_contents = g_strdup_printf ("[Runtime]\n"
                                                "name=%s\n", debug_id);
-          if (!g_file_replace_contents (metadata_debuginfo_file,
-                                        metadata_contents, strlen (metadata_contents), NULL, FALSE,
-                                        G_FILE_CREATE_REPLACE_DESTINATION,
-                                        NULL, NULL, error))
+          if (!g_file_set_contents (flatpak_file_get_path_cached (metadata_debuginfo_file),
+                                    metadata_contents, strlen (metadata_contents), error))
             return FALSE;
         }
+
+      if (!builder_context_disable_rofiles (context, error))
+        return FALSE;
 
       if (!builder_cache_commit (cache, "Finish", error))
         return FALSE;
@@ -2079,7 +2241,6 @@ builder_manifest_create_platform (BuilderManifest *self,
                                   BuilderContext  *context,
                                   GError         **error)
 {
-  GFile *app_dir = builder_context_get_app_dir (context);
   g_autofree char *commandline = NULL;
 
   g_autoptr(GFile) locale_dir = NULL;
@@ -2098,8 +2259,15 @@ builder_manifest_create_platform (BuilderManifest *self,
       g_autoptr(GFile) platform_dir = NULL;
       g_autoptr(GSubprocess) subp = NULL;
       g_autoptr(GPtrArray) args = NULL;
+      GFile *app_dir = NULL;
 
       g_print ("Creating platform based on %s\n", self->runtime);
+
+      if (!builder_context_enable_rofiles (context, error))
+        return FALSE;
+
+      /* Call after enabling rofiles */
+      app_dir = builder_context_get_app_dir (context);
 
       platform_dir = g_file_get_child (app_dir, "platform");
 
@@ -2126,7 +2294,7 @@ builder_manifest_create_platform (BuilderManifest *self,
 
       g_ptr_array_add (args, NULL);
 
-      commandline = g_strjoinv (" ", (char **) args->pdata);
+      commandline = flatpak_quote_argv ((const char **) args->pdata);
       g_debug ("Running '%s'", commandline);
 
       subp =
@@ -2155,10 +2323,48 @@ builder_manifest_create_platform (BuilderManifest *self,
           GFile *base_dir = builder_context_get_base_dir (context);
           g_autoptr(GFile) dest_metadata = g_file_get_child (app_dir, "metadata.platform");
           g_autoptr(GFile) src_metadata = g_file_resolve_relative_path (base_dir, self->metadata_platform);
+          g_autofree char *contents = NULL;
+          gsize length;
 
-          if (!g_file_copy (src_metadata, dest_metadata, G_FILE_COPY_OVERWRITE, NULL,
-                            NULL, NULL, error))
+          if (!g_file_get_contents (flatpak_file_get_path_cached (src_metadata),
+                                    &contents, &length, error))
             return FALSE;
+
+          if (!g_file_set_contents (flatpak_file_get_path_cached (dest_metadata),
+                                    contents, length, error))
+            return FALSE;
+        }
+      else
+        {
+          g_autoptr(GFile) metadata = g_file_get_child (app_dir, "metadata");
+          g_autoptr(GFile) dest_metadata = g_file_get_child (app_dir, "metadata.platform");
+          g_autoptr(GKeyFile) keyfile = g_key_file_new ();
+          g_autofree char *sdk_locale_id = builder_manifest_get_locale_id (self);
+          g_autofree char *sdk_debug_id = builder_manifest_get_debug_id (self);
+          g_autofree char *sdk_locale_group = g_strdup_printf ("Extension %s", sdk_locale_id);
+          g_autofree char *sdk_debug_group = g_strdup_printf ("Extension %s", sdk_debug_id);
+
+          if (!g_key_file_load_from_file (keyfile,
+                                          flatpak_file_get_path_cached (metadata),
+                                          G_KEY_FILE_KEEP_COMMENTS|G_KEY_FILE_KEEP_TRANSLATIONS,
+                                          error))
+            {
+              g_prefix_error (error, "Can't load metadata file: ");
+              return FALSE;
+            }
+
+          g_key_file_set_string (keyfile, "Runtime", "name", self->id_platform);
+
+          g_key_file_remove_group (keyfile, sdk_locale_group, NULL);
+          g_key_file_remove_group (keyfile, sdk_debug_group, NULL);
+
+          if (!g_key_file_save_to_file (keyfile,
+                                        flatpak_file_get_path_cached (dest_metadata),
+                                        error))
+            {
+              g_prefix_error (error, "Can't save metadata.platform: ");
+              return FALSE;
+            }
         }
 
       for (l = self->expanded_modules; l != NULL; l = l->next)
@@ -2252,6 +2458,18 @@ builder_manifest_create_platform (BuilderManifest *self,
             }
         }
 
+      if (self->cleanup_platform_commands)
+        {
+          g_auto(GStrv) env = builder_options_get_env (self->build_options, context);
+          char *extra_args[] = { "--sdk-dir=platform", "--metadata=metadata.platform", NULL};
+
+          for (i = 0; self->cleanup_platform_commands[i] != NULL; i++)
+            {
+              if (!command (app_dir, env, extra_args, self->cleanup_platform_commands[i], error))
+                return FALSE;
+            }
+        }
+
       if (self->separate_locales && locale_dir && g_file_query_exists (locale_dir, NULL))
         {
           g_autoptr(GFile) metadata_file = NULL;
@@ -2283,13 +2501,14 @@ builder_manifest_create_platform (BuilderManifest *self,
           metadata_locale_file = g_file_get_child (app_dir, "metadata.platform.locale");
           metadata_contents = g_strdup_printf ("[Runtime]\n"
                                                "name=%s\n", locale_id);
-          if (!g_file_replace_contents (metadata_locale_file,
-                                        metadata_contents, strlen (metadata_contents),
-                                        NULL, FALSE,
-                                        G_FILE_CREATE_REPLACE_DESTINATION,
-                                        NULL, NULL, error))
+          if (!g_file_set_contents (flatpak_file_get_path_cached (metadata_locale_file),
+                                    metadata_contents, strlen (metadata_contents),
+                                    error))
             return FALSE;
         }
+
+      if (!builder_context_disable_rofiles (context, error))
+        return FALSE;
 
       if (!builder_cache_commit (cache, "Created platform", error))
         return FALSE;
@@ -2305,19 +2524,20 @@ builder_manifest_create_platform (BuilderManifest *self,
 
 gboolean
 builder_manifest_show_deps (BuilderManifest *self,
+                            BuilderContext  *context,
                             GError         **error)
 {
   g_autoptr(GHashTable) names = g_hash_table_new (g_str_hash, g_str_equal);
   GList *l;
 
-  if (!expand_modules (self->modules, &self->expanded_modules, names, error))
+  if (!expand_modules (context, self->modules, &self->expanded_modules, names, error))
     return FALSE;
 
   for (l = self->expanded_modules; l != NULL; l = l->next)
     {
       BuilderModule *module = l->data;
 
-      if (!builder_module_show_deps (module, error))
+      if (!builder_module_show_deps (module, context, error))
         return FALSE;
     }
 
@@ -2339,6 +2559,9 @@ builder_manifest_run (BuilderManifest *self,
   g_auto(GStrv) env = NULL;
   g_auto(GStrv) build_args = NULL;
   int i;
+
+  if (!builder_context_enable_rofiles (context, error))
+    return FALSE;
 
   if (!flatpak_mkdir_p (builder_context_get_build_dir (context),
                         NULL, error))
@@ -2373,6 +2596,9 @@ builder_manifest_run (BuilderManifest *self,
         g_ptr_array_add (args, g_strdup_printf ("--env=%s", env[i]));
     }
 
+  /* Just add something so that we get the default rules (own our own id) */
+  g_ptr_array_add (args, g_strdup ("--talk-name=org.freedesktop.DBus"));
+
   /* Inherit all finish args except the filesystem and command
    * ones so the command gets the same access as the final app
    */
@@ -2382,6 +2608,9 @@ builder_manifest_run (BuilderManifest *self,
         {
           const char *arg = self->finish_args[i];
           if (!g_str_has_prefix (arg, "--filesystem") &&
+              !g_str_has_prefix (arg, "--extension") &&
+              !g_str_has_prefix (arg, "--sdk") &&
+              !g_str_has_prefix (arg, "--runtime") &&
               !g_str_has_prefix (arg, "--command"))
             g_ptr_array_add (args, g_strdup (arg));
         }
@@ -2395,7 +2624,7 @@ builder_manifest_run (BuilderManifest *self,
     g_ptr_array_add (args, g_strdup (argv[i]));
   g_ptr_array_add (args, NULL);
 
-  commandline = g_strjoinv (" ", (char **) args->pdata);
+  commandline = flatpak_quote_argv ((const char **) args->pdata);
   g_debug ("Running '%s'", commandline);
 
   if (execvp ((char *) args->pdata[0], (char **) args->pdata) == -1)

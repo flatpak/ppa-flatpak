@@ -33,6 +33,7 @@
 #include "flatpak-utils.h"
 #include "builder-utils.h"
 #include "builder-module.h"
+#include "builder-post-process.h"
 
 struct BuilderModule
 {
@@ -46,10 +47,14 @@ struct BuilderModule
   char          **make_args;
   char          **make_install_args;
   char           *buildsystem;
+  char          **ensure_writable;
+  char          **only_arches;
+  char          **skip_arches;
   gboolean        disabled;
   gboolean        rm_configure;
   gboolean        no_autogen;
   gboolean        no_parallel_make;
+  gboolean        no_make_install;
   gboolean        no_python_timestamp_fix;
   gboolean        cmake;
   gboolean        builddir;
@@ -59,6 +64,7 @@ struct BuilderModule
   char          **cleanup_platform;
   GList          *sources;
   GList          *modules;
+  char          **build_commands;
 };
 
 typedef struct
@@ -79,6 +85,7 @@ enum {
   PROP_DISABLED,
   PROP_NO_AUTOGEN,
   PROP_NO_PARALLEL_MAKE,
+  PROP_NO_MAKE_INSTALL,
   PROP_NO_PYTHON_TIMESTAMP_FIX,
   PROP_CMAKE,
   PROP_BUILDSYSTEM,
@@ -86,15 +93,33 @@ enum {
   PROP_CONFIG_OPTS,
   PROP_MAKE_ARGS,
   PROP_MAKE_INSTALL_ARGS,
+  PROP_ENSURE_WRITABLE,
+  PROP_ONLY_ARCHES,
+  PROP_SKIP_ARCHES,
   PROP_SOURCES,
   PROP_BUILD_OPTIONS,
   PROP_CLEANUP,
   PROP_CLEANUP_PLATFORM,
   PROP_POST_INSTALL,
   PROP_MODULES,
+  PROP_BUILD_COMMANDS,
   LAST_PROP
 };
 
+static void
+collect_cleanup_for_path (const char **patterns,
+                          const char  *path,
+                          const char  *add_prefix,
+                          GHashTable  *to_remove_ht)
+{
+  int i;
+
+  if (patterns == NULL)
+    return;
+
+  for (i = 0; patterns[i] != NULL; i++)
+    flatpak_collect_matches_for_path_pattern (path, patterns[i], add_prefix, to_remove_ht);
+}
 
 static void
 builder_module_finalize (GObject *object)
@@ -109,11 +134,15 @@ builder_module_finalize (GObject *object)
   g_strfreev (self->config_opts);
   g_strfreev (self->make_args);
   g_strfreev (self->make_install_args);
+  g_strfreev (self->ensure_writable);
+  g_strfreev (self->only_arches);
+  g_strfreev (self->skip_arches);
   g_clear_object (&self->build_options);
   g_list_free_full (self->sources, g_object_unref);
   g_strfreev (self->cleanup);
   g_strfreev (self->cleanup_platform);
   g_list_free_full (self->modules, g_object_unref);
+  g_strfreev (self->build_commands);
 
   if (self->changes)
     g_ptr_array_unref (self->changes);
@@ -155,6 +184,10 @@ builder_module_get_property (GObject    *object,
       g_value_set_boolean (value, self->no_parallel_make);
       break;
 
+    case PROP_NO_MAKE_INSTALL:
+      g_value_set_boolean (value, self->no_make_install);
+      break;
+
     case PROP_NO_PYTHON_TIMESTAMP_FIX:
       g_value_set_boolean (value, self->no_python_timestamp_fix);
       break;
@@ -183,6 +216,18 @@ builder_module_get_property (GObject    *object,
       g_value_set_boxed (value, self->make_install_args);
       break;
 
+    case PROP_ENSURE_WRITABLE:
+      g_value_set_boxed (value, self->ensure_writable);
+      break;
+
+    case PROP_ONLY_ARCHES:
+      g_value_set_boxed (value, self->only_arches);
+      break;
+
+    case PROP_SKIP_ARCHES:
+      g_value_set_boxed (value, self->skip_arches);
+      break;
+
     case PROP_POST_INSTALL:
       g_value_set_boxed (value, self->post_install);
       break;
@@ -205,6 +250,10 @@ builder_module_get_property (GObject    *object,
 
     case PROP_MODULES:
       g_value_set_pointer (value, self->modules);
+      break;
+
+    case PROP_BUILD_COMMANDS:
+      g_value_set_boxed (value, self->build_commands);
       break;
 
     default:
@@ -253,6 +302,10 @@ builder_module_set_property (GObject      *object,
       self->no_parallel_make = g_value_get_boolean (value);
       break;
 
+    case PROP_NO_MAKE_INSTALL:
+      self->no_make_install = g_value_get_boolean (value);
+      break;
+
     case PROP_NO_PYTHON_TIMESTAMP_FIX:
       self->no_python_timestamp_fix = g_value_get_boolean (value);
       break;
@@ -288,6 +341,24 @@ builder_module_set_property (GObject      *object,
       g_strfreev (tmp);
       break;
 
+    case PROP_ENSURE_WRITABLE:
+      tmp = self->ensure_writable;
+      self->ensure_writable = g_strdupv (g_value_get_boxed (value));
+      g_strfreev (tmp);
+      break;
+
+    case PROP_ONLY_ARCHES:
+      tmp = self->only_arches;
+      self->only_arches = g_strdupv (g_value_get_boxed (value));
+      g_strfreev (tmp);
+      break;
+
+    case PROP_SKIP_ARCHES:
+      tmp = self->skip_arches;
+      self->skip_arches = g_strdupv (g_value_get_boxed (value));
+      g_strfreev (tmp);
+      break;
+
     case PROP_POST_INSTALL:
       tmp = self->post_install;
       self->post_install = g_strdupv (g_value_get_boxed (value));
@@ -320,6 +391,12 @@ builder_module_set_property (GObject      *object,
       g_list_free_full (self->modules, g_object_unref);
       /* NOTE: This takes ownership of the list! */
       self->modules = g_value_get_pointer (value);
+      break;
+
+    case PROP_BUILD_COMMANDS:
+      tmp = self->build_commands;
+      self->build_commands = g_strdupv (g_value_get_boxed (value));
+      g_strfreev (tmp);
       break;
 
     default:
@@ -374,6 +451,13 @@ builder_module_class_init (BuilderModuleClass *klass)
   g_object_class_install_property (object_class,
                                    PROP_NO_PARALLEL_MAKE,
                                    g_param_spec_boolean ("no-parallel-make",
+                                                         "",
+                                                         "",
+                                                         FALSE,
+                                                         G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_NO_MAKE_INSTALL,
+                                   g_param_spec_boolean ("no-make-install",
                                                          "",
                                                          "",
                                                          FALSE,
@@ -434,6 +518,27 @@ builder_module_class_init (BuilderModuleClass *klass)
                                                        G_TYPE_STRV,
                                                        G_PARAM_READWRITE));
   g_object_class_install_property (object_class,
+                                   PROP_ENSURE_WRITABLE,
+                                   g_param_spec_boxed ("ensure-writable",
+                                                       "",
+                                                       "",
+                                                       G_TYPE_STRV,
+                                                       G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_ONLY_ARCHES,
+                                   g_param_spec_boxed ("only-arches",
+                                                       "",
+                                                       "",
+                                                       G_TYPE_STRV,
+                                                       G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_SKIP_ARCHES,
+                                   g_param_spec_boxed ("skip-arches",
+                                                       "",
+                                                       "",
+                                                       G_TYPE_STRV,
+                                                       G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
                                    PROP_POST_INSTALL,
                                    g_param_spec_boxed ("post-install",
                                                        "",
@@ -467,6 +572,13 @@ builder_module_class_init (BuilderModuleClass *klass)
                                                          "",
                                                          "",
                                                          G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_BUILD_COMMANDS,
+                                   g_param_spec_boxed ("build-commands",
+                                                       "",
+                                                       "",
+                                                       G_TYPE_STRV,
+                                                       G_PARAM_READWRITE));
 }
 
 static void
@@ -657,6 +769,25 @@ builder_module_get_name (BuilderModule *self)
 }
 
 gboolean
+builder_module_is_enabled (BuilderModule *self,
+                           BuilderContext *context)
+{
+  if (self->disabled)
+    return FALSE;
+
+  if (self->only_arches != NULL &&
+      self->only_arches[0] != NULL &&
+      !g_strv_contains ((const char * const *) self->only_arches, builder_context_get_arch (context)))
+    return FALSE;
+
+  if (self->skip_arches != NULL &&
+      g_strv_contains ((const char * const *)self->skip_arches, builder_context_get_arch (context)))
+    return FALSE;
+
+  return TRUE;
+}
+
+gboolean
 builder_module_get_disabled (BuilderModule *self)
 {
   return self->disabled;
@@ -676,6 +807,7 @@ builder_module_get_modules (BuilderModule *self)
 
 gboolean
 builder_module_show_deps (BuilderModule *self,
+                          BuilderContext *context,
                           GError         **error)
 {
   GList *l;
@@ -685,6 +817,9 @@ builder_module_show_deps (BuilderModule *self,
   for (l = self->sources; l != NULL; l = l->next)
     {
       BuilderSource *source = l->data;
+
+      if (!builder_source_is_enabled (source, context))
+        continue;
 
       if (!builder_source_show_deps (source, error))
         return FALSE;
@@ -704,6 +839,9 @@ builder_module_download_sources (BuilderModule  *self,
   for (l = self->sources; l != NULL; l = l->next)
     {
       BuilderSource *source = l->data;
+
+      if (!builder_source_is_enabled (source, context))
+        continue;
 
       if (!builder_source_download (source, update_vcs, context, error))
         {
@@ -731,6 +869,9 @@ builder_module_extract_sources (BuilderModule  *self,
     {
       BuilderSource *source = l->data;
 
+      if (!builder_source_is_enabled (source, context))
+        continue;
+
       if (!builder_source_extract (source, dest, self->build_options, context, error))
         {
           g_prefix_error (error, "module %s: ", self->name);
@@ -741,37 +882,28 @@ builder_module_extract_sources (BuilderModule  *self,
   return TRUE;
 }
 
-static const char skip_arg[] = "skip";
-static const char strv_arg[] = "strv";
-
-static gboolean
-build (GFile          *app_dir,
-       const char     *module_name,
-       BuilderContext *context,
-       GFile          *source_dir,
-       const char     *cwd_subdir,
-       char          **flatpak_opts,
-       char          **env_vars,
-       GError        **error,
-       const gchar    *argv1,
-       ...)
+static GPtrArray *
+setup_build_args (GFile          *app_dir,
+                  const char     *module_name,
+                  BuilderContext *context,
+                  GFile          *source_dir,
+                  const char     *cwd_subdir,
+                  char          **flatpak_opts,
+                  char          **env_vars,
+                  GFile         **cwd_file)
 {
   g_autoptr(GPtrArray) args = NULL;
-  const gchar *arg;
-  const gchar **argv;
   g_autofree char *source_dir_path = g_file_get_path (source_dir);
   g_autofree char *source_dir_path_canonical = NULL;
   g_autofree char *ccache_dir_path = NULL;
-  g_autoptr(GFile) source_dir_path_canonical_file = NULL;
   const char *builddir;
-  va_list ap;
   int i;
 
   args = g_ptr_array_new_with_free_func (g_free);
   g_ptr_array_add (args, g_strdup ("flatpak"));
   g_ptr_array_add (args, g_strdup ("build"));
 
-  source_dir_path_canonical = canonicalize_file_name (source_dir_path);
+  source_dir_path_canonical = realpath (source_dir_path, NULL);
 
   if (builder_context_get_build_runtime (context))
     builddir = "/run/build-runtime/";
@@ -810,7 +942,69 @@ build (GFile          *app_dir,
       for (i = 0; env_vars[i] != NULL; i++)
         g_ptr_array_add (args, g_strdup_printf ("--env=%s", env_vars[i]));
     }
+
   g_ptr_array_add (args, g_file_get_path (app_dir));
+
+  *cwd_file = g_file_new_for_path (source_dir_path_canonical);
+
+  return g_steal_pointer (&args);
+}
+
+static gboolean
+shell (GFile          *app_dir,
+       const char     *module_name,
+       BuilderContext *context,
+       GFile          *source_dir,
+       const char     *cwd_subdir,
+       char          **flatpak_opts,
+       char          **env_vars,
+       GError        **error)
+{
+  g_autoptr(GFile) cwd_file = NULL;
+  g_autoptr(GPtrArray) args =
+    setup_build_args (app_dir, module_name, context, source_dir, cwd_subdir, flatpak_opts, env_vars, &cwd_file);
+
+  g_ptr_array_add (args, "sh");
+  g_ptr_array_add (args, NULL);
+
+  if (chdir (flatpak_file_get_path_cached (cwd_file)))
+    {
+      glnx_set_error_from_errno (error);
+      return FALSE;
+    }
+
+  if (execvp ((char *) args->pdata[0], (char **) args->pdata) == -1)
+    {
+      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno), "Unable to start flatpak build");
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+static const char skip_arg[] = "skip";
+static const char strv_arg[] = "strv";
+
+static gboolean
+build (GFile          *app_dir,
+       const char     *module_name,
+       BuilderContext *context,
+       GFile          *source_dir,
+       const char     *cwd_subdir,
+       char          **flatpak_opts,
+       char          **env_vars,
+       GError        **error,
+       const gchar    *argv1,
+       ...)
+{
+  g_autoptr(GFile) cwd_file = NULL;
+  g_autoptr(GPtrArray) args =
+    setup_build_args (app_dir, module_name, context, source_dir, cwd_subdir, flatpak_opts, env_vars, &cwd_file);
+  const gchar *arg;
+  const gchar **argv;
+  va_list ap;
+  int i;
+
   va_start (ap, argv1);
   g_ptr_array_add (args, g_strdup (argv1));
   while ((arg = va_arg (ap, const gchar *)))
@@ -829,12 +1023,11 @@ build (GFile          *app_dir,
           g_ptr_array_add (args, g_strdup (arg));
         }
     }
-  g_ptr_array_add (args, NULL);
   va_end (ap);
 
-  source_dir_path_canonical_file = g_file_new_for_path (source_dir_path_canonical);
+  g_ptr_array_add (args, NULL);
 
-  if (!builder_maybe_host_spawnv (source_dir_path_canonical_file, NULL, error, (const char * const *)args->pdata))
+  if (!builder_maybe_host_spawnv (cwd_file, NULL, error, (const char * const *)args->pdata))
     {
       g_prefix_error (error, "module %s: ", module_name);
       return FALSE;
@@ -843,328 +1036,59 @@ build (GFile          *app_dir,
   return TRUE;
 }
 
-static gboolean
-builder_module_handle_debuginfo (BuilderModule  *self,
-                                 GFile          *app_dir,
-                                 BuilderCache   *cache,
-                                 BuilderContext *context,
-                                 GError        **error)
+gboolean
+builder_module_ensure_writable (BuilderModule  *self,
+                                BuilderCache   *cache,
+                                BuilderContext *context,
+                                GError        **error)
 {
-  g_autofree char *app_dir_path = g_file_get_path (app_dir);
+  g_autoptr(GPtrArray) changes = NULL;
+  g_autoptr(GHashTable) matches = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+  GFile *app_dir = builder_context_get_app_dir (context);
+  GHashTableIter iter;
+  gpointer key, value;
   int i;
 
-  g_autoptr(GPtrArray) added = NULL;
-  g_autoptr(GPtrArray) modified = NULL;
-  g_autoptr(GPtrArray) added_or_modified = g_ptr_array_new ();
+  if (cache == NULL)
+    return TRUE;
 
-  if (!builder_cache_get_outstanding_changes (cache, &added, &modified, NULL, error))
+  if (self->ensure_writable == NULL ||
+      self->ensure_writable[0] == NULL)
+    return TRUE;
+
+  changes = builder_cache_get_files (cache, error);
+  if (changes == NULL)
     return FALSE;
 
-  for (i = 0; i < added->len; i++)
-    g_ptr_array_add (added_or_modified, g_ptr_array_index (added, i));
-
-  for (i = 0; i < modified->len; i++)
-    g_ptr_array_add (added_or_modified, g_ptr_array_index (modified, i));
-
-  g_ptr_array_sort (added_or_modified, flatpak_strcmp0_ptr);
-
-  for (i = 0; i < added_or_modified->len; i++)
+  for (i = 0; i < changes->len; i++)
     {
-      const char *rel_path = (char *) g_ptr_array_index (added_or_modified, i);
-      g_autoptr(GFile) file = g_file_resolve_relative_path (app_dir, rel_path);
-      g_autofree char *path = g_file_get_path (file);
-      g_autofree char *debug_path = NULL;
-      g_autofree char *real_debug_path = NULL;
-      gboolean is_shared, is_stripped;
+      const char *path = g_ptr_array_index (changes, i);
+      const char *unprefixed_path;
+      const char *prefix;
 
-      if (is_elf_file (path, &is_shared, &is_stripped))
-        {
-          if (builder_options_get_strip (self->build_options, context))
-            {
-              g_print ("stripping: %s\n", rel_path);
-              if (is_shared)
-                {
-                  if (!strip (error, "--remove-section=.comment", "--remove-section=.note", "--strip-unneeded", path, NULL))
-                    {
-                      g_prefix_error (error, "module %s: ", self->name);
-                      return FALSE;
-                    }
-                }
-              else
-                {
-                  if (!strip (error, "--remove-section=.comment", "--remove-section=.note", path, NULL))
-                    {
-                      g_prefix_error (error, "module %s: ", self->name);
-                      return FALSE;
-                    }
-                }
-            }
-          else if (!builder_options_get_no_debuginfo (self->build_options, context))
-            {
-              g_autofree char *rel_path_dir = g_path_get_dirname (rel_path);
-              g_autofree char *filename = g_path_get_basename (rel_path);
-              g_autofree char *filename_debug = g_strconcat (filename, ".debug", NULL);
-              g_autofree char *debug_dir = NULL;
-              g_autofree char *source_dir_path = NULL;
-              g_autoptr(GFile) source_dir = NULL;
-              g_autofree char *real_debug_dir = NULL;
+      if (g_str_has_prefix (path, "files/"))
+        prefix = "files/";
+      else if (g_str_has_prefix (path, "usr/"))
+        prefix = "usr/";
+      else
+        continue;
 
-              if (g_str_has_prefix (rel_path_dir, "files/"))
-                {
-                  debug_dir = g_build_filename (app_dir_path, "files/lib/debug", rel_path_dir + strlen ("files/"), NULL);
-                  real_debug_dir = g_build_filename ("/app/lib/debug", rel_path_dir + strlen ("files/"), NULL);
-                  source_dir_path = g_build_filename (app_dir_path, "files/lib/debug/source", NULL);
-                }
-              else if (g_str_has_prefix (rel_path_dir, "usr/"))
-                {
-                  debug_dir = g_build_filename (app_dir_path, "usr/lib/debug", rel_path_dir, NULL);
-                  real_debug_dir = g_build_filename ("/usr/lib/debug", rel_path_dir, NULL);
-                  source_dir_path = g_build_filename (app_dir_path, "usr/lib/debug/source", NULL);
-                }
+      unprefixed_path = path + strlen (prefix);
 
-              if (debug_dir)
-                {
-                  const char *builddir;
-                  g_autoptr(GError) local_error = NULL;
-                  g_auto(GStrv) file_refs = NULL;
-
-                  if (g_mkdir_with_parents (debug_dir, 0755) != 0)
-                    {
-                      glnx_set_error_from_errno (error);
-                      g_prefix_error (error, "module %s: ", self->name);
-                      return FALSE;
-                    }
-
-                  source_dir = g_file_new_for_path (source_dir_path);
-                  if (g_mkdir_with_parents (source_dir_path, 0755) != 0)
-                    {
-                      glnx_set_error_from_errno (error);
-                      g_prefix_error (error, "module %s: ", self->name);
-                      return FALSE;
-                    }
-
-                  if (builder_context_get_build_runtime (context))
-                    builddir = "/run/build-runtime/";
-                  else
-                    builddir = "/run/build/";
-
-                  debug_path = g_build_filename (debug_dir, filename_debug, NULL);
-                  real_debug_path = g_build_filename (real_debug_dir, filename_debug, NULL);
-
-                  file_refs = builder_get_debuginfo_file_references (path, &local_error);
-
-                  if (file_refs == NULL)
-                    {
-                      g_warning ("%s", local_error->message);
-                    }
-                  else
-                    {
-                      GFile *build_dir = builder_context_get_build_dir (context);
-                      int i;
-                      for (i = 0; file_refs[i] != NULL; i++)
-                        {
-                          if (g_str_has_prefix (file_refs[i], builddir))
-                            {
-                              const char *relative_path = file_refs[i] + strlen (builddir);
-                              g_autoptr(GFile) src = g_file_resolve_relative_path (build_dir, relative_path);
-                              g_autoptr(GFile) dst = g_file_resolve_relative_path (source_dir, relative_path);
-                              g_autoptr(GFile) dst_parent = g_file_get_parent (dst);
-                              GFileType file_type;
-
-                              if (!flatpak_mkdir_p (dst_parent, NULL, error))
-                                {
-                                  g_prefix_error (error, "module %s: ", self->name);
-                                  return FALSE;
-                                }
-
-                              file_type = g_file_query_file_type (src, 0, NULL);
-                              if (file_type == G_FILE_TYPE_DIRECTORY)
-                                {
-                                  if (!flatpak_mkdir_p (dst, NULL, error))
-                                    {
-                                      g_prefix_error (error, "module %s: ", self->name);
-                                      return FALSE;
-                                    }
-                                }
-                              else if (file_type == G_FILE_TYPE_REGULAR)
-                                {
-                                  if (!g_file_copy (src, dst,
-                                                    G_FILE_COPY_OVERWRITE,
-                                                    NULL, NULL, NULL, error))
-                                    {
-                                      g_prefix_error (error, "module %s: ", self->name);
-                                      return FALSE;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                  g_print ("stripping %s to %s\n", path, debug_path);
-                  if (!eu_strip (error, "--remove-comment", "--reloc-debug-sections",
-                                 "-f", debug_path,
-                                 "-F", real_debug_path,
-                                 path, NULL))
-                    {
-                      g_prefix_error (error, "module %s: ", self->name);
-                      return FALSE;
-                    }
-                }
-            }
-        }
+      collect_cleanup_for_path ((const char **)self->ensure_writable, unprefixed_path, prefix, matches);
     }
 
-  return TRUE;
-}
-
-static gboolean
-fixup_python_timestamp (int dfd,
-                        const char *rel_path,
-                        const char *full_path,
-                        GCancellable  *cancellable,
-                        GError       **error)
-{
-  g_auto(GLnxDirFdIterator) dfd_iter = { 0, };
-
-  glnx_dirfd_iterator_init_at (dfd, rel_path, FALSE, &dfd_iter, NULL);
-
-  while (TRUE)
+  g_hash_table_iter_init (&iter, matches);
+  while (g_hash_table_iter_next (&iter, &key, &value))
     {
-      struct dirent *dent;
+      const char *path = key;
+      g_autoptr(GFile) dest = g_file_resolve_relative_path (app_dir, path);
 
-      if (!glnx_dirfd_iterator_next_dent_ensure_dtype (&dfd_iter, &dent, NULL, NULL) || dent == NULL)
-        break;
-
-      if (dent->d_type == DT_DIR)
-        {
-          g_autofree char *child_full_path = g_build_filename (full_path, dent->d_name, NULL);
-          if (!fixup_python_timestamp (dfd_iter.fd, dent->d_name, child_full_path,
-                                       cancellable, error))
-            return FALSE;
-        }
-      else if (dent->d_type == DT_REG &&
-               dfd != AT_FDCWD &&
-               (g_str_has_suffix (dent->d_name, ".pyc") ||
-                g_str_has_suffix (dent->d_name, ".pyo")))
-        {
-          glnx_fd_close int fd = -1;
-          guint8 buffer[8];
-          ssize_t res;
-          guint32 pyc_mtime;
-          g_autofree char *py_path = NULL;
-          struct stat stbuf;
-          gboolean remove_pyc = FALSE;
-
-          fd = openat (dfd_iter.fd, dent->d_name, O_RDWR | O_CLOEXEC | O_NOFOLLOW);
-          if (fd == -1)
-            {
-              g_warning ("Can't open %s", dent->d_name);
-              continue;
-            }
-
-          res = read (fd, buffer, 8);
-          if (res != 8)
-            {
-              g_warning ("Short read for %s", dent->d_name);
-              continue;
-            }
-
-          if (buffer[2] != 0x0d || buffer[3] != 0x0a)
-            {
-              g_debug ("Not matching python magic: %s", dent->d_name);
-              continue;
-            }
-
-          pyc_mtime =
-            (buffer[4] << 8*0) |
-            (buffer[5] << 8*1) |
-            (buffer[6] << 8*2) |
-            (buffer[7] << 8*3);
-
-          if (strcmp (rel_path, "__pycache__") == 0)
-            {
-              /* Python3 */
-              g_autofree char *base = g_strdup (dent->d_name);
-              char *dot;
-
-              dot = strrchr (base, '.');
-              if (dot == NULL)
-                continue;
-              *dot = 0;
-
-              dot = strrchr (base, '.');
-              if (dot == NULL)
-                continue;
-              *dot = 0;
-
-              py_path = g_strconcat ("../", base, ".py", NULL);
-            }
-          else
-            {
-              /* Python2 */
-              py_path = g_strndup (dent->d_name, strlen (dent->d_name) - 1);
-            }
-
-          /* Here we found a .pyc (or .pyo) file an a possible .py file that apply for it.
-           * There are several possible cases wrt their mtimes:
-           *
-           * py not existing: pyc is stale, remove it
-           * pyc mtime == 0: (.pyc is from an old commited module)
-           *     py mtime == 0: Do nothing, already correct
-           *     py mtime != 0: The py changed in this module, remove pyc
-           * pyc mtime != 0: (.pyc changed this module, or was never rewritten in base layer)
-           *     py == 0: Shouldn't happen in flatpak-builder, but could be an un-rewritten ctime lower layer, assume it matches and update timestamp
-           *     py mtime != pyc mtime: new pyc doesn't match last py written in this module, remove it
-           *     py mtime == pyc mtime: These match, but the py will be set to mtime 0 by ostree, so update timestamp in pyc.
-           */
-
-          if (fstatat (dfd_iter.fd, py_path, &stbuf, AT_SYMLINK_NOFOLLOW) != 0)
-            {
-              remove_pyc = TRUE;
-            }
-          else if (pyc_mtime == OSTREE_TIMESTAMP)
-            {
-              if (stbuf.st_mtime == OSTREE_TIMESTAMP)
-                continue; /* Previously handled pyc */
-
-              remove_pyc = TRUE;
-            }
-          else /* pyc_mtime != 0 */
-            {
-              if (pyc_mtime != stbuf.st_mtime && stbuf.st_mtime != OSTREE_TIMESTAMP)
-                remove_pyc = TRUE;
-              /* else change mtime */
-            }
-
-          if (remove_pyc)
-            {
-              g_autofree char *child_full_path = g_build_filename (full_path, dent->d_name, NULL);
-              g_print ("Removing stale python bytecode file %s\n", child_full_path);
-              if (unlinkat (dfd_iter.fd, dent->d_name, 0) != 0)
-                g_warning ("Unable to delete %s", child_full_path);
-              continue;
-            }
-
-          /* Change to mtime 0 which is what ostree uses for checkouts */
-          buffer[4] = OSTREE_TIMESTAMP;
-          buffer[5] = buffer[6] = buffer[7] = 0;
-
-          res = pwrite (fd, buffer, 8, 0);
-          if (res != 8)
-            {
-              glnx_set_error_from_errno (error);
-              return FALSE;
-            }
-
-          {
-            g_autofree char *child_full_path = g_build_filename (full_path, dent->d_name, NULL);
-            g_print ("Fixed up header mtime for %s\n", child_full_path);
-          }
-
-          /* The mtime will be zeroed on cache commit. We don't want to do that now, because multiple
-             files could reference one .py file and we need the mtimes to match for them all */
-        }
+      g_debug ("Breaking hardlink %s\n", path);
+      if (!flatpak_break_hardlink (dest, error))
+        return FALSE;
     }
+
 
   return TRUE;
 }
@@ -1173,6 +1097,7 @@ gboolean
 builder_module_build (BuilderModule  *self,
                       BuilderCache   *cache,
                       BuilderContext *context,
+                      gboolean        run_shell,
                       GError        **error)
 {
   GFile *app_dir = builder_context_get_app_dir (context);
@@ -1180,7 +1105,7 @@ builder_module_build (BuilderModule  *self,
   g_autofree char *make_l = NULL;
   const char *make_cmd = NULL;
 
-  gboolean autotools = FALSE, cmake = FALSE, meson = FALSE;
+  gboolean autotools = FALSE, cmake = FALSE, cmake_ninja = FALSE, meson = FALSE, simple = FALSE;
   g_autoptr(GFile) configure_file = NULL;
   GFile *build_parent_dir = NULL;
   g_autoptr(GFile) build_dir = NULL;
@@ -1199,44 +1124,18 @@ builder_module_build (BuilderModule  *self,
   g_autofree char *source_dir_path = NULL;
   g_autofree char *buildname = NULL;
   g_autoptr(GError) my_error = NULL;
-  int count;
+  BuilderPostProcessFlags post_process_flags = 0;
 
-  build_parent_dir = builder_context_get_build_dir (context);
-
-  if (!flatpak_mkdir_p (build_parent_dir,
-                        NULL, error))
+  source_dir = builder_context_allocate_build_subdir (context, self->name, error);
+  if (source_dir == NULL)
     {
       g_prefix_error (error, "module %s: ", self->name);
       return FALSE;
     }
 
-  for (count = 1; source_dir_path == NULL; count++)
-    {
-      g_autoptr(GFile) source_dir_count = NULL;
-
-      g_free (buildname);
-      buildname = g_strdup_printf ("%s-%d", self->name, count);
-
-      source_dir_count = g_file_get_child (build_parent_dir, buildname);
-
-      if (g_file_make_directory (source_dir_count, NULL, &my_error))
-        {
-          source_dir_path = g_file_get_path (source_dir_count);
-        }
-      else
-        {
-          if (!g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_EXISTS))
-            {
-              g_propagate_error (error, g_steal_pointer (&my_error));
-              g_prefix_error (error, "module %s: ", self->name);
-              return FALSE;
-            }
-          g_clear_error (&my_error);
-          /* Already exists, try again */
-        }
-    }
-
-  source_dir = g_file_new_for_path (source_dir_path);
+  build_parent_dir = g_file_get_parent (source_dir);
+  buildname = g_file_get_basename (source_dir);
+  source_dir_path = g_file_get_path (source_dir);
 
   /* Make an unversioned symlink */
   build_link = g_file_get_child (build_parent_dir, self->name);
@@ -1294,6 +1193,10 @@ builder_module_build (BuilderModule  *self,
     meson = TRUE;
   else if (!strcmp (self->buildsystem, "autotools"))
     autotools = TRUE;
+  else if (!strcmp (self->buildsystem, "cmake-ninja"))
+    cmake_ninja = TRUE;
+  else if (!strcmp (self->buildsystem, "simple"))
+    simple = TRUE;
   else
     {
       g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "module %s: Invalid buildsystem: \"%s\"",
@@ -1301,7 +1204,16 @@ builder_module_build (BuilderModule  *self,
       return FALSE;
     }
 
-  if (cmake)
+  if (simple)
+    {
+      if (!self->build_commands)
+        {
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "module %s: Buildsystem simple requires specifying \"build-commands\"",
+                       self->name);
+          return FALSE;
+        }
+    }
+  else if (cmake || cmake_ninja)
     {
       g_autoptr(GFile) cmake_file = NULL;
 
@@ -1339,9 +1251,10 @@ builder_module_build (BuilderModule  *self,
         }
     }
 
-  has_configure = g_file_query_exists (configure_file, NULL);
+  if (configure_file)
+    has_configure = g_file_query_exists (configure_file, NULL);
 
-  if (!has_configure && !self->no_autogen)
+  if (configure_file && !has_configure && !self->no_autogen)
     {
       const char *autogen_names[] =  {"autogen", "autogen.sh", "bootstrap", NULL};
       g_autofree char *autogen_cmd = NULL;
@@ -1380,12 +1293,14 @@ builder_module_build (BuilderModule  *self,
       has_configure = TRUE;
     }
 
-  if (has_configure)
+  if (configure_file && has_configure)
     {
       const char *configure_cmd;
-      const char *configure_final_arg = skip_arg;
-      g_autofree char *configure_prefix_arg = NULL;
+      const char *cmake_generator = NULL;
+      gchar *configure_final_arg = NULL;
       g_autofree char *configure_content = NULL;
+      g_auto(GStrv) configure_args = NULL;
+      g_autoptr(GPtrArray) configure_args_arr = g_ptr_array_new ();
 
       if (!g_file_load_contents (configure_file, NULL, &configure_content, NULL, NULL, error))
         {
@@ -1410,15 +1325,15 @@ builder_module_build (BuilderModule  *self,
               return FALSE;
             }
 
-          if (cmake)
+          if (cmake || cmake_ninja)
             {
               configure_cmd = "cmake";
-              configure_final_arg = "..";
+              configure_final_arg = g_strdup("..");
             }
           else if (meson)
             {
               configure_cmd = "meson";
-              configure_final_arg = "..";
+              configure_final_arg = g_strdup ("..");
             }
           else
             {
@@ -1429,10 +1344,10 @@ builder_module_build (BuilderModule  *self,
         {
           build_dir_relative = g_strdup (source_subdir_relative);
           build_dir = g_object_ref (source_subdir);
-          if (cmake)
+          if (cmake || cmake_ninja)
             {
               configure_cmd = "cmake";
-              configure_final_arg = ".";
+              configure_final_arg = g_strdup (".");
             }
           else if (meson)
             {
@@ -1446,14 +1361,30 @@ builder_module_build (BuilderModule  *self,
         }
 
       if (cmake)
-        configure_prefix_arg = g_strdup_printf ("-DCMAKE_INSTALL_PREFIX:PATH='%s'",
-                                                builder_options_get_prefix (self->build_options, context));
+        cmake_generator = "Unix Makefiles";
+      else if (cmake_ninja)
+        cmake_generator = "Ninja";
+
+      if (cmake || cmake_ninja)
+        {
+          g_ptr_array_add (configure_args_arr, g_strdup_printf ("-DCMAKE_INSTALL_PREFIX:PATH='%s'",
+                                                                builder_options_get_prefix (self->build_options, context)));
+          g_ptr_array_add (configure_args_arr, g_strdup ("-G"));
+          g_ptr_array_add (configure_args_arr, g_strdup_printf ("%s", cmake_generator));
+        }
       else /* autotools and meson */
-        configure_prefix_arg = g_strdup_printf ("--prefix=%s",
-                                                builder_options_get_prefix (self->build_options, context));
+        {
+          g_ptr_array_add (configure_args_arr, g_strdup_printf ("--prefix=%s",
+                                                                builder_options_get_prefix (self->build_options, context)));
+        }
+
+      g_ptr_array_add (configure_args_arr, configure_final_arg);
+      g_ptr_array_add (configure_args_arr, NULL);
+
+      configure_args = (char **) g_ptr_array_free (g_steal_pointer (&configure_args_arr), FALSE);
 
       if (!build (app_dir, self->name, context, source_dir, build_dir_relative, build_args, env, error,
-                  configure_cmd, configure_prefix_arg, strv_arg, config_opts, configure_final_arg, NULL))
+                  configure_cmd, strv_arg, configure_args, strv_arg, config_opts, NULL))
         return FALSE;
     }
   else
@@ -1462,7 +1393,7 @@ builder_module_build (BuilderModule  *self,
       build_dir = g_object_ref (source_subdir);
     }
 
-  if (meson)
+  if (meson || cmake_ninja)
     {
       g_autoptr(GFile) ninja_file = g_file_get_child (build_dir, "build.ninja");
       if (!g_file_query_exists (ninja_file, NULL))
@@ -1495,20 +1426,43 @@ builder_module_build (BuilderModule  *self,
       make_l = g_strdup_printf ("-l%d", 2 * builder_context_get_jobs (context));
     }
 
+  if (run_shell)
+    {
+      if (!shell (app_dir, self->name, context, source_dir, build_dir_relative, build_args, env, error))
+        return FALSE;
+      return TRUE;
+    }
+
   /* Build and install */
 
-  if (meson)
+  if (meson || cmake_ninja)
     make_cmd = "ninja";
+  else if (simple)
+    make_cmd = NULL;
   else
     make_cmd = "make";
 
-  if (!build (app_dir, self->name, context, source_dir, build_dir_relative, build_args, env, error,
-              make_cmd, make_j ? make_j : skip_arg, make_l ? make_l : skip_arg, strv_arg, self->make_args, NULL))
-    return FALSE;
+  if (make_cmd)
+    {
+      if (!build (app_dir, self->name, context, source_dir, build_dir_relative, build_args, env, error,
+                  make_cmd, make_j ? make_j : skip_arg, make_l ? make_l : skip_arg, strv_arg, self->make_args, NULL))
+        return FALSE;
+    }
 
-  if (!build (app_dir, self->name, context, source_dir, build_dir_relative, build_args, env, error,
-              make_cmd, "install", strv_arg, self->make_install_args, NULL))
-    return FALSE;
+  for (i = 0; self->build_commands != NULL && self->build_commands[i] != NULL; i++)
+    {
+      g_print ("Running: %s\n", self->build_commands[i]);
+      if (!build (app_dir, self->name, context, source_dir, build_dir_relative, build_args, env, error,
+                  "/bin/sh", "-c", self->build_commands[i], NULL))
+        return FALSE;
+    }
+
+  if (!self->no_make_install && make_cmd)
+    {
+      if (!build (app_dir, self->name, context, source_dir, build_dir_relative, build_args, env, error,
+                  make_cmd, "install", strv_arg, self->make_install_args, NULL))
+        return FALSE;
+    }
 
   /* Post installation scripts */
 
@@ -1539,16 +1493,21 @@ builder_module_build (BuilderModule  *self,
     }
 
   if (!self->no_python_timestamp_fix)
-    {
-      if (!fixup_python_timestamp (AT_FDCWD,
-                                   flatpak_file_get_path_cached (app_dir), "/",
-                                   NULL,
-                                   error))
-        return FALSE;
-    }
+    post_process_flags |= BUILDER_POST_PROCESS_FLAGS_PYTHON_TIMESTAMPS;
 
-  if (!builder_module_handle_debuginfo (self, app_dir, cache, context, error))
-    return FALSE;
+  if (builder_options_get_strip (self->build_options, context))
+    post_process_flags |= BUILDER_POST_PROCESS_FLAGS_STRIP;
+  else if (!builder_options_get_no_debuginfo (self->build_options, context) &&
+           /* No support for debuginfo for extensions atm */
+           !builder_context_get_build_extension (context))
+    post_process_flags |= BUILDER_POST_PROCESS_FLAGS_DEBUGINFO;
+
+  if (!builder_post_process (post_process_flags, app_dir,
+                             cache, context, error))
+    {
+      g_prefix_error (error, "module %s: ", self->name);
+      return FALSE;
+    }
 
   /* Clean up build dir */
 
@@ -1581,6 +1540,9 @@ builder_module_update (BuilderModule  *self,
     {
       BuilderSource *source = l->data;
 
+      if (!builder_source_is_enabled (source, context))
+        continue;
+
       if (!builder_source_update (source, context, error))
         {
           g_prefix_error (error, "module %s: ", self->name);
@@ -1605,10 +1567,14 @@ builder_module_checksum (BuilderModule  *self,
   builder_cache_checksum_strv (cache, self->config_opts);
   builder_cache_checksum_strv (cache, self->make_args);
   builder_cache_checksum_strv (cache, self->make_install_args);
+  builder_cache_checksum_strv (cache, self->ensure_writable);
+  builder_cache_checksum_strv (cache, self->only_arches);
+  builder_cache_checksum_strv (cache, self->skip_arches);
   builder_cache_checksum_boolean (cache, self->rm_configure);
   builder_cache_checksum_boolean (cache, self->no_autogen);
   builder_cache_checksum_boolean (cache, self->disabled);
   builder_cache_checksum_boolean (cache, self->no_parallel_make);
+  builder_cache_checksum_boolean (cache, self->no_make_install);
   builder_cache_checksum_boolean (cache, self->no_python_timestamp_fix);
   builder_cache_checksum_boolean (cache, self->cmake);
   builder_cache_checksum_boolean (cache, self->builddir);
@@ -1619,6 +1585,9 @@ builder_module_checksum (BuilderModule  *self,
   for (l = self->sources; l != NULL; l = l->next)
     {
       BuilderSource *source = l->data;
+
+      if (!builder_source_is_enabled (source, context))
+        continue;
 
       builder_source_checksum (source, cache, context);
     }
@@ -1632,6 +1601,14 @@ builder_module_checksum_for_cleanup (BuilderModule  *self,
   builder_cache_checksum_str (cache, BUILDER_MODULE_CHECKSUM_VERSION);
   builder_cache_checksum_str (cache, self->name);
   builder_cache_checksum_strv (cache, self->cleanup);
+}
+
+void
+builder_module_checksum_for_platform (BuilderModule  *self,
+                                      BuilderCache   *cache,
+                                      BuilderContext *context)
+{
+  builder_cache_checksum_strv (cache, self->cleanup_platform);
 }
 
 void
@@ -1657,21 +1634,6 @@ builder_module_set_changes (BuilderModule *self,
         g_ptr_array_unref (self->changes);
       self->changes = g_ptr_array_ref (changes);
     }
-}
-
-static void
-collect_cleanup_for_path (const char **patterns,
-                          const char  *path,
-                          const char  *add_prefix,
-                          GHashTable  *to_remove_ht)
-{
-  int i;
-
-  if (patterns == NULL)
-    return;
-
-  for (i = 0; patterns[i] != NULL; i++)
-    flatpak_collect_matches_for_path_pattern (path, patterns[i], add_prefix, to_remove_ht);
 }
 
 static gboolean

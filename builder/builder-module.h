@@ -40,6 +40,8 @@ typedef struct BuilderModule BuilderModule;
 GType builder_module_get_type (void);
 
 const char * builder_module_get_name (BuilderModule *self);
+gboolean     builder_module_is_enabled (BuilderModule *self,
+                                        BuilderContext *context);
 gboolean     builder_module_get_disabled (BuilderModule *self);
 GList *      builder_module_get_sources (BuilderModule *self);
 GList *      builder_module_get_modules (BuilderModule *self);
@@ -50,6 +52,7 @@ void         builder_module_set_changes (BuilderModule *self,
                                          GPtrArray     *changes);
 
 gboolean     builder_module_show_deps (BuilderModule *self,
+                                       BuilderContext *context,
                                        GError         **error);
 gboolean builder_module_download_sources (BuilderModule  *self,
                                           gboolean        update_vcs,
@@ -59,9 +62,14 @@ gboolean builder_module_extract_sources (BuilderModule  *self,
                                          GFile          *dest,
                                          BuilderContext *context,
                                          GError        **error);
+gboolean builder_module_ensure_writable (BuilderModule  *self,
+                                         BuilderCache   *cache,
+                                         BuilderContext *context,
+                                         GError        **error);
 gboolean builder_module_build (BuilderModule  *self,
                                BuilderCache   *cache,
                                BuilderContext *context,
+                               gboolean        run_shell,
                                GError        **error);
 gboolean builder_module_update (BuilderModule  *self,
                                 BuilderContext *context,
@@ -72,6 +80,9 @@ void     builder_module_checksum (BuilderModule  *self,
 void     builder_module_checksum_for_cleanup (BuilderModule  *self,
                                               BuilderCache   *cache,
                                               BuilderContext *context);
+void     builder_module_checksum_for_platform (BuilderModule  *self,
+                                               BuilderCache   *cache,
+                                               BuilderContext *context);
 void     builder_module_cleanup_collect (BuilderModule  *self,
                                          gboolean        platform,
                                          BuilderContext *context,

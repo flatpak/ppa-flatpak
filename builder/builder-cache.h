@@ -27,6 +27,7 @@
 G_BEGIN_DECLS
 
 typedef struct BuilderCache BuilderCache;
+typedef struct BuilderContext BuilderContext;
 
 #define BUILDER_TYPE_CACHE (builder_cache_get_type ())
 #define BUILDER_CACHE(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), BUILDER_TYPE_CACHE, BuilderCache))
@@ -34,7 +35,7 @@ typedef struct BuilderCache BuilderCache;
 
 GType builder_cache_get_type (void);
 
-BuilderCache *builder_cache_new (GFile      *cache_dir,
+BuilderCache *builder_cache_new (BuilderContext *context,
                                  GFile      *app_dir,
                                  const char *branch);
 void          builder_cache_disable_lookups (BuilderCache *self);
@@ -49,10 +50,10 @@ gboolean      builder_cache_commit (BuilderCache *self,
                                     const char   *body,
                                     GError      **error);
 gboolean      builder_cache_get_outstanding_changes (BuilderCache *self,
-                                                     GPtrArray   **added_out,
-                                                     GPtrArray   **modified_out,
-                                                     GPtrArray   **removed_out,
+                                                     GPtrArray   **changed_out,
                                                      GError      **error);
+GPtrArray   *builder_cache_get_files (BuilderCache *self,
+                                      GError      **error);
 GPtrArray   *builder_cache_get_changes (BuilderCache *self,
                                         GError      **error);
 GPtrArray   *builder_cache_get_all_changes (BuilderCache *self,
@@ -64,8 +65,12 @@ void builder_cache_checksum_str (BuilderCache *self,
                                  const char   *str);
 void builder_cache_checksum_strv (BuilderCache *self,
                                   char        **strv);
+void builder_cache_checksum_compat_strv (BuilderCache *self,
+                                         char        **strv);
 void builder_cache_checksum_boolean (BuilderCache *self,
                                      gboolean      val);
+void builder_cache_checksum_compat_boolean (BuilderCache *self,
+                                            gboolean      val);
 void builder_cache_checksum_uint32 (BuilderCache *self,
                                     guint32       val);
 void builder_cache_checksum_data (BuilderCache *self,

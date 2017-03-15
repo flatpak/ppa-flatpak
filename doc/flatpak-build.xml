@@ -240,6 +240,29 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--add-policy=SUBSYSTEM.KEY=VALUE</option></term>
+
+                <listitem><para>
+                    Add generic policy option. For example, "--add-policy=subsystem.key=v1 --add-policy=subsystem.key=v2" would map to this metadata:
+<programlisting>
+[Policy subsystem]
+key=v1;v2;
+</programlisting>
+                </para></listitem>
+                <listitem><para>
+                    This option can be used multiple times.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--remove-policy=SUBSYSTEM.KEY=VALUE</option></term>
+
+                <listitem><para>
+                    Remove generic policy option. This option can be used multiple times.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--env=VAR=VALUE</option></term>
 
                 <listitem><para>
@@ -298,6 +321,28 @@
                     allowing that location to be used for persistent data.
                     This overrides to the Context section from the application metadata.
                     This option can be used multiple times.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--sdk-dir=DIR</option></term>
+
+                <listitem><para>
+                  Normally if there is a <filename>usr</filename> directory in the build dir, this is used
+                  for the runtime files (this can be created by --writable-sdk or --type=runtime arguments
+                  to build-init). If you specify --sdk-dir this directoryname will be used instead.
+                  Use this if you passed --sdk-dir to build-init.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--metadata=FILE</option></term>
+
+                <listitem><para>
+                  Use the specified filename as metadata in the exported app instead of
+                  the default file (called <filename>metadata</filename>). This is useful
+                  if you build multiple things from a single build tree (such as both a
+                  platform and a sdk).
                 </para></listitem>
             </varlistentry>
 
