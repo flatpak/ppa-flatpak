@@ -10,6 +10,8 @@ flatpak (0.9.1-1) UNRELEASED; urgency=medium
     - Update symbols
   * flatpak Recommends xdg-desktop-portal-gtk | xdg-desktop-portal-backend,
     so that sandboxed apps can communicate with the outside world
+  * Build-depend on ostree-tests and make flatpak-tests depend on it,
+    for ostree trivial-httpd
 
  -- Simon McVittie <smcv@debian.org>  Wed, 15 Mar 2017 22:40:55 +0000
 
