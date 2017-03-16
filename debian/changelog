@@ -1,4 +1,4 @@
-flatpak (0.9.1-1) UNRELEASED; urgency=medium
+flatpak (0.9.1-1) experimental; urgency=medium
 
   * d/gbp.conf, d/watch: switch to development branch for experimental
   * New upstream development release
@@ -13,7 +13,7 @@ flatpak (0.9.1-1) UNRELEASED; urgency=medium
   * Build-depend on ostree-tests and make flatpak-tests depend on it,
     for ostree trivial-httpd
 
- -- Simon McVittie <smcv@debian.org>  Wed, 15 Mar 2017 22:40:55 +0000
+ -- Simon McVittie <smcv@debian.org>  Thu, 16 Mar 2017 11:50:46 +0000
 
 flatpak (0.8.4-3) unstable; urgency=medium
 
