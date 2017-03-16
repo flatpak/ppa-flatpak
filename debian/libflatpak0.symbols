@@ -62,6 +62,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installed_ref_get_subpaths@Base 0.5.2+git20160516
  flatpak_installed_ref_get_type@Base 0.5.2
  flatpak_installed_ref_load_metadata@Base 0.5.2
+ flatpak_oci_error_quark@Base 0.9.1
  flatpak_portal_error_quark@Base 0.5.2+git20160516
  flatpak_ref_format_ref@Base 0.5.2
  flatpak_ref_get_arch@Base 0.5.2
