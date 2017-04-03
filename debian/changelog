@@ -5,6 +5,7 @@ flatpak (0.9.1+git20170403.1-1) UNRELEASED; urgency=medium
     - Update d/copyright
     - Don't (build-)depend on ostree-tests any more, ostree trivial-httpd
       is no longer required for the tests
+    - Install a new man page
 
  -- Simon McVittie <smcv@debian.org>  Mon, 03 Apr 2017 18:13:26 +0100
 
