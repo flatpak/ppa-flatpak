@@ -23,6 +23,8 @@ flatpak (0.8.5-1) UNRELEASED; urgency=medium
     - Strip ?query suffix before detecting whether a URI points to a
       .flatpakref or .flatpakrepo file (upstream issue 659)
     - Fix a typo in help output
+  * d/tests/control: most tests now require python, for the
+    ostree-trivial-httpd replacement
 
  -- Simon McVittie <smcv@debian.org>  Mon, 03 Apr 2017 14:25:39 +0100
 
