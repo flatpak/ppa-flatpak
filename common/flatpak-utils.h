@@ -46,9 +46,11 @@ typedef enum {
 #define FLATPAK_VARIANT_DICT_INITIALIZER {{{0,}}}
 #endif
 
-gboolean flatpak_fail (GError    **error,
-                       const char *format,
-                       ...);
+/* https://github.com/GNOME/libglnx/pull/38
+ * Note by using #define rather than wrapping via a static inline, we
+ * don't have to re-define attributes like G_GNUC_PRINTF.
+ */
+#define flatpak_fail glnx_throw
 
 gint flatpak_strcmp0_ptr (gconstpointer a,
                           gconstpointer b);
@@ -115,7 +117,8 @@ char **  flatpak_summary_match_subrefs (GVariant *summary,
                                         const char *ref);
 gboolean flatpak_summary_lookup_ref (GVariant   *summary,
                                      const char *ref,
-                                     char      **out_checksum);
+                                     char      **out_checksum,
+                                     GVariant **out_variant);
 
 gboolean flatpak_has_name_prefix (const char *string,
                                   const char *name);
@@ -341,11 +344,22 @@ char * flatpak_pull_from_oci (OstreeRepo   *repo,
                               FlatpakOciRegistry *registry,
                               const char *digest,
                               FlatpakOciManifest *manifest,
+                              const char *remote,
                               const char *ref,
+                              const char *signature_digest,
                               FlatpakOciPullProgress progress_cb,
                               gpointer progress_data,
                               GCancellable *cancellable,
                               GError      **error);
+
+gboolean flatpak_mirror_image_from_oci (FlatpakOciRegistry *dst_registry,
+                                        FlatpakOciRegistry *registry,
+                                        const char *digest,
+                                        const char *signature_digest,
+                                        FlatpakOciPullProgress progress_cb,
+                                        gpointer progress_data,
+                                        GCancellable *cancellable,
+                                        GError      **error);
 
 typedef struct
 {
@@ -369,6 +383,7 @@ GList *flatpak_list_extensions (GKeyFile   *metakey,
                                 const char *branch);
 
 char * flatpak_quote_argv (const char *argv[]);
+gboolean flatpak_file_arg_has_suffix (const char *arg, const char *suffix);
 
 gboolean            flatpak_spawn (GFile       *dir,
                                    char       **output,
@@ -481,12 +496,22 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakRepoTransaction, flatpak_repo_transaction_
 
 #define AUTOLOCK(name) G_GNUC_UNUSED __attribute__((cleanup (flatpak_auto_unlock_helper))) GMutex * G_PASTE (auto_unlock, __LINE__) = flatpak_auto_lock_helper (&G_LOCK_NAME (name))
 
+/* OSTREE_CHECK_VERSION was added immediately after the 2017.3 release */
+#ifndef OSTREE_CHECK_VERSION
+#define OSTREE_CHECK_VERSION(year, minor) (0)
+#endif
+/* Cleanups are always exported in 2017.4, and some git releases between 2017.3 and 2017.4.
+   We actually check against 2017.3 so that we work on the git releases *after* 2017.3
+   which is safe, because the real OSTREE_CHECK_VERSION macro was added after 2017.3
+   too. */
+#if !OSTREE_CHECK_VERSION(2017, 3)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeRepo, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeMutableTree, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeAsyncProgress, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeGpgVerifyResult, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeRepoCommitModifier, ostree_repo_commit_modifier_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeRepoDevInoCache, ostree_repo_devino_cache_unref)
+#endif
 
 #ifndef SOUP_AUTOCLEANUPS_H
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (SoupSession, g_object_unref)
@@ -577,8 +602,8 @@ gboolean flatpak_allocate_tmpdir (int           tmpdir_dfd,
                                   GError      **error);
 
 
-gboolean flatpak_yes_no_prompt (const char *prompt, ...);
-long flatpak_number_prompt (int min, int max, const char *prompt, ...);
+gboolean flatpak_yes_no_prompt (const char *prompt, ...) G_GNUC_PRINTF(1, 2);
+long flatpak_number_prompt (int min, int max, const char *prompt, ...) G_GNUC_PRINTF(3, 4);
 
 typedef void (*FlatpakLoadUriProgress) (guint64 downloaded_bytes,
                                         gpointer user_data);
@@ -619,7 +644,7 @@ FlatpakCompletion *flatpak_completion_new   (const char        *arg_line,
                                              const char        *arg_cur);
 void               flatpak_complete_word    (FlatpakCompletion *completion,
                                              char              *format,
-                                             ...);
+                                             ...) G_GNUC_PRINTF(2,3);
 void               flatpak_complete_ref     (FlatpakCompletion *completion,
                                              OstreeRepo        *repo);
 void               flatpak_complete_partial_ref (FlatpakCompletion *completion,

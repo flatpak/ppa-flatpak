@@ -20,8 +20,389 @@ You have another version of autoconf.  It may work, but is not guaranteed to.
 If you have problems, you may need to regenerate the build system entirely.
 To do so, use the procedure documented by the package, typically 'autoreconf'.])])
 
+# gpgme.m4 - autoconf macro to detect GPGME.
+# Copyright (C) 2002, 2003, 2004, 2014 g10 Code GmbH
+#
+# This file is free software; as a special exception the author gives
+# unlimited permission to copy and/or distribute it, with or without
+# modifications, as long as this notice is preserved.
+#
+# This file is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+# Last-changed: 2014-10-02
+
+
+AC_DEFUN([_AM_PATH_GPGME_CONFIG],
+[ AC_ARG_WITH(gpgme-prefix,
+            AC_HELP_STRING([--with-gpgme-prefix=PFX],
+                           [prefix where GPGME is installed (optional)]),
+     gpgme_config_prefix="$withval", gpgme_config_prefix="")
+  if test x"${GPGME_CONFIG}" = x ; then
+     if test x"${gpgme_config_prefix}" != x ; then
+        GPGME_CONFIG="${gpgme_config_prefix}/bin/gpgme-config"
+     else
+       case "${SYSROOT}" in
+         /*)
+           if test -x "${SYSROOT}/bin/gpgme-config" ; then
+             GPGME_CONFIG="${SYSROOT}/bin/gpgme-config"
+           fi
+           ;;
+         '')
+           ;;
+          *)
+           AC_MSG_WARN([Ignoring \$SYSROOT as it is not an absolute path.])
+           ;;
+       esac
+     fi
+  fi
+
+  AC_PATH_PROG(GPGME_CONFIG, gpgme-config, no)
+
+  if test "$GPGME_CONFIG" != "no" ; then
+    gpgme_version=`$GPGME_CONFIG --version`
+  fi
+  gpgme_version_major=`echo $gpgme_version | \
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\1/'`
+  gpgme_version_minor=`echo $gpgme_version | \
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\2/'`
+  gpgme_version_micro=`echo $gpgme_version | \
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\).*/\3/'`
+])
+
+
+AC_DEFUN([_AM_PATH_GPGME_CONFIG_HOST_CHECK],
+[
+    gpgme_config_host=`$GPGME_CONFIG --host 2>/dev/null || echo none`
+    if test x"$gpgme_config_host" != xnone ; then
+      if test x"$gpgme_config_host" != x"$host" ; then
+  AC_MSG_WARN([[
+***
+*** The config script $GPGME_CONFIG was
+*** built for $gpgme_config_host and thus may not match the
+*** used host $host.
+*** You may want to use the configure option --with-gpgme-prefix
+*** to specify a matching config script or use \$SYSROOT.
+***]])
+        gpg_config_script_warn="$gpg_config_script_warn gpgme"
+      fi
+    fi
+])
+
+
+dnl AM_PATH_GPGME([MINIMUM-VERSION,
+dnl               [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND ]]])
+dnl Test for libgpgme and define GPGME_CFLAGS and GPGME_LIBS.
+dnl
+dnl If a prefix option is not used, the config script is first
+dnl searched in $SYSROOT/bin and then along $PATH.  If the used
+dnl config script does not match the host specification the script
+dnl is added to the gpg_config_script_warn variable.
+dnl
+AC_DEFUN([AM_PATH_GPGME],
+[ AC_REQUIRE([_AM_PATH_GPGME_CONFIG])dnl
+  tmp=ifelse([$1], ,1:0.4.2,$1)
+  if echo "$tmp" | grep ':' >/dev/null 2>/dev/null ; then
+     req_gpgme_api=`echo "$tmp"     | sed 's/\(.*\):\(.*\)/\1/'`
+     min_gpgme_version=`echo "$tmp" | sed 's/\(.*\):\(.*\)/\2/'`
+  else
+     req_gpgme_api=0
+     min_gpgme_version="$tmp"
+  fi
+
+  AC_MSG_CHECKING(for GPGME - version >= $min_gpgme_version)
+  ok=no
+  if test "$GPGME_CONFIG" != "no" ; then
+    req_major=`echo $min_gpgme_version | \
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+    req_minor=`echo $min_gpgme_version | \
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+    req_micro=`echo $min_gpgme_version | \
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+    if test "$gpgme_version_major" -gt "$req_major"; then
+        ok=yes
+    else
+        if test "$gpgme_version_major" -eq "$req_major"; then
+            if test "$gpgme_version_minor" -gt "$req_minor"; then
+               ok=yes
+            else
+               if test "$gpgme_version_minor" -eq "$req_minor"; then
+                   if test "$gpgme_version_micro" -ge "$req_micro"; then
+                     ok=yes
+                   fi
+               fi
+            fi
+        fi
+    fi
+  fi
+  if test $ok = yes; then
+     # If we have a recent GPGME, we should also check that the
+     # API is compatible.
+     if test "$req_gpgme_api" -gt 0 ; then
+        tmp=`$GPGME_CONFIG --api-version 2>/dev/null || echo 0`
+        if test "$tmp" -gt 0 ; then
+           if test "$req_gpgme_api" -ne "$tmp" ; then
+             ok=no
+           fi
+        fi
+     fi
+  fi
+  if test $ok = yes; then
+    GPGME_CFLAGS=`$GPGME_CONFIG --cflags`
+    GPGME_LIBS=`$GPGME_CONFIG --libs`
+    AC_MSG_RESULT(yes)
+    ifelse([$2], , :, [$2])
+    _AM_PATH_GPGME_CONFIG_HOST_CHECK
+  else
+    GPGME_CFLAGS=""
+    GPGME_LIBS=""
+    AC_MSG_RESULT(no)
+    ifelse([$3], , :, [$3])
+  fi
+  AC_SUBST(GPGME_CFLAGS)
+  AC_SUBST(GPGME_LIBS)
+])
+
+dnl AM_PATH_GPGME_PTHREAD([MINIMUM-VERSION,
+dnl                       [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND ]]])
+dnl Test for libgpgme and define GPGME_PTHREAD_CFLAGS
+dnl  and GPGME_PTHREAD_LIBS.
+dnl
+AC_DEFUN([AM_PATH_GPGME_PTHREAD],
+[ AC_REQUIRE([_AM_PATH_GPGME_CONFIG])dnl
+  tmp=ifelse([$1], ,1:0.4.2,$1)
+  if echo "$tmp" | grep ':' >/dev/null 2>/dev/null ; then
+     req_gpgme_api=`echo "$tmp"     | sed 's/\(.*\):\(.*\)/\1/'`
+     min_gpgme_version=`echo "$tmp" | sed 's/\(.*\):\(.*\)/\2/'`
+  else
+     req_gpgme_api=0
+     min_gpgme_version="$tmp"
+  fi
+
+  AC_MSG_CHECKING(for GPGME pthread - version >= $min_gpgme_version)
+  ok=no
+  if test "$GPGME_CONFIG" != "no" ; then
+    if `$GPGME_CONFIG --thread=pthread 2> /dev/null` ; then
+      req_major=`echo $min_gpgme_version | \
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+      req_minor=`echo $min_gpgme_version | \
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+      req_micro=`echo $min_gpgme_version | \
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+      if test "$gpgme_version_major" -gt "$req_major"; then
+        ok=yes
+      else
+        if test "$gpgme_version_major" -eq "$req_major"; then
+          if test "$gpgme_version_minor" -gt "$req_minor"; then
+            ok=yes
+          else
+            if test "$gpgme_version_minor" -eq "$req_minor"; then
+              if test "$gpgme_version_micro" -ge "$req_micro"; then
+                ok=yes
+              fi
+            fi
+          fi
+        fi
+      fi
+    fi
+  fi
+  if test $ok = yes; then
+     # If we have a recent GPGME, we should also check that the
+     # API is compatible.
+     if test "$req_gpgme_api" -gt 0 ; then
+        tmp=`$GPGME_CONFIG --api-version 2>/dev/null || echo 0`
+        if test "$tmp" -gt 0 ; then
+           if test "$req_gpgme_api" -ne "$tmp" ; then
+             ok=no
+           fi
+        fi
+     fi
+  fi
+  if test $ok = yes; then
+    GPGME_PTHREAD_CFLAGS=`$GPGME_CONFIG --thread=pthread --cflags`
+    GPGME_PTHREAD_LIBS=`$GPGME_CONFIG --thread=pthread --libs`
+    AC_MSG_RESULT(yes)
+    ifelse([$2], , :, [$2])
+    _AM_PATH_GPGME_CONFIG_HOST_CHECK
+  else
+    GPGME_PTHREAD_CFLAGS=""
+    GPGME_PTHREAD_LIBS=""
+    AC_MSG_RESULT(no)
+    ifelse([$3], , :, [$3])
+  fi
+  AC_SUBST(GPGME_PTHREAD_CFLAGS)
+  AC_SUBST(GPGME_PTHREAD_LIBS)
+])
+
+
+dnl AM_PATH_GPGME_GLIB([MINIMUM-VERSION,
+dnl               [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND ]]])
+dnl Test for libgpgme-glib and define GPGME_GLIB_CFLAGS and GPGME_GLIB_LIBS.
+dnl
+AC_DEFUN([AM_PATH_GPGME_GLIB],
+[ AC_REQUIRE([_AM_PATH_GPGME_CONFIG])dnl
+  tmp=ifelse([$1], ,1:0.4.2,$1)
+  if echo "$tmp" | grep ':' >/dev/null 2>/dev/null ; then
+     req_gpgme_api=`echo "$tmp"     | sed 's/\(.*\):\(.*\)/\1/'`
+     min_gpgme_version=`echo "$tmp" | sed 's/\(.*\):\(.*\)/\2/'`
+  else
+     req_gpgme_api=0
+     min_gpgme_version="$tmp"
+  fi
+
+  AC_MSG_CHECKING(for GPGME - version >= $min_gpgme_version)
+  ok=no
+  if test "$GPGME_CONFIG" != "no" ; then
+    req_major=`echo $min_gpgme_version | \
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
+    req_minor=`echo $min_gpgme_version | \
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
+    req_micro=`echo $min_gpgme_version | \
+               sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
+    if test "$gpgme_version_major" -gt "$req_major"; then
+        ok=yes
+    else
+        if test "$gpgme_version_major" -eq "$req_major"; then
+            if test "$gpgme_version_minor" -gt "$req_minor"; then
+               ok=yes
+            else
+               if test "$gpgme_version_minor" -eq "$req_minor"; then
+                   if test "$gpgme_version_micro" -ge "$req_micro"; then
+                     ok=yes
+                   fi
+               fi
+            fi
+        fi
+    fi
+  fi
+  if test $ok = yes; then
+     # If we have a recent GPGME, we should also check that the
+     # API is compatible.
+     if test "$req_gpgme_api" -gt 0 ; then
+        tmp=`$GPGME_CONFIG --api-version 2>/dev/null || echo 0`
+        if test "$tmp" -gt 0 ; then
+           if test "$req_gpgme_api" -ne "$tmp" ; then
+             ok=no
+           fi
+        fi
+     fi
+  fi
+  if test $ok = yes; then
+    GPGME_GLIB_CFLAGS=`$GPGME_CONFIG --glib --cflags`
+    GPGME_GLIB_LIBS=`$GPGME_CONFIG --glib --libs`
+    AC_MSG_RESULT(yes)
+    ifelse([$2], , :, [$2])
+    _AM_PATH_GPGME_CONFIG_HOST_CHECK
+  else
+    GPGME_GLIB_CFLAGS=""
+    GPGME_GLIB_LIBS=""
+    AC_MSG_RESULT(no)
+    ifelse([$3], , :, [$3])
+  fi
+  AC_SUBST(GPGME_GLIB_CFLAGS)
+  AC_SUBST(GPGME_GLIB_LIBS)
+])
+
+dnl -*- mode: autoconf -*-
+dnl Copyright 2009 Johan Dahlin
+dnl
+dnl This file is free software; the author(s) gives unlimited
+dnl permission to copy and/or distribute it, with or without
+dnl modifications, as long as this notice is preserved.
+dnl
+
+# serial 1
+
+m4_define([_GOBJECT_INTROSPECTION_CHECK_INTERNAL],
+[
+    AC_BEFORE([AC_PROG_LIBTOOL],[$0])dnl setup libtool first
+    AC_BEFORE([AM_PROG_LIBTOOL],[$0])dnl setup libtool first
+    AC_BEFORE([LT_INIT],[$0])dnl setup libtool first
+
+    dnl enable/disable introspection
+    m4_if([$2], [require],
+    [dnl
+        enable_introspection=yes
+    ],[dnl
+        AC_ARG_ENABLE(introspection,
+                  AS_HELP_STRING([--enable-introspection[=@<:@no/auto/yes@:>@]],
+                                 [Enable introspection for this build]),, 
+                                 [enable_introspection=auto])
+    ])dnl
+
+    AC_MSG_CHECKING([for gobject-introspection])
+
+    dnl presence/version checking
+    AS_CASE([$enable_introspection],
+    [no], [dnl
+        found_introspection="no (disabled, use --enable-introspection to enable)"
+    ],dnl
+    [yes],[dnl
+        PKG_CHECK_EXISTS([gobject-introspection-1.0],,
+                         AC_MSG_ERROR([gobject-introspection-1.0 is not installed]))
+        PKG_CHECK_EXISTS([gobject-introspection-1.0 >= $1],
+                         found_introspection=yes,
+                         AC_MSG_ERROR([You need to have gobject-introspection >= $1 installed to build AC_PACKAGE_NAME]))
+    ],dnl
+    [auto],[dnl
+        PKG_CHECK_EXISTS([gobject-introspection-1.0 >= $1], found_introspection=yes, found_introspection=no)
+	dnl Canonicalize enable_introspection
+	enable_introspection=$found_introspection
+    ],dnl
+    [dnl	
+        AC_MSG_ERROR([invalid argument passed to --enable-introspection, should be one of @<:@no/auto/yes@:>@])
+    ])dnl
+
+    AC_MSG_RESULT([$found_introspection])
+
+    INTROSPECTION_SCANNER=
+    INTROSPECTION_COMPILER=
+    INTROSPECTION_GENERATE=
+    INTROSPECTION_GIRDIR=
+    INTROSPECTION_TYPELIBDIR=
+    if test "x$found_introspection" = "xyes"; then
+       INTROSPECTION_SCANNER=`$PKG_CONFIG --variable=g_ir_scanner gobject-introspection-1.0`
+       INTROSPECTION_COMPILER=`$PKG_CONFIG --variable=g_ir_compiler gobject-introspection-1.0`
+       INTROSPECTION_GENERATE=`$PKG_CONFIG --variable=g_ir_generate gobject-introspection-1.0`
+       INTROSPECTION_GIRDIR=`$PKG_CONFIG --variable=girdir gobject-introspection-1.0`
+       INTROSPECTION_TYPELIBDIR="$($PKG_CONFIG --variable=typelibdir gobject-introspection-1.0)"
+       INTROSPECTION_CFLAGS=`$PKG_CONFIG --cflags gobject-introspection-1.0`
+       INTROSPECTION_LIBS=`$PKG_CONFIG --libs gobject-introspection-1.0`
+       INTROSPECTION_MAKEFILE=`$PKG_CONFIG --variable=datadir gobject-introspection-1.0`/gobject-introspection-1.0/Makefile.introspection
+    fi
+    AC_SUBST(INTROSPECTION_SCANNER)
+    AC_SUBST(INTROSPECTION_COMPILER)
+    AC_SUBST(INTROSPECTION_GENERATE)
+    AC_SUBST(INTROSPECTION_GIRDIR)
+    AC_SUBST(INTROSPECTION_TYPELIBDIR)
+    AC_SUBST(INTROSPECTION_CFLAGS)
+    AC_SUBST(INTROSPECTION_LIBS)
+    AC_SUBST(INTROSPECTION_MAKEFILE)
+
+    AM_CONDITIONAL(HAVE_INTROSPECTION, test "x$found_introspection" = "xyes")
+])
+
+
+dnl Usage:
+dnl   GOBJECT_INTROSPECTION_CHECK([minimum-g-i-version])
+
+AC_DEFUN([GOBJECT_INTROSPECTION_CHECK],
+[
+  _GOBJECT_INTROSPECTION_CHECK_INTERNAL([$1])
+])
+
+dnl Usage:
+dnl   GOBJECT_INTROSPECTION_REQUIRE([minimum-g-i-version])
+
+
+AC_DEFUN([GOBJECT_INTROSPECTION_REQUIRE],
+[
+  _GOBJECT_INTROSPECTION_CHECK_INTERNAL([$1], [require])
+])
+
 dnl pkg.m4 - Macros to locate and utilise pkg-config.   -*- Autoconf -*-
-dnl serial 11 (pkg-config-0.29.1)
+dnl serial 11 (pkg-config-0.29)
 dnl
 dnl Copyright © 2004 Scott James Remnant <scott@netsplit.com>.
 dnl Copyright © 2012-2015 Dan Nicholson <dbn.lists@gmail.com>
@@ -63,7 +444,7 @@ dnl
 dnl See the "Since" comment for each macro you use to see what version
 dnl of the macros you require.
 m4_defun([PKG_PREREQ],
-[m4_define([PKG_MACROS_VERSION], [0.29.1])
+[m4_define([PKG_MACROS_VERSION], [0.29])
 m4_if(m4_version_compare(PKG_MACROS_VERSION, [$1]), -1,
     [m4_fatal([pkg.m4 version $1 or higher is required but ]PKG_MACROS_VERSION[ found])])
 ])dnl PKG_PREREQ
@@ -295,103 +676,6 @@ AS_VAR_COPY([$1], [pkg_cv_][$1])
 
 AS_VAR_IF([$1], [""], [$5], [$4])dnl
 ])dnl PKG_CHECK_VAR
-
-dnl -*- mode: autoconf -*-
-dnl Copyright 2009 Johan Dahlin
-dnl
-dnl This file is free software; the author(s) gives unlimited
-dnl permission to copy and/or distribute it, with or without
-dnl modifications, as long as this notice is preserved.
-dnl
-
-# serial 1
-
-m4_define([_GOBJECT_INTROSPECTION_CHECK_INTERNAL],
-[
-    AC_BEFORE([AC_PROG_LIBTOOL],[$0])dnl setup libtool first
-    AC_BEFORE([AM_PROG_LIBTOOL],[$0])dnl setup libtool first
-    AC_BEFORE([LT_INIT],[$0])dnl setup libtool first
-
-    dnl enable/disable introspection
-    m4_if([$2], [require],
-    [dnl
-        enable_introspection=yes
-    ],[dnl
-        AC_ARG_ENABLE(introspection,
-                  AS_HELP_STRING([--enable-introspection[=@<:@no/auto/yes@:>@]],
-                                 [Enable introspection for this build]),, 
-                                 [enable_introspection=auto])
-    ])dnl
-
-    AC_MSG_CHECKING([for gobject-introspection])
-
-    dnl presence/version checking
-    AS_CASE([$enable_introspection],
-    [no], [dnl
-        found_introspection="no (disabled, use --enable-introspection to enable)"
-    ],dnl
-    [yes],[dnl
-        PKG_CHECK_EXISTS([gobject-introspection-1.0],,
-                         AC_MSG_ERROR([gobject-introspection-1.0 is not installed]))
-        PKG_CHECK_EXISTS([gobject-introspection-1.0 >= $1],
-                         found_introspection=yes,
-                         AC_MSG_ERROR([You need to have gobject-introspection >= $1 installed to build AC_PACKAGE_NAME]))
-    ],dnl
-    [auto],[dnl
-        PKG_CHECK_EXISTS([gobject-introspection-1.0 >= $1], found_introspection=yes, found_introspection=no)
-	dnl Canonicalize enable_introspection
-	enable_introspection=$found_introspection
-    ],dnl
-    [dnl	
-        AC_MSG_ERROR([invalid argument passed to --enable-introspection, should be one of @<:@no/auto/yes@:>@])
-    ])dnl
-
-    AC_MSG_RESULT([$found_introspection])
-
-    INTROSPECTION_SCANNER=
-    INTROSPECTION_COMPILER=
-    INTROSPECTION_GENERATE=
-    INTROSPECTION_GIRDIR=
-    INTROSPECTION_TYPELIBDIR=
-    if test "x$found_introspection" = "xyes"; then
-       INTROSPECTION_SCANNER=`$PKG_CONFIG --variable=g_ir_scanner gobject-introspection-1.0`
-       INTROSPECTION_COMPILER=`$PKG_CONFIG --variable=g_ir_compiler gobject-introspection-1.0`
-       INTROSPECTION_GENERATE=`$PKG_CONFIG --variable=g_ir_generate gobject-introspection-1.0`
-       INTROSPECTION_GIRDIR=`$PKG_CONFIG --variable=girdir gobject-introspection-1.0`
-       INTROSPECTION_TYPELIBDIR="$($PKG_CONFIG --variable=typelibdir gobject-introspection-1.0)"
-       INTROSPECTION_CFLAGS=`$PKG_CONFIG --cflags gobject-introspection-1.0`
-       INTROSPECTION_LIBS=`$PKG_CONFIG --libs gobject-introspection-1.0`
-       INTROSPECTION_MAKEFILE=`$PKG_CONFIG --variable=datadir gobject-introspection-1.0`/gobject-introspection-1.0/Makefile.introspection
-    fi
-    AC_SUBST(INTROSPECTION_SCANNER)
-    AC_SUBST(INTROSPECTION_COMPILER)
-    AC_SUBST(INTROSPECTION_GENERATE)
-    AC_SUBST(INTROSPECTION_GIRDIR)
-    AC_SUBST(INTROSPECTION_TYPELIBDIR)
-    AC_SUBST(INTROSPECTION_CFLAGS)
-    AC_SUBST(INTROSPECTION_LIBS)
-    AC_SUBST(INTROSPECTION_MAKEFILE)
-
-    AM_CONDITIONAL(HAVE_INTROSPECTION, test "x$found_introspection" = "xyes")
-])
-
-
-dnl Usage:
-dnl   GOBJECT_INTROSPECTION_CHECK([minimum-g-i-version])
-
-AC_DEFUN([GOBJECT_INTROSPECTION_CHECK],
-[
-  _GOBJECT_INTROSPECTION_CHECK_INTERNAL([$1])
-])
-
-dnl Usage:
-dnl   GOBJECT_INTROSPECTION_REQUIRE([minimum-g-i-version])
-
-
-AC_DEFUN([GOBJECT_INTROSPECTION_REQUIRE],
-[
-  _GOBJECT_INTROSPECTION_CHECK_INTERNAL([$1], [require])
-])
 
 # Copyright (C) 2002-2014 Free Software Foundation, Inc.
 #
@@ -1559,6 +1843,7 @@ AC_SUBST([am__tar])
 AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
+m4_include([m4/attributes.m4])
 m4_include([m4/gettext.m4])
 m4_include([m4/glibtests.m4])
 m4_include([m4/gtk-doc.m4])

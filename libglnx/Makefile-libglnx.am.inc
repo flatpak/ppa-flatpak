@@ -51,3 +51,19 @@ libglnx_la_SOURCES = \
 libglnx_la_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
 libglnx_la_LDFLAGS = -avoid-version -Bsymbolic-functions -export-symbols-regex "^glnx_" -no-undefined -export-dynamic 
 libglnx_la_LIBADD = $(libglnx_libs)
+
+libglnx_tests = test-libglnx-xattrs test-libglnx-fdio test-libglnx-errors
+TESTS += $(libglnx_tests)
+
+check_PROGRAMS += $(libglnx_tests)
+test_libglnx_xattrs_SOURCES = libglnx/tests/test-libglnx-xattrs.c
+test_libglnx_xattrs_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
+test_libglnx_xattrs_LDADD = $(libglnx_libs) libglnx.la
+
+test_libglnx_fdio_SOURCES = libglnx/tests/test-libglnx-fdio.c
+test_libglnx_fdio_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
+test_libglnx_fdio_LDADD = $(libglnx_libs) libglnx.la
+
+test_libglnx_errors_SOURCES = libglnx/tests/test-libglnx-errors.c
+test_libglnx_errors_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
+test_libglnx_errors_LDADD = $(libglnx_libs) libglnx.la

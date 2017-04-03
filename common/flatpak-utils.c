@@ -285,24 +285,7 @@ flatpak_path_match_prefix (const char *pattern,
   return NULL; /* Should not be reached */
 }
 
-gboolean
-flatpak_fail (GError **error, const char *format, ...)
-{
-  g_autofree char *message = NULL;
-  va_list args;
-
-  va_start (args, format);
-  message = g_strdup_vprintf (format, args);
-  va_end (args);
-
-  g_set_error_literal (error,
-                       G_IO_ERROR, G_IO_ERROR_FAILED,
-                       message);
-
-  return FALSE;
-}
-
-const char *
+static const char *
 flatpak_get_kernel_arch (void)
 {
   static struct utsname buf;
@@ -875,7 +858,7 @@ flatpak_kinds_from_bools (gboolean app, gboolean runtime)
   return kinds;
 }
 
-gboolean
+static gboolean
 _flatpak_split_partial_ref_arg (const char   *partial_ref,
                                 gboolean      validate,
                                 FlatpakKinds  default_kinds,
@@ -1122,13 +1105,13 @@ flatpak_list_unmaintained_refs (const char   *name_prefix,
                                 GError      **error)
 {
   gchar **ret = NULL;
-
   g_autoptr(GPtrArray) names = NULL;
   g_autoptr(GHashTable) hash = NULL;
   g_autoptr(FlatpakDir) user_dir = NULL;
-  g_autoptr(GError) my_error = NULL;
   const char *key;
   GHashTableIter iter;
+  g_autoptr(GPtrArray) system_dirs = NULL;
+  int i;
 
   hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
@@ -1136,28 +1119,21 @@ flatpak_list_unmaintained_refs (const char   *name_prefix,
 
   if (!flatpak_dir_collect_unmaintained_refs (user_dir, name_prefix,
                                               branch, arch, hash, cancellable,
-                                              &my_error))
+                                              error))
+    return NULL;
+
+  system_dirs = flatpak_dir_get_system_list (cancellable, error);
+  if (system_dirs == NULL)
+    return NULL;
+
+  for (i = 0; i < system_dirs->len; i++)
     {
-      g_autoptr(GPtrArray) system_dirs = NULL;
-      int i;
+      FlatpakDir *system_dir = g_ptr_array_index (system_dirs, i);
 
-      system_dirs = flatpak_dir_get_system_list (cancellable, error);
-      if (system_dirs == NULL)
-        goto out;
-
-      for (i = 0; i < system_dirs->len; i++)
-        {
-          FlatpakDir *system_dir = g_ptr_array_index (system_dirs, i);
-
-          g_clear_error (&my_error);
-          if (flatpak_dir_collect_unmaintained_refs (system_dir, name_prefix,
-                                                     branch, arch, hash, cancellable,
-                                                     &my_error))
-            {
-              /* Reference found in at least one of the system installations */
-              break;
-            }
-        }
+      if (!flatpak_dir_collect_unmaintained_refs (system_dir, name_prefix,
+                                                  branch, arch, hash, cancellable,
+                                                  error))
+        return NULL;
     }
 
   names = g_ptr_array_new ();
@@ -1171,10 +1147,6 @@ flatpak_list_unmaintained_refs (const char   *name_prefix,
   ret = (char **) g_ptr_array_free (names, FALSE);
   names = NULL;
 
-  if (ret == NULL)
-    g_propagate_error (error, g_steal_pointer (&my_error));
-
-out:
   return ret;
 }
 
@@ -1952,6 +1924,16 @@ flatpak_quote_argv (const char *argv[])
   return g_string_free (res, FALSE);
 }
 
+/* This is useful, because it handles escaped characters in uris, and ? arguments at the end of the uri */
+gboolean
+flatpak_file_arg_has_suffix (const char *arg, const char *suffix)
+{
+  g_autoptr(GFile) file = g_file_new_for_commandline_arg (arg);
+  g_autofree char *basename = g_file_get_basename (file);
+
+  return g_str_has_suffix (basename, suffix);
+}
+
 gboolean
 flatpak_spawn (GFile       *dir,
                char       **output,
@@ -2615,7 +2597,7 @@ flatpak_summary_match_subrefs (GVariant *summary, const char *ref)
 }
 
 gboolean
-flatpak_summary_lookup_ref (GVariant *summary, const char *ref, char **out_checksum)
+flatpak_summary_lookup_ref (GVariant *summary, const char *ref, char **out_checksum, GVariant **out_variant)
 {
   g_autoptr(GVariant) refs = g_variant_get_child_value (summary, 0);
   int pos;
@@ -2636,6 +2618,9 @@ flatpak_summary_lookup_ref (GVariant *summary, const char *ref, char **out_check
 
   if (out_checksum)
     *out_checksum = ostree_checksum_from_bytes_v (commit_csum_v);
+
+  if (out_variant)
+    *out_variant = g_steal_pointer (&reftargetdata);
 
   return TRUE;
 }
@@ -2980,7 +2965,7 @@ flatpak_repo_update (OstreeRepo   *repo,
               g_autoptr(GVariant) old_commit_data_v = g_variant_get_child_value (old_element, 1);
               CommitData *old_rev_data;
 
-              if (flatpak_summary_lookup_ref (old_summary, old_ref, &old_rev))
+              if (flatpak_summary_lookup_ref (old_summary, old_ref, &old_rev, NULL))
                 {
                   guint64 old_installed_size, old_download_size;
                   g_autofree char *old_metadata = NULL;
@@ -4439,12 +4424,106 @@ oci_layer_progress (guint64 downloaded_bytes,
                                 progress_data->progress_user_data);
 }
 
+gboolean
+flatpak_mirror_image_from_oci (FlatpakOciRegistry *dst_registry,
+                               FlatpakOciRegistry *registry,
+                               const char *digest,
+                               const char *signature_digest,
+                               FlatpakOciPullProgress progress_cb,
+                               gpointer progress_user_data,
+                               GCancellable *cancellable,
+                               GError      **error)
+{
+  FlatpakOciPullProgressData progress_data = { progress_cb, progress_user_data };
+  g_autoptr(FlatpakOciVersioned) versioned = NULL;
+  FlatpakOciManifest *manifest = NULL;
+  g_autoptr(FlatpakOciDescriptor) manifest_desc = NULL;
+  gsize versioned_size;
+  g_autoptr(FlatpakOciIndex) index = NULL;
+  int i;
+
+  if (!flatpak_oci_registry_mirror_blob (dst_registry, registry, digest, NULL, NULL, cancellable, error))
+    return FALSE;
+
+  if (signature_digest &&
+      !flatpak_oci_registry_mirror_blob (dst_registry, registry, signature_digest, NULL, NULL, cancellable, error))
+    return FALSE;
+
+  versioned = flatpak_oci_registry_load_versioned (dst_registry, digest, &versioned_size, cancellable, error);
+  if (versioned == NULL)
+    return FALSE;
+
+  if (!FLATPAK_IS_OCI_MANIFEST (versioned))
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                   "Image is not a manifest");
+      return FALSE;
+    }
+
+  manifest = FLATPAK_OCI_MANIFEST (versioned);
+
+  if (manifest->config.digest != NULL)
+    {
+      if (!flatpak_oci_registry_mirror_blob (dst_registry, registry, manifest->config.digest, NULL, NULL, cancellable, error))
+        return FALSE;
+    }
+
+  for (i = 0; manifest->layers[i] != NULL; i++)
+    {
+      FlatpakOciDescriptor *layer = manifest->layers[i];
+      progress_data.total_size += layer->size;
+      progress_data.n_layers++;
+    }
+
+  if (progress_cb)
+    progress_cb (progress_data.total_size, 0,
+                 progress_data.n_layers, progress_data.pulled_layers,
+                 progress_user_data);
+
+  for (i = 0; manifest->layers[i] != NULL; i++)
+    {
+      FlatpakOciDescriptor *layer = manifest->layers[i];
+
+      if (!flatpak_oci_registry_mirror_blob (dst_registry, registry, layer->digest,
+                                             oci_layer_progress, &progress_data,
+                                             cancellable, error))
+        return FALSE;
+
+      progress_data.pulled_layers++;
+      progress_data.previous_layers_size += layer->size;
+    }
+
+
+  index = flatpak_oci_registry_load_index (dst_registry, NULL, NULL, NULL, NULL);
+  if (index == NULL)
+    index = flatpak_oci_index_new ();
+
+  manifest_desc = flatpak_oci_descriptor_new (versioned->mediatype, digest, versioned_size);
+
+  flatpak_oci_export_annotations (manifest->annotations, manifest_desc->annotations);
+
+  if (signature_digest)
+    g_hash_table_replace (manifest_desc->annotations,
+                          g_strdup ("org.flatpak.signature-digest"),
+                          g_strdup (signature_digest));
+
+  flatpak_oci_index_add_manifest (index, manifest_desc);
+
+  if (!flatpak_oci_registry_save_index (dst_registry, index, cancellable, error))
+    return FALSE;
+
+  return TRUE;
+}
+
+
 char *
 flatpak_pull_from_oci (OstreeRepo   *repo,
                        FlatpakOciRegistry *registry,
                        const char *digest,
                        FlatpakOciManifest *manifest,
+                       const char *remote,
                        const char *ref,
+                       const char *signature_digest,
                        FlatpakOciPullProgress progress_cb,
                        gpointer progress_user_data,
                        GCancellable *cancellable,
@@ -4456,22 +4535,82 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
   const char *parent = NULL;
   g_autofree char *subject = NULL;
   g_autofree char *body = NULL;
+  g_autofree char *manifest_ref = NULL;
+  g_autofree char *full_ref = NULL;
   guint64 timestamp = 0;
   FlatpakOciPullProgressData progress_data = { progress_cb, progress_user_data };
   g_autoptr(GVariantBuilder) metadata_builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
   g_autoptr(GVariant) metadata = NULL;
   GHashTable *annotations;
+  gboolean gpg_verify = FALSE;
   int i;
 
   g_assert (ref != NULL);
   g_assert (g_str_has_prefix (digest, "sha256:"));
 
+  if (remote &&
+      !ostree_repo_remote_get_gpg_verify (repo, remote,
+                                          &gpg_verify, error))
+    return NULL;
+
+  if (gpg_verify)
+    {
+      g_autoptr(GBytes) signature_bytes = NULL;
+      g_autoptr(FlatpakOciSignature) signature = NULL;
+
+      if (signature_digest == NULL)
+        {
+          flatpak_fail (error, "GPG verification enabled, but no OCI signature found");
+          return NULL;
+        }
+
+      signature_bytes = flatpak_oci_registry_load_blob (registry, signature_digest, cancellable, error);
+      if (signature_bytes == NULL)
+        return NULL;
+
+      signature = flatpak_oci_verify_signature (repo, remote, signature_bytes, error);
+      if (signature == NULL)
+        return NULL;
+
+      if (g_strcmp0 (signature->critical.type, FLATPAK_OCI_SIGNATURE_TYPE_FLATPAK) != 0)
+        {
+          flatpak_fail (error, "Invalid signature type %s", signature->critical.type);
+          return NULL;
+        }
+
+      if (g_strcmp0 (signature->critical.image.digest, digest) != 0)
+        {
+          flatpak_fail (error, "Invalid signature digest %s", signature->critical.image.digest);
+          return NULL;
+        }
+
+      if (g_strcmp0 (signature->critical.identity.ref, ref) != 0)
+        {
+          flatpak_fail (error, "Invalid signature ref %s", signature->critical.identity.ref);
+          return NULL;
+        }
+
+      /* Success! It is valid */
+      g_debug ("Verified OCI signature for %s %s\n", signature->critical.identity.ref, digest);
+    }
+
   annotations = flatpak_oci_manifest_get_annotations (manifest);
   if (annotations)
     flatpak_oci_parse_commit_annotations (annotations, &timestamp,
                                           &subject, &body,
-                                          NULL, NULL, NULL,
+                                          &manifest_ref, NULL, NULL,
                                           metadata_builder);
+  if (manifest_ref == NULL)
+    {
+      flatpak_fail (error, "No ref specified for OCI image %s\n", digest);
+      return NULL;
+    }
+
+  if (strcmp (manifest_ref, ref) != 0)
+    {
+      flatpak_fail (error, "Wrong ref (%s) specified for OCI image %s, expected %s\n", manifest_ref, digest, ref);
+      return NULL;
+    }
 
   g_variant_builder_add (metadata_builder, "{s@v}", "xa.alt-id",
                          g_variant_new_variant (g_variant_new_string (digest + strlen("sha256:"))));
@@ -4501,6 +4640,8 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
       OstreeRepoImportArchiveOptions opts = { 0, };
       free_read_archive struct archive *a = NULL;
       glnx_fd_close int layer_fd = -1;
+      g_autoptr(GChecksum) checksum = g_checksum_new (G_CHECKSUM_SHA256);
+      const char *layer_checksum;
 
       opts.autocreate_parents = TRUE;
       opts.ignore_unsupported_content = TRUE;
@@ -4518,11 +4659,9 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
       archive_read_support_compression_all (a);
 #endif
       archive_read_support_format_all (a);
-      if (archive_read_open_fd (a, layer_fd, 8192) != ARCHIVE_OK)
-        {
-          propagate_libarchive_error (error, a);
-          goto error;
-        }
+
+      if (!flatpak_archive_read_open_fd_with_checksum (a, layer_fd, checksum, error))
+        goto error;
 
       if (!ostree_repo_import_archive_to_mtree (repo, &opts, a, archive_mtree, NULL, cancellable, error))
         goto error;
@@ -4530,6 +4669,14 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
       if (archive_read_close (a) != ARCHIVE_OK)
         {
           propagate_libarchive_error (error, a);
+          goto error;
+        }
+
+      layer_checksum = g_checksum_get_string (checksum);
+      if (!g_str_has_prefix (layer->digest, "sha256:") ||
+          strcmp (layer->digest + strlen ("sha256:"), layer_checksum) != 0)
+        {
+          flatpak_fail (error, "Wrong layer checksum, expected %s, was %s\n", layer->digest, layer_checksum);
           goto error;
         }
 
@@ -4555,7 +4702,12 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
                                            cancellable, error))
     goto error;
 
-  ostree_repo_transaction_set_ref (repo, NULL, ref, commit_checksum);
+  if (remote)
+    full_ref = g_strdup_printf ("%s:%s", remote, ref);
+  else
+    full_ref = g_strdup (ref);
+
+  ostree_repo_transaction_set_ref (repo, NULL, full_ref, commit_checksum);
 
   if (!ostree_repo_commit_transaction (repo, NULL, cancellable, error))
     return NULL;
@@ -4712,9 +4864,13 @@ flatpak_yes_no_prompt (const char *prompt, ...)
   va_list var_args;
   gchar *s;
 
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
   va_start (var_args, prompt);
   s = g_strdup_vprintf (prompt, var_args);
   va_end (var_args);
+#pragma GCC diagnostic pop
 
   while (TRUE)
     {
@@ -5115,9 +5271,12 @@ flatpak_complete_word (FlatpakCompletion *completion,
 
   g_return_if_fail (format != NULL);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
   va_start (args, format);
   string = g_strdup_vprintf (format, args);
   va_end (args);
+#pragma GCC diagnostic pop
 
   if (!g_str_has_prefix (string, completion->cur))
     return;
@@ -5161,7 +5320,7 @@ flatpak_complete_ref (FlatpakCompletion *completion,
     }
 }
 
-int
+static int
 find_current_element (const char *str)
 {
   int count = 0;

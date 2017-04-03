@@ -1083,15 +1083,21 @@ builder_manifest_get_runtime_version (BuilderManifest *self)
 }
 
 const char *
-builder_manifest_get_branch (BuilderManifest *self)
+builder_manifest_get_branch (BuilderManifest *self, const char *default_branch)
 {
-  return self->branch ? self->branch : "master";
+  if (self->branch)
+    return self->branch;
+
+  if (default_branch)
+    return default_branch;
+
+  return "master";
 }
 
 static const char *
 builder_manifest_get_base_version (BuilderManifest *self)
 {
-  return self->base_version ? self->base_version : builder_manifest_get_branch (self);
+  return self->base_version ? self->base_version : builder_manifest_get_branch (self, NULL);
 }
 
 static char *
@@ -1752,7 +1758,10 @@ appstream_compose (GFile   *app_dir,
   va_end (ap);
 
   if (!builder_maybe_host_spawnv (NULL, NULL, &local_error, (const char * const *)args->pdata))
-    g_print ("WARNING: appstream-compose failed: %s\n", local_error->message);
+    {
+      g_print ("ERROR: appstream-compose failed: %s\n", local_error->message);
+      return FALSE;
+    }
 
   return TRUE;
 }
@@ -2057,10 +2066,19 @@ builder_manifest_finish (BuilderManifest *self,
 
       if (self->command)
         {
-          g_autoptr(GFile) bin_dir = g_file_resolve_relative_path (app_dir, "files/bin");
-          g_autoptr(GFile) bin_command = g_file_get_child (bin_dir, self->command);
+          g_autoptr(GFile) files_dir = g_file_resolve_relative_path (app_dir, "files");
+          g_autoptr(GFile) command_file = NULL;
 
-          if (!g_file_query_exists (bin_command, NULL))
+          if (!g_path_is_absolute (self->command))
+            {
+              g_autoptr(GFile) bin_dir = g_file_resolve_relative_path (files_dir, "bin");
+              command_file = g_file_get_child (bin_dir, self->command);
+            }
+          else if (g_str_has_prefix (self->command, "/app/"))
+            command_file = g_file_resolve_relative_path (files_dir, self->command + strlen ("/app/"));
+
+          if (command_file != NULL &&
+              !g_file_query_exists (command_file, NULL))
             {
               const char *help = "";
 
@@ -2339,10 +2357,9 @@ builder_manifest_create_platform (BuilderManifest *self,
           g_autoptr(GFile) metadata = g_file_get_child (app_dir, "metadata");
           g_autoptr(GFile) dest_metadata = g_file_get_child (app_dir, "metadata.platform");
           g_autoptr(GKeyFile) keyfile = g_key_file_new ();
-          g_autofree char *sdk_locale_id = builder_manifest_get_locale_id (self);
-          g_autofree char *sdk_debug_id = builder_manifest_get_debug_id (self);
-          g_autofree char *sdk_locale_group = g_strdup_printf ("Extension %s", sdk_locale_id);
-          g_autofree char *sdk_debug_group = g_strdup_printf ("Extension %s", sdk_debug_id);
+          g_auto(GStrv) groups = NULL;
+          g_autofree char *sdk_group_prefix = g_strdup_printf ("Extension %s.", self->id);
+          int j;
 
           if (!g_key_file_load_from_file (keyfile,
                                           flatpak_file_get_path_cached (metadata),
@@ -2355,8 +2372,12 @@ builder_manifest_create_platform (BuilderManifest *self,
 
           g_key_file_set_string (keyfile, "Runtime", "name", self->id_platform);
 
-          g_key_file_remove_group (keyfile, sdk_locale_group, NULL);
-          g_key_file_remove_group (keyfile, sdk_debug_group, NULL);
+          groups = g_key_file_get_groups (keyfile, NULL);
+          for (j = 0; groups[j] != NULL; j++)
+            {
+              if (g_str_has_prefix (groups[j], sdk_group_prefix))
+                g_key_file_remove_group (keyfile, groups[j], NULL);
+            }
 
           if (!g_key_file_save_to_file (keyfile,
                                         flatpak_file_get_path_cached (dest_metadata),
@@ -2599,8 +2620,9 @@ builder_manifest_run (BuilderManifest *self,
   /* Just add something so that we get the default rules (own our own id) */
   g_ptr_array_add (args, g_strdup ("--talk-name=org.freedesktop.DBus"));
 
-  /* Inherit all finish args except the filesystem and command
-   * ones so the command gets the same access as the final app
+  /* Inherit all finish args except --filesystem and some that
+   * build doesn't understand so the command gets the same access
+   * as the final app
    */
   if (self->finish_args)
     {
@@ -2611,7 +2633,8 @@ builder_manifest_run (BuilderManifest *self,
               !g_str_has_prefix (arg, "--extension") &&
               !g_str_has_prefix (arg, "--sdk") &&
               !g_str_has_prefix (arg, "--runtime") &&
-              !g_str_has_prefix (arg, "--command"))
+              !g_str_has_prefix (arg, "--command") &&
+              !g_str_has_prefix (arg, "--require-version"))
             g_ptr_array_add (args, g_strdup (arg));
         }
     }
