@@ -1,4 +1,4 @@
-flatpak (0.9.1+git20170403.1-1) UNRELEASED; urgency=medium
+flatpak (0.9.1+git20170403.1-1) experimental; urgency=medium
 
   * New upstream snapshot, to merge the same fixes that are in 0.8.5
     - Build-depend on libgpgme-dev
@@ -7,7 +7,7 @@ flatpak (0.9.1+git20170403.1-1) UNRELEASED; urgency=medium
       is no longer required for the tests
     - Install a new man page
 
- -- Simon McVittie <smcv@debian.org>  Mon, 03 Apr 2017 18:13:26 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 03 Apr 2017 21:04:25 +0100
 
 flatpak (0.8.5-1) unstable; urgency=medium
 
