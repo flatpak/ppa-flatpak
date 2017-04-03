@@ -32,6 +32,7 @@ Build-Depends:
  libfuse-dev,
  libgirepository1.0-dev,
  libglib2.0-dev (>= 2.44),
+ libgpgme-dev (>= 1.1.8),
  libjson-glib-dev,
  libostree-dev (>= 2016.15),
  libpolkit-gobject-1-dev,
