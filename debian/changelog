@@ -1,6 +1,8 @@
 flatpak (0.9.1+git20170403.1-1) UNRELEASED; urgency=medium
 
   * New upstream snapshot, to merge the same fixes that are in 0.8.5
+  * Don't (build-)depend on ostree-tests any more, ostree trivial-httpd
+    is no longer required
 
  -- Simon McVittie <smcv@debian.org>  Mon, 03 Apr 2017 18:13:26 +0100
 
