@@ -1709,6 +1709,7 @@ repo_pull_one_dir (OstreeRepo          *self,
                    const char         **dirs_to_pull,
                    const char          *ref_to_fetch,
                    const char          *rev_to_fetch,
+                   FlatpakPullFlags     flatpak_flags,
                    OstreeRepoPullFlags  flags,
                    OstreeAsyncProgress *progress,
                    GCancellable        *cancellable,
@@ -1716,7 +1717,11 @@ repo_pull_one_dir (OstreeRepo          *self,
 {
   GVariantBuilder builder;
   gboolean force_disable_deltas = FALSE;
+  g_autofree char *remote_and_branch = NULL;
+  g_autofree char *current_checksum = NULL;
   g_autoptr(GVariant) options = NULL;
+  g_autoptr(GVariant) old_commit = NULL;
+  g_autoptr(GVariant) new_commit = NULL;
   const char *refs_to_fetch[2];
   const char *revs_to_fetch[2];
   gboolean res;
@@ -1751,8 +1756,32 @@ repo_pull_one_dir (OstreeRepo          *self,
                          g_variant_new_variant (g_variant_new_strv ((const char * const *) revs_to_fetch, -1)));
 
   options = g_variant_ref_sink (g_variant_builder_end (&builder));
+
+  remote_and_branch = g_strdup_printf ("%s:%s", remote_name, ref_to_fetch);
+  if (!ostree_repo_resolve_rev (self, remote_and_branch, TRUE, &current_checksum, error))
+    return FALSE;
+  if (current_checksum != NULL &&
+      !ostree_repo_load_commit (self, current_checksum, &old_commit, NULL, error))
+    return FALSE;
+
   res = ostree_repo_pull_with_options (self, remote_name, options,
                                        progress, cancellable, error);
+
+  if (old_commit &&
+      (flatpak_flags & FLATPAK_PULL_FLAGS_ALLOW_DOWNGRADE) == 0)
+    {
+      guint64 old_timestamp;
+      guint64 new_timestamp;
+
+      if (!ostree_repo_load_commit (self, rev_to_fetch, &new_commit, NULL, error))
+        return FALSE;
+
+      old_timestamp = ostree_commit_get_timestamp (old_commit);
+      new_timestamp = ostree_commit_get_timestamp (new_commit);
+
+      if (new_timestamp < old_timestamp)
+        return flatpak_fail (error, "Update is older then current version");
+    }
 
   return res;
 }
@@ -2154,7 +2183,7 @@ flatpak_dir_pull (FlatpakDir          *self,
 
   if (!repo_pull_one_dir (repo, repository,
                           subdirs_arg ? (const char **)subdirs_arg->pdata : NULL,
-                          ref, rev, flags,
+                          ref, rev, flatpak_flags, flags,
                           progress,
                           cancellable, error))
     {
@@ -2267,10 +2296,12 @@ flatpak_dir_pull_untrusted_local (FlatpakDir          *self,
   g_autoptr(GFile) summary_sig_file = g_file_get_child (path_file, "summary.sig");
   g_autofree char *url = g_file_get_uri (path_file);
   g_autofree char *checksum = NULL;
+  g_autofree char *current_checksum = NULL;
   gboolean gpg_verify_summary;
   gboolean gpg_verify;
   char *summary_data = NULL;
   char *summary_sig_data = NULL;
+  g_autofree char *remote_and_branch = NULL;
   gsize summary_data_size, summary_sig_data_size;
   g_autoptr(GBytes) summary_bytes = NULL;
   g_autoptr(GBytes) summary_sig_bytes = NULL;
@@ -2335,7 +2366,13 @@ flatpak_dir_pull_untrusted_local (FlatpakDir          *self,
       return FALSE;
     }
 
-  (void) ostree_repo_load_commit (self->repo, checksum, &old_commit, NULL, NULL);
+  remote_and_branch = g_strdup_printf ("%s:%s", remote_name, ref);
+  if (!ostree_repo_resolve_rev (self->repo, remote_and_branch, TRUE, &current_checksum, error))
+    return FALSE;
+
+  if (current_checksum != NULL &&
+      !ostree_repo_load_commit (self->repo, current_checksum, &old_commit, NULL, NULL))
+    return FALSE;
 
   src_repo = ostree_repo_new (path_file);
   if (!ostree_repo_open (src_repo, cancellable, error))
@@ -4771,15 +4808,19 @@ flatpak_dir_update (FlatpakDir          *self,
           /* We're pulling from a remote source, we do the network mirroring pull as a
              user and hand back the resulting data to the system-helper, that trusts us
              due to the GPG signatures in the repo */
+          FlatpakPullFlags flatpak_flags;
 
           child_repo = flatpak_dir_create_system_child_repo (self, &child_repo_lock, error);
           if (child_repo == NULL)
             return FALSE;
 
+          flatpak_flags = FLATPAK_PULL_FLAGS_DOWNLOAD_EXTRA_DATA | FLATPAK_PULL_FLAGS_SIDELOAD_EXTRA_DATA;
+          if (checksum_or_latest != NULL)
+            flatpak_flags |= FLATPAK_PULL_FLAGS_ALLOW_DOWNGRADE;
+
           if (!flatpak_dir_pull (self, remote_name, ref, rev, subpaths,
                                  child_repo,
-                                 FLATPAK_PULL_FLAGS_DOWNLOAD_EXTRA_DATA | FLATPAK_PULL_FLAGS_SIDELOAD_EXTRA_DATA,
-                                 OSTREE_REPO_PULL_FLAGS_MIRROR,
+                                 flatpak_flags, OSTREE_REPO_PULL_FLAGS_MIRROR,
                                  progress, cancellable, error))
             return FALSE;
 

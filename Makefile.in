@@ -1061,7 +1061,8 @@ NULL =
 dist_installed_test_extra_scripts = $(NULL) buildutil/tap-driver.sh \
 	tests/empty-configure tests/test-configure \
 	tests/make-test-app.sh tests/make-test-runtime.sh \
-	tests/make-test-bundles.sh tests/testpython.py $(NULL)
+	tests/make-test-bundles.sh tests/testpython.py \
+	tests/test-webserver.sh $(NULL)
 noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
