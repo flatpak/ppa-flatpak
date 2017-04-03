@@ -3,20 +3,12 @@ Depends:
  build-essential,
  libflatpak-dev,
 
-Tests: builder
+Tests: builder builder-python
 Restrictions: isolation-machine
 Depends:
  flatpak-builder,
  flatpak-tests,
  git,
- gnome-desktop-testing,
- make,
-
-Tests: builder-python
-Restrictions: isolation-machine
-Depends:
- flatpak-builder,
- flatpak-tests,
  gnome-desktop-testing,
  make,
  python,
@@ -26,3 +18,4 @@ Restrictions: isolation-machine
 Depends:
  flatpak-tests,
  gnome-desktop-testing,
+ python,

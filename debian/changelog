@@ -1,3 +1,33 @@
+flatpak (0.8.5-1) unstable; urgency=medium
+
+  * New upstream bugfix release
+  * Upstream security fixes:
+    - dbus-proxy: Fix a use-after-free (no specific exploit is known)
+      and several memory leaks
+    - system-helper: Correct the check that was meant to prevent
+      unprivileged users from downgrading system-wide-installed apps
+    - Do not allow downgrading apps to validly-signed older versions
+      unless a specific older version is requested, so that a
+      man-in-the-middle cannot cause a downgrade to an older app
+      version with a vulnerability
+  * Other upstream fixes:
+    - Increase GLib build-dependency to 2.44 (in practice this was
+      already required, there is a patch in jessie-backports to
+      relax this)
+    - Collect system extension references from all system directories,
+      not just the first that exists (upstream issue 654)
+    - Stop using ostree trivial-httpd, which is not available in
+      post-stretch ostree (upstream issues 658, 723)
+    - Be build-time compatible with post-stretch ostree (upstream
+      issue 756)
+    - Strip ?query suffix before detecting whether a URI points to a
+      .flatpakref or .flatpakrepo file (upstream issue 659)
+    - Fix a typo in help output
+  * d/tests/control: most tests now require python, for the
+    ostree-trivial-httpd replacement
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 03 Apr 2017 16:35:44 +0100
+
 flatpak (0.9.1-1) experimental; urgency=medium
 
   * d/gbp.conf, d/watch: switch to development branch for experimental
