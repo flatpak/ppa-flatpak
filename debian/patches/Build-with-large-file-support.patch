@@ -1,0 +1,25 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Mon, 3 Apr 2017 23:20:15 +0100
+Subject: Build with large file support
+
+gpgme is built with large file support by default, and checks that
+its ABI (size of off_t) matches the ABI expected by library users
+like flatpak. This caused build failures on Debian i386 and powerpc.
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ configure.ac | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/configure.ac b/configure.ac
+index 74a4293..092d3d2 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -32,6 +32,7 @@ GLIB_REQS=2.44
+ SYSTEM_BWRAP_REQS=0.1.5
+ OSTREE_REQS=2016.14
+ 
++AC_SYS_LARGEFILE
+ AC_USE_SYSTEM_EXTENSIONS
+ 
+ AC_PROG_CC

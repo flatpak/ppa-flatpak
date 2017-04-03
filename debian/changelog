@@ -1,3 +1,10 @@
+flatpak (0.9.1+git20170403.1-2) experimental; urgency=medium
+
+  * Build with large file support, fixing FTBFS on 32-bit
+    architectures when gpgme detects a mismatch
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 03 Apr 2017 23:20:58 +0100
+
 flatpak (0.9.1+git20170403.1-1) experimental; urgency=medium
 
   * New upstream snapshot, to merge the same fixes that are in 0.8.5
