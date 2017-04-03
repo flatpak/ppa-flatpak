@@ -55,12 +55,26 @@ AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$PACKAGE", [gettext domain])
 AM_SILENT_RULES([yes])
 AM_MAINTAINER_MODE([enable])
 
-if test "x$GCC" = "xyes"; then
-  case " $CFLAGS " in
-  *[[\ \	]]-Wall[[\ \	]]*) ;;
-  *) CFLAGS="$CFLAGS -Wall" ;;
-  esac
-fi
+dnl This list is shared with https://github.com/ostreedev/ostree
+CC_CHECK_FLAGS_APPEND([WARN_CFLAGS], [CFLAGS], [\
+-pipe \
+-Wall \
+-Werror=empty-body \
+-Werror=strict-prototypes \
+-Werror=missing-prototypes \
+-Werror=implicit-function-declaration \
+"-Werror=format=2 -Werror=format-security -Werror=format-nonliteral" \
+-Werror=pointer-arith -Werror=init-self \
+-Werror=missing-declarations \
+-Werror=return-type \
+-Werror=overflow \
+-Werror=int-conversion \
+-Werror=parenthesis \
+-Werror=incompatible-pointer-types \
+-Werror=misleading-indentation \
+-Werror=missing-include-dirs \
+])
+AC_SUBST(WARN_CFLAGS)
 
 AX_VALGRIND_CHECK
 
@@ -153,6 +167,16 @@ save_LIBS=$LIBS
 LIBS=$BASE_LIBS
 AC_CHECK_FUNCS(archive_read_support_filter_all)
 LIBS=$save_LIBS
+
+LIBGPGME_DEPENDENCY="1.1.8"
+PKG_CHECK_MODULES(DEP_GPGME, gpgme-pthread >= $LIBGPGME_DEPENDENCY, have_gpgme=yes, [
+    m4_ifdef([AM_PATH_GPGME_PTHREAD], [
+       AM_PATH_GPGME_PTHREAD($LIBGPGME_DEPENDENCY, have_gpgme=yes, have_gpgme=no)
+    ],[ have_gpgme=no ])
+])
+AS_IF([ test x$have_gpgme = xno ], [
+   AC_MSG_ERROR([Need GPGME_PTHREAD version $LIBGPGME_DEPENDENCY or later])
+])
 
 AC_ARG_ENABLE([system-helper],
               AC_HELP_STRING([--disable-system-helper],
@@ -257,8 +281,17 @@ AC_ARG_WITH([dwarf-header],
 provided, or it will be searched for in includedir])])],
             [with_dwarf_header=yes])
 
+# We need to check these exist, because otherwise -Werror=missing-include-dirs errors out
+LIBDWARF_INCLUDES=
+if test -d $(eval echo \"$includedir\")/libdwarf; then
+   LIBDWARF_INCLUDES="$LIBDWARF_INCLUDES -I$(eval echo \"$includedir\")/libdwarf"
+fi
+if test -d /usr/include/libdwarf; then
+   LIBDWARF_INCLUDES="$LIBDWARF_INCLUDES -I/usr/include/libdwarf"
+fi
+
 AS_IF([test "x$with_dwarf_header" = "xyes"],
-      [CPPFLAGS="$CPPFLAGS -I$(eval echo \"$includedir\")/libdwarf -I/usr/include/libdwarf"
+      [CPPFLAGS="$CPPFLAGS $LIBDWARF_INCLUDES"
        AC_CHECK_HEADER([dwarf.h])
        AS_IF([test "x$ac_cv_header_dwarf_h" != "xyes"],
              [AC_MSG_ERROR([dwarf.h is required but was not found; locate it using --with-dwarf-header=/path/containing/header])])],
