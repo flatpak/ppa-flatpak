@@ -1,4 +1,4 @@
-flatpak (0.8.5-1) UNRELEASED; urgency=medium
+flatpak (0.8.5-1) unstable; urgency=medium
 
   * New upstream bugfix release
   * Upstream security fixes:
@@ -26,7 +26,7 @@ flatpak (0.8.5-1) UNRELEASED; urgency=medium
   * d/tests/control: most tests now require python, for the
     ostree-trivial-httpd replacement
 
- -- Simon McVittie <smcv@debian.org>  Mon, 03 Apr 2017 14:25:39 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 03 Apr 2017 16:35:44 +0100
 
 flatpak (0.8.4-3) unstable; urgency=medium
 
