@@ -93,6 +93,7 @@ Section: devel
 Depends:
  gir1.2-flatpak-1.0,
  flatpak (= ${binary:Version}),
+ ostree,
  python3-gi,
  ${misc:Depends},
  ${python3:Depends},
