@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flatpak master\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2017-04-03 18:09+0100\n"
+"POT-Creation-Date: 2017-04-05 09:52+0200\n"
 "PO-Revision-Date: 2017-03-16 22:23+0100\n"
 "Last-Translator: Josef Andersson <l10nl18nsweja@gmail.com>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
@@ -128,7 +128,7 @@ msgstr "PLATS måste anges"
 #: app/flatpak-builtins-build-bundle.c:464
 #: app/flatpak-builtins-build-export.c:654
 #: app/flatpak-builtins-build-import-bundle.c:180
-#: app/flatpak-builtins-build-init.c:177 app/flatpak-builtins-build-sign.c:74
+#: app/flatpak-builtins-build-init.c:181 app/flatpak-builtins-build-sign.c:74
 #: app/flatpak-builtins-delete-remote.c:63
 #: app/flatpak-builtins-document-export.c:102
 #: app/flatpak-builtins-document-info.c:75
@@ -674,33 +674,33 @@ msgstr "Var SDK:n ska sparas (standardvärdet är ”usr”)"
 msgid "Re-initialize the sdk/var"
 msgstr "Återinitiera SDK/var"
 
-#: app/flatpak-builtins-build-init.c:106
+#: app/flatpak-builtins-build-init.c:102
 #, c-format
 msgid "Requested extension %s is only partially installed"
 msgstr "Begärt tillägg %s är bara delvis installerat"
 
-#: app/flatpak-builtins-build-init.c:128
+#: app/flatpak-builtins-build-init.c:131
 #, c-format
 msgid "Requested extension %s not installed"
 msgstr "Begärt tillägg %s är inte installerat"
 
-#: app/flatpak-builtins-build-init.c:167
+#: app/flatpak-builtins-build-init.c:171
 msgid ""
 "DIRECTORY APPNAME SDK RUNTIME [BRANCH] - Initialize a directory for building"
 msgstr ""
 "KATALOG PROGNAMN SDK EXEKVERINGSMILJÖ [GREN] - Initiera katalog för bygge"
 
-#: app/flatpak-builtins-build-init.c:174
+#: app/flatpak-builtins-build-init.c:178
 msgid "RUNTIME must be specified"
 msgstr "EXEKVERINGSMILJÖ måste anges"
 
-#: app/flatpak-builtins-build-init.c:195
+#: app/flatpak-builtins-build-init.c:199
 #, c-format
 msgid "'%s' is not a valid build type name, use app, runtime or extension"
 msgstr ""
 "”%s” är inte ett giltigt byggtypsnamn, använd app, runtime eller extension"
 
-#: app/flatpak-builtins-build-init.c:201 app/flatpak-builtins-override.c:71
+#: app/flatpak-builtins-build-init.c:205 app/flatpak-builtins-override.c:71
 #, c-format
 msgid "'%s' is not a valid application name: %s"
 msgstr "”%s” är inte ett giltigt programnamn: %s"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flatpak master\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2017-04-03 18:09+0100\n"
+"POT-Creation-Date: 2017-04-05 09:52+0200\n"
 "PO-Revision-Date: 2017-03-19 19:04+0100\n"
 "Last-Translator: Balázs Úr <urbalazs@gmail.com>\n"
 "Language-Team: Hungarian <openscope at googlegroups dot com>\n"
@@ -130,7 +130,7 @@ msgstr "A HELY megadása kötelező"
 #: app/flatpak-builtins-build-bundle.c:464
 #: app/flatpak-builtins-build-export.c:654
 #: app/flatpak-builtins-build-import-bundle.c:180
-#: app/flatpak-builtins-build-init.c:177 app/flatpak-builtins-build-sign.c:74
+#: app/flatpak-builtins-build-init.c:181 app/flatpak-builtins-build-sign.c:74
 #: app/flatpak-builtins-delete-remote.c:63
 #: app/flatpak-builtins-document-export.c:102
 #: app/flatpak-builtins-document-info.c:75
@@ -683,35 +683,35 @@ msgstr "Hol tárolja az sdk-t (alapértelmezetten „usr”)"
 msgid "Re-initialize the sdk/var"
 msgstr "Az sdk vagy változó újra előkészítése"
 
-#: app/flatpak-builtins-build-init.c:106
+#: app/flatpak-builtins-build-init.c:102
 #, c-format
 msgid "Requested extension %s is only partially installed"
 msgstr "A kért %s kiterjesztés csak részlegesen van telepítve"
 
-#: app/flatpak-builtins-build-init.c:128
+#: app/flatpak-builtins-build-init.c:131
 #, c-format
 msgid "Requested extension %s not installed"
 msgstr "A szükséges %s kiterjesztés nincs telepítve"
 
-#: app/flatpak-builtins-build-init.c:167
+#: app/flatpak-builtins-build-init.c:171
 msgid ""
 "DIRECTORY APPNAME SDK RUNTIME [BRANCH] - Initialize a directory for building"
 msgstr ""
 "KÖNYVTÁR ALKALMAZÁSNÉV SDK FUTTATÓKÖRNYEZET [ÁG] - Könyvtár előkészítése az "
 "összeállításhoz"
 
-#: app/flatpak-builtins-build-init.c:174
+#: app/flatpak-builtins-build-init.c:178
 msgid "RUNTIME must be specified"
 msgstr "A FUTTATÓKÖRNYEZET megadása kötelező"
 
-#: app/flatpak-builtins-build-init.c:195
+#: app/flatpak-builtins-build-init.c:199
 #, c-format
 msgid "'%s' is not a valid build type name, use app, runtime or extension"
 msgstr ""
 "A(z) „%s” nem érvényes összeállítás-típus név, alkalmazás, futtatókörnyezet "
 "vagy kiterjesztés használata szükséges"
 
-#: app/flatpak-builtins-build-init.c:201 app/flatpak-builtins-override.c:71
+#: app/flatpak-builtins-build-init.c:205 app/flatpak-builtins-override.c:71
 #, c-format
 msgid "'%s' is not a valid application name: %s"
 msgstr "A(z) „%s” nem érvényes alkalmazásnév: %s"
