@@ -41,6 +41,8 @@ struct BuilderSourceGit
   char         *url;
   char         *path;
   char         *branch;
+  char         *commit;
+  gboolean      disable_fsckobjects;
 };
 
 typedef struct
@@ -55,6 +57,8 @@ enum {
   PROP_URL,
   PROP_PATH,
   PROP_BRANCH,
+  PROP_COMMIT,
+  PROP_DISABLE_FSCKOBJECTS,
   LAST_PROP
 };
 
@@ -66,6 +70,7 @@ builder_source_git_finalize (GObject *object)
   g_free (self->url);
   g_free (self->path);
   g_free (self->branch);
+  g_free (self->commit);
 
   G_OBJECT_CLASS (builder_source_git_parent_class)->finalize (object);
 }
@@ -90,6 +95,14 @@ builder_source_git_get_property (GObject    *object,
 
     case PROP_BRANCH:
       g_value_set_string (value, self->branch);
+      break;
+
+    case PROP_COMMIT:
+      g_value_set_string (value, self->commit);
+      break;
+
+    case PROP_DISABLE_FSCKOBJECTS:
+      g_value_set_boolean (value, self->disable_fsckobjects);
       break;
 
     default:
@@ -122,6 +135,15 @@ builder_source_git_set_property (GObject      *object,
       self->branch = g_value_dup_string (value);
       break;
 
+    case PROP_COMMIT:
+      g_free (self->commit);
+      self->commit = g_value_dup_string (value);
+      break;
+
+    case PROP_DISABLE_FSCKOBJECTS:
+      self->disable_fsckobjects = g_value_get_boolean (value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
     }
@@ -132,6 +154,8 @@ get_branch (BuilderSourceGit *self)
 {
   if (self->branch)
     return self->branch;
+  else if (self->commit)
+    return self->commit;
   else
     return "master";
 }
@@ -182,11 +206,20 @@ builder_source_git_download (BuilderSource  *source,
     return FALSE;
 
   if (!builder_git_mirror_repo (location,
-                                update_vcs, TRUE,
+                                update_vcs, TRUE, self->disable_fsckobjects,
                                 get_branch (self),
                                 context,
                                 error))
     return FALSE;
+
+  if (self->commit != NULL && self->branch != NULL)
+    {
+      g_autofree char *current_commit = builder_git_get_current_commit (location,get_branch (self), context, error);
+      if (current_commit == NULL)
+        return FALSE;
+      if (strcmp (current_commit, self->commit) != 0)
+        return flatpak_fail (error, "Git commit for branch %s is %s, but expected %s\n", self->branch, current_commit, self->commit);
+    }
 
   return TRUE;
 }
@@ -225,6 +258,8 @@ builder_source_git_checksum (BuilderSource  *source,
   builder_cache_checksum_str (cache, self->url);
   builder_cache_checksum_str (cache, self->path);
   builder_cache_checksum_str (cache, self->branch);
+  builder_cache_checksum_compat_str (cache, self->commit);
+  builder_cache_checksum_compat_boolean (cache, self->disable_fsckobjects);
 
   location = get_url_or_path (self, context, &error);
   if (location != NULL)
@@ -300,6 +335,20 @@ builder_source_git_class_init (BuilderSourceGitClass *klass)
                                                         "",
                                                         NULL,
                                                         G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_COMMIT,
+                                   g_param_spec_string ("commit",
+                                                        "",
+                                                        "",
+                                                        NULL,
+                                                        G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_DISABLE_FSCKOBJECTS,
+                                   g_param_spec_boolean ("disable-fsckobjects",
+                                                         "",
+                                                         "",
+                                                         FALSE,
+                                                         G_PARAM_READWRITE));
 }
 
 static void

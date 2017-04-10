@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [9])
-m4_define([flatpak_micro_version], [1])
-m4_define([flatpak_interface_age], [1])
+m4_define([flatpak_micro_version], [2])
+m4_define([flatpak_interface_age], [2])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -32,6 +32,7 @@ GLIB_REQS=2.44
 SYSTEM_BWRAP_REQS=0.1.5
 OSTREE_REQS=2016.14
 
+AC_SYS_LARGEFILE
 AC_USE_SYSTEM_EXTENSIONS
 
 AC_PROG_CC

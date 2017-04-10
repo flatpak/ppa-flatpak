@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flatpak\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2017-04-03 18:09+0100\n"
+"POT-Creation-Date: 2017-04-05 09:52+0200\n"
 "PO-Revision-Date: 2017-03-30 08:00+0200\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <community-poland@mozilla.org>\n"
@@ -129,7 +129,7 @@ msgstr "Należy podać POŁOŻENIE"
 #: app/flatpak-builtins-build-bundle.c:464
 #: app/flatpak-builtins-build-export.c:654
 #: app/flatpak-builtins-build-import-bundle.c:180
-#: app/flatpak-builtins-build-init.c:177 app/flatpak-builtins-build-sign.c:74
+#: app/flatpak-builtins-build-init.c:181 app/flatpak-builtins-build-sign.c:74
 #: app/flatpak-builtins-delete-remote.c:63
 #: app/flatpak-builtins-document-export.c:102
 #: app/flatpak-builtins-document-info.c:75
@@ -690,35 +690,35 @@ msgstr "Gdzie przechowywać środowisko programistyczne (domyślnie „usr”)"
 msgid "Re-initialize the sdk/var"
 msgstr "Ponownie inicjuje środowisko programistyczne/zmienną"
 
-#: app/flatpak-builtins-build-init.c:106
+#: app/flatpak-builtins-build-init.c:102
 #, c-format
 msgid "Requested extension %s is only partially installed"
 msgstr "Żądane rozszerzenie %s jest tylko częściowo zainstalowane"
 
-#: app/flatpak-builtins-build-init.c:128
+#: app/flatpak-builtins-build-init.c:131
 #, c-format
 msgid "Requested extension %s not installed"
 msgstr "Nie zainstalowano żądanego rozszerzenia %s"
 
-#: app/flatpak-builtins-build-init.c:167
+#: app/flatpak-builtins-build-init.c:171
 msgid ""
 "DIRECTORY APPNAME SDK RUNTIME [BRANCH] - Initialize a directory for building"
 msgstr ""
 "KATALOG NAZWA-PROGRAMU ŚRODOWISKO-PROGRAMISTYCZNE [GAŁĄŹ] — inicjuje katalog "
 "do budowania"
 
-#: app/flatpak-builtins-build-init.c:174
+#: app/flatpak-builtins-build-init.c:178
 msgid "RUNTIME must be specified"
 msgstr "Należy podać ŚRODOWISKO-WYKONAWCZE"
 
-#: app/flatpak-builtins-build-init.c:195
+#: app/flatpak-builtins-build-init.c:199
 #, c-format
 msgid "'%s' is not a valid build type name, use app, runtime or extension"
 msgstr ""
 "„%s” nie jest prawidłową nazwą typu budowania, należy użyć „app” (program), "
 "„runtime” (środowisko wykonawcze) lub „extension” (rozszerzenie)"
 
-#: app/flatpak-builtins-build-init.c:201 app/flatpak-builtins-override.c:71
+#: app/flatpak-builtins-build-init.c:205 app/flatpak-builtins-override.c:71
 #, c-format
 msgid "'%s' is not a valid application name: %s"
 msgstr "„%s” nie jest prawidłową nazwą programu: %s"
