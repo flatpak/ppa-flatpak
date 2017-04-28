@@ -66,8 +66,8 @@
         <para>
             In addition to the system-wide installation in <filename>$prefix/var/lib/flatpak/</filename>,
             which is always considered the default one unless overridden, more
-            system-wide installations can be defined via configuration files
-            <filename>/etc/flatpak/installations.d</filename>, which must define
+            system-wide installations can be defined via configuration files in
+            <filename>/etc/flatpak/installations.d/</filename>, which must define
             at least the id of the installation and the absolute path to it.
             Other optional parameters like <arg choice="plain">DisplayName</arg>,
             <arg choice="plain">Priority</arg> or <arg choice="plain">StorageType</arg>
@@ -211,6 +211,13 @@
                 </para></listitem>
             </varlistentry>
             <varlistentry>
+                <term><citerefentry><refentrytitle>flatpak-make-current</refentrytitle><manvolnum>1</manvolnum></citerefentry></term>
+
+                <listitem><para>
+                    Specify the default version to run.
+                </para></listitem>
+            </varlistentry>
+            <varlistentry>
                 <term><citerefentry><refentrytitle>flatpak-enter</refentrytitle><manvolnum>1</manvolnum></citerefentry></term>
 
                 <listitem><para>
@@ -339,6 +346,13 @@
                 </para></listitem>
             </varlistentry>
             <varlistentry>
+                <term><citerefentry><refentrytitle>flatpak-build-sign</refentrytitle><manvolnum>1</manvolnum></citerefentry></term>
+
+                <listitem><para>
+                    Sign an application or runtime after its been exported.
+                </para></listitem>
+            </varlistentry>
+            <varlistentry>
                 <term><citerefentry><refentrytitle>flatpak-build-update-repo</refentrytitle><manvolnum>1</manvolnum></citerefentry></term>
 
                 <listitem><para>
@@ -346,10 +360,10 @@
                 </para></listitem>
             </varlistentry>
             <varlistentry>
-                <term><citerefentry><refentrytitle>flatpak-build-sign</refentrytitle><manvolnum>1</manvolnum></citerefentry></term>
+                <term><citerefentry><refentrytitle>flatpak-build-commit-from</refentrytitle><manvolnum>1</manvolnum></citerefentry></term>
 
                 <listitem><para>
-                    Sign an application or runtime after its been exported.
+                    Create a new commit based on an existing ref.
                 </para></listitem>
             </varlistentry>
         </variablelist>
@@ -361,6 +375,7 @@
             <para>
                 <citerefentry><refentrytitle>ostree</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
                 <citerefentry><refentrytitle>ostree.repo</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
+                <citerefentry><refentrytitle>flatpak-remote</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
             </para>
 
     </refsect1>

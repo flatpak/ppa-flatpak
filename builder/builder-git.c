@@ -141,6 +141,7 @@ make_absolute (const char *orig_parent, const char *orig_relpath, GError **error
 
 static gboolean
 git_mirror_submodules (const char     *repo_location,
+                       const char     *destination_path,
                        gboolean        update,
                        GFile          *mirror_dir,
                        gboolean        disable_fsck,
@@ -187,6 +188,8 @@ git_mirror_submodules (const char     *repo_location,
             return FALSE;
 
           relative_url = g_key_file_get_string (key_file, submodule, "url", error);
+          /* Remove any trailing whitespace */
+          g_strchomp (relative_url);
           absolute_url = make_absolute (repo_location, relative_url, error);
           if (absolute_url == NULL)
             return FALSE;
@@ -206,7 +209,7 @@ git_mirror_submodules (const char     *repo_location,
           if (g_strcmp0 (words[0], "160000") != 0)
             continue;
 
-          if (!builder_git_mirror_repo (absolute_url, update, TRUE, disable_fsck, words[2], context, error))
+          if (!builder_git_mirror_repo (absolute_url, destination_path, update, TRUE, disable_fsck, words[2], context, error))
             return FALSE;
         }
     }
@@ -216,6 +219,7 @@ git_mirror_submodules (const char     *repo_location,
 
 gboolean
 builder_git_mirror_repo (const char     *repo_location,
+                         const char     *destination_path,
                          gboolean        update,
                          gboolean        mirror_submodules,
                          gboolean        disable_fsck,
@@ -228,22 +232,78 @@ builder_git_mirror_repo (const char     *repo_location,
 
   mirror_dir = git_get_mirror_dir (repo_location, context);
 
+  if (destination_path != NULL)
+    {
+      g_autofree char *file_name = g_file_get_basename (mirror_dir);
+      g_autofree char *destination_file_path = g_build_filename (destination_path,
+                                                                 file_name,
+                                                                 NULL);
+      g_object_unref (mirror_dir);
+      mirror_dir = g_file_new_for_path (destination_file_path);
+    }
+
   if (!g_file_query_exists (mirror_dir, NULL))
     {
       g_autofree char *filename = g_file_get_basename (mirror_dir);
       g_autoptr(GFile) parent = g_file_get_parent (mirror_dir);
       g_autofree char *filename_tmp = g_strconcat (filename, ".clone_tmp", NULL);
       g_autoptr(GFile) mirror_dir_tmp = g_file_get_child (parent, filename_tmp);
+      g_autoptr(GFile) cached_git_dir = NULL;
       gboolean res;
+      g_autoptr(GPtrArray) args = g_ptr_array_new ();
+
+      g_ptr_array_add (args, "git");
+      g_ptr_array_add (args, "clone");
+
+      if (!disable_fsck)
+        {
+          g_ptr_array_add (args, "-c");
+          g_ptr_array_add (args, "transfer.fsckObjects=1");
+        }
+
+      g_ptr_array_add (args, "--mirror");
+
+      /* If we're doing a regular download, look for cache sources */
+      if (destination_path == NULL)
+        cached_git_dir = builder_context_find_in_sources_dirs (context, "git", filename, NULL);
 
       g_print ("Cloning git repo %s\n", repo_location);
 
-      if (disable_fsck)
-        res = git (parent, NULL, error,
-                   "clone", "--mirror", repo_location,  filename_tmp, NULL);
+      if (cached_git_dir && update)
+        {
+          g_ptr_array_add (args, "--reference");
+          g_ptr_array_add (args, (char *)flatpak_file_get_path_cached (cached_git_dir));
+        }
+
+      /* Non-updating use of caches we just pull from the cache to avoid network i/o */
+      if (cached_git_dir && !update)
+        g_ptr_array_add (args, (char *)flatpak_file_get_path_cached (cached_git_dir));
       else
-        res = git (parent, NULL, error,
-                   "clone", "-c", "transfer.fsckObjects=1", "--mirror", repo_location,  filename_tmp, NULL);
+        g_ptr_array_add (args, (char *)repo_location);
+
+      g_ptr_array_add (args, filename_tmp);
+      g_ptr_array_add (args, NULL);
+
+      res = flatpak_spawnv (parent, NULL, error,
+                            (const gchar * const *) args->pdata);
+
+      if (cached_git_dir && !update &&
+          !git (mirror_dir_tmp, NULL, error,
+                "config", "--local", "remote.origin.url",
+                repo_location, NULL))
+        return FALSE;
+
+      /* Ensure we copy the files from the cache, to be safe if the extra source changes */
+      if (cached_git_dir && update)
+        {
+          g_autoptr(GFile) alternates = g_file_resolve_relative_path (mirror_dir_tmp, "objects/info/alternates");
+
+          if (!git (mirror_dir_tmp, NULL, error,
+                    "repack", "-a", "-d", NULL))
+            return FALSE;
+
+          g_file_delete (alternates, NULL, NULL);
+        }
 
       if (!res || !g_file_move (mirror_dir_tmp, mirror_dir, 0, NULL, NULL, NULL, error))
         return FALSE;
@@ -262,7 +322,8 @@ builder_git_mirror_repo (const char     *repo_location,
       if (current_commit == NULL)
         return FALSE;
 
-      if (!git_mirror_submodules (repo_location, update, mirror_dir, disable_fsck, current_commit, context, error))
+      if (!git_mirror_submodules (repo_location, destination_path, update,
+                                  mirror_dir, disable_fsck, current_commit, context, error))
         return FALSE;
     }
 
