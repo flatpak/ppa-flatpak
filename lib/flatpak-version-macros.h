@@ -27,7 +27,7 @@
 
 #define FLATPAK_MAJOR_VERSION (0)
 #define FLATPAK_MINOR_VERSION (9)
-#define FLATPAK_MICRO_VERSION (2)
+#define FLATPAK_MICRO_VERSION (3)
 
 #define FLATPAK_CHECK_VERSION(major,minor,micro)        \
     (FLATPAK_MAJOR_VERSION > (major) || \

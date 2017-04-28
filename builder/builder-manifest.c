@@ -36,12 +36,18 @@
 
 #define LOCALES_SEPARATE_DIR "share/runtime/locale"
 
-static BuilderContext *demarshal_build_context = NULL;
+static GFile *demarshal_base_dir = NULL;
 
 void
-builder_manifest_set_demarshal_buid_context (BuilderContext *build_context)
+builder_manifest_set_demarshal_base_dir (GFile *dir)
 {
-  g_set_object (&demarshal_build_context, build_context);
+  g_set_object (&demarshal_base_dir, dir);
+}
+
+GFile *
+builder_manifest_get_demarshal_base_dir (void)
+{
+  return g_object_ref (demarshal_base_dir);
 }
 
 struct BuilderManifest
@@ -940,6 +946,7 @@ builder_manifest_deserialize_property (JsonSerializable *serializable,
         {
           JsonArray *array = json_node_get_array (property_node);
           guint i, array_len = json_array_get_length (array);
+          g_autoptr(GFile) saved_demarshal_base_dir = builder_manifest_get_demarshal_base_dir ();
           GList *modules = NULL;
           GObject *module;
 
@@ -954,17 +961,23 @@ builder_manifest_deserialize_property (JsonSerializable *serializable,
                 {
                   const char *module_relpath = json_node_get_string (element_node);
                   g_autoptr(GFile) module_file =
-                    g_file_resolve_relative_path (builder_context_get_base_dir (demarshal_build_context), module_relpath);
+                    g_file_resolve_relative_path (demarshal_base_dir, module_relpath);
                   const char *module_path = flatpak_file_get_path_cached (module_file);
                   g_autofree char *json = NULL;
                   g_autoptr(GError) error = NULL;
 
                   if (g_file_get_contents (module_path, &json, NULL, &error))
                     {
+                      g_autoptr(GFile) module_file_dir = g_file_get_parent (module_file);
+                      builder_manifest_set_demarshal_base_dir (module_file_dir);
                       module = json_gobject_from_data (BUILDER_TYPE_MODULE,
                                                        json, -1, &error);
+                      builder_manifest_set_demarshal_base_dir (saved_demarshal_base_dir);
                       if (module)
-                        builder_module_set_json_path (BUILDER_MODULE (module), module_path);
+                        {
+                          builder_module_set_json_path (BUILDER_MODULE (module), module_path);
+                          builder_module_set_base_dir (BUILDER_MODULE (module), module_file_dir);
+                        }
                     }
                   if (error != NULL)
                     {
@@ -972,7 +985,11 @@ builder_manifest_deserialize_property (JsonSerializable *serializable,
                     }
                 }
               else if (JSON_NODE_HOLDS_OBJECT (element_node))
-                module = json_gobject_deserialize (BUILDER_TYPE_MODULE, element_node);
+                {
+                  module = json_gobject_deserialize (BUILDER_TYPE_MODULE, element_node);
+                  if (module != NULL)
+                    builder_module_set_base_dir (BUILDER_MODULE (module), saved_demarshal_base_dir);
+                }
 
               if (module == NULL)
                 {
@@ -1004,6 +1021,7 @@ serializable_iface_init (JsonSerializableIface *serializable_iface)
 {
   serializable_iface->serialize_property = builder_manifest_serialize_property;
   serializable_iface->deserialize_property = builder_manifest_deserialize_property;
+  serializable_iface->find_property = builder_serializable_find_property_with_error;
 }
 
 const char *
@@ -1042,6 +1060,13 @@ builder_manifest_get_debug_id (BuilderManifest *self)
 {
   g_autofree char *id = make_valid_id_prefix (self->id);
   return g_strdup_printf ("%s.Debug", id);
+}
+
+char *
+builder_manifest_get_sources_id (BuilderManifest *self)
+{
+  g_autofree char *id = make_valid_id_prefix (self->id);
+  return g_strdup_printf ("%s.Sources", id);
 }
 
 const char *
@@ -1370,6 +1395,14 @@ builder_manifest_checksum_for_finish (BuilderManifest *self,
     }
 }
 
+void
+builder_manifest_checksum_for_bundle_sources (BuilderManifest *self,
+                                              BuilderCache    *cache,
+                                              BuilderContext  *context)
+{
+  builder_cache_checksum_str (cache, BUILDER_MANIFEST_CHECKSUM_BUNDLE_SOURCES_VERSION);
+  builder_cache_checksum_boolean (cache, builder_context_get_bundle_sources (context));
+}
 
 void
 builder_manifest_checksum_for_platform (BuilderManifest *self,
@@ -1944,20 +1977,44 @@ builder_manifest_cleanup (BuilderManifest *self,
                                           error))
             return FALSE;
 
+          desktop_keys = g_key_file_get_keys (keyfile,
+                                              G_KEY_FILE_DESKTOP_GROUP,
+                                              NULL, NULL);
+
           if (self->rename_icon)
             {
+              g_autofree char *original_icon_name = g_key_file_get_string (keyfile,
+                                                                           G_KEY_FILE_DESKTOP_GROUP,
+                                                                           G_KEY_FILE_DESKTOP_KEY_ICON,
+                                                                           NULL);
+
               g_key_file_set_string (keyfile,
                                      G_KEY_FILE_DESKTOP_GROUP,
                                      G_KEY_FILE_DESKTOP_KEY_ICON,
                                      self->id);
+
+              /* Also rename localized version of the Icon= field */
+              for (i = 0; desktop_keys[i]; i++)
+                {
+                  /* Only rename untranslated icon names */
+                  if (g_str_has_prefix (desktop_keys[i], "Icon["))
+                    {
+                      g_autofree char *icon_name = g_key_file_get_string (keyfile,
+                                                                          G_KEY_FILE_DESKTOP_GROUP,
+                                                                          desktop_keys[i], NULL);
+
+                      if (strcmp (icon_name, original_icon_name) == 0)
+                        g_key_file_set_string (keyfile,
+                                               G_KEY_FILE_DESKTOP_GROUP,
+                                               desktop_keys[i],
+                                               self->id);
+                    }
+                }
             }
 
           if (self->desktop_file_name_suffix ||
               self->desktop_file_name_prefix)
             {
-              desktop_keys = g_key_file_get_keys (keyfile,
-                                                  G_KEY_FILE_DESKTOP_GROUP,
-                                                  NULL, NULL);
               for (i = 0; desktop_keys[i]; i++)
                 {
                   if (strcmp (desktop_keys[i], "Name") == 0 ||
@@ -2027,6 +2084,7 @@ builder_manifest_finish (BuilderManifest *self,
 {
   g_autoptr(GFile) manifest_file = NULL;
   g_autoptr(GFile) debuginfo_dir = NULL;
+  g_autoptr(GFile) sources_dir = NULL;
   g_autoptr(GFile) locale_parent_dir = NULL;
   g_autofree char *json = NULL;
   g_autofree char *commandline = NULL;
@@ -2167,6 +2225,7 @@ builder_manifest_finish (BuilderManifest *self,
           debuginfo_dir = g_file_resolve_relative_path (app_dir, "files/lib/debug");
           locale_parent_dir = g_file_resolve_relative_path (app_dir, "files/" LOCALES_SEPARATE_DIR);
         }
+      sources_dir = g_file_resolve_relative_path (app_dir, "sources");
 
       if (self->separate_locales && g_file_query_exists (locale_parent_dir, NULL))
         {
@@ -2543,6 +2602,71 @@ builder_manifest_create_platform (BuilderManifest *self,
   return TRUE;
 }
 
+gboolean
+builder_manifest_bundle_sources (BuilderManifest *self,
+                                 const char      *json,
+                                 BuilderCache    *cache,
+                                 BuilderContext  *context,
+                                 GError         **error)
+{
+
+  builder_manifest_checksum_for_bundle_sources (self, cache, context);
+  if (!builder_cache_lookup (cache, "bundle-sources"))
+    {
+      g_autofree char *sources_id = builder_manifest_get_sources_id (self);
+      GFile *app_dir;
+      g_autoptr(GFile) metadata_sources_file = NULL;
+      g_autoptr(GFile) json_dir = NULL;
+      g_autofree char *manifest_filename = NULL;
+      g_autoptr(GFile) manifest_file = NULL;
+      g_autofree char *metadata_contents = NULL;
+      GList *l;
+
+      g_print ("Bundling sources\n");
+
+      if (!builder_context_enable_rofiles (context, error))
+        return FALSE;
+
+      app_dir = builder_context_get_app_dir (context);
+      metadata_sources_file = g_file_get_child (app_dir, "metadata.sources");
+      metadata_contents = g_strdup_printf ("[Runtime]\n"
+                                           "name=%s\n", sources_id);
+      if (!g_file_set_contents (flatpak_file_get_path_cached (metadata_sources_file),
+                                metadata_contents, strlen (metadata_contents), error))
+        return FALSE;
+
+      json_dir = g_file_resolve_relative_path (app_dir, "sources/manifest");
+      if (!flatpak_mkdir_p (json_dir, NULL, error))
+        return FALSE;
+
+      manifest_filename = g_strconcat (self->id, ".json", NULL);
+      manifest_file = g_file_get_child (json_dir, manifest_filename);
+      if (!g_file_set_contents (flatpak_file_get_path_cached (manifest_file),
+                                json, strlen (json), error))
+        return FALSE;
+
+
+      for (l = self->expanded_modules; l != NULL; l = l->next)
+        {
+          BuilderModule *m = l->data;
+
+          if (!builder_module_bundle_sources (m, context, error))
+            return FALSE;
+        }
+
+      if (!builder_context_disable_rofiles (context, error))
+        return FALSE;
+
+      if (!builder_cache_commit (cache, "Bundled sources", error))
+        return FALSE;
+    }
+  else
+    {
+      g_print ("Cache hit for bundle-sources, skipping\n");
+    }
+
+  return TRUE;
+}
 
 gboolean
 builder_manifest_show_deps (BuilderManifest *self,
@@ -2635,6 +2759,7 @@ builder_manifest_run (BuilderManifest *self,
               !g_str_has_prefix (arg, "--sdk") &&
               !g_str_has_prefix (arg, "--runtime") &&
               !g_str_has_prefix (arg, "--command") &&
+              !g_str_has_prefix (arg, "--extra-data") &&
               !g_str_has_prefix (arg, "--require-version"))
             g_ptr_array_add (args, g_strdup (arg));
         }

@@ -166,6 +166,7 @@ get_url_or_path (BuilderSourceGit *self,
                  GError          **error)
 {
   g_autoptr(GFile) repo = NULL;
+  GFile *base_dir = BUILDER_SOURCE (self)->base_dir;
 
   if (self->url == NULL && self->path == NULL)
     {
@@ -179,15 +180,14 @@ get_url_or_path (BuilderSourceGit *self,
       scheme = g_uri_parse_scheme (self->url);
       if (scheme == NULL)
         {
-          repo = g_file_resolve_relative_path (builder_context_get_base_dir (context),
-                                               self->url);
+          repo = g_file_resolve_relative_path (base_dir, self->url);
           return g_file_get_uri (repo);
         }
 
       return g_strdup (self->url);
     }
 
-  repo = g_file_resolve_relative_path (builder_context_get_base_dir (context),
+  repo = g_file_resolve_relative_path (base_dir,
                                        self->path);
   return g_file_get_path (repo);
 }
@@ -206,6 +206,7 @@ builder_source_git_download (BuilderSource  *source,
     return FALSE;
 
   if (!builder_git_mirror_repo (location,
+                                NULL,
                                 update_vcs, TRUE, self->disable_fsckobjects,
                                 get_branch (self),
                                 context,
@@ -240,6 +241,40 @@ builder_source_git_extract (BuilderSource  *source,
 
   if (!builder_git_checkout (location, get_branch (self),
                              dest, context, error))
+    return FALSE;
+
+  return TRUE;
+}
+
+static gboolean
+builder_source_git_bundle (BuilderSource  *source,
+                           BuilderContext *context,
+                           GError        **error)
+{
+  BuilderSourceGit *self = BUILDER_SOURCE_GIT (source);
+
+  g_autofree char *location = NULL;
+  g_autoptr(GFile) mirror_dir = NULL;
+
+  location = get_url_or_path (self, context, error);
+
+  g_print ("builder_source_git_bundle %s\n", location);
+
+  if (location == NULL)
+    return FALSE;
+
+  mirror_dir = flatpak_build_file (builder_context_get_app_dir (context),
+                                   "sources/git",
+                                   NULL);
+  if (!flatpak_mkdir_p (mirror_dir, NULL, error))
+    return FALSE;
+
+  if (!builder_git_mirror_repo (location,
+                                flatpak_file_get_path_cached (mirror_dir),
+                                FALSE, TRUE, FALSE,
+                                get_branch (self),
+                                context,
+                                error))
     return FALSE;
 
   return TRUE;
@@ -311,6 +346,7 @@ builder_source_git_class_init (BuilderSourceGitClass *klass)
 
   source_class->download = builder_source_git_download;
   source_class->extract = builder_source_git_extract;
+  source_class->bundle = builder_source_git_bundle;
   source_class->update = builder_source_git_update;
   source_class->checksum = builder_source_git_checksum;
 

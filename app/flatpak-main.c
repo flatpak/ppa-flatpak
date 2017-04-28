@@ -97,6 +97,7 @@ static FlatpakCommand commands[] = {
   { "build-sign", N_("Sign an application or runtime"), flatpak_builtin_build_sign, flatpak_complete_build_sign },
   { "build-update-repo", N_("Update the summary file in a repository"), flatpak_builtin_build_update_repo, flatpak_complete_build_update_repo },
   { "build-commit-from", N_("Create new commit based on existing ref"), flatpak_builtin_build_commit_from, flatpak_complete_build_commit_from },
+  { "repo", N_("Print information about a repo"), flatpak_builtin_repo, flatpak_complete_repo },
 
   { NULL }
 };
@@ -119,7 +120,7 @@ static GOptionEntry empty_entries[] = {
 GOptionEntry user_entries[] = {
   { "user", 0, 0, G_OPTION_ARG_NONE, &opt_user, N_("Work on user installations"), NULL },
   { "system", 0, G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &opt_user, N_("Work on system-wide installations (default)"), NULL },
-  { "installation", 0, 0, G_OPTION_ARG_STRING, &opt_installation, N_("Work on a specific system-wide installation"), NULL },
+  { "installation", 0, 0, G_OPTION_ARG_STRING, &opt_installation, N_("Work on a specific system-wide installation"), N_("NAME") },
   { NULL }
 };
 

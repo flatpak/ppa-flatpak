@@ -123,12 +123,17 @@ gboolean
 flatpak_splice_update_checksum (GOutputStream  *out,
                                 GInputStream   *in,
                                 GChecksum      *checksum,
+                                FlatpakLoadUriProgress progress,
+                                gpointer        progress_data,
                                 GCancellable   *cancellable,
                                 GError        **error)
 {
   gsize bytes_read, bytes_written;
   char buf[32*1024];
+  guint64 downloaded_bytes = 0;
+  gint64 progress_start;
 
+  progress_start = g_get_monotonic_time ();
   do
     {
       if (!g_input_stream_read_all (in, buf, sizeof buf, &bytes_read, cancellable, error))
@@ -137,8 +142,20 @@ flatpak_splice_update_checksum (GOutputStream  *out,
       if (!flatpak_write_update_checksum (out, buf, bytes_read, &bytes_written, checksum,
                                           cancellable, error))
         return FALSE;
+
+      downloaded_bytes += bytes_read;
+
+      if (progress &&
+          g_get_monotonic_time () - progress_start >  5 * 1000000)
+        {
+          progress (downloaded_bytes, progress_data);
+          progress_start = g_get_monotonic_time ();
+        }
     }
   while (bytes_read > 0);
+
+  if (progress)
+    progress (downloaded_bytes, progress_data);
 
   return TRUE;
 }
@@ -366,6 +383,22 @@ flatpak_get_arch (void)
 #else
   return flatpak_get_kernel_arch ();
 #endif
+}
+
+gboolean
+flatpak_is_linux32_arch (const char *arch)
+{
+  const char *kernel_arch = flatpak_get_kernel_arch ();
+
+  if (strcmp (kernel_arch, "x86_64") == 0 &&
+      strcmp (arch, "i386") == 0)
+    return TRUE;
+
+  if (strcmp (kernel_arch, "aarch64") == 0 &&
+      strcmp (arch, "arm") == 0)
+    return TRUE;
+
+  return FALSE;
 }
 
 /* Get all compatible arches for this host in order of priority */
@@ -2038,6 +2071,35 @@ flatpak_spawnv (GFile                *dir,
   return TRUE;
 }
 
+GFile *
+flatpak_build_file_va (GFile *base,
+                       va_list args)
+{
+  g_autoptr(GFile) res = g_object_ref (base);
+  const gchar *arg;
+
+  while ((arg = va_arg (args, const gchar *)))
+    {
+      GFile *child = g_file_resolve_relative_path (res, arg);
+      g_set_object (&res, child);
+    }
+
+  return g_steal_pointer (&res);
+}
+
+GFile *
+flatpak_build_file (GFile *base, ...)
+{
+  GFile *res;
+  va_list args;
+
+  va_start (args, base);
+  res = flatpak_build_file_va (base, args);
+  va_end (args);
+
+  return res;
+}
+
 const char *
 flatpak_file_get_path_cached (GFile *file)
 {
@@ -3134,7 +3196,9 @@ validate_component (FlatpakXml *component,
 
   id_text = g_strstrip (g_strdup (id_text_node->text));
 
-  if (g_str_has_suffix (id_text, ".desktop"))
+  /* Drop .desktop file suffix (unless the actual app id ends with .desktop) */
+  if (g_str_has_suffix (id_text, ".desktop") &&
+      !g_str_has_suffix (id, ".desktop"))
     id_text[strlen(id_text)-strlen(".desktop")] = 0;
 
   if (!g_str_has_prefix (id_text, id))
