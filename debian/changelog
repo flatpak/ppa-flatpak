@@ -1,9 +1,9 @@
-flatpak (0.9.3-1) UNRELEASED; urgency=medium
+flatpak (0.9.3-1) experimental; urgency=medium
 
   * New upstream release
     - Install new man pages
 
- -- Simon McVittie <smcv@debian.org>  Fri, 28 Apr 2017 18:11:12 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 28 Apr 2017 18:17:12 +0100
 
 flatpak (0.9.2-1) experimental; urgency=medium
 
