@@ -42,13 +42,16 @@ usr/share/man/man1/flatpak-remote-delete.1
 usr/share/man/man1/flatpak-remote-ls.1
 usr/share/man/man1/flatpak-remote-modify.1
 usr/share/man/man1/flatpak-remotes.1
+usr/share/man/man1/flatpak-repo.1
 usr/share/man/man1/flatpak-run.1
 usr/share/man/man1/flatpak-uninstall.1
 usr/share/man/man1/flatpak-update.1
 usr/share/man/man1/flatpak.1
 usr/share/man/man5/flatpak-flatpakref.5
 usr/share/man/man5/flatpak-flatpakrepo.5
+usr/share/man/man5/flatpak-installation.5
 usr/share/man/man5/flatpak-manifest.5
 usr/share/man/man5/flatpak-metadata.5
+usr/share/man/man5/flatpak-remote.5
 usr/share/polkit-1/actions
 usr/share/polkit-1/rules.d
