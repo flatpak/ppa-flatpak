@@ -4,6 +4,8 @@ flatpak (0.9.4-1) UNRELEASED; urgency=medium
     - Add new API to symbols file
     - Build-depend on libxml2-dev
     - Increase required libostree and bubblewrap versions
+  * d/p/installed-tests-Install-test-keyring2-to-the-right-place.patch:
+    Fix failure to install data for installed-tests
 
  -- Simon McVittie <smcv@debian.org>  Wed, 24 May 2017 22:17:27 +0100
 
