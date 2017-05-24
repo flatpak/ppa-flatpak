@@ -6,6 +6,8 @@ flatpak (0.9.4-1) UNRELEASED; urgency=medium
     - Increase required libostree and bubblewrap versions
   * d/p/installed-tests-Install-test-keyring2-to-the-right-place.patch:
     Fix failure to install data for installed-tests
+  * d/p/testlibrary-Call-g_assert_no_error-first.patch:
+    Improve diagnostics on failing tests
 
  -- Simon McVittie <smcv@debian.org>  Wed, 24 May 2017 22:17:27 +0100
 
