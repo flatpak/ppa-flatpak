@@ -31,6 +31,7 @@
 #include "flatpak-dbus.h"
 #include <ostree.h>
 #include <json-glib/json-glib.h>
+#include "document-portal/xdp-dbus.h"
 
 typedef enum {
   FLATPAK_HOST_COMMAND_FLAGS_CLEAR_ENV = 1 << 0,
@@ -38,6 +39,12 @@ typedef enum {
 
 typedef void (*FlatpakLoadUriProgress) (guint64 downloaded_bytes,
                                         gpointer user_data);
+
+
+#define FLATPAK_ANSI_BOLD_ON "\x1b[1m"
+#define FLATPAK_ANSI_BOLD_OFF "\x1b[22m"
+#define FLATPAK_ANSI_RED "\x1b[31m"
+#define FLATPAK_ANSI_COLOR_RESET "\x1b[0m"
 
 /* https://bugzilla.gnome.org/show_bug.cgi?id=766370 */
 #if !GLIB_CHECK_VERSION(2, 49, 3)
@@ -64,6 +71,8 @@ const char * flatpak_path_match_prefix (const char *pattern,
                                         const char *path);
 
 gboolean flatpak_is_in_sandbox (void);
+
+gboolean flatpak_fancy_output (void);
 
 const char * flatpak_get_arch (void);
 const char ** flatpak_get_arches (void);
@@ -171,6 +180,9 @@ char * flatpak_build_runtime_ref (const char *runtime,
 char * flatpak_build_app_ref (const char *app,
                               const char *branch,
                               const char *arch);
+char * flatpak_find_current_ref (const char *app_id,
+                                 GCancellable *cancellable,
+                                 GError      **error);
 GFile *flatpak_find_deploy_dir_for_ref (const char   *ref,
                                         FlatpakDir **dir_out,
                                         GCancellable *cancellable,
@@ -274,27 +286,18 @@ gint flatpak_mkstempat (int    dir_fd,
                         int    flags,
                         int    mode);
 
-
-typedef struct FlatpakTablePrinter FlatpakTablePrinter;
-
-FlatpakTablePrinter *flatpak_table_printer_new (void);
-void                flatpak_table_printer_free (FlatpakTablePrinter *printer);
-void                flatpak_table_printer_add_column (FlatpakTablePrinter *printer,
-                                                      const char          *text);
-void                flatpak_table_printer_add_column_len (FlatpakTablePrinter *printer,
-                                                          const char          *text,
-                                                          gsize                len);
-void                flatpak_table_printer_append_with_comma (FlatpakTablePrinter *printer,
-                                                             const char          *text);
-void                flatpak_table_printer_finish_row (FlatpakTablePrinter *printer);
-void                flatpak_table_printer_print (FlatpakTablePrinter *printer);
-
 gboolean flatpak_repo_set_title (OstreeRepo *repo,
                                  const char *title,
                                  GError    **error);
+gboolean flatpak_repo_set_redirect_url (OstreeRepo *repo,
+                                        const char *redirect_url,
+                                        GError    **error);
 gboolean flatpak_repo_set_default_branch (OstreeRepo *repo,
                                           const char *branch,
                                           GError    **error);
+gboolean flatpak_repo_set_gpg_keys (OstreeRepo *repo,
+                                    GBytes *bytes,
+                                    GError    **error);
 gboolean flatpak_repo_update (OstreeRepo   *repo,
                               const char  **gpg_key_ids,
                               const char   *gpg_homedir,
@@ -413,10 +416,6 @@ gboolean flatpak_openat_noatime (int            dfd,
                                  int           *ret_fd,
                                  GCancellable  *cancellable,
                                  GError       **error);
-
-gboolean flatpak_copy_bytes (int fdf,
-                             int fdt,
-                             GError **error);
 
 typedef enum {
   FLATPAK_CP_FLAGS_NONE = 0,
@@ -552,6 +551,8 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(GUnixFDList, g_object_unref)
 typedef FlatpakSessionHelper AutoFlatpakSessionHelper;
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (AutoFlatpakSessionHelper, g_object_unref)
 
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (XdpDbusDocuments, g_object_unref)
+
 typedef struct FlatpakXml FlatpakXml;
 
 struct FlatpakXml
@@ -664,5 +665,25 @@ void               flatpak_complete_dir     (FlatpakCompletion *completion);
 void               flatpak_complete_options (FlatpakCompletion *completion,
                                              GOptionEntry      *entries);
 void               flatpak_completion_free  (FlatpakCompletion *completion);
+
+typedef struct {
+  int inited;
+  int n_columns;
+  int last_width;
+} FlatpakTerminalProgress;
+
+void flatpak_terminal_progress_cb (const char *status,
+                                   guint       progress,
+                                   gboolean    estimating,
+                                   gpointer    user_data);
+void flatpak_terminal_progress_end (FlatpakTerminalProgress *term);
+
+typedef void (*FlatpakProgressCallback)(const char *status,
+                                        guint       progress,
+                                        gboolean    estimating,
+                                        gpointer    user_data);
+
+OstreeAsyncProgress *flatpak_progress_new (FlatpakProgressCallback progress,
+                                           gpointer                progress_data);
 
 #endif /* __FLATPAK_UTILS_H__ */

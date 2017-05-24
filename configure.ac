@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [9])
-m4_define([flatpak_micro_version], [3])
-m4_define([flatpak_interface_age], [3])
+m4_define([flatpak_micro_version], [4])
+m4_define([flatpak_interface_age], [4])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -29,8 +29,8 @@ AC_INIT([Flatpak],
         [http://flatpak.org/])
 
 GLIB_REQS=2.44
-SYSTEM_BWRAP_REQS=0.1.5
-OSTREE_REQS=2016.14
+SYSTEM_BWRAP_REQS=0.1.8
+OSTREE_REQS=2017.6
 
 AC_SYS_LARGEFILE
 AC_USE_SYSTEM_EXTENSIONS
@@ -161,7 +161,7 @@ AC_SUBST([GDBUS_CODEGEN], [`$PKG_CONFIG --variable gdbus_codegen gio-2.0`])
 
 POLKIT_GOBJECT_REQUIRED=0.98
 
-PKG_CHECK_MODULES(BASE, [glib-2.0 >= $GLIB_REQS gio-2.0 gio-unix-2.0 libarchive >= 2.8.0])
+PKG_CHECK_MODULES(BASE, [glib-2.0 >= $GLIB_REQS gio-2.0 gio-unix-2.0 libarchive >= 2.8.0 libxml-2.0 >= 2.4 ])
 PKG_CHECK_MODULES(SOUP, [libsoup-2.4])
 
 save_LIBS=$LIBS

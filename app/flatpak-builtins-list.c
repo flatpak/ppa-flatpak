@@ -31,6 +31,7 @@
 
 #include "flatpak-builtins.h"
 #include "flatpak-utils.h"
+#include "flatpak-table-printer.h"
 
 static gboolean opt_show_details;
 static gboolean opt_user;
@@ -124,6 +125,17 @@ print_table_for_refs (gboolean print_apps, GPtrArray* refs_array, const char *ar
   FlatpakTablePrinter *printer = flatpak_table_printer_new ();
   int i;
 
+  i = 0;
+  flatpak_table_printer_set_column_title (printer, i++, _("Ref"));
+  if (opt_show_details)
+    {
+      flatpak_table_printer_set_column_title (printer, i++, _("Origin"));
+      flatpak_table_printer_set_column_title (printer, i++, _("Active commit"));
+      flatpak_table_printer_set_column_title (printer, i++, _("Latest commit"));
+      flatpak_table_printer_set_column_title (printer, i++, _("Installed size"));
+    }
+  flatpak_table_printer_set_column_title (printer, i++, _("Options"));
+
   for (i = 0; i < refs_array->len; i++)
     {
       RefsData *refs_data = NULL;
@@ -194,7 +206,7 @@ print_table_for_refs (gboolean print_apps, GPtrArray* refs_array, const char *ar
 
               size = flatpak_deploy_data_get_installed_size (deploy_data);
               size_s = g_format_size (size);
-              flatpak_table_printer_add_column (printer, size_s);
+              flatpak_table_printer_add_decimal_column (printer, size_s);
             }
 
           flatpak_table_printer_add_column (printer, ""); /* Options */
@@ -225,20 +237,10 @@ print_table_for_refs (gboolean print_apps, GPtrArray* refs_array, const char *ar
                 flatpak_table_printer_append_with_comma (printer, "runtime");
             }
 
-          if (opt_show_details)
+          subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
+          if (subpaths[0] != NULL)
             {
-              subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
-              if (subpaths[0] == NULL)
-                {
-                  flatpak_table_printer_add_column (printer, "");
-                }
-              else
-                {
-                  int i;
-                  flatpak_table_printer_add_column (printer, ""); /* subpaths */
-                  for (i = 0; subpaths[i] != NULL; i++)
-                    flatpak_table_printer_append_with_comma (printer, subpaths[i]);
-                }
+              flatpak_table_printer_append_with_comma (printer, "partial");
             }
           flatpak_table_printer_finish_row (printer);
         }
