@@ -8,7 +8,7 @@ Uploaders:
 Build-Depends:
  attr,
  automake (>= 1.14.1),
- bubblewrap (>= 0.1.5),
+ bubblewrap (>= 0.1.8),
  ca-certificates,
  dbus,
  debhelper (>= 10~),
@@ -34,11 +34,12 @@ Build-Depends:
  libglib2.0-dev (>= 2.44),
  libgpgme-dev (>= 1.1.8),
  libjson-glib-dev,
- libostree-dev (>= 2016.15),
+ libostree-dev (>= 2017.6),
  libpolkit-gobject-1-dev,
  libseccomp-dev,
  libsoup2.4-dev,
  libxau-dev,
+ libxml2-dev (>= 2.4),
  libxml2-utils,
  ostree,
  procps,
@@ -54,7 +55,7 @@ Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/flatpak.git
 Package: flatpak
 Architecture: linux-any
 Depends:
- bubblewrap (>= 0.1.5),
+ bubblewrap (>= 0.1.8),
  fuse,
  ${misc:Depends},
  ${shlibs:Depends},
@@ -93,7 +94,7 @@ Section: devel
 Depends:
  gir1.2-flatpak-1.0,
  flatpak (= ${binary:Version}),
- ostree,
+ ostree (>= 2017.6),
  python3-gi,
  ${misc:Depends},
  ${python3:Depends},
@@ -125,7 +126,7 @@ Depends:
  flatpak (= ${binary:Version}),
  hicolor-icon-theme,
  gtk-update-icon-cache,
- ostree,
+ ostree (>= 2017.6),
  shared-mime-info,
  ${misc:Depends},
  ${shlibs:Depends},
@@ -159,7 +160,8 @@ Depends:
  gir1.2-flatpak-1.0 (= ${binary:Version}),
  libflatpak0 (= ${binary:Version}),
  libglib2.0-dev,
- libostree-dev (>= 2016.15),
+ libostree-dev (>= 2017.6),
+ libxml2-dev (>= 2.4),
  pkg-config,
  ${misc:Depends},
 Description: Application deployment framework for desktop apps (development)
@@ -187,7 +189,7 @@ Package: libflatpak0
 Architecture: linux-any
 Section: libs
 Depends:
- bubblewrap (>= 0.1.5),
+ bubblewrap (>= 0.1.8),
  ${misc:Depends},
  ${shlibs:Depends},
 Pre-Depends:

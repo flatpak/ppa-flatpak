@@ -51,6 +51,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_remove_remote@Base 0.5.2+git20160516
  flatpak_installation_uninstall@Base 0.5.2
  flatpak_installation_update@Base 0.5.2
+ flatpak_installation_update_appstream_full_sync@Base 0.9.4
  flatpak_installation_update_appstream_sync@Base 0.5.2
  flatpak_installation_update_full@Base 0.6.5
  flatpak_installation_update_remote_sync@Base 0.6.13

@@ -1,3 +1,12 @@
+flatpak (0.9.4-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    - Add new API to symbols file
+    - Build-depend on libxml2-dev
+    - Increase required libostree and bubblewrap versions
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 24 May 2017 22:17:27 +0100
+
 flatpak (0.9.3-1) experimental; urgency=medium
 
   * New upstream release
