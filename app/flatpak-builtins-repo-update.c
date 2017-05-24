@@ -31,9 +31,12 @@
 
 #include "flatpak-builtins.h"
 #include "flatpak-utils.h"
+#include "flatpak-builtins-utils.h"
 
 static char *opt_title;
+static char *opt_redirect_url;
 static char *opt_default_branch;
+static char **opt_gpg_import;
 static char *opt_generate_delta_from;
 static char *opt_generate_delta_to;
 static char *opt_generate_delta_ref;
@@ -44,8 +47,10 @@ static gboolean opt_generate_deltas;
 static gint opt_prune_depth = -1;
 
 static GOptionEntry options[] = {
+  { "redirect-url", 0, 0, G_OPTION_ARG_STRING, &opt_redirect_url, N_("Redirect this repo to a new URL"), N_("URL") },
   { "title", 0, 0, G_OPTION_ARG_STRING, &opt_title, N_("A nice name to use for this repository"), N_("TITLE") },
   { "default-branch", 0, 0, G_OPTION_ARG_STRING, &opt_default_branch, N_("Default branch to use for this repository"), N_("BRANCH") },
+  { "gpg-import", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_gpg_import, N_("Import new default GPG public key from FILE"), N_("FILE") },
   { "gpg-sign", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_gpg_key_ids, N_("GPG Key ID to sign the summary with"), N_("KEY-ID") },
   { "gpg-homedir", 0, 0, G_OPTION_ARG_STRING, &opt_gpg_homedir, N_("GPG Homedir to use when looking for keyrings"), N_("HOMEDIR") },
   { "generate-static-deltas", 0, 0, G_OPTION_ARG_NONE, &opt_generate_deltas, N_("Generate delta files"), NULL },
@@ -419,12 +424,26 @@ flatpak_builtin_build_update_repo (int argc, char **argv,
     }
 
   if (opt_title &&
-      !flatpak_repo_set_title (repo, opt_title, error))
+      !flatpak_repo_set_title (repo, opt_title[0] ? opt_title : NULL, error))
+    return FALSE;
+
+  if (opt_redirect_url &&
+      !flatpak_repo_set_redirect_url (repo, opt_redirect_url[0] ? opt_redirect_url : NULL, error))
     return FALSE;
 
   if (opt_default_branch &&
-      !flatpak_repo_set_default_branch (repo, opt_default_branch, error))
+      !flatpak_repo_set_default_branch (repo, opt_default_branch[0] ? opt_default_branch : NULL, error))
     return FALSE;
+
+  if (opt_gpg_import)
+    {
+      g_autoptr(GBytes) gpg_data = flatpak_load_gpg_keys (opt_gpg_import, cancellable, error);
+      if (gpg_data == NULL)
+        return FALSE;
+
+      if (!flatpak_repo_set_gpg_keys (repo, gpg_data, error))
+        return FALSE;
+    }
 
   g_print (_("Updating appstream branch\n"));
   if (!flatpak_repo_generate_appstream (repo, (const char **) opt_gpg_key_ids, opt_gpg_homedir, 0, cancellable, error))

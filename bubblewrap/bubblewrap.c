@@ -65,6 +65,7 @@ bool opt_unshare_cgroup = FALSE;
 bool opt_unshare_cgroup_try = FALSE;
 bool opt_needs_devpts = FALSE;
 bool opt_new_session = FALSE;
+bool opt_die_with_parent = FALSE;
 uid_t opt_sandbox_uid = -1;
 gid_t opt_sandbox_gid = -1;
 int opt_sync_fd = -1;
@@ -217,8 +218,19 @@ usage (int ecode, FILE *out)
            "    --block-fd FD                Block on FD until some data to read is available\n"
            "    --info-fd FD                 Write information about the running container to FD\n"
            "    --new-session                Create a new terminal session\n"
+           "    --die-with-parent            Kills with SIGKILL child process (COMMAND) when bwrap or bwrap's parent dies.\n"
           );
   exit (ecode);
+}
+
+/* If --die-with-parent was specified, use PDEATHSIG to ensure SIGKILL
+ * is sent to the current process when our parent dies.
+ */
+static void
+handle_die_with_parent (void)
+{
+  if (opt_die_with_parent && prctl (PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0) != 0)
+    die_with_error ("prctl");
 }
 
 static void
@@ -399,6 +411,9 @@ do_init (int event_fd, pid_t initial_pid, struct sock_fprog *seccomp_prog)
       /* Keep fd open to hang on to lock */
     }
 
+  /* Optionally bind our lifecycle to that of the caller */
+  handle_die_with_parent ();
+
   if (seccomp_prog != NULL &&
       prctl (PR_SET_SECCOMP, SECCOMP_MODE_FILTER, seccomp_prog) != 0)
     die_with_error ("prctl(PR_SET_SECCOMP)");
@@ -482,10 +497,17 @@ drop_cap_bounding_set (void)
 {
   unsigned long cap;
 
+  /* We ignore both EINVAL and EPERM, as we are actually relying
+   * on PR_SET_NO_NEW_PRIVS to ensure the right capabilities are
+   * available.  EPERM in particular can happen with old, buggy
+   * kernels.  See:
+   *  https://github.com/projectatomic/bubblewrap/pull/175#issuecomment-278051373
+   *  https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/security/commoncap.c?id=160da84dbb39443fdade7151bc63a88f8e953077
+   */
   for (cap = 0; cap <= 63; cap++)
     {
       int res = prctl (PR_CAPBSET_DROP, cap, 0, 0, 0);
-      if (res == -1 && errno != EINVAL)
+      if (res == -1 && !(errno == EINVAL || errno == EPERM))
         die_with_error ("Dropping capability %ld from bounds", cap);
     }
 }
@@ -848,7 +870,7 @@ setup_newroot (bool unshare_pid,
 
         case SETUP_REMOUNT_RO_NO_RECURSIVE:
           privileged_op (privileged_op_socket,
-                         PRIV_SEP_OP_REMOUNT_RO_NO_RECURSIVE, BIND_READONLY, NULL, dest);
+                         PRIV_SEP_OP_REMOUNT_RO_NO_RECURSIVE, 0, NULL, dest);
           break;
 
         case SETUP_MOUNT_PROC:
@@ -878,6 +900,9 @@ setup_newroot (bool unshare_pid,
           for (i = 0; i < N_ELEMENTS (cover_proc_dirs); i++)
             {
               cleanup_free char *subdir = strconcat3 (dest, "/", cover_proc_dirs[i]);
+              /* Some of these may not exist */
+              if (get_file_mode (subdir) == -1)
+                continue;
               privileged_op (privileged_op_socket,
                              PRIV_SEP_OP_BIND_MOUNT, BIND_READONLY,
                              subdir, subdir);
@@ -925,8 +950,7 @@ setup_newroot (bool unshare_pid,
             if (mkdir (pts, 0755) == -1)
               die_with_error ("Can't create %s/devpts", op->dest);
             privileged_op (privileged_op_socket,
-                           PRIV_SEP_OP_DEVPTS_MOUNT, BIND_DEVICES,
-                           pts, NULL);
+                           PRIV_SEP_OP_DEVPTS_MOUNT, 0, pts, NULL);
 
             if (symlink ("pts/ptmx", ptmx) != 0)
               die_with_error ("Can't make symlink at %s/ptmx", op->dest);
@@ -1118,6 +1142,13 @@ read_priv_sec_op (int          read_socket,
   return op->op;
 }
 
+static void __attribute__ ((noreturn))
+print_version_and_exit (void)
+{
+  printf ("%s\n", PACKAGE_STRING);
+  exit (0);
+}
+
 static void
 parse_args_recurse (int    *argcp,
                     char ***argvp,
@@ -1152,8 +1183,7 @@ parse_args_recurse (int    *argcp,
         }
       else if (strcmp (arg, "--version") == 0)
         {
-          printf ("%s\n", PACKAGE_STRING);
-          exit (0);
+          print_version_and_exit ();
         }
       else if (strcmp (arg, "--args") == 0)
         {
@@ -1276,6 +1306,9 @@ parse_args_recurse (int    *argcp,
         }
       else if (strcmp (arg, "--remount-ro") == 0)
         {
+          if (argc < 2)
+            die ("--remount-ro takes one argument");
+
           SetupOp *op = setup_op_new (SETUP_REMOUNT_RO_NO_RECURSIVE);
           op->dest = argv[1];
 
@@ -1615,6 +1648,10 @@ parse_args_recurse (int    *argcp,
         {
           opt_new_session = TRUE;
         }
+      else if (strcmp (arg, "--die-with-parent") == 0)
+        {
+          opt_die_with_parent = TRUE;
+        }
       else if (*arg == '-')
         {
           die ("Unknown option %s", arg);
@@ -1685,6 +1722,14 @@ main (int    argc,
   size_t seccomp_len;
   struct sock_fprog seccomp_prog;
 
+  /* Handle --version early on before we try to acquire/drop
+   * any capabilities so it works in a build environment;
+   * right now flatpak's build runs bubblewrap --version.
+   * https://github.com/projectatomic/bubblewrap/issues/185
+   */
+  if (argc == 2 && (strcmp (argv[1], "--version") == 0))
+    print_version_and_exit ();
+
   real_uid = getuid ();
   real_gid = getgid ();
 
@@ -1717,6 +1762,12 @@ main (int    argc,
    * root), so let's just DWIM */
   if (!is_privileged && getuid () != 0)
     opt_unshare_user = TRUE;
+
+#ifdef ENABLE_REQUIRE_USERNS
+  /* In this build option, we require userns. */
+  if (is_privileged && getuid () != 0)
+    opt_unshare_user = TRUE;
+#endif
 
   if (opt_unshare_user_try &&
       stat ("/proc/self/ns/user", &sbuf) == 0)
@@ -1859,6 +1910,9 @@ main (int    argc,
       /* We don't need any privileges in the launcher, drop them immediately. */
       drop_privs ();
 
+      /* Optionally bind our lifecycle to that of the parent */
+      handle_die_with_parent ();
+
       /* Let child run now that the uid maps are set up */
       val = 1;
       res = write (child_wait_fd, &val, 8);
@@ -1905,8 +1959,8 @@ main (int    argc,
    */
   switch_to_user_with_privs ();
 
-  if (opt_unshare_net && loopback_setup () != 0)
-    die ("Can't create loopback device");
+  if (opt_unshare_net)
+    loopback_setup (); /* Will exit if unsuccessful */
 
   ns_uid = opt_sandbox_uid;
   ns_gid = opt_sandbox_gid;
@@ -2153,6 +2207,11 @@ main (int    argc,
   /* We want sigchild in the child */
   unblock_sigchild ();
 
+  /* Optionally bind our lifecycle */
+  handle_die_with_parent ();
+
+  /* Should be the last thing before execve() so that filters don't
+   * need to handle anything above */
   if (seccomp_data != NULL &&
       prctl (PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &seccomp_prog) != 0)
     die_with_error ("prctl(PR_SET_SECCOMP)");

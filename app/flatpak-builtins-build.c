@@ -269,7 +269,9 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   argv_array = g_ptr_array_new_with_free_func (g_free);
   g_ptr_array_add (argv_array, g_strdup (flatpak_get_bwrap ()));
 
-  run_flags = FLATPAK_RUN_FLAG_DEVEL | FLATPAK_RUN_FLAG_NO_SESSION_HELPER | FLATPAK_RUN_FLAG_SET_PERSONALITY;
+  run_flags =
+    FLATPAK_RUN_FLAG_DEVEL | FLATPAK_RUN_FLAG_NO_SESSION_HELPER |
+    FLATPAK_RUN_FLAG_SET_PERSONALITY | FLATPAK_RUN_FLAG_DIE_WITH_PARENT;
   if (custom_usr)
     run_flags |= FLATPAK_RUN_FLAG_WRITABLE_ETC;
 
@@ -356,7 +358,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
     return FALSE;
 
   if (!flatpak_run_add_environment_args (argv_array, NULL, &envp, app_info_path, run_flags, id,
-                                         app_context, NULL, cancellable, error))
+                                         app_context, NULL, NULL, cancellable, error))
     return FALSE;
 
   for (i = 0; opt_bind_mounts != NULL && opt_bind_mounts[i] != NULL; i++)

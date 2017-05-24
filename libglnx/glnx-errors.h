@@ -30,7 +30,7 @@ G_BEGIN_DECLS
  * This function returns %FALSE so it can be used conveniently in a single
  * statement:
  *
- * ``
+ * ```
  *   if (strcmp (foo, "somevalue") != 0)
  *     return glnx_throw (error, "key must be somevalue, not '%s'", foo);
  * ```
@@ -49,13 +49,47 @@ glnx_throw (GError **error, const char *fmt, ...)
   return FALSE;
 }
 
+/* Like `glnx_throw ()`, but returns %NULL. */
+#define glnx_null_throw(error, args...) \
+  ({glnx_throw (error, args); NULL;})
+
+/* Implementation detail of glnx_throw_prefix() */
+void glnx_real_set_prefix_error_va (GError     *error,
+                                    const char *format,
+                                    va_list     args) G_GNUC_PRINTF (2,0);
+
+/* Prepend to @error's message by `$prefix: ` where `$prefix` is computed via
+ * printf @fmt. Returns %FALSE so it can be used conveniently in a single
+ * statement:
+ *
+ * ```
+ *   if (!function_that_fails (s, error))
+ *     return glnx_throw_prefix (error, "while handling '%s'", s);
+ * ```
+ * */
+static inline gboolean G_GNUC_PRINTF (2,3)
+glnx_prefix_error (GError **error, const char *fmt, ...)
+{
+  if (error == NULL)
+    return FALSE;
+
+  va_list args;
+  va_start (args, fmt);
+  glnx_real_set_prefix_error_va (*error, fmt, args);
+  va_end (args);
+  return FALSE;
+}
+
+/* Like `glnx_prefix_error ()`, but returns %NULL. */
+#define glnx_prefix_error_null(error, args...) \
+  ({glnx_prefix_error (error, args); NULL;})
 
 /* Set @error using the value of `g_strerror (errno)`.
  *
  * This function returns %FALSE so it can be used conveniently in a single
  * statement:
  *
- * ``
+ * ```
  *   if (unlinkat (fd, somepathname) < 0)
  *     return glnx_throw_errno (error);
  * ```
@@ -78,6 +112,10 @@ glnx_throw_errno (GError **error)
   errno = errsv;
   return FALSE;
 }
+
+/* Like glnx_throw_errno(), but yields a NULL pointer. */
+#define glnx_null_throw_errno(error) \
+  ({glnx_throw_errno (error); NULL;})
 
 /* Implementation detail of glnx_throw_errno_prefix() */
 void glnx_real_set_prefix_error_from_errno_va (GError     **error,
@@ -108,6 +146,10 @@ glnx_throw_errno_prefix (GError **error, const char *fmt, ...)
   return FALSE;
 }
 
+/* Like glnx_throw_errno_prefix(), but yields a NULL pointer. */
+#define glnx_null_throw_errno_prefix(error, args...) \
+  ({glnx_throw_errno_prefix (error, args); NULL;})
+
 /* BEGIN LEGACY APIS */
 
 #define glnx_set_error_from_errno(error)                \
@@ -117,9 +159,7 @@ glnx_throw_errno_prefix (GError **error, const char *fmt, ...)
 
 #define glnx_set_prefix_error_from_errno(error, format, args...)  \
   do {                                                            \
-    glnx_set_error_from_errno (error);                            \
-    g_prefix_error (error, format, args);                         \
+    glnx_throw_errno_prefix (error, format, args);                \
   } while (0);
-
 
 G_END_DECLS

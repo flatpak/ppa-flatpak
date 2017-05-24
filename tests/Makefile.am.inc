@@ -109,6 +109,9 @@ dist_installed_test_keyring_DATA = \
 	tests/test-keyring/README \
 	tests/test-keyring/pubring.gpg \
 	tests/test-keyring/secring.gpg \
+	tests/test-keyring2/README \
+	tests/test-keyring2/pubring.gpg \
+	tests/test-keyring2/secring.gpg \
 	$(NULL)
 dist_installed_test_dbs_DATA = tests/dbs/no_tables
 endif
@@ -119,6 +122,8 @@ dist_test_scripts = \
 	tests/test-run-system.sh \
 	tests/test-run-deltas.sh \
 	tests/test-run-system-deltas.sh \
+	tests/test-repo.sh \
+	tests/test-repo-system.sh \
 	tests/test-extensions.sh \
 	tests/test-bundle.sh \
 	tests/test-bundle-system.sh \

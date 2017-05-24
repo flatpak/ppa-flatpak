@@ -31,6 +31,7 @@
 
 #include "flatpak-builtins.h"
 #include "flatpak-utils.h"
+#include "flatpak-table-printer.h"
 
 static void
 print_info (GVariant *summary)
@@ -39,6 +40,8 @@ print_info (GVariant *summary)
   g_autoptr(GVariant) cache = NULL;
   const char *title;
   const char *default_branch;
+  const char *redirect_url;
+  g_autoptr(GVariant) gpg_keys = NULL;
 
   meta = g_variant_get_child_value (summary, 1);
 
@@ -48,6 +51,35 @@ print_info (GVariant *summary)
   if (g_variant_lookup (meta, "xa.default-branch", "&s", &default_branch))
     g_print ("Default branch: %s\n", default_branch);
 
+  if (g_variant_lookup (meta, "xa.redirect-url", "&s", &redirect_url))
+    g_print ("Redirect URL: %s\n", redirect_url);
+
+  if ((gpg_keys = g_variant_lookup_value (meta, "xa.gpg-keys", G_VARIANT_TYPE_BYTESTRING)) != NULL)
+    {
+      const guchar *gpg_data = g_variant_get_data (gpg_keys);
+      gsize gpg_size = g_variant_get_size (gpg_keys);
+      g_autofree gchar *gpg_data_checksum = g_compute_checksum_for_data (G_CHECKSUM_SHA256, gpg_data, gpg_size);
+
+      g_print ("GPG key hash: %s\n", gpg_data_checksum);
+    }
+
+  cache = g_variant_lookup_value (meta, "xa.cache", NULL);
+  if (cache)
+    {
+      g_autoptr(GVariant) refdata = NULL;
+
+      refdata = g_variant_get_variant (cache);
+      g_print ("%zd branches\n", g_variant_n_children (refdata));
+    }
+}
+
+static void
+print_branches (GVariant *summary)
+{
+  g_autoptr(GVariant) meta = NULL;
+  g_autoptr(GVariant) cache = NULL;
+
+  meta = g_variant_get_child_value (summary, 1);
   cache = g_variant_lookup_value (meta, "xa.cache", NULL);
   if (cache)
     {
@@ -57,18 +89,28 @@ print_info (GVariant *summary)
       guint64 installed_size;
       guint64 download_size;
       const char *metadata;
+      FlatpakTablePrinter *printer;
+
+      printer = flatpak_table_printer_new ();
+      flatpak_table_printer_set_column_title (printer, 0, _("Ref"));
+      flatpak_table_printer_set_column_title (printer, 1, _("Installed"));
+      flatpak_table_printer_set_column_title (printer, 2, _("Download"));
 
       refdata = g_variant_get_variant (cache);
-      g_print ("%zd branches\n", g_variant_n_children (refdata));
-
       g_variant_iter_init (&iter, refdata);
       while (g_variant_iter_next (&iter, "{&s(tt&s)}", &ref, &installed_size, &download_size, &metadata))
         {
           g_autofree char *installed = g_format_size (GUINT64_FROM_BE (installed_size));
           g_autofree char *download = g_format_size (GUINT64_FROM_BE (download_size));
 
-          g_print ("%s (installed: %s, download: %s)\n", ref, installed, download);
+          flatpak_table_printer_add_column (printer, ref);
+          flatpak_table_printer_add_decimal_column (printer, installed);
+          flatpak_table_printer_add_decimal_column (printer, download);
+          flatpak_table_printer_finish_row (printer);
         }
+
+      flatpak_table_printer_print (printer);
+      flatpak_table_printer_free (printer);
     }
 }
 
@@ -101,11 +143,13 @@ print_metadata (GVariant   *summary,
 }
 
 static gboolean opt_info;
-static gchar *opt_branch;
+static gboolean opt_branches;
+static gchar *opt_metadata_branch;
 
 static GOptionEntry options[] = {
-  { "info", 0, 0, G_OPTION_ARG_NONE, &opt_info, N_("Print information about a repo"), NULL },
-  { "metadata", 0, 0, G_OPTION_ARG_STRING, &opt_branch, N_("Print metadata for a branch"), N_("BRANCH") },
+  { "info", 0, 0, G_OPTION_ARG_NONE, &opt_info, N_("Print general information about the repository"), NULL },
+  { "branches", 0, 0, G_OPTION_ARG_NONE, &opt_branches, N_("List the branches in the repository"), NULL },
+  { "metadata", 0, 0, G_OPTION_ARG_STRING, &opt_metadata_branch, N_("Print metadata for a branch"), N_("BRANCH") },
   { NULL }
 };
 
@@ -142,8 +186,11 @@ flatpak_builtin_repo (int argc, char **argv,
   if (opt_info)
     print_info (summary);
 
-  if (opt_branch)
-    print_metadata (summary, opt_branch);
+  if (opt_branches)
+    print_branches (summary);
+
+  if (opt_metadata_branch)
+    print_metadata (summary, opt_metadata_branch);
 
   return TRUE;
 }

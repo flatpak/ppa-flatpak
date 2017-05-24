@@ -75,7 +75,11 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
   g_autofree char *ref = NULL;
   FlatpakDir *dir = NULL;
   g_autoptr(GVariant) deploy_data = NULL;
+  g_autoptr(FlatpakDeploy) deploy = NULL;
+  g_autoptr(GKeyFile) metakey = NULL;
   const char *commit = NULL;
+  const char *latest = NULL;
+  const char *alt_id = NULL;
   const char *pref = NULL;
   const char *default_branch = NULL;
   const char *origin = NULL;
@@ -83,6 +87,13 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
   gboolean search_all = FALSE;
   gboolean first = TRUE;
   FlatpakKinds kinds;
+  const char *on = "";
+  const char *off = "";
+  g_auto(GStrv) parts = NULL;
+  g_autofree char *path = NULL;
+  g_autofree char *formatted = NULL;
+  gboolean friendly = TRUE;
+  g_autofree const char **subpaths = NULL;
 
   context = g_option_context_new (_("NAME [BRANCH] - Get info about installed app and/or runtime"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
@@ -115,65 +126,113 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
   if (deploy_data == NULL)
     return FALSE;
 
+  deploy = flatpak_find_deploy_for_ref (ref, NULL, error);
+  if (deploy == NULL)
+    return FALSE;
+
+  if (flatpak_fancy_output ())
+    {
+      on = FLATPAK_ANSI_BOLD_ON;
+      off = FLATPAK_ANSI_BOLD_OFF; /* bold off */
+    }
+
+  parts = g_strsplit (ref, "/", 0);
+
   commit = flatpak_deploy_data_get_commit (deploy_data);
+  alt_id = flatpak_deploy_data_get_alt_id (deploy_data);
   origin = flatpak_deploy_data_get_origin (deploy_data);
+  latest = flatpak_dir_read_latest (dir, origin, ref, NULL, NULL, NULL);
   size = flatpak_deploy_data_get_installed_size (deploy_data);
+  formatted = g_format_size (size);
+  path = g_file_get_path (flatpak_deploy_get_dir (deploy));
+  subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
 
-  if (!opt_show_extensions && !opt_show_metadata &&
-      !opt_show_ref && !opt_show_origin && !opt_show_commit && !opt_show_size)
-    opt_show_ref = opt_show_origin = opt_show_commit = opt_show_size = TRUE;
+  metakey = flatpak_deploy_get_metadata (deploy);
 
-  if (opt_show_ref)
+  if (opt_show_ref || opt_show_origin || opt_show_commit || opt_show_size)
+    friendly = FALSE;
+
+  if (friendly)
     {
-      maybe_print_space (&first);
-      g_print ("%s", ref);
+      g_print ("%s%s%s %s\n", on, _("Ref:"), off, ref);
+      g_print ("%s%s%s %s\n", on, _("ID:"), off, parts[1]);
+      g_print ("%s%s%s %s\n", on, _("Arch:"), off, parts[2]);
+      g_print ("%s%s%s %s\n", on, _("Branch:"), off, parts[3]);
+      g_print ("%s%s%s %s\n", on, _("Origin:"), off, origin ? origin : "-");
+      if (strcmp (commit, latest) != 0)
+        {
+          g_print ("%s%s%s %s\n", on, _("Active commit:"), off, commit);
+          g_print ("%s%s%s %s\n", on, _("Latest commit:"), off, latest);
+        }
+      else
+        g_print ("%s%s%s %s\n", on, _("Commit:"), off, commit);
+      if (alt_id)
+        g_print ("%s%s%s %s\n", on, _("alt-id:"), off, alt_id);
+      g_print ("%s%s%s %s\n", on, _("Location:"), off, path);
+      g_print ("%s%s%s %s\n", on, _("Installed size:"), off, formatted);
+      if (strcmp (parts[0], "app") == 0)
+        {
+          g_autofree char *runtime = NULL;
+          runtime = g_key_file_get_string (metakey, "Application", "runtime", error);
+          g_print ("%s%s%s %s\n", on, _("Runtime:"), off, runtime ? runtime : "-");
+        }
+      if (subpaths[0] != NULL)
+        {
+          int i;
+          g_print ("%s%s%s ", on, _("Installed subdirectories:"), off);
+          for (i = 0; subpaths[i] != NULL; i++)
+            g_print (i == 0 ? "%s" : ",%s", subpaths[i]);
+          g_print ("\n");
+        }
     }
-
-  if (opt_show_origin)
+  else
     {
-      maybe_print_space (&first);
-      g_print ("%s", origin ? origin : "-");
+      if (opt_show_ref)
+        {
+          maybe_print_space (&first);
+          g_print ("%s", ref);
+        }
+
+      if (opt_show_origin)
+        {
+          maybe_print_space (&first);
+          g_print ("%s", origin ? origin : "-");
+        }
+
+      if (opt_show_commit)
+        {
+          maybe_print_space (&first);
+          g_print ("%s", commit);
+        }
+
+      if (opt_show_size)
+        {
+          maybe_print_space (&first);
+          g_print ("%s", formatted);
+        }
+
+      if (!first)
+        g_print ("\n");
     }
-
-  if (opt_show_commit)
-    {
-      maybe_print_space (&first);
-      g_print ("%s", commit);
-    }
-
-  if (opt_show_size)
-    {
-      g_autofree char *formatted = g_format_size (size);
-
-      maybe_print_space (&first);
-      g_print ("%s", formatted);
-    }
-
-  if (!first)
-    g_print ("\n");
 
   if (opt_show_extensions)
     {
-       g_autoptr(FlatpakDeploy) deploy = NULL;
-       g_autoptr(GKeyFile) metakey = NULL;
-       g_auto(GStrv) parts = NULL;
        GList *extensions, *l;
 
-       deploy = flatpak_find_deploy_for_ref (ref, NULL, NULL);
-       metakey = flatpak_deploy_get_metadata (deploy);
-       parts = g_strsplit (ref, "/", 0);
        extensions = flatpak_list_extensions (metakey, parts[2], parts[3]);
        for (l = extensions; l; l = l->next)
          {
            FlatpakExtension *ext = l->data;
            g_autofree const char **subpaths = NULL;
            g_autoptr(GVariant) ext_deploy_data = NULL;
+           g_autofree char *formatted = NULL;
 
            if (ext->is_unmaintained)
              {
                commit = "unmaintained";
                origin = NULL;
                size = 0;
+               formatted = g_strdup ("unknown");
                subpaths = NULL;
              }
            else
@@ -185,37 +244,23 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
                commit = flatpak_deploy_data_get_commit (ext_deploy_data);
                origin = flatpak_deploy_data_get_origin (ext_deploy_data);
                size = flatpak_deploy_data_get_installed_size (ext_deploy_data);
+               formatted = g_format_size (size);
                subpaths = flatpak_deploy_data_get_subpaths (ext_deploy_data);
              }
 
-           g_print ("extension: %s", ext->id);
+           g_print ("\n%s%s%s %s\n", on, _("Extension:"), off, ext->ref);
+           g_print ("%s%s%s %s\n", on, _("ID:"), off, ext->id);
+           g_print ("%s%s%s %s\n", on, _("Origin:"), off, origin ? origin : "-");
+           g_print ("%s%s%s %s\n", on, _("Commit:"), off, commit);
+           g_print ("%s%s%s %s%s\n", on, _("Installed size:"), off, subpaths && subpaths[0] ? "<" : "", formatted);
 
-           if (opt_show_ref)
-             g_print (" %s", ext->ref);
-
-           if (opt_show_origin)
-             g_print (" %s", origin ? origin : "-");
-
-           if (opt_show_commit)
-             g_print (" %s", commit);
-
-           if (opt_show_size && size > 0)
-             {
-               g_autofree char *formatted = NULL;
-
-               formatted = g_format_size (size);
-               g_print (" %s", formatted);
-             }
-
-           if (subpaths)
+           if (subpaths && subpaths[0])
              {
                g_autofree char *subpath_str = NULL;
 
                subpath_str = g_strjoinv (",", (char **)subpaths);
-               g_print (" %s", subpath_str);
+               g_print ("%s%s%s %s\n", on, _("Subpaths:"), off, subpath_str);
              }
-
-           g_print ("\n");
          }
     }
 
@@ -225,6 +270,8 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
       g_autoptr(GFile) file = NULL;
       g_autofree char *data = NULL;
       gsize data_size;
+
+      g_print ("\n%s%s%s\n", on, _("Metadata:"), off);
 
       deploy_dir = flatpak_dir_get_if_deployed (dir, ref, NULL, cancellable);
       file = g_file_get_child (deploy_dir, "metadata");

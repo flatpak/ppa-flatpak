@@ -71,6 +71,8 @@ void           flatpak_context_to_args (FlatpakContext *context,
 gboolean       flatpak_context_get_needs_session_bus_proxy (FlatpakContext *context);
 gboolean       flatpak_context_get_needs_system_bus_proxy (FlatpakContext *context);
 
+FlatpakContext *flatpak_context_load_for_app (const char     *app_id,
+                                              GError        **error);
 
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakContext, flatpak_context_free)
 
@@ -85,7 +87,19 @@ typedef enum {
   FLATPAK_RUN_FLAG_NO_SESSION_BUS_PROXY = (1 << 7),
   FLATPAK_RUN_FLAG_NO_SYSTEM_BUS_PROXY = (1 << 8),
   FLATPAK_RUN_FLAG_SET_PERSONALITY    = (1 << 9),
+  FLATPAK_RUN_FLAG_FILE_FORWARDING    = (1 << 10),
+  FLATPAK_RUN_FLAG_DIE_WITH_PARENT    = (1 << 11),
 } FlatpakRunFlags;
+
+typedef struct _FlatpakExports FlatpakExports;
+
+void flatpak_exports_free (FlatpakExports *exports);
+
+gboolean flatpak_exports_path_is_visible (FlatpakExports *exports,
+                                          const char *path);
+FlatpakExports *flatpak_exports_from_context (FlatpakContext *context);
+
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakExports, flatpak_exports_free);
 
 gboolean  flatpak_run_add_extension_args (GPtrArray    *argv_array,
                                           char       ***envp_p,
@@ -101,6 +115,7 @@ gboolean flatpak_run_add_environment_args (GPtrArray      *argv_array,
                                            const char     *app_id,
                                            FlatpakContext *context,
                                            GFile          *app_id_dir,
+                                           FlatpakExports **exports_out,
                                            GCancellable *cancellable,
                                            GError      **error);
 char **  flatpak_run_get_minimal_env (gboolean devel);

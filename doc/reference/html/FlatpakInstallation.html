@@ -676,7 +676,7 @@ was installed, uninstalled or updated.</p>
 </div>
 <div class="refsect3">
 <a name="id-1.2.2.7.8.6"></a><h4>Returns</h4>
-<p> a new <span class="type">GFileMonitor</span> instance, or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> on error. </p>
+<p> a new <span class="type">GFileMonitor</span> instance, or <code class="literal">NULL</code> on error. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -760,7 +760,7 @@ flatpak_installation_install (<em class="parameter"><code><a class="link" href="
 </div>
 <div class="refsect3">
 <a name="id-1.2.2.7.9.6"></a><h4>Returns</h4>
-<p> The ref for the newly installed app or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> on failure. </p>
+<p> The ref for the newly installed app or <code class="literal">NULL</code> on failure. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -827,7 +827,7 @@ flatpak_installation_install_full (<em class="parameter"><code><a class="link" h
 </tr>
 <tr>
 <td class="parameter_name"><p>subpaths</p></td>
-<td class="parameter_description"><p> A list of subpaths to fetch, or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> for everything. </p></td>
+<td class="parameter_description"><p> A list of subpaths to fetch, or <code class="literal">NULL</code> for everything. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -856,7 +856,7 @@ flatpak_installation_install_full (<em class="parameter"><code><a class="link" h
 </div>
 <div class="refsect3">
 <a name="id-1.2.2.7.10.6"></a><h4>Returns</h4>
-<p> The ref for the newly installed app or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> on failure. </p>
+<p> The ref for the newly installed app or <code class="literal">NULL</code> on failure. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -940,7 +940,7 @@ flatpak_installation_update (<em class="parameter"><code><a class="link" href="F
 </div>
 <div class="refsect3">
 <a name="id-1.2.2.7.11.6"></a><h4>Returns</h4>
-<p> The ref for the newly updated app (or the same if no update) or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> on failure. </p>
+<p> The ref for the newly updated app (or the same if no update) or <code class="literal">NULL</code> on failure. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -1001,7 +1001,7 @@ flatpak_installation_update_full (<em class="parameter"><code><a class="link" hr
 </tr>
 <tr>
 <td class="parameter_name"><p>subpaths</p></td>
-<td class="parameter_description"><p> A list of subpaths to fetch, or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> for everything. </p></td>
+<td class="parameter_description"><p> A list of subpaths to fetch, or <code class="literal">NULL</code> for everything. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1030,7 +1030,7 @@ flatpak_installation_update_full (<em class="parameter"><code><a class="link" hr
 </div>
 <div class="refsect3">
 <a name="id-1.2.2.7.12.6"></a><h4>Returns</h4>
-<p> The ref for the newly updated app (or the same if no update) or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> on failure. </p>
+<p> The ref for the newly updated app (or the same if no update) or <code class="literal">NULL</code> on failure. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -1191,7 +1191,7 @@ flatpak_installation_get_current_installed_app
                                 <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Get the last build of reference <em class="parameter"><code>name</code></em>
  that was installed with
-<a class="link" href="FlatpakInstallation.html#flatpak-installation-install" title="flatpak_installation_install ()"><code class="function">flatpak_installation_install()</code></a>, or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> if the reference has
+<a class="link" href="FlatpakInstallation.html#flatpak-installation-install" title="flatpak_installation_install ()"><code class="function">flatpak_installation_install()</code></a>, or <code class="literal">NULL</code> if the reference has
 never been installed locally.</p>
 <div class="refsect3">
 <a name="id-1.2.2.7.15.5"></a><h4>Parameters</h4>
@@ -1352,7 +1352,7 @@ its size, location, etc.</p>
 </div>
 <div class="refsect3">
 <a name="id-1.2.2.7.18.6"></a><h4>Returns</h4>
-<p> an <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a>, or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> if an error occurred. </p>
+<p> an <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a>, or <code class="literal">NULL</code> if an error occurred. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -1821,7 +1821,7 @@ flatpak_installation_get_remote_by_name
 </div>
 <div class="refsect3">
 <a name="id-1.2.2.7.28.6"></a><h4>Returns</h4>
-<p> a <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> instances, or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> error. </p>
+<p> a <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> instances, or <code class="literal">NULL</code> error. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -1876,7 +1876,7 @@ flatpak_installation_fetch_remote_metadata_sync
 <div class="refsect3">
 <a name="id-1.2.2.7.29.6"></a><h4>Returns</h4>
 <p> a <span class="type">GBytes</span> containing the flatpak metadata file,
-or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> if an error occurred. </p>
+or <code class="literal">NULL</code> if an error occurred. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -1948,7 +1948,7 @@ flatpak_installation_fetch_remote_ref_sync
 </div>
 <div class="refsect3">
 <a name="id-1.2.2.7.30.6"></a><h4>Returns</h4>
-<p> a <a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="type">FlatpakRemoteRef</span></a> instance, or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
+<p> a <a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="type">FlatpakRemoteRef</span></a> instance, or <code class="literal">NULL</code>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -2067,7 +2067,7 @@ flatpak_installation_load_app_overrides
 <div class="refsect3">
 <a name="id-1.2.2.7.32.6"></a><h4>Returns</h4>
 <p> the contents of the overrides files,
-or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> if an error occurred. </p>
+or <code class="literal">NULL</code> if an error occurred. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -2084,7 +2084,8 @@ flatpak_installation_update_appstream_sync
                                 <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Updates the local copy of appstream for <em class="parameter"><code>remote_name</code></em>
  for the specified <em class="parameter"><code>arch</code></em>
-.</p>
+.
+If you need progress feedback, use <code class="function">flatpak_installation_update_appstream_full_sync()</code>.</p>
 <div class="refsect3">
 <a name="id-1.2.2.7.33.5"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -2106,7 +2107,7 @@ flatpak_installation_update_appstream_sync
 </tr>
 <tr>
 <td class="parameter_name"><p>arch</p></td>
-<td class="parameter_description"><p>Architecture to update, or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> for the local machine arch</p></td>
+<td class="parameter_description"><p>Architecture to update, or <code class="literal">NULL</code> for the local machine arch</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -2189,7 +2190,7 @@ See flatpak-build-bundle(1) for how to create brundles.</p>
 </div>
 <div class="refsect3">
 <a name="id-1.2.2.7.34.6"></a><h4>Returns</h4>
-<p> The ref for the newly installed app or <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> on failure. </p>
+<p> The ref for the newly installed app or <code class="literal">NULL</code> on failure. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -2242,7 +2243,7 @@ explicitly with <a class="link" href="FlatpakInstallation.html#flatpak-installat
 </div>
 <div class="refsect3">
 <a name="id-1.2.2.7.35.7"></a><h4>Returns</h4>
-<p> a <a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="type">FlatpakRemoteRef</span></a> if the remote has been added successfully, <a href="/usr/share/gtk-doc/html/liboilliboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a>
+<p> a <a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="type">FlatpakRemoteRef</span></a> if the remote has been added successfully, <code class="literal">NULL</code>
 on error. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
@@ -2580,6 +2581,11 @@ is just an estimate</p></td>
 </td>
 <td class="enum_member_annotations"> </td>
 </tr>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-UPDATE-FLAGS-NO-STATIC-DELTAS:CAPS"></a>FLATPAK_UPDATE_FLAGS_NO_STATIC_DELTAS</p></td>
+<td> </td>
+<td> </td>
+</tr>
 </tbody>
 </table></div>
 </div>
@@ -2596,13 +2602,20 @@ is just an estimate</p></td>
 <col class="enum_members_description">
 <col width="200px" class="enum_members_annotations">
 </colgroup>
-<tbody><tr>
+<tbody>
+<tr>
 <td class="enum_member_name"><p><a name="FLATPAK-INSTALL-FLAGS-NONE:CAPS"></a>FLATPAK_INSTALL_FLAGS_NONE</p></td>
 <td class="enum_member_description">
 <p>Default</p>
 </td>
 <td class="enum_member_annotations"> </td>
-</tr></tbody>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-INSTALL-FLAGS-NO-STATIC-DELTAS:CAPS"></a>FLATPAK_INSTALL_FLAGS_NO_STATIC_DELTAS</p></td>
+<td> </td>
+<td> </td>
+</tr>
+</tbody>
 </table></div>
 </div>
 </div>

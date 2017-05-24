@@ -35,6 +35,8 @@
 #include <libgen.h>
 #undef basename
 
+#include <glnx-errors.h>
+
 G_BEGIN_DECLS
 
 /* Irritatingly, g_basename() which is what we want
@@ -46,12 +48,20 @@ const char *glnx_basename (const char *path)
   return (basename) (path);
 }
 
+typedef struct {
+  gboolean initialized;
+  int src_dfd;
+  int fd;
+  char *path;
+} GLnxTmpfile;
+void glnx_tmpfile_clear (GLnxTmpfile *tmpf);
+G_DEFINE_AUTO_CLEANUP_CLEAR_FUNC(GLnxTmpfile, glnx_tmpfile_clear);
+
 gboolean
 glnx_open_tmpfile_linkable_at (int dfd,
                                const char *subpath,
                                int flags,
-                               int *out_fd,
-                               char **out_path,
+                               GLnxTmpfile *out_tmpf,
                                GError **error);
 
 typedef enum {
@@ -61,10 +71,8 @@ typedef enum {
 } GLnxLinkTmpfileReplaceMode;
 
 gboolean
-glnx_link_tmpfile_at (int dfd,
+glnx_link_tmpfile_at (GLnxTmpfile *tmpf,
                       GLnxLinkTmpfileReplaceMode flags,
-                      int fd,
-                      const char *tmpfile_path,
                       int target_dfd,
                       const char *target,
                       GError **error);
@@ -129,6 +137,9 @@ glnx_readlinkat_malloc (int            dfd,
 int
 glnx_loop_write (int fd, const void *buf, size_t nbytes);
 
+int
+glnx_regfile_copy_bytes (int fdf, int fdt, off_t max_bytes, gboolean try_reflink);
+
 typedef enum {
   GLNX_FILE_COPY_OVERWRITE = (1 << 0),
   GLNX_FILE_COPY_NOXATTRS = (1 << 1),
@@ -155,5 +166,54 @@ int glnx_renameat2_noreplace (int olddirfd, const char *oldpath,
 int glnx_renameat2_exchange (int olddirfd, const char *oldpath,
                              int newdirfd, const char *newpath);
 
+/**
+ * glnx_fstat:
+ * @fd: FD to stat
+ * @buf: (out caller-allocates): Return location for stat details
+ * @error: Return location for a #GError, or %NULL
+ *
+ * Wrapper around fstat() which adds #GError support and ensures that it retries
+ * on %EINTR.
+ *
+ * Returns: %TRUE on success, %FALSE otherwise
+ * Since: UNRELEASED
+ */
+static inline gboolean
+glnx_fstat (int           fd,
+            struct stat  *buf,
+            GError      **error)
+{
+  if (TEMP_FAILURE_RETRY (fstat (fd, buf)) != 0)
+    return glnx_throw_errno (error);
+
+  return TRUE;
+}
+
+/**
+ * glnx_fstatat:
+ * @dfd: Directory FD to stat beneath
+ * @path: Path to stat beneath @dfd
+ * @buf: (out caller-allocates): Return location for stat details
+ * @flags: Flags to pass to fstatat()
+ * @error: Return location for a #GError, or %NULL
+ *
+ * Wrapper around fstatat() which adds #GError support and ensures that it
+ * retries on %EINTR.
+ *
+ * Returns: %TRUE on success, %FALSE otherwise
+ * Since: UNRELEASED
+ */
+static inline gboolean
+glnx_fstatat (int           dfd,
+              const gchar  *path,
+              struct stat  *buf,
+              int           flags,
+              GError      **error)
+{
+  if (TEMP_FAILURE_RETRY (fstatat (dfd, path, buf, flags)) != 0)
+    return glnx_throw_errno (error);
+
+  return TRUE;
+}
 
 G_END_DECLS
