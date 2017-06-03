@@ -1,0 +1,41 @@
+From: =?utf-8?q?Jonas_=C3=85dahl?= <jadahl@gmail.com>
+Date: Mon, 17 Apr 2017 13:45:53 +0800
+Subject: run: Handle non-default WAYLAND_DISPLAY
+
+WAYLAND_DISPLAY can be other than "wayland-0" for various reasons, such
+as using a custom Wayland display server or the session display server
+using a custom display name.
+
+Note that for xdg-desktop-portal to support showing portal windows, the
+xdg-desktop-portal service MUST use the same WAYLAND_DISPLAY.
+
+(cherry picked from commit a1ff20ca0ebbf1cebd13c03d4fcd712e6e6a0fe3)
+
+Origin: upstream, 0.8.6
+---
+ common/flatpak-run.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/common/flatpak-run.c b/common/flatpak-run.c
+index c1c3788..85a4ef3 100644
+--- a/common/flatpak-run.c
++++ b/common/flatpak-run.c
+@@ -1969,8 +1969,16 @@ static void
+ flatpak_run_add_wayland_args (GPtrArray *argv_array,
+                               char    ***envp_p)
+ {
+-  g_autofree char *wayland_socket = g_build_filename (g_get_user_runtime_dir (), "wayland-0", NULL);
+-  g_autofree char *sandbox_wayland_socket = g_strdup_printf ("/run/user/%d/wayland-0", getuid ());
++  const char *wayland_display;
++  g_autofree char *wayland_socket = NULL;
++  g_autofree char *sandbox_wayland_socket = NULL;
++
++  wayland_display = g_getenv ("WAYLAND_DISPLAY");
++  if (!wayland_display)
++    wayland_display = "wayland-0";
++
++  wayland_socket = g_build_filename (g_get_user_runtime_dir (), wayland_display, NULL);
++  sandbox_wayland_socket = g_strdup_printf ("/run/user/%d/%s", getuid (), wayland_display);
+ 
+   if (g_file_test (wayland_socket, G_FILE_TEST_EXISTS))
+     {

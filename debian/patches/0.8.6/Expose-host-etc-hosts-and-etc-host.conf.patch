@@ -1,0 +1,79 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Thu, 4 May 2017 13:07:43 +0200
+Subject: Expose host /etc/hosts and /etc/host.conf
+
+These are local network configuration, very much similar to
+resolv.conf, so should also be exposed.
+
+Fixes https://github.com/alexlarsson/spotify-app/issues/42
+
+Origin: upstream, 0.8.6
+---
+ common/flatpak-run.c                    | 24 +++++++++++++++---------
+ session-helper/flatpak-session-helper.c |  2 ++
+ 2 files changed, 17 insertions(+), 9 deletions(-)
+
+diff --git a/common/flatpak-run.c b/common/flatpak-run.c
+index f4f66f8..b3b29b6 100644
+--- a/common/flatpak-run.c
++++ b/common/flatpak-run.c
+@@ -3352,12 +3352,10 @@ add_monitor_path_args (gboolean use_session_helper,
+     {
+       add_args (argv_array,
+                 "--ro-bind", monitor_path, "/run/host/monitor",
+-                NULL);
+-      add_args (argv_array,
+                 "--symlink", "/run/host/monitor/localtime", "/etc/localtime",
+-                NULL);
+-      add_args (argv_array,
+                 "--symlink", "/run/host/monitor/resolv.conf", "/etc/resolv.conf",
++                "--symlink", "/run/host/monitor/host.conf", "/etc/host.conf",
++                "--symlink", "/run/host/monitor/hosts", "/etc/hosts",
+                 NULL);
+     }
+   else
+@@ -3388,11 +3386,17 @@ add_monitor_path_args (gboolean use_session_helper,
+         }
+ 
+       if (g_file_test ("/etc/resolv.conf", G_FILE_TEST_EXISTS))
+-        {
+-          add_args (argv_array,
+-                    "--ro-bind", "/etc/resolv.conf", "/etc/resolv.conf",
+-                    NULL);
+-        }
++        add_args (argv_array,
++                  "--ro-bind", "/etc/resolv.conf", "/etc/resolv.conf",
++                  NULL);
++      if (g_file_test ("/etc/host.conf", G_FILE_TEST_EXISTS))
++        add_args (argv_array,
++                  "--ro-bind", "/etc/host.conf", "/etc/host.conf",
++                  NULL);
++      if (g_file_test ("/etc/hosts", G_FILE_TEST_EXISTS))
++        add_args (argv_array,
++                  "--ro-bind", "/etc/hosts", "/etc/hosts",
++                  NULL);
+     }
+ }
+ 
+@@ -4012,6 +4016,8 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
+               strcmp (dent->d_name, "group") == 0 ||
+               strcmp (dent->d_name, "machine-id") == 0 ||
+               strcmp (dent->d_name, "resolv.conf") == 0 ||
++              strcmp (dent->d_name, "host.conf") == 0 ||
++              strcmp (dent->d_name, "hosts") == 0 ||
+               strcmp (dent->d_name, "localtime") == 0)
+             continue;
+ 
+diff --git a/session-helper/flatpak-session-helper.c b/session-helper/flatpak-session-helper.c
+index f372cd5..3b57dbb 100644
+--- a/session-helper/flatpak-session-helper.c
++++ b/session-helper/flatpak-session-helper.c
+@@ -529,6 +529,8 @@ main (int    argc,
+     }
+ 
+   setup_file_monitor ("/etc/resolv.conf");
++  setup_file_monitor ("/etc/host.conf");
++  setup_file_monitor ("/etc/hosts");
+   setup_file_monitor ("/etc/localtime");
+ 
+   flags = G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT;

@@ -1,0 +1,52 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Thu, 4 May 2017 10:34:40 +0200
+Subject: run: Handle the case where /tmp on the host is a symlink
+
+If the app explicitly grants access to the host /tmp (for
+instance telegram) then when this is being exposed as a symlink
+in the sandbox we get an error because /tmp already exists
+as a dir, which we create very early on.
+
+It doesn't really make sense to keep /tmp as a symlink in
+the sandbox anyway, so we just special case this and mount
+the symlink target as /tmp.
+
+(cherry picked from commit f28d318cc9029f28901b47e03e9ef2e144660c74)
+
+Origin: upstream, 0.8.6
+---
+ common/flatpak-run.c | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/common/flatpak-run.c b/common/flatpak-run.c
+index 4c6655b..f4f66f8 100644
+--- a/common/flatpak-run.c
++++ b/common/flatpak-run.c
+@@ -2423,6 +2423,18 @@ add_hide_path (GHashTable *hash_table,
+   g_hash_table_insert (hash_table, ep->path, ep);
+ }
+ 
++static gboolean
++never_export_as_symlink (const char *path)
++{
++  /* Don't export /tmp as a symlink even if it is on the host, because
++     that will fail with the pre-existing directory we created for /tmp,
++     and anyway, it being a symlink is not useful in the sandbox */
++  if (strcmp (path, "/tmp") == 0)
++    return TRUE;
++
++  return FALSE;
++}
++
+ /* We use the level to make sure we get the ordering somewhat right.
+  * For instance if /symlink -> /z_dir is exported, then we want to create
+  * /z_dir before /symlink, because otherwise an export like /symlink/foo
+@@ -2472,7 +2484,7 @@ _add_expose_path (GHashTable *hash_table,
+       if (old_ep != NULL)
+         old_mode = old_ep->mode;
+ 
+-      if (S_ISLNK (st.st_mode))
++      if (S_ISLNK (st.st_mode) && !never_export_as_symlink (path))
+         {
+           g_autofree char *resolved = flatpak_resolve_link (path, NULL);
+ 

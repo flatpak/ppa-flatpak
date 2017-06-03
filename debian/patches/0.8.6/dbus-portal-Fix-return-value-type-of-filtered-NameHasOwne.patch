@@ -1,0 +1,26 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Wed, 31 May 2017 08:58:08 +0200
+Subject: dbus-portal: Fix return value type of filtered NameHasOwner
+
+Fixes https://github.com/flatpak/flatpak/issues/817
+
+(cherry picked from commit bd22ff8d429e7e0d0ef60cbe08d8f5a0d0c127c6)
+
+Origin: upstream, 0.8.6
+---
+ dbus-proxy/flatpak-proxy.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/dbus-proxy/flatpak-proxy.c b/dbus-proxy/flatpak-proxy.c
+index d2b74b6..7100ed3 100644
+--- a/dbus-proxy/flatpak-proxy.c
++++ b/dbus-proxy/flatpak-proxy.c
+@@ -1304,7 +1304,7 @@ get_bool_reply_for_header (FlatpakProxyClient *client, Header *header, gboolean
+   g_dbus_message_set_message_type (reply, G_DBUS_MESSAGE_TYPE_METHOD_RETURN);
+   g_dbus_message_set_flags (reply, G_DBUS_MESSAGE_FLAGS_NO_REPLY_EXPECTED);
+   g_dbus_message_set_reply_serial (reply, header->serial - client->serial_offset);
+-  g_dbus_message_set_body (reply, g_variant_new_boolean (val));
++  g_dbus_message_set_body (reply, g_variant_new ("(b)", val));
+ 
+   return reply;
+ }

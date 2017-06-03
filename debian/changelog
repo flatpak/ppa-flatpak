@@ -1,3 +1,31 @@
+flatpak (0.8.5-3) UNRELEASED; urgency=medium
+
+  * d/p/0.8.6/*.patch: Update from upstream flatpak-0.8.x branch,
+    bringing in what would be in 0.8.6 if it was released today
+    - Fix the return value type for filtered NameHasOwner() D-Bus calls
+      (upstream issue 817)
+    - Security hardening: Only export .desktop files, D-Bus session
+      services and icons, but not other files that an app might try to
+      export
+    - Allow remote repositories to specify a new GPG key (for key rollover)
+      or a new URL (for location migration) in their signed metadata
+    - Let KDE apps bind-mount ~/.config/kdeglobals into the sandbox:
+      + Allow bind-mounting regular files in the XDG cache, config or data
+        directories, not just directories
+      + Allow bind-mounting files in the XDG directories read-only, not
+        just read/write
+    - Close a race condition in app identification by portals
+    - Cope with a non-default WAYLAND_DISPLAY
+    - Cope with /tmp on the host being a symlink
+    - Clear TMPDIR in the sandbox, fixing sandboxed Spotify
+    - Add X-Flatpak=$app_id to exported .desktop files
+      so that the desktop environment can identify what will be launched
+    - Make the host's /etc/hosts and /etc/host.conf available in the sandbox,
+      fixing sandboxed Spotify
+    - Update Hungarian translation
+
+ -- Simon McVittie <smcv@debian.org>  Sat, 03 Jun 2017 12:02:07 +0100
+
 flatpak (0.8.5-2) unstable; urgency=medium
 
   * flatpak Recommends xdg-desktop-portal-gtk | xdg-desktop-portal-backend,
