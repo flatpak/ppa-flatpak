@@ -10,4 +10,5 @@
 0.8.6/Minimal-backport-of-rewrite-url-and-gpg-keys-remote-metad.patch
 0.8.6/run-Allow-regular-files-for-filesystem-xdg-config-path.patch
 0.8.6/run-Allow-filesystem-xdg-subdir-ro.patch
+flatpak-dir-Check-for-variant-containing-string-correctly.patch
 Improve-and-simplify-profile-snippet.patch

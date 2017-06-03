@@ -23,6 +23,9 @@ flatpak (0.8.5-3) UNRELEASED; urgency=medium
     - Make the host's /etc/hosts and /etc/host.conf available in the sandbox,
       fixing sandboxed Spotify
     - Update Hungarian translation
+  * d/p/flatpak-dir-Check-for-variant-containing-string-correctly.patch:
+    Fix an incorrect type-check in the backported support for key rollover
+    and location migration
 
  -- Simon McVittie <smcv@debian.org>  Sat, 03 Jun 2017 12:02:07 +0100
 
