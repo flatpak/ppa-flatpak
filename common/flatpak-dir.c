@@ -3582,7 +3582,7 @@ export_desktop_file (const char   *app,
         }
 
       /* Add a marker so consumers can easily find out that this launches a sandbox */
-      g_key_file_set_boolean (keyfile, "Desktop Entry", "X-Flatpak", TRUE);
+      g_key_file_set_string (keyfile, "Desktop Entry", "X-Flatpak", app);
     }
 
   groups = g_key_file_get_groups (keyfile, NULL);
@@ -4294,8 +4294,8 @@ apply_extra_data (FlatpakDir          *self,
 
   if (exit_status != 0)
     {
-      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-                           _("apply_extra script failed"));
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                   _("apply_extra script failed, exit status %d"), exit_status);
       return FALSE;
     }
 
@@ -8163,6 +8163,9 @@ flatpak_dir_update_remote_configuration (FlatpakDir   *self,
   g_autoptr(GVariant) summary = NULL;
   g_autoptr(GBytes) summary_sig_bytes = NULL;
   gboolean is_oci;
+
+  if (flatpak_dir_get_remote_disabled (self, remote))
+    return TRUE;
 
   is_oci = flatpak_dir_get_remote_oci (self, remote);
   if (is_oci)
