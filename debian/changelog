@@ -1,4 +1,4 @@
-flatpak (0.8.6-1) UNRELEASED; urgency=medium
+flatpak (0.8.6-1) unstable; urgency=medium
 
   * New upstream release
     - Fix the return value type for filtered NameHasOwner() D-Bus calls
@@ -23,7 +23,7 @@ flatpak (0.8.6-1) UNRELEASED; urgency=medium
       fixing sandboxed Spotify
     - Update Hungarian translation
 
- -- Simon McVittie <smcv@debian.org>  Sat, 03 Jun 2017 12:02:07 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 05 Jun 2017 21:30:06 +0100
 
 flatpak (0.8.5-2) unstable; urgency=medium
 
