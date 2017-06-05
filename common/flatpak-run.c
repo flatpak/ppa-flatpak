@@ -2670,7 +2670,8 @@ exports_path_expose (FlatpakExports *exports,
 static void
 export_paths_export_context (FlatpakContext *context,
                              FlatpakExports *exports,
-                             gboolean  do_create,
+                             GFile *app_id_dir,
+                             gboolean do_create,
                              GString *xdg_dirs_conf,
                              gboolean *home_access_out)
 {
@@ -2791,16 +2792,28 @@ export_paths_export_context (FlatpakContext *context,
         }
     }
 
+  if (app_id_dir)
+    {
+      g_autoptr(GFile) apps_dir = g_file_get_parent (app_id_dir);
+      /* Hide the .var/app dir by default (unless explicitly made visible) */
+      exports_path_hide (exports, flatpak_file_get_path_cached (apps_dir));
+      /* But let the app write to the per-app dir in it */
+      exports_path_expose (exports, FLATPAK_FILESYSTEM_MODE_READ_WRITE,
+                           flatpak_file_get_path_cached (app_id_dir));
+    }
+
   if (home_access_out != NULL)
     *home_access_out = home_access;
 }
 
 FlatpakExports *
-flatpak_exports_from_context (FlatpakContext *context)
+flatpak_exports_from_context (FlatpakContext *context,
+                              const char *app_id)
 {
   g_autoptr(FlatpakExports) exports = exports_new ();
+  g_autoptr(GFile) app_id_dir = flatpak_get_data_dir (app_id);
 
-  export_paths_export_context (context, exports, FALSE, NULL, NULL);
+  export_paths_export_context (context, exports, app_id_dir, FALSE, NULL, NULL);
   return g_steal_pointer (&exports);
 }
 
@@ -2888,7 +2901,7 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
         }
     }
 
-  export_paths_export_context (context, exports, TRUE, xdg_dirs_conf, &home_access);
+  export_paths_export_context (context, exports, app_id_dir, TRUE, xdg_dirs_conf, &home_access);
 
   if (!home_access)
     {
@@ -2923,16 +2936,6 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
                   NULL);
   }
 
-  if (app_id_dir)
-    {
-      g_autoptr(GFile) apps_dir = g_file_get_parent (app_id_dir);
-      /* Hide the .var/app dir by default (unless explicitly made visible) */
-      exports_path_hide (exports, flatpak_file_get_path_cached (apps_dir));
-      /* But let the app write to the per-app dir in it */
-      exports_path_expose (exports, FLATPAK_FILESYSTEM_MODE_READ_WRITE,
-                           flatpak_file_get_path_cached (app_id_dir));
-    }
-
   /* Hide the flatpak dir by default (unless explicitly made visible) */
   user_flatpak_dir = flatpak_get_user_base_dir_location ();
   exports_path_hide (exports, flatpak_file_get_path_cached (user_flatpak_dir));
@@ -2945,11 +2948,11 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
             "--dir", g_get_home_dir (),
             NULL);
 
-  /* Special case subdirectories of the cache, config and data xdg dirs.
-   * If these are accessible explicilty, in a read-write fashion, then
-   * we bind-mount these in the app-id dir. This allows applications to
-   * explicitly opt out of keeping some config/cache/data in the
-   * app-specific directory.
+  /* Special case subdirectories of the cache, config and data xdg
+   * dirs.  If these are accessible explicilty, then we bind-mount
+   * these in the app-id dir. This allows applications to explicitly
+   * opt out of keeping some config/cache/data in the app-specific
+   * directory.
    */
   if (app_id_dir)
     {
@@ -2964,17 +2967,18 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
           xdg_path = get_xdg_dir_from_string (filesystem, &rest, &where);
 
           if (xdg_path != NULL && *rest != 0 &&
-              mode >= FLATPAK_FILESYSTEM_MODE_READ_WRITE)
+              mode >= FLATPAK_FILESYSTEM_MODE_READ_ONLY)
             {
               g_autoptr(GFile) app_version = g_file_get_child (app_id_dir, where);
               g_autoptr(GFile) app_version_subdir = g_file_resolve_relative_path (app_version, rest);
 
-              if (g_file_test (xdg_path, G_FILE_TEST_IS_DIR))
+              if (g_file_test (xdg_path, G_FILE_TEST_IS_DIR) ||
+                  g_file_test (xdg_path, G_FILE_TEST_IS_REGULAR))
                 {
                   g_autofree char *xdg_path_in_app = g_file_get_path (app_version_subdir);
-                  g_mkdir_with_parents (xdg_path_in_app, 0755);
                   add_args (argv_array,
-                            "--bind", xdg_path, xdg_path_in_app,
+                            mode == FLATPAK_FILESYSTEM_MODE_READ_ONLY ? "--ro-bind" : "--bind",
+                            xdg_path, xdg_path_in_app,
                             NULL);
                 }
             }
@@ -3713,13 +3717,13 @@ join_args (GPtrArray *argv_array, gsize *len_out)
   gint i;
   gsize len = 0;
 
-  for (i = 0; i < argv_array->len; i++)
+  for (i = 0; i < argv_array->len && argv_array->pdata[i] != NULL; i++)
     len +=  strlen (argv_array->pdata[i]) + 1;
 
   string = g_new (gchar, len);
   *string = 0;
   ptr = string;
-  for (i = 0; i < argv_array->len; i++)
+  for (i = 0; i < argv_array->len && argv_array->pdata[i] != NULL; i++)
     ptr = g_stpcpy (ptr, argv_array->pdata[i]) + 1;
 
   *len_out = len;
@@ -3814,6 +3818,12 @@ prepend_bwrap_argv_wrapper (GPtrArray *argv,
   g_ptr_array_add (bwrap_args, g_strdup ("--file"));
   g_ptr_array_add (bwrap_args, g_strdup_printf ("%d", app_info_fd));
   g_ptr_array_add (bwrap_args, g_strdup ("/.flatpak-info"));
+  g_ptr_array_add (bwrap_args, NULL);
+
+  {
+    g_autofree char *commandline = flatpak_quote_argv ((const char **) bwrap_args->pdata);
+    g_debug ("bwrap args '%s'", commandline);
+  }
 
   bwrap_args_data = join_args (bwrap_args, &bwrap_args_len);
   bwrap_args_fd = create_tmp_fd (bwrap_args_data, bwrap_args_len, error);
@@ -4484,6 +4494,8 @@ add_rest_args (const char  *app_id,
             {
               if (g_str_has_prefix (args[i], "file:"))
                 file = g_file_new_for_uri (args[i]);
+              else if (G_IS_DIR_SEPARATOR(args[i][0]))
+                file = g_file_new_for_path (args[i]);
             }
           else
             file = g_file_new_for_path (args[i]);
