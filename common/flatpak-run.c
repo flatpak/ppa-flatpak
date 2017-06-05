@@ -1969,8 +1969,16 @@ static void
 flatpak_run_add_wayland_args (GPtrArray *argv_array,
                               char    ***envp_p)
 {
-  g_autofree char *wayland_socket = g_build_filename (g_get_user_runtime_dir (), "wayland-0", NULL);
-  g_autofree char *sandbox_wayland_socket = g_strdup_printf ("/run/user/%d/wayland-0", getuid ());
+  const char *wayland_display;
+  g_autofree char *wayland_socket = NULL;
+  g_autofree char *sandbox_wayland_socket = NULL;
+
+  wayland_display = g_getenv ("WAYLAND_DISPLAY");
+  if (!wayland_display)
+    wayland_display = "wayland-0";
+
+  wayland_socket = g_build_filename (g_get_user_runtime_dir (), wayland_display, NULL);
+  sandbox_wayland_socket = g_strdup_printf ("/run/user/%d/%s", getuid (), wayland_display);
 
   if (g_file_test (wayland_socket, G_FILE_TEST_EXISTS))
     {
@@ -2423,6 +2431,18 @@ add_hide_path (GHashTable *hash_table,
   g_hash_table_insert (hash_table, ep->path, ep);
 }
 
+static gboolean
+never_export_as_symlink (const char *path)
+{
+  /* Don't export /tmp as a symlink even if it is on the host, because
+     that will fail with the pre-existing directory we created for /tmp,
+     and anyway, it being a symlink is not useful in the sandbox */
+  if (strcmp (path, "/tmp") == 0)
+    return TRUE;
+
+  return FALSE;
+}
+
 /* We use the level to make sure we get the ordering somewhat right.
  * For instance if /symlink -> /z_dir is exported, then we want to create
  * /z_dir before /symlink, because otherwise an export like /symlink/foo
@@ -2472,7 +2492,7 @@ _add_expose_path (GHashTable *hash_table,
       if (old_ep != NULL)
         old_mode = old_ep->mode;
 
-      if (S_ISLNK (st.st_mode))
+      if (S_ISLNK (st.st_mode) && !never_export_as_symlink (path))
         {
           g_autofree char *resolved = flatpak_resolve_link (path, NULL);
 
@@ -2747,11 +2767,11 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
             "--dir", g_get_home_dir (),
             NULL);
 
-  /* Special case subdirectories of the cache, config and data xdg dirs.
-   * If these are accessible explicilty, in a read-write fashion, then
-   * we bind-mount these in the app-id dir. This allows applications to
-   * explicitly opt out of keeping some config/cache/data in the
-   * app-specific directory.
+  /* Special case subdirectories of the cache, config and data xdg
+   * dirs.  If these are accessible explicilty, then we bind-mount
+   * these in the app-id dir. This allows applications to explicitly
+   * opt out of keeping some config/cache/data in the app-specific
+   * directory.
    */
   if (app_id_dir)
     {
@@ -2766,17 +2786,18 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
           xdg_path = get_xdg_dir_from_string (filesystem, &rest, &where);
 
           if (xdg_path != NULL && *rest != 0 &&
-              mode >= FLATPAK_FILESYSTEM_MODE_READ_WRITE)
+              mode >= FLATPAK_FILESYSTEM_MODE_READ_ONLY)
             {
               g_autoptr(GFile) app_version = g_file_get_child (app_id_dir, where);
               g_autoptr(GFile) app_version_subdir = g_file_resolve_relative_path (app_version, rest);
 
-              if (g_file_test (xdg_path, G_FILE_TEST_IS_DIR))
+              if (g_file_test (xdg_path, G_FILE_TEST_IS_DIR) ||
+                  g_file_test (xdg_path, G_FILE_TEST_IS_REGULAR))
                 {
                   g_autofree char *xdg_path_in_app = g_file_get_path (app_version_subdir);
-                  g_mkdir_with_parents (xdg_path_in_app, 0755);
                   add_args (argv_array,
-                            "--bind", xdg_path, xdg_path_in_app,
+                            mode == FLATPAK_FILESYSTEM_MODE_READ_ONLY ? "--ro-bind" : "--bind",
+                            xdg_path, xdg_path_in_app,
                             NULL);
                 }
             }
@@ -2872,6 +2893,7 @@ static const struct {const char *env;
   {"XDG_CONFIG_DIRS", "/app/etc/xdg:/etc/xdg"},
   {"XDG_DATA_DIRS", "/app/share:/usr/share"},
   {"SHELL", "/bin/sh"},
+  {"TMPDIR", NULL}, /* Unset TMPDIR as it may not exist in the sandbox */
 };
 
 static const struct {const char *env;
@@ -2926,12 +2948,18 @@ flatpak_run_get_minimal_env (gboolean devel)
   env_array = g_ptr_array_new_with_free_func (g_free);
 
   for (i = 0; i < G_N_ELEMENTS (default_exports); i++)
-    g_ptr_array_add (env_array, g_strdup_printf ("%s=%s", default_exports[i].env, default_exports[i].val));
+    {
+      if (default_exports[i].val)
+        g_ptr_array_add (env_array, g_strdup_printf ("%s=%s", default_exports[i].env, default_exports[i].val));
+    }
 
   if (devel)
     {
       for (i = 0; i < G_N_ELEMENTS(devel_exports); i++)
-        g_ptr_array_add (env_array, g_strdup_printf ("%s=%s", devel_exports[i].env, devel_exports[i].val));
+        {
+          if (devel_exports[i].val)
+            g_ptr_array_add (env_array, g_strdup_printf ("%s=%s", devel_exports[i].env, devel_exports[i].val));
+        }
     }
 
   for (i = 0; i < G_N_ELEMENTS (copy); i++)
@@ -2961,7 +2989,14 @@ flatpak_run_apply_env_default (char **envp)
   int i;
 
   for (i = 0; i < G_N_ELEMENTS (default_exports); i++)
-    envp = g_environ_setenv (envp, default_exports[i].env, default_exports[i].val, TRUE);
+    {
+      const char *value = default_exports[i].val;
+
+      if (value)
+        envp = g_environ_setenv (envp, default_exports[i].env, value, TRUE);
+      else
+        envp = g_environ_unsetenv (envp, default_exports[i].env);
+    }
 
   return envp;
 }
@@ -3225,10 +3260,11 @@ flatpak_run_add_app_info_args (GPtrArray      *argv_array,
                                GError        **error)
 {
   g_autofree char *tmp_path = NULL;
-  int fd;
+  int fd, fd2;
   g_autoptr(GKeyFile) keyfile = NULL;
   g_autofree char *runtime_path = NULL;
   g_autofree char *fd_str = NULL;
+  g_autofree char *fd2_str = NULL;
   g_autofree char *old_dest = g_strdup_printf ("/run/user/%d/flatpak-info", getuid ());
   const char *group;
 
@@ -3276,6 +3312,17 @@ flatpak_run_add_app_info_args (GPtrArray      *argv_array,
   if (!g_key_file_save_to_file (keyfile, tmp_path, error))
     return FALSE;
 
+  /* We want to create a file on /.flatpak-info that the app cannot modify, which
+     we do by creating a read-only bind mount. This way one can openat()
+     /proc/$pid/root, and if that succeeds use openat via that to find the
+     unfakable .flatpak-info file. However, there is a tiny race in that if
+     you manage to open /proc/$pid/root, but then the pid dies, then
+     every mount but the root is unmounted in the namespace, so the
+     .flatpak-info will be empty. We fix this by first creating a real file
+     with the real info in, then bind-mounting on top of that, the same info.
+     This way even if the bind-mount is unmounted we can find the real data.
+  */
+
   fd = open (tmp_path, O_RDONLY);
   if (fd == -1)
     {
@@ -3285,14 +3332,29 @@ flatpak_run_add_app_info_args (GPtrArray      *argv_array,
       return FALSE;
     }
 
+  fd2 = open (tmp_path, O_RDONLY);
+  if (fd2 == -1)
+    {
+      close (fd);
+      int errsv = errno;
+      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+                   _("Failed to open temp file: %s"), g_strerror (errsv));
+      return FALSE;
+    }
+
   unlink (tmp_path);
 
   fd_str = g_strdup_printf ("%d", fd);
+  fd2_str = g_strdup_printf ("%d", fd2);
   if (fd_array)
-    g_array_append_val (fd_array, fd);
+    {
+      g_array_append_val (fd_array, fd);
+      g_array_append_val (fd_array, fd2);
+    }
 
   add_args (argv_array,
-            "--ro-bind-data", fd_str, "/.flatpak-info",
+            "--file", fd_str, "/.flatpak-info",
+            "--ro-bind-data", fd2_str, "/.flatpak-info",
             "--symlink", "../../../.flatpak-info", old_dest,
             NULL);
 
@@ -3326,12 +3388,10 @@ add_monitor_path_args (gboolean use_session_helper,
     {
       add_args (argv_array,
                 "--ro-bind", monitor_path, "/run/host/monitor",
-                NULL);
-      add_args (argv_array,
                 "--symlink", "/run/host/monitor/localtime", "/etc/localtime",
-                NULL);
-      add_args (argv_array,
                 "--symlink", "/run/host/monitor/resolv.conf", "/etc/resolv.conf",
+                "--symlink", "/run/host/monitor/host.conf", "/etc/host.conf",
+                "--symlink", "/run/host/monitor/hosts", "/etc/hosts",
                 NULL);
     }
   else
@@ -3362,11 +3422,17 @@ add_monitor_path_args (gboolean use_session_helper,
         }
 
       if (g_file_test ("/etc/resolv.conf", G_FILE_TEST_EXISTS))
-        {
-          add_args (argv_array,
-                    "--ro-bind", "/etc/resolv.conf", "/etc/resolv.conf",
-                    NULL);
-        }
+        add_args (argv_array,
+                  "--ro-bind", "/etc/resolv.conf", "/etc/resolv.conf",
+                  NULL);
+      if (g_file_test ("/etc/host.conf", G_FILE_TEST_EXISTS))
+        add_args (argv_array,
+                  "--ro-bind", "/etc/host.conf", "/etc/host.conf",
+                  NULL);
+      if (g_file_test ("/etc/hosts", G_FILE_TEST_EXISTS))
+        add_args (argv_array,
+                  "--ro-bind", "/etc/hosts", "/etc/hosts",
+                  NULL);
     }
 }
 
@@ -3521,7 +3587,9 @@ prepend_bwrap_argv_wrapper (GPtrArray *argv,
   g_ptr_array_add (bwrap_args, g_strdup (proxy_socket_dir));
   g_ptr_array_add (bwrap_args, g_strdup (proxy_socket_dir));
 
-  g_ptr_array_add (bwrap_args, g_strdup ("--ro-bind-data"));
+  /* This is a file rather than a bind mount, because it will then
+     not be unmounted from the namespace when the namespace dies. */
+  g_ptr_array_add (bwrap_args, g_strdup ("--file"));
   g_ptr_array_add (bwrap_args, g_strdup_printf ("%d", app_info_fd));
   g_ptr_array_add (bwrap_args, g_strdup ("/.flatpak-info"));
 
@@ -3986,6 +4054,8 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
               strcmp (dent->d_name, "group") == 0 ||
               strcmp (dent->d_name, "machine-id") == 0 ||
               strcmp (dent->d_name, "resolv.conf") == 0 ||
+              strcmp (dent->d_name, "host.conf") == 0 ||
+              strcmp (dent->d_name, "hosts") == 0 ||
               strcmp (dent->d_name, "localtime") == 0)
             continue;
 
