@@ -1,7 +1,6 @@
-flatpak (0.8.5-3) UNRELEASED; urgency=medium
+flatpak (0.8.6-1) UNRELEASED; urgency=medium
 
-  * d/p/0.8.6/*.patch: Update from upstream flatpak-0.8.x branch,
-    bringing in what would be in 0.8.6 if it was released today
+  * New upstream release
     - Fix the return value type for filtered NameHasOwner() D-Bus calls
       (upstream issue 817)
     - Security hardening: Only export .desktop files, D-Bus session
@@ -23,9 +22,6 @@ flatpak (0.8.5-3) UNRELEASED; urgency=medium
     - Make the host's /etc/hosts and /etc/host.conf available in the sandbox,
       fixing sandboxed Spotify
     - Update Hungarian translation
-  * d/p/flatpak-dir-Check-for-variant-containing-string-correctly.patch:
-    Fix an incorrect type-check in the backported support for key rollover
-    and location migration
 
  -- Simon McVittie <smcv@debian.org>  Sat, 03 Jun 2017 12:02:07 +0100
 

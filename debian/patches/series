@@ -1,14 +1,1 @@
-0.8.6/Updated-Hungarian-translation.patch
-0.8.6/Unset-TMPDIR-in-the-sandbox.patch
-0.8.6/run-Handle-the-case-where-tmp-on-the-host-is-a-symlink.patch
-0.8.6/Expose-host-etc-hosts-and-etc-host.conf.patch
-0.8.6/Add-a-marker-to-rewritten-desktop-files.patch
-0.8.6/install-Limit-the-exported-file-to-a-whitelist.patch
-0.8.6/run-Fix-race-condition-in-app-identification.patch
-0.8.6/run-Handle-non-default-WAYLAND_DISPLAY.patch
-0.8.6/dbus-portal-Fix-return-value-type-of-filtered-NameHasOwne.patch
-0.8.6/Minimal-backport-of-rewrite-url-and-gpg-keys-remote-metad.patch
-0.8.6/run-Allow-regular-files-for-filesystem-xdg-config-path.patch
-0.8.6/run-Allow-filesystem-xdg-subdir-ro.patch
-flatpak-dir-Check-for-variant-containing-string-correctly.patch
 Improve-and-simplify-profile-snippet.patch
