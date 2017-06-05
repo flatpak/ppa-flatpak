@@ -3113,6 +3113,9 @@ export_desktop_file (const char   *app,
                                       "X-Flatpak-Tags",
                                       (const char * const *) tags, length);
         }
+
+      /* Add a marker so consumers can easily find out that this launches a sandbox */
+      g_key_file_set_string (keyfile, "Desktop Entry", "X-Flatpak", app);
     }
 
   groups = g_key_file_get_groups (keyfile, NULL);
@@ -3408,21 +3411,33 @@ flatpak_export_dir (GFile        *source,
                     GCancellable *cancellable,
                     GError      **error)
 {
-  gboolean ret = FALSE;
+  const char *exported_subdirs[] = {
+    "share/applications",                  "../..",
+    "share/icons",                         "../..",
+    "share/dbus-1/services",               "../../.."
+  };
+  int i;
 
-  if (!flatpak_mkdir_p (destination, cancellable, error))
-    goto out;
+  for (i = 0; i < G_N_ELEMENTS(exported_subdirs); i = i + 2)
+    {
+      /* The fds are closed by this call */
+      g_autoptr(GFile) sub_source = g_file_resolve_relative_path (source, exported_subdirs[i]);
+      g_autoptr(GFile) sub_destination = g_file_resolve_relative_path (destination, exported_subdirs[i]);
+      g_autofree char *sub_symlink_prefix = g_build_filename (exported_subdirs[i+1], symlink_prefix, exported_subdirs[i], NULL);
 
-  /* The fds are closed by this call */
-  if (!export_dir (AT_FDCWD, flatpak_file_get_path_cached (source), symlink_prefix, "",
-                   AT_FDCWD, flatpak_file_get_path_cached (destination),
-                   cancellable, error))
-    goto out;
+      if (!g_file_query_exists (sub_source, cancellable))
+        continue;
 
-  ret = TRUE;
+      if (!flatpak_mkdir_p (sub_destination, cancellable, error))
+        return FALSE;
 
-out:
-  return ret;
+      if (!export_dir (AT_FDCWD, flatpak_file_get_path_cached (sub_source), sub_symlink_prefix, "",
+                       AT_FDCWD, flatpak_file_get_path_cached (sub_destination),
+                       cancellable, error))
+        return FALSE;
+    }
+
+  return TRUE;
 }
 
 gboolean
@@ -7292,13 +7307,17 @@ flatpak_dir_update_remote_configuration (FlatpakDir   *self,
      flatpak_repo_set_* () family of functions) */
   static const char *const supported_params[] = {
     "xa.title",
-    "xa.default-branch", NULL
+    "xa.default-branch",
+    "xa.gpg-keys",
+    "xa.redirect-url",
+    NULL
   };
 
   g_autoptr(GVariant) summary = NULL;
   g_autoptr(GVariant) extensions = NULL;
   g_autoptr(GPtrArray) updated_params = NULL;
   GVariantIter iter;
+  g_autoptr(GBytes) gpg_keys = NULL;
 
   updated_params = g_ptr_array_new_with_free_func (g_free);
   summary = fetch_remote_summary_file (self, remote, cancellable, error);
@@ -7315,14 +7334,31 @@ flatpak_dir_update_remote_configuration (FlatpakDir   *self,
 
       while (g_variant_iter_next (&iter, "{sv}", &key, &value_var))
         {
-          /* At the moment, every supported parameter are strings */
-          if (g_strv_contains (supported_params, key) &&
-              g_variant_get_type_string (value_var))
+          /* At the moment, every supported parameter except gpg-keys are strings */
+          if (strcmp (key, "xa.gpg-keys") == 0 &&
+              g_variant_is_of_type (value_var, G_VARIANT_TYPE_BYTESTRING))
+            {
+              const guchar *gpg_data = g_variant_get_data (value_var);
+              gsize gpg_size = g_variant_get_size (value_var);
+              g_autofree gchar *gpg_data_checksum = g_compute_checksum_for_data (G_CHECKSUM_SHA256, gpg_data, gpg_size);
+
+              gpg_keys = g_bytes_new (gpg_data, gpg_size);
+
+              /* We store the hash so that we can detect when things changed or not
+                 instead of re-importing the key over-and-over */
+              g_ptr_array_add (updated_params, g_strdup ("xa.gpg-keys-hash"));
+              g_ptr_array_add (updated_params, g_steal_pointer (&gpg_data_checksum));
+            }
+          else if (g_strv_contains (supported_params, key) &&
+                   g_variant_is_of_type (value_var, G_VARIANT_TYPE_STRING))
             {
               const char *value = g_variant_get_string(value_var, NULL);
               if (value != NULL && *value != 0)
                 {
-                  g_ptr_array_add (updated_params, g_strdup (key));
+                  if (strcmp (key, "xa.redirect-url") == 0)
+                    g_ptr_array_add (updated_params, g_strdup ("url"));
+                  else
+                    g_ptr_array_add (updated_params, g_strdup (key));
                   g_ptr_array_add (updated_params, g_strdup (value));
                 }
             }
@@ -7389,7 +7425,7 @@ flatpak_dir_update_remote_configuration (FlatpakDir   *self,
       }
 
     /* Update the local remote configuration with the updated info. */
-    if (!flatpak_dir_modify_remote (self, remote, config, NULL, cancellable, error))
+    if (!flatpak_dir_modify_remote (self, remote, config, gpg_keys, cancellable, error))
       return FALSE;
   }
 
