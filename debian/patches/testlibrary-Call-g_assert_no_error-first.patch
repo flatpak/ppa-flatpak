@@ -4,6 +4,7 @@ Subject: testlibrary: Call g_assert_no_error first
 
 Failing tests produce much clearer diagnostics this way round.
 
+Forwarded: https://github.com/flatpak/flatpak/pull/836
 Signed-off-by: Simon McVittie <smcv@debian.org>
 ---
  tests/testlibrary.c | 12 ++++++------

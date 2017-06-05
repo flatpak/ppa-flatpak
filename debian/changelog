@@ -3,6 +3,8 @@ flatpak (0.9.5-1) UNRELEASED; urgency=medium
   * New upstream release
   * d/p/installed-tests-Install-test-keyring2-to-the-right-place.patch:
     Drop patch, superseded by an equivalent upstream change
+  * d/p/testlibrary-Call-g_assert_no_error-first.patch:
+    Mark as forwarded upstream
 
  -- Simon McVittie <smcv@debian.org>  Mon, 05 Jun 2017 21:34:51 +0100
 
