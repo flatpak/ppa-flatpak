@@ -28,7 +28,8 @@ test_doc_portal_LDADD = \
              libglnx.la \
              libflatpak-common.la \
              $(NULL)
-test_doc_portal_SOURCES = tests/test-doc-portal.c $(xdp_dbus_built_sources)
+test_doc_portal_SOURCES = tests/test-doc-portal.c
+nodist_test_doc_portal_SOURCES = $(xdp_dbus_built_sources)
 
 testlibrary_CFLAGS = $(BASE_CFLAGS)
 testlibrary_LDADD = \
@@ -97,6 +98,7 @@ dist_installed_test_data = \
 	tests/session.conf.in \
 	tests/0001-Add-test-logo.patch \
 	tests/org.test.Python.json \
+	tests/org.test.Python2.json \
 	tests/importme.py \
 	tests/importme2.py \
 	$(NULL)
