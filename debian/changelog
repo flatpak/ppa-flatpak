@@ -1,3 +1,15 @@
+flatpak (0.9.6-1) UNRELEASED; urgency=high
+
+  * New upstream release
+    - Security: prevent deploying files with inappropriate permissions
+      (world-writable, setuid, etc.) (Closes: #865413)
+    - Security: make ~/.local/share/flatpak private to user to defend
+      against app vendors that might have released files with
+      inappropriate permissions in the past
+    - Bump libostree build-dependency to 2017.7
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 21 Jun 2017 15:02:16 +0100
+
 flatpak (0.9.5-1) experimental; urgency=medium
 
   * New upstream release
