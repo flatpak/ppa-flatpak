@@ -7,6 +7,8 @@ flatpak (0.9.6-1) UNRELEASED; urgency=high
       against app vendors that might have released files with
       inappropriate permissions in the past
     - Bump libostree build-dependency to 2017.7
+  * Standards-Version: 4.0.0
+    - Use https URL for format of debian/copyright
 
  -- Simon McVittie <smcv@debian.org>  Wed, 21 Jun 2017 15:02:16 +0100
 
