@@ -10,6 +10,8 @@ flatpak (0.8.7-3) UNRELEASED; urgency=medium
   * d/control: Do not build-depend on gnome-desktop-testing. It is only
     used for the installed-tests.
   * d/control: Annotate test-only build-dependencies with <!nocheck>
+  * Standards-Version: 4.0.0
+    - Use https URL for format of debian/copyright
 
  -- Simon McVittie <smcv@debian.org>  Tue, 04 Jul 2017 11:42:36 +0100
 
