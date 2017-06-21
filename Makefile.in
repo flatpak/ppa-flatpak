@@ -441,11 +441,12 @@ flatpak_system_helper_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_system_helper_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am__objects_6 = document-portal/test_doc_portal-xdp-dbus.$(OBJEXT)
 am_test_doc_portal_OBJECTS =  \
-	tests/test_doc_portal-test-doc-portal.$(OBJEXT) \
-	$(am__objects_6)
-test_doc_portal_OBJECTS = $(am_test_doc_portal_OBJECTS)
+	tests/test_doc_portal-test-doc-portal.$(OBJEXT)
+am__objects_6 = document-portal/test_doc_portal-xdp-dbus.$(OBJEXT)
+nodist_test_doc_portal_OBJECTS = $(am__objects_6)
+test_doc_portal_OBJECTS = $(am_test_doc_portal_OBJECTS) \
+	$(nodist_test_doc_portal_OBJECTS)
 test_doc_portal_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) libglnx.la libflatpak-common.la \
 	$(am__DEPENDENCIES_1)
@@ -551,8 +552,9 @@ SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(flatpak_dbus_proxy_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
 	$(flatpak_system_helper_SOURCES) $(test_doc_portal_SOURCES) \
-	$(test_libflatpak_SOURCES) $(testdb_SOURCES) \
-	$(testlibrary_SOURCES) $(xdg_document_portal_SOURCES) \
+	$(nodist_test_doc_portal_SOURCES) $(test_libflatpak_SOURCES) \
+	$(testdb_SOURCES) $(testlibrary_SOURCES) \
+	$(xdg_document_portal_SOURCES) \
 	$(nodist_xdg_document_portal_SOURCES) \
 	$(xdg_permission_store_SOURCES) \
 	$(nodist_xdg_permission_store_SOURCES)
@@ -1565,7 +1567,8 @@ test_doc_portal_LDADD = \
              libflatpak-common.la \
              $(NULL)
 
-test_doc_portal_SOURCES = tests/test-doc-portal.c $(xdp_dbus_built_sources)
+test_doc_portal_SOURCES = tests/test-doc-portal.c
+nodist_test_doc_portal_SOURCES = $(xdp_dbus_built_sources)
 testlibrary_CFLAGS = $(BASE_CFLAGS)
 testlibrary_LDADD = \
              $(BASE_LIBS) \
@@ -1589,6 +1592,7 @@ dist_installed_test_data = \
 	tests/session.conf.in \
 	tests/0001-Add-test-logo.patch \
 	tests/org.test.Python.json \
+	tests/org.test.Python2.json \
 	tests/importme.py \
 	tests/importme2.py \
 	$(NULL)

@@ -139,6 +139,14 @@ assert_not_file_has_content () {
     fi
 }
 
+assert_file_has_mode () {
+    mode=$(stat -c '%a' $1)
+    if [ "$mode" != "$2" ]; then
+        echo 1>&2 "File '$1' has wrong mode: expected $2, but got $mode"
+        exit 1
+    fi
+}
+
 assert_not_has_dir () {
     if test -d "$1"; then
 	echo 1>&2 "Directory '$1' exists"; exit 1
@@ -215,8 +223,8 @@ setup_sdk_repo () {
 
 setup_python2_repo () {
     REPONAME=${1:-test}
-    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" . $(dirname $0)/make-test-runtime.sh ${REPONAME} org.test.PythonPlatform bash python2 ls cat echo readlink > /dev/null
-    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" . $(dirname $0)/make-test-runtime.sh ${REPONAME} org.test.PythonSdk python2 bash ls cat echo readlink make mkdir cp touch > /dev/null
+    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" . $(dirname $0)/make-test-runtime.sh ${REPONAME} org.test.PythonPlatform bash python2 ls cat echo rm readlink > /dev/null
+    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" . $(dirname $0)/make-test-runtime.sh ${REPONAME} org.test.PythonSdk python2 bash ls cat echo rm readlink make mkdir cp touch > /dev/null
     update_repo $REPONAME
 }
 

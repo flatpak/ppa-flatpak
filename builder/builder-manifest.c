@@ -76,6 +76,7 @@ struct BuilderManifest
   char          **cleanup_platform;
   char          **cleanup_platform_commands;
   char          **finish_args;
+  char          **inherit_extensions;
   char          **tags;
   char           *rename_desktop_file;
   char           *rename_appdata_file;
@@ -138,6 +139,7 @@ enum {
   PROP_SDK_EXTENSIONS,
   PROP_PLATFORM_EXTENSIONS,
   PROP_FINISH_ARGS,
+  PROP_INHERIT_EXTENSIONS,
   PROP_TAGS,
   PROP_RENAME_DESKTOP_FILE,
   PROP_RENAME_APPDATA_FILE,
@@ -175,6 +177,7 @@ builder_manifest_finalize (GObject *object)
   g_strfreev (self->cleanup_platform);
   g_strfreev (self->cleanup_platform_commands);
   g_strfreev (self->finish_args);
+  g_strfreev (self->inherit_extensions);
   g_strfreev (self->tags);
   g_free (self->rename_desktop_file);
   g_free (self->rename_appdata_file);
@@ -334,6 +337,10 @@ builder_manifest_get_property (GObject    *object,
 
     case PROP_FINISH_ARGS:
       g_value_set_boxed (value, self->finish_args);
+      break;
+
+    case PROP_INHERIT_EXTENSIONS:
+      g_value_set_boxed (value, self->inherit_extensions);
       break;
 
     case PROP_TAGS:
@@ -531,6 +538,12 @@ builder_manifest_set_property (GObject      *object,
     case PROP_FINISH_ARGS:
       tmp = self->finish_args;
       self->finish_args = g_strdupv (g_value_get_boxed (value));
+      g_strfreev (tmp);
+      break;
+
+    case PROP_INHERIT_EXTENSIONS:
+      tmp = self->inherit_extensions;
+      self->inherit_extensions = g_strdupv (g_value_get_boxed (value));
       g_strfreev (tmp);
       break;
 
@@ -778,6 +791,13 @@ builder_manifest_class_init (BuilderManifestClass *klass)
   g_object_class_install_property (object_class,
                                    PROP_FINISH_ARGS,
                                    g_param_spec_boxed ("finish-args",
+                                                       "",
+                                                       "",
+                                                       G_TYPE_STRV,
+                                                       G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_INHERIT_EXTENSIONS,
+                                   g_param_spec_boxed ("inherit-extensions",
                                                        "",
                                                        "",
                                                        G_TYPE_STRV,
@@ -1090,21 +1110,26 @@ builder_manifest_get_runtime_version (BuilderManifest *self)
 }
 
 const char *
-builder_manifest_get_branch (BuilderManifest *self, const char *default_branch)
+builder_manifest_get_branch (BuilderManifest *self)
 {
   if (self->branch)
     return self->branch;
 
-  if (default_branch)
-    return default_branch;
-
   return "master";
+}
+
+void
+builder_manifest_set_default_branch (BuilderManifest *self,
+                                     const char *default_branch)
+{
+  if (self->branch == NULL)
+    self->branch = g_strdup (default_branch);
 }
 
 static const char *
 builder_manifest_get_base_version (BuilderManifest *self)
 {
-  return self->base_version ? self->base_version : builder_manifest_get_branch (self, NULL);
+  return self->base_version ? self->base_version : builder_manifest_get_branch (self);
 }
 
 static char *
@@ -1361,6 +1386,7 @@ builder_manifest_checksum_for_finish (BuilderManifest *self,
   builder_cache_checksum_str (cache, BUILDER_MANIFEST_CHECKSUM_FINISH_VERSION);
   builder_cache_checksum_strv (cache, self->finish_args);
   builder_cache_checksum_str (cache, self->command);
+  builder_cache_checksum_compat_strv (cache, self->inherit_extensions);
 
   if (self->metadata)
     {
@@ -2090,6 +2116,7 @@ builder_manifest_finish (BuilderManifest *self,
   if (!builder_cache_lookup (cache, "finish"))
     {
       GFile *app_dir = NULL;
+      g_autofree char *ref = NULL;
       g_print ("Finishing app\n");
 
       if (!builder_context_enable_rofiles (context, error))
@@ -2097,6 +2124,13 @@ builder_manifest_finish (BuilderManifest *self,
 
       /* Call after enabling rofiles */
       app_dir = builder_context_get_app_dir (context);
+
+      ref = flatpak_compose_ref (!self->build_runtime && !self->build_extension,
+                                 builder_manifest_get_id (self),
+                                 builder_manifest_get_branch (self),
+                                 builder_context_get_arch (context), error);
+      if (ref == NULL)
+        return FALSE;
 
       if (self->metadata)
         {
@@ -2113,6 +2147,87 @@ builder_manifest_finish (BuilderManifest *self,
           if (!g_file_set_contents (flatpak_file_get_path_cached (dest_metadata),
                                     contents, length, error))
             return FALSE;
+        }
+
+      if (self->inherit_extensions && self->inherit_extensions[0] != NULL)
+        {
+          g_autoptr(GFile) metadata = g_file_get_child (app_dir, "metadata");
+          g_autoptr(GKeyFile) keyfile = g_key_file_new ();
+          g_autoptr(GKeyFile) base_keyfile = g_key_file_new ();
+          g_autofree char *arch_option = NULL;
+          const char *parent_id = NULL;
+          const char *parent_version = NULL;
+          g_autofree char *base_metadata = NULL;
+          g_auto(GStrv) groups = NULL;
+
+          arch_option = g_strdup_printf ("--arch=%s", builder_context_get_arch (context));
+
+          if (self->base != NULL && *self->base != 0)
+            {
+              parent_id = self->base;
+              parent_version = builder_manifest_get_base_version (self);
+            }
+          else
+            {
+              parent_id = self->sdk;
+              parent_version = builder_manifest_get_runtime_version (self);
+            }
+
+          base_metadata = flatpak (NULL, "info", arch_option, "--show-metadata", parent_id, parent_version, NULL);
+          if (base_metadata == NULL)
+            return flatpak_fail (error, "Inherit extensions specified, but could not get metadata for parent %s version %s", parent_id, parent_version);
+
+          if (!g_key_file_load_from_data (base_keyfile,
+                                          base_metadata, -1,
+                                          G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS,
+                                          error))
+            {
+              g_prefix_error (error, "Can't load metadata file: ");
+              return FALSE;
+            }
+
+          if (!g_key_file_load_from_file (keyfile,
+                                          flatpak_file_get_path_cached (metadata),
+                                          G_KEY_FILE_KEEP_COMMENTS|G_KEY_FILE_KEEP_TRANSLATIONS,
+                                          error))
+            {
+              g_prefix_error (error, "Can't load metadata file: ");
+              return FALSE;
+            }
+
+          for (i = 0; self->inherit_extensions[i] != NULL; i++)
+            {
+              g_autofree char *group = g_strdup_printf ("Extension %s", self->inherit_extensions[i]);
+              g_auto(GStrv) keys = NULL;
+              int j;
+
+              if (!g_key_file_has_group (base_keyfile, group))
+                return flatpak_fail (error, "Can't find inherited extension point %s", self->inherit_extensions[i]);
+
+              keys = g_key_file_get_keys (base_keyfile, group, NULL, error);
+              if (keys == NULL)
+                return FALSE;
+
+              for (j = 0; keys[j] != NULL; j++)
+                {
+                  g_autofree char *value = g_key_file_get_value (base_keyfile, group, keys[j], error);
+                  if (value == NULL)
+                    return FALSE;
+                  g_key_file_set_value (keyfile, group, keys[j], value);
+                }
+
+              if (!g_key_file_has_key (keyfile, group, "version", NULL) &&
+                  !g_key_file_has_key (keyfile, group, "versions", NULL))
+                g_key_file_set_value (keyfile, group, "version", parent_version);
+            }
+
+          if (!g_key_file_save_to_file (keyfile,
+                                        flatpak_file_get_path_cached (metadata),
+                                        error))
+            {
+              g_prefix_error (error, "Can't save metadata.platform: ");
+              return FALSE;
+            }
         }
 
       if (self->command)
@@ -2249,7 +2364,11 @@ builder_manifest_finish (BuilderManifest *self,
 
           metadata_locale_file = g_file_get_child (app_dir, "metadata.locale");
           metadata_contents = g_strdup_printf ("[Runtime]\n"
-                                               "name=%s\n", locale_id);
+                                               "name=%s\n"
+                                               "\n"
+                                               "[ExtensionOf]\n"
+                                               "ref=%s\n",
+                                               locale_id, ref);
           if (!g_file_set_contents (flatpak_file_get_path_cached (metadata_locale_file),
                                     metadata_contents, strlen (metadata_contents),
                                     error))
@@ -2285,7 +2404,11 @@ builder_manifest_finish (BuilderManifest *self,
             return FALSE;
 
           metadata_contents = g_strdup_printf ("[Runtime]\n"
-                                               "name=%s\n", debug_id);
+                                               "name=%s\n"
+                                               "\n"
+                                               "[ExtensionOf]\n"
+                                               "ref=%s\n",
+                                               debug_id, ref);
           if (!g_file_set_contents (flatpak_file_get_path_cached (metadata_debuginfo_file),
                                     metadata_contents, strlen (metadata_contents), error))
             return FALSE;
@@ -2330,6 +2453,7 @@ builder_manifest_create_platform (BuilderManifest *self,
       g_autoptr(GSubprocess) subp = NULL;
       g_autoptr(GPtrArray) args = NULL;
       GFile *app_dir = NULL;
+      g_autofree char *ref = NULL;
 
       g_print ("Creating platform based on %s\n", self->runtime);
 
@@ -2338,6 +2462,13 @@ builder_manifest_create_platform (BuilderManifest *self,
 
       /* Call after enabling rofiles */
       app_dir = builder_context_get_app_dir (context);
+
+      ref = flatpak_compose_ref (!self->build_runtime && !self->build_extension,
+                                 builder_manifest_get_id_platform (self),
+                                 builder_manifest_get_branch (self),
+                                 builder_context_get_arch (context), error);
+      if (ref == NULL)
+        return FALSE;
 
       platform_dir = g_file_get_child (app_dir, "platform");
 
@@ -2573,7 +2704,10 @@ builder_manifest_create_platform (BuilderManifest *self,
 
           metadata_locale_file = g_file_get_child (app_dir, "metadata.platform.locale");
           metadata_contents = g_strdup_printf ("[Runtime]\n"
-                                               "name=%s\n", locale_id);
+                                               "name=%s\n"
+                                               "\n"
+                                               "[ExtensionOf]\n"
+                                               "ref=%s\n", locale_id, ref);
           if (!g_file_set_contents (flatpak_file_get_path_cached (metadata_locale_file),
                                     metadata_contents, strlen (metadata_contents),
                                     error))
