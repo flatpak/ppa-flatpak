@@ -1,4 +1,4 @@
-flatpak (0.9.6-1) UNRELEASED; urgency=high
+flatpak (0.9.6-1) experimental; urgency=high
 
   * New upstream release
     - Security: prevent deploying files with inappropriate permissions
@@ -12,7 +12,7 @@ flatpak (0.9.6-1) UNRELEASED; urgency=high
   * Standards-Version: 4.0.0
     - Use https URL for format of debian/copyright
 
- -- Simon McVittie <smcv@debian.org>  Wed, 21 Jun 2017 15:02:16 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 21 Jun 2017 15:09:59 +0100
 
 flatpak (0.9.5-1) experimental; urgency=medium
 
