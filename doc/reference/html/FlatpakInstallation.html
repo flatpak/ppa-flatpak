@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>FlatpakInstallation: Flatpak Library Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="Flatpak Library Reference Manual">
 <link rel="up" href="ch01.html" title="Flatpak">
 <link rel="prev" href="ch01.html" title="Flatpak">
 <link rel="next" href="FlatpakRef.html" title="FlatpakRef">
-<meta name="generator" content="GTK-Doc V1.24.1 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -327,7 +327,7 @@ flatpak_installation_new_system (<em class="parameter"><code><span class="type">
                                  <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Creates a new <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> for the system-wide installation.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.2.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-new-system.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -337,7 +337,7 @@ flatpak_installation_new_system (<em class="parameter"><code><span class="type">
 <tbody>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -349,8 +349,8 @@ flatpak_installation_new_system (<em class="parameter"><code><span class="type">
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.2.6"></a><h4>Returns</h4>
-<p> a new <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a>. </p>
+<a name="flatpak-installation-new-system.returns"></a><h4>Returns</h4>
+<p>a new <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -362,7 +362,7 @@ flatpak_installation_new_user (<em class="parameter"><code><span class="type">GC
                                <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Creates a new <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> for the per-user installation.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.3.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-new-user.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -372,7 +372,7 @@ flatpak_installation_new_user (<em class="parameter"><code><span class="type">GC
 <tbody>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -384,8 +384,8 @@ flatpak_installation_new_user (<em class="parameter"><code><span class="type">GC
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.3.6"></a><h4>Returns</h4>
-<p> a new <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a>. </p>
+<a name="flatpak-installation-new-user.returns"></a><h4>Returns</h4>
+<p>a new <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -400,7 +400,7 @@ flatpak_installation_new_for_path (<em class="parameter"><code><span class="type
 <p>Creates a new <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> for the installation at the given <em class="parameter"><code>path</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.4.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-new-for-path.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -420,7 +420,7 @@ flatpak_installation_new_for_path (<em class="parameter"><code><span class="type
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -432,8 +432,8 @@ flatpak_installation_new_for_path (<em class="parameter"><code><span class="type
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.4.6"></a><h4>Returns</h4>
-<p> a new <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a>. </p>
+<a name="flatpak-installation-new-for-path.returns"></a><h4>Returns</h4>
+<p>a new <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -444,7 +444,7 @@ flatpak_installation_new_for_path (<em class="parameter"><code><span class="type
 flatpak_installation_get_is_user (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>);</pre>
 <p>Returns whether the installation is for a user-specific location.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.5.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-get-is-user.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -459,7 +459,7 @@ flatpak_installation_get_is_user (<em class="parameter"><code><a class="link" hr
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.5.6"></a><h4>Returns</h4>
+<a name="flatpak-installation-get-is-user.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> if <em class="parameter"><code>self</code></em>
 is a per-user installation</p>
 </div>
@@ -472,7 +472,7 @@ flatpak_installation_get_path (<em class="parameter"><code><a class="link" href=
 <p>Returns the installation location for <em class="parameter"><code>self</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.6.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-get-path.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -487,8 +487,8 @@ flatpak_installation_get_path (<em class="parameter"><code><a class="link" href=
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.6.6"></a><h4>Returns</h4>
-<p> an <span class="type">GFile</span>. </p>
+<a name="flatpak-installation-get-path.returns"></a><h4>Returns</h4>
+<p>an <span class="type">GFile</span>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -503,7 +503,7 @@ flatpak_installation_create_monitor (<em class="parameter"><code><a class="link"
 emit the <span class="type">“changed”</span> signal whenever an application or runtime
 was installed, uninstalled or updated.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.7.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-create-monitor.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -518,7 +518,7 @@ was installed, uninstalled or updated.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -530,8 +530,8 @@ was installed, uninstalled or updated.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.7.6"></a><h4>Returns</h4>
-<p> a new <span class="type">GFileMonitor</span> instance, or <code class="literal">NULL</code> on error. </p>
+<a name="flatpak-installation-create-monitor.returns"></a><h4>Returns</h4>
+<p>a new <span class="type">GFileMonitor</span> instance, or <code class="literal">NULL</code> on error. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -551,7 +551,7 @@ flatpak_installation_install (<em class="parameter"><code><a class="link" href="
                               <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Install a new application or runtime.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.8.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-install.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -581,17 +581,17 @@ flatpak_installation_install (<em class="parameter"><code><a class="link" href="
 </tr>
 <tr>
 <td class="parameter_name"><p>arch</p></td>
-<td class="parameter_description"><p> which architecture to fetch (default: current architecture). </p></td>
+<td class="parameter_description"><p>which architecture to fetch (default: current architecture). </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>branch</p></td>
-<td class="parameter_description"><p> which branch to fetch (default: 'master'). </p></td>
+<td class="parameter_description"><p>which branch to fetch (default: 'master'). </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>progress</p></td>
-<td class="parameter_description"><p> progress callback. </p></td>
+<td class="parameter_description"><p>progress callback. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="The callback is valid only during the call to the method."><span class="acronym">scope call</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -602,7 +602,7 @@ flatpak_installation_install (<em class="parameter"><code><a class="link" href="
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -614,8 +614,8 @@ flatpak_installation_install (<em class="parameter"><code><a class="link" href="
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.8.6"></a><h4>Returns</h4>
-<p> The ref for the newly installed app or <code class="literal">NULL</code> on failure. </p>
+<a name="flatpak-installation-install.returns"></a><h4>Returns</h4>
+<p>The ref for the newly installed app or <code class="literal">NULL</code> on failure. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -635,7 +635,7 @@ flatpak_installation_update (<em class="parameter"><code><a class="link" href="F
                              <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Update an application or runtime.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.9.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-update.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -665,17 +665,17 @@ flatpak_installation_update (<em class="parameter"><code><a class="link" href="F
 </tr>
 <tr>
 <td class="parameter_name"><p>arch</p></td>
-<td class="parameter_description"><p> architecture of the app or runtime to update (default: current architecture). </p></td>
+<td class="parameter_description"><p>architecture of the app or runtime to update (default: current architecture). </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>branch</p></td>
-<td class="parameter_description"><p> name of the branch of the app or runtime to update (default: master). </p></td>
+<td class="parameter_description"><p>name of the branch of the app or runtime to update (default: master). </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>progress</p></td>
-<td class="parameter_description"><p> the callback. </p></td>
+<td class="parameter_description"><p>the callback. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="The callback is valid only during the call to the method."><span class="acronym">scope call</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -686,7 +686,7 @@ flatpak_installation_update (<em class="parameter"><code><a class="link" href="F
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -698,8 +698,8 @@ flatpak_installation_update (<em class="parameter"><code><a class="link" href="F
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.9.6"></a><h4>Returns</h4>
-<p> The ref for the newly updated app (or the same if no update) or <code class="literal">NULL</code> on failure. </p>
+<a name="flatpak-installation-update.returns"></a><h4>Returns</h4>
+<p>The ref for the newly updated app (or the same if no update) or <code class="literal">NULL</code> on failure. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -718,7 +718,7 @@ flatpak_installation_uninstall (<em class="parameter"><code><a class="link" href
                                 <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Uninstall an application or runtime.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.10.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-uninstall.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -753,7 +753,7 @@ flatpak_installation_uninstall (<em class="parameter"><code><a class="link" href
 </tr>
 <tr>
 <td class="parameter_name"><p>progress</p></td>
-<td class="parameter_description"><p> the callback. </p></td>
+<td class="parameter_description"><p>the callback. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="The callback is valid only during the call to the method."><span class="acronym">scope call</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -764,7 +764,7 @@ flatpak_installation_uninstall (<em class="parameter"><code><a class="link" href
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -776,7 +776,7 @@ flatpak_installation_uninstall (<em class="parameter"><code><a class="link" href
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.10.6"></a><h4>Returns</h4>
+<a name="flatpak-installation-uninstall.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success</p>
 </div>
 </div>
@@ -797,7 +797,7 @@ flatpak_installation_launch (<em class="parameter"><code><a class="link" href="F
 are available, in order to get a value for <em class="parameter"><code>commit</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.11.6"></a><h4>Parameters</h4>
+<a name="flatpak-installation-launch.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -817,23 +817,23 @@ are available, in order to get a value for <em class="parameter"><code>commit</c
 </tr>
 <tr>
 <td class="parameter_name"><p>arch</p></td>
-<td class="parameter_description"><p> which architecture to launch (default: current architecture). </p></td>
+<td class="parameter_description"><p>which architecture to launch (default: current architecture). </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>branch</p></td>
-<td class="parameter_description"><p> which branch of the application (default: "master"). </p></td>
+<td class="parameter_description"><p>which branch of the application (default: "master"). </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>commit</p></td>
-<td class="parameter_description"><p> the commit of <em class="parameter"><code>branch</code></em>
+<td class="parameter_description"><p>the commit of <em class="parameter"><code>branch</code></em>
 to launch. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -845,7 +845,7 @@ to launch. </p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.11.7"></a><h4>Returns</h4>
+<a name="flatpak-installation-launch.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code>, unless an error occurred</p>
 </div>
 </div>
@@ -863,7 +863,7 @@ flatpak_installation_get_current_installed_app
 <a class="link" href="FlatpakInstallation.html#flatpak-installation-install" title="flatpak_installation_install ()"><code class="function">flatpak_installation_install()</code></a>, or <code class="literal">NULL</code> if the reference has
 never been installed locally.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.12.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-get-current-installed-app.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -883,7 +883,7 @@ never been installed locally.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -895,8 +895,8 @@ never been installed locally.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.12.6"></a><h4>Returns</h4>
-<p> an <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a>. </p>
+<a name="flatpak-installation-get-current-installed-app.returns"></a><h4>Returns</h4>
+<p>an <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -915,7 +915,7 @@ flatpak_installation_get_installed_ref
 <p>Returns information about an installed ref, such as the available builds,
 its size, location, etc.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.13.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-get-installed-ref.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -940,17 +940,17 @@ its size, location, etc.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>arch</p></td>
-<td class="parameter_description"><p> which architecture to fetch (default: current architecture). </p></td>
+<td class="parameter_description"><p>which architecture to fetch (default: current architecture). </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>branch</p></td>
-<td class="parameter_description"><p> which branch to fetch (default: "master"). </p></td>
+<td class="parameter_description"><p>which branch to fetch (default: "master"). </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -962,8 +962,8 @@ its size, location, etc.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.13.6"></a><h4>Returns</h4>
-<p> an <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a>, or <code class="literal">NULL</code> if an error occurred. </p>
+<a name="flatpak-installation-get-installed-ref.returns"></a><h4>Returns</h4>
+<p>an <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a>, or <code class="literal">NULL</code> if an error occurred. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -977,7 +977,7 @@ flatpak_installation_list_installed_refs
                                 <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Lists the installed references.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.14.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-list-installed-refs.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -992,7 +992,7 @@ flatpak_installation_list_installed_refs
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1004,8 +1004,8 @@ flatpak_installation_list_installed_refs
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.14.6"></a><h4>Returns</h4>
-<p> an GPtrArray of
+<a name="flatpak-installation-list-installed-refs.returns"></a><h4>Returns</h4>
+<p>an GPtrArray of
 <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> instances. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakInstalledRef]</span></p>
 </div>
@@ -1021,7 +1021,7 @@ flatpak_installation_list_installed_refs_by_kind
                                 <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Lists the installed references of a specific kind.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.15.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-list-installed-refs-by-kind.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1041,7 +1041,7 @@ flatpak_installation_list_installed_refs_by_kind
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1053,8 +1053,8 @@ flatpak_installation_list_installed_refs_by_kind
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.15.6"></a><h4>Returns</h4>
-<p> an GPtrArray of
+<a name="flatpak-installation-list-installed-refs-by-kind.returns"></a><h4>Returns</h4>
+<p>an GPtrArray of
 <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> instances. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakInstalledRef]</span></p>
 </div>
@@ -1072,7 +1072,7 @@ locally available. However, even though an app is not returned by this
 it can have local updates available that has not been deployed. Look
 at commit vs latest_commit on installed apps for this.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.16.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-list-installed-refs-for-update.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1087,7 +1087,7 @@ at commit vs latest_commit on installed apps for this.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1099,8 +1099,8 @@ at commit vs latest_commit on installed apps for this.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.16.6"></a><h4>Returns</h4>
-<p> an GPtrArray of
+<a name="flatpak-installation-list-installed-refs-for-update.returns"></a><h4>Returns</h4>
+<p>an GPtrArray of
 <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> instances. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakInstalledRef]</span></p>
 </div>
@@ -1116,7 +1116,7 @@ flatpak_installation_list_remote_refs_sync
                                 <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Lists all the applications and runtimes in a remote.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.17.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-list-remote-refs-sync.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1136,7 +1136,7 @@ flatpak_installation_list_remote_refs_sync
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1148,8 +1148,8 @@ flatpak_installation_list_remote_refs_sync
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.17.6"></a><h4>Returns</h4>
-<p> an GPtrArray of
+<a name="flatpak-installation-list-remote-refs-sync.returns"></a><h4>Returns</h4>
+<p>an GPtrArray of
 <a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="type">FlatpakRemoteRef</span></a> instances. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakRemoteRef]</span></p>
 </div>
@@ -1164,7 +1164,7 @@ flatpak_installation_list_remotes (<em class="parameter"><code><a class="link" h
 <p>Lists the remotes, in priority (highest first) order. For same priority,
 an earlier added remote comes before a later added one.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.18.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-list-remotes.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1179,7 +1179,7 @@ an earlier added remote comes before a later added one.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1191,8 +1191,8 @@ an earlier added remote comes before a later added one.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.18.6"></a><h4>Returns</h4>
-<p> an GPtrArray of
+<a name="flatpak-installation-list-remotes.returns"></a><h4>Returns</h4>
+<p>an GPtrArray of
 <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> instances. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakRemote]</span></p>
 </div>
@@ -1208,7 +1208,7 @@ flatpak_installation_get_remote_by_name
                                 <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Looks up a remote by name.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.19.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-get-remote-by-name.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1228,7 +1228,7 @@ flatpak_installation_get_remote_by_name
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1240,8 +1240,8 @@ flatpak_installation_get_remote_by_name
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.19.6"></a><h4>Returns</h4>
-<p> a <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> instances, or <code class="literal">NULL</code> error. </p>
+<a name="flatpak-installation-get-remote-by-name.returns"></a><h4>Returns</h4>
+<p>a <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> instances, or <code class="literal">NULL</code> error. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -1257,7 +1257,7 @@ flatpak_installation_fetch_remote_metadata_sync
                                 <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Obtains the metadata file from a commit.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.20.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-fetch-remote-metadata-sync.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1282,7 +1282,7 @@ flatpak_installation_fetch_remote_metadata_sync
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1294,8 +1294,8 @@ flatpak_installation_fetch_remote_metadata_sync
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.20.6"></a><h4>Returns</h4>
-<p> a <span class="type">GBytes</span> containing the flatpak metadata file,
+<a name="flatpak-installation-fetch-remote-metadata-sync.returns"></a><h4>Returns</h4>
+<p>a <span class="type">GBytes</span> containing the flatpak metadata file,
 or <code class="literal">NULL</code> if an error occurred. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
@@ -1315,7 +1315,7 @@ flatpak_installation_fetch_remote_ref_sync
                                 <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Gets the current remote branch of a ref in the remote.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.21.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-fetch-remote-ref-sync.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1345,17 +1345,17 @@ flatpak_installation_fetch_remote_ref_sync
 </tr>
 <tr>
 <td class="parameter_name"><p>arch</p></td>
-<td class="parameter_description"><p> which architecture to fetch (default: current architecture). </p></td>
+<td class="parameter_description"><p>which architecture to fetch (default: current architecture). </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>branch</p></td>
-<td class="parameter_description"><p> which branch to fetch (default: 'master'). </p></td>
+<td class="parameter_description"><p>which branch to fetch (default: 'master'). </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1367,8 +1367,8 @@ flatpak_installation_fetch_remote_ref_sync
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.21.6"></a><h4>Returns</h4>
-<p> a <a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="type">FlatpakRemoteRef</span></a> instance, or <code class="literal">NULL</code>. </p>
+<a name="flatpak-installation-fetch-remote-ref-sync.returns"></a><h4>Returns</h4>
+<p>a <a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="type">FlatpakRemoteRef</span></a> instance, or <code class="literal">NULL</code>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -1391,7 +1391,7 @@ local disk space that is required to check out this commit.</p>
 for instance if you're doing an update then the real download size may be smaller
 than what is returned here.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.22.6"></a><h4>Parameters</h4>
+<a name="flatpak-installation-fetch-remote-size-sync.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1416,17 +1416,17 @@ than what is returned here.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>download_size</p></td>
-<td class="parameter_description"><p> return location for the (maximum) download size. </p></td>
+<td class="parameter_description"><p>return location for the (maximum) download size. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>installed_size</p></td>
-<td class="parameter_description"><p> return location for the installed size. </p></td>
+<td class="parameter_description"><p>return location for the installed size. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1438,7 +1438,7 @@ than what is returned here.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.22.7"></a><h4>Returns</h4>
+<a name="flatpak-installation-fetch-remote-size-sync.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code>, unless an error occurred</p>
 </div>
 </div>
@@ -1453,7 +1453,7 @@ flatpak_installation_load_app_overrides
                                 <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Loads the metadata overrides file for an application.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.23.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-load-app-overrides.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1473,7 +1473,7 @@ flatpak_installation_load_app_overrides
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1485,8 +1485,8 @@ flatpak_installation_load_app_overrides
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.23.6"></a><h4>Returns</h4>
-<p> the contents of the overrides files,
+<a name="flatpak-installation-load-app-overrides.returns"></a><h4>Returns</h4>
+<p>the contents of the overrides files,
 or <code class="literal">NULL</code> if an error occurred. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
@@ -1506,7 +1506,7 @@ flatpak_installation_update_appstream_sync
  for the specified <em class="parameter"><code>arch</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.24.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-update-appstream-sync.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1531,12 +1531,12 @@ flatpak_installation_update_appstream_sync
 </tr>
 <tr>
 <td class="parameter_name"><p>out_changed</p></td>
-<td class="parameter_description"><p> Set to <code class="literal">TRUE</code> if the contents of the appstream changed, <code class="literal">FALSE</code> if nothing changed. </p></td>
+<td class="parameter_description"><p>Set to <code class="literal">TRUE</code> if the contents of the appstream changed, <code class="literal">FALSE</code> if nothing changed. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1548,7 +1548,7 @@ flatpak_installation_update_appstream_sync
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.24.6"></a><h4>Returns</h4>
+<a name="flatpak-installation-update-appstream-sync.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success, or <code class="literal">FALSE</code> on error</p>
 </div>
 </div>
@@ -1565,7 +1565,7 @@ flatpak_installation_install_bundle (<em class="parameter"><code><a class="link"
 <p>Install an application or runtime from an flatpak bundle file.
 See flatpak-build-bundle(1) for how to create brundles.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.25.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-install-bundle.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1585,7 +1585,7 @@ See flatpak-build-bundle(1) for how to create brundles.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>progress</p></td>
-<td class="parameter_description"><p> progress callback. </p></td>
+<td class="parameter_description"><p>progress callback. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="The callback is valid only during the call to the method."><span class="acronym">scope call</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1596,7 +1596,7 @@ See flatpak-build-bundle(1) for how to create brundles.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1608,8 +1608,8 @@ See flatpak-build-bundle(1) for how to create brundles.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.25.6"></a><h4>Returns</h4>
-<p> The ref for the newly installed app or <code class="literal">NULL</code> on failure. </p>
+<a name="flatpak-installation-install-bundle.returns"></a><h4>Returns</h4>
+<p>The ref for the newly installed app or <code class="literal">NULL</code> on failure. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -1623,7 +1623,7 @@ flatpak_installation_drop_caches (<em class="parameter"><code><a class="link" hr
 <p>Drops all internal (in-memory) caches. For instance, this may be needed to pick up new or changed
 remotes configured outside this installation instance.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.26.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-drop-caches.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1638,7 +1638,7 @@ remotes configured outside this installation instance.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1650,7 +1650,7 @@ remotes configured outside this installation instance.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.26.6"></a><h4>Returns</h4>
+<a name="flatpak-installation-drop-caches.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success, <code class="literal">FALSE</code> on error</p>
 </div>
 </div>
@@ -1665,7 +1665,7 @@ flatpak_installation_modify_remote (<em class="parameter"><code><a class="link" 
 <p>Saves changes in the <em class="parameter"><code>remote</code></em>
  object.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.27.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-modify-remote.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1685,7 +1685,7 @@ flatpak_installation_modify_remote (<em class="parameter"><code><a class="link" 
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1697,7 +1697,7 @@ flatpak_installation_modify_remote (<em class="parameter"><code><a class="link" 
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.27.6"></a><h4>Returns</h4>
+<a name="flatpak-installation-modify-remote.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> if the modifications have been committed successfully</p>
 </div>
 </div>
@@ -1711,7 +1711,7 @@ flatpak_installation_remove_remote (<em class="parameter"><code><a class="link" 
                                     <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Removes the remote with the given name from the installation.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.28.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-remove-remote.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1731,7 +1731,7 @@ flatpak_installation_remove_remote (<em class="parameter"><code><a class="link" 
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1743,7 +1743,7 @@ flatpak_installation_remove_remote (<em class="parameter"><code><a class="link" 
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.28.6"></a><h4>Returns</h4>
+<a name="flatpak-installation-remove-remote.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> if the remote has been removed successfully</p>
 </div>
 </div>
@@ -1760,7 +1760,7 @@ flatpak_installation_update_remote_sync
 the related information from the summary file in the remote OSTree
 repository and committing the changes to the local installation.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.29.5"></a><h4>Parameters</h4>
+<a name="flatpak-installation-update-remote-sync.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1780,7 +1780,7 @@ repository and committing the changes to the local installation.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1792,7 +1792,7 @@ repository and committing the changes to the local installation.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.2.2.7.29.6"></a><h4>Returns</h4>
+<a name="flatpak-installation-update-remote-sync.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> if the remote has been updated successfully</p>
 </div>
 <p class="since">Since: 0.6.13</p>
@@ -1804,7 +1804,7 @@ repository and committing the changes to the local installation.</p>
 flatpak_get_default_arch (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
 <p>Returns the canonical name for the arch of the current machine.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.30.5"></a><h4>Returns</h4>
+<a name="flatpak-get-default-arch.returns"></a><h4>Returns</h4>
 <p> an arch string</p>
 </div>
 </div>
@@ -1821,7 +1821,7 @@ such as installations or updates, and can be used to update progress information
 in a user interface.</p>
 <p>The callback occurs in the thread-default context of the caller.</p>
 <div class="refsect3">
-<a name="id-1.2.2.7.31.6"></a><h4>Parameters</h4>
+<a name="FlatpakProgressCallback.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
@@ -1866,7 +1866,7 @@ is just an estimate</p></td>
 <a name="FlatpakUpdateFlags"></a><h3>enum FlatpakUpdateFlags</h3>
 <p>Flags to alter the behavior of <a class="link" href="FlatpakInstallation.html#flatpak-installation-update" title="flatpak_installation_update ()"><code class="function">flatpak_installation_update()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.2.2.8.3.4"></a><h4>Members</h4>
+<a name="FlatpakUpdateFlags.members"></a><h4>Members</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
@@ -1902,6 +1902,6 @@ is just an estimate</p></td>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.24.1</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>
