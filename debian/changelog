@@ -1,3 +1,18 @@
+flatpak (0.8.7-1) UNRELEASED; urgency=medium
+
+  * New upstream stable release
+    - Security: prevent deploying files with inappropriate permissions
+      (world-writable, setuid, etc.)
+    - Security: make ~/.local/share/flatpak private to user to defend
+      against app vendors that might have released files with
+      inappropriate permissions in the past
+    - If an error occurs during pull, do not double-set an error,
+      which is considered to be invalid
+    - Increase some arbitrary timeouts in a test to make it more
+      reliable
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 21 Jun 2017 09:04:15 +0100
+
 flatpak (0.8.6-1) unstable; urgency=medium
 
   * New upstream release
