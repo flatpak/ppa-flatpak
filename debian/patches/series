@@ -1,1 +1,4 @@
 0.9.1/Improve-and-simplify-profile-snippet.patch
+0.9.4/common-Store-the-summary-signature-in-the-cache-too.patch
+0.9.6/install-Manually-save-summary-.sig-in-cache-repo.patch
+0.9.6/Manually-copy-summary-for-update-and-appdata-too.patch
