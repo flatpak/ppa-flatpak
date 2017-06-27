@@ -3,6 +3,8 @@ Date: Mon, 19 Jun 2017 15:01:19 +0200
 Subject: Manually copy summary for update and appdata too
 
 Origin: backport, 0.9.6, commit:67ffd9a0b6f2f76de8aa08e6eb00505e48c48cbd
+Forwarded: https://github.com/flatpak/flatpak/pull/874
+Applied-upstream: 0.8.8, commit:0723efdcc8f960cadf6d9235f0e93e715f287fd0
 ---
  common/flatpak-dir.c | 46 ++++++++++++++++++++++++++++++++++++++++++++++
  1 file changed, 46 insertions(+)

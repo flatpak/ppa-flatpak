@@ -1,0 +1,66 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Wed, 28 Jun 2017 10:47:29 +0100
+Subject: test-run: Allow org.test.Setuid to install,
+ as long as it's not setuid
+
+libostree attempts to strip the setuid and setgid bits from file
+permissions in user-mode checkouts, which, if successful, would make
+Flatpak's check for setuid ineffective and unnecessary. In versions
+older than 2017.7 this was not consistently applied, making commits
+2c8e241 and 02a299f necessary to defeat CVE-2017-9780 (see #845).
+
+libostree 2017.7 removes setuid and setgid bits more thoroughly
+as a result of fixing https://github.com/ostreedev/ostree/issues/633
+in PR https://github.com/ostreedev/ostree/pull/903, which means that
+this test fails when linking flatpak 0.8.x to libostree 2017.7.
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/flatpak/flatpak/pull/874
+Applied-upstream: 0.8.8, commit:3ba6e122e1ba49aae6129d7af444fd8db48e6b7e
+---
+ tests/libtest.sh  | 8 ++++++++
+ tests/test-run.sh | 7 ++++---
+ 2 files changed, 12 insertions(+), 3 deletions(-)
+
+diff --git a/tests/libtest.sh b/tests/libtest.sh
+index 8f415b4..0f35195 100644
+--- a/tests/libtest.sh
++++ b/tests/libtest.sh
+@@ -138,6 +138,14 @@ assert_not_file_has_content () {
+     fi
+ }
+ 
++assert_file_has_mode () {
++    mode=$(stat -c '%a' $1)
++    if [ "$mode" != "$2" ]; then
++        echo 1>&2 "File '$1' has wrong mode: expected $2, but got $mode"
++        exit 1
++    fi
++}
++
+ assert_not_has_dir () {
+     if test -d "$1"; then
+ 	echo 1>&2 "Directory '$1' exists"; exit 1
+diff --git a/tests/test-run.sh b/tests/test-run.sh
+index 2b70ff2..934dad3 100755
+--- a/tests/test-run.sh
++++ b/tests/test-run.sh
+@@ -358,14 +358,15 @@ rm -rf app
+ flatpak build-init app org.test.Setuid org.test.Platform org.test.Platform
+ mkdir -p app/files/
+ touch app/files/exe
+-chmod u+s app/files/exe
++chmod 04644 app/files/exe
+ flatpak build-finish --command=hello.sh app
+ ostree --repo=repos/test commit  ${FL_GPGARGS} --branch=app/org.test.Setuid/$ARCH/master app
+ update_repo
+ 
+ if ${FLATPAK} ${U} install test-repo org.test.Setuid &> err2.txt; then
+-    assert_not_reached "Should not be able to install with setuid file"
++    assert_file_has_mode "$FL_DIR/app/org.test.Setuid/$ARCH/master/active/files/exe" 644
++else
++    assert_file_has_content err2.txt [Ii]nvalid
+ fi
+-assert_file_has_content err2.txt [Ii]nvalid
+ 
+ echo "ok no setuid"

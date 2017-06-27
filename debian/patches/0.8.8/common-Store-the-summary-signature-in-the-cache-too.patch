@@ -5,6 +5,8 @@ Subject: common: Store the summary signature in the cache too
 We will need this later
 
 Origin: backport, 0.9.4, commit:b06e38073a17dc2e67a7774768100f6cc9769791
+Forwarded: https://github.com/flatpak/flatpak/pull/874
+Applied-upstream: 0.8.8, commit:f76f5002368b73360d48093dfae72ad9de53c6eb
 ---
  common/flatpak-dir.c | 60 ++++++++++++++++++++++++++++++++++------------------
  1 file changed, 39 insertions(+), 21 deletions(-)

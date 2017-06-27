@@ -1,4 +1,5 @@
+0.8.8/test-run-Allow-org.test.Setuid-to-install-as-long-as-it-s.patch
+0.8.8/common-Store-the-summary-signature-in-the-cache-too.patch
+0.8.8/install-Manually-save-summary-.sig-in-cache-repo.patch
+0.8.8/Manually-copy-summary-for-update-and-appdata-too.patch
 0.9.1/Improve-and-simplify-profile-snippet.patch
-0.9.4/common-Store-the-summary-signature-in-the-cache-too.patch
-0.9.6/install-Manually-save-summary-.sig-in-cache-repo.patch
-0.9.6/Manually-copy-summary-for-update-and-appdata-too.patch

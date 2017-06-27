@@ -7,6 +7,8 @@ summary for partial pulls, so system-wide installs fail. We
 fix it by manually updating the summary.
 
 Origin: backport, 0.9.6, commit:e987d92ad03981895a2a60db4f82420a12cd6cb7
+Forwarded: https://github.com/flatpak/flatpak/pull/874
+Applied-upstream: 0.8.8, commit:82495934823a501dccd54486143dee790ffe3f32
 ---
  common/flatpak-dir.c | 23 +++++++++++++++++++++++
  1 file changed, 23 insertions(+)

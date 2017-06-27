@@ -2,8 +2,9 @@ flatpak (0.8.7-2) UNRELEASED; urgency=medium
 
   * Move upstreamed patch to debian/patches/0.9.1/ to make it obvious
     when it can be dropped
-  * d/p/0.9.4/, d/p/0.9.6/: add patches backported from upstream to
-    restore compatibility with libostree 2017.7
+  * d/p/0.8.8/: add patches backported from upstream 0.9.4, 0.9.6,
+    together with a new patch to the tests, to restore compatibility
+    with libostree 2017.7 (all applied upstream already)
 
  -- Simon McVittie <smcv@debian.org>  Tue, 27 Jun 2017 10:55:46 +0100
 
