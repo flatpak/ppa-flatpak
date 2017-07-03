@@ -113,15 +113,15 @@ build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = $(am__EXEEXT_1) flatpak$(EXEEXT) $(am__EXEEXT_1) \
 	flatpak-builder$(EXEEXT) $(am__EXEEXT_1)
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_7) \
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_8) \
 	test-libflatpak$(EXEEXT)
 libexec_PROGRAMS = $(am__EXEEXT_1) flatpak-session-helper$(EXEEXT) \
-	$(am__EXEEXT_1) $(am__EXEEXT_6) flatpak-dbus-proxy$(EXEEXT) \
+	$(am__EXEEXT_1) $(am__EXEEXT_7) flatpak-dbus-proxy$(EXEEXT) \
 	$(am__EXEEXT_1) xdg-permission-store$(EXEEXT) $(am__EXEEXT_1) \
 	xdg-document-portal$(EXEEXT) $(am__EXEEXT_1)
-TESTS = $(am__EXEEXT_2) $(am__EXEEXT_8)
-installed_test_PROGRAMS = $(am__EXEEXT_5)
-check_PROGRAMS = $(am__EXEEXT_4)
+TESTS = $(am__EXEEXT_2) $(am__EXEEXT_9) $(am__EXEEXT_5)
+installed_test_PROGRAMS = $(am__EXEEXT_6)
+check_PROGRAMS = $(am__EXEEXT_4) $(am__EXEEXT_5)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_1 = $(all_test_ltlibs)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_2 = $(all_test_programs)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_3 = $(all_test_scripts)
@@ -247,8 +247,7 @@ libflatpak_common_la_DEPENDENCIES = libglnx.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
 am__dirstamp = $(am__leading_dot)dirstamp
-am__objects_1 = document-portal/libflatpak_common_la-xdp-dbus.lo
-am__objects_2 =
+am__objects_1 =
 am_libflatpak_common_la_OBJECTS =  \
 	common/libflatpak_common_la-flatpak-dir.lo \
 	common/libflatpak_common_la-flatpak-run.lo \
@@ -262,11 +261,12 @@ am_libflatpak_common_la_OBJECTS =  \
 	common/libflatpak_common_la-flatpak-json.lo \
 	common/libflatpak_common_la-flatpak-json-oci.lo \
 	common/libflatpak_common_la-flatpak-oci-registry.lo \
-	$(am__objects_1) $(am__objects_2)
-am__objects_3 = common/libflatpak_common_la-flatpak-dbus.lo
-am__objects_4 = common/libflatpak_common_la-flatpak-systemd-dbus.lo
-nodist_libflatpak_common_la_OBJECTS = $(am__objects_3) \
-	$(am__objects_4) $(am__objects_2)
+	$(am__objects_1)
+am__objects_2 = common/libflatpak_common_la-flatpak-dbus.lo
+am__objects_3 = common/libflatpak_common_la-flatpak-systemd-dbus.lo
+am__objects_4 = document-portal/libflatpak_common_la-xdp-dbus.lo
+nodist_libflatpak_common_la_OBJECTS = $(am__objects_2) \
+	$(am__objects_3) $(am__objects_4) $(am__objects_1)
 libflatpak_common_la_OBJECTS = $(am_libflatpak_common_la_OBJECTS) \
 	$(nodist_libflatpak_common_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -289,9 +289,9 @@ am_libflatpak_la_OBJECTS = lib/libflatpak_la-flatpak.lo \
 	lib/libflatpak_la-flatpak-related-ref.lo \
 	lib/libflatpak_la-flatpak-remote.lo \
 	lib/libflatpak_la-flatpak-error.lo \
-	lib/libflatpak_la-flatpak-installation.lo $(am__objects_2)
+	lib/libflatpak_la-flatpak-installation.lo $(am__objects_1)
 nodist_libflatpak_la_OBJECTS =  \
-	lib/libflatpak_la-flatpak-enum-types.lo $(am__objects_2)
+	lib/libflatpak_la-flatpak-enum-types.lo $(am__objects_1)
 libflatpak_la_OBJECTS = $(am_libflatpak_la_OBJECTS) \
 	$(nodist_libflatpak_la_OBJECTS)
 libflatpak_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -307,7 +307,7 @@ am_libglnx_la_OBJECTS = libglnx/libglnx_la-glnx-backports.lo \
 	libglnx/libglnx_la-glnx-fdio.lo \
 	libglnx/libglnx_la-glnx-lockfile.lo \
 	libglnx/libglnx_la-glnx-xattrs.lo \
-	libglnx/libglnx_la-glnx-shutil.lo $(am__objects_2)
+	libglnx/libglnx_la-glnx-shutil.lo $(am__objects_1)
 libglnx_la_OBJECTS = $(am_libglnx_la_OBJECTS)
 libglnx_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libglnx_la_CFLAGS) \
@@ -317,11 +317,13 @@ am__EXEEXT_2 = testdb$(EXEEXT) test-doc-portal$(EXEEXT) \
 	testlibrary$(EXEEXT)
 am__EXEEXT_3 = $(am__EXEEXT_2)
 @ENABLE_ALWAYS_BUILD_TESTS_FALSE@am__EXEEXT_4 = $(am__EXEEXT_3)
-@ENABLE_INSTALLED_TESTS_TRUE@am__EXEEXT_5 = $(am__EXEEXT_2)
-@BUILD_SYSTEM_HELPER_TRUE@am__EXEEXT_6 =  \
+am__EXEEXT_5 = test-libglnx-xattrs$(EXEEXT) test-libglnx-fdio$(EXEEXT) \
+	test-libglnx-errors$(EXEEXT)
+@ENABLE_INSTALLED_TESTS_TRUE@am__EXEEXT_6 = $(am__EXEEXT_2)
+@BUILD_SYSTEM_HELPER_TRUE@am__EXEEXT_7 =  \
 @BUILD_SYSTEM_HELPER_TRUE@	flatpak-system-helper$(EXEEXT) \
 @BUILD_SYSTEM_HELPER_TRUE@	$(am__EXEEXT_1)
-@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__EXEEXT_7 = $(am__EXEEXT_3)
+@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__EXEEXT_8 = $(am__EXEEXT_3)
 PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(installed_test_PROGRAMS) $(libexec_PROGRAMS) \
 	$(noinst_PROGRAMS)
@@ -355,7 +357,7 @@ am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-unexport.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-info.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-list.$(OBJEXT) \
-	$(am__objects_2)
+	$(am__objects_1)
 flatpak_OBJECTS = $(am_flatpak_OBJECTS)
 flatpak_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libglnx.la \
@@ -380,7 +382,7 @@ am_flatpak_builder_OBJECTS =  \
 	builder/flatpak_builder-builder-context.$(OBJEXT) \
 	builder/flatpak_builder-builder-cache.$(OBJEXT) \
 	builder/flatpak_builder-builder-utils.$(OBJEXT) \
-	builder/flatpak_builder-builder-git.$(OBJEXT) $(am__objects_2)
+	builder/flatpak_builder-builder-git.$(OBJEXT) $(am__objects_1)
 flatpak_builder_OBJECTS = $(am_flatpak_builder_OBJECTS)
 flatpak_builder_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -398,7 +400,7 @@ am__flatpak_bwrap_SOURCES_DIST = bubblewrap/bubblewrap.c \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-bind-mount.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-network.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-utils.$(OBJEXT) \
-@WITH_SYSTEM_BWRAP_FALSE@	$(am__objects_2)
+@WITH_SYSTEM_BWRAP_FALSE@	$(am__objects_1)
 @WITH_SYSTEM_BWRAP_FALSE@am_flatpak_bwrap_OBJECTS = $(am__objects_5)
 flatpak_bwrap_OBJECTS = $(am_flatpak_bwrap_OBJECTS)
 @WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_DEPENDENCIES =  \
@@ -409,7 +411,7 @@ flatpak_bwrap_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 am_flatpak_dbus_proxy_OBJECTS =  \
 	dbus-proxy/flatpak_dbus_proxy-flatpak-proxy.$(OBJEXT) \
 	dbus-proxy/flatpak_dbus_proxy-dbus-proxy.$(OBJEXT) \
-	$(am__objects_2)
+	$(am__objects_1)
 flatpak_dbus_proxy_OBJECTS = $(am_flatpak_dbus_proxy_OBJECTS)
 flatpak_dbus_proxy_DEPENDENCIES = $(am__DEPENDENCIES_1) libglnx.la
 flatpak_dbus_proxy_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
@@ -417,7 +419,7 @@ flatpak_dbus_proxy_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(flatpak_dbus_proxy_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_flatpak_session_helper_OBJECTS = session-helper/flatpak_session_helper-flatpak-session-helper.$(OBJEXT) \
-	$(am__objects_2)
+	$(am__objects_1)
 flatpak_session_helper_OBJECTS = $(am_flatpak_session_helper_OBJECTS)
 flatpak_session_helper_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	libflatpak-common.la
@@ -429,7 +431,7 @@ am__flatpak_system_helper_SOURCES_DIST =  \
 	system-helper/flatpak-system-helper.c lib/flatpak-error.c
 @BUILD_SYSTEM_HELPER_TRUE@am_flatpak_system_helper_OBJECTS = system-helper/flatpak_system_helper-flatpak-system-helper.$(OBJEXT) \
 @BUILD_SYSTEM_HELPER_TRUE@	lib/flatpak_system_helper-flatpak-error.$(OBJEXT) \
-@BUILD_SYSTEM_HELPER_TRUE@	$(am__objects_2)
+@BUILD_SYSTEM_HELPER_TRUE@	$(am__objects_1)
 flatpak_system_helper_OBJECTS = $(am_flatpak_system_helper_OBJECTS)
 @BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_DEPENDENCIES =  \
 @BUILD_SYSTEM_HELPER_TRUE@	$(am__DEPENDENCIES_1) \
@@ -455,7 +457,7 @@ test_doc_portal_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(test_doc_portal_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 am_test_libflatpak_OBJECTS = lib/test_libflatpak-test-lib.$(OBJEXT) \
-	$(am__objects_2)
+	$(am__objects_1)
 test_libflatpak_OBJECTS = $(am_test_libflatpak_OBJECTS)
 test_libflatpak_DEPENDENCIES = $(am__DEPENDENCIES_1) libflatpak.la \
 	$(am__DEPENDENCIES_1)
@@ -463,6 +465,28 @@ test_libflatpak_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(test_libflatpak_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
+am_test_libglnx_errors_OBJECTS = libglnx/tests/test_libglnx_errors-test-libglnx-errors.$(OBJEXT)
+test_libglnx_errors_OBJECTS = $(am_test_libglnx_errors_OBJECTS)
+test_libglnx_errors_DEPENDENCIES = $(am__DEPENDENCIES_3) libglnx.la
+test_libglnx_errors_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(test_libglnx_errors_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_test_libglnx_fdio_OBJECTS =  \
+	libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.$(OBJEXT)
+test_libglnx_fdio_OBJECTS = $(am_test_libglnx_fdio_OBJECTS)
+test_libglnx_fdio_DEPENDENCIES = $(am__DEPENDENCIES_3) libglnx.la
+test_libglnx_fdio_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(test_libglnx_fdio_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+am_test_libglnx_xattrs_OBJECTS = libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.$(OBJEXT)
+test_libglnx_xattrs_OBJECTS = $(am_test_libglnx_xattrs_OBJECTS)
+test_libglnx_xattrs_DEPENDENCIES = $(am__DEPENDENCIES_3) libglnx.la
+test_libglnx_xattrs_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(test_libglnx_xattrs_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_testdb_OBJECTS = tests/testdb-testdb.$(OBJEXT)
 testdb_OBJECTS = $(am_testdb_OBJECTS)
 testdb_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -481,13 +505,13 @@ am_xdg_document_portal_OBJECTS =  \
 	document-portal/xdg_document_portal-xdp-main.$(OBJEXT) \
 	document-portal/xdg_document_portal-xdp-util.$(OBJEXT) \
 	document-portal/xdg_document_portal-xdp-fuse.$(OBJEXT) \
-	$(am__objects_2)
+	$(am__objects_1)
 am__objects_7 =  \
 	document-portal/xdg_document_portal-xdp-dbus.$(OBJEXT)
 am__objects_8 = permission-store/xdg_document_portal-permission-store-dbus.$(OBJEXT)
 am__objects_9 = $(am__objects_8)
 nodist_xdg_document_portal_OBJECTS = $(am__objects_7) $(am__objects_9) \
-	$(am__objects_2)
+	$(am__objects_1)
 xdg_document_portal_OBJECTS = $(am_xdg_document_portal_OBJECTS) \
 	$(nodist_xdg_document_portal_OBJECTS)
 xdg_document_portal_DEPENDENCIES = $(am__DEPENDENCIES_1) \
@@ -498,7 +522,7 @@ xdg_document_portal_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(LDFLAGS) -o $@
 am_xdg_permission_store_OBJECTS = permission-store/xdg_permission_store-permission-store.$(OBJEXT) \
 	permission-store/xdg_permission_store-xdg-permission-store.$(OBJEXT) \
-	$(am__objects_2)
+	$(am__objects_1)
 nodist_xdg_permission_store_OBJECTS = permission-store/xdg_permission_store-permission-store-dbus.$(OBJEXT)
 xdg_permission_store_OBJECTS = $(am_xdg_permission_store_OBJECTS) \
 	$(nodist_xdg_permission_store_OBJECTS)
@@ -553,8 +577,9 @@ SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
 	$(flatpak_system_helper_SOURCES) $(test_doc_portal_SOURCES) \
 	$(nodist_test_doc_portal_SOURCES) $(test_libflatpak_SOURCES) \
-	$(testdb_SOURCES) $(testlibrary_SOURCES) \
-	$(xdg_document_portal_SOURCES) \
+	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
+	$(test_libglnx_xattrs_SOURCES) $(testdb_SOURCES) \
+	$(testlibrary_SOURCES) $(xdg_document_portal_SOURCES) \
 	$(nodist_xdg_document_portal_SOURCES) \
 	$(xdg_permission_store_SOURCES) \
 	$(nodist_xdg_permission_store_SOURCES)
@@ -566,8 +591,10 @@ DIST_SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
 	$(am__flatpak_system_helper_SOURCES_DIST) \
 	$(test_doc_portal_SOURCES) $(test_libflatpak_SOURCES) \
-	$(testdb_SOURCES) $(testlibrary_SOURCES) \
-	$(xdg_document_portal_SOURCES) $(xdg_permission_store_SOURCES)
+	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
+	$(test_libglnx_xattrs_SOURCES) $(testdb_SOURCES) \
+	$(testlibrary_SOURCES) $(xdg_document_portal_SOURCES) \
+	$(xdg_permission_store_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -784,7 +811,7 @@ am__set_TESTS_bases = \
   bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
   bases=`echo $$bases`
 RECHECK_LOGS = $(TEST_LOGS)
-am__EXEEXT_8 = tests/test-basic.sh tests/test-run.sh \
+am__EXEEXT_9 = tests/test-basic.sh tests/test-run.sh \
 	tests/test-run-system.sh tests/test-run-deltas.sh \
 	tests/test-run-system-deltas.sh tests/test-repo.sh \
 	tests/test-repo-system.sh tests/test-extensions.sh \
@@ -1191,7 +1218,8 @@ AM_CPPFLAGS = -DFLATPAK_BINDIR=\"$(FLATPAK_BINDIR)\" \
 	-DDBUSPROXY=\"$(libexecdir)/flatpak-dbus-proxy\" \
 	-DG_LOG_DOMAIN=\"flatpak\" -I$(srcdir)/libglnx \
 	-I$(srcdir)/common -I$(builddir)/common -I$(srcdir)/lib \
-	-I$(builddir)/lib $(NULL) $(am__append_15) $(am__append_16)
+	-I$(builddir)/lib -include "config.h" $(NULL) $(am__append_15) \
+	$(am__append_16)
 AM_CFLAGS = $(WARN_CFLAGS)
 triggersdir = $(pkgdatadir)/triggers
 dist_triggers_SCRIPTS = \
@@ -1243,11 +1271,22 @@ libglnx_la_SOURCES = \
 libglnx_la_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
 libglnx_la_LDFLAGS = -avoid-version -Bsymbolic-functions -export-symbols-regex "^glnx_" -no-undefined -export-dynamic 
 libglnx_la_LIBADD = $(libglnx_libs)
+libglnx_tests = test-libglnx-xattrs test-libglnx-fdio test-libglnx-errors
+test_libglnx_xattrs_SOURCES = libglnx/tests/test-libglnx-xattrs.c
+test_libglnx_xattrs_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
+test_libglnx_xattrs_LDADD = $(libglnx_libs) libglnx.la
+test_libglnx_fdio_SOURCES = libglnx/tests/test-libglnx-fdio.c
+test_libglnx_fdio_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
+test_libglnx_fdio_LDADD = $(libglnx_libs) libglnx.la
+test_libglnx_errors_SOURCES = libglnx/tests/test-libglnx-errors.c
+test_libglnx_errors_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
+test_libglnx_errors_LDADD = $(libglnx_libs) libglnx.la
 dbus_built_sources = common/flatpak-dbus.c common/flatpak-dbus.h
 systemd_dbus_built_sources = common/flatpak-systemd-dbus.c common/flatpak-systemd-dbus.h
 nodist_libflatpak_common_la_SOURCES = \
 	$(dbus_built_sources)		\
 	$(systemd_dbus_built_sources)	\
+	$(xdp_dbus_built_sources) \
 	$(NULL)
 
 libflatpak_common_la_SOURCES = \
@@ -1277,7 +1316,6 @@ libflatpak_common_la_SOURCES = \
 	common/flatpak-json-oci.h \
 	common/flatpak-oci-registry.c \
 	common/flatpak-oci-registry.h \
-        $(xdp_dbus_built_sources) \
 	$(NULL)
 
 libflatpak_common_la_CFLAGS = \
@@ -1583,6 +1621,7 @@ dist_installed_test_data = \
 	tests/org.test.Hello.png \
 	tests/package_version.txt \
 	tests/test.json \
+	tests/test-runtime.json \
 	tests/module1.json \
 	tests/data1 \
 	tests/data1.patch \
@@ -1852,6 +1891,10 @@ common/libflatpak_common_la-flatpak-json-oci.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-oci-registry.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-dbus.lo: common/$(am__dirstamp) \
+	common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-systemd-dbus.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 document-portal/$(am__dirstamp):
 	@$(MKDIR_P) document-portal
 	@: > document-portal/$(am__dirstamp)
@@ -1861,10 +1904,6 @@ document-portal/$(DEPDIR)/$(am__dirstamp):
 document-portal/libflatpak_common_la-xdp-dbus.lo:  \
 	document-portal/$(am__dirstamp) \
 	document-portal/$(DEPDIR)/$(am__dirstamp)
-common/libflatpak_common_la-flatpak-dbus.lo: common/$(am__dirstamp) \
-	common/$(DEPDIR)/$(am__dirstamp)
-common/libflatpak_common_la-flatpak-systemd-dbus.lo:  \
-	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 
 libflatpak-common.la: $(libflatpak_common_la_OBJECTS) $(libflatpak_common_la_DEPENDENCIES) $(EXTRA_libflatpak_common_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libflatpak_common_la_LINK)  $(libflatpak_common_la_OBJECTS) $(libflatpak_common_la_LIBADD) $(LIBS)
@@ -2338,6 +2377,33 @@ lib/test_libflatpak-test-lib.$(OBJEXT): lib/$(am__dirstamp) \
 test-libflatpak$(EXEEXT): $(test_libflatpak_OBJECTS) $(test_libflatpak_DEPENDENCIES) $(EXTRA_test_libflatpak_DEPENDENCIES) 
 	@rm -f test-libflatpak$(EXEEXT)
 	$(AM_V_CCLD)$(test_libflatpak_LINK) $(test_libflatpak_OBJECTS) $(test_libflatpak_LDADD) $(LIBS)
+libglnx/tests/$(am__dirstamp):
+	@$(MKDIR_P) libglnx/tests
+	@: > libglnx/tests/$(am__dirstamp)
+libglnx/tests/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) libglnx/tests/$(DEPDIR)
+	@: > libglnx/tests/$(DEPDIR)/$(am__dirstamp)
+libglnx/tests/test_libglnx_errors-test-libglnx-errors.$(OBJEXT):  \
+	libglnx/tests/$(am__dirstamp) \
+	libglnx/tests/$(DEPDIR)/$(am__dirstamp)
+
+test-libglnx-errors$(EXEEXT): $(test_libglnx_errors_OBJECTS) $(test_libglnx_errors_DEPENDENCIES) $(EXTRA_test_libglnx_errors_DEPENDENCIES) 
+	@rm -f test-libglnx-errors$(EXEEXT)
+	$(AM_V_CCLD)$(test_libglnx_errors_LINK) $(test_libglnx_errors_OBJECTS) $(test_libglnx_errors_LDADD) $(LIBS)
+libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.$(OBJEXT):  \
+	libglnx/tests/$(am__dirstamp) \
+	libglnx/tests/$(DEPDIR)/$(am__dirstamp)
+
+test-libglnx-fdio$(EXEEXT): $(test_libglnx_fdio_OBJECTS) $(test_libglnx_fdio_DEPENDENCIES) $(EXTRA_test_libglnx_fdio_DEPENDENCIES) 
+	@rm -f test-libglnx-fdio$(EXEEXT)
+	$(AM_V_CCLD)$(test_libglnx_fdio_LINK) $(test_libglnx_fdio_OBJECTS) $(test_libglnx_fdio_LDADD) $(LIBS)
+libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.$(OBJEXT):  \
+	libglnx/tests/$(am__dirstamp) \
+	libglnx/tests/$(DEPDIR)/$(am__dirstamp)
+
+test-libglnx-xattrs$(EXEEXT): $(test_libglnx_xattrs_OBJECTS) $(test_libglnx_xattrs_DEPENDENCIES) $(EXTRA_test_libglnx_xattrs_DEPENDENCIES) 
+	@rm -f test-libglnx-xattrs$(EXEEXT)
+	$(AM_V_CCLD)$(test_libglnx_xattrs_LINK) $(test_libglnx_xattrs_OBJECTS) $(test_libglnx_xattrs_LDADD) $(LIBS)
 tests/testdb-testdb.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -2510,6 +2576,7 @@ mostlyclean-compile:
 	-rm -f lib/*.lo
 	-rm -f libglnx/*.$(OBJEXT)
 	-rm -f libglnx/*.lo
+	-rm -f libglnx/tests/*.$(OBJEXT)
 	-rm -f permission-store/*.$(OBJEXT)
 	-rm -f session-helper/*.$(OBJEXT)
 	-rm -f system-helper/*.$(OBJEXT)
@@ -2612,6 +2679,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-lockfile.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-shutil.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-xattrs.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@libglnx/tests/$(DEPDIR)/test_libglnx_errors-test-libglnx-errors.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@libglnx/tests/$(DEPDIR)/test_libglnx_fdio-test-libglnx-fdio.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@libglnx/tests/$(DEPDIR)/test_libglnx_xattrs-test-libglnx-xattrs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@permission-store/$(DEPDIR)/xdg_permission_store-permission-store.Po@am__quote@
@@ -2730,13 +2800,6 @@ common/libflatpak_common_la-flatpak-oci-registry.lo: common/flatpak-oci-registry
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-oci-registry.lo `test -f 'common/flatpak-oci-registry.c' || echo '$(srcdir)/'`common/flatpak-oci-registry.c
 
-document-portal/libflatpak_common_la-xdp-dbus.lo: document-portal/xdp-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT document-portal/libflatpak_common_la-xdp-dbus.lo -MD -MP -MF document-portal/$(DEPDIR)/libflatpak_common_la-xdp-dbus.Tpo -c -o document-portal/libflatpak_common_la-xdp-dbus.lo `test -f 'document-portal/xdp-dbus.c' || echo '$(srcdir)/'`document-portal/xdp-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) document-portal/$(DEPDIR)/libflatpak_common_la-xdp-dbus.Tpo document-portal/$(DEPDIR)/libflatpak_common_la-xdp-dbus.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='document-portal/xdp-dbus.c' object='document-portal/libflatpak_common_la-xdp-dbus.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o document-portal/libflatpak_common_la-xdp-dbus.lo `test -f 'document-portal/xdp-dbus.c' || echo '$(srcdir)/'`document-portal/xdp-dbus.c
-
 common/libflatpak_common_la-flatpak-dbus.lo: common/flatpak-dbus.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-dbus.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-dbus.Tpo -c -o common/libflatpak_common_la-flatpak-dbus.lo `test -f 'common/flatpak-dbus.c' || echo '$(srcdir)/'`common/flatpak-dbus.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-dbus.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-dbus.Plo
@@ -2750,6 +2813,13 @@ common/libflatpak_common_la-flatpak-systemd-dbus.lo: common/flatpak-systemd-dbus
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-systemd-dbus.c' object='common/libflatpak_common_la-flatpak-systemd-dbus.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-systemd-dbus.lo `test -f 'common/flatpak-systemd-dbus.c' || echo '$(srcdir)/'`common/flatpak-systemd-dbus.c
+
+document-portal/libflatpak_common_la-xdp-dbus.lo: document-portal/xdp-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT document-portal/libflatpak_common_la-xdp-dbus.lo -MD -MP -MF document-portal/$(DEPDIR)/libflatpak_common_la-xdp-dbus.Tpo -c -o document-portal/libflatpak_common_la-xdp-dbus.lo `test -f 'document-portal/xdp-dbus.c' || echo '$(srcdir)/'`document-portal/xdp-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) document-portal/$(DEPDIR)/libflatpak_common_la-xdp-dbus.Tpo document-portal/$(DEPDIR)/libflatpak_common_la-xdp-dbus.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='document-portal/xdp-dbus.c' object='document-portal/libflatpak_common_la-xdp-dbus.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o document-portal/libflatpak_common_la-xdp-dbus.lo `test -f 'document-portal/xdp-dbus.c' || echo '$(srcdir)/'`document-portal/xdp-dbus.c
 
 lib/libflatpak_la-flatpak.lo: lib/flatpak.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak.Tpo -c -o lib/libflatpak_la-flatpak.lo `test -f 'lib/flatpak.c' || echo '$(srcdir)/'`lib/flatpak.c
@@ -3709,6 +3779,48 @@ lib/test_libflatpak-test-lib.obj: lib/test-lib.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/test-lib.c' object='lib/test_libflatpak-test-lib.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libflatpak_CFLAGS) $(CFLAGS) -c -o lib/test_libflatpak-test-lib.obj `if test -f 'lib/test-lib.c'; then $(CYGPATH_W) 'lib/test-lib.c'; else $(CYGPATH_W) '$(srcdir)/lib/test-lib.c'; fi`
+
+libglnx/tests/test_libglnx_errors-test-libglnx-errors.o: libglnx/tests/test-libglnx-errors.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_errors_CFLAGS) $(CFLAGS) -MT libglnx/tests/test_libglnx_errors-test-libglnx-errors.o -MD -MP -MF libglnx/tests/$(DEPDIR)/test_libglnx_errors-test-libglnx-errors.Tpo -c -o libglnx/tests/test_libglnx_errors-test-libglnx-errors.o `test -f 'libglnx/tests/test-libglnx-errors.c' || echo '$(srcdir)/'`libglnx/tests/test-libglnx-errors.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) libglnx/tests/$(DEPDIR)/test_libglnx_errors-test-libglnx-errors.Tpo libglnx/tests/$(DEPDIR)/test_libglnx_errors-test-libglnx-errors.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libglnx/tests/test-libglnx-errors.c' object='libglnx/tests/test_libglnx_errors-test-libglnx-errors.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_errors_CFLAGS) $(CFLAGS) -c -o libglnx/tests/test_libglnx_errors-test-libglnx-errors.o `test -f 'libglnx/tests/test-libglnx-errors.c' || echo '$(srcdir)/'`libglnx/tests/test-libglnx-errors.c
+
+libglnx/tests/test_libglnx_errors-test-libglnx-errors.obj: libglnx/tests/test-libglnx-errors.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_errors_CFLAGS) $(CFLAGS) -MT libglnx/tests/test_libglnx_errors-test-libglnx-errors.obj -MD -MP -MF libglnx/tests/$(DEPDIR)/test_libglnx_errors-test-libglnx-errors.Tpo -c -o libglnx/tests/test_libglnx_errors-test-libglnx-errors.obj `if test -f 'libglnx/tests/test-libglnx-errors.c'; then $(CYGPATH_W) 'libglnx/tests/test-libglnx-errors.c'; else $(CYGPATH_W) '$(srcdir)/libglnx/tests/test-libglnx-errors.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) libglnx/tests/$(DEPDIR)/test_libglnx_errors-test-libglnx-errors.Tpo libglnx/tests/$(DEPDIR)/test_libglnx_errors-test-libglnx-errors.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libglnx/tests/test-libglnx-errors.c' object='libglnx/tests/test_libglnx_errors-test-libglnx-errors.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_errors_CFLAGS) $(CFLAGS) -c -o libglnx/tests/test_libglnx_errors-test-libglnx-errors.obj `if test -f 'libglnx/tests/test-libglnx-errors.c'; then $(CYGPATH_W) 'libglnx/tests/test-libglnx-errors.c'; else $(CYGPATH_W) '$(srcdir)/libglnx/tests/test-libglnx-errors.c'; fi`
+
+libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.o: libglnx/tests/test-libglnx-fdio.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_fdio_CFLAGS) $(CFLAGS) -MT libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.o -MD -MP -MF libglnx/tests/$(DEPDIR)/test_libglnx_fdio-test-libglnx-fdio.Tpo -c -o libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.o `test -f 'libglnx/tests/test-libglnx-fdio.c' || echo '$(srcdir)/'`libglnx/tests/test-libglnx-fdio.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) libglnx/tests/$(DEPDIR)/test_libglnx_fdio-test-libglnx-fdio.Tpo libglnx/tests/$(DEPDIR)/test_libglnx_fdio-test-libglnx-fdio.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libglnx/tests/test-libglnx-fdio.c' object='libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_fdio_CFLAGS) $(CFLAGS) -c -o libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.o `test -f 'libglnx/tests/test-libglnx-fdio.c' || echo '$(srcdir)/'`libglnx/tests/test-libglnx-fdio.c
+
+libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.obj: libglnx/tests/test-libglnx-fdio.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_fdio_CFLAGS) $(CFLAGS) -MT libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.obj -MD -MP -MF libglnx/tests/$(DEPDIR)/test_libglnx_fdio-test-libglnx-fdio.Tpo -c -o libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.obj `if test -f 'libglnx/tests/test-libglnx-fdio.c'; then $(CYGPATH_W) 'libglnx/tests/test-libglnx-fdio.c'; else $(CYGPATH_W) '$(srcdir)/libglnx/tests/test-libglnx-fdio.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) libglnx/tests/$(DEPDIR)/test_libglnx_fdio-test-libglnx-fdio.Tpo libglnx/tests/$(DEPDIR)/test_libglnx_fdio-test-libglnx-fdio.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libglnx/tests/test-libglnx-fdio.c' object='libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_fdio_CFLAGS) $(CFLAGS) -c -o libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.obj `if test -f 'libglnx/tests/test-libglnx-fdio.c'; then $(CYGPATH_W) 'libglnx/tests/test-libglnx-fdio.c'; else $(CYGPATH_W) '$(srcdir)/libglnx/tests/test-libglnx-fdio.c'; fi`
+
+libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.o: libglnx/tests/test-libglnx-xattrs.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_xattrs_CFLAGS) $(CFLAGS) -MT libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.o -MD -MP -MF libglnx/tests/$(DEPDIR)/test_libglnx_xattrs-test-libglnx-xattrs.Tpo -c -o libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.o `test -f 'libglnx/tests/test-libglnx-xattrs.c' || echo '$(srcdir)/'`libglnx/tests/test-libglnx-xattrs.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) libglnx/tests/$(DEPDIR)/test_libglnx_xattrs-test-libglnx-xattrs.Tpo libglnx/tests/$(DEPDIR)/test_libglnx_xattrs-test-libglnx-xattrs.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libglnx/tests/test-libglnx-xattrs.c' object='libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_xattrs_CFLAGS) $(CFLAGS) -c -o libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.o `test -f 'libglnx/tests/test-libglnx-xattrs.c' || echo '$(srcdir)/'`libglnx/tests/test-libglnx-xattrs.c
+
+libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.obj: libglnx/tests/test-libglnx-xattrs.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_xattrs_CFLAGS) $(CFLAGS) -MT libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.obj -MD -MP -MF libglnx/tests/$(DEPDIR)/test_libglnx_xattrs-test-libglnx-xattrs.Tpo -c -o libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.obj `if test -f 'libglnx/tests/test-libglnx-xattrs.c'; then $(CYGPATH_W) 'libglnx/tests/test-libglnx-xattrs.c'; else $(CYGPATH_W) '$(srcdir)/libglnx/tests/test-libglnx-xattrs.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) libglnx/tests/$(DEPDIR)/test_libglnx_xattrs-test-libglnx-xattrs.Tpo libglnx/tests/$(DEPDIR)/test_libglnx_xattrs-test-libglnx-xattrs.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libglnx/tests/test-libglnx-xattrs.c' object='libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_xattrs_CFLAGS) $(CFLAGS) -c -o libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.obj `if test -f 'libglnx/tests/test-libglnx-xattrs.c'; then $(CYGPATH_W) 'libglnx/tests/test-libglnx-xattrs.c'; else $(CYGPATH_W) '$(srcdir)/libglnx/tests/test-libglnx-xattrs.c'; fi`
 
 tests/testdb-testdb.o: tests/testdb.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testdb_CFLAGS) $(CFLAGS) -MT tests/testdb-testdb.o -MD -MP -MF tests/$(DEPDIR)/testdb-testdb.Tpo -c -o tests/testdb-testdb.o `test -f 'tests/testdb.c' || echo '$(srcdir)/'`tests/testdb.c
@@ -4709,6 +4821,27 @@ tests/test-oci.sh.log: tests/test-oci.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test-libglnx-xattrs.log: test-libglnx-xattrs$(EXEEXT)
+	@p='test-libglnx-xattrs$(EXEEXT)'; \
+	b='test-libglnx-xattrs'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test-libglnx-fdio.log: test-libglnx-fdio$(EXEEXT)
+	@p='test-libglnx-fdio$(EXEEXT)'; \
+	b='test-libglnx-fdio'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test-libglnx-errors.log: test-libglnx-errors$(EXEEXT)
+	@p='test-libglnx-errors$(EXEEXT)'; \
+	b='test-libglnx-errors'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 .test.log:
 	@p='$<'; \
 	$(am__set_b); \
@@ -4975,6 +5108,8 @@ distclean-generic:
 	-rm -f lib/$(am__dirstamp)
 	-rm -f libglnx/$(DEPDIR)/$(am__dirstamp)
 	-rm -f libglnx/$(am__dirstamp)
+	-rm -f libglnx/tests/$(DEPDIR)/$(am__dirstamp)
+	-rm -f libglnx/tests/$(am__dirstamp)
 	-rm -f permission-store/$(DEPDIR)/$(am__dirstamp)
 	-rm -f permission-store/$(am__dirstamp)
 	-rm -f session-helper/$(DEPDIR)/$(am__dirstamp)
@@ -5000,7 +5135,7 @@ clean-am: clean-binPROGRAMS clean-bwrapPROGRAMS clean-checkLTLIBRARIES \
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf app/$(DEPDIR) bubblewrap/$(DEPDIR) builder/$(DEPDIR) common/$(DEPDIR) common/gvdb/$(DEPDIR) dbus-proxy/$(DEPDIR) document-portal/$(DEPDIR) lib/$(DEPDIR) libglnx/$(DEPDIR) permission-store/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf app/$(DEPDIR) bubblewrap/$(DEPDIR) builder/$(DEPDIR) common/$(DEPDIR) common/gvdb/$(DEPDIR) dbus-proxy/$(DEPDIR) document-portal/$(DEPDIR) lib/$(DEPDIR) libglnx/$(DEPDIR) libglnx/tests/$(DEPDIR) permission-store/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -5066,7 +5201,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf app/$(DEPDIR) bubblewrap/$(DEPDIR) builder/$(DEPDIR) common/$(DEPDIR) common/gvdb/$(DEPDIR) dbus-proxy/$(DEPDIR) document-portal/$(DEPDIR) lib/$(DEPDIR) libglnx/$(DEPDIR) permission-store/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf app/$(DEPDIR) bubblewrap/$(DEPDIR) builder/$(DEPDIR) common/$(DEPDIR) common/gvdb/$(DEPDIR) dbus-proxy/$(DEPDIR) document-portal/$(DEPDIR) lib/$(DEPDIR) libglnx/$(DEPDIR) libglnx/tests/$(DEPDIR) permission-store/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -5184,7 +5319,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 		-e "s|\@localstatedir\@|$(localstatedir)|" \
 		-e "s|\@extraargs\@||" $< > $@
 
-$(dbus_built_sources) : data/org.freedesktop.Flatpak.xml
+common/flatpak-dbus.c: data/org.freedesktop.Flatpak.xml Makefile
 	mkdir -p $(builddir)/common
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.Flatpak.	\
@@ -5193,7 +5328,7 @@ $(dbus_built_sources) : data/org.freedesktop.Flatpak.xml
 		$(srcdir)/data/org.freedesktop.Flatpak.xml	\
 		$(NULL)
 
-$(systemd_dbus_built_sources) : data/org.freedesktop.systemd1.xml
+common/flatpak-systemd-dbus.c: data/org.freedesktop.systemd1.xml Makefile
 	mkdir -p $(builddir)/common
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.systemd1.	\
@@ -5201,6 +5336,9 @@ $(systemd_dbus_built_sources) : data/org.freedesktop.systemd1.xml
 		--generate-c-code $(builddir)/common/flatpak-systemd-dbus	\
 		$(srcdir)/data/org.freedesktop.systemd1.xml	\
 		$(NULL)
+
+common/%-dbus.h: common/%-dbus.c
+	@true # Built as a side-effect of the rules for the .c
 
 lib/flatpak-enum-types.h: $(flatpakinclude_HEADERS) lib/flatpak-enum-types.h.template
 	$(AM_V_GEN) $(GLIB_MKENUMS) --template $(filter %.template,$^) $(filter-out %.template,$^) > \
@@ -5221,7 +5359,7 @@ lib/flatpak-enum-types.c: $(flatpakinclude_HEADERS) lib/flatpak-enum-types.c.tem
 @BUILD_SYSTEM_HELPER_TRUE@%.policy: %.policy.in
 @BUILD_SYSTEM_HELPER_TRUE@	$(AM_V_GEN) $(MSGFMT) --xml -d $(top_srcdir)/po --template $< -o $@ || cp $< $@
 
-$(nodist_xdg_permission_store_SOURCES) : data/org.freedesktop.impl.portal.PermissionStore.xml
+permission-store/permission-store-dbus.c: data/org.freedesktop.impl.portal.PermissionStore.xml Makefile
 	mkdir -p $(builddir)/permission-store
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.impl.portal.	\
@@ -5230,7 +5368,10 @@ $(nodist_xdg_permission_store_SOURCES) : data/org.freedesktop.impl.portal.Permis
 		$(srcdir)/data/org.freedesktop.impl.portal.PermissionStore.xml	\
 		$(NULL)
 
-$(xdp_dbus_built_sources) : data/org.freedesktop.portal.Documents.xml
+permission-store/%-dbus.h: permission-store/%-dbus.c
+	@true # Built as a side-effect of the rules for the .c
+
+document-portal/xdp-dbus.c: data/org.freedesktop.portal.Documents.xml Makefile
 	mkdir -p $(builddir)/document-portal
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.portal.	\
@@ -5240,6 +5381,9 @@ $(xdp_dbus_built_sources) : data/org.freedesktop.portal.Documents.xml
                 --annotate "org.freedesktop.portal.Documents.AddFull()" org.gtk.GDBus.C.UnixFD "yes" \
 		$(srcdir)/data/org.freedesktop.portal.Documents.xml	\
 		$(NULL)
+
+document-portal/%-dbus.h: document-portal/%-dbus.c
+	@true # Built as a side-effect of the rules for the .c
 
 tests/services/org.freedesktop.portal.Documents.service: document-portal/org.freedesktop.portal.Documents.service.in
 	mkdir -p tests/services
