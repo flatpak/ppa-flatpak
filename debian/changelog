@@ -5,6 +5,7 @@ flatpak (0.8.7-3) UNRELEASED; urgency=medium
   * d/control: Add libglib2.0-doc, libostree-doc to Build-Depends-Indep
     so that libflatpak-doc can cross-reference those documentation
     packages
+  * debian/test.sh: Do not ignore build-time tests' exit status
 
  -- Simon McVittie <smcv@debian.org>  Tue, 04 Jul 2017 11:42:36 +0100
 
