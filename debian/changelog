@@ -5,6 +5,7 @@ flatpak (0.9.7-1) UNRELEASED; urgency=medium
     so that libflatpak-doc can cross-reference those documentation
     packages
   * debian/test.sh: Do not ignore build-time tests' exit status
+  * d/rules: Do not run build-time tests with DEB_BUILD_OPTIONS=nocheck
 
  -- Simon McVittie <smcv@debian.org>  Mon, 03 Jul 2017 09:23:10 +0100
 
