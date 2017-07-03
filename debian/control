@@ -43,6 +43,9 @@ Build-Depends:
  shared-mime-info,
  xmlto,
  xsltproc,
+Build-Depends-Indep:
+ libglib2.0-doc,
+ libostree-doc,
 Standards-Version: 3.9.8
 Homepage: http://flatpak.org/
 Vcs-Git: https://anonscm.debian.org/git/collab-maint/flatpak.git
