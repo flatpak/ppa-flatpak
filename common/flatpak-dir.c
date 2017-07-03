@@ -82,6 +82,12 @@ static gboolean flatpak_dir_remote_fetch_summary (FlatpakDir   *self,
                                                   GCancellable *cancellable,
                                                   GError      **error);
 
+static GVariant *fetch_remote_summary_file (FlatpakDir    *self,
+                                            const char    *remote,
+                                            GBytes       **summary_sig_bytes_out,
+                                            GCancellable  *cancellable,
+                                            GError       **error);
+
 typedef struct
 {
   GBytes *bytes;
@@ -2027,11 +2033,13 @@ flatpak_dir_setup_extra_data (FlatpakDir           *self,
 
   if (progress)
     {
-      ostree_async_progress_set_uint (progress, "outstanding-extra-data", n_extra_data);
-      ostree_async_progress_set_uint (progress, "total-extra-data", n_extra_data);
-      ostree_async_progress_set_uint64 (progress, "total-extra-data-bytes", total_download_size);
-      ostree_async_progress_set_uint64 (progress, "transferred-extra-data-bytes", 0);
-      ostree_async_progress_set_uint (progress, "downloading-extra-data", 0);
+      ostree_async_progress_set (progress,
+                                 "outstanding-extra-data", "u", n_extra_data,
+                                 "total-extra-data", "u", n_extra_data,
+                                 "total-extra-data-bytes", "t", total_download_size,
+                                 "transferred-extra-data-bytes", "t", (guint64) 0,
+                                 "downloading-extra-data", "u", 0,
+                                 NULL);
     }
 
   return TRUE;
@@ -2081,8 +2089,10 @@ flatpak_dir_pull_extra_data (FlatpakDir          *self,
   /* Other fields were already set in flatpak_dir_setup_extra_data() */
   if (progress)
     {
-      ostree_async_progress_set_uint64 (progress, "start-time-extra-data", g_get_monotonic_time ());
-      ostree_async_progress_set_uint (progress, "downloading-extra-data", 1);
+      ostree_async_progress_set (progress,
+                                 "start-time-extra-data", "t", g_get_monotonic_time (),
+                                 "downloading-extra-data", "u", 1,
+                                 NULL);
     }
 
   extra_data_progress.progress = progress;
@@ -2207,16 +2217,12 @@ flatpak_dir_lookup_ref_from_summary (FlatpakDir          *self,
                                      GError             **error)
 {
   g_autoptr(GVariant) summary = NULL;
-  g_autoptr(GBytes) summary_bytes = NULL;
   g_autofree char *latest_rev = NULL;
 
-  if (!flatpak_dir_remote_fetch_summary (self, remote,
-                                         &summary_bytes, NULL,
-                                         cancellable, error))
+  summary = fetch_remote_summary_file (self, remote, NULL, cancellable, error);
+  if (summary == NULL)
     return NULL;
 
-  summary = g_variant_ref_sink (g_variant_new_from_bytes (OSTREE_SUMMARY_GVARIANT_FORMAT,
-                                                          summary_bytes, FALSE));
   if (!flatpak_summary_lookup_ref (summary, ref, &latest_rev, out_variant))
     {
       flatpak_fail (error, "No such ref '%s' in remote %s", ref, remote);
@@ -2234,31 +2240,32 @@ oci_pull_init_progress (OstreeAsyncProgress *progress)
   if (progress == NULL)
     return;
 
-  ostree_async_progress_set_uint (progress, "outstanding-fetches", 0);
-  ostree_async_progress_set_uint (progress, "outstanding-writes", 0);
-  ostree_async_progress_set_uint (progress, "fetched", 0);
-  ostree_async_progress_set_uint (progress, "requested", 0);
-  ostree_async_progress_set_uint (progress, "scanning", 0);
-  ostree_async_progress_set_uint (progress, "scanned-metadata", 0);
-  ostree_async_progress_set_uint64 (progress, "bytes-transferred", 0);
-  ostree_async_progress_set_uint64 (progress, "start-time", start_time);
-  ostree_async_progress_set_uint (progress, "outstanding-metadata-fetches", 0);
-  ostree_async_progress_set_uint (progress, "metadata-fetched", 0);
-  ostree_async_progress_set_uint (progress, "outstanding-extra-data", 0);
-  ostree_async_progress_set_uint (progress, "total-extra-data", 0);
-  ostree_async_progress_set_uint64 (progress, "total-extra-data-bytes", 0);
-  ostree_async_progress_set_uint64 (progress, "transferred-extra-data-bytes", 0);
-  ostree_async_progress_set_uint (progress, "downloading-extra-data", 0);
-  ostree_async_progress_set_uint (progress, "fetched-delta-parts", 0);
-  ostree_async_progress_set_uint (progress, "total-delta-parts", 0);
-  ostree_async_progress_set_uint (progress, "fetched-delta-fallbacks", 0);
-  ostree_async_progress_set_uint (progress, "total-delta-fallbacks", 0);
-  ostree_async_progress_set_uint64 (progress, "fetched-delta-part-size", 0);
-  ostree_async_progress_set_uint64 (progress, "total-delta-part-size", 0);
-  ostree_async_progress_set_uint64 (progress, "total-delta-part-usize", 0);
-  ostree_async_progress_set_uint (progress, "total-delta-superblocks", 0);
-
-  ostree_async_progress_set_status (progress, NULL);
+  ostree_async_progress_set (progress,
+                             "outstanding-fetches", "u", 0,
+                             "outstanding-writes", "u", 0,
+                             "fetched", "u", 0,
+                             "requested", "u", 0,
+                             "scanning", "u", 0,
+                             "scanned-metadata", "u", 0,
+                             "bytes-transferred", "t", (guint64) 0,
+                             "start-time", "t", start_time,
+                             "outstanding-metadata-fetches", "u", 0,
+                             "metadata-fetched", "u", 0,
+                             "outstanding-extra-data", "u", 0,
+                             "total-extra-data", "u", 0,
+                             "total-extra-data-bytes", "t", (guint64) 0,
+                             "transferred-extra-data-bytes", "t", (guint64) 0,
+                             "downloading-extra-data", "u", 0,
+                             "fetched-delta-parts", "u", 0,
+                             "total-delta-parts", "u", 0,
+                             "fetched-delta-fallbacks", "u", 0,
+                             "total-delta-fallbacks", "u", 0,
+                             "fetched-delta-part-size", "t", (guint64) 0,
+                             "total-delta-part-size", "t", (guint64) 0,
+                             "total-delta-part-usize", "t", (guint64) 0,
+                             "total-delta-superblocks", "u", 0,
+                             "status", "s", "",
+                             NULL);
 }
 
 static void
@@ -2272,15 +2279,61 @@ oci_pull_progress_cb (guint64 total_size, guint64 pulled_size,
     return;
 
   /* Deltas */
-  ostree_async_progress_set_uint (progress, "outstanding-fetches", n_layers - pulled_layers);
-  ostree_async_progress_set_uint (progress, "fetched-delta-parts", pulled_layers);
-  ostree_async_progress_set_uint (progress, "total-delta-parts", n_layers);
-  ostree_async_progress_set_uint (progress, "fetched-delta-fallbacks", 0);
-  ostree_async_progress_set_uint (progress, "total-delta-fallbacks", 0);
-  ostree_async_progress_set_uint64 (progress, "fetched-delta-part-size", pulled_size);
-  ostree_async_progress_set_uint64 (progress, "total-delta-part-size", total_size);
-  ostree_async_progress_set_uint64 (progress, "total-delta-part-usize", total_size);
-  ostree_async_progress_set_uint (progress, "total-delta-superblocks", 0);
+  ostree_async_progress_set (progress,
+                             "outstanding-fetches", "u", n_layers - pulled_layers,
+                             "fetched-delta-parts", "u", pulled_layers,
+                             "total-delta-parts", "u", n_layers,
+                             "fetched-delta-fallbacks", "u", 0,
+                             "total-delta-fallbacks", "u", 0,
+                             "fetched-delta-part-size", "t", pulled_size,
+                             "total-delta-part-size", "t", total_size,
+                             "total-delta-part-usize", "t", total_size,
+                             "total-delta-superblocks", "u", 0,
+                             NULL);
+}
+
+/* Look up a piece of per-repository metadata. */
+gboolean
+flatpak_dir_lookup_repo_metadata (FlatpakDir    *self,
+                                  const char    *remote_name,
+                                  GCancellable  *cancellable,
+                                  GError       **error,
+                                  const char    *key,
+                                  const char    *format_string,
+                                  ...)
+{
+  va_list args;
+  g_autofree char *collection_id = NULL;
+  g_autoptr(GVariant) metadata = NULL;
+  g_autoptr(GVariant) value = NULL;
+
+  if (!flatpak_dir_ensure_repo (self, cancellable, error))
+    return FALSE;
+
+  if (TRUE)
+    {
+      g_autoptr(GVariant) summary_v = NULL;
+
+      summary_v = fetch_remote_summary_file (self, remote_name, NULL, cancellable, error);
+      if (summary_v == NULL)
+        return FALSE;
+
+      metadata = g_variant_get_child_value (summary_v, 1);
+    }
+
+  /* Extract the metadata from it, if set. */
+  value = g_variant_lookup_value (metadata, key, NULL);
+
+  if (value == NULL)
+    return FALSE;
+  if (!g_variant_check_format_string (value, format_string, FALSE))
+    return FALSE;
+
+  va_start (args, format_string);
+  g_variant_get_va (value, format_string, NULL, &args);
+  va_end (args);
+
+  return TRUE;
 }
 
 static gboolean
@@ -2582,15 +2635,16 @@ out:
 }
 
 static gboolean
-repo_pull_one_untrusted (OstreeRepo          *self,
-                         const char          *remote_name,
-                         const char          *url,
-                         const char         **dirs_to_pull,
-                         const char          *ref,
-                         const char          *checksum,
-                         OstreeAsyncProgress *progress,
-                         GCancellable        *cancellable,
-                         GError             **error)
+repo_pull_one_local_untrusted (FlatpakDir          *self,
+                               OstreeRepo          *repo,
+                               const char          *remote_name,
+                               const char          *url,
+                               const char         **dirs_to_pull,
+                               const char          *ref,
+                               const char          *checksum,
+                               OstreeAsyncProgress *progress,
+                               GCancellable        *cancellable,
+                               GError             **error)
 {
   /* The latter flag was introduced in https://github.com/ostreedev/ostree/pull/926 */
   const OstreeRepoPullFlags flags = OSTREE_REPO_PULL_FLAGS_UNTRUSTED |OSTREE_REPO_PULL_FLAGS_BAREUSERONLY_FILES;
@@ -2640,7 +2694,7 @@ repo_pull_one_untrusted (OstreeRepo          *self,
                              g_variant_new_variant (g_variant_new_boolean (TRUE)));
     }
 
-  res = ostree_repo_pull_with_options (self, url, g_variant_builder_end (&builder),
+  res = ostree_repo_pull_with_options (repo, url, g_variant_builder_end (&builder),
                                        progress, cancellable, error);
 
   if (progress)
@@ -2777,10 +2831,10 @@ flatpak_dir_pull_untrusted_local (FlatpakDir          *self,
 
   /* Past this we must use goto out, so we abort the transaction on error */
 
-  if (!repo_pull_one_untrusted (self->repo, remote_name, url,
-                                subdirs_arg ? (const char **)subdirs_arg->pdata : NULL,
-                                ref, checksum, progress,
-                                cancellable, error))
+  if (!repo_pull_one_local_untrusted (self, self->repo, remote_name, url,
+                                      subdirs_arg ? (const char **)subdirs_arg->pdata : NULL,
+                                      ref, checksum, progress,
+                                      cancellable, error))
     {
       g_prefix_error (error, _("While pulling %s from remote %s: "), ref, remote_name);
       goto out;
@@ -3143,7 +3197,7 @@ flatpak_dir_read_latest (FlatpakDir   *self,
       g_autoptr(GVariant) commit_metadata = NULL;
 
       if (!ostree_repo_load_commit (self->repo, res, &commit_data, NULL, error))
-        return FALSE;
+        return NULL;
 
       commit_metadata = g_variant_get_child_value (commit_data, 0);
       g_variant_lookup (commit_metadata, "xa.alt-id", "s", &alt_id);
@@ -6704,20 +6758,15 @@ flatpak_dir_remote_has_ref (FlatpakDir   *self,
                             const char   *remote,
                             const char   *ref)
 {
-  g_autoptr(GBytes) summary_bytes = NULL;
   g_autoptr(GVariant) summary = NULL;
   g_autoptr(GError) local_error = NULL;
 
-  if (!flatpak_dir_remote_fetch_summary (self, remote,
-                                         &summary_bytes, NULL,
-                                         NULL, &local_error))
+  summary = fetch_remote_summary_file (self, remote, NULL, NULL, &local_error);
+  if (summary == NULL)
     {
       g_debug ("Can't get summary for remote %s: %s\n", remote, local_error->message);
       return FALSE;
     }
-
-  summary = g_variant_ref_sink (g_variant_new_from_bytes (OSTREE_SUMMARY_GVARIANT_FORMAT,
-                                                          summary_bytes, FALSE));
 
   return flatpak_summary_lookup_ref (summary, ref, NULL, NULL);
 }
@@ -6731,21 +6780,17 @@ flatpak_dir_remote_list_refs (FlatpakDir       *self,
                               GCancellable     *cancellable,
                               GError          **error)
 {
-  g_autoptr(GBytes) summary_bytes = NULL;
   g_autoptr(GHashTable) ret_all_refs = NULL;
   g_autoptr(GVariant) summary = NULL;
   g_autoptr(GVariant) ref_map = NULL;
   GVariantIter iter;
   GVariant *child;
 
-  if (!flatpak_dir_remote_fetch_summary (self, remote_name,
-                                         &summary_bytes, NULL,
-                                         cancellable, error))
-    return FALSE;
-
   ret_all_refs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-  summary = g_variant_ref_sink (g_variant_new_from_bytes (OSTREE_SUMMARY_GVARIANT_FORMAT,
-                                                          summary_bytes, FALSE));
+
+  summary = fetch_remote_summary_file (self, remote_name, NULL, cancellable, error);
+  if (summary == NULL)
+    return FALSE;
 
   ref_map = g_variant_get_child_value (summary, 0);
 
@@ -8102,26 +8147,16 @@ fetch_remote_summary_file (FlatpakDir   *self,
                                                        summary_bytes, FALSE));
 }
 
-
 char *
 flatpak_dir_fetch_remote_title (FlatpakDir   *self,
                                 const char   *remote,
                                 GCancellable *cancellable,
                                 GError      **error)
 {
-  g_autoptr(GVariant) summary = NULL;
-  g_autoptr(GVariant) extensions = NULL;
   g_autofree char *title = NULL;
 
-  summary = fetch_remote_summary_file (self, remote, NULL, cancellable, error);
-  if (summary == NULL)
-    return NULL;
-
-  extensions = g_variant_get_child_value (summary, 1);
-
-  g_variant_lookup (extensions, "xa.title", "s", &title);
-
-  if (title == NULL)
+  if (!flatpak_dir_lookup_repo_metadata (self, remote, cancellable, error,
+                                         "xa.title", "s", &title))
     {
       g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
                            _("Remote title not set"));
@@ -8137,18 +8172,10 @@ flatpak_dir_fetch_remote_default_branch (FlatpakDir   *self,
                                          GCancellable *cancellable,
                                          GError      **error)
 {
-  g_autoptr(GVariant) summary = NULL;
-  g_autoptr(GVariant) extensions = NULL;
   g_autofree char *default_branch = NULL;
 
-  summary = fetch_remote_summary_file (self, remote, NULL, cancellable, error);
-  if (summary == NULL)
-    return NULL;
-
-  extensions = g_variant_get_child_value (summary, 1);
-  g_variant_lookup (extensions, "xa.default-branch", "s", &default_branch);
-
-  if (default_branch == NULL)
+  if (!flatpak_dir_lookup_repo_metadata (self, remote, cancellable, error,
+                                         "xa.default-branch", "s", &default_branch))
     {
       g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
                            _("Remote default-branch not set"));
@@ -8167,14 +8194,14 @@ flatpak_dir_fetch_remote_summary (FlatpakDir    *self,
   return fetch_remote_summary_file (self, remote, NULL, cancellable, error);
 }
 
-gboolean
-flatpak_dir_update_remote_configuration_for_summary (FlatpakDir   *self,
-                                                     const char   *remote,
-                                                     GVariant     *summary,
-                                                     gboolean      dry_run,
-                                                     gboolean     *has_changed_out,
-                                                     GCancellable *cancellable,
-                                                     GError      **error)
+static gboolean
+flatpak_dir_update_remote_configuration_for_dict (FlatpakDir    *self,
+                                                  const char    *remote,
+                                                  GVariant      *metadata,
+                                                  gboolean       dry_run,
+                                                  gboolean      *has_changed_out,
+                                                  GCancellable  *cancellable,
+                                                  GError       **error)
 {
   /* We only support those configuration parameters that can
      be set in the server when building the repo (see the
@@ -8187,16 +8214,13 @@ flatpak_dir_update_remote_configuration_for_summary (FlatpakDir   *self,
     NULL
   };
 
-  g_autoptr(GVariant) extensions = NULL;
   g_autoptr(GPtrArray) updated_params = NULL;
   GVariantIter iter;
   g_autoptr(GBytes) gpg_keys = NULL;
 
   updated_params = g_ptr_array_new_with_free_func (g_free);
 
-  extensions = g_variant_get_child_value (summary, 1);
-
-  g_variant_iter_init (&iter, extensions);
+  g_variant_iter_init (&iter, metadata);
   if (g_variant_iter_n_children (&iter) > 0)
     {
       GVariant *value_var = NULL;
@@ -8288,6 +8312,24 @@ flatpak_dir_update_remote_configuration_for_summary (FlatpakDir   *self,
   }
 
   return TRUE;
+}
+
+gboolean
+flatpak_dir_update_remote_configuration_for_summary (FlatpakDir    *self,
+                                                     const char    *remote,
+                                                     GVariant      *summary,
+                                                     gboolean       dry_run,
+                                                     gboolean      *has_changed_out,
+                                                     GCancellable  *cancellable,
+                                                     GError       **error)
+{
+  g_autoptr(GVariant) extensions = NULL;
+
+  extensions = g_variant_get_child_value (summary, 1);
+
+  return flatpak_dir_update_remote_configuration_for_dict (self, remote, extensions,
+                                                           dry_run, has_changed_out,
+                                                           cancellable, error);
 }
 
 gboolean
@@ -8452,19 +8494,11 @@ flatpak_dir_fetch_ref_cache (FlatpakDir   *self,
                              GCancellable *cancellable,
                              GError      **error)
 {
-  g_autoptr(GBytes) summary_bytes = NULL;
   g_autoptr(GVariant) summary = NULL;
 
-  if (!flatpak_dir_ensure_repo (self, cancellable, error))
+  summary = fetch_remote_summary_file (self, remote_name, NULL, cancellable, error);
+  if (summary == NULL)
     return FALSE;
-
-  if (!flatpak_dir_remote_fetch_summary (self, remote_name,
-                                         &summary_bytes, NULL,
-                                         cancellable, error))
-    return FALSE;
-
-  summary = g_variant_ref_sink (g_variant_new_from_bytes (OSTREE_SUMMARY_GVARIANT_FORMAT,
-                                                          summary_bytes, FALSE));
 
   return flatpak_dir_parse_summary_for_ref (self, summary, ref,
                                             download_size, installed_size,
@@ -8576,7 +8610,6 @@ flatpak_dir_find_remote_related (FlatpakDir *self,
                                  GCancellable *cancellable,
                                  GError **error)
 {
-  g_autoptr(GBytes) summary_bytes = NULL;
   g_autoptr(GVariant) summary = NULL;
   g_autofree char *metadata = NULL;
   g_autoptr(GKeyFile) metakey = g_key_file_new ();
@@ -8601,13 +8634,9 @@ flatpak_dir_find_remote_related (FlatpakDir *self,
   if (*url == 0)
     return g_steal_pointer (&related);  /* Empty url, silently disables updates */
 
-  if (!flatpak_dir_remote_fetch_summary (self, remote_name,
-                                         &summary_bytes, NULL,
-                                         cancellable, error))
+  summary = fetch_remote_summary_file (self, remote_name, NULL, cancellable, error);
+  if (summary == NULL)
     return NULL;
-
-  summary = g_variant_ref_sink (g_variant_new_from_bytes (OSTREE_SUMMARY_GVARIANT_FORMAT,
-                                                          summary_bytes, FALSE));
 
   if (flatpak_dir_parse_summary_for_ref (self, summary, ref,
                                          NULL, NULL, &metadata,

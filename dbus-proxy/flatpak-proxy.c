@@ -170,9 +170,6 @@
 
 typedef struct FlatpakProxyClient FlatpakProxyClient;
 
-FlatpakPolicy flatpak_proxy_get_policy (FlatpakProxy *proxy,
-                                        const char   *name);
-
 /* We start looking ignoring the first cr-lf
    since there is no previous line initially */
 #define AUTH_END_INIT_OFFSET 2
@@ -439,7 +436,7 @@ flatpak_proxy_get_wildcard_policy (FlatpakProxy *proxy,
   return wildcard_policy;
 }
 
-FlatpakPolicy
+static FlatpakPolicy
 flatpak_proxy_get_policy (FlatpakProxy *proxy,
                           const char   *name)
 {
@@ -490,7 +487,6 @@ flatpak_proxy_finalize (GObject *object)
   if (g_socket_service_is_active (G_SOCKET_SERVICE (proxy)))
     unlink (proxy->socket_path);
 
-  g_clear_pointer (&proxy->dbus_address, g_free);
   g_assert (proxy->clients == NULL);
 
   g_hash_table_destroy (proxy->policy);
