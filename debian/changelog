@@ -1,6 +1,9 @@
 flatpak (0.9.7-1) UNRELEASED; urgency=medium
 
   * New upstream release
+  * d/control: Add libglib2.0-doc, libostree-doc to Build-Depends-Indep
+    so that libflatpak-doc can cross-reference those documentation
+    packages
 
  -- Simon McVittie <smcv@debian.org>  Mon, 03 Jul 2017 09:23:10 +0100
 
