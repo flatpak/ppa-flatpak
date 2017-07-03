@@ -19,7 +19,6 @@ Build-Depends:
  docbook-xsl,
  fuse,
  git,
- gnome-desktop-testing,
  gobject-introspection,
  gtk-doc-tools,
  gtk-update-icon-cache,
