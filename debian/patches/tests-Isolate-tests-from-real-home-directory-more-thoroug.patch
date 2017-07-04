@@ -1,0 +1,81 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Tue, 4 Jul 2017 11:01:09 +0100
+Subject: tests: Isolate tests from real home directory more thoroughly
+
+The library test previously used the real ~/.cache, while the
+library test and the shell-script tests would use the real ~/.config
+to look up the XDG user-dirs.dirs. Other home-directory-related code
+might have used the real $HOME.
+
+As a general rule, build-time tests should not affect the real home
+directory. Debian autobuilders run as a user whose home directory
+does not exist, in order to catch packages whose build process could
+affect or be affected by the contents of the home directory.
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ tests/libtest.sh    |  2 ++
+ tests/testlibrary.c | 27 ++++++++++++++++++++++++---
+ 2 files changed, 26 insertions(+), 3 deletions(-)
+
+diff --git a/tests/libtest.sh b/tests/libtest.sh
+index 11e6032..7aa0733 100644
+--- a/tests/libtest.sh
++++ b/tests/libtest.sh
+@@ -80,7 +80,9 @@ mkdir -p ${TEST_DATA_DIR}/system
+ export FLATPAK_SYSTEM_DIR=${TEST_DATA_DIR}/system
+ export FLATPAK_SYSTEM_HELPER_ON_SESSION=1
+ 
++export HOME=${TEST_DATA_DIR}/home
+ export XDG_CACHE_HOME=${TEST_DATA_DIR}/home/cache
++export XDG_CONFIG_HOME=${TEST_DATA_DIR}/home/config
+ export XDG_DATA_HOME=${TEST_DATA_DIR}/home/share
+ export XDG_RUNTIME_DIR=${TEST_DATA_DIR}/runtime
+ 
+diff --git a/tests/testlibrary.c b/tests/testlibrary.c
+index 12c8fae..e4b2107 100644
+--- a/tests/testlibrary.c
++++ b/tests/testlibrary.c
+@@ -766,6 +766,9 @@ copy_gpg (void)
+ static void
+ global_setup (void)
+ {
++  g_autofree char *cachedir = NULL;
++  g_autofree char *configdir = NULL;
++  g_autofree char *datadir = NULL;
+   g_autofree char *homedir = NULL;
+ 
+   testdir = g_strdup ("/var/tmp/flatpak-test-XXXXXX");
+@@ -773,11 +776,29 @@ global_setup (void)
+   if (g_test_verbose ())
+     g_print ("testdir: %s\n", testdir);
+ 
+-  homedir = g_strconcat (testdir, "/home/share", NULL);
++  homedir = g_strconcat (testdir, "/home", NULL);
+   g_mkdir_with_parents (homedir, S_IRWXU|S_IRWXG|S_IRWXO);
+-  g_setenv ("XDG_DATA_HOME", homedir, TRUE);
++  g_setenv ("HOME", homedir, TRUE);
+   if (g_test_verbose ())
+-    g_print ("setting XDG_DATA_HOME=%s\n", homedir);
++    g_print ("setting HOME=%s\n", datadir);
++
++  cachedir = g_strconcat (testdir, "/home/cache", NULL);
++  g_mkdir_with_parents (cachedir, S_IRWXU|S_IRWXG|S_IRWXO);
++  g_setenv ("XDG_CACHE_HOME", cachedir, TRUE);
++  if (g_test_verbose ())
++    g_print ("setting XDG_CACHE_HOME=%s\n", cachedir);
++
++  configdir = g_strconcat (testdir, "/home/config", NULL);
++  g_mkdir_with_parents (configdir, S_IRWXU|S_IRWXG|S_IRWXO);
++  g_setenv ("XDG_CONFIG_HOME", configdir, TRUE);
++  if (g_test_verbose ())
++    g_print ("setting XDG_CONFIG_HOME=%s\n", configdir);
++
++  datadir = g_strconcat (testdir, "/home/share", NULL);
++  g_mkdir_with_parents (datadir, S_IRWXU|S_IRWXG|S_IRWXO);
++  g_setenv ("XDG_DATA_HOME", datadir, TRUE);
++  if (g_test_verbose ())
++    g_print ("setting XDG_DATA_HOME=%s\n", datadir);
+ 
+   flatpak_runtimedir = g_strconcat (testdir, "/runtime", NULL);
+   g_mkdir_with_parents (flatpak_runtimedir, S_IRWXU|S_IRWXG|S_IRWXO);
