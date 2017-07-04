@@ -1,4 +1,4 @@
-flatpak (0.9.7-1) UNRELEASED; urgency=medium
+flatpak (0.9.7-1) experimental; urgency=medium
 
   * New upstream release
   * d/control: Add libglib2.0-doc, libostree-doc to Build-Depends-Indep
@@ -11,7 +11,7 @@ flatpak (0.9.7-1) UNRELEASED; urgency=medium
   * d/control: Annotate test-only build-dependencies with <!nocheck>
   * d/patches/: Add a patch to isolate tests from $HOME more thoroughly
 
- -- Simon McVittie <smcv@debian.org>  Mon, 03 Jul 2017 09:23:10 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 04 Jul 2017 11:54:36 +0100
 
 flatpak (0.9.6-1) experimental; urgency=high
 
