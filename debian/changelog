@@ -1,4 +1,4 @@
-flatpak (0.8.7-3) UNRELEASED; urgency=medium
+flatpak (0.8.7-3) unstable; urgency=medium
 
   * d/patches/: Add patch backported from 0.9.4, and new patch sent
     upstream to PR #894, to avoid using the real home directory in tests
@@ -13,7 +13,7 @@ flatpak (0.8.7-3) UNRELEASED; urgency=medium
   * Standards-Version: 4.0.0
     - Use https URL for format of debian/copyright
 
- -- Simon McVittie <smcv@debian.org>  Tue, 04 Jul 2017 11:42:36 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 04 Jul 2017 11:59:37 +0100
 
 flatpak (0.8.7-2) unstable; urgency=medium
 
