@@ -1,0 +1,23 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Tue, 9 May 2017 13:23:53 +0200
+Subject: Fix tests by setting XDG_CACHE_HOME
+
+We use this now, so need to have it set to the test homedir
+
+Origin: backport, 0.9.4, commit:0d4fa486b54997a25596f93e985df67fc58ab5c5
+---
+ tests/libtest.sh | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/tests/libtest.sh b/tests/libtest.sh
+index 0f35195..72573f0 100644
+--- a/tests/libtest.sh
++++ b/tests/libtest.sh
+@@ -80,6 +80,7 @@ mkdir -p ${TEST_DATA_DIR}/system
+ export FLATPAK_SYSTEM_DIR=${TEST_DATA_DIR}/system
+ export FLATPAK_SYSTEM_HELPER_ON_SESSION=1
+ 
++export XDG_CACHE_HOME=${TEST_DATA_DIR}/home/cache
+ export XDG_DATA_HOME=${TEST_DATA_DIR}/home/share
+ export XDG_RUNTIME_DIR=${TEST_DATA_DIR}/runtime
+ 
