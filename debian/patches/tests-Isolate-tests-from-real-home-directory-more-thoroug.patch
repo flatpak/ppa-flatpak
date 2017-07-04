@@ -10,9 +10,12 @@ might have used the real $HOME.
 As a general rule, build-time tests should not affect the real home
 directory. Debian autobuilders run as a user whose home directory
 does not exist, in order to catch packages whose build process could
-affect or be affected by the contents of the home directory.
+affect or be affected by the contents of the home directory. This
+caused testlibrary to fail when it tried to create that nonexistent
+directory, which I think happened while trying to create ~/.cache.
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/flatpak/flatpak/pull/894
 ---
  tests/libtest.sh    |  2 ++
  tests/testlibrary.c | 27 ++++++++++++++++++++++++---
