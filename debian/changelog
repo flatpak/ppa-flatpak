@@ -1,3 +1,11 @@
+flatpak (0.8.7-4) UNRELEASED; urgency=medium
+
+  * d/rules, d/autogen.sh: Run gtkdocize as well as autoreconf
+    (similar to upstream's autogen.sh but much simpler), replacing
+    gtk-doc.make at build time with the one in Debian's gtk-doc-tools
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 17 Jul 2017 21:14:11 +0100
+
 flatpak (0.8.7-3) unstable; urgency=medium
 
   * d/patches/: Add patch backported from 0.9.4, and new patch sent
