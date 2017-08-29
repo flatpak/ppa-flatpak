@@ -33,7 +33,7 @@ Build-Depends:
  libglib2.0-dev (>= 2.44),
  libgpgme-dev (>= 1.1.8),
  libjson-glib-dev,
- libostree-dev (>= 2017.7),
+ libostree-dev (>= 2017.10),
  libpolkit-gobject-1-dev,
  libseccomp-dev,
  libsoup2.4-dev,
