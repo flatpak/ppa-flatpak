@@ -22,6 +22,11 @@
 
 #include <string.h>
 
+#ifdef FLATPAK_ENABLE_P2P
+#include <ostree.h>
+#include <ostree-repo-finder-avahi.h>
+#endif  /* FLATPAK_ENABLE_P2P */
+
 #include "flatpak-utils.h"
 #include "flatpak-installation.h"
 #include "flatpak-installed-ref-private.h"
@@ -878,6 +883,93 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
   return g_steal_pointer (&updates);
 }
 
+#ifdef FLATPAK_ENABLE_P2P
+static void
+async_result_cb (GObject      *obj,
+                 GAsyncResult *result,
+                 gpointer      user_data)
+{
+  GAsyncResult **result_out = user_data;
+  *result_out = g_object_ref (result);
+}
+#endif  /* FLATPAK_ENABLE_P2P */
+
+/* Find all USB and LAN repositories which share the same collection ID as
+ * @remote_name, and add a #FlatpakRemote to @remotes for each of them. The caller
+ * must initialise @remotes. Returns %TRUE without modifying @remotes if the
+ * given remote doesn’t have a collection ID configured.
+ *
+ * FIXME: If this were async, the parallelisation could be handled in the caller. */
+static gboolean
+list_remotes_for_configured_remote (FlatpakInstallation  *self,
+                                    const gchar          *remote_name,
+                                    FlatpakDir           *dir,
+                                    GPtrArray            *remotes  /* (element-type FlatpakRemote) */,
+                                    GCancellable         *cancellable,
+                                    GError              **error)
+{
+#ifdef FLATPAK_ENABLE_P2P
+  g_autofree gchar *collection_id = NULL;
+  OstreeCollectionRef ref;
+  const OstreeCollectionRef *refs[2] = { NULL, };
+  g_autofree gchar *appstream_ref = NULL;
+  g_autoptr(GMainContext) context = NULL;
+  g_auto(OstreeRepoFinderResultv) results = NULL;
+  g_autoptr(GAsyncResult) result = NULL;
+  g_autoptr(OstreeRepoFinder) finder_mount = NULL, finder_avahi = NULL;
+  OstreeRepoFinder *finders[3] = { NULL, };
+  gsize i;
+
+  /* Find the collection ID for @remote_name, or bail if there is none. */
+  if (!ostree_repo_get_remote_option (flatpak_dir_get_repo (dir),
+                                      remote_name, "collection-id",
+                                      NULL, &collection_id, error))
+    return FALSE;
+  if (collection_id == NULL || *collection_id == '\0')
+    return TRUE;
+
+  context = g_main_context_new ();
+  g_main_context_push_thread_default (context);
+
+  appstream_ref = g_strdup_printf ("appstream/%s", flatpak_get_arch ());
+  ref.collection_id = collection_id;
+  ref.ref_name = appstream_ref;
+  refs[0] = &ref;
+
+  finder_mount = OSTREE_REPO_FINDER (ostree_repo_finder_mount_new (NULL));
+  finder_avahi = OSTREE_REPO_FINDER (ostree_repo_finder_avahi_new (context));
+  finders[0] = finder_mount;
+  finders[1] = finder_avahi;
+
+  ostree_repo_finder_avahi_start (OSTREE_REPO_FINDER_AVAHI (finder_avahi), NULL);  /* ignore failure */
+  ostree_repo_find_remotes_async (flatpak_dir_get_repo (dir),
+                                  (const OstreeCollectionRef * const *) refs,
+                                  NULL,  /* no options */
+                                  finders,
+                                  NULL,  /* no progress */
+                                  cancellable,
+                                  async_result_cb,
+                                  &result);
+
+  while (result == NULL)
+    g_main_context_iteration (context, TRUE);
+
+  results = ostree_repo_find_remotes_finish (flatpak_dir_get_repo (dir), result, error);
+  ostree_repo_finder_avahi_stop (OSTREE_REPO_FINDER_AVAHI (finder_avahi));
+
+  g_main_context_pop_thread_default (context);
+
+  for (i = 0; results != NULL && results[i] != NULL; i++)
+    {
+      g_ptr_array_add (remotes,
+                       flatpak_remote_new_from_ostree (results[i]->remote,
+                                                       results[i]->finder,
+                                                       dir));
+    }
+#endif  /* FLATPAK_ENABLE_P2P */
+
+  return TRUE;
+}
 
 /**
  * flatpak_installation_list_remotes:
@@ -900,7 +992,7 @@ flatpak_installation_list_remotes (FlatpakInstallation *self,
   g_autoptr(FlatpakDir) dir_clone = NULL;
   g_auto(GStrv) remote_names = NULL;
   g_autoptr(GPtrArray) remotes = g_ptr_array_new_with_free_func (g_object_unref);
-  int i;
+  gsize i;
 
   remote_names = flatpak_dir_list_remotes (dir, cancellable, error);
   if (remote_names == NULL)
@@ -913,8 +1005,15 @@ flatpak_installation_list_remotes (FlatpakInstallation *self,
     return NULL;
 
   for (i = 0; remote_names[i] != NULL; i++)
-    g_ptr_array_add (remotes,
-                     flatpak_remote_new_with_dir (remote_names[i], dir_clone));
+    {
+      g_ptr_array_add (remotes,
+                       flatpak_remote_new_with_dir (remote_names[i], dir_clone));
+
+      /* Add the dynamic mirrors of this remote. */
+      if (!list_remotes_for_configured_remote (self, remote_names[i], dir_clone,
+                                               remotes, cancellable, error))
+        return NULL;
+    }
 
   return g_steal_pointer (&remotes);
 }
@@ -1112,7 +1211,7 @@ flatpak_installation_load_app_overrides (FlatpakInstallation *self,
  * @error: return location for a #GError
  *
  * Install an application or runtime from an flatpak bundle file.
- * See flatpak-build-bundle(1) for how to create brundles.
+ * See flatpak-build-bundle(1) for how to create bundles.
  *
  * Returns: (transfer full): The ref for the newly installed app or %NULL on failure
  */
@@ -1261,7 +1360,7 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
     ostree_progress = ostree_async_progress_new_and_connect (no_progress_cb, NULL);
 
   if (!flatpak_dir_install (dir_clone, FALSE, FALSE,
-                            (flags & FLATPAK_UPDATE_FLAGS_NO_STATIC_DELTAS) != 0,
+                            (flags & FLATPAK_INSTALL_FLAGS_NO_STATIC_DELTAS) != 0,
                             ref, remote_name, (const char **)subpaths,
                             ostree_progress, cancellable, error))
     goto out;
@@ -1355,6 +1454,7 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
   g_autofree char *remote_name = NULL;
   FlatpakInstalledRef *result = NULL;
   g_autofree char *target_commit = NULL;
+  g_auto(OstreeRepoFinderResultv) check_results = NULL;
 
   ref = flatpak_compose_ref (kind == FLATPAK_REF_KIND_APP, name, branch, arch, error);
   if (ref == NULL)
@@ -1376,6 +1476,7 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
   target_commit = flatpak_dir_check_for_update (dir, ref, remote_name, NULL,
                                                 (const char **)subpaths,
                                                 (flags & FLATPAK_UPDATE_FLAGS_NO_PULL) != 0,
+                                                &check_results,
                                                 cancellable, error);
   if (target_commit == NULL)
     return NULL;
@@ -1399,7 +1500,9 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
                            (flags & FLATPAK_UPDATE_FLAGS_NO_DEPLOY) != 0,
                            (flags & FLATPAK_UPDATE_FLAGS_NO_STATIC_DELTAS) != 0,
                            FALSE,
-                           ref, remote_name, target_commit, (const char **)subpaths,
+                           ref, remote_name, target_commit,
+                           (const OstreeRepoFinderResult * const *) check_results,
+                           (const char **)subpaths,
                            ostree_progress, cancellable, error))
     goto out;
 
@@ -1841,7 +1944,7 @@ flatpak_installation_list_remote_related_refs_sync (FlatpakInstallation *self,
       FlatpakRelated *rel = g_ptr_array_index (related, i);
       FlatpakRelatedRef *ref;
 
-      ref = flatpak_related_ref_new (rel->ref, rel->commit,
+      ref = flatpak_related_ref_new (rel->collection_id, rel->ref, rel->commit,
                                      rel->subpaths, rel->download, rel->delete);
 
       if (ref)
@@ -1897,7 +2000,7 @@ flatpak_installation_list_installed_related_refs_sync (FlatpakInstallation *self
       FlatpakRelated *rel = g_ptr_array_index (related, i);
       FlatpakRelatedRef *ref;
 
-      ref = flatpak_related_ref_new (rel->ref, rel->commit,
+      ref = flatpak_related_ref_new (rel->collection_id, rel->ref, rel->commit,
                                      rel->subpaths, rel->download, rel->delete);
 
       if (ref)

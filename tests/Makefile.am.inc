@@ -1,4 +1,4 @@
-TESTS_ENVIRONMENT += FLATPAK_TESTS_DEBUG=1 \
+AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 \
 	FLATPAK_TRIGGERSDIR=$$(cd $(top_srcdir) && pwd)/triggers \
 	FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && pwd)/flatpak-dbus-proxy \
 	GI_TYPELIB_PATH=$$(cd $(top_builddir) && pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
@@ -7,13 +7,14 @@ TESTS_ENVIRONMENT += FLATPAK_TESTS_DEBUG=1 \
 	$(NULL)
 
 if WITH_SYSTEM_BWRAP
-TESTS_ENVIRONMENT += FLATPAK_BWRAP=$(BWRAP)
+AM_TESTS_ENVIRONMENT += FLATPAK_BWRAP=$(BWRAP)
 else
-TESTS_ENVIRONMENT += FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
+AM_TESTS_ENVIRONMENT += FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
 endif
 
-testdb_CFLAGS = $(BASE_CFLAGS)
+testdb_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
 testdb_LDADD = \
+             $(AM_LDADD) \
              $(BASE_LIBS) \
              $(OSTREE_LIBS) \
              libglnx.la \
@@ -21,8 +22,9 @@ testdb_LDADD = \
              $(NULL)
 testdb_SOURCES = tests/testdb.c
 
-test_doc_portal_CFLAGS = $(BASE_CFLAGS)
+test_doc_portal_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
 test_doc_portal_LDADD = \
+             $(AM_LDADD) \
              $(BASE_LIBS) \
              $(OSTREE_LIBS) \
              libglnx.la \
@@ -31,8 +33,9 @@ test_doc_portal_LDADD = \
 test_doc_portal_SOURCES = tests/test-doc-portal.c
 nodist_test_doc_portal_SOURCES = $(xdp_dbus_built_sources)
 
-testlibrary_CFLAGS = $(BASE_CFLAGS)
+testlibrary_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
 testlibrary_LDADD = \
+             $(AM_LDADD) \
              $(BASE_LIBS) \
              libglnx.la \
              libflatpak.la \
@@ -129,6 +132,8 @@ dist_test_scripts = \
 	tests/test-run-deltas.sh \
 	tests/test-run-system-deltas.sh \
 	tests/test-repo.sh \
+	tests/test-repo-collections.sh \
+	tests/test-repo-collections-server-only.sh \
 	tests/test-repo-system.sh \
 	tests/test-extensions.sh \
 	tests/test-bundle.sh \
@@ -136,6 +141,8 @@ dist_test_scripts = \
 	tests/test-builder.sh \
 	tests/test-builder-python.sh \
 	tests/test-oci.sh \
+	tests/test-unsigned-summaries.sh \
+	tests/test-update-remote-configuration.sh \
 	$(NULL)
 
 test_programs = testdb test-doc-portal testlibrary

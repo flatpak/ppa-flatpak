@@ -13,6 +13,9 @@
 /* Define if using xauth */
 #undef ENABLE_XAUTH
 
+/* Define if peer to peer support should be enabled */
+#undef FLATPAK_ENABLE_P2P
+
 /* defines how to decorate public symbols while building */
 #undef FLATPAK_EXTERN
 
@@ -75,6 +78,9 @@
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
+
+/* Define if libostree experimental API should be enabled */
+#undef OSTREE_ENABLE_EXPERIMENTAL_API
 
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT

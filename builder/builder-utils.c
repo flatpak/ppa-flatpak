@@ -26,6 +26,7 @@
 #include <gelf.h>
 #include <dwarf.h>
 #include <sys/mman.h>
+#include <sys/uio.h>
 #include <stdio.h>
 
 #include <string.h>
@@ -63,7 +64,7 @@ builder_uri_to_filename (const char *uri)
   return g_string_free (s, FALSE);
 }
 
-const char *
+static const char *
 inplace_basename (const char *path)
 {
   const char *last_slash;
@@ -764,8 +765,7 @@ handle_dwarf2_line (DebuginfoData *data, uint32_t off, char *comp_dir, GHashTabl
         }
       canonicalize_path (s, s);
 
-      if (s)
-        g_hash_table_insert (files, s, NULL);
+      g_hash_table_insert (files, s, NULL);
 
       (void) read_uleb128 (ptr);
       (void) read_uleb128 (ptr);
@@ -1340,7 +1340,7 @@ builder_get_debuginfo_file_references (const char *filename, GError **error)
     return NULL;
 
   if (elf_end (elf) < 0)
-    g_warning ("elf_end failed: %s\n", elf_errmsg (elf_errno ()));
+    g_warning ("elf_end failed: %s", elf_errmsg (elf_errno ()));
 
   res = (char **) g_hash_table_get_keys_as_array (files, NULL);
   g_hash_table_steal_all (files);
@@ -1597,7 +1597,7 @@ builder_maybe_host_spawnv (GFile                *dir,
   if (flatpak_is_in_sandbox ())
     return builder_host_spawnv (dir, output, error, argv);
 
-  return flatpak_spawnv (dir, output, error, argv);
+  return flatpak_spawnv (dir, output, 0, error, argv);
 }
 
 typedef struct {
@@ -1627,7 +1627,7 @@ download_progress_cleanup (DownloadPromptData *progress_data)
 }
 
 gboolean
-builder_download_uri (const char     *url,
+builder_download_uri (SoupURI        *uri,
                       GFile          *dest,
                       char           *sha256,
                       SoupSession    *session,
@@ -1655,13 +1655,23 @@ builder_download_uri (const char     *url,
   if (out == NULL)
     return FALSE;
 
-  req = soup_session_request (session, url, error);
+  req = soup_session_request_uri (session, uri, error);
   if (req == NULL)
     return FALSE;
 
   input = soup_request_send (req, NULL, error);
   if (input == NULL)
     return FALSE;
+
+  if (SOUP_IS_REQUEST_HTTP (req))
+    {
+      g_autoptr(SoupMessage) msg = soup_request_http_get_message (SOUP_REQUEST_HTTP(req));
+      if (!SOUP_STATUS_IS_SUCCESSFUL(msg->status_code))
+        {
+          g_set_error_literal (error, SOUP_HTTP_ERROR, msg->status_code, msg->reason_phrase);
+          return FALSE;
+        }
+    }
 
   if (!flatpak_splice_update_checksum (G_OUTPUT_STREAM (out), input, checksum, download_progress, &progress_data, NULL, error))
     {
@@ -1702,6 +1712,23 @@ builder_serializable_find_property_with_error (JsonSerializable *serializable,
   GParamSpec *pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (serializable), name);
   if (pspec == NULL &&
       !g_str_has_prefix (name, "x-"))
-    g_warning ("Unknown property %s for type %s\n", name, g_type_name_from_instance ((GTypeInstance *)serializable));
+    g_warning ("Unknown property %s for type %s", name, g_type_name_from_instance ((GTypeInstance *)serializable));
   return pspec;
+}
+
+void
+builder_set_term_title (const gchar *format,
+                        ...)
+{
+  g_autofree gchar *message = NULL;
+  va_list args;
+
+  if (isatty (STDOUT_FILENO) != 1)
+    return;
+
+  va_start (args, format);
+  message = g_strdup_vprintf (format, args);
+  va_end (args);
+
+  g_print ("\033]2;flatpak-builder: %s\007", message);
 }

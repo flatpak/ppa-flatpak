@@ -26,6 +26,11 @@
 #include "flatpak-enum-types.h"
 
 #include <string.h>
+#include <ostree.h>
+
+#ifdef FLATPAK_ENABLE_P2P
+#include <ostree-repo-finder-avahi.h>
+#endif  /* FLATPAK_ENABLE_P2P */
 
 /**
  * SECTION:flatpak-remote
@@ -54,6 +59,7 @@ struct _FlatpakRemotePrivate
   FlatpakDir *dir;
 
   char       *local_url;
+  char       *local_collection_id;
   char       *local_title;
   char       *local_default_branch;
   gboolean    local_gpg_verify;
@@ -61,8 +67,10 @@ struct _FlatpakRemotePrivate
   gboolean    local_nodeps;
   gboolean    local_disabled;
   int         local_prio;
+  FlatpakRemoteType type;
 
   guint       local_url_set : 1;
+  guint       local_collection_id_set : 1;
   guint       local_title_set : 1;
   guint       local_default_branch_set : 1;
   guint       local_gpg_verify_set : 1;
@@ -80,6 +88,7 @@ enum {
   PROP_0,
 
   PROP_NAME,
+  PROP_TYPE,
 };
 
 static void
@@ -95,6 +104,7 @@ flatpak_remote_finalize (GObject *object)
     g_bytes_unref (priv->local_gpg_key);
 
   g_free (priv->local_url);
+  g_free (priv->local_collection_id);
   g_free (priv->local_title);
   g_free (priv->local_default_branch);
 
@@ -117,6 +127,10 @@ flatpak_remote_set_property (GObject      *object,
       priv->name = g_value_dup_string (value);
       break;
 
+    case PROP_TYPE:
+      priv->type = g_value_get_enum (value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -136,6 +150,10 @@ flatpak_remote_get_property (GObject    *object,
     {
     case PROP_NAME:
       g_value_set_string (value, priv->name);
+      break;
+
+    case PROP_TYPE:
+      g_value_set_enum (value, priv->type);
       break;
 
     default:
@@ -160,6 +178,15 @@ flatpak_remote_class_init (FlatpakRemoteClass *klass)
                                                         "The name of the remote",
                                                         NULL,
                                                         G_PARAM_READWRITE));
+
+  g_object_class_install_property (object_class,
+                                   PROP_TYPE,
+                                   g_param_spec_enum ("type",
+                                                      "Type",
+                                                      "The type of the remote",
+                                                      FLATPAK_TYPE_REMOTE_TYPE,
+                                                      FLATPAK_REMOTE_TYPE_STATIC,
+                                                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }
 
 static void
@@ -286,6 +313,57 @@ flatpak_remote_set_url (FlatpakRemote *self,
   g_free (priv->local_url);
   priv->local_url = g_strdup (url);
   priv->local_url_set = TRUE;
+}
+
+/**
+ * flatpak_remote_get_collection_id:
+ * @self: a #FlatpakRemote
+ *
+ * Returns the repository collection ID of this remote, if set.
+ *
+ * Returns: (transfer full) (nullable): the collection ID, or %NULL if unset
+ */
+char *
+flatpak_remote_get_collection_id (FlatpakRemote *self)
+{
+#ifdef FLATPAK_ENABLE_P2P
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
+
+  if (priv->local_collection_id_set)
+    return g_strdup (priv->local_collection_id);
+
+  if (priv->dir)
+    return flatpak_dir_get_remote_collection_id (priv->dir, priv->name);
+#endif  /** FLATPAK_ENABLE_P2P */
+
+  return NULL;
+}
+
+/**
+ * flatpak_remote_set_collection_id:
+ * @self: a #FlatpakRemote
+ * @collection_id: (nullable): The new collection ID, or %NULL to unset
+ *
+ * Sets the repository collection ID of this remote.
+ *
+ * Note: This is a local modification of this object, you must commit changes
+ * using flatpak_installation_modify_remote() for the changes to take
+ * effect.
+ */
+void
+flatpak_remote_set_collection_id (FlatpakRemote *self,
+                                  const char    *collection_id)
+{
+#ifdef FLATPAK_ENABLE_P2P
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
+
+  if (collection_id != NULL && *collection_id == '\0')
+    collection_id = NULL;
+
+  g_free (priv->local_collection_id);
+  priv->local_collection_id = g_strdup (collection_id);
+  priv->local_collection_id_set = TRUE;
+#endif  /* FLATPAK_ENABLE_P2P */
 }
 
 /**
@@ -637,6 +715,37 @@ flatpak_remote_new_with_dir (const char *name,
   return self;
 }
 
+#ifdef FLATPAK_ENABLE_P2P
+static FlatpakRemoteType
+repo_finder_to_remote_type (OstreeRepoFinder *repo_finder)
+{
+  if (OSTREE_IS_REPO_FINDER_AVAHI (repo_finder))
+    return FLATPAK_REMOTE_TYPE_LAN;
+  else if (OSTREE_IS_REPO_FINDER_MOUNT (repo_finder))
+    return FLATPAK_REMOTE_TYPE_USB;
+  else
+    return FLATPAK_REMOTE_TYPE_STATIC;
+}
+
+FlatpakRemote *
+flatpak_remote_new_from_ostree (OstreeRemote     *remote,
+                                OstreeRepoFinder *repo_finder,
+                                FlatpakDir       *dir)
+{
+  FlatpakRemotePrivate *priv;
+  FlatpakRemote *self = g_object_new (FLATPAK_TYPE_REMOTE,
+                                      "name", ostree_remote_get_name (remote),
+                                      "type", repo_finder_to_remote_type (repo_finder),
+                                      NULL);
+
+  priv = flatpak_remote_get_instance_private (self);
+  if (dir)
+    priv->dir = g_object_ref (dir);
+
+  return self;
+}
+#endif  /* FLATPAK_ENABLE_P2P */
+
 /**
  * flatpak_remote_new:
  * @name: a name
@@ -670,9 +779,20 @@ flatpak_remote_commit (FlatpakRemote   *self,
   if (url == NULL || *url == 0)
     return flatpak_fail (error, "No url specified");
 
+  if (priv->type != FLATPAK_REMOTE_TYPE_STATIC)
+    return flatpak_fail (error, "Dynamic remote cannot be committed");
+
   config = ostree_repo_copy_config (flatpak_dir_get_repo (dir));
   if (priv->local_url_set)
     g_key_file_set_string (config, group, "url", priv->local_url);
+
+  if (priv->local_collection_id_set)
+    {
+      if (priv->local_collection_id != NULL)
+        g_key_file_set_string (config, group, "collection-id", priv->local_collection_id);
+      else
+        g_key_file_remove_key (config, group, "collection-id", NULL);
+    }
 
   if (priv->local_title_set)
     g_key_file_set_string (config, group, "xa.title", priv->local_title);

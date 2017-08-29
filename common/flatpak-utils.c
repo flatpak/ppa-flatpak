@@ -54,9 +54,8 @@ static const GDBusErrorEntry flatpak_error_entries[] = {
   {FLATPAK_ERROR_NOT_INSTALLED,         "org.freedesktop.Flatpak.Error.NotInstalled"},
 };
 
-
-GLNX_DEFINE_CLEANUP_FUNCTION (void *, flatpak_local_free_read_archive, archive_read_free)
-#define free_read_archive __attribute__((cleanup (flatpak_local_free_read_archive)))
+typedef struct archive FlatpakAutoArchiveRead;
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(FlatpakAutoArchiveRead, archive_read_free)
 
 static void
 propagate_libarchive_error (GError      **error,
@@ -1676,7 +1675,8 @@ parse_app_id_from_fileinfo (int pid)
       if (errno == ENOENT)
         {
           /* No file => on the host */
-          g_key_file_set_string (metadata, "Application", "name", "");
+          g_key_file_set_string (metadata, FLATPAK_METADATA_GROUP_APPLICATION,
+                                 FLATPAK_METADATA_KEY_NAME, "");
           return g_steal_pointer (&metadata);
         }
 
@@ -1955,7 +1955,7 @@ flatpak_spawn (GFile       *dir,
     g_ptr_array_add (args, (gchar *) arg);
   g_ptr_array_add (args, NULL);
 
-  res = flatpak_spawnv (dir, output, error, (const gchar * const *) args->pdata);
+  res = flatpak_spawnv (dir, output, 0, error, (const gchar * const *) args->pdata);
 
   g_ptr_array_free (args, TRUE);
 
@@ -1965,6 +1965,7 @@ flatpak_spawn (GFile       *dir,
 gboolean
 flatpak_spawnv (GFile                *dir,
                 char                **output,
+                GSubprocessFlags      flags,
                 GError              **error,
                 const gchar * const  *argv)
 {
@@ -1979,7 +1980,9 @@ flatpak_spawnv (GFile                *dir,
   launcher = g_subprocess_launcher_new (0);
 
   if (output)
-    g_subprocess_launcher_set_flags (launcher, G_SUBPROCESS_FLAGS_STDOUT_PIPE);
+    flags |= G_SUBPROCESS_FLAGS_STDOUT_PIPE;
+
+  g_subprocess_launcher_set_flags (launcher, flags);
 
   if (dir)
     {
@@ -2077,7 +2080,7 @@ flatpak_file_get_path_cached (GFile *file)
   const char *path;
   static GQuark _file_path_quark = 0;
 
-  if (G_UNLIKELY (_file_path_quark) == 0)
+  if (G_UNLIKELY (_file_path_quark == 0))
     _file_path_quark = g_quark_from_static_string ("flatpak-file-path");
 
   do
@@ -2551,11 +2554,46 @@ flatpak_variant_bsearch_str (GVariant   *array,
   return FALSE;
 }
 
-/* This matches all refs that have ref, followed by '.'  as prefix */
-char **
-flatpak_summary_match_subrefs (GVariant *summary, const char *ref)
+/* Find the list of refs which belong to the given @collection_id in @summary.
+ * If @collection_id is %NULL, the main refs list from the summary will be
+ * returned. If @collection_id doesn’t match any collection IDs in the summary
+ * file, %NULL will be returned. */
+static GVariant *
+summary_find_refs_list (GVariant   *summary,
+                        const char *collection_id)
 {
-  g_autoptr(GVariant) refs = g_variant_get_child_value (summary, 0);
+  g_autoptr(GVariant) refs = NULL;
+  g_autoptr(GVariant) metadata = g_variant_get_child_value (summary, 1);
+  const char *summary_collection_id;
+
+  if (!g_variant_lookup (metadata, "ostree.summary.collection-id", "&s", &summary_collection_id))
+    summary_collection_id = NULL;
+
+  if (collection_id == NULL || g_strcmp0 (collection_id, summary_collection_id) == 0)
+    {
+      refs = g_variant_get_child_value (summary, 0);
+    }
+  else if (collection_id != NULL)
+    {
+      g_autoptr(GVariant) collection_map = NULL;
+
+      collection_map = g_variant_lookup_value (metadata, "ostree.summary.collection-map",
+                                               G_VARIANT_TYPE ("a{sa(s(taya{sv}))}"));
+      if (collection_map != NULL)
+        refs = g_variant_lookup_value (collection_map, collection_id, G_VARIANT_TYPE ("a(s(taya{sv}))"));
+    }
+
+  return g_steal_pointer (&refs);
+}
+
+/* This matches all refs from @collection_id that have ref, followed by '.'  as prefix */
+char **
+flatpak_summary_match_subrefs (GVariant   *summary,
+                               const char *collection_id,
+                               const char *ref)
+{
+  g_autoptr(GVariant) refs = NULL;
+  g_autoptr(GVariant) metadata = g_variant_get_child_value (summary, 1);
   GPtrArray *res = g_ptr_array_new ();
   gsize n, i;
   g_auto(GStrv) parts = NULL;
@@ -2563,41 +2601,48 @@ flatpak_summary_match_subrefs (GVariant *summary, const char *ref)
   g_autofree char *ref_prefix = NULL;
   g_autofree char *ref_suffix = NULL;
 
-  parts = g_strsplit (ref, "/", 0);
-  parts_prefix = g_strconcat (parts[1], ".", NULL);
+  /* Work out which refs list to use, based on the @collection_id. */
+  refs = summary_find_refs_list (summary, collection_id);
 
-  ref_prefix = g_strconcat (parts[0], "/", NULL);
-  ref_suffix = g_strconcat ("/", parts[2], "/", parts[3], NULL);
-
-  n = g_variant_n_children (refs);
-  for (i = 0; i < n; i++)
+  if (refs != NULL)
     {
-      g_autoptr(GVariant) child = NULL;
-      g_autoptr(GVariant) cur_v = NULL;
-      const char *cur;
-      const char *id_start;
+      /* Match against the refs. */
+      parts = g_strsplit (ref, "/", 0);
+      parts_prefix = g_strconcat (parts[1], ".", NULL);
 
-      child = g_variant_get_child_value (refs, i);
-      cur_v = g_variant_get_child_value (child, 0);
-      cur = g_variant_get_data (cur_v);
+      ref_prefix = g_strconcat (parts[0], "/", NULL);
+      ref_suffix = g_strconcat ("/", parts[2], "/", parts[3], NULL);
 
-      /* Must match type */
-      if (!g_str_has_prefix (cur, ref_prefix))
-        continue;
+      n = g_variant_n_children (refs);
+      for (i = 0; i < n; i++)
+        {
+          g_autoptr(GVariant) child = NULL;
+          g_autoptr(GVariant) cur_v = NULL;
+          const char *cur;
+          const char *id_start;
 
-      /* Must match arch & branch */
-      if (!g_str_has_prefix (cur, ref_prefix))
-        continue;
+          child = g_variant_get_child_value (refs, i);
+          cur_v = g_variant_get_child_value (child, 0);
+          cur = g_variant_get_data (cur_v);
 
-      id_start = strchr (cur, '/');
-      if (id_start == NULL)
-        continue;
+          /* Must match type */
+          if (!g_str_has_prefix (cur, ref_prefix))
+            continue;
 
-      /* But only prefix of id */
-      if (!g_str_has_prefix (id_start + 1, parts_prefix))
-        continue;
+          /* Must match arch & branch */
+          if (!g_str_has_suffix (cur, ref_suffix))
+            continue;
 
-      g_ptr_array_add (res, g_strdup (cur));
+          id_start = strchr (cur, '/');
+          if (id_start == NULL)
+            continue;
+
+          /* But only prefix of id */
+          if (!g_str_has_prefix (id_start + 1, parts_prefix))
+            continue;
+
+          g_ptr_array_add (res, g_strdup (cur));
+        }
     }
 
   g_ptr_array_add (res, NULL);
@@ -2605,14 +2650,22 @@ flatpak_summary_match_subrefs (GVariant *summary, const char *ref)
 }
 
 gboolean
-flatpak_summary_lookup_ref (GVariant *summary, const char *ref, char **out_checksum, GVariant **out_variant)
+flatpak_summary_lookup_ref (GVariant    *summary,
+                            const char  *collection_id,
+                            const char  *ref,
+                            char       **out_checksum,
+                            GVariant   **out_variant)
 {
-  g_autoptr(GVariant) refs = g_variant_get_child_value (summary, 0);
+  g_autoptr(GVariant) refs = NULL;
   int pos;
   g_autoptr(GVariant) refdata = NULL;
   g_autoptr(GVariant) reftargetdata = NULL;
   guint64 commit_size;
   g_autoptr(GVariant) commit_csum_v = NULL;
+
+  refs = summary_find_refs_list (summary, collection_id);
+  if (refs == NULL)
+    return FALSE;
 
   if (!flatpak_variant_bsearch_str (refs, ref, &pos))
     return FALSE;
@@ -2674,6 +2727,18 @@ flatpak_repo_set_redirect_url (OstreeRepo *repo,
 }
 
 gboolean
+flatpak_repo_set_deploy_collection_id (OstreeRepo  *repo,
+                                       gboolean     deploy_collection_id,
+                                       GError     **error)
+{
+  g_autoptr(GKeyFile) config = NULL;
+
+  config = ostree_repo_copy_config (repo);
+  g_key_file_set_boolean (config, "flatpak", "deploy-collection-id", deploy_collection_id);
+  return ostree_repo_write_config (repo, config, error);
+}
+
+gboolean
 flatpak_repo_set_gpg_keys (OstreeRepo *repo,
                            GBytes *bytes,
                            GError    **error)
@@ -2709,6 +2774,25 @@ flatpak_repo_set_default_branch (OstreeRepo *repo,
 
   if (!ostree_repo_write_config (repo, config, error))
     return FALSE;
+
+  return TRUE;
+}
+
+gboolean
+flatpak_repo_set_collection_id (OstreeRepo  *repo,
+                                const char  *collection_id,
+                                GError     **error)
+{
+#ifdef FLATPAK_ENABLE_P2P
+  g_autoptr(GKeyFile) config = NULL;
+
+  config = ostree_repo_copy_config (repo);
+  if (!ostree_repo_set_collection_id (repo, collection_id, error))
+    return FALSE;
+
+  if (!ostree_repo_write_config (repo, config, error))
+    return FALSE;
+#endif  /* FLATPAK_ENABLE_P2P */
 
   return TRUE;
 }
@@ -2955,6 +3039,79 @@ commit_data_free (gpointer data)
   g_free (rev_data);
 }
 
+/* For all the refs listed in @cache_v (an xa.cache value) which exist in the
+ * @summary, insert their data into @commit_data_cache if it isn’t already there. */
+static void
+populate_commit_data_cache (GVariant   *metadata,
+                            GVariant   *summary,
+                            GHashTable *commit_data_cache  /* (element-type utf8 CommitData) */)
+{
+  g_autoptr(GVariant) cache_v = NULL;
+  g_autoptr(GVariant) cache = NULL;
+  gsize n, i;
+  const char *old_collection_id;
+
+#if FLATPAK_ENABLE_P2P
+  if (!g_variant_lookup (metadata, "ostree.summary.collection-id", "&s", &old_collection_id))
+    old_collection_id = NULL;
+#else  /* if !FLATPAK_ENABLE_P2P */
+  old_collection_id = NULL;
+#endif  /* !FLATPAK_ENABLE_P2P */
+
+  cache_v = g_variant_lookup_value (metadata, "xa.cache", NULL);
+
+  if (cache_v == NULL)
+    return;
+
+  cache = g_variant_get_child_value (cache_v, 0);
+
+  n = g_variant_n_children (cache);
+  for (i = 0; i < n; i++)
+    {
+      g_autoptr(GVariant) old_element = g_variant_get_child_value (cache, i);
+      g_autoptr(GVariant) old_ref_v = g_variant_get_child_value (old_element, 0);
+      const char *old_ref = g_variant_get_string (old_ref_v, NULL);
+      g_autofree char *old_rev = NULL;
+      g_autoptr(GVariant) old_commit_data_v = g_variant_get_child_value (old_element, 1);
+      CommitData *old_rev_data;
+
+      if (flatpak_summary_lookup_ref (summary, old_collection_id, old_ref, &old_rev, NULL))
+        {
+          guint64 old_installed_size, old_download_size;
+          g_autofree char *old_metadata = NULL;
+
+          /* See if we already have the info on this revision */
+          if (g_hash_table_lookup (commit_data_cache, old_rev))
+            continue;
+
+          g_variant_get_child (old_commit_data_v, 0, "t", &old_installed_size);
+          old_installed_size = GUINT64_FROM_BE (old_installed_size);
+          g_variant_get_child (old_commit_data_v, 1, "t", &old_download_size);
+          old_download_size = GUINT64_FROM_BE (old_download_size);
+          g_variant_get_child (old_commit_data_v, 2, "s", &old_metadata);
+
+          old_rev_data = g_new (CommitData, 1);
+          old_rev_data->installed_size = old_installed_size;
+          old_rev_data->download_size = old_download_size;
+          old_rev_data->metadata_contents = g_steal_pointer (&old_metadata);
+
+          g_hash_table_insert (commit_data_cache, g_steal_pointer (&old_rev), old_rev_data);
+        }
+    }
+}
+
+/* Update the metadata in the summary file for @repo, and then re-sign the file.
+ * If the repo has a collection ID set, additionally store the metadata on a
+ * contentless commit in a well-known branch, which is the preferred way of
+ * broadcasting per-repo metadata (putting it in the summary file is deprecated,
+ * but kept for backwards compatibility).
+ *
+ * Note that there are two keys for the collection ID: collection-id, and
+ * xa.collection-id. If a client does not currently have a collection ID configured
+ * for this remote, it will *only* update its configuration from xa.collection-id.
+ * This allows phased deployment of collection-based repositories. Clients will
+ * only update their configuration from an unset to a set collection ID once
+ * (otherwise the security properties of collection IDs are broken). */
 gboolean
 flatpak_repo_update (OstreeRepo   *repo,
                      const char  **gpg_key_ids,
@@ -2977,6 +3134,10 @@ flatpak_repo_update (OstreeRepo   *repo,
   g_autoptr(GList) ordered_keys = NULL;
   GList *l = NULL;
   g_autoptr(GHashTable) commit_data_cache = NULL;
+  const char *collection_id;
+  g_autofree char *old_ostree_metadata_checksum = NULL;
+  g_autoptr(GVariant) old_ostree_metadata_v = NULL;
+  gboolean deploy_collection_id = FALSE;
 
   g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 
@@ -2988,7 +3149,14 @@ flatpak_repo_update (OstreeRepo   *repo,
       default_branch = g_key_file_get_string (config, "flatpak", "default-branch", NULL);
       gpg_keys = g_key_file_get_string (config, "flatpak", "gpg-keys", NULL);
       redirect_url = g_key_file_get_string (config, "flatpak", "redirect-url", NULL);
+      deploy_collection_id = g_key_file_get_boolean (config, "flatpak", "deploy-collection-id", NULL);
     }
+
+#ifdef FLATPAK_ENABLE_P2P
+  collection_id = ostree_repo_get_collection_id (repo);
+#else  /* if !FLATPAK_ENABLE_P2P */
+  collection_id = NULL;
+#endif  /* FLATPAK_ENABLE_P2P */
 
   if (title)
     g_variant_builder_add (&builder, "{sv}", "xa.title",
@@ -3001,6 +3169,12 @@ flatpak_repo_update (OstreeRepo   *repo,
   if (default_branch)
     g_variant_builder_add (&builder, "{sv}", "xa.default-branch",
                            g_variant_new_string (default_branch));
+
+  if (deploy_collection_id && collection_id != NULL)
+    g_variant_builder_add (&builder, "{sv}", "xa.collection-id",
+                           g_variant_new_string (collection_id));
+  else if (deploy_collection_id)
+    g_debug ("Ignoring deploy-collection-id=true because no collection ID is set.");
 
   if (gpg_keys)
     {
@@ -3044,50 +3218,26 @@ flatpak_repo_update (OstreeRepo   *repo,
                                              g_free, commit_data_free);
 
   old_summary = flatpak_repo_load_summary (repo, NULL);
-  if (old_summary != NULL)
+
+#ifdef FLATPAK_ENABLE_P2P
+  if (!ostree_repo_resolve_rev (repo, OSTREE_REPO_METADATA_REF,
+                                TRUE, &old_ostree_metadata_checksum, error))
+    return FALSE;
+#endif  /* FLATPAK_ENABLE_P2P */
+
+  if (old_summary != NULL &&
+      old_ostree_metadata_checksum != NULL &&
+      ostree_repo_load_commit (repo, old_ostree_metadata_checksum, &old_ostree_metadata_v, NULL, NULL))
+    {
+      g_autoptr(GVariant) metadata = g_variant_get_child_value (old_ostree_metadata_v, 0);
+
+      populate_commit_data_cache (metadata, old_summary, commit_data_cache);
+    }
+  else if (old_summary != NULL)
     {
       g_autoptr(GVariant) extensions = g_variant_get_child_value (old_summary, 1);
-      g_autoptr(GVariant) cache_v = g_variant_lookup_value (extensions, "xa.cache", NULL);
-      g_autoptr(GVariant) cache = NULL;
-      if (cache_v != NULL)
-        {
-          cache = g_variant_get_child_value (cache_v, 0);
-          gsize n, i;
 
-          n = g_variant_n_children (cache);
-          for (i = 0; i < n; i++)
-            {
-              g_autoptr(GVariant) old_element = g_variant_get_child_value (cache, i);
-              g_autoptr(GVariant) old_ref_v = g_variant_get_child_value (old_element, 0);
-              const char *old_ref = g_variant_get_string (old_ref_v, NULL);
-              g_autofree char *old_rev = NULL;
-              g_autoptr(GVariant) old_commit_data_v = g_variant_get_child_value (old_element, 1);
-              CommitData *old_rev_data;
-
-              if (flatpak_summary_lookup_ref (old_summary, old_ref, &old_rev, NULL))
-                {
-                  guint64 old_installed_size, old_download_size;
-                  g_autofree char *old_metadata = NULL;
-
-                  /* See if we already have the info on this revision */
-                  if (g_hash_table_lookup (commit_data_cache, old_rev))
-                    continue;
-
-                  g_variant_get_child (old_commit_data_v, 0, "t", &old_installed_size);
-                  old_installed_size = GUINT64_FROM_BE (old_installed_size);
-                  g_variant_get_child (old_commit_data_v, 1, "t", &old_download_size);
-                  old_download_size = GUINT64_FROM_BE (old_download_size);
-                  g_variant_get_child (old_commit_data_v, 2, "s", &old_metadata);
-
-                  old_rev_data = g_new (CommitData, 1);
-                  old_rev_data->installed_size = old_installed_size;
-                  old_rev_data->download_size = old_download_size;
-                  old_rev_data->metadata_contents = g_steal_pointer (&old_metadata);
-
-                  g_hash_table_insert (commit_data_cache, g_steal_pointer (&old_rev), old_rev_data);
-                }
-            }
-        }
+      populate_commit_data_cache (extensions, old_summary, commit_data_cache);
     }
 
   ordered_keys = g_hash_table_get_keys (refs);
@@ -3160,10 +3310,81 @@ flatpak_repo_update (OstreeRepo   *repo,
                              rev_data->metadata_contents);
     }
 
+  /* Note: xa.cache doesn’t need to support collection IDs for the refs listed
+   * in it, because the xa.cache metadata is stored on the ostree-metadata ref,
+   * which is itself strongly bound to a collection ID — so that collection ID
+   * is bound to all the refs in xa.cache. If a client is using the xa.cache
+   * data from a summary file (rather than an ostree-metadata branch), they are
+   * too old to care about collection IDs anyway. */
   g_variant_builder_add (&builder, "{sv}", "xa.cache",
                          g_variant_new_variant (g_variant_builder_end (&ref_data_builder)));
 
   new_summary = g_variant_ref_sink (g_variant_builder_end (&builder));
+
+  /* Write out a new metadata commit for the repository. */
+  if (collection_id != NULL)
+    {
+#ifdef FLATPAK_ENABLE_P2P
+      OstreeCollectionRef collection_ref = { (gchar *) collection_id, (gchar *) OSTREE_REPO_METADATA_REF };
+      g_autofree gchar *new_ostree_metadata_checksum = NULL;
+      g_autoptr(OstreeMutableTree) mtree = NULL;
+      g_autoptr(OstreeRepoFile) repo_file = NULL;
+      g_autoptr(GVariantDict) new_summary_commit_dict = NULL;
+      g_autoptr(GVariant) new_summary_commit = NULL;
+
+      /* Add bindings to the metadata. */
+      new_summary_commit_dict = g_variant_dict_new (new_summary);
+      g_variant_dict_insert (new_summary_commit_dict, "ostree.collection-binding",
+                             "s", collection_ref.collection_id);
+      g_variant_dict_insert_value (new_summary_commit_dict, "ostree.ref-binding",
+                                   g_variant_new_strv ((const gchar * const *) &collection_ref.ref_name, 1));
+      new_summary_commit = g_variant_dict_end (new_summary_commit_dict);
+
+      if (!ostree_repo_prepare_transaction (repo, NULL, cancellable, error))
+        goto out;
+
+      mtree = ostree_mutable_tree_new ();
+      if (!ostree_repo_write_dfd_to_mtree (repo, AT_FDCWD, ".", mtree, NULL, NULL, error))
+        goto out;
+      if (!ostree_repo_write_mtree (repo, mtree, (GFile **) &repo_file, NULL, error))
+        goto out;
+
+      if (!ostree_repo_write_commit (repo, old_ostree_metadata_checksum,
+                                     NULL  /* subject */, NULL  /* body */,
+                                     new_summary_commit, repo_file, &new_ostree_metadata_checksum,
+                                     NULL, error))
+        goto out;
+
+      if (gpg_key_ids != NULL)
+        {
+          const char * const *iter;
+
+          for (iter = gpg_key_ids; iter != NULL && *iter != NULL; iter++)
+            {
+              const char *key_id = *iter;
+
+              if (!ostree_repo_sign_commit (repo,
+                                            new_ostree_metadata_checksum,
+                                            key_id,
+                                            gpg_homedir,
+                                            cancellable,
+                                            error))
+                goto out;
+            }
+        }
+
+      ostree_repo_transaction_set_collection_ref (repo, &collection_ref,
+                                                  new_ostree_metadata_checksum);
+
+      if (!ostree_repo_commit_transaction (repo, NULL, cancellable, error))
+        goto out;
+#else  /* if !FLATPAK_ENABLE_P2P */
+      g_assert_not_reached ();
+      goto out;
+#endif  /* FLATPAK_ENABLE_P2P */
+    }
+
+  /* Regenerate and re-sign the summary file. */
   if (!ostree_repo_regenerate_summary (repo, new_summary, cancellable, error))
     return FALSE;
 
@@ -3178,6 +3399,11 @@ flatpak_repo_update (OstreeRepo   *repo,
     }
 
   return TRUE;
+
+out:
+  if (repo != NULL)
+    ostree_repo_abort_transaction (repo, cancellable, NULL);
+  return FALSE;
 }
 
 gboolean
@@ -3351,13 +3577,15 @@ flatpak_appstream_xml_migrate (FlatpakXml *source,
     return FALSE;
 
   if (g_str_has_prefix (ref, "app/"))
-    group = "Application";
+    group = FLATPAK_METADATA_GROUP_APPLICATION;
   else
-    group = "Runtime";
+    group = FLATPAK_METADATA_GROUP_RUNTIME;
 
-  tags = g_key_file_get_string_list (metadata, group, "tags", NULL, NULL);
-  runtime = g_key_file_get_string (metadata, group, "runtime", NULL);
-  sdk = g_key_file_get_string (metadata, group, "sdk", NULL);
+  tags = g_key_file_get_string_list (metadata, group, FLATPAK_METADATA_KEY_TAGS,
+                                     NULL, NULL);
+  runtime = g_key_file_get_string (metadata, group,
+                                   FLATPAK_METADATA_KEY_RUNTIME, NULL);
+  sdk = g_key_file_get_string (metadata, group, FLATPAK_METADATA_KEY_SDK, NULL);
 
   source_components = source->first_child;
   dest_components = dest->first_child;
@@ -3592,13 +3820,19 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
                                  GError      **error)
 {
   g_autoptr(GHashTable) all_refs = NULL;
-  g_autoptr(GHashTable) arches = NULL;
+  g_autoptr(GHashTable) arches = NULL;  /* (element-type utf8 utf8) */
   GHashTableIter iter;
   gpointer key;
-  gpointer value;
   gboolean skip_commit = FALSE;
+  const char *collection_id;
 
   arches = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+
+#ifdef FLATPAK_ENABLE_P2P
+  collection_id = ostree_repo_get_collection_id (repo);
+#else  /* if !FLATPAK_ENABLE_P2P */
+  collection_id = NULL;
+#endif  /* !FLATPAK_ENABLE_P2P */
 
   if (!ostree_repo_list_refs (repo,
                               NULL,
@@ -3608,7 +3842,7 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
     return FALSE;
 
   g_hash_table_iter_init (&iter, all_refs);
-  while (g_hash_table_iter_next (&iter, &key, &value))
+  while (g_hash_table_iter_next (&iter, &key, NULL))
     {
       const char *ref = key;
       const char *arch;
@@ -3620,11 +3854,11 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
 
       arch = split[2];
       if (!g_hash_table_contains (arches, arch))
-        g_hash_table_insert (arches, g_strdup (arch), GINT_TO_POINTER (1));
+        g_hash_table_add (arches, g_strdup (arch));
     }
 
   g_hash_table_iter_init (&iter, arches);
-  while (g_hash_table_iter_next (&iter, &key, &value))
+  while (g_hash_table_iter_next (&iter, &key, NULL))
     {
       GHashTableIter iter2;
       const char *arch = key;
@@ -3649,7 +3883,7 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
       appstream_root = flatpak_appstream_xml_new ();
 
       g_hash_table_iter_init (&iter2, all_refs);
-      while (g_hash_table_iter_next (&iter2, &key, &value))
+      while (g_hash_table_iter_next (&iter2, &key, NULL))
         {
           const char *ref = key;
           g_auto(GStrv) split = NULL;
@@ -3723,9 +3957,21 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
 
       if (!skip_commit)
         {
+          g_autoptr(GVariantDict) metadata_dict = NULL;
+          g_autoptr(GVariant) metadata = NULL;
+
+          /* Add bindings to the metadata. Do this even if P2P support is not
+           * enabled, as it might be enable for other flatpak builds. */
+          metadata_dict = g_variant_dict_new (NULL);
+          g_variant_dict_insert (metadata_dict, "ostree.collection-binding",
+                                 "s", (collection_id != NULL) ? collection_id : "");
+          g_variant_dict_insert_value (metadata_dict, "ostree.ref-binding",
+                                       g_variant_new_strv ((const gchar * const *) &branch, 1));
+          metadata = g_variant_dict_end (metadata_dict);
+
           if (timestamp > 0)
             {
-              if (!ostree_repo_write_commit_with_time (repo, parent, "Update", NULL, NULL,
+              if (!ostree_repo_write_commit_with_time (repo, parent, "Update", NULL, metadata,
                                                        OSTREE_REPO_FILE (root),
                                                        timestamp,
                                                        &commit_checksum,
@@ -3734,7 +3980,7 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
             }
           else
             {
-              if (!ostree_repo_write_commit (repo, parent, "Update", NULL, NULL,
+              if (!ostree_repo_write_commit (repo, parent, "Update", NULL, metadata,
                                              OSTREE_REPO_FILE (root),
                                              &commit_checksum, cancellable, error))
                 goto out;
@@ -3758,7 +4004,17 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
                 }
             }
 
-          ostree_repo_transaction_set_ref (repo, NULL, branch, commit_checksum);
+#ifdef FLATPAK_ENABLE_P2P
+          if (collection_id != NULL)
+            {
+              const OstreeCollectionRef collection_ref = { (char *) collection_id, branch };
+              ostree_repo_transaction_set_collection_ref (repo, &collection_ref, commit_checksum);
+            }
+          else
+#endif  /* FLATPAK_ENABLE_P2P */
+            {
+              ostree_repo_transaction_set_ref (repo, NULL, branch, commit_checksum);
+            }
 
           if (!ostree_repo_commit_transaction (repo, &stats, cancellable, error))
             goto out;
@@ -3831,7 +4087,10 @@ flatpak_extension_new (const char *id,
       g_autofree char *metadata_path = g_build_filename (ext->files_path, "../metadata", NULL);
 
       if (g_key_file_load_from_file (keyfile, metadata_path, G_KEY_FILE_NONE, NULL))
-        ext->priority = g_key_file_get_integer (keyfile, "ExtensionOf", "priority", NULL);
+        ext->priority = g_key_file_get_integer (keyfile,
+                                                FLATPAK_METADATA_GROUP_EXTENSION_OF,
+                                                FLATPAK_METADATA_KEY_PRIORITY,
+                                                NULL);
     }
 
   return ext;
@@ -3879,11 +4138,21 @@ add_extension (GKeyFile   *metakey,
                GList *res)
 {
   FlatpakExtension *ext;
-  g_autofree char *directory = g_key_file_get_string (metakey, group, "directory", NULL);
-  g_autofree char *add_ld_path = g_key_file_get_string (metakey, group, "add-ld-path", NULL);
-  g_auto(GStrv) merge_dirs = g_key_file_get_string_list (metakey, group, "merge-dirs", NULL, NULL);
-  g_autofree char *enable_if = g_key_file_get_string (metakey, group, "enable-if", NULL);
-  g_autofree char *subdir_suffix = g_key_file_get_string (metakey, group, "subdirectory-suffix", NULL);
+  g_autofree char *directory = g_key_file_get_string (metakey, group,
+                                                      FLATPAK_METADATA_KEY_DIRECTORY,
+                                                      NULL);
+  g_autofree char *add_ld_path = g_key_file_get_string (metakey, group,
+                                                        FLATPAK_METADATA_KEY_ADD_LD_PATH,
+                                                        NULL);
+  g_auto(GStrv) merge_dirs = g_key_file_get_string_list (metakey, group,
+                                                         FLATPAK_METADATA_KEY_MERGE_DIRS,
+                                                         NULL, NULL);
+  g_autofree char *enable_if = g_key_file_get_string (metakey, group,
+                                                      FLATPAK_METADATA_KEY_ENABLE_IF,
+                                                      NULL);
+  g_autofree char *subdir_suffix = g_key_file_get_string (metakey, group,
+                                                          FLATPAK_METADATA_KEY_SUBDIRECTORY_SUFFIX,
+                                                          NULL);
   g_autofree char *ref = NULL;
   gboolean is_unmaintained = FALSE;
   g_autoptr(GFile) files = NULL;
@@ -3910,7 +4179,7 @@ add_extension (GKeyFile   *metakey,
         }
     }
   else if (g_key_file_get_boolean (metakey, group,
-                                   "subdirectories", NULL))
+                                   FLATPAK_METADATA_KEY_SUBDIRECTORIES, NULL))
     {
       g_autofree char *prefix = g_strconcat (extension, ".", NULL);
       g_auto(GStrv) refs = NULL;
@@ -3973,11 +4242,15 @@ flatpak_list_extensions (GKeyFile   *metakey,
     {
       char *extension;
 
-      if (g_str_has_prefix (groups[i], "Extension ") &&
-          *(extension = (groups[i] + strlen ("Extension "))) != 0)
+      if (g_str_has_prefix (groups[i], FLATPAK_METADATA_GROUP_PREFIX_EXTENSION) &&
+          *(extension = (groups[i] + strlen (FLATPAK_METADATA_GROUP_PREFIX_EXTENSION))) != 0)
         {
-          g_autofree char *version = g_key_file_get_string (metakey, groups[i], "version", NULL);
-          g_auto(GStrv) versions = g_key_file_get_string_list (metakey, groups[i], "versions", NULL, NULL);
+          g_autofree char *version = g_key_file_get_string (metakey, groups[i],
+                                                            FLATPAK_METADATA_KEY_VERSION,
+                                                            NULL);
+          g_auto(GStrv) versions = g_key_file_get_string_list (metakey, groups[i],
+                                                               FLATPAK_METADATA_KEY_VERSIONS,
+                                                               NULL, NULL);
           const char *default_branches[] = { default_branch, NULL};
           const char **branches;
 
@@ -4315,6 +4588,7 @@ flatpak_bundle_load (GFile   *file,
                      char   **app_metadata,
                      guint64 *installed_size,
                      GBytes **gpg_keys,
+                     char   **collection_id,
                      GError **error)
 {
   g_autoptr(GVariant) delta = NULL;
@@ -4388,6 +4662,16 @@ flatpak_bundle_load (GFile   *file,
         *runtime_repo = NULL;
     }
 
+  if (collection_id != NULL)
+    {
+#ifdef FLATPAK_ENABLE_P2P
+      if (!g_variant_lookup (metadata, "collection-id", "s", collection_id))
+        *collection_id = NULL;
+#else  /* if !FLATPAK_ENABLE_P2P */
+      *collection_id = NULL;
+#endif  /* !FLATPAK_ENABLE_P2P */
+    }
+
   if (app_metadata != NULL)
     {
       if (!g_variant_lookup (metadata, "metadata", "s", app_metadata))
@@ -4437,14 +4721,28 @@ flatpak_pull_from_bundle (OstreeRepo   *repo,
   g_autoptr(GError) my_error = NULL;
   g_autoptr(GVariant) metadata = NULL;
   gboolean metadata_valid;
+  g_autofree char *remote_collection_id = NULL;
+  g_autofree char *collection_id = NULL;
 
-  metadata = flatpak_bundle_load (file, &to_checksum, NULL, NULL, NULL, &metadata_contents, NULL, NULL, error);
+  metadata = flatpak_bundle_load (file, &to_checksum, NULL, NULL, NULL, &metadata_contents, NULL, NULL, &collection_id, error);
   if (metadata == NULL)
     return FALSE;
+
+#ifdef FLATPAK_ENABLE_P2P
+  if (!ostree_repo_get_remote_option (repo, remote, "collection-id", NULL,
+                                      &remote_collection_id, NULL))
+    remote_collection_id = NULL;
+#endif  /* FLATPAK_ENABLE_P2P */
+
+  if (remote_collection_id != NULL && collection_id != NULL &&
+      strcmp (remote_collection_id, collection_id) != 0)
+    return flatpak_fail (error, "Collection ‘%s’ of bundle doesn’t match collection ‘%s’ of remote",
+                         collection_id, remote_collection_id);
 
   if (!ostree_repo_prepare_transaction (repo, NULL, cancellable, error))
     return FALSE;
 
+  /* Don’t need to set the collection ID here, since the remote binds this ref to the collection. */
   ostree_repo_transaction_set_ref (repo, remote, ref, to_checksum);
 
   if (!ostree_repo_static_delta_execute_offline (repo,
@@ -4458,9 +4756,9 @@ flatpak_pull_from_bundle (OstreeRepo   *repo,
                                               NULL, NULL, cancellable, &my_error);
   if (gpg_result == NULL)
     {
-      /* NOT_FOUND means no gpg signature, we ignore this *if* there
-       * is no gpg key specified in the bundle or by the user */
-      if (g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND) &&
+      /* no gpg signature, we ignore this *if* there is no gpg key
+       * specified in the bundle or by the user */
+      if (g_error_matches (my_error, OSTREE_GPG_ERROR, OSTREE_GPG_ERROR_NO_SIGNATURE) &&
           !require_gpg_signature)
         {
           g_clear_error (&my_error);
@@ -4711,7 +5009,7 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
         }
 
       /* Success! It is valid */
-      g_debug ("Verified OCI signature for %s %s\n", signature->critical.identity.ref, digest);
+      g_debug ("Verified OCI signature for %s %s", signature->critical.identity.ref, digest);
     }
 
   annotations = flatpak_oci_manifest_get_annotations (manifest);
@@ -4758,7 +5056,7 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
     {
       FlatpakOciDescriptor *layer = manifest->layers[i];
       OstreeRepoImportArchiveOptions opts = { 0, };
-      free_read_archive struct archive *a = NULL;
+      g_autoptr(FlatpakAutoArchiveRead) a = NULL;
       glnx_fd_close int layer_fd = -1;
       g_autoptr(GChecksum) checksum = g_checksum_new (G_CHECKSUM_SHA256);
       const char *layer_checksum;
@@ -4827,6 +5125,8 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
   else
     full_ref = g_strdup (ref);
 
+  /* Don’t need to set the collection ID here, since the ref is bound to a
+   * collection via its remote. */
   ostree_repo_transaction_set_ref (repo, NULL, full_ref, commit_checksum);
 
   if (!ostree_repo_commit_transaction (repo, NULL, cancellable, error))
@@ -5088,7 +5388,7 @@ stream_closed (GObject *source, GAsyncResult *res, gpointer user_data)
   g_autoptr(GError) error = NULL;
 
   if (!g_input_stream_close_finish (stream, res, &error))
-    g_warning ("Error closing http stream: %s\n", error->message);
+    g_warning ("Error closing http stream: %s", error->message);
 
   g_main_loop_quit (data->loop);
 }

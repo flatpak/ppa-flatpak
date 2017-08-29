@@ -99,6 +99,16 @@
             new commits added, or the first module where some changes to the <arg choice="plain">MANIFEST</arg> file caused
             the build environment to change. This makes flatpak-builder very efficient for incremental builds.
         </para>
+        <!-- FIXME: Uncomment this when enable-p2p is enabled unconditionally.
+        <para>
+            When building a flatpak to be published to the internet,
+            <option>-FIXME-collection-id=COLLECTION-ID</option> should be specified
+            as a globally unique reverse DNS value to identify the collection of
+            flatpaks this will be added to. Setting a globally unique collection
+            ID allows the apps in the repository to be shared over peer to peer
+            systems without needing further configuration.
+        </para>
+        -->
     </refsect1>
 
     <refsect1>
@@ -267,6 +277,16 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--delete-build-dirs</option></term>
+
+                <listitem><para>
+                    Always remove the sources and build after having built each module, even if the build
+                    failed. The default is to keep failed build directories but remote successful ones.
+                    This is useful in e.g. automatic build systems.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--ccache</option></term>
 
                 <listitem><para>
@@ -313,6 +333,21 @@
                     Used when exporting the build results.
                 </para></listitem>
             </varlistentry>
+
+            <!-- FIXME: Uncomment this when enable-p2p is enabled unconditionally.
+            <varlistentry>
+                <term><option>-FIXME-collection-id=COLLECTION-ID</option></term>
+
+                <listitem><para>
+                    Set as the collection ID of the repository. Setting a globally
+                    unique collection ID allows the apps in the repository to be shared over
+                    peer to peer systems without needing further configuration.
+                    If building in an existing repository, the collection ID
+                    must match the existing configured collection ID for that
+                    repository.
+                </para></listitem>
+            </varlistentry>
+            -->
 
             <varlistentry>
                 <term><option>--gpg-sign=KEYID</option></term>
@@ -405,6 +440,24 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--extra-sources=SOURCE-DIR</option></term>
+
+                <listitem><para>
+                  When downloading sources (archives, files, git, bzr), look in this
+                  directory for pre-existing copies and use them instead of downloading.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--extra-sources-url=URL</option></term>
+
+                <listitem><para>
+                  When downloading sources (archives, files, git, bzr), look at this url
+                  for mirrored downloads before downloading from the original url.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--from-git=GIT</option></term>
 
                 <listitem><para>
@@ -420,6 +473,51 @@
                   The branch to use with --from-git.
                 </para></listitem>
             </varlistentry>
+
+            <varlistentry>
+                <term><option>--install-deps-from=REMOTE</option></term>
+
+                <listitem><para>
+                    Install/update build required dependencies from the specified remote.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--install-deps-only</option></term>
+
+                <listitem><para>
+                    Stop after downloading dependencies.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--user</option></term>
+
+                <listitem><para>
+                    Install the dependencies in a per-user installation.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--system</option></term>
+
+                <listitem><para>
+                    Install the dependenceis in the default system-wide installation.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--installation=NAME</option></term>
+
+                <listitem><para>
+                    Install the dependencies in a system-wide installation
+                    specified by <arg choice="plain">NAME</arg> among those defined in
+                    <filename>/etc/flatpak/installations.d/</filename>. Using
+                    <arg choice="plain">--installation=default</arg> is equivalent to using
+                    <arg choice="plain">--system</arg>.
+                </para></listitem>
+            </varlistentry>
+
           </variablelist>
     </refsect1>
 

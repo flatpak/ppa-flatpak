@@ -80,11 +80,8 @@ test_renameat2_noreplace (void)
       glnx_set_error_from_errno (error);
       goto out;
     }
-  if (fstatat (destfd, "bar", &stbuf, AT_SYMLINK_NOFOLLOW) < 0)
-    {
-      glnx_set_error_from_errno (error);
-      goto out;
-    }
+  if (!glnx_fstatat (destfd, "bar", &stbuf, AT_SYMLINK_NOFOLLOW, error))
+    goto out;
 
   if (fstatat (srcfd, "foo", &stbuf, AT_SYMLINK_NOFOLLOW) == 0)
     g_assert_not_reached ();
@@ -140,12 +137,66 @@ test_renameat2_exchange (void)
   g_assert_no_error (local_error);
 }
 
+static void
+test_tmpfile (void)
+{
+  g_autoptr(GError) local_error = NULL;
+  GError **error = &local_error;
+  g_auto(GLnxTmpfile) tmpf = { 0, };
+
+  if (!glnx_open_tmpfile_linkable_at (AT_FDCWD, ".", O_WRONLY|O_CLOEXEC, &tmpf, error))
+    goto out;
+
+  if (glnx_loop_write (tmpf.fd, "foo", strlen ("foo")) < 0)
+    {
+      (void)glnx_throw_errno_prefix (error, "write");
+      goto out;
+    }
+
+  if (glnx_link_tmpfile_at (&tmpf, GLNX_LINK_TMPFILE_NOREPLACE, AT_FDCWD, "foo", error))
+    goto out;
+
+ out:
+  g_assert_no_error (local_error);
+}
+
+static void
+test_stdio_file (void)
+{
+  g_autoptr(GError) local_error = NULL;
+  GError **error = &local_error;
+  g_auto(GLnxTmpfile) tmpf = { 0, };
+  g_autoptr(FILE) f = NULL;
+
+  if (!glnx_open_anonymous_tmpfile (O_RDWR|O_CLOEXEC, &tmpf, error))
+    goto out;
+  f = fdopen (tmpf.fd, "w");
+  if (!f)
+    {
+      (void)glnx_throw_errno_prefix (error, "fdopen");
+      goto out;
+    }
+
+  if (fwrite ("hello", 1, strlen ("hello"), f) != strlen ("hello"))
+    {
+      (void)glnx_throw_errno_prefix (error, "fwrite");
+      goto out;
+    }
+  if (!glnx_stdio_file_flush (f, error))
+    goto out;
+
+ out:
+  g_assert_no_error (local_error);
+}
+
 int main (int argc, char **argv)
 {
   int ret;
 
   g_test_init (&argc, &argv, NULL);
 
+  g_test_add_func ("/tmpfile", test_tmpfile);
+  g_test_add_func ("/stdio-file", test_stdio_file);
   g_test_add_func ("/renameat2-noreplace", test_renameat2_noreplace);
   g_test_add_func ("/renameat2-exchange", test_renameat2_exchange);
 

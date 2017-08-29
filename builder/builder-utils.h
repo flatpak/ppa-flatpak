@@ -63,7 +63,7 @@ gboolean builder_maybe_host_spawnv (GFile                *dir,
                                     GError              **error,
                                     const gchar * const  *argv);
 
-gboolean builder_download_uri (const char     *url,
+gboolean builder_download_uri (SoupURI        *uri,
                                GFile          *dest,
                                char           *sha256,
                                SoupSession    *soup_session,
@@ -71,6 +71,9 @@ gboolean builder_download_uri (const char     *url,
 
 GParamSpec * builder_serializable_find_property_with_error (JsonSerializable *serializable,
                                                             const char       *name);
+
+void builder_set_term_title (const gchar *format,
+                             ...) G_GNUC_PRINTF (1, 2);
 
 G_END_DECLS
 

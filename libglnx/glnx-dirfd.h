@@ -21,6 +21,8 @@
 #pragma once
 
 #include <glnx-backport-autocleanups.h>
+#include <glnx-macros.h>
+#include <glnx-errors.h>
 #include <limits.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -55,7 +57,7 @@ typedef struct GLnxDirFdIterator GLnxDirFdIterator;
 gboolean glnx_dirfd_iterator_init_at (int dfd, const char *path,
                                     gboolean follow,
                                     GLnxDirFdIterator *dfd_iter, GError **error);
-gboolean glnx_dirfd_iterator_init_take_fd (int dfd, GLnxDirFdIterator *dfd_iter, GError **error);
+gboolean glnx_dirfd_iterator_init_take_fd (int *dfd, GLnxDirFdIterator *dfd_iter, GError **error);
 gboolean glnx_dirfd_iterator_next_dent (GLnxDirFdIterator  *dfd_iter,
                                         struct dirent     **out_dent,
                                         GCancellable       *cancellable,
@@ -82,6 +84,34 @@ char *glnx_fdrel_abspath (int         dfd,
                           const char *path);
 
 void glnx_gen_temp_name (gchar *tmpl);
+
+/**
+ * glnx_ensure_dir:
+ * @dfd: directory fd
+ * @path: Directory path
+ * @mode: Mode
+ * @error: Return location for a #GError, or %NULL
+ *
+ * Wrapper around mkdirat() which ignores adds #GError support, ensures that
+ * it retries on %EINTR, and also ignores `EEXIST`.
+ *
+ * See also `glnx_shutil_mkdir_p_at()` for recursive handling.
+ *
+ * Returns: %TRUE on success, %FALSE otherwise
+ */
+static inline gboolean
+glnx_ensure_dir (int           dfd,
+                 const char   *path,
+                 mode_t        mode,
+                 GError      **error)
+{
+  if (TEMP_FAILURE_RETRY (mkdirat (dfd, path, mode)) != 0)
+    {
+      if (G_UNLIKELY (errno != EEXIST))
+        return glnx_throw_errno_prefix (error, "mkdirat(%s)", path);
+    }
+  return TRUE;
+}
 
 gboolean glnx_mkdtempat (int dfd,
                          gchar *tmpl,

@@ -128,12 +128,14 @@ gboolean flatpak_variant_bsearch_str (GVariant   *array,
                                       int        *out_pos);
 GVariant *flatpak_repo_load_summary (OstreeRepo *repo,
                                      GError **error);
-char **  flatpak_summary_match_subrefs (GVariant *summary,
+char **  flatpak_summary_match_subrefs (GVariant   *summary,
+                                        const char *collection_id,
                                         const char *ref);
-gboolean flatpak_summary_lookup_ref (GVariant   *summary,
-                                     const char *ref,
-                                     char      **out_checksum,
-                                     GVariant **out_variant);
+gboolean flatpak_summary_lookup_ref (GVariant    *summary,
+                                     const char  *collection_id,
+                                     const char  *ref,
+                                     char       **out_checksum,
+                                     GVariant   **out_variant);
 
 gboolean flatpak_has_name_prefix (const char *string,
                                   const char *name);
@@ -298,6 +300,12 @@ gboolean flatpak_repo_set_redirect_url (OstreeRepo *repo,
 gboolean flatpak_repo_set_default_branch (OstreeRepo *repo,
                                           const char *branch,
                                           GError    **error);
+gboolean flatpak_repo_set_collection_id (OstreeRepo  *repo,
+                                         const char  *collection_id,
+                                         GError     **error);
+gboolean flatpak_repo_set_deploy_collection_id (OstreeRepo  *repo,
+                                                gboolean     deploy_collection_id,
+                                                GError     **error);
 gboolean flatpak_repo_set_gpg_keys (OstreeRepo *repo,
                                     GBytes *bytes,
                                     GError    **error);
@@ -338,6 +346,7 @@ GVariant * flatpak_bundle_load (GFile   *file,
                                 char   **app_metadata,
                                 guint64 *installed_size,
                                 GBytes **gpg_keys,
+                                char   **collection_id,
                                 GError **error);
 
 gboolean flatpak_pull_from_bundle (OstreeRepo   *repo,
@@ -405,6 +414,7 @@ gboolean            flatpak_spawn (GFile       *dir,
 
 gboolean            flatpak_spawnv (GFile                *dir,
                                     char                **output,
+                                    GSubprocessFlags      flags,
                                     GError              **error,
                                     const gchar * const  *argv);
 

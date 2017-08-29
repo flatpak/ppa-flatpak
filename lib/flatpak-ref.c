@@ -54,6 +54,7 @@ struct _FlatpakRefPrivate
   char          *branch;
   char          *commit;
   FlatpakRefKind kind;
+  char          *collection_id;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (FlatpakRef, flatpak_ref, G_TYPE_OBJECT)
@@ -65,7 +66,8 @@ enum {
   PROP_ARCH,
   PROP_BRANCH,
   PROP_COMMIT,
-  PROP_KIND
+  PROP_KIND,
+  PROP_COLLECTION_ID,
 };
 
 static void
@@ -117,6 +119,11 @@ flatpak_ref_set_property (GObject      *object,
       priv->kind = g_value_get_enum (value);
       break;
 
+    case PROP_COLLECTION_ID:
+      g_clear_pointer (&priv->collection_id, g_free);
+      priv->collection_id = g_value_dup_string (value);
+      break;
+
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
       break;
@@ -152,6 +159,10 @@ flatpak_ref_get_property (GObject    *object,
 
     case PROP_KIND:
       g_value_set_enum (value, priv->kind);
+      break;
+
+    case PROP_COLLECTION_ID:
+      g_value_set_string (value, priv->collection_id);
       break;
 
     default:
@@ -205,6 +216,13 @@ flatpak_ref_class_init (FlatpakRefClass *klass)
                                                       FLATPAK_TYPE_REF_KIND,
                                                       FLATPAK_REF_KIND_APP,
                                                       G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_COLLECTION_ID,
+                                   g_param_spec_string ("collection-id",
+                                                        "Collection ID",
+                                                        "The collection ID",
+                                                        NULL,
+                                                        G_PARAM_READWRITE));
 }
 
 static void
@@ -360,4 +378,20 @@ flatpak_ref_parse (const char *ref, GError **error)
                                     "arch", parts[2],
                                     "branch", parts[3],
                                     NULL));
+}
+
+/**
+ * flatpak_ref_get_collection_id:
+ * @self: a #FlatpakRef
+ *
+ * Gets the collection ID of the ref.
+ *
+ * Returns: (transfer none): the collection ID
+ */
+const char *
+flatpak_ref_get_collection_id (FlatpakRef *self)
+{
+  FlatpakRefPrivate *priv = flatpak_ref_get_instance_private (self);
+
+  return priv->collection_id;
 }

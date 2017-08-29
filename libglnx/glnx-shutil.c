@@ -110,9 +110,8 @@ glnx_shutil_rm_rf_at (int                   dfd,
     }
   else
     {
-      if (!glnx_dirfd_iterator_init_take_fd (target_dfd, &dfd_iter, error))
+      if (!glnx_dirfd_iterator_init_take_fd (&target_dfd, &dfd_iter, error))
         return FALSE;
-      target_dfd = -1;
 
       if (!glnx_shutil_rm_rf_children (&dfd_iter, cancellable, error))
         return FALSE;
@@ -186,6 +185,8 @@ mkdir_p_at_internal (int              dfd,
  *
  * Similar to g_mkdir_with_parents(), except operates relative to the
  * directory fd @dfd.
+ *
+ * See also glnx_ensure_dir() for a non-recursive version.
  */
 gboolean
 glnx_shutil_mkdir_p_at (int                   dfd,

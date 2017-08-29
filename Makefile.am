@@ -79,6 +79,7 @@ libglnx_srcpath := $(srcdir)/libglnx
 libglnx_cflags := \
 	$(BASE_CFLAGS) \
 	"-I$(libglnx_srcpath)" \
+	-std=gnu99 \
 	$(HIDDEN_VISIBILITY_CFLAGS) \
 	$(NULL)
 libglnx_libs := $(BASE_LIBS)
@@ -100,8 +101,8 @@ if !WITH_SYSTEM_BWRAP
 
 bwrap_PROGRAMS = flatpak-bwrap
 flatpak_bwrap_SOURCES = $(bwrap_SOURCES)
-flatpak_bwrap_CFLAGS = $(bwrap_CFLAGS)
-flatpak_bwrap_LDADD = $(bwrap_LDADD)
+flatpak_bwrap_CFLAGS = $(AM_CFLAGS) $(bwrap_CFLAGS)
+flatpak_bwrap_LDADD = $(AM_LDADD) $(bwrap_LDADD)
 bwrapdir = $(libexecdir)
 include bubblewrap/Makefile-bwrap.am.inc
 

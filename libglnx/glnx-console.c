@@ -187,10 +187,11 @@ text_percent_internal (const char *text,
   const guint n_spaces = sizeof (spaces) - 1;
   const guint ncolumns = glnx_console_columns ();
   const guint bar_min = 10;
-  const guint input_textlen = text ? strlen (text) : 0;
 
   if (text && !*text)
     text = NULL;
+
+  const guint input_textlen = text ? strlen (text) : 0;
 
   if (percentage == current_percent
       && g_strcmp0 (text, current_text) == 0)
@@ -221,7 +222,8 @@ text_percent_internal (const char *text,
 
   if (percentage == -1)
     {
-      fwrite (text, 1, input_textlen, stdout);
+      if (text != NULL)
+        fwrite (text, 1, input_textlen, stdout);
 
       /* Overwrite remaining space, if any */
       if (ncolumns > input_textlen)
@@ -273,7 +275,7 @@ void
 glnx_console_progress_text_percent (const char *text,
                                     guint percentage)
 {
-  g_return_if_fail (percentage >= 0 && percentage <= 100);
+  g_return_if_fail (percentage <= 100);
 
   text_percent_internal (text, percentage);
 }
