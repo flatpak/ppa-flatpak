@@ -7,6 +7,11 @@ flatpak (0.9.8-1) UNRELEASED; urgency=medium
   * Move flatpak-manifest(5) from flatpak to flatpak-builder.
     Manifest files are not part of core Flatpak, and are only used by
     flatpak-builder.
+  * Install flatpak-bisect as an example in flatpak, not as a public
+    entry point in flatpak-builder. It will not be in flatpak-builder
+    after the projects are separated upstream, and does not seem
+    important enough to justify a python3 dependency in flatpak or a
+    separate binary package.
 
  -- Simon McVittie <smcv@collabora.com>  Tue, 29 Aug 2017 12:24:06 +0100
 

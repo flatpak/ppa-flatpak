@@ -97,9 +97,7 @@ Depends:
  gir1.2-flatpak-1.0,
  flatpak (= ${binary:Version}),
  ostree (>= 2017.10),
- python3-gi,
  ${misc:Depends},
- ${python3:Depends},
  ${shlibs:Depends},
 Recommends:
  binutils,
@@ -116,9 +114,6 @@ Description: Flatpak application building helper
  .
  flatpak-builder is a tool that makes it easy to build applications and their
  dependencies by automating the configure && make && make install steps.
- .
- This package also contains the flatpak-bisect script, which can be used to
- identify the first commit that had a particular regression.
 
 Package: flatpak-tests
 Architecture: linux-any
