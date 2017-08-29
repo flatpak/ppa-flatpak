@@ -108,6 +108,8 @@ Recommends:
  git,
  patch,
  unzip,
+Replaces:
+ flatpak (<< 0.9.8-1~),
 Description: Flatpak application building helper
  Flatpak installs, manages and runs sandboxed desktop application bundles.
  See the flatpak package for a more comprehensive description.

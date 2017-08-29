@@ -50,7 +50,6 @@ usr/share/man/man1/flatpak.1
 usr/share/man/man5/flatpak-flatpakref.5
 usr/share/man/man5/flatpak-flatpakrepo.5
 usr/share/man/man5/flatpak-installation.5
-usr/share/man/man5/flatpak-manifest.5
 usr/share/man/man5/flatpak-metadata.5
 usr/share/man/man5/flatpak-remote.5
 usr/share/polkit-1/actions
