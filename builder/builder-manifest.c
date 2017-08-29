@@ -31,6 +31,7 @@
 #include "builder-utils.h"
 #include "flatpak-utils.h"
 #include "builder-post-process.h"
+#include "builder-extension.h"
 
 #include "libglnx/libglnx.h"
 
@@ -57,6 +58,7 @@ struct BuilderManifest
   char           *id;
   char           *id_platform;
   char           *branch;
+  char           *collection_id;
   char           *type;
   char           *runtime;
   char           *runtime_commit;
@@ -94,6 +96,7 @@ struct BuilderManifest
   BuilderOptions *build_options;
   GList          *modules;
   GList          *expanded_modules;
+  GList          *add_extensions;
 };
 
 typedef struct
@@ -147,6 +150,8 @@ enum {
   PROP_COPY_ICON,
   PROP_DESKTOP_FILE_NAME_PREFIX,
   PROP_DESKTOP_FILE_NAME_SUFFIX,
+  PROP_COLLECTION_ID,
+  PROP_ADD_EXTENSIONS,
   LAST_PROP
 };
 
@@ -157,6 +162,7 @@ builder_manifest_finalize (GObject *object)
 
   g_free (self->id);
   g_free (self->branch);
+  g_free (self->collection_id);
   g_free (self->runtime);
   g_free (self->runtime_commit);
   g_free (self->runtime_version);
@@ -171,6 +177,7 @@ builder_manifest_finalize (GObject *object)
   g_free (self->command);
   g_clear_object (&self->build_options);
   g_list_free_full (self->modules, g_object_unref);
+  g_list_free_full (self->add_extensions, g_object_unref);
   g_list_free (self->expanded_modules);
   g_strfreev (self->cleanup);
   g_strfreev (self->cleanup_commands);
@@ -319,6 +326,10 @@ builder_manifest_get_property (GObject    *object,
       g_value_set_pointer (value, self->modules);
       break;
 
+    case PROP_ADD_EXTENSIONS:
+      g_value_set_pointer (value, self->add_extensions);
+      break;
+
     case PROP_CLEANUP:
       g_value_set_boxed (value, self->cleanup);
       break;
@@ -397,6 +408,10 @@ builder_manifest_get_property (GObject    *object,
 
     case PROP_DESKTOP_FILE_NAME_SUFFIX:
       g_value_set_string (value, self->desktop_file_name_suffix);
+      break;
+
+    case PROP_COLLECTION_ID:
+      g_value_set_string (value, self->collection_id);
       break;
 
     default:
@@ -511,6 +526,12 @@ builder_manifest_set_property (GObject      *object,
       self->modules = g_value_get_pointer (value);
       break;
 
+    case PROP_ADD_EXTENSIONS:
+      g_list_free_full (self->add_extensions, g_object_unref);
+      /* NOTE: This takes ownership of the list! */
+      self->add_extensions = g_value_get_pointer (value);
+      break;
+
     case PROP_CLEANUP:
       tmp = self->cleanup;
       self->cleanup = g_strdupv (g_value_get_boxed (value));
@@ -612,6 +633,11 @@ builder_manifest_set_property (GObject      *object,
     case PROP_DESKTOP_FILE_NAME_SUFFIX:
       g_free (self->desktop_file_name_suffix);
       self->desktop_file_name_suffix = g_value_dup_string (value);
+      break;
+
+    case PROP_COLLECTION_ID:
+      g_free (self->collection_id);
+      self->collection_id = g_value_dup_string (value);
       break;
 
     default:
@@ -761,6 +787,12 @@ builder_manifest_class_init (BuilderManifestClass *klass)
                                                          "",
                                                          G_PARAM_READWRITE));
   g_object_class_install_property (object_class,
+                                   PROP_ADD_EXTENSIONS,
+                                   g_param_spec_pointer ("add-extensions",
+                                                         "",
+                                                         "",
+                                                         G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
                                    PROP_CLEANUP,
                                    g_param_spec_boxed ("cleanup",
                                                        "",
@@ -900,6 +932,13 @@ builder_manifest_class_init (BuilderManifestClass *klass)
                                                         "",
                                                         NULL,
                                                         G_PARAM_READWRITE));
+  g_object_class_install_property (object_class,
+                                   PROP_COLLECTION_ID,
+                                   g_param_spec_string ("collection-id",
+                                                        "",
+                                                        "",
+                                                        NULL,
+                                                        G_PARAM_READWRITE));
 }
 
 static void
@@ -939,6 +978,31 @@ builder_manifest_serialize_property (JsonSerializable *serializable,
 
       return retval;
     }
+  else if (strcmp (property_name, "add-extensions") == 0)
+    {
+      BuilderManifest *self = BUILDER_MANIFEST (serializable);
+      JsonNode *retval = NULL;
+
+      if (self->add_extensions)
+        {
+          JsonObject *object;
+          GList *l;
+
+          object = json_object_new ();
+
+          for (l = self->add_extensions; l != NULL; l = l->next)
+            {
+              BuilderExtension *e = l->data;
+              JsonNode *child = json_gobject_serialize (G_OBJECT (e));
+              json_object_set_member (object, (char *) builder_extension_get_name (e), child);
+            }
+
+          retval = json_node_init_object (json_node_alloc (), object);
+          json_object_unref (object);
+        }
+
+      return retval;
+    }
   else
     {
       return json_serializable_default_serialize_property (serializable,
@@ -946,6 +1010,14 @@ builder_manifest_serialize_property (JsonSerializable *serializable,
                                                            value,
                                                            pspec);
     }
+}
+
+static gint
+sort_extension (gconstpointer  a,
+                gconstpointer  b)
+{
+  return strcmp (builder_extension_get_name (BUILDER_EXTENSION (a)),
+                 builder_extension_get_name (BUILDER_EXTENSION (b)));
 }
 
 static gboolean
@@ -1021,6 +1093,48 @@ builder_manifest_deserialize_property (JsonSerializable *serializable,
             }
 
           g_value_set_pointer (value, g_list_reverse (modules));
+
+          return TRUE;
+        }
+
+      return FALSE;
+    }
+  else if (strcmp (property_name, "add-extensions") == 0)
+    {
+      if (JSON_NODE_TYPE (property_node) == JSON_NODE_NULL)
+        {
+          g_value_set_pointer (value, NULL);
+          return TRUE;
+        }
+      else if (JSON_NODE_TYPE (property_node) == JSON_NODE_OBJECT)
+        {
+          JsonObject *object = json_node_get_object (property_node);
+          g_autoptr(GHashTable) hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
+          g_autoptr(GList) members = NULL;
+          GList *extensions;
+          GList *l;
+
+          members = json_object_get_members (object);
+          for (l = members; l != NULL; l = l->next)
+            {
+              const char *member_name = l->data;
+              JsonNode *val;
+              GObject *extension;
+
+              val = json_object_get_member (object, member_name);
+              extension = json_gobject_deserialize (BUILDER_TYPE_EXTENSION, val);
+              if (extension == NULL)
+                return FALSE;
+
+              builder_extension_set_name (BUILDER_EXTENSION (extension), member_name);
+              g_hash_table_insert (hash, (char *)builder_extension_get_name (BUILDER_EXTENSION (extension)), extension);
+            }
+
+          extensions = g_hash_table_get_values (hash);
+          g_hash_table_steal_all (hash);
+
+          extensions = g_list_sort (extensions, sort_extension);
+          g_value_set_pointer (value, extensions);
 
           return TRUE;
         }
@@ -1103,6 +1217,12 @@ builder_manifest_get_modules (BuilderManifest *self)
   return self->modules;
 }
 
+GList *
+builder_manifest_get_add_extensions (BuilderManifest *self)
+{
+  return self->add_extensions;
+}
+
 static const char *
 builder_manifest_get_runtime_version (BuilderManifest *self)
 {
@@ -1126,6 +1246,20 @@ builder_manifest_set_default_branch (BuilderManifest *self,
     self->branch = g_strdup (default_branch);
 }
 
+const char *
+builder_manifest_get_collection_id (BuilderManifest *self)
+{
+  return self->collection_id;
+}
+
+void
+builder_manifest_set_default_collection_id (BuilderManifest *self,
+                                            const char      *default_collection_id)
+{
+  if (self->collection_id == NULL)
+    self->collection_id = g_strdup (default_collection_id);
+}
+
 static const char *
 builder_manifest_get_base_version (BuilderManifest *self)
 {
@@ -1143,6 +1277,49 @@ flatpak (GError **error,
   va_start (ap, error);
   res = flatpak_spawn (NULL, &output, error, "flatpak", ap);
   va_end (ap);
+
+  if (res)
+    {
+      g_strchomp (output);
+      return g_steal_pointer (&output);
+    }
+  return NULL;
+}
+
+static void
+add_installation_args (GPtrArray *args,
+                       gboolean opt_user,
+                       const char *opt_installation)
+{
+  if (opt_user)
+    g_ptr_array_add (args, g_strdup ("--user"));
+  else if (opt_installation)
+    g_ptr_array_add (args, g_strdup_printf ("--installation=%s", opt_installation));
+  else
+    g_ptr_array_add (args, g_strdup ("--system"));
+}
+
+static char *
+flatpak_info (gboolean opt_user,
+              const char *opt_installation,
+              const char *ref,
+              const char *extra_arg,
+              GError **error)
+{
+  gboolean res;
+  g_autofree char *output = NULL;
+  g_autoptr(GPtrArray) args = NULL;
+
+  args = g_ptr_array_new_with_free_func (g_free);
+  g_ptr_array_add (args, g_strdup ("flatpak"));
+  add_installation_args (args, opt_user, opt_installation);
+  g_ptr_array_add (args, g_strdup ("info"));
+  if (extra_arg)
+    g_ptr_array_add (args, g_strdup (extra_arg));
+  g_ptr_array_add (args, g_strdup (ref));
+  g_ptr_array_add (args, NULL);
+
+  res = flatpak_spawnv (NULL, &output, G_SUBPROCESS_FLAGS_STDERR_SILENCE, error, (const char * const *)args->pdata);
 
   if (res)
     {
@@ -1353,7 +1530,7 @@ builder_manifest_checksum (BuilderManifest *self,
     builder_options_checksum (self->build_options, cache, context);
 }
 
-void
+static void
 builder_manifest_checksum_for_cleanup (BuilderManifest *self,
                                        BuilderCache    *cache,
                                        BuilderContext  *context)
@@ -1378,15 +1555,23 @@ builder_manifest_checksum_for_cleanup (BuilderManifest *self,
     }
 }
 
-void
+static void
 builder_manifest_checksum_for_finish (BuilderManifest *self,
                                       BuilderCache    *cache,
                                       BuilderContext  *context)
 {
+  GList *l;
+
   builder_cache_checksum_str (cache, BUILDER_MANIFEST_CHECKSUM_FINISH_VERSION);
   builder_cache_checksum_strv (cache, self->finish_args);
   builder_cache_checksum_str (cache, self->command);
   builder_cache_checksum_compat_strv (cache, self->inherit_extensions);
+
+  for (l = self->add_extensions; l != NULL; l = l->next)
+    {
+      BuilderExtension *e = l->data;
+      builder_extension_checksum (e, cache, context);
+    }
 
   if (self->metadata)
     {
@@ -1403,7 +1588,7 @@ builder_manifest_checksum_for_finish (BuilderManifest *self,
     }
 }
 
-void
+static void
 builder_manifest_checksum_for_bundle_sources (BuilderManifest *self,
                                               BuilderCache    *cache,
                                               BuilderContext  *context)
@@ -1412,7 +1597,7 @@ builder_manifest_checksum_for_bundle_sources (BuilderManifest *self,
   builder_cache_checksum_boolean (cache, builder_context_get_bundle_sources (context));
 }
 
-void
+static void
 builder_manifest_checksum_for_platform (BuilderManifest *self,
                                         BuilderCache    *cache,
                                         BuilderContext  *context)
@@ -2133,6 +2318,7 @@ builder_manifest_finish (BuilderManifest *self,
   g_autoptr(GPtrArray) args = NULL;
   g_autoptr(GSubprocess) subp = NULL;
   int i;
+  GList *l;
   JsonNode *node;
   JsonGenerator *generator;
 
@@ -2182,7 +2368,6 @@ builder_manifest_finish (BuilderManifest *self,
           const char *parent_id = NULL;
           const char *parent_version = NULL;
           g_autofree char *base_metadata = NULL;
-          g_auto(GStrv) groups = NULL;
 
           arch_option = g_strdup_printf ("--arch=%s", builder_context_get_arch (context));
 
@@ -2221,7 +2406,9 @@ builder_manifest_finish (BuilderManifest *self,
 
           for (i = 0; self->inherit_extensions[i] != NULL; i++)
             {
-              g_autofree char *group = g_strdup_printf ("Extension %s", self->inherit_extensions[i]);
+              g_autofree char *group = g_strconcat (FLATPAK_METADATA_GROUP_PREFIX_EXTENSION,
+                                                    self->inherit_extensions[i],
+                                                    NULL);
               g_auto(GStrv) keys = NULL;
               int j;
 
@@ -2240,9 +2427,13 @@ builder_manifest_finish (BuilderManifest *self,
                   g_key_file_set_value (keyfile, group, keys[j], value);
                 }
 
-              if (!g_key_file_has_key (keyfile, group, "version", NULL) &&
-                  !g_key_file_has_key (keyfile, group, "versions", NULL))
-                g_key_file_set_value (keyfile, group, "version", parent_version);
+              if (!g_key_file_has_key (keyfile, group,
+                                       FLATPAK_METADATA_KEY_VERSION, NULL) &&
+                  !g_key_file_has_key (keyfile, group,
+                                       FLATPAK_METADATA_KEY_VERSIONS, NULL))
+                g_key_file_set_value (keyfile, group,
+                                      FLATPAK_METADATA_KEY_VERSION,
+                                      parent_version);
             }
 
           if (!g_key_file_save_to_file (keyfile,
@@ -2293,6 +2484,9 @@ builder_manifest_finish (BuilderManifest *self,
           for (i = 0; self->finish_args[i] != NULL; i++)
             g_ptr_array_add (args, g_strdup (self->finish_args[i]));
         }
+
+      for (l = self->add_extensions; l != NULL; l = l->next)
+        builder_extension_add_finish_args (l->data, args);
 
       g_ptr_array_add (args, g_file_get_path (app_dir));
       g_ptr_array_add (args, NULL);
@@ -2438,6 +2632,30 @@ builder_manifest_finish (BuilderManifest *self,
             return FALSE;
         }
 
+
+      for (l = self->add_extensions; l != NULL; l = l->next)
+        {
+          BuilderExtension *e = l->data;
+          g_autofree char *extension_metadata_name = NULL;
+          g_autoptr(GFile) metadata_extension_file = NULL;
+          g_autofree char *metadata_contents = NULL;
+
+          if (!builder_extension_is_bundled (e))
+            continue;
+
+          extension_metadata_name = g_strdup_printf ("metadata.%s", builder_extension_get_name (e));
+          metadata_extension_file = g_file_get_child (app_dir, extension_metadata_name);
+          metadata_contents = g_strdup_printf ("[Runtime]\n"
+                                               "name=%s\n"
+                                               "\n"
+                                               "[ExtensionOf]\n"
+                                               "ref=%s\n",
+                                               builder_extension_get_name (e), ref);
+          if (!g_file_set_contents (flatpak_file_get_path_cached (metadata_extension_file),
+                                    metadata_contents, strlen (metadata_contents), error))
+            return FALSE;
+        }
+
       if (!builder_context_disable_rofiles (context, error))
         return FALSE;
 
@@ -2565,7 +2783,7 @@ builder_manifest_create_platform (BuilderManifest *self,
           g_autoptr(GFile) dest_metadata = g_file_get_child (app_dir, "metadata.platform");
           g_autoptr(GKeyFile) keyfile = g_key_file_new ();
           g_auto(GStrv) groups = NULL;
-          g_autofree char *sdk_group_prefix = g_strdup_printf ("Extension %s.", self->id);
+          g_autofree char *sdk_group_prefix = g_strconcat (FLATPAK_METADATA_GROUP_PREFIX_EXTENSION, self->id, NULL);
           int j;
 
           if (!g_key_file_load_from_file (keyfile,
@@ -2577,7 +2795,8 @@ builder_manifest_create_platform (BuilderManifest *self,
               return FALSE;
             }
 
-          g_key_file_set_string (keyfile, "Runtime", "name", self->id_platform);
+          g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_RUNTIME,
+                                 FLATPAK_METADATA_KEY_NAME, self->id_platform);
 
           groups = g_key_file_get_groups (keyfile, NULL);
           for (j = 0; groups[j] != NULL; j++)
@@ -2844,6 +3063,161 @@ builder_manifest_show_deps (BuilderManifest *self,
   return TRUE;
 }
 
+static gboolean
+builder_manifest_install_dep (BuilderManifest *self,
+                              BuilderContext  *context,
+                              const char *remote,
+                              gboolean opt_user,
+                              const char *opt_installation,
+                              const char *runtime,
+                              const char *version,
+                              GError         **error)
+{
+  g_autofree char *ref = NULL;
+  g_autofree char *commit = NULL;
+  g_autoptr(GPtrArray) args = NULL;
+  gboolean installed;
+
+  if (version == NULL)
+    version = builder_manifest_get_runtime_version (self);
+
+  ref = flatpak_build_untyped_ref (runtime,
+                                   version,
+                                   builder_context_get_arch (context));
+
+  commit = flatpak_info (opt_user, opt_installation, "--show-commit", ref, NULL);
+  installed = (commit != NULL);
+
+  args = g_ptr_array_new_with_free_func (g_free);
+  g_ptr_array_add (args, g_strdup ("flatpak"));
+  add_installation_args (args, opt_user, opt_installation);
+  if (installed)
+    {
+      g_ptr_array_add (args, g_strdup ("update"));
+      g_ptr_array_add (args, g_strdup ("--subpath="));
+    }
+  else
+    {
+      g_ptr_array_add (args, g_strdup ("install"));
+      g_ptr_array_add (args, g_strdup (remote));
+    }
+
+  g_ptr_array_add (args, g_strdup (ref));
+  g_ptr_array_add (args, NULL);
+
+  if (!flatpak_spawnv (NULL, NULL, 0, error, (const char * const *)args->pdata))
+    return FALSE;
+
+  return TRUE;
+}
+
+static gboolean
+builder_manifest_install_extension_deps (BuilderManifest *self,
+                                         BuilderContext  *context,
+                                         const char *runtime,
+                                         char **runtime_extensions,
+                                         const char *remote,
+                                         gboolean opt_user,
+                                         const char *opt_installation,
+                                         GError **error)
+{
+  g_autofree char *runtime_ref = flatpak_build_runtime_ref (runtime, builder_manifest_get_runtime_version (self),
+                                                            builder_context_get_arch (context));
+  g_autofree char *metadata = NULL;
+  g_autoptr(GKeyFile) keyfile = g_key_file_new ();
+  int i;
+
+  if (runtime_extensions == NULL)
+    return TRUE;
+
+  metadata = flatpak_info (opt_user, opt_installation, "--show-metadata", runtime_ref, NULL);
+  if (metadata == NULL)
+    return FALSE;
+
+  if (!g_key_file_load_from_data (keyfile,
+                                  metadata, -1,
+                                  0,
+                                  error))
+    return FALSE;
+
+  for (i = 0; runtime_extensions != NULL && runtime_extensions[i] != NULL; i++)
+    {
+      g_autofree char *extension_group = g_strdup_printf ("Extension %s", runtime_extensions[i]);
+      g_autofree char *extension_version = NULL;
+
+      if (!g_key_file_has_group (keyfile, extension_group))
+        {
+          g_autofree char *base = g_strdup (runtime_extensions[i]);
+          char *dot = strrchr (base, '.');
+          if (dot != NULL)
+            *dot = 0;
+
+          g_free (extension_group);
+          extension_group = g_strdup_printf ("Extension %s", base);
+          if (!g_key_file_has_group (keyfile, extension_group))
+            return flatpak_fail (error, "Unknown extension '%s' in runtime\n", runtime_extensions[i]);
+        }
+
+      extension_version = g_key_file_get_string (keyfile, extension_group, "version", NULL);
+      if (extension_version == NULL)
+        extension_version = g_strdup (builder_manifest_get_runtime_version (self));
+
+      g_print ("Dependency Extension: %s %s\n", runtime_extensions[i], extension_version);
+      if (!builder_manifest_install_dep (self, context, remote, opt_user, opt_installation,
+                                         runtime_extensions[i], extension_version,
+                                         error))
+        return FALSE;
+    }
+
+  return TRUE;
+}
+
+gboolean
+builder_manifest_install_deps (BuilderManifest *self,
+                               BuilderContext  *context,
+                               const char *remote,
+                               gboolean opt_user,
+                               const char *opt_installation,
+                               GError **error)
+{
+  /* Sdk */
+  g_print ("Dependency Sdk: %s %s\n", self->sdk, builder_manifest_get_runtime_version (self));
+  if (!builder_manifest_install_dep (self, context, remote, opt_user, opt_installation,
+                                     self->sdk, builder_manifest_get_runtime_version (self),
+                                     error))
+    return FALSE;
+
+  /* Runtime */
+  g_print ("Dependency Runtime: %s %s\n", self->runtime, builder_manifest_get_runtime_version (self));
+  if (!builder_manifest_install_dep (self, context, remote, opt_user, opt_installation,
+                                     self->runtime, builder_manifest_get_runtime_version (self),
+                                     error))
+    return FALSE;
+
+  if (self->base)
+    {
+      g_print ("Dependency Base: %s %s\n", self->base, builder_manifest_get_base_version (self));
+      if (!builder_manifest_install_dep (self, context, remote, opt_user, opt_installation,
+                                         self->base, builder_manifest_get_base_version (self),
+                                         error))
+        return FALSE;
+    }
+
+  if (!builder_manifest_install_extension_deps (self, context,
+                                                self->sdk, self->sdk_extensions,
+                                                remote,opt_user, opt_installation,
+                                                error))
+    return FALSE;
+
+  if (!builder_manifest_install_extension_deps (self, context,
+                                                self->runtime, self->platform_extensions,
+                                                remote, opt_user, opt_installation,
+                                                error))
+    return FALSE;
+
+  return TRUE;
+}
+
 gboolean
 builder_manifest_run (BuilderManifest *self,
                       BuilderContext  *context,
@@ -2938,4 +3312,24 @@ builder_manifest_run (BuilderManifest *self,
 
   /* Not reached */
   return TRUE;
+}
+
+char **
+builder_manifest_get_exclude_dirs (BuilderManifest *self)
+{
+  g_autoptr(GPtrArray) dirs = NULL;
+  GList *l;
+
+  dirs = g_ptr_array_new ();
+
+  for (l = self->add_extensions; l != NULL; l = l->next)
+    {
+      BuilderExtension *e = l->data;
+
+      if (builder_extension_is_bundled (e))
+        g_ptr_array_add (dirs, g_strdup (builder_extension_get_directory (e)));
+    }
+  g_ptr_array_add (dirs, NULL);
+
+  return (char **)g_ptr_array_free (g_steal_pointer (&dirs), FALSE);
 }

@@ -106,7 +106,7 @@ builder_git_get_current_commit (const char     *repo_location,
   return git_get_current_commit (mirror_dir, branch, ensure_commit, context, error);
 }
 
-char *
+static char *
 make_absolute (const char *orig_parent, const char *orig_relpath, GError **error)
 {
   g_autofree char *parent = g_strdup (orig_parent);
@@ -304,7 +304,7 @@ builder_git_mirror_repo (const char     *repo_location,
       g_ptr_array_add (args, filename_tmp);
       g_ptr_array_add (args, NULL);
 
-      res = flatpak_spawnv (parent, NULL, error,
+      res = flatpak_spawnv (parent, NULL, 0, error,
                             (const gchar * const *) args->pdata);
 
       if (cached_git_dir && !update &&

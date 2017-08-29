@@ -25,6 +25,13 @@
 #ifndef __FLATPAK_REMOTE_H__
 #define __FLATPAK_REMOTE_H__
 
+typedef enum
+{
+  FLATPAK_REMOTE_TYPE_STATIC,
+  FLATPAK_REMOTE_TYPE_USB,
+  FLATPAK_REMOTE_TYPE_LAN,
+} FlatpakRemoteType;
+
 typedef struct _FlatpakRemote FlatpakRemote;
 
 #include <gio/gio.h>
@@ -60,6 +67,9 @@ FLATPAK_EXTERN GFile *       flatpak_remote_get_appstream_timestamp (FlatpakRemo
 FLATPAK_EXTERN char *        flatpak_remote_get_url (FlatpakRemote *self);
 FLATPAK_EXTERN void          flatpak_remote_set_url (FlatpakRemote *self,
                                                      const char    *url);
+FLATPAK_EXTERN char *        flatpak_remote_get_collection_id (FlatpakRemote *self);
+FLATPAK_EXTERN void          flatpak_remote_set_collection_id (FlatpakRemote *self,
+                                                               const char    *collection_id);
 FLATPAK_EXTERN char *        flatpak_remote_get_title (FlatpakRemote *self);
 FLATPAK_EXTERN void          flatpak_remote_set_title (FlatpakRemote *self,
                                                        const char    *title);
@@ -84,6 +94,7 @@ FLATPAK_EXTERN int           flatpak_remote_get_prio (FlatpakRemote *self);
 FLATPAK_EXTERN void          flatpak_remote_set_prio (FlatpakRemote *self,
                                                       int            prio);
 
+FLATPAK_EXTERN FlatpakRemoteType flatpak_remote_get_remote_type (FlatpakRemote *self);
 
 
 #endif /* __FLATPAK_REMOTE_H__ */

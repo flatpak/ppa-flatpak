@@ -72,13 +72,13 @@ typedef enum {
   ZIP
 } BuilderArchiveType;
 
-gboolean
+static gboolean
 is_tar (BuilderArchiveType type)
 {
   return (type >= TAR) && (type <= TAR_XZ);
 }
 
-const char *
+static const char *
 tar_decompress_flag (BuilderArchiveType type)
 {
   switch (type)
@@ -332,12 +332,11 @@ builder_source_archive_download (BuilderSource  *source,
       return FALSE;
     }
 
-  g_print ("Downloading %s\n", self->url);
-  if (!builder_download_uri (self->url,
-                             file,
-                             self->sha256,
-                             builder_context_get_soup_session (context),
-                             error))
+  if (!builder_context_download_uri (context,
+                                     self->url,
+                                     file,
+                                     self->sha256,
+                                     error))
     return FALSE;
 
   return TRUE;
@@ -384,12 +383,12 @@ unrpm (GFile   *dir,
       rpm_path, /* shell's $1 */
       NULL };
 
-  res = flatpak_spawnv (dir, NULL, error, argv);
+  res = flatpak_spawnv (dir, NULL, 0, error, argv);
 
   return res;
 }
 
-BuilderArchiveType
+static BuilderArchiveType
 get_type (GFile *archivefile)
 {
   g_autofree char *base_name = NULL;

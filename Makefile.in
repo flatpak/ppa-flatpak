@@ -159,10 +159,9 @@ check_PROGRAMS = $(am__EXEEXT_4) $(am__EXEEXT_5)
 
 @BUILD_SYSTEM_HELPER_TRUE@am__append_20 = system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/flatpak-system-helper.service.in
-@BUILD_SYSTEM_HELPER_TRUE@am__append_21 = system-helper/org.freedesktop.Flatpak.policy.in system-helper/org.freedesktop.Flatpak.SystemHelper.conf system-helper/org.freedesktop.Flatpak.rules.in
-@BUILD_SYSTEM_HELPER_TRUE@am__append_22 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service
-@WITH_SYSTEM_BWRAP_TRUE@am__append_23 = FLATPAK_BWRAP=$(BWRAP)
-@WITH_SYSTEM_BWRAP_FALSE@am__append_24 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
+@BUILD_SYSTEM_HELPER_TRUE@am__append_21 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service
+@WITH_SYSTEM_BWRAP_TRUE@am__append_22 = FLATPAK_BWRAP=$(BWRAP)
+@WITH_SYSTEM_BWRAP_FALSE@am__append_23 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_PROGRAMS = flatpak-bwrap$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -180,6 +179,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
 	$(am__configure_deps) $(dist_triggers_SCRIPTS) \
+	$(am__dist_dbusconf_DATA_DIST) \
 	$(am__dist_installed_test_dbs_DATA_DIST) \
 	$(am__dist_installed_test_keyring_DATA_DIST) \
 	$(am__dist_installed_test_keyring2_DATA_DIST) \
@@ -223,8 +223,8 @@ am__installdirs = "$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" \
 	"$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" \
-	"$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(dbussnippetdir)" \
-	"$(DESTDIR)$(dbussystemservicedir)" \
+	"$(DESTDIR)$(dbussnippetdir)" \
+	"$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" \
 	"$(DESTDIR)$(installed_test_dbsdir)" \
 	"$(DESTDIR)$(installed_test_keyringdir)" \
 	"$(DESTDIR)$(installed_test_keyring2dir)" \
@@ -318,7 +318,7 @@ am__EXEEXT_2 = testdb$(EXEEXT) test-doc-portal$(EXEEXT) \
 am__EXEEXT_3 = $(am__EXEEXT_2)
 @ENABLE_ALWAYS_BUILD_TESTS_FALSE@am__EXEEXT_4 = $(am__EXEEXT_3)
 am__EXEEXT_5 = test-libglnx-xattrs$(EXEEXT) test-libglnx-fdio$(EXEEXT) \
-	test-libglnx-errors$(EXEEXT)
+	test-libglnx-errors$(EXEEXT) test-libglnx-macros$(EXEEXT)
 @ENABLE_INSTALLED_TESTS_TRUE@am__EXEEXT_6 = $(am__EXEEXT_2)
 @BUILD_SYSTEM_HELPER_TRUE@am__EXEEXT_7 =  \
 @BUILD_SYSTEM_HELPER_TRUE@	flatpak-system-helper$(EXEEXT) \
@@ -369,6 +369,7 @@ am_flatpak_builder_OBJECTS =  \
 	builder/flatpak_builder-builder-main.$(OBJEXT) \
 	builder/flatpak_builder-builder-manifest.$(OBJEXT) \
 	builder/flatpak_builder-builder-options.$(OBJEXT) \
+	builder/flatpak_builder-builder-extension.$(OBJEXT) \
 	builder/flatpak_builder-builder-module.$(OBJEXT) \
 	builder/flatpak_builder-builder-post-process.$(OBJEXT) \
 	builder/flatpak_builder-builder-source.$(OBJEXT) \
@@ -480,6 +481,13 @@ test_libglnx_fdio_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(test_libglnx_fdio_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
+am_test_libglnx_macros_OBJECTS = libglnx/tests/test_libglnx_macros-test-libglnx-macros.$(OBJEXT)
+test_libglnx_macros_OBJECTS = $(am_test_libglnx_macros_OBJECTS)
+test_libglnx_macros_DEPENDENCIES = $(am__DEPENDENCIES_3) libglnx.la
+test_libglnx_macros_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(test_libglnx_macros_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_test_libglnx_xattrs_OBJECTS = libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.$(OBJEXT)
 test_libglnx_xattrs_OBJECTS = $(am_test_libglnx_xattrs_OBJECTS)
 test_libglnx_xattrs_DEPENDENCIES = $(am__DEPENDENCIES_3) libglnx.la
@@ -578,8 +586,9 @@ SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(flatpak_system_helper_SOURCES) $(test_doc_portal_SOURCES) \
 	$(nodist_test_doc_portal_SOURCES) $(test_libflatpak_SOURCES) \
 	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
-	$(test_libglnx_xattrs_SOURCES) $(testdb_SOURCES) \
-	$(testlibrary_SOURCES) $(xdg_document_portal_SOURCES) \
+	$(test_libglnx_macros_SOURCES) $(test_libglnx_xattrs_SOURCES) \
+	$(testdb_SOURCES) $(testlibrary_SOURCES) \
+	$(xdg_document_portal_SOURCES) \
 	$(nodist_xdg_document_portal_SOURCES) \
 	$(xdg_permission_store_SOURCES) \
 	$(nodist_xdg_permission_store_SOURCES)
@@ -592,9 +601,9 @@ DIST_SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(am__flatpak_system_helper_SOURCES_DIST) \
 	$(test_doc_portal_SOURCES) $(test_libflatpak_SOURCES) \
 	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
-	$(test_libglnx_xattrs_SOURCES) $(testdb_SOURCES) \
-	$(testlibrary_SOURCES) $(xdg_document_portal_SOURCES) \
-	$(xdg_permission_store_SOURCES)
+	$(test_libglnx_macros_SOURCES) $(test_libglnx_xattrs_SOURCES) \
+	$(testdb_SOURCES) $(testlibrary_SOURCES) \
+	$(xdg_document_portal_SOURCES) $(xdg_permission_store_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -608,14 +617,16 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
+am__dist_dbusconf_DATA_DIST =  \
+	system-helper/org.freedesktop.Flatpak.SystemHelper.conf
 am__dist_installed_test_dbs_DATA_DIST = tests/dbs/no_tables
 am__dist_installed_test_keyring_DATA_DIST = tests/test-keyring/README \
 	tests/test-keyring/pubring.gpg tests/test-keyring/secring.gpg
 am__dist_installed_test_keyring2_DATA_DIST =  \
 	tests/test-keyring2/README tests/test-keyring2/pubring.gpg \
 	tests/test-keyring2/secring.gpg
-DATA = $(completion_DATA) $(dbus_service_DATA) $(dbusconf_DATA) \
-	$(dbussnippet_DATA) $(dbussystemservice_DATA) \
+DATA = $(completion_DATA) $(dbus_service_DATA) $(dbussnippet_DATA) \
+	$(dbussystemservice_DATA) $(dist_dbusconf_DATA) \
 	$(dist_installed_test_dbs_DATA) \
 	$(dist_installed_test_keyring_DATA) \
 	$(dist_installed_test_keyring2_DATA) $(env_DATA) \
@@ -814,10 +825,13 @@ RECHECK_LOGS = $(TEST_LOGS)
 am__EXEEXT_9 = tests/test-basic.sh tests/test-run.sh \
 	tests/test-run-system.sh tests/test-run-deltas.sh \
 	tests/test-run-system-deltas.sh tests/test-repo.sh \
+	tests/test-repo-collections.sh \
+	tests/test-repo-collections-server-only.sh \
 	tests/test-repo-system.sh tests/test-extensions.sh \
 	tests/test-bundle.sh tests/test-bundle-system.sh \
 	tests/test-builder.sh tests/test-builder-python.sh \
-	tests/test-oci.sh $(am__EXEEXT_1)
+	tests/test-oci.sh tests/test-unsigned-summaries.sh \
+	tests/test-update-remote-configuration.sh $(am__EXEEXT_1)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
 LOG_COMPILE = $(LOG_COMPILER) $(AM_LOG_FLAGS) $(LOG_FLAGS)
@@ -1117,7 +1131,7 @@ CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
 	$(am__append_18) $(nodist_xdg_permission_store_SOURCES)
 MAINTAINERCLEANFILES = $(NULL)
 DISTCLEANFILES = $(NULL) $(nodist_flatpakinclude_HEADERS) \
-	$(nodist_libflatpak_la_SOURCES) $(NULL) $(am__append_22) \
+	$(nodist_libflatpak_la_SOURCES) $(NULL) $(am__append_21) \
 	tests/services/org.freedesktop.Flatpak.service \
 	tests/services/org.freedesktop.portal.Documents.service \
 	tests/services/org.freedesktop.impl.portal.PermissionStore.service \
@@ -1138,23 +1152,24 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	data/org.freedesktop.systemd1.xml \
 	data/org.freedesktop.Flatpak.xml $(NULL) \
 	lib/flatpak-enum-types.c.template \
-	lib/flatpak-enum-types.h.template $(am__append_21) \
+	lib/flatpak-enum-types.h.template \
+	system-helper/org.freedesktop.Flatpak.policy.in \
+	system-helper/org.freedesktop.Flatpak.SystemHelper.conf \
+	system-helper/org.freedesktop.Flatpak.rules.in \
+	system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
+	system-helper/flatpak-system-helper.service.in \
 	tests/flatpak.supp tests/glib.supp $(completion_DATA) \
 	profile/flatpak.sh.in $(NULL) env.d/flatpak.env.in \
 	dbus.service.d/flatpak.conf.in flatpak.pc.in \
 	scripts/flatpak-bisect README.md
-TESTS_ENVIRONMENT = G_TEST_SRCDIR="$(abs_srcdir)/tests" \
-	G_TEST_BUILDDIR="$(abs_builddir)/tests" UNINSTALLEDTESTS=1 \
-	G_DEBUG=gc-friendly MALLOC_CHECK_=2 \
-	MALLOC_PERTURB_=$$(($${RANDOM:-256} % 256)) \
-	FLATPAK_TESTS_DEBUG=1 FLATPAK_TRIGGERSDIR=$$(cd $(top_srcdir) \
-	&& pwd)/triggers FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && \
-	pwd)/flatpak-dbus-proxy GI_TYPELIB_PATH=$$(cd $(top_builddir) \
-	&& pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
-	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && \
-	pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} PATH=$$(cd \
-	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_23) \
-	$(am__append_24)
+TESTS_ENVIRONMENT = \
+	G_TEST_SRCDIR="$(abs_srcdir)/tests"	\
+	G_TEST_BUILDDIR="$(abs_builddir)/tests"	\
+	UNINSTALLEDTESTS=1                      \
+	G_DEBUG=gc-friendly 			\
+	MALLOC_CHECK_=2 			\
+	MALLOC_PERTURB_=$$(($${RANDOM:-256} % 256))
+
 LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) $(top_srcdir)/buildutil/tap-driver.sh
 LOG_COMPILER = $(top_srcdir)/buildutil/tap-test
 installed_test_LTLIBRARIES = $(am__append_12)
@@ -1237,12 +1252,13 @@ libglnx_srcpath := $(srcdir)/libglnx
 libglnx_cflags := \
 	$(BASE_CFLAGS) \
 	"-I$(libglnx_srcpath)" \
+	-std=gnu99 \
 	$(HIDDEN_VISIBILITY_CFLAGS) \
 	$(NULL)
 
 libglnx_libs := $(BASE_LIBS)
 libglnx_la_SOURCES = \
-	libglnx/glnx-alloca.h \
+	libglnx/glnx-macros.h \
 	libglnx/glnx-backport-autocleanups.h \
 	libglnx/glnx-backport-autoptr.h \
 	libglnx/glnx-backports.h \
@@ -1271,7 +1287,7 @@ libglnx_la_SOURCES = \
 libglnx_la_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
 libglnx_la_LDFLAGS = -avoid-version -Bsymbolic-functions -export-symbols-regex "^glnx_" -no-undefined -export-dynamic 
 libglnx_la_LIBADD = $(libglnx_libs)
-libglnx_tests = test-libglnx-xattrs test-libglnx-fdio test-libglnx-errors
+libglnx_tests = test-libglnx-xattrs test-libglnx-fdio test-libglnx-errors test-libglnx-macros
 test_libglnx_xattrs_SOURCES = libglnx/tests/test-libglnx-xattrs.c
 test_libglnx_xattrs_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
 test_libglnx_xattrs_LDADD = $(libglnx_libs) libglnx.la
@@ -1281,6 +1297,9 @@ test_libglnx_fdio_LDADD = $(libglnx_libs) libglnx.la
 test_libglnx_errors_SOURCES = libglnx/tests/test-libglnx-errors.c
 test_libglnx_errors_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
 test_libglnx_errors_LDADD = $(libglnx_libs) libglnx.la
+test_libglnx_macros_SOURCES = libglnx/tests/test-libglnx-macros.c
+test_libglnx_macros_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
+test_libglnx_macros_LDADD = $(libglnx_libs) libglnx.la
 dbus_built_sources = common/flatpak-dbus.c common/flatpak-dbus.h
 systemd_dbus_built_sources = common/flatpak-systemd-dbus.c common/flatpak-systemd-dbus.h
 nodist_libflatpak_common_la_SOURCES = \
@@ -1331,7 +1350,7 @@ libflatpak_common_la_CFLAGS = \
 	-I$(srcdir)/dbus-proxy \
 	$(NULL)
 
-libflatpak_common_la_LIBADD = libglnx.la $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(XAUTH_LIBS) $(LIBSECCOMP_LIBS) $(INTERNAL_GPGME_LIBS)
+libflatpak_common_la_LIBADD = $(AM_LIBADD) libglnx.la $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(XAUTH_LIBS) $(LIBSECCOMP_LIBS) $(INTERNAL_GPGME_LIBS)
 introspectiondir = $(datadir)/dbus-1/interfaces
 introspection_DATA = \
 	data/org.freedesktop.impl.portal.PermissionStore.xml \
@@ -1375,8 +1394,8 @@ flatpak_SOURCES = \
 	app/flatpak-builtins-document-list.c \
 	$(NULL)
 
-flatpak_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) libglnx.la libflatpak-common.la
-flatpak_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) \
+flatpak_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) libglnx.la libflatpak-common.la
+flatpak_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) \
         -DLOCALEDIR=\"$(localedir)\"
 
 flatpakincludedir = $(includedir)/flatpak
@@ -1435,12 +1454,14 @@ libflatpak_la_CFLAGS = \
 	$(NULL)
 
 libflatpak_la_LDFLAGS = \
+	$(AM_LDFLAGS) \
 	-version-info $(LT_VERSION_INFO)	\
 	-export-dynamic				\
 	-rpath $(libdir)			\
 	$(NULL)
 
 libflatpak_la_LIBADD = \
+	$(AM_LIBADD) \
         libflatpak-common.la \
 	$(BASE_LIBS)	\
 	$(OSTREE_LIBS)	\
@@ -1453,12 +1474,14 @@ test_libflatpak_SOURCES = \
 	$(NULL)
 
 test_libflatpak_CFLAGS = \
+	$(AM_CFLAGS) \
 	$(BASE_CFLAGS) \
 	-I$(top_srcdir)/lib \
 	-I$(top_builddir)/lib \
 	$(NULL)
 
 test_libflatpak_LDADD = \
+	$(AM_LDADD) \
 	$(BASE_LIBS)	\
         libflatpak.la \
 	$(NULL)
@@ -1491,6 +1514,8 @@ flatpak_builder_SOURCES = \
 	builder/builder-manifest.h \
 	builder/builder-options.c \
 	builder/builder-options.h \
+	builder/builder-extension.c \
+	builder/builder-extension.h \
 	builder/builder-module.c \
 	builder/builder-module.h \
 	builder/builder-post-process.c \
@@ -1521,20 +1546,20 @@ flatpak_builder_SOURCES = \
 	builder/builder-git.h \
 	$(NULL)
 
-flatpak_builder_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(JSON_LIBS) $(SOUP_LIBS) $(LIBELF_LIBS) \
+flatpak_builder_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(JSON_LIBS) $(SOUP_LIBS) $(LIBELF_LIBS) \
 			libglnx.la libflatpak-common.la
 
-flatpak_builder_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(JSON_CFLAGS) $(SOUP_CFLAGS)
+flatpak_builder_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(JSON_CFLAGS) $(SOUP_CFLAGS)
 flatpak_session_helper_SOURCES = \
 	session-helper/flatpak-session-helper.c	\
 	$(NULL)
 
-flatpak_session_helper_LDADD = $(BASE_LIBS) libflatpak-common.la
-flatpak_session_helper_CFLAGS = $(BASE_CFLAGS) $(SOUP_CFLAGS) $(OSTREE_CFLAGS) $(GSYSTEM_CFLAGS) $(JSON_CFLAGS)
+flatpak_session_helper_LDADD = $(AM_LDADD) $(BASE_LIBS) libflatpak-common.la
+flatpak_session_helper_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(SOUP_CFLAGS) $(OSTREE_CFLAGS) $(GSYSTEM_CFLAGS) $(JSON_CFLAGS)
 @BUILD_SYSTEM_HELPER_TRUE@dbussystemservicedir = $(datadir)/dbus-1/system-services
 @BUILD_SYSTEM_HELPER_TRUE@dbussystemservice_DATA = system-helper/org.freedesktop.Flatpak.SystemHelper.service
 @BUILD_SYSTEM_HELPER_TRUE@dbusconfdir = $(DBUS_CONFIG_DIR)
-@BUILD_SYSTEM_HELPER_TRUE@dbusconf_DATA = system-helper/org.freedesktop.Flatpak.SystemHelper.conf
+@BUILD_SYSTEM_HELPER_TRUE@dist_dbusconf_DATA = system-helper/org.freedesktop.Flatpak.SystemHelper.conf
 @BUILD_SYSTEM_HELPER_TRUE@systemdsystemunit_DATA = system-helper/flatpak-system-helper.service
 @BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_SOURCES = \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/flatpak-system-helper.c	\
@@ -1557,8 +1582,8 @@ flatpak_dbus_proxy_SOURCES = \
 	dbus-proxy/dbus-proxy.c		\
 	$(NULL)
 
-flatpak_dbus_proxy_LDADD = $(BASE_LIBS) libglnx.la
-flatpak_dbus_proxy_CFLAGS = $(BASE_CFLAGS) -I$(srcdir)/dbus-proxy
+flatpak_dbus_proxy_LDADD = $(AM_LDADD) $(BASE_LIBS) libglnx.la
+flatpak_dbus_proxy_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) -I$(srcdir)/dbus-proxy
 nodist_xdg_permission_store_SOURCES = permission-store/permission-store-dbus.c permission-store/permission-store-dbus.h
 
 # also used by the document portal
@@ -1569,8 +1594,8 @@ xdg_permission_store_SOURCES = \
 	permission-store/xdg-permission-store.h	\
 	$(NULL)
 
-xdg_permission_store_LDADD = $(BASE_LIBS) libflatpak-common.la
-xdg_permission_store_CFLAGS = $(BASE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(OSTREE_CFLAGS) $(GSYSTEM_CFLAGS) -I$(srcdir)/permission-store -I$(builddir)/permission-store
+xdg_permission_store_LDADD = $(AM_LDADD) $(BASE_LIBS) libflatpak-common.la
+xdg_permission_store_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(OSTREE_CFLAGS) $(GSYSTEM_CFLAGS) -I$(srcdir)/permission-store -I$(builddir)/permission-store
 xdp_dbus_built_sources = document-portal/xdp-dbus.c document-portal/xdp-dbus.h
 nodist_xdg_document_portal_SOURCES = \
 	$(xdp_dbus_built_sources)		\
@@ -1586,10 +1611,20 @@ xdg_document_portal_SOURCES = \
 	document-portal/xdp-fuse.c		\
 	$(NULL)
 
-xdg_document_portal_LDADD = $(BASE_LIBS) $(FUSE_LIBS) libflatpak-common.la
-xdg_document_portal_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(FUSE_CFLAGS) -I$(srcdir)/document-portal -I$(builddir)/document-portal -I$(srcdir)/permission-store -I$(builddir)/permission-store -DFLATPAK_COMPILATION
-testdb_CFLAGS = $(BASE_CFLAGS)
+xdg_document_portal_LDADD = $(AM_LDADD) $(BASE_LIBS) $(FUSE_LIBS) libflatpak-common.la
+xdg_document_portal_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(FUSE_CFLAGS) -I$(srcdir)/document-portal -I$(builddir)/document-portal -I$(srcdir)/permission-store -I$(builddir)/permission-store -DFLATPAK_COMPILATION
+AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 FLATPAK_TRIGGERSDIR=$$(cd \
+	$(top_srcdir) && pwd)/triggers FLATPAK_DBUSPROXY=$$(cd \
+	$(top_builddir) && pwd)/flatpak-dbus-proxy \
+	GI_TYPELIB_PATH=$$(cd $(top_builddir) && \
+	pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
+	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && \
+	pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} PATH=$$(cd \
+	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_22) \
+	$(am__append_23)
+testdb_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
 testdb_LDADD = \
+             $(AM_LDADD) \
              $(BASE_LIBS) \
              $(OSTREE_LIBS) \
              libglnx.la \
@@ -1597,8 +1632,9 @@ testdb_LDADD = \
              $(NULL)
 
 testdb_SOURCES = tests/testdb.c
-test_doc_portal_CFLAGS = $(BASE_CFLAGS)
+test_doc_portal_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
 test_doc_portal_LDADD = \
+             $(AM_LDADD) \
              $(BASE_LIBS) \
              $(OSTREE_LIBS) \
              libglnx.la \
@@ -1607,8 +1643,9 @@ test_doc_portal_LDADD = \
 
 test_doc_portal_SOURCES = tests/test-doc-portal.c
 nodist_test_doc_portal_SOURCES = $(xdp_dbus_built_sources)
-testlibrary_CFLAGS = $(BASE_CFLAGS)
+testlibrary_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
 testlibrary_LDADD = \
+             $(AM_LDADD) \
              $(BASE_LIBS) \
              libglnx.la \
              libflatpak.la \
@@ -1659,6 +1696,8 @@ dist_test_scripts = \
 	tests/test-run-deltas.sh \
 	tests/test-run-system-deltas.sh \
 	tests/test-repo.sh \
+	tests/test-repo-collections.sh \
+	tests/test-repo-collections-server-only.sh \
 	tests/test-repo-system.sh \
 	tests/test-extensions.sh \
 	tests/test-bundle.sh \
@@ -1666,13 +1705,15 @@ dist_test_scripts = \
 	tests/test-builder.sh \
 	tests/test-builder-python.sh \
 	tests/test-oci.sh \
+	tests/test-unsigned-summaries.sh \
+	tests/test-update-remote-configuration.sh \
 	$(NULL)
 
 test_programs = testdb test-doc-portal testlibrary
 VALGRIND_SUPPRESSIONS_FILES = tests/flatpak.supp tests/glib.supp
 @WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_SOURCES = $(bwrap_SOURCES)
-@WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_CFLAGS = $(bwrap_CFLAGS)
-@WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_LDADD = $(bwrap_LDADD)
+@WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_CFLAGS = $(AM_CFLAGS) $(bwrap_CFLAGS)
+@WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_LDADD = $(AM_LDADD) $(bwrap_LDADD)
 @WITH_SYSTEM_BWRAP_FALSE@bwrapdir = $(libexecdir)
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_SOURCES = \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/bubblewrap.c \
@@ -2259,6 +2300,8 @@ builder/flatpak_builder-builder-manifest.$(OBJEXT):  \
 	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
 builder/flatpak_builder-builder-options.$(OBJEXT):  \
 	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
+builder/flatpak_builder-builder-extension.$(OBJEXT):  \
+	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
 builder/flatpak_builder-builder-module.$(OBJEXT):  \
 	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
 builder/flatpak_builder-builder-post-process.$(OBJEXT):  \
@@ -2397,6 +2440,13 @@ libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.$(OBJEXT):  \
 test-libglnx-fdio$(EXEEXT): $(test_libglnx_fdio_OBJECTS) $(test_libglnx_fdio_DEPENDENCIES) $(EXTRA_test_libglnx_fdio_DEPENDENCIES) 
 	@rm -f test-libglnx-fdio$(EXEEXT)
 	$(AM_V_CCLD)$(test_libglnx_fdio_LINK) $(test_libglnx_fdio_OBJECTS) $(test_libglnx_fdio_LDADD) $(LIBS)
+libglnx/tests/test_libglnx_macros-test-libglnx-macros.$(OBJEXT):  \
+	libglnx/tests/$(am__dirstamp) \
+	libglnx/tests/$(DEPDIR)/$(am__dirstamp)
+
+test-libglnx-macros$(EXEEXT): $(test_libglnx_macros_OBJECTS) $(test_libglnx_macros_DEPENDENCIES) $(EXTRA_test_libglnx_macros_DEPENDENCIES) 
+	@rm -f test-libglnx-macros$(EXEEXT)
+	$(AM_V_CCLD)$(test_libglnx_macros_LINK) $(test_libglnx_macros_OBJECTS) $(test_libglnx_macros_LDADD) $(LIBS)
 libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.$(OBJEXT):  \
 	libglnx/tests/$(am__dirstamp) \
 	libglnx/tests/$(DEPDIR)/$(am__dirstamp)
@@ -2621,6 +2671,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-cache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-context.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-extension.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-git.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-manifest.Po@am__quote@
@@ -2681,6 +2732,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-xattrs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/tests/$(DEPDIR)/test_libglnx_errors-test-libglnx-errors.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/tests/$(DEPDIR)/test_libglnx_fdio-test-libglnx-fdio.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@libglnx/tests/$(DEPDIR)/test_libglnx_macros-test-libglnx-macros.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/tests/$(DEPDIR)/test_libglnx_xattrs-test-libglnx-xattrs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@permission-store/$(DEPDIR)/xdg_document_portal-permission-store-dbus.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@permission-store/$(DEPDIR)/xdg_permission_store-permission-store-dbus.Po@am__quote@
@@ -3416,6 +3468,20 @@ builder/flatpak_builder-builder-options.obj: builder/builder-options.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-options.obj `if test -f 'builder/builder-options.c'; then $(CYGPATH_W) 'builder/builder-options.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-options.c'; fi`
 
+builder/flatpak_builder-builder-extension.o: builder/builder-extension.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-extension.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-extension.Tpo -c -o builder/flatpak_builder-builder-extension.o `test -f 'builder/builder-extension.c' || echo '$(srcdir)/'`builder/builder-extension.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-extension.Tpo builder/$(DEPDIR)/flatpak_builder-builder-extension.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-extension.c' object='builder/flatpak_builder-builder-extension.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-extension.o `test -f 'builder/builder-extension.c' || echo '$(srcdir)/'`builder/builder-extension.c
+
+builder/flatpak_builder-builder-extension.obj: builder/builder-extension.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-extension.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-extension.Tpo -c -o builder/flatpak_builder-builder-extension.obj `if test -f 'builder/builder-extension.c'; then $(CYGPATH_W) 'builder/builder-extension.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-extension.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-extension.Tpo builder/$(DEPDIR)/flatpak_builder-builder-extension.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-extension.c' object='builder/flatpak_builder-builder-extension.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-extension.obj `if test -f 'builder/builder-extension.c'; then $(CYGPATH_W) 'builder/builder-extension.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-extension.c'; fi`
+
 builder/flatpak_builder-builder-module.o: builder/builder-module.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-module.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-module.Tpo -c -o builder/flatpak_builder-builder-module.o `test -f 'builder/builder-module.c' || echo '$(srcdir)/'`builder/builder-module.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-module.Tpo builder/$(DEPDIR)/flatpak_builder-builder-module.Po
@@ -3808,6 +3874,20 @@ libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.obj: libglnx/tests/test-libgln
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_fdio_CFLAGS) $(CFLAGS) -c -o libglnx/tests/test_libglnx_fdio-test-libglnx-fdio.obj `if test -f 'libglnx/tests/test-libglnx-fdio.c'; then $(CYGPATH_W) 'libglnx/tests/test-libglnx-fdio.c'; else $(CYGPATH_W) '$(srcdir)/libglnx/tests/test-libglnx-fdio.c'; fi`
 
+libglnx/tests/test_libglnx_macros-test-libglnx-macros.o: libglnx/tests/test-libglnx-macros.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_macros_CFLAGS) $(CFLAGS) -MT libglnx/tests/test_libglnx_macros-test-libglnx-macros.o -MD -MP -MF libglnx/tests/$(DEPDIR)/test_libglnx_macros-test-libglnx-macros.Tpo -c -o libglnx/tests/test_libglnx_macros-test-libglnx-macros.o `test -f 'libglnx/tests/test-libglnx-macros.c' || echo '$(srcdir)/'`libglnx/tests/test-libglnx-macros.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) libglnx/tests/$(DEPDIR)/test_libglnx_macros-test-libglnx-macros.Tpo libglnx/tests/$(DEPDIR)/test_libglnx_macros-test-libglnx-macros.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libglnx/tests/test-libglnx-macros.c' object='libglnx/tests/test_libglnx_macros-test-libglnx-macros.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_macros_CFLAGS) $(CFLAGS) -c -o libglnx/tests/test_libglnx_macros-test-libglnx-macros.o `test -f 'libglnx/tests/test-libglnx-macros.c' || echo '$(srcdir)/'`libglnx/tests/test-libglnx-macros.c
+
+libglnx/tests/test_libglnx_macros-test-libglnx-macros.obj: libglnx/tests/test-libglnx-macros.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_macros_CFLAGS) $(CFLAGS) -MT libglnx/tests/test_libglnx_macros-test-libglnx-macros.obj -MD -MP -MF libglnx/tests/$(DEPDIR)/test_libglnx_macros-test-libglnx-macros.Tpo -c -o libglnx/tests/test_libglnx_macros-test-libglnx-macros.obj `if test -f 'libglnx/tests/test-libglnx-macros.c'; then $(CYGPATH_W) 'libglnx/tests/test-libglnx-macros.c'; else $(CYGPATH_W) '$(srcdir)/libglnx/tests/test-libglnx-macros.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) libglnx/tests/$(DEPDIR)/test_libglnx_macros-test-libglnx-macros.Tpo libglnx/tests/$(DEPDIR)/test_libglnx_macros-test-libglnx-macros.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libglnx/tests/test-libglnx-macros.c' object='libglnx/tests/test_libglnx_macros-test-libglnx-macros.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_macros_CFLAGS) $(CFLAGS) -c -o libglnx/tests/test_libglnx_macros-test-libglnx-macros.obj `if test -f 'libglnx/tests/test-libglnx-macros.c'; then $(CYGPATH_W) 'libglnx/tests/test-libglnx-macros.c'; else $(CYGPATH_W) '$(srcdir)/libglnx/tests/test-libglnx-macros.c'; fi`
+
 libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.o: libglnx/tests/test-libglnx-xattrs.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_xattrs_CFLAGS) $(CFLAGS) -MT libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.o -MD -MP -MF libglnx/tests/$(DEPDIR)/test_libglnx_xattrs-test-libglnx-xattrs.Tpo -c -o libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.o `test -f 'libglnx/tests/test-libglnx-xattrs.c' || echo '$(srcdir)/'`libglnx/tests/test-libglnx-xattrs.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) libglnx/tests/$(DEPDIR)/test_libglnx_xattrs-test-libglnx-xattrs.Tpo libglnx/tests/$(DEPDIR)/test_libglnx_xattrs-test-libglnx-xattrs.Po
@@ -4017,27 +4097,6 @@ uninstall-dbus_serviceDATA:
 	@list='$(dbus_service_DATA)'; test -n "$(dbus_servicedir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(dbus_servicedir)'; $(am__uninstall_files_from_dir)
-install-dbusconfDATA: $(dbusconf_DATA)
-	@$(NORMAL_INSTALL)
-	@list='$(dbusconf_DATA)'; test -n "$(dbusconfdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(dbusconfdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(dbusconfdir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(dbusconfdir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(dbusconfdir)" || exit $$?; \
-	done
-
-uninstall-dbusconfDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(dbusconf_DATA)'; test -n "$(dbusconfdir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(dbusconfdir)'; $(am__uninstall_files_from_dir)
 install-dbussnippetDATA: $(dbussnippet_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(dbussnippet_DATA)'; test -n "$(dbussnippetdir)" || list=; \
@@ -4080,6 +4139,27 @@ uninstall-dbussystemserviceDATA:
 	@list='$(dbussystemservice_DATA)'; test -n "$(dbussystemservicedir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(dbussystemservicedir)'; $(am__uninstall_files_from_dir)
+install-dist_dbusconfDATA: $(dist_dbusconf_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(dist_dbusconf_DATA)'; test -n "$(dbusconfdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(dbusconfdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(dbusconfdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(dbusconfdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(dbusconfdir)" || exit $$?; \
+	done
+
+uninstall-dist_dbusconfDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_dbusconf_DATA)'; test -n "$(dbusconfdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(dbusconfdir)'; $(am__uninstall_files_from_dir)
 install-dist_installed_test_dbsDATA: $(dist_installed_test_dbs_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(dist_installed_test_dbs_DATA)'; test -n "$(installed_test_dbsdir)" || list=; \
@@ -4772,6 +4852,20 @@ tests/test-repo.sh.log: tests/test-repo.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-repo-collections.sh.log: tests/test-repo-collections.sh
+	@p='tests/test-repo-collections.sh'; \
+	b='tests/test-repo-collections.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-repo-collections-server-only.sh.log: tests/test-repo-collections-server-only.sh
+	@p='tests/test-repo-collections-server-only.sh'; \
+	b='tests/test-repo-collections-server-only.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 tests/test-repo-system.sh.log: tests/test-repo-system.sh
 	@p='tests/test-repo-system.sh'; \
 	b='tests/test-repo-system.sh'; \
@@ -4821,6 +4915,20 @@ tests/test-oci.sh.log: tests/test-oci.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-unsigned-summaries.sh.log: tests/test-unsigned-summaries.sh
+	@p='tests/test-unsigned-summaries.sh'; \
+	b='tests/test-unsigned-summaries.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-update-remote-configuration.sh.log: tests/test-update-remote-configuration.sh
+	@p='tests/test-update-remote-configuration.sh'; \
+	b='tests/test-update-remote-configuration.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 test-libglnx-xattrs.log: test-libglnx-xattrs$(EXEEXT)
 	@p='test-libglnx-xattrs$(EXEEXT)'; \
 	b='test-libglnx-xattrs'; \
@@ -4838,6 +4946,13 @@ test-libglnx-fdio.log: test-libglnx-fdio$(EXEEXT)
 test-libglnx-errors.log: test-libglnx-errors$(EXEEXT)
 	@p='test-libglnx-errors$(EXEEXT)'; \
 	b='test-libglnx-errors'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test-libglnx-macros.log: test-libglnx-macros$(EXEEXT)
+	@p='test-libglnx-macros$(EXEEXT)'; \
+	b='test-libglnx-macros'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5056,7 +5171,7 @@ install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(dbussnippetdir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(installed_test_dbsdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
+	for dir in "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussnippetdir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_dbsdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -5153,8 +5268,8 @@ info: info-recursive
 info-am:
 
 install-data-am: install-bwrapPROGRAMS install-completionDATA \
-	install-dbus_serviceDATA install-dbusconfDATA \
-	install-dbussnippetDATA install-dbussystemserviceDATA \
+	install-dbus_serviceDATA install-dbussnippetDATA \
+	install-dbussystemserviceDATA install-dist_dbusconfDATA \
 	install-dist_installed_test_dbsDATA \
 	install-dist_installed_test_keyring2DATA \
 	install-dist_installed_test_keyringDATA \
@@ -5220,8 +5335,8 @@ ps-am:
 
 uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-completionDATA uninstall-dbus_serviceDATA \
-	uninstall-dbusconfDATA uninstall-dbussnippetDATA \
-	uninstall-dbussystemserviceDATA \
+	uninstall-dbussnippetDATA uninstall-dbussystemserviceDATA \
+	uninstall-dist_dbusconfDATA \
 	uninstall-dist_installed_test_dbsDATA \
 	uninstall-dist_installed_test_keyring2DATA \
 	uninstall-dist_installed_test_keyringDATA \
@@ -5258,9 +5373,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	install-binPROGRAMS install-bwrapPROGRAMS \
 	install-completionDATA install-data install-data-am \
 	install-data-hook install-dbus_serviceDATA \
-	install-dbusconfDATA install-dbussnippetDATA \
-	install-dbussystemserviceDATA \
-	install-dist_installed_test_dbsDATA \
+	install-dbussnippetDATA install-dbussystemserviceDATA \
+	install-dist_dbusconfDATA install-dist_installed_test_dbsDATA \
 	install-dist_installed_test_keyring2DATA \
 	install-dist_installed_test_keyringDATA \
 	install-dist_triggersSCRIPTS install-dvi install-dvi-am \
@@ -5284,8 +5398,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	pdf pdf-am ps ps-am recheck tags tags-am uninstall \
 	uninstall-am uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-completionDATA uninstall-dbus_serviceDATA \
-	uninstall-dbusconfDATA uninstall-dbussnippetDATA \
-	uninstall-dbussystemserviceDATA \
+	uninstall-dbussnippetDATA uninstall-dbussystemserviceDATA \
+	uninstall-dist_dbusconfDATA \
 	uninstall-dist_installed_test_dbsDATA \
 	uninstall-dist_installed_test_keyring2DATA \
 	uninstall-dist_installed_test_keyringDATA \

@@ -38,18 +38,26 @@ print_info (GVariant *meta)
 {
   g_autoptr(GVariant) cache = NULL;
   const char *title;
+  const char *collection_id;
   const char *default_branch;
   const char *redirect_url;
+  const char *redirect_collection_id;
   g_autoptr(GVariant) gpg_keys = NULL;
 
   if (g_variant_lookup (meta, "xa.title", "&s", &title))
     g_print ("Title: %s\n", title);
+
+  if (g_variant_lookup (meta, "collection-id", "&s", &collection_id))
+    g_print ("Collection ID: %s\n", collection_id);
 
   if (g_variant_lookup (meta, "xa.default-branch", "&s", &default_branch))
     g_print ("Default branch: %s\n", default_branch);
 
   if (g_variant_lookup (meta, "xa.redirect-url", "&s", &redirect_url))
     g_print ("Redirect URL: %s\n", redirect_url);
+
+  if (g_variant_lookup (meta, "xa.collection-id", "&s", &redirect_collection_id))
+    g_print ("Redirect collection ID: %s\n", redirect_collection_id);
 
   if ((gpg_keys = g_variant_lookup_value (meta, "xa.gpg-keys", G_VARIANT_TYPE_BYTESTRING)) != NULL)
     {
@@ -151,11 +159,10 @@ flatpak_builtin_repo (int argc, char **argv,
                       GCancellable *cancellable, GError **error)
 {
   g_autoptr(GOptionContext) context = NULL;
-  g_autofree char *location = NULL;
-  g_autofree char *data = NULL;
-  gsize size;
-  g_autoptr(GVariant) summary = NULL;
+  g_autoptr(GFile) location = NULL;
   g_autoptr(GVariant) meta = NULL;
+  g_autoptr(OstreeRepo) repo = NULL;
+  g_autofree char *ostree_metadata_checksum = NULL;
 
   context = g_option_context_new (_("LOCATION - Repository maintenance"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
@@ -166,18 +173,39 @@ flatpak_builtin_repo (int argc, char **argv,
   if (argc < 2)
     return usage_error (context, _("LOCATION must be specified"), error);
 
-  location = g_build_filename (argv[1], "summary", NULL);
+  location = g_file_new_for_commandline_arg (argv[1]);
+  repo = ostree_repo_new (location);
+  if (!ostree_repo_open (repo, cancellable, error))
+    return FALSE;
 
-  if (!g_file_get_contents (location, &data, &size, error)) {
-    exit (1);
-  }
+#ifdef FLATPAK_ENABLE_P2P
+  /* Try loading the metadata from the ostree-metadata branch first. If that
+   * fails, fall back to the summary file. */
+  if (!ostree_repo_resolve_rev (repo, OSTREE_REPO_METADATA_REF,
+                                TRUE, &ostree_metadata_checksum, error))
+    return FALSE;
+#endif  /* FLATPAK_ENABLE_P2P */
 
-  summary = g_variant_new_from_data (OSTREE_SUMMARY_GVARIANT_FORMAT,
-                                     data, size,
-                                     FALSE, NULL, NULL);
-  g_variant_ref_sink (summary);
-  meta = g_variant_get_child_value (summary, 1);
+  if (ostree_metadata_checksum != NULL)
+    {
+      g_autoptr(GVariant) commit_v = NULL;
 
+      if (!ostree_repo_load_commit (repo, ostree_metadata_checksum, &commit_v, NULL, error))
+        return FALSE;
+
+      meta = g_variant_get_child_value (commit_v, 0);
+    }
+  else
+    {
+      g_autoptr(GVariant) summary = NULL;
+
+      summary = flatpak_repo_load_summary (repo, error);
+      if (summary == NULL)
+        return FALSE;
+      meta = g_variant_get_child_value (summary, 1);
+    }
+
+  /* Print out the metadata. */
   if (opt_info)
     print_info (meta);
 

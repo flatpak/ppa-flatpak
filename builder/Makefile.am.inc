@@ -8,6 +8,8 @@ flatpak_builder_SOURCES = \
 	builder/builder-manifest.h \
 	builder/builder-options.c \
 	builder/builder-options.h \
+	builder/builder-extension.c \
+	builder/builder-extension.h \
 	builder/builder-module.c \
 	builder/builder-module.h \
 	builder/builder-post-process.c \
@@ -38,6 +40,6 @@ flatpak_builder_SOURCES = \
 	builder/builder-git.h \
 	$(NULL)
 
-flatpak_builder_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(JSON_LIBS) $(SOUP_LIBS) $(LIBELF_LIBS) \
+flatpak_builder_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(JSON_LIBS) $(SOUP_LIBS) $(LIBELF_LIBS) \
 			libglnx.la libflatpak-common.la
-flatpak_builder_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(JSON_CFLAGS) $(SOUP_CFLAGS)
+flatpak_builder_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(JSON_CFLAGS) $(SOUP_CFLAGS)

@@ -47,6 +47,10 @@ GType flatpak_deploy_get_type (void);
 #define FLATPAK_REF_NAME_KEY "Name"
 #define FLATPAK_REF_BRANCH_KEY "Branch"
 
+#ifdef FLATPAK_ENABLE_P2P
+#define FLATPAK_REF_COLLECTION_ID_KEY "CollectionID"
+#endif  /* FLATPAK_ENABLE_P2P */
+
 #define FLATPAK_REPO_GROUP "Flatpak Repo"
 #define FLATPAK_REPO_VERSION_KEY "Version"
 #define FLATPAK_REPO_URL_KEY "Url"
@@ -55,11 +59,16 @@ GType flatpak_deploy_get_type (void);
 #define FLATPAK_REPO_GPGKEY_KEY "GPGKey"
 #define FLATPAK_REPO_NODEPS_KEY "NoDeps"
 
+#ifdef FLATPAK_ENABLE_P2P
+#define FLATPAK_REPO_COLLECTION_ID_KEY "CollectionID"
+#endif  /* FLATPAK_ENABLE_P2P */
+
 #define FLATPAK_DEFAULT_UPDATE_FREQUENCY 100
 #define FLATPAK_CLI_UPDATE_FREQUENCY 300
 
 typedef struct
 {
+  char           *collection_id;  /* (nullable) */
   char           *ref;
   char           *commit;
   char          **subpaths;
@@ -119,6 +128,17 @@ typedef enum {
 } FlatpakDirStorageType;
 
 GQuark       flatpak_dir_error_quark (void);
+
+#ifndef FLATPAK_ENABLE_P2P
+/* Rather than putting #ifdefs around all the function arguments for result sets,
+ * define away OstreeRepoFinderResult if we’re compiling without P2P support.
+ * The surrounding code should always pass in NULL if P2P support is disabled. */
+typedef void OstreeRepoFinderResult;
+typedef void** OstreeRepoFinderResultv;
+
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeRepoFinderResult, void)
+G_DEFINE_AUTO_CLEANUP_FREE_FUNC (OstreeRepoFinderResultv, void, NULL)
+#endif  /* !FLATPAK_ENABLE_P2P */
 
 /**
  * FLATPAK_DEPLOY_DATA_GVARIANT_FORMAT:
@@ -292,6 +312,7 @@ gboolean    flatpak_dir_pull (FlatpakDir          *self,
                               const char          *repository,
                               const char          *ref,
                               const char          *opt_rev,
+                              const OstreeRepoFinderResult * const *results,
                               const char         **subpaths,
                               OstreeRepo          *repo,
                               FlatpakPullFlags     flatpak_flags,
@@ -402,6 +423,7 @@ char * flatpak_dir_check_for_update (FlatpakDir          *self,
                                      const char          *checksum_or_latest,
                                      const char         **opt_subpaths,
                                      gboolean             no_pull,
+                                     OstreeRepoFinderResult ***out_results,
                                      GCancellable        *cancellable,
                                      GError             **error);
 gboolean   flatpak_dir_update (FlatpakDir          *self,
@@ -412,6 +434,7 @@ gboolean   flatpak_dir_update (FlatpakDir          *self,
                                const char          *ref,
                                const char          *remote_name,
                                const char          *checksum_or_latest,
+                               const OstreeRepoFinderResult * const *results,
                                const char         **opt_subpaths,
                                OstreeAsyncProgress *progress,
                                GCancellable        *cancellable,
@@ -472,6 +495,7 @@ char      *flatpak_dir_create_origin_remote (FlatpakDir   *self,
                                              const char   *title,
                                              const char   *main_ref,
                                              GBytes       *gpg_data,
+                                             const char   *collection_id,
                                              GCancellable *cancellable,
                                              GError      **error);
 gboolean   flatpak_dir_create_remote_for_ref_file (FlatpakDir   *self,
@@ -488,7 +512,8 @@ GKeyFile * flatpak_dir_parse_repofile (FlatpakDir   *self,
                                        GError      **error);
 
 char      *flatpak_dir_find_remote_by_uri (FlatpakDir   *self,
-                                           const char   *uri);
+                                           const char   *uri,
+                                           const char   *collection_id);
 char     **flatpak_dir_list_remotes (FlatpakDir   *self,
                                      GCancellable *cancellable,
                                      GError      **error);
@@ -508,6 +533,8 @@ gboolean   flatpak_dir_remove_remote (FlatpakDir   *self,
                                       GError      **error);
 char      *flatpak_dir_get_remote_title (FlatpakDir *self,
                                          const char *remote_name);
+char      *flatpak_dir_get_remote_collection_id (FlatpakDir *self,
+                                                 const char *remote_name);
 char      *flatpak_dir_get_remote_main_ref (FlatpakDir *self,
                                             const char *remote_name);
 gboolean   flatpak_dir_get_remote_oci (FlatpakDir *self,
@@ -527,10 +554,10 @@ gboolean   flatpak_dir_list_remote_refs (FlatpakDir   *self,
                                          GHashTable  **refs,
                                          GCancellable *cancellable,
                                          GError      **error);
-GVariant *flatpak_dir_fetch_remote_summary (FlatpakDir   *self,
-                                            const char   *remote,
-                                            GCancellable *cancellable,
-                                            GError      **error);
+gboolean flatpak_dir_fetch_remote_repo_metadata (FlatpakDir    *self,
+                                                 const char    *remote_name,
+                                                 GCancellable  *cancellable,
+                                                 GError       **error);
 char *   flatpak_dir_fetch_remote_title (FlatpakDir   *self,
                                          const char   *remote,
                                          GCancellable *cancellable,
@@ -550,6 +577,13 @@ gboolean flatpak_dir_update_remote_configuration_for_summary (FlatpakDir   *self
                                                               gboolean     *has_changed_out,
                                                               GCancellable *cancellable,
                                                               GError      **error);
+gboolean flatpak_dir_update_remote_configuration_for_repo_metadata (FlatpakDir    *self,
+                                                                    const char    *remote,
+                                                                    GVariant      *summary,
+                                                                    gboolean       dry_run,
+                                                                    gboolean      *has_changed_out,
+                                                                    GCancellable  *cancellable,
+                                                                    GError       **error);
 gboolean flatpak_dir_fetch_ref_cache (FlatpakDir   *self,
                                       const char   *remote_name,
                                       const char   *ref,
@@ -576,5 +610,7 @@ gboolean flatpak_dir_lookup_repo_metadata (FlatpakDir    *self,
                                            const char    *key,
                                            const char    *format_string,
                                            ...);
+
+char ** flatpak_dir_get_locale_subpaths (FlatpakDir *self);
 
 #endif /* __FLATPAK_DIR_H__ */

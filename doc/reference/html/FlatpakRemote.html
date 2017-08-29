@@ -187,12 +187,19 @@
 <col width="300px" class="properties_name">
 <col width="200px" class="properties_flags">
 </colgroup>
-<tbody><tr>
+<tbody>
+<tr>
 <td class="property_type">
 <span class="type">gchar</span> *</td>
 <td class="property_name"><a class="link" href="FlatpakRemote.html#FlatpakRemote--name" title="The “name” property">name</a></td>
 <td class="property_flags">Read / Write</td>
-</tr></tbody>
+</tr>
+<tr>
+<td class="property_type"><span class="type">FlatpakRemoteType</span></td>
+<td class="property_name"><a class="link" href="FlatpakRemote.html#FlatpakRemote--type" title="The “type” property">type</a></td>
+<td class="property_flags">Read / Write / Construct Only</td>
+</tr>
+</tbody>
 </table></div>
 </div>
 <div class="refsect1">
@@ -765,6 +772,14 @@ effect.</p>
 <p>The name of the remote.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: NULL</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakRemote--type"></a><h3>The <code class="literal">“type”</code> property</h3>
+<pre class="programlisting">  “type”                     <span class="type">FlatpakRemoteType</span></pre>
+<p>The type of the remote.</p>
+<p>Flags: Read / Write / Construct Only</p>
+<p>Default value: FLATPAK_REMOTE_TYPE_STATIC</p>
 </div>
 </div>
 </div>

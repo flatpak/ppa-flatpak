@@ -12,6 +12,9 @@ static char *flatpak_installationsdir;
 static char *gpg_homedir;
 static char *gpg_args;
 static char *repo_url;
+#ifdef FLATPAK_ENABLE_P2P
+static char *repo_collection_id;
+#endif  /* FLATPAK_ENABLE_P2P */
 int httpd_pid = -1;
 
 static const char *gpg_id = "7B0961FD";
@@ -202,6 +205,9 @@ test_ref (void)
   g_assert_cmpstr (flatpak_ref_get_name (ref), ==, "org.flatpak.Hello");
   g_assert_cmpstr (flatpak_ref_get_arch (ref), ==, "x86_64");
   g_assert_cmpstr (flatpak_ref_get_branch (ref), ==, "master");
+#ifdef FLATPAK_ENABLE_P2P
+  g_assert_null (flatpak_ref_get_collection_id (ref));
+#endif  /* FLATPAK_ENABLE_P2P */
 
   formatted = flatpak_ref_format_ref (ref);
   g_assert_cmpstr (formatted, ==, valid);
@@ -248,6 +254,10 @@ test_remote_by_name (void)
   g_assert_false (flatpak_remote_get_disabled (remote));
   g_assert_true (flatpak_remote_get_gpg_verify (remote));
   g_assert_cmpint (flatpak_remote_get_prio (remote), ==, 1);
+
+#ifdef FLATPAK_ENABLE_P2P
+  g_assert_cmpstr (flatpak_remote_get_collection_id (remote), ==, repo_collection_id);
+#endif  /* FLATPAK_ENABLE_P2P */
 }
 
 static void
@@ -263,6 +273,15 @@ test_remote (void)
 
   remote = flatpak_installation_get_remote_by_name (inst, repo_name, NULL, &error);
   g_assert_no_error (error);
+
+#ifdef FLATPAK_ENABLE_P2P
+  g_assert_cmpstr (flatpak_remote_get_collection_id (remote), ==, NULL);
+  flatpak_remote_set_collection_id (remote, "org.example.CollectionID");
+  g_assert_cmpstr (flatpak_remote_get_collection_id (remote), ==, "org.example.CollectionID");
+  /* Don’t leave the collection ID set since the repos aren’t configured with one. */
+  flatpak_remote_set_collection_id (remote, NULL);
+  g_assert_cmpstr (flatpak_remote_get_collection_id (remote), ==, NULL);
+#endif  /* FLATPAK_ENABLE_P2P */
 
   g_assert_cmpstr (flatpak_remote_get_title (remote), ==, NULL);
   flatpak_remote_set_title (remote, "Test Repo");
@@ -311,8 +330,6 @@ progress_cb (const char *status,
   *count += 1;
 }
 
-static int changed_count;
-
 static void
 changed_cb (GFileMonitor *monitor,
             GFile *file,
@@ -320,16 +337,15 @@ changed_cb (GFileMonitor *monitor,
             GFileMonitorEvent event_type,
             gpointer user_data)
 {
-  GMainLoop *loop = user_data;
-  g_main_loop_quit (loop);
-  changed_count += 1;
+  int *count = user_data;
+  *count += 1;
 }
 
 static gboolean
-quit (gpointer data)
+timeout_cb (gpointer data)
 {
-  GMainLoop *loop = data;
-  g_main_loop_quit (loop);
+  gboolean *timeout_reached = data;
+  *timeout_reached = TRUE;
   return G_SOURCE_CONTINUE;
 }
 
@@ -345,9 +361,9 @@ test_install_launch_uninstall (void)
   GPtrArray *refs = NULL;
   g_autofree char *s = NULL;
   g_autofree char *s1 = NULL;
-  int progress_count;
-  g_autoptr(GMainLoop) loop = NULL;
-  guint quit_id;
+  int progress_count, changed_count;
+  gboolean timeout_reached;
+  guint timeout_id;
   gboolean res;
   const char *bwrap = g_getenv ("FLATPAK_BWRAP");
 
@@ -355,6 +371,8 @@ test_install_launch_uninstall (void)
     {
       gint exit_code = 0;
       char *argv[] = { (char *)bwrap, "--ro-bind", "/", "/", "/bin/true", NULL };
+      g_autofree char *argv_str = g_strjoinv (" ", argv);
+      g_test_message ("Spawning %s", argv_str);
       g_spawn_sync (NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL, &exit_code, &error);
       g_assert_no_error (error);
       if (exit_code != 0)
@@ -372,9 +390,7 @@ test_install_launch_uninstall (void)
   g_assert (G_IS_FILE_MONITOR (monitor));
   g_file_monitor_set_rate_limit (monitor, 100);
 
-  loop = g_main_loop_new (NULL, TRUE);
-
-  g_signal_connect (monitor, "changed", G_CALLBACK (changed_cb), loop);
+  g_signal_connect (monitor, "changed", G_CALLBACK (changed_cb), &changed_count);
 
   refs = flatpak_installation_list_installed_refs (inst, NULL, &error);
   g_assert_no_error (error);
@@ -383,6 +399,7 @@ test_install_launch_uninstall (void)
 
   changed_count = 0;
   progress_count = 0;
+  timeout_reached = FALSE;
   ref = flatpak_installation_install (inst,
                                       repo_name,
                                       FLATPAK_REF_KIND_RUNTIME,
@@ -397,9 +414,10 @@ test_install_launch_uninstall (void)
   g_assert (FLATPAK_IS_INSTALLED_REF (ref));
   g_assert_cmpint (progress_count, >, 0);
 
-  quit_id = g_timeout_add (1000, quit, loop);
-  g_main_loop_run (loop);
-  g_source_remove (quit_id);
+  timeout_id = g_timeout_add (20000, timeout_cb, &timeout_reached);
+  while (!timeout_reached && changed_count == 0)
+    g_main_context_iteration (NULL, TRUE);
+  g_source_remove (timeout_id);
 
   g_assert_cmpint (changed_count, >, 0);
 
@@ -407,6 +425,9 @@ test_install_launch_uninstall (void)
   g_assert_cmpstr (flatpak_ref_get_arch (FLATPAK_REF (ref)), ==, flatpak_get_default_arch ());
   g_assert_cmpstr (flatpak_ref_get_branch (FLATPAK_REF (ref)), ==, "master");
   g_assert_cmpint (flatpak_ref_get_kind (FLATPAK_REF (ref)), ==, FLATPAK_REF_KIND_RUNTIME);
+#ifdef FLATPAK_ENABLE_P2P
+  g_assert_null (flatpak_ref_get_collection_id (FLATPAK_REF (ref)));
+#endif  /* FLATPAK_ENABLE_P2P */
 
   g_assert_cmpuint (flatpak_installed_ref_get_installed_size (ref), >, 0);
 
@@ -428,6 +449,7 @@ test_install_launch_uninstall (void)
 
   changed_count = 0;
   progress_count = 0;
+  timeout_reached = FALSE;
   ref = flatpak_installation_install (inst,
                                       repo_name,
                                       FLATPAK_REF_KIND_APP,
@@ -442,9 +464,10 @@ test_install_launch_uninstall (void)
   g_assert (FLATPAK_IS_INSTALLED_REF (ref));
   g_assert_cmpint (progress_count, >, 0);
 
-  quit_id = g_timeout_add (1000, quit, loop);
-  g_main_loop_run (loop);
-  g_source_remove (quit_id);
+  timeout_id = g_timeout_add (20000, timeout_cb, &timeout_reached);
+  while (!timeout_reached && changed_count == 0)
+    g_main_context_iteration (NULL, TRUE);
+  g_source_remove (timeout_id);
 
   g_assert_cmpint (changed_count, >, 0);
 
@@ -452,6 +475,9 @@ test_install_launch_uninstall (void)
   g_assert_cmpstr (flatpak_ref_get_arch (FLATPAK_REF (ref)), ==, flatpak_get_default_arch ());
   g_assert_cmpstr (flatpak_ref_get_branch (FLATPAK_REF (ref)), ==, "master");
   g_assert_cmpint (flatpak_ref_get_kind (FLATPAK_REF (ref)), ==, FLATPAK_REF_KIND_APP);
+#ifdef FLATPAK_ENABLE_P2P
+  g_assert_null (flatpak_ref_get_collection_id (FLATPAK_REF (ref)));
+#endif  /* FLATPAK_ENABLE_P2P */
 
   g_assert_cmpuint (flatpak_installed_ref_get_installed_size (ref), >, 0);
   g_assert_true (flatpak_installed_ref_get_is_current (ref));
@@ -466,9 +492,11 @@ test_install_launch_uninstall (void)
   g_assert_no_error (error);
   g_assert_true (res);
 
-  quit_id = g_timeout_add (500, quit, loop);
-  g_main_loop_run (loop);
-  g_source_remove (quit_id);
+  timeout_reached = FALSE;
+  timeout_id = g_timeout_add (500, timeout_cb, &timeout_reached);
+  while (!timeout_reached)
+    g_main_context_iteration (NULL, TRUE);
+  g_source_remove (timeout_id);
 
   changed_count = 0;
   progress_count = 0;
@@ -486,9 +514,11 @@ test_install_launch_uninstall (void)
   //FIXME: no progress for uninstall
   //g_assert_cmpint (progress_count, >, 0);
 
-  quit_id = g_timeout_add (500, quit, loop);
-  g_main_loop_run (loop);
-  g_source_remove (quit_id);
+  timeout_reached = FALSE;
+  timeout_id = g_timeout_add (500, timeout_cb, &timeout_reached);
+  while (!timeout_reached && changed_count == 0)
+    g_main_context_iteration (NULL, TRUE);
+  g_source_remove (timeout_id);
 
   refs = flatpak_installation_list_installed_refs (inst, NULL, &error);
   g_assert_no_error (error);
@@ -512,9 +542,11 @@ test_install_launch_uninstall (void)
   //FIXME: no progress for uninstall
   //g_assert_cmpint (progress_count, >, 0);
 
-  quit_id = g_timeout_add (500, quit, loop);
-  g_main_loop_run (loop);
-  g_source_remove (quit_id);
+  timeout_reached = FALSE;
+  timeout_id = g_timeout_add (500, timeout_cb, &timeout_reached);
+  while (!timeout_reached && changed_count == 0)
+    g_main_context_iteration (NULL, TRUE);
+  g_source_remove (timeout_id);
 
   refs = flatpak_installation_list_installed_refs (inst, NULL, &error);
   g_assert_no_error (error);
@@ -530,8 +562,9 @@ make_test_runtime (void)
   g_autoptr(GError) error = NULL;
   g_autofree char *arg0 = NULL;
   char *argv[] = {
-    NULL, "test", "org.test.Platform", "bash", "ls", "cat", "echo", "readlink", NULL
+    NULL, "test", "org.test.Platform", "", "bash", "ls", "cat", "echo", "readlink", NULL
   };
+  g_autofree char *argv_str = NULL;
   GSpawnFlags flags = G_SPAWN_DEFAULT;
 
   arg0 = g_test_build_filename (G_TEST_DIST, "make-test-runtime.sh", NULL);
@@ -545,6 +578,8 @@ make_test_runtime (void)
   else
     flags |= G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL;
 
+  argv_str = g_strjoinv (" ", argv);
+  g_test_message ("Spawning %s", argv_str);
   g_spawn_sync (NULL, (char **)argv, NULL, flags, NULL, NULL, NULL, NULL, &status, &error);
   g_assert_no_error (error);
   g_assert_cmpint (status, ==, 0);
@@ -556,7 +591,8 @@ make_test_app (void)
   int status;
   g_autoptr(GError) error = NULL;
   g_autofree char *arg0 = NULL;
-  char *argv[] = { NULL, "test", NULL };
+  char *argv[] = { NULL, "test", "", NULL };
+  g_autofree char *argv_str = NULL;
   GSpawnFlags flags = G_SPAWN_DEFAULT;
 
   arg0 = g_test_build_filename (G_TEST_DIST, "make-test-app.sh", NULL);
@@ -570,6 +606,8 @@ make_test_app (void)
   else
     flags |= G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL;
 
+  argv_str = g_strjoinv (" ", argv);
+  g_test_message ("Spawning %s", argv_str);
   g_spawn_sync (NULL, (char **)argv, NULL, flags, NULL, NULL, NULL, NULL, &status, &error);
   g_assert_no_error (error);
   g_assert_cmpint (status, ==, 0);
@@ -581,6 +619,7 @@ update_repo (void)
   int status;
   g_autoptr(GError) error = NULL;
   char *argv[] = { "flatpak", "build-update-repo", "--gpg-homedir=", "--gpg-sign=", "repos/test", NULL };
+  g_autofree char *argv_str = NULL;
   GSpawnFlags flags = G_SPAWN_SEARCH_PATH;
   g_auto(GStrv) gpgargs = NULL;
 
@@ -596,6 +635,8 @@ update_repo (void)
   else
     flags |= G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL;
 
+  argv_str = g_strjoinv (" ", argv);
+  g_test_message ("Spawning %s", argv_str);
   g_spawn_sync (NULL, (char **)argv, NULL, flags, NULL, NULL, NULL, NULL, &status, &error);
   g_assert_no_error (error);
   g_assert_cmpint (status, ==, 0);
@@ -608,6 +649,7 @@ launch_httpd (void)
   g_autoptr(GError) error = NULL;
   g_autofree char *path = g_test_build_filename (G_TEST_DIST, "test-webserver.sh", NULL);
   char *argv[] = {path , "repos", NULL };
+  g_autofree char *argv_str = NULL;
   GSpawnFlags flags = G_SPAWN_SEARCH_PATH;
 
   if (g_test_verbose ())
@@ -618,6 +660,8 @@ launch_httpd (void)
   else
     flags |= G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL;
 
+  argv_str = g_strjoinv (" ", argv);
+  g_test_message ("Spawning %s", argv_str);
   g_spawn_sync (NULL, (char **)argv, NULL, flags, NULL, NULL, NULL, NULL, &status, &error);
   g_assert_no_error (error);
   g_assert_cmpint (status, ==, 0);
@@ -629,6 +673,7 @@ add_remote (void)
   int status;
   g_autoptr(GError) error = NULL;
   char *argv[] = { "flatpak", "remote-add", "--user", "--gpg-import=", "name", "url", NULL };
+  g_autofree char *argv_str = NULL;
   g_autofree char *gpgimport = NULL;
   g_autofree char *port = NULL;
   g_autofree char *pid = NULL;
@@ -663,6 +708,8 @@ add_remote (void)
   else
     flags |= G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL;
 
+  argv_str = g_strjoinv (" ", argv);
+  g_test_message ("Spawning %s", argv_str);
   g_spawn_sync (NULL, (char **)argv, NULL, flags, NULL, NULL, NULL, NULL, &status, &error);
   g_assert_no_error (error);
   g_assert_cmpint (status, ==, 0);
@@ -674,10 +721,6 @@ add_extra_installation (const char *id,
                         const char *storage_type,
                         const char *priority)
 {
-  static const char *base_fmt_string =
-    "[Installation \"%s\"]\n"
-    "Path=%s";
-
   g_autofree char *conffile_path = NULL;
   g_autofree char *contents_string = NULL;
   g_autofree char *path = NULL;
@@ -689,7 +732,10 @@ add_extra_installation (const char *id,
 
   contents_array = g_ptr_array_new_with_free_func ((GDestroyNotify)g_free);
 
-  g_ptr_array_add (contents_array, g_strdup_printf (base_fmt_string, id, path));
+  g_ptr_array_add (contents_array,
+      g_strdup_printf ("[Installation \"%s\"]\n"
+                       "Path=%s",
+                       id, path));
 
   if (display_name != NULL)
     g_ptr_array_add (contents_array, g_strdup_printf ("DisplayName=%s", display_name));
@@ -766,6 +812,9 @@ copy_gpg (void)
 static void
 global_setup (void)
 {
+  g_autofree char *cachedir = NULL;
+  g_autofree char *configdir = NULL;
+  g_autofree char *datadir = NULL;
   g_autofree char *homedir = NULL;
 
   testdir = g_strdup ("/var/tmp/flatpak-test-XXXXXX");
@@ -773,11 +822,29 @@ global_setup (void)
   if (g_test_verbose ())
     g_print ("testdir: %s\n", testdir);
 
-  homedir = g_strconcat (testdir, "/home/share", NULL);
+  homedir = g_strconcat (testdir, "/home", NULL);
   g_mkdir_with_parents (homedir, S_IRWXU|S_IRWXG|S_IRWXO);
-  g_setenv ("XDG_DATA_HOME", homedir, TRUE);
+  g_setenv ("HOME", homedir, TRUE);
   if (g_test_verbose ())
-    g_print ("setting XDG_DATA_HOME=%s\n", homedir);
+    g_print ("setting HOME=%s\n", datadir);
+
+  cachedir = g_strconcat (testdir, "/home/cache", NULL);
+  g_mkdir_with_parents (cachedir, S_IRWXU|S_IRWXG|S_IRWXO);
+  g_setenv ("XDG_CACHE_HOME", cachedir, TRUE);
+  if (g_test_verbose ())
+    g_print ("setting XDG_CACHE_HOME=%s\n", cachedir);
+
+  configdir = g_strconcat (testdir, "/home/config", NULL);
+  g_mkdir_with_parents (configdir, S_IRWXU|S_IRWXG|S_IRWXO);
+  g_setenv ("XDG_CONFIG_HOME", configdir, TRUE);
+  if (g_test_verbose ())
+    g_print ("setting XDG_CONFIG_HOME=%s\n", configdir);
+
+  datadir = g_strconcat (testdir, "/home/share", NULL);
+  g_mkdir_with_parents (datadir, S_IRWXU|S_IRWXG|S_IRWXO);
+  g_setenv ("XDG_DATA_HOME", datadir, TRUE);
+  if (g_test_verbose ())
+    g_print ("setting XDG_DATA_HOME=%s\n", datadir);
 
   flatpak_runtimedir = g_strconcat (testdir, "/runtime", NULL);
   g_mkdir_with_parents (flatpak_runtimedir, S_IRWXU|S_IRWXG|S_IRWXO);
@@ -816,6 +883,7 @@ global_teardown (void)
   int status;
   g_autoptr (GError) error = NULL;
   char *argv[] = { "gpg-connect-agent", "--homedir", "<placeholder>", "killagent", "/bye", NULL };
+  g_autofree char *argv_str = NULL;
   GSpawnFlags flags = G_SPAWN_SEARCH_PATH;
 
   if (g_getenv ("SKIP_TEARDOWN"))
@@ -835,6 +903,9 @@ global_teardown (void)
 
   if (httpd_pid != -1)
     kill (httpd_pid, SIGKILL);
+
+  argv_str = g_strjoinv (" ", argv);
+  g_test_message ("Spawning %s", argv_str);
 
   /* mostly ignore failure here */
   if (!g_spawn_sync (NULL, (char **)argv, NULL, flags, NULL, NULL, NULL, NULL, &status, &error) ||

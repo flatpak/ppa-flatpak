@@ -48,6 +48,7 @@ static gboolean opt_disable_updates;
 static gboolean opt_ccache;
 static gboolean opt_require_changes;
 static gboolean opt_keep_build_dirs;
+static gboolean opt_delete_build_dirs;
 static gboolean opt_force_clean;
 static gboolean opt_allow_missing_runtimes;
 static gboolean opt_sandboxed;
@@ -62,11 +63,17 @@ static char *opt_default_branch;
 static char *opt_repo;
 static char *opt_subject;
 static char *opt_body;
+static char *opt_collection_id = NULL;
 static char *opt_gpg_homedir;
 static char **opt_key_ids;
 static char **opt_sources_dirs;
+static char **opt_sources_urls;
 static int opt_jobs;
 static char *opt_mirror_screenshots_url;
+static char *opt_install_deps_from;
+static gboolean opt_install_deps_only;
+static gboolean opt_user;
+static char *opt_installation;
 
 static GOptionEntry entries[] = {
   { "verbose", 'v', 0, G_OPTION_ARG_NONE, &opt_verbose, "Print debug information during command processing", NULL },
@@ -82,6 +89,7 @@ static GOptionEntry entries[] = {
   { "download-only", 0, 0, G_OPTION_ARG_NONE, &opt_download_only, "Only download sources, don't build", NULL },
   { "bundle-sources", 0, 0, G_OPTION_ARG_NONE, &opt_bundle_sources, "Bundle module sources as runtime", NULL },
   { "extra-sources", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_sources_dirs, "Add a directory of sources specified by SOURCE-DIR, multiple uses of this option possible", "SOURCE-DIR"},
+  { "extra-sources-url", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_sources_urls, "Add a url of sources specified by SOURCE-URL multiple uses of this option possible", "SOURCE-URL"},
   { "build-only", 0, 0, G_OPTION_ARG_NONE, &opt_build_only, "Stop after build, don't run clean and finish phases", NULL },
   { "finish-only", 0, 0, G_OPTION_ARG_NONE, &opt_finish_only, "Only run clean and finish and export phases", NULL },
   { "export-only", 0, 0, G_OPTION_ARG_NONE, &opt_export_only, "Only run export phase", NULL },
@@ -89,9 +97,13 @@ static GOptionEntry entries[] = {
   { "show-deps", 0, 0, G_OPTION_ARG_NONE, &opt_show_deps, "List the dependencies of the json file (see --show-deps --help)", NULL },
   { "require-changes", 0, 0, G_OPTION_ARG_NONE, &opt_require_changes, "Don't create app dir or export if no changes", NULL },
   { "keep-build-dirs", 0, 0, G_OPTION_ARG_NONE, &opt_keep_build_dirs, "Don't remove build directories after install", NULL },
+  { "delete-build-dirs", 0, 0, G_OPTION_ARG_NONE, &opt_delete_build_dirs, "Always remove build directories, even after build failure", NULL },
   { "repo", 0, 0, G_OPTION_ARG_STRING, &opt_repo, "Repo to export into", "DIR"},
   { "subject", 's', 0, G_OPTION_ARG_STRING, &opt_subject, "One line subject (passed to build-export)", "SUBJECT" },
   { "body", 'b', 0, G_OPTION_ARG_STRING, &opt_body, "Full description (passed to build-export)", "BODY" },
+#ifdef FLATPAK_ENABLE_P2P
+  { "collection-id", 0, 0, G_OPTION_ARG_STRING, &opt_collection_id, "Collection ID (passed to build-export)", "COLLECTION-ID" },
+#endif  /* FLATPAK_ENABLE_P2P */
   { "gpg-sign", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_key_ids, "GPG Key ID to sign the commit with", "KEY-ID"},
   { "gpg-homedir", 0, 0, G_OPTION_ARG_STRING, &opt_gpg_homedir, "GPG Homedir to use when looking for keyrings", "HOMEDIR"},
   { "force-clean", 0, 0, G_OPTION_ARG_NONE, &opt_force_clean, "Erase previous contents of DIRECTORY", NULL },
@@ -104,6 +116,11 @@ static GOptionEntry entries[] = {
   { "from-git", 0, 0, G_OPTION_ARG_STRING, &opt_from_git, "Get input files from git repo", "URL"},
   { "from-git-branch", 0, 0, G_OPTION_ARG_STRING, &opt_from_git_branch, "Branch to use in --from-git", "BRANCH"},
   { "mirror-screenshots-url", 0, 0, G_OPTION_ARG_STRING, &opt_mirror_screenshots_url, "Download and rewrite screenshots to match this url", "URL"},
+  { "install-deps-from", 0, 0, G_OPTION_ARG_STRING, &opt_install_deps_from, "Install build dependencies from this remote", "REMOTE"},
+  { "install-deps-only", 0, 0, G_OPTION_ARG_NONE, &opt_install_deps_only, "Stop after installing dependencies"},
+  { "user", 0, 0, G_OPTION_ARG_NONE, &opt_user, "Install dependencies in user installations", NULL },
+  { "system", 0, G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &opt_user, "Install dependencies in system-wide installations (default)", NULL },
+  { "installation", 0, 0, G_OPTION_ARG_STRING, &opt_installation, "Install dependencies in a specific system-wide installation", "NAME" },
   { NULL }
 };
 
@@ -135,7 +152,7 @@ message_handler (const gchar   *log_domain,
     g_printerr ("%s: %s\n", g_get_prgname (), message);
 }
 
-int
+static int
 usage (GOptionContext *context, const char *message)
 {
   g_autofree gchar *help = g_option_context_get_help (context, TRUE, NULL);
@@ -153,7 +170,9 @@ do_export (BuilderContext *build_context,
            gboolean        runtime,
            const gchar    *location,
            const gchar    *directory,
+           char          **exclude_dirs,
            const gchar    *branch,
+           const gchar    *collection_id,
            ...)
 {
   va_list ap;
@@ -184,12 +203,21 @@ do_export (BuilderContext *build_context,
   for (i = 0; opt_key_ids != NULL && opt_key_ids[i] != NULL; i++)
     g_ptr_array_add (args, g_strdup_printf ("--gpg-sign=%s", opt_key_ids[i]));
 
+  if (collection_id)
+    g_ptr_array_add (args, g_strdup_printf ("--collection-id=%s", collection_id));
+
   /* Additional flags. */
-  va_start (ap, branch);
+  va_start (ap, collection_id);
   while ((arg = va_arg (ap, const gchar *)))
     if (arg != skip_arg)
       g_ptr_array_add (args, g_strdup ((gchar *) arg));
   va_end (ap);
+
+  if (exclude_dirs)
+    {
+      for (i = 0; exclude_dirs[i] != NULL; i++)
+        g_ptr_array_add (args, g_strdup_printf ("--exclude=/%s/*", exclude_dirs[i]));
+    }
 
   /* Mandatory positional arguments. */
   g_ptr_array_add (args, g_strdup (location));
@@ -326,6 +354,15 @@ main (int    argc,
   manifest_rel_path = argv[argnr++];
   manifest_basename = g_path_get_basename (manifest_rel_path);
 
+#ifdef FLATPAK_ENABLE_P2P
+  if (opt_collection_id != NULL &&
+      !ostree_validate_collection_id (opt_collection_id, &error))
+    {
+      g_printerr ("‘%s’ is not a valid collection ID: %s", opt_collection_id, error->message);
+      return 1;
+    }
+#endif  /* FLATPAK_ENABLE_P2P */
+
   if (app_dir_path)
     app_dir = g_file_new_for_path (app_dir_path);
   cwd = g_get_current_dir ();
@@ -335,6 +372,7 @@ main (int    argc,
 
   builder_context_set_use_rofiles (build_context, !opt_disable_rofiles);
   builder_context_set_keep_build_dirs (build_context, opt_keep_build_dirs);
+  builder_context_set_delete_build_dirs (build_context, opt_delete_build_dirs);
   builder_context_set_sandboxed (build_context, opt_sandboxed);
   builder_context_set_jobs (build_context, opt_jobs);
   builder_context_set_rebuild_on_sdk_change (build_context, opt_rebuild_on_sdk_change);
@@ -350,6 +388,23 @@ main (int    argc,
           g_ptr_array_add (sources_dirs, file);
         }
       builder_context_set_sources_dirs (build_context, sources_dirs);
+    }
+
+  if (opt_sources_urls)
+    {
+      g_autoptr(GPtrArray) sources_urls = NULL;
+      sources_urls = g_ptr_array_new_with_free_func ((GDestroyNotify)soup_uri_free);
+      for (i = 0; opt_sources_urls[i] != NULL; i++)
+        {
+          SoupURI *uri = soup_uri_new (opt_sources_urls[i]);
+          if (uri == NULL)
+            {
+              g_printerr ("Invalid URL '%s'", opt_sources_urls[i]);
+              return 1;
+            }
+          g_ptr_array_add (sources_urls, uri);
+        }
+      builder_context_set_sources_urls (build_context, sources_urls);
     }
 
   if (opt_arch)
@@ -450,8 +505,17 @@ main (int    argc,
   if (opt_default_branch)
     builder_manifest_set_default_branch (manifest, opt_default_branch);
 
+  if (opt_collection_id)
+    builder_manifest_set_default_collection_id (manifest, opt_collection_id);
+
   if (is_run && argc == 3)
     return usage (context, "Program to run must be specified");
+
+  if (opt_show_deps && !is_show_deps)
+    return usage (context, "Can't use --show-deps after a non-option");
+
+  if (opt_run && !is_run)
+    return usage (context, "Can't use --run after a non-option");
 
   if (is_show_deps)
     {
@@ -462,6 +526,17 @@ main (int    argc,
         }
 
       return 0;
+    }
+
+  if (opt_install_deps_from != NULL)
+    {
+      if (!builder_manifest_install_deps (manifest, build_context, opt_install_deps_from, opt_user, opt_installation, &error))
+        {
+          g_printerr ("Error running %s: %s\n", argv[3], error->message);
+          return 1;
+        }
+      if (opt_install_deps_only)
+        return 0;
     }
 
   app_dir_is_empty = !g_file_query_exists (app_dir, NULL) ||
@@ -672,12 +747,15 @@ main (int    argc,
     {
       g_autoptr(GFile) debuginfo_metadata = NULL;
       g_autoptr(GFile) sourcesinfo_metadata = NULL;
+      g_auto(GStrv) exclude_dirs = builder_manifest_get_exclude_dirs (manifest);
+      GList *l;
 
       g_print ("Exporting %s to repo\n", builder_manifest_get_id (manifest));
 
       if (!do_export (build_context, &error,
                       FALSE,
-                      opt_repo, app_dir_path, builder_manifest_get_branch (manifest),
+                      opt_repo, app_dir_path, exclude_dirs, builder_manifest_get_branch (manifest),
+                      builder_manifest_get_collection_id (manifest),
                       "--exclude=/lib/debug/*",
                       "--include=/lib/debug/app",
                       builder_context_get_separate_locales (build_context) ? "--exclude=/share/runtime/locale/*/*" : skip_arg,
@@ -709,7 +787,8 @@ main (int    argc,
           files_arg = g_strconcat (builder_context_get_build_runtime (build_context) ? "--files=usr" : "--files=files",
                                    "/share/runtime/locale/", NULL);
           if (!do_export (build_context, &error, TRUE,
-                          opt_repo, app_dir_path, builder_manifest_get_branch (manifest),
+                          opt_repo, app_dir_path, NULL, builder_manifest_get_branch (manifest),
+                          builder_manifest_get_collection_id (manifest),
                           metadata_arg,
                           files_arg,
                           NULL))
@@ -727,9 +806,39 @@ main (int    argc,
           g_print ("Exporting %s to repo\n", debug_id);
 
           if (!do_export (build_context, &error, TRUE,
-                          opt_repo, app_dir_path, builder_manifest_get_branch (manifest),
+                          opt_repo, app_dir_path, NULL, builder_manifest_get_branch (manifest),
+                          builder_manifest_get_collection_id (manifest),
                           "--metadata=metadata.debuginfo",
                           builder_context_get_build_runtime (build_context) ? "--files=usr/lib/debug" : "--files=files/lib/debug",
+                          NULL))
+            {
+              g_printerr ("Export failed: %s\n", error->message);
+              return 1;
+            }
+        }
+
+      for (l = builder_manifest_get_add_extensions (manifest); l != NULL; l = l->next)
+        {
+          BuilderExtension *e = l->data;
+          const char *extension_id = NULL;
+          g_autofree char *metadata_arg = NULL;
+          g_autofree char *files_arg = NULL;
+
+          if (!builder_extension_is_bundled (e))
+            continue;
+
+          extension_id = builder_extension_get_name (e);
+          g_print ("Exporting %s to repo\n", extension_id);
+
+          metadata_arg = g_strdup_printf ("--metadata=metadata.%s", extension_id);
+          files_arg = g_strdup_printf ("--files=%s/%s",
+                                       builder_context_get_build_runtime (build_context) ? "usr" : "files",
+                                       builder_extension_get_directory (e));
+
+          if (!do_export (build_context, &error, TRUE,
+                          opt_repo, app_dir_path, NULL, builder_manifest_get_branch (manifest),
+                          builder_manifest_get_collection_id (manifest),
+                          metadata_arg, files_arg,
                           NULL))
             {
               g_printerr ("Export failed: %s\n", error->message);
@@ -745,7 +854,8 @@ main (int    argc,
           g_print ("Exporting %s to repo\n", sources_id);
 
           if (!do_export (build_context, &error, TRUE,
-                          opt_repo, app_dir_path, builder_manifest_get_branch (manifest),
+                          opt_repo, app_dir_path, NULL, builder_manifest_get_branch (manifest),
+                          builder_manifest_get_collection_id (manifest),
                           "--metadata=metadata.sources",
                           "--files=sources",
                           NULL))
@@ -763,7 +873,8 @@ main (int    argc,
           g_print ("Exporting %s to repo\n", platform_id);
 
           if (!do_export (build_context, &error, TRUE,
-                          opt_repo, app_dir_path, builder_manifest_get_branch (manifest),
+                          opt_repo, app_dir_path, NULL, builder_manifest_get_branch (manifest),
+                          builder_manifest_get_collection_id (manifest),
                           "--metadata=metadata.platform",
                           "--files=platform",
                           builder_context_get_separate_locales (build_context) ? "--exclude=/share/runtime/locale/*/*" : skip_arg,
@@ -795,7 +906,8 @@ main (int    argc,
           metadata_arg = g_strdup_printf ("--metadata=%s", name);
           files_arg = g_strconcat ("--files=platform/share/runtime/locale/", NULL);
           if (!do_export (build_context, &error, TRUE,
-                          opt_repo, app_dir_path, builder_manifest_get_branch (manifest),
+                          opt_repo, app_dir_path, NULL, builder_manifest_get_branch (manifest),
+                          builder_manifest_get_collection_id (manifest),
                           metadata_arg,
                           files_arg,
                           NULL))
@@ -808,7 +920,7 @@ main (int    argc,
 
   if (!builder_gc (cache, &error))
     {
-      g_warning ("Failed to GC build cache: %s\n", error->message);
+      g_warning ("Failed to GC build cache: %s", error->message);
       g_clear_error (&error);
     }
 

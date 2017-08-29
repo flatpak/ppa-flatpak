@@ -36,6 +36,8 @@
 static char *opt_title;
 static char *opt_redirect_url;
 static char *opt_default_branch;
+static char *opt_collection_id = NULL;
+static gboolean opt_deploy_collection_id = FALSE;
 static char **opt_gpg_import;
 static char *opt_generate_delta_from;
 static char *opt_generate_delta_to;
@@ -50,6 +52,10 @@ static GOptionEntry options[] = {
   { "redirect-url", 0, 0, G_OPTION_ARG_STRING, &opt_redirect_url, N_("Redirect this repo to a new URL"), N_("URL") },
   { "title", 0, 0, G_OPTION_ARG_STRING, &opt_title, N_("A nice name to use for this repository"), N_("TITLE") },
   { "default-branch", 0, 0, G_OPTION_ARG_STRING, &opt_default_branch, N_("Default branch to use for this repository"), N_("BRANCH") },
+#ifdef FLATPAK_ENABLE_P2P
+  { "collection-id", 0, 0, G_OPTION_ARG_STRING, &opt_collection_id, N_("Collection ID"), N_("COLLECTION-ID") },
+  { "deploy-collection-id", 0, 0, G_OPTION_ARG_NONE, &opt_deploy_collection_id, N_("Permanently deploy collection ID to client remote configurations"), NULL },
+#endif  /* FLATPAK_ENABLE_P2P */
   { "gpg-import", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_gpg_import, N_("Import new default GPG public key from FILE"), N_("FILE") },
   { "gpg-sign", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_gpg_key_ids, N_("GPG Key ID to sign the summary with"), N_("KEY-ID") },
   { "gpg-homedir", 0, 0, G_OPTION_ARG_STRING, &opt_gpg_homedir, N_("GPG Homedir to use when looking for keyrings"), N_("HOMEDIR") },
@@ -321,6 +327,7 @@ generate_all_deltas (OstreeRepo *repo,
       g_autoptr(GVariant) variant = NULL;
       g_autoptr(GVariant) parent_variant = NULL;
       g_autofree char *parent_commit = NULL;
+      g_autofree char *grandparent_commit = NULL;
 
       if (!ostree_repo_load_variant (repo, OSTREE_OBJECT_TYPE_COMMIT, commit,
                                      &variant, NULL))
@@ -364,8 +371,21 @@ generate_all_deltas (OstreeRepo *repo,
                 goto error;
             }
 
-          /* Mark this one as wanted */
+          /* Mark parent-to-current as wanted */
           g_hash_table_insert (wanted_deltas_hash, g_strdup (from_parent), GINT_TO_POINTER (1));
+
+          /* We also want to keep around the parent and the grandparent-to-parent deltas
+           * because otherwise these will be deleted immediately which may cause a race if
+           * someone is currently downloading them.
+           * However, there is no need to generate these if they don't exist.
+           */
+
+          g_hash_table_insert (wanted_deltas_hash, g_strdup (parent_commit), GINT_TO_POINTER (1));
+          grandparent_commit = ostree_commit_get_parent (parent_variant);
+          if (grandparent_commit != NULL)
+            g_hash_table_insert (wanted_deltas_hash,
+                                 g_strdup_printf ("%s-%s", grandparent_commit, parent_commit),
+                                 GINT_TO_POINTER (1));
         }
     }
 
@@ -433,6 +453,32 @@ flatpak_builtin_build_update_repo (int argc, char **argv,
 
   if (opt_default_branch &&
       !flatpak_repo_set_default_branch (repo, opt_default_branch[0] ? opt_default_branch : NULL, error))
+    return FALSE;
+
+  if (opt_collection_id != NULL)
+    {
+      /* Only allow a transition from no collection ID to a non-empty collection ID.
+       * Changing the collection ID between two different non-empty values is too
+       * dangerous: it will break all clients who have previously pulled from the repository.
+       * Require the user to recreate the repository from scratch in that case. */
+#ifdef FLATPAK_ENABLE_P2P
+      const char *old_collection_id = ostree_repo_get_collection_id (repo);
+#else  /* if !FLATPAK_ENABLE_P2P */
+      const char *old_collection_id = NULL;
+#endif  /* !FLATPAK_ENABLE_P2P */
+      const char *new_collection_id = opt_collection_id[0] ? opt_collection_id : NULL;
+
+      if (old_collection_id != NULL &&
+          g_strcmp0 (old_collection_id, new_collection_id) != 0)
+        return flatpak_fail (error, "The collection ID of an existing repository cannot be changed. "
+                                    "Recreate the repository to change or clear its collection ID.");
+
+      if (!flatpak_repo_set_collection_id (repo, new_collection_id, error))
+        return FALSE;
+    }
+
+  if (opt_deploy_collection_id &&
+      !flatpak_repo_set_deploy_collection_id (repo, TRUE, error))
     return FALSE;
 
   if (opt_gpg_import)

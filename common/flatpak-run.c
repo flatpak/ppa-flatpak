@@ -1233,7 +1233,15 @@ parse_negated (const char *option, gboolean *negated)
   return option;
 }
 
-/* This is a merge, not a replace */
+/*
+ * Merge the FLATPAK_METADATA_GROUP_CONTEXT,
+ * FLATPAK_METADATA_GROUP_SESSION_BUS_POLICY,
+ * FLATPAK_METADATA_GROUP_SYSTEM_BUS_POLICY and
+ * FLATPAK_METADATA_GROUP_ENVIRONMENT groups, and all groups starting
+ * with FLATPAK_METADATA_GROUP_PREFIX_POLICY, from metakey into context.
+ *
+ * This is a merge, not a replace!
+ */
 gboolean
 flatpak_context_load_metadata (FlatpakContext *context,
                                GKeyFile       *metakey,
@@ -1444,6 +1452,13 @@ flatpak_context_load_metadata (FlatpakContext *context,
   return TRUE;
 }
 
+/*
+ * Save the FLATPAK_METADATA_GROUP_CONTEXT,
+ * FLATPAK_METADATA_GROUP_SESSION_BUS_POLICY,
+ * FLATPAK_METADATA_GROUP_SYSTEM_BUS_POLICY and
+ * FLATPAK_METADATA_GROUP_ENVIRONMENT groups, and all groups starting
+ * with FLATPAK_METADATA_GROUP_PREFIX_POLICY, into metakey
+ */
 void
 flatpak_context_save_metadata (FlatpakContext *context,
                                gboolean        flatten,
@@ -2736,7 +2751,7 @@ export_paths_export_context (FlatpakContext *context,
 
           if (!get_xdg_user_dir_from_string (filesystem, &config_key, &rest, &path))
             {
-              g_warning ("Unsupported xdg dir %s\n", filesystem);
+              g_warning ("Unsupported xdg dir %s", filesystem);
               continue;
             }
 
@@ -2748,7 +2763,7 @@ export_paths_export_context (FlatpakContext *context,
               /* xdg-user-dirs sets disabled dirs to $HOME, and its in general not a good
                  idea to set full access to $HOME other than explicitly, so we ignore
                  these */
-              g_debug ("Xdg dir %s is $HOME (i.e. disabled), ignoring\n", filesystem);
+              g_debug ("Xdg dir %s is $HOME (i.e. disabled), ignoring", filesystem);
               continue;
             }
 
@@ -2788,7 +2803,7 @@ export_paths_export_context (FlatpakContext *context,
         }
       else
         {
-          g_warning ("Unexpected filesystem arg %s\n", filesystem);
+          g_warning ("Unexpected filesystem arg %s", filesystem);
         }
     }
 
@@ -3070,7 +3085,7 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
     {
       /* We still run along even if we don't get a cgroup, as nothing
          really depends on it. Its just nice to have */
-      g_debug ("Failed to run in transient scope: %s\n", my_error->message);
+      g_debug ("Failed to run in transient scope: %s", my_error->message);
       g_clear_error (&my_error);
     }
 
@@ -3489,30 +3504,37 @@ flatpak_run_add_app_info_args (GPtrArray      *argv_array,
   keyfile = g_key_file_new ();
 
   if (app_files)
-    group = "Application";
+    group = FLATPAK_METADATA_GROUP_APPLICATION;
   else
-    group = "Runtime";
+    group = FLATPAK_METADATA_GROUP_RUNTIME;
 
-  g_key_file_set_string (keyfile, group, "name", app_id);
-  g_key_file_set_string (keyfile, group, "runtime", runtime_ref);
+  g_key_file_set_string (keyfile, group, FLATPAK_METADATA_KEY_NAME, app_id);
+  g_key_file_set_string (keyfile, group, FLATPAK_METADATA_KEY_RUNTIME,
+                         runtime_ref);
 
   if (app_files)
     {
       g_autofree char *app_path = g_file_get_path (app_files);
-      g_key_file_set_string (keyfile, "Instance", "app-path", app_path);
+      g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                             FLATPAK_METADATA_KEY_APP_PATH, app_path);
     }
   runtime_path = g_file_get_path (runtime_files);
-  g_key_file_set_string (keyfile, "Instance", "runtime-path", runtime_path);
+  g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                         FLATPAK_METADATA_KEY_RUNTIME_PATH, runtime_path);
   if (app_branch != NULL)
-    g_key_file_set_string (keyfile, "Instance", "branch", app_branch);
+    g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                           FLATPAK_METADATA_KEY_BRANCH, app_branch);
 
-  g_key_file_set_string (keyfile, "Instance", "flatpak-version", PACKAGE_VERSION);
+  g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                         FLATPAK_METADATA_KEY_FLATPAK_VERSION, PACKAGE_VERSION);
 
   if ((final_app_context->sockets & FLATPAK_CONTEXT_SOCKET_SESSION_BUS) == 0)
-    g_key_file_set_boolean (keyfile, "Instance", "session-bus-proxy", TRUE);
+    g_key_file_set_boolean (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                            FLATPAK_METADATA_KEY_SESSION_BUS_PROXY, TRUE);
 
   if ((final_app_context->sockets & FLATPAK_CONTEXT_SOCKET_SYSTEM_BUS) == 0)
-    g_key_file_set_boolean (keyfile, "Instance", "system-bus-proxy", TRUE);
+    g_key_file_set_boolean (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                            FLATPAK_METADATA_KEY_SYSTEM_BUS_PROXY, TRUE);
 
   flatpak_context_save_metadata (final_app_context, TRUE, keyfile);
 
@@ -3689,7 +3711,7 @@ add_document_portal_args (GPtrArray   *argv_array,
         {
           if (g_dbus_message_to_gerror (reply, &local_error))
             {
-              g_message ("Can't get document portal: %s\n", local_error->message);
+              g_message ("Can't get document portal: %s", local_error->message);
             }
           else
             {
@@ -4456,7 +4478,7 @@ add_rest_args (const char  *app_id,
 
   if (file_forwarding && doc_mount_path == NULL)
     {
-      g_message ("Can't get document portal mount path\n");
+      g_message ("Can't get document portal mount path");
       can_forward = FALSE;
     }
   else if (file_forwarding)
@@ -4470,7 +4492,7 @@ add_rest_args (const char  *app_id,
                                                              &local_error);
       if (documents == NULL)
         {
-          g_message ("Can't get document portal: %s\n", local_error->message);
+          g_message ("Can't get document portal: %s", local_error->message);
           can_forward = FALSE;
         }
     }
@@ -4614,10 +4636,17 @@ flatpak_run_app (const char     *app_ref,
     }
   else
     {
+      const gchar *key;
+
+      if ((flags & FLATPAK_RUN_FLAG_DEVEL) != 0)
+        key = FLATPAK_METADATA_KEY_SDK;
+      else
+        key = FLATPAK_METADATA_KEY_RUNTIME,
+
       metakey = flatpak_deploy_get_metadata (app_deploy);
-      default_runtime = g_key_file_get_string (metakey, "Application",
-                                               (flags & FLATPAK_RUN_FLAG_DEVEL) != 0 ? "sdk" : "runtime",
-                                               &my_error);
+      default_runtime = g_key_file_get_string (metakey,
+                                               FLATPAK_METADATA_GROUP_APPLICATION,
+                                               key, &my_error);
       if (my_error)
         {
           g_propagate_error (error, g_steal_pointer (&my_error));
@@ -4747,7 +4776,10 @@ flatpak_run_app (const char     *app_ref,
     }
   else if (metakey)
     {
-      default_command = g_key_file_get_string (metakey, "Application", "command", &my_error);
+      default_command = g_key_file_get_string (metakey,
+                                               FLATPAK_METADATA_GROUP_APPLICATION,
+                                               FLATPAK_METADATA_KEY_COMMAND,
+                                               &my_error);
       if (my_error)
         {
           g_propagate_error (error, g_steal_pointer (&my_error));

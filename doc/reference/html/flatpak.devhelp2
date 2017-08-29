@@ -73,6 +73,7 @@
     <keyword type="enum" name="enum FlatpakRefKind" link="FlatpakRef.html#FlatpakRefKind"/>
     <keyword type="property" name="The “arch” property" link="FlatpakRef.html#FlatpakRef--arch"/>
     <keyword type="property" name="The “branch” property" link="FlatpakRef.html#FlatpakRef--branch"/>
+    <keyword type="property" name="The “collection-id” property" link="FlatpakRef.html#FlatpakRef--collection-id"/>
     <keyword type="property" name="The “commit” property" link="FlatpakRef.html#FlatpakRef--commit"/>
     <keyword type="property" name="The “kind” property" link="FlatpakRef.html#FlatpakRef--kind"/>
     <keyword type="property" name="The “name” property" link="FlatpakRef.html#FlatpakRef--name"/>
@@ -112,6 +113,7 @@
     <keyword type="function" name="flatpak_remote_set_disabled ()" link="FlatpakRemote.html#flatpak-remote-set-disabled"/>
     <keyword type="struct" name="struct FlatpakRemote" link="FlatpakRemote.html#FlatpakRemote-struct"/>
     <keyword type="property" name="The “name” property" link="FlatpakRemote.html#FlatpakRemote--name"/>
+    <keyword type="property" name="The “type” property" link="FlatpakRemote.html#FlatpakRemote--type"/>
     <keyword type="function" name="flatpak_bundle_ref_new ()" link="flatpak-flatpak-bundle-ref.html#flatpak-bundle-ref-new"/>
     <keyword type="function" name="flatpak_bundle_ref_get_file ()" link="flatpak-flatpak-bundle-ref.html#flatpak-bundle-ref-get-file"/>
     <keyword type="function" name="flatpak_bundle_ref_get_metadata ()" link="flatpak-flatpak-bundle-ref.html#flatpak-bundle-ref-get-metadata"/>
