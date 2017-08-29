@@ -28,7 +28,10 @@ override_dh_install:
 	install -m644 debian/tmp/etc/profile.d/flatpak.sh \
 		debian/tmp/etc/X11/Xsession.d/20flatpak
 	rm -f debian/tmp/usr/lib/*/*.la
-	dh_install --fail-missing
+	dh_install
+
+override_dh_missing:
+	dh_missing --fail-missing
 
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
