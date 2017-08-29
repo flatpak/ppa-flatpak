@@ -1,3 +1,9 @@
+flatpak (0.9.8-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+
+ -- Simon McVittie <smcv@collabora.com>  Tue, 29 Aug 2017 12:24:06 +0100
+
 flatpak (0.9.7-1) experimental; urgency=medium
 
   * New upstream release
