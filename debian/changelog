@@ -6,6 +6,8 @@ flatpak (0.9.8-1) UNRELEASED; urgency=medium
       experimental libostree APIs enabled first
     - Drop patches, applied upstream
   * Add patch from upstream to fix a regression that broke --devel
+  * Add patch already merged upstream to improve test diagnostics
+    (see #870312)
   * Move flatpak-manifest(5) from flatpak to flatpak-builder.
     Manifest files are not part of core Flatpak, and are only used by
     flatpak-builder.
