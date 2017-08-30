@@ -5,6 +5,7 @@ flatpak (0.9.8-1) UNRELEASED; urgency=medium
     - Do not enable experimental P2P feature for now, it needs
       experimental libostree APIs enabled first
     - Drop patches, applied upstream
+  * Add patch from upstream to fix a regression that broke --devel
   * Move flatpak-manifest(5) from flatpak to flatpak-builder.
     Manifest files are not part of core Flatpak, and are only used by
     flatpak-builder.
