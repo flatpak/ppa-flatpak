@@ -16,6 +16,7 @@ directory, which I think happened while trying to create ~/.cache.
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
 Forwarded: https://github.com/flatpak/flatpak/pull/894
+Applied-upstream: 0.9.8, commit:367c586862573e30e7896f5750b248f5d7d5eb30
 ---
  tests/libtest.sh    |  2 ++
  tests/testlibrary.c | 27 ++++++++++++++++++++++++---

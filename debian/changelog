@@ -1,3 +1,10 @@
+flatpak (0.8.7-5) UNRELEASED; urgency=medium
+
+  * d/p/tests-Isolate-tests-from-real-home-directory-more-thoroug.patch:
+    Mark as upstreamed for 0.9.8, and move to d/p/0.9.8/ directory
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 29 Aug 2017 15:36:42 +0100
+
 flatpak (0.8.7-4) unstable; urgency=medium
 
   * d/rules, d/autogen.sh: Run gtkdocize as well as autoreconf

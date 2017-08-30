@@ -4,4 +4,4 @@
 0.8.8/Manually-copy-summary-for-update-and-appdata-too.patch
 0.9.1/Improve-and-simplify-profile-snippet.patch
 0.9.4/Fix-tests-by-setting-XDG_CACHE_HOME.patch
-tests-Isolate-tests-from-real-home-directory-more-thoroug.patch
+0.9.8/tests-Isolate-tests-from-real-home-directory-more-thoroug.patch
