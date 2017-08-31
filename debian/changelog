@@ -1,4 +1,4 @@
-flatpak (0.9.8-1) UNRELEASED; urgency=medium
+flatpak (0.9.8-1) experimental; urgency=medium
 
   * New upstream release
     - d/control: Bump libostree dependency
@@ -27,7 +27,7 @@ flatpak (0.9.8-1) UNRELEASED; urgency=medium
   * Add patches to improve test coverage by not skipping most tests when
     running on tmpfs
 
- -- Simon McVittie <smcv@collabora.com>  Tue, 29 Aug 2017 12:24:06 +0100
+ -- Simon McVittie <smcv@debian.org>  Thu, 31 Aug 2017 15:26:32 +0100
 
 flatpak (0.8.7-5) unstable; urgency=medium
 
