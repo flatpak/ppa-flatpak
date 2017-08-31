@@ -17,7 +17,6 @@ Build-Depends:
  docbook-xml,
  docbook-xsl,
  fuse <!nocheck>,
- git <!nocheck>,
  gobject-introspection,
  gtk-doc-tools,
  gtk-update-icon-cache <!nocheck>,
@@ -41,7 +40,6 @@ Build-Depends:
  libxml2-utils,
  ostree <!nocheck>,
  procps,
- python3,
  shared-mime-info <!nocheck>,
  xmlto,
  xsltproc,
@@ -88,31 +86,6 @@ Description: Application deployment framework for desktop apps
  This package contains the services and executables needed to install and
  launch sandboxed applications, and the portal services needed to provide
  limited access to resources outside the sandbox.
-
-Package: flatpak-builder
-Architecture: linux-any
-Section: devel
-Depends:
- gir1.2-flatpak-1.0,
- flatpak (= ${binary:Version}),
- ostree (>= 2017.10),
- ${misc:Depends},
- ${shlibs:Depends},
-Recommends:
- binutils,
- bzr,
- elfutils,
- git,
- patch,
- unzip,
-Replaces:
- flatpak (<< 0.9.8-1~),
-Description: Flatpak application building helper
- Flatpak installs, manages and runs sandboxed desktop application bundles.
- See the flatpak package for a more comprehensive description.
- .
- flatpak-builder is a tool that makes it easy to build applications and their
- dependencies by automating the configure && make && make install steps.
 
 Package: flatpak-tests
 Architecture: linux-any

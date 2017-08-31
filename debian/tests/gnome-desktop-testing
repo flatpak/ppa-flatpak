@@ -11,25 +11,4 @@ if [ "$(id -nu)" = adt ]; then
 	install -d ~/.flatpak-tests/
 fi
 
-gnome-desktop-testing-runner -l Flatpak | while read t; do
-	t="${t%% *}"
-
-	case "$t" in
-		(Flatpak/test-builder.sh.test)
-			# has more dependencies
-			continue
-			;;
-		(Flatpak/test-builder-python.sh.test)
-			# has more dependencies
-			continue
-			;;
-	esac
-
-	gnome-desktop-testing-runner "$t" < /dev/null || touch "$ADTTMP"/failed
-done
-
-if [ -e "$ADTTMP"/failed ]; then
-	exit 1
-fi
-
-exit 0
+exec gnome-desktop-testing-runner Flatpak

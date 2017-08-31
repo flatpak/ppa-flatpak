@@ -1,6 +1,5 @@
 /*.debhelper
 /*.substvars
-/flatpak-builder/
 /flatpak-tests/
 /flatpak/
 /gir1.2-flatpak-1.0/

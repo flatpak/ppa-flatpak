@@ -1,3 +1,11 @@
+flatpak (0.9.8+27+g22f05803-1) UNRELEASED; urgency=medium
+
+  * New upstream snapshot without flatpak-builder included
+    - Drop patches, applied upstream
+    - Drop all flatpak-builder packaging
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 31 Aug 2017 16:54:24 +0100
+
 flatpak (0.9.8-1) experimental; urgency=medium
 
   * New upstream release
