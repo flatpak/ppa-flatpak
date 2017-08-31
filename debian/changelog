@@ -5,6 +5,7 @@ flatpak (0.9.8-1) UNRELEASED; urgency=medium
     - Do not enable experimental P2P feature for now, it needs
       experimental libostree APIs enabled first
     - Drop patches, applied upstream
+    - Update symbols file
   * Add patch from upstream to fix a regression that broke --devel
   * Add patch already merged upstream to improve test diagnostics
     (see #870312)
