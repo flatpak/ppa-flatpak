@@ -20,6 +20,10 @@ flatpak (0.9.8-1) UNRELEASED; urgency=medium
     - Do not use dh-python
   * Use dh_missing instead of deprecated dh_install --fail-missing
   * Merge packaging from unstable
+    - d/rules, d/autogen.sh: Run gtkdocize as well as autoreconf
+      (similar to upstream's autogen.sh but much simpler), replacing
+      gtk-doc.make at build time with the one in Debian's gtk-doc-tools
+    - Standards-Version: 4.0.1 (no changes required)
 
  -- Simon McVittie <smcv@collabora.com>  Tue, 29 Aug 2017 12:24:06 +0100
 
