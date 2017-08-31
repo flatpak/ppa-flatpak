@@ -19,8 +19,107 @@ flatpak (0.9.8-1) UNRELEASED; urgency=medium
     separate binary package.
     - Do not use dh-python
   * Use dh_missing instead of deprecated dh_install --fail-missing
+  * Merge packaging from unstable
 
  -- Simon McVittie <smcv@collabora.com>  Tue, 29 Aug 2017 12:24:06 +0100
+
+flatpak (0.8.7-5) unstable; urgency=medium
+
+  * d/p/tests-Isolate-tests-from-real-home-directory-more-thoroug.patch:
+    Mark as upstreamed for 0.9.8, and move to d/p/0.9.8/ directory
+  * d/p/Improve-test-diagnostics.patch: Add patch to improve test
+    diagnostics (see #870312)
+  * Standards-Version: 4.0.1 (no changes required)
+  * d/p/testlibrary-Skip-tests-that-need-extended-attributes-if-n.patch:
+    Add patch to skip tests that need extended attributes if /var/tmp
+    does not support them (Closes: #870312)
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 31 Aug 2017 11:33:05 +0100
+
+flatpak (0.8.7-4) unstable; urgency=medium
+
+  * d/rules, d/autogen.sh: Run gtkdocize as well as autoreconf
+    (similar to upstream's autogen.sh but much simpler), replacing
+    gtk-doc.make at build time with the one in Debian's gtk-doc-tools
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 18 Jul 2017 23:12:52 +0100
+
+flatpak (0.8.7-3) unstable; urgency=medium
+
+  * d/patches/: Add patch backported from 0.9.4, and new patch sent
+    upstream to PR #894, to avoid using the real home directory in tests
+  * d/control: Add libglib2.0-doc, libostree-doc to Build-Depends-Indep
+    so that libflatpak-doc can cross-reference those documentation
+    packages
+  * debian/test.sh: Do not ignore build-time tests' exit status
+  * d/rules: Do not run build-time tests with DEB_BUILD_OPTIONS=nocheck
+  * d/control: Do not build-depend on gnome-desktop-testing. It is only
+    used for the installed-tests.
+  * d/control: Annotate test-only build-dependencies with <!nocheck>
+  * Standards-Version: 4.0.0
+    - Use https URL for format of debian/copyright
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 04 Jul 2017 11:59:37 +0100
+
+flatpak (0.8.7-2) unstable; urgency=medium
+
+  * Move upstreamed patch to debian/patches/0.9.1/ to make it obvious
+    when it can be dropped
+  * d/p/0.8.8/: add patches backported from upstream 0.9.4, 0.9.6,
+    together with a new patch to the tests, to restore compatibility
+    with libostree 2017.7 (all applied upstream already)
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 28 Jun 2017 11:55:18 +0100
+
+flatpak (0.8.7-1) unstable; urgency=high
+
+  * New upstream stable release
+    - Security: prevent deploying files with inappropriate permissions
+      (world-writable, setuid, etc.) (Closes: #865413)
+    - Security: make ~/.local/share/flatpak private to user to defend
+      against app vendors that might have released files with
+      inappropriate permissions in the past
+    - If an error occurs during pull, do not double-set an error,
+      which is considered to be invalid
+    - Increase some arbitrary timeouts in a test to make it more
+      reliable
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 21 Jun 2017 09:50:09 +0100
+
+flatpak (0.8.6-1) unstable; urgency=medium
+
+  * New upstream release
+    - Fix the return value type for filtered NameHasOwner() D-Bus calls
+      (upstream issue 817)
+    - Security hardening: Only export .desktop files, D-Bus session
+      services and icons, but not other files that an app might try to
+      export
+    - Allow remote repositories to specify a new GPG key (for key rollover)
+      or a new URL (for location migration) in their signed metadata
+    - Let KDE apps bind-mount ~/.config/kdeglobals into the sandbox:
+      + Allow bind-mounting regular files in the XDG cache, config or data
+        directories, not just directories
+      + Allow bind-mounting files in the XDG directories read-only, not
+        just read/write
+    - Close a race condition in app identification by portals
+    - Cope with a non-default WAYLAND_DISPLAY
+    - Cope with /tmp on the host being a symlink
+    - Clear TMPDIR in the sandbox, fixing sandboxed Spotify
+    - Add X-Flatpak=$app_id to exported .desktop files
+      so that the desktop environment can identify what will be launched
+    - Make the host's /etc/hosts and /etc/host.conf available in the sandbox,
+      fixing sandboxed Spotify
+    - Update Hungarian translation
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 05 Jun 2017 21:30:06 +0100
+
+flatpak (0.8.5-2) unstable; urgency=medium
+
+  * flatpak Recommends xdg-desktop-portal-gtk | xdg-desktop-portal-backend,
+    so that sandboxed apps can communicate with the outside world
+    (Closes: #861068)
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 24 Apr 2017 12:59:09 +0100
 
 flatpak (0.9.7-1) experimental; urgency=medium
 
