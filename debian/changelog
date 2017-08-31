@@ -1,4 +1,4 @@
-flatpak (0.8.7-5) UNRELEASED; urgency=medium
+flatpak (0.8.7-5) unstable; urgency=medium
 
   * d/p/tests-Isolate-tests-from-real-home-directory-more-thoroug.patch:
     Mark as upstreamed for 0.9.8, and move to d/p/0.9.8/ directory
@@ -9,7 +9,7 @@ flatpak (0.8.7-5) UNRELEASED; urgency=medium
     Add patch to skip tests that need extended attributes if /var/tmp
     does not support them (Closes: #870312)
 
- -- Simon McVittie <smcv@debian.org>  Tue, 29 Aug 2017 15:36:42 +0100
+ -- Simon McVittie <smcv@debian.org>  Thu, 31 Aug 2017 11:33:05 +0100
 
 flatpak (0.8.7-4) unstable; urgency=medium
 
