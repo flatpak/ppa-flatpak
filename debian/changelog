@@ -4,6 +4,7 @@ flatpak (0.8.7-5) UNRELEASED; urgency=medium
     Mark as upstreamed for 0.9.8, and move to d/p/0.9.8/ directory
   * d/p/Improve-test-diagnostics.patch: Add patch to improve test
     diagnostics (see #870312)
+  * Standards-Version: 4.0.1 (no changes required)
 
  -- Simon McVittie <smcv@debian.org>  Tue, 29 Aug 2017 15:36:42 +0100
 
