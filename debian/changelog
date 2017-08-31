@@ -5,6 +5,9 @@ flatpak (0.8.7-5) UNRELEASED; urgency=medium
   * d/p/Improve-test-diagnostics.patch: Add patch to improve test
     diagnostics (see #870312)
   * Standards-Version: 4.0.1 (no changes required)
+  * d/p/testlibrary-Skip-tests-that-need-extended-attributes-if-n.patch:
+    Add patch to skip tests that need extended attributes if /var/tmp
+    does not support them (Closes: #870312)
 
  -- Simon McVittie <smcv@debian.org>  Tue, 29 Aug 2017 15:36:42 +0100
 

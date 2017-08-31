@@ -1,0 +1,133 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Thu, 31 Aug 2017 10:56:19 +0100
+Subject: testlibrary: Skip tests that need extended attributes if necessary
+
+These would fail when /var/tmp is a tmpfs.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+---
+ tests/testlibrary.c | 55 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 55 insertions(+)
+
+diff --git a/tests/testlibrary.c b/tests/testlibrary.c
+index 0b50a95..80bd18c 100644
+--- a/tests/testlibrary.c
++++ b/tests/testlibrary.c
+@@ -9,6 +9,7 @@
+ #include "libglnx/libglnx.h"
+ #include "flatpak.h"
+ 
++static GError *no_xattrs = NULL;
+ static char *testdir;
+ static char *flatpak_runtimedir;
+ static char *flatpak_systemdir;
+@@ -51,6 +52,12 @@ test_user_installation (void)
+   g_autofree char *path = NULL;
+   g_autofree char *expected_path = NULL;
+ 
++  if (no_xattrs != NULL)
++    {
++      g_test_skip (no_xattrs->message);
++      return;
++    }
++
+   inst = flatpak_installation_new_user (NULL, &error);
+   g_assert_nonnull (inst);
+   g_assert_no_error (error);
+@@ -71,6 +78,12 @@ test_system_installation (void)
+   g_autoptr(GFile) dir = NULL;
+   g_autofree char *path = NULL;
+ 
++  if (no_xattrs != NULL)
++    {
++      g_test_skip (no_xattrs->message);
++      return;
++    }
++
+   inst = flatpak_installation_new_system (NULL, &error);
+   g_assert_nonnull (inst);
+   g_assert_no_error (error);
+@@ -103,6 +116,12 @@ test_multiple_system_installations (void)
+   FlatpakStorageType current_storage_type = FLATPAK_STORAGE_TYPE_DEFAULT;
+   int i;
+ 
++  if (no_xattrs != NULL)
++    {
++      g_test_skip (no_xattrs->message);
++      return;
++    }
++
+   system_dirs = flatpak_get_system_installations (NULL, &error);
+   g_assert_nonnull (system_dirs);
+   g_assert_no_error (error);
+@@ -220,6 +239,12 @@ test_list_remotes (void)
+   g_autoptr(GPtrArray) remotes = NULL;
+   FlatpakRemote *remote;
+ 
++  if (no_xattrs != NULL)
++    {
++      g_test_skip (no_xattrs->message);
++      return;
++    }
++
+   inst = flatpak_installation_new_user (NULL, &error);
+   g_assert_no_error (error);
+ 
+@@ -239,6 +264,12 @@ test_remote_by_name (void)
+   g_autoptr(GError) error = NULL;
+   FlatpakRemote *remote;
+ 
++  if (no_xattrs != NULL)
++    {
++      g_test_skip (no_xattrs->message);
++      return;
++    }
++
+   inst = flatpak_installation_new_user (NULL, &error);
+   g_assert_no_error (error);
+ 
+@@ -263,6 +294,12 @@ test_remote (void)
+   g_autoptr(FlatpakRemote) remote = NULL;
+   gboolean res;
+ 
++  if (no_xattrs != NULL)
++    {
++      g_test_skip (no_xattrs->message);
++      return;
++    }
++
+   inst = flatpak_installation_new_user (NULL, &error);
+   g_assert_no_error (error);
+ 
+@@ -297,6 +334,12 @@ test_list_refs (void)
+   g_autoptr(GError) error = NULL;
+   g_autoptr(GPtrArray) refs = NULL;
+ 
++  if (no_xattrs != NULL)
++    {
++      g_test_skip (no_xattrs->message);
++      return;
++    }
++
+   inst = flatpak_installation_new_user (NULL, &error);
+   g_assert_no_error (error);
+ 
+@@ -813,6 +856,18 @@ global_setup (void)
+ 
+   copy_gpg ();
+   setup_multiple_installations();
++
++  if (setxattr (testdir, "user.test-xattr-support", "yes", 4, 0) != 0)
++    {
++      int saved_errno = errno;
++
++      g_set_error (&no_xattrs, G_IO_ERROR, G_IO_ERROR_FAILED,
++                   "Unable to setxattr on \"%s\": %s", testdir,
++                   g_strerror (saved_errno));
++      g_test_message ("%s", no_xattrs->message);
++      return;
++    }
++
+   setup_repo ();
+ }
+ 
