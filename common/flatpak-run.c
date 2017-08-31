@@ -3278,6 +3278,7 @@ flatpak_ensure_data_dir (const char   *app_id,
   g_autoptr(GFile) dir = flatpak_get_data_dir (app_id);
   g_autoptr(GFile) data_dir = g_file_get_child (dir, "data");
   g_autoptr(GFile) cache_dir = g_file_get_child (dir, "cache");
+  g_autoptr(GFile) fontconfig_cache_dir = g_file_get_child (cache_dir, "fontconfig");
   g_autoptr(GFile) tmp_dir = g_file_get_child (cache_dir, "tmp");
   g_autoptr(GFile) config_dir = g_file_get_child (dir, "config");
 
@@ -3285,6 +3286,9 @@ flatpak_ensure_data_dir (const char   *app_id,
     return NULL;
 
   if (!flatpak_mkdir_p (cache_dir, cancellable, error))
+    return NULL;
+
+  if (!flatpak_mkdir_p (fontconfig_cache_dir, cancellable, error))
     return NULL;
 
   if (!flatpak_mkdir_p (tmp_dir, cancellable, error))
@@ -3973,6 +3977,7 @@ static gboolean
 setup_seccomp (GPtrArray  *argv_array,
                GArray     *fd_array,
                const char *arch,
+               gulong      allowed_personality,
                gboolean    multiarch,
                gboolean    devel,
                GError    **error)
@@ -4018,7 +4023,7 @@ setup_seccomp (GPtrArray  *argv_array,
     /* Useless old syscall */
     {SCMP_SYS (uselib)},
     /* Don't allow you to switch to bsd emulation or whatnot */
-    {SCMP_SYS (personality)},
+    {SCMP_SYS (personality), &SCMP_A0(SCMP_CMP_NE, allowed_personality)},
     /* Don't allow disabling accounting */
     {SCMP_SYS (acct)},
     /* 16-bit code is unnecessary in the sandbox, and modify_ldt is a
@@ -4224,6 +4229,7 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
   g_autofree char *group_fd_str = NULL;
   g_autofree char *group_contents = NULL;
   struct group *g = getgrgid (getgid ());
+  gulong pers;
 
   g_autoptr(GFile) etc = NULL;
 
@@ -4369,11 +4375,23 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
         }
     }
 
+  pers = PER_LINUX;
+
+  if ((flags & FLATPAK_RUN_FLAG_SET_PERSONALITY) &&
+      flatpak_is_linux32_arch (arch))
+    {
+      g_debug ("Setting personality linux32");
+      pers = PER_LINUX32;
+    }
+
+  /* Always set the personallity, and clear all weird flags */
+  personality (pers);
 
 #ifdef ENABLE_SECCOMP
   if (!setup_seccomp (argv_array,
                       fd_array,
                       arch,
+                      pers,
                       (flags & FLATPAK_RUN_FLAG_MULTIARCH) != 0,
                       (flags & FLATPAK_RUN_FLAG_DEVEL) != 0,
                       error))
@@ -4382,13 +4400,6 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
 
   if ((flags & FLATPAK_RUN_FLAG_WRITABLE_ETC) == 0)
     add_monitor_path_args ((flags & FLATPAK_RUN_FLAG_NO_SESSION_HELPER) == 0, argv_array);
-
-  if ((flags & FLATPAK_RUN_FLAG_SET_PERSONALITY) &&
-      flatpak_is_linux32_arch (arch))
-    {
-      g_debug ("Setting personality linux32");
-      personality (PER_LINUX32);
-    }
 
   return TRUE;
 }
@@ -4641,7 +4652,7 @@ flatpak_run_app (const char     *app_ref,
       if ((flags & FLATPAK_RUN_FLAG_DEVEL) != 0)
         key = FLATPAK_METADATA_KEY_SDK;
       else
-        key = FLATPAK_METADATA_KEY_RUNTIME,
+        key = FLATPAK_METADATA_KEY_RUNTIME;
 
       metakey = flatpak_deploy_get_metadata (app_deploy);
       default_runtime = g_key_file_get_string (metakey,
