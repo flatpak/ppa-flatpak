@@ -1,0 +1,102 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Thu, 31 Aug 2017 14:02:31 +0100
+Subject: Skip system-mode tests (only) if /var/tmp doesn't support xattrs
+
+This partially reverts commit a53a752a354a569b8cd4a1bb19e2cbfd837aac12.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/988
+---
+ tests/test-bundle.sh                      | 1 +
+ tests/test-extensions.sh                  | 1 +
+ tests/test-oci.sh                         | 1 +
+ tests/test-repo.sh                        | 1 +
+ tests/test-run.sh                         | 1 +
+ tests/test-unsigned-summaries.sh          | 1 +
+ tests/test-update-remote-configuration.sh | 1 +
+ 7 files changed, 7 insertions(+)
+
+diff --git a/tests/test-bundle.sh b/tests/test-bundle.sh
+index 7fba235..c843e6b 100755
+--- a/tests/test-bundle.sh
++++ b/tests/test-bundle.sh
+@@ -22,6 +22,7 @@ set -euo pipefail
+ . $(dirname $0)/libtest.sh
+ 
+ skip_without_bwrap
++[ x${USE_SYSTEMDIR-} != xyes ] || skip_without_user_xattrs
+ 
+ echo "1..7"
+ 
+diff --git a/tests/test-extensions.sh b/tests/test-extensions.sh
+index 2a13a86..ce9d317 100755
+--- a/tests/test-extensions.sh
++++ b/tests/test-extensions.sh
+@@ -22,6 +22,7 @@ set -euo pipefail
+ . $(dirname $0)/libtest.sh
+ 
+ skip_without_bwrap
++[ x${USE_SYSTEMDIR-} != xyes ] || skip_without_user_xattrs
+ 
+ echo "1..2"
+ 
+diff --git a/tests/test-oci.sh b/tests/test-oci.sh
+index 06effca..5d8cee9 100755
+--- a/tests/test-oci.sh
++++ b/tests/test-oci.sh
+@@ -22,6 +22,7 @@ set -euo pipefail
+ . $(dirname $0)/libtest.sh
+ 
+ skip_without_bwrap
++[ x${USE_SYSTEMDIR-} != xyes ] || skip_without_user_xattrs
+ 
+ echo "1..6"
+ 
+diff --git a/tests/test-repo.sh b/tests/test-repo.sh
+index a5b54d2..7637195 100755
+--- a/tests/test-repo.sh
++++ b/tests/test-repo.sh
+@@ -22,6 +22,7 @@ set -euo pipefail
+ . $(dirname $0)/libtest.sh
+ 
+ skip_without_bwrap
++[ x${USE_SYSTEMDIR-} != xyes ] || skip_without_user_xattrs
+ 
+ if [ x${USE_COLLECTIONS_IN_CLIENT-} == xyes ] || [ x${USE_COLLECTIONS_IN_SERVER-} == xyes ] ; then
+     skip_without_p2p
+diff --git a/tests/test-run.sh b/tests/test-run.sh
+index c19dbe1..4781f8a 100755
+--- a/tests/test-run.sh
++++ b/tests/test-run.sh
+@@ -22,6 +22,7 @@ set -euo pipefail
+ . $(dirname $0)/libtest.sh
+ 
+ skip_without_bwrap
++[ x${USE_SYSTEMDIR-} != xyes ] || skip_without_user_xattrs
+ 
+ echo "1..12"
+ 
+diff --git a/tests/test-unsigned-summaries.sh b/tests/test-unsigned-summaries.sh
+index ff14af2..40f6c33 100755
+--- a/tests/test-unsigned-summaries.sh
++++ b/tests/test-unsigned-summaries.sh
+@@ -25,6 +25,7 @@ set -euo pipefail
+ . $(dirname $0)/libtest.sh
+ 
+ skip_without_bwrap
++[ x${USE_SYSTEMDIR-} != xyes ] || skip_without_user_xattrs
+ skip_without_p2p
+ 
+ echo "1..7"
+diff --git a/tests/test-update-remote-configuration.sh b/tests/test-update-remote-configuration.sh
+index df0a8ea..7043f3f 100755
+--- a/tests/test-update-remote-configuration.sh
++++ b/tests/test-update-remote-configuration.sh
+@@ -25,6 +25,7 @@ set -euo pipefail
+ . $(dirname $0)/libtest.sh
+ 
+ skip_without_bwrap
++[ x${USE_SYSTEMDIR-} != xyes ] || skip_without_user_xattrs
+ skip_without_p2p
+ 
+ echo "1..3"

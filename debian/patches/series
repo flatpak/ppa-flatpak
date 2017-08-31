@@ -1,2 +1,6 @@
 0.9.9/Fix-regression-in-devel.patch
 0.9.9/Improve-test-diagnostics.patch
+0.9.9/tests-Don-t-require-user-xattrs.patch
+Put-FLATPAK_SYSTEM_CACHE_DIR-alongside-other-test-data.patch
+Bring-back-skip_without_user_xattrs-helper-function.patch
+Skip-system-mode-tests-only-if-var-tmp-doesn-t-support-xa.patch
