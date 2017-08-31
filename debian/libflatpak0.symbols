@@ -89,6 +89,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_remote_get_nodeps@Base 0.6.13
  flatpak_remote_get_noenumerate@Base 0.5.2
  flatpak_remote_get_prio@Base 0.5.2
+ flatpak_remote_get_remote_type@Base 0.9.8+27+g22f05803
  flatpak_remote_get_title@Base 0.5.2
  flatpak_remote_get_type@Base 0.5.2
  flatpak_remote_get_url@Base 0.5.2
