@@ -1,11 +1,11 @@
-flatpak (0.9.9-1) UNRELEASED; urgency=medium
+flatpak (0.9.9-1) experimental; urgency=medium
 
   * New upstream release, without flatpak-builder included
     - Drop patches, applied upstream
     - Drop all flatpak-builder packaging
     - Update symbols file
 
- -- Simon McVittie <smcv@debian.org>  Thu, 31 Aug 2017 16:54:24 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 01 Sep 2017 17:23:35 +0100
 
 flatpak (0.9.8-1) experimental; urgency=medium
 
