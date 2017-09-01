@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flatpak master\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2017-08-31 16:10+0100\n"
+"POT-Creation-Date: 2017-09-01 16:37+0200\n"
 "PO-Revision-Date: 2017-04-07 13:52+0200\n"
 "Last-Translator: Mario Blättermann <mario.blaettermann@gmail.com>\n"
 "Language-Team: German <gnome-de@gnome.org>\n"
@@ -97,7 +97,7 @@ msgid "Default branch to use for this remote"
 msgstr "Zu verwendender Vorgabe-Zweig für diese ferne Quelle"
 
 #: app/flatpak-builtins-add-remote.c:78 app/flatpak-builtins-repo.c:153
-#: app/flatpak-builtins-repo-update.c:54 app/flatpak-builtins-run.c:53
+#: app/flatpak-builtins-repo-update.c:54 app/flatpak-builtins-run.c:54
 msgid "BRANCH"
 msgstr "ZWEIG"
 
@@ -225,7 +225,7 @@ msgstr "Architektur für die gebündelt wird"
 #: app/flatpak-builtins-build-sign.c:41 app/flatpak-builtins-info.c:48
 #: app/flatpak-builtins-install.c:56 app/flatpak-builtins-list.c:52
 #: app/flatpak-builtins-ls-remote.c:48 app/flatpak-builtins-make-current.c:38
-#: app/flatpak-builtins-run.c:51 app/flatpak-builtins-uninstall.c:44
+#: app/flatpak-builtins-run.c:52 app/flatpak-builtins-uninstall.c:44
 #: app/flatpak-builtins-update.c:53
 msgid "ARCH"
 msgstr "ARCH"
@@ -362,12 +362,12 @@ msgstr "Metadaten sind ungültig. Es ist keine Anwendung oder Laufzeit"
 msgid "No extension point matching %s in %s"
 msgstr "Kein Erweiterungspunkt entspricht %s in %s"
 
-#: app/flatpak-builtins-build.c:387
+#: app/flatpak-builtins-build.c:390
 #, c-format
 msgid "Missing '=' in bind mount option '%s'"
 msgstr "Fehlendes »=« in Bind-Mount-Option »%s«"
 
-#: app/flatpak-builtins-build.c:413 common/flatpak-run.c:4850
+#: app/flatpak-builtins-build.c:416 common/flatpak-run.c:4960
 msgid "Unable to start app"
 msgstr "Anwendung kann nicht gestartet werden"
 
@@ -538,7 +538,7 @@ msgstr "In den Metadaten ist kein Name angegeben"
 msgid "Command to set"
 msgstr "Festzulegender Befehl"
 
-#: app/flatpak-builtins-build-finish.c:47 app/flatpak-builtins-run.c:52
+#: app/flatpak-builtins-build-finish.c:47 app/flatpak-builtins-run.c:53
 #: app/flatpak-main.c:146
 msgid "COMMAND"
 msgstr "BEFEHL"
@@ -580,7 +580,7 @@ msgid "Change the runtime used for the app"
 msgstr "Die für die App verwendete Laufzeit ändern"
 
 #: app/flatpak-builtins-build-finish.c:53 app/flatpak-builtins-build-init.c:50
-#: app/flatpak-builtins-run.c:55
+#: app/flatpak-builtins-run.c:56
 msgid "RUNTIME"
 msgstr "LAUFZEIT"
 
@@ -665,7 +665,7 @@ msgid "LOCATION and FILENAME must be specified"
 msgstr "ORT und DATEINAME müssen angegeben werden"
 
 #: app/flatpak-builtins-build-init.c:49 app/flatpak-builtins-info.c:48
-#: app/flatpak-builtins-run.c:51
+#: app/flatpak-builtins-run.c:52
 msgid "Arch to use"
 msgstr "Zu verwendende Architektur"
 
@@ -686,7 +686,7 @@ msgstr "APP"
 msgid "Specify version for --base"
 msgstr "Version für --base angeben"
 
-#: app/flatpak-builtins-build-init.c:52 app/flatpak-builtins-run.c:56
+#: app/flatpak-builtins-build-init.c:52 app/flatpak-builtins-run.c:57
 msgid "VERSION"
 msgstr "VERSION"
 
@@ -1278,7 +1278,7 @@ msgid "APP BRANCH - Make branch of application current"
 msgstr "ANWENDUNG ZWEIG - Zweig der Anwendung aktuell setzen"
 
 #: app/flatpak-builtins-make-current.c:64 app/flatpak-builtins-override.c:63
-#: app/flatpak-builtins-run.c:103
+#: app/flatpak-builtins-run.c:105
 msgid "APP must be specified"
 msgstr "ANWENDUNG muss angegeben werden"
 
@@ -1411,39 +1411,44 @@ msgstr "Keine unerreichbaren Objekte\n"
 msgid "Deleted %u objects, %s freed\n"
 msgstr "%u Objekte gelöscht, %s freigemacht\n"
 
-#: app/flatpak-builtins-run.c:52
+#: app/flatpak-builtins-run.c:53
 msgid "Command to run"
 msgstr "Auszuführender Befehl"
 
-#: app/flatpak-builtins-run.c:53
+#: app/flatpak-builtins-run.c:54
 msgid "Branch to use"
 msgstr "Zu verwendender Zweig"
 
-#: app/flatpak-builtins-run.c:54
+#: app/flatpak-builtins-run.c:55
 msgid "Use development runtime"
 msgstr "Entwickler-Laufzeitumgebung verwenden"
 
-#: app/flatpak-builtins-run.c:55
+#: app/flatpak-builtins-run.c:56
 msgid "Runtime to use"
 msgstr "Zu verwendende Laufzeitumgebung"
 
-#: app/flatpak-builtins-run.c:56
+#: app/flatpak-builtins-run.c:57
 msgid "Runtime version to use"
 msgstr "Zu verwendende Laufzeit"
 
-#: app/flatpak-builtins-run.c:57
+#: app/flatpak-builtins-run.c:58
 msgid "Log session bus calls"
 msgstr "Sitzungsbus-Aufrufe protokollieren"
 
-#: app/flatpak-builtins-run.c:58
+#: app/flatpak-builtins-run.c:59
 msgid "Log system bus calls"
 msgstr "Systembus-Aufrufe protokollieren"
 
-#: app/flatpak-builtins-run.c:59
+#: app/flatpak-builtins-run.c:60
+#, fuzzy
+msgid "Log accessibility bus calls"
+msgstr "Sitzungsbus-Aufrufe protokollieren"
+
+#: app/flatpak-builtins-run.c:61
 msgid "Enable file forwarding"
 msgstr ""
 
-#: app/flatpak-builtins-run.c:80
+#: app/flatpak-builtins-run.c:82
 msgid "APP [args...] - Run an app"
 msgstr "ANWENDUNG [Argumente …] - Eine Anwendung ausführen"
 
@@ -2066,37 +2071,37 @@ msgstr ""
 msgid "No entry for %s in remote summary flatpak cache "
 msgstr ""
 
-#: common/flatpak-run.c:253
+#: common/flatpak-run.c:257
 #, c-format
 msgid "Unknown share type %s, valid types are: %s"
 msgstr "Unbekannter Freigabetyp %s, zulässige Typen sind: %s"
 
-#: common/flatpak-run.c:288
+#: common/flatpak-run.c:292
 #, c-format
 msgid "Unknown policy type %s, valid types are: %s"
 msgstr "Unbekannter Regeltyp %s, zulässige Typen sind: %s"
 
-#: common/flatpak-run.c:326
+#: common/flatpak-run.c:330
 #, c-format
 msgid "Invalid dbus name %s\n"
 msgstr "Ungültiger Dbus-Name %s\n"
 
-#: common/flatpak-run.c:339
+#: common/flatpak-run.c:343
 #, c-format
 msgid "Unknown socket type %s, valid types are: %s"
 msgstr "Unbekannter Socket-Typ %s, zulässige Typen sind: %s"
 
-#: common/flatpak-run.c:368
+#: common/flatpak-run.c:372
 #, c-format
 msgid "Unknown device type %s, valid types are: %s"
 msgstr "Unbekannter Gerätetyp %s, zulässige Typen sind: %s"
 
-#: common/flatpak-run.c:396
+#: common/flatpak-run.c:400
 #, c-format
 msgid "Unknown feature type %s, valid types are: %s"
 msgstr "Unbekannter Funktionstyp %s, zulässige Typen sind: %s"
 
-#: common/flatpak-run.c:769
+#: common/flatpak-run.c:773
 #, fuzzy, c-format
 msgid ""
 "Unknown filesystem location %s, valid locations are: host, home, xdg-"
@@ -2105,166 +2110,166 @@ msgstr ""
 "Unbekannter Dateisystem-Ort %s, zulässige Typen sind: host, home, xdg-"
 "*[/...], ~/Ordner, /Ordner"
 
-#: common/flatpak-run.c:1035
+#: common/flatpak-run.c:1039
 #, c-format
 msgid "Invalid env format %s"
 msgstr "Ungültiges Umgebungsformat: %s"
 
-#: common/flatpak-run.c:1175
+#: common/flatpak-run.c:1179
 msgid "Share with host"
 msgstr "Mit Rechner teilen"
 
-#: common/flatpak-run.c:1175 common/flatpak-run.c:1176
+#: common/flatpak-run.c:1179 common/flatpak-run.c:1180
 msgid "SHARE"
 msgstr "FREIGABE"
 
-#: common/flatpak-run.c:1176
+#: common/flatpak-run.c:1180
 msgid "Unshare with host"
 msgstr "Freigabe für Rechner aufheben"
 
-#: common/flatpak-run.c:1177
+#: common/flatpak-run.c:1181
 msgid "Expose socket to app"
 msgstr "Socket für die Anwendung sichtbar machen"
 
-#: common/flatpak-run.c:1177 common/flatpak-run.c:1178
+#: common/flatpak-run.c:1181 common/flatpak-run.c:1182
 msgid "SOCKET"
 msgstr "SOCKET"
 
-#: common/flatpak-run.c:1178
+#: common/flatpak-run.c:1182
 msgid "Don't expose socket to app"
 msgstr "Socket vor der Anwendung verbergen"
 
-#: common/flatpak-run.c:1179
+#: common/flatpak-run.c:1183
 msgid "Expose device to app"
 msgstr "Gerät für die Anwendung sichtbar machen"
 
-#: common/flatpak-run.c:1179 common/flatpak-run.c:1180
+#: common/flatpak-run.c:1183 common/flatpak-run.c:1184
 msgid "DEVICE"
 msgstr "GERÄT"
 
-#: common/flatpak-run.c:1180
+#: common/flatpak-run.c:1184
 msgid "Don't expose device to app"
 msgstr "Gerät vor der Anwendung verbergen"
 
-#: common/flatpak-run.c:1181
+#: common/flatpak-run.c:1185
 msgid "Allow feature"
 msgstr "Funktion erlauben"
 
-#: common/flatpak-run.c:1181 common/flatpak-run.c:1182
+#: common/flatpak-run.c:1185 common/flatpak-run.c:1186
 msgid "FEATURE"
 msgstr "FUNKTION"
 
-#: common/flatpak-run.c:1182
+#: common/flatpak-run.c:1186
 msgid "Don't allow feature"
 msgstr "Funktion nicht erlauben"
 
-#: common/flatpak-run.c:1183
+#: common/flatpak-run.c:1187
 msgid "Expose filesystem to app (:ro for read-only)"
 msgstr ""
 "Das Dateisystem für die Anwendung sichtbar machen (:ro für schreibgeschützt)"
 
-#: common/flatpak-run.c:1183
+#: common/flatpak-run.c:1187
 msgid "FILESYSTEM[:ro]"
 msgstr "DATEISYSTEM[:ro]"
 
-#: common/flatpak-run.c:1184
+#: common/flatpak-run.c:1188
 msgid "Don't expose filesystem to app"
 msgstr "Das Dateisystem vor der Anwendung verbergen"
 
-#: common/flatpak-run.c:1184
+#: common/flatpak-run.c:1188
 msgid "FILESYSTEM"
 msgstr "DATEISYSTEM"
 
-#: common/flatpak-run.c:1185
+#: common/flatpak-run.c:1189
 msgid "Set environment variable"
 msgstr "Umgebungsvariable festlegen"
 
-#: common/flatpak-run.c:1185
+#: common/flatpak-run.c:1189
 msgid "VAR=VALUE"
 msgstr "VAR=WERT"
 
-#: common/flatpak-run.c:1186
+#: common/flatpak-run.c:1190
 msgid "Allow app to own name on the session bus"
 msgstr ""
 "Der Anwendung erlauben, einen Namen auf dem Sitzungsbus zu beanspruchen"
 
-#: common/flatpak-run.c:1186 common/flatpak-run.c:1187
-#: common/flatpak-run.c:1188 common/flatpak-run.c:1189
+#: common/flatpak-run.c:1190 common/flatpak-run.c:1191
+#: common/flatpak-run.c:1192 common/flatpak-run.c:1193
 msgid "DBUS_NAME"
 msgstr "DBUS_NAME"
 
-#: common/flatpak-run.c:1187
+#: common/flatpak-run.c:1191
 msgid "Allow app to talk to name on the session bus"
 msgstr "Der Anwendung erlauben, mit Namen auf dem Sitzungsbus zu kommunizieren"
 
-#: common/flatpak-run.c:1188
+#: common/flatpak-run.c:1192
 msgid "Allow app to own name on the system bus"
 msgstr ""
 "Der Anwendung erlauben, einen Namen auf dem Sitzungsbus zu beanspruchen"
 
-#: common/flatpak-run.c:1189
+#: common/flatpak-run.c:1193
 msgid "Allow app to talk to name on the system bus"
 msgstr "Der Anwendung erlauben, mit Namen auf dem Systembus zu kommunizieren"
 
-#: common/flatpak-run.c:1190
+#: common/flatpak-run.c:1194
 msgid "Add generic policy option"
 msgstr "Allgemeine Richtlinien-Einstellungen hinzufügen"
 
-#: common/flatpak-run.c:1190 common/flatpak-run.c:1191
+#: common/flatpak-run.c:1194 common/flatpak-run.c:1195
 msgid "SUBSYSTEM.KEY=VALUE"
 msgstr "SUBSYSTEM.SCHLÜSSEL=WERT"
 
-#: common/flatpak-run.c:1191
+#: common/flatpak-run.c:1195
 msgid "Remove generic policy option"
 msgstr "Allgemeine Richtlinien-Einstellungen entfernen"
 
-#: common/flatpak-run.c:1192
+#: common/flatpak-run.c:1196
 msgid "Persist home directory"
 msgstr "Basisordner beständig machen"
 
-#: common/flatpak-run.c:1192
+#: common/flatpak-run.c:1196
 msgid "FILENAME"
 msgstr "DATEINAME"
 
 #. This is not needed/used anymore, so hidden, but we accept it for backwards compat
-#: common/flatpak-run.c:1194
+#: common/flatpak-run.c:1198
 msgid "Don't require a running session (no cgroups creation)"
 msgstr ""
 "Laufende Sitzung als nicht erforderlich festlegen (keine Erstellung von "
 "cgroups)"
 
-#: common/flatpak-run.c:1878
+#: common/flatpak-run.c:1882
 msgid "Failed to create temporary file"
 msgstr "Temporäre Datei konnte nicht erstellt werden"
 
-#: common/flatpak-run.c:1885
+#: common/flatpak-run.c:1889
 msgid "Failed to unlink temporary file"
 msgstr "Verbindung zur temporären Datei konnte nicht gelöst werden"
 
-#: common/flatpak-run.c:1903
+#: common/flatpak-run.c:1907
 msgid "Failed to write to temporary file"
 msgstr "In temporäre Datei konnte nicht geschrieben werden"
 
-#: common/flatpak-run.c:3502
+#: common/flatpak-run.c:3581
 #, c-format
 msgid "Failed to open flatpak-info temp file: %s"
 msgstr "Öffnen der temporären flatpak-Informationsdatei fehlgeschlagen: %s"
 
-#: common/flatpak-run.c:3564 common/flatpak-run.c:3574
+#: common/flatpak-run.c:3643 common/flatpak-run.c:3653
 #, c-format
 msgid "Failed to open temp file: %s"
 msgstr "Temporäre Datei konnte nicht geöffnet werden: %s"
 
-#: common/flatpak-run.c:3895
+#: common/flatpak-run.c:4003
 msgid "Unable to create sync pipe"
 msgstr "»Sync-Pipe« konnte nicht erstellt werden"
 
-#: common/flatpak-run.c:3920
+#: common/flatpak-run.c:4030
 #, c-format
 msgid "Failed to open app info file: %s"
 msgstr "Öffnen der Informationsdatei der Anwendung fehlgeschlagen: %s"
 
-#: common/flatpak-run.c:3950
+#: common/flatpak-run.c:4060
 msgid "Failed to sync with dbus proxy"
 msgstr "Abgleich mit Dbus-Proxy ist fehlgeschlagen"
 

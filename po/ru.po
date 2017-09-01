@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flatpak master\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2017-08-31 16:10+0100\n"
+"POT-Creation-Date: 2017-09-01 16:37+0200\n"
 "PO-Revision-Date: 2017-02-10 11:59+0300\n"
 "Last-Translator: Roman Kharin <romiq.kh@gmail.com>\n"
 "Language-Team: romiq.kh@gmail.com\n"
@@ -94,7 +94,7 @@ msgid "Default branch to use for this remote"
 msgstr "Указать ветку по умолчанию для удалённого репозитория"
 
 #: app/flatpak-builtins-add-remote.c:78 app/flatpak-builtins-repo.c:153
-#: app/flatpak-builtins-repo-update.c:54 app/flatpak-builtins-run.c:53
+#: app/flatpak-builtins-repo-update.c:54 app/flatpak-builtins-run.c:54
 msgid "BRANCH"
 msgstr "ВЕТКА"
 
@@ -224,7 +224,7 @@ msgstr "Архитектура для пакета"
 #: app/flatpak-builtins-build-sign.c:41 app/flatpak-builtins-info.c:48
 #: app/flatpak-builtins-install.c:56 app/flatpak-builtins-list.c:52
 #: app/flatpak-builtins-ls-remote.c:48 app/flatpak-builtins-make-current.c:38
-#: app/flatpak-builtins-run.c:51 app/flatpak-builtins-uninstall.c:44
+#: app/flatpak-builtins-run.c:52 app/flatpak-builtins-uninstall.c:44
 #: app/flatpak-builtins-update.c:53
 msgid "ARCH"
 msgstr "АРХ"
@@ -362,12 +362,12 @@ msgstr ""
 msgid "No extension point matching %s in %s"
 msgstr "Не найдена точка расширения подходящая для %s в %s"
 
-#: app/flatpak-builtins-build.c:387
+#: app/flatpak-builtins-build.c:390
 #, c-format
 msgid "Missing '=' in bind mount option '%s'"
 msgstr "Отсутствует '=' в параметре связанного монтирования '%s'"
 
-#: app/flatpak-builtins-build.c:413 common/flatpak-run.c:4850
+#: app/flatpak-builtins-build.c:416 common/flatpak-run.c:4960
 msgid "Unable to start app"
 msgstr "Невозможно запустить приложение"
 
@@ -535,7 +535,7 @@ msgstr "Не указано имя в метаданных"
 msgid "Command to set"
 msgstr "Указать команду"
 
-#: app/flatpak-builtins-build-finish.c:47 app/flatpak-builtins-run.c:52
+#: app/flatpak-builtins-build-finish.c:47 app/flatpak-builtins-run.c:53
 #: app/flatpak-main.c:146
 msgid "COMMAND"
 msgstr "КОМАНДА"
@@ -577,7 +577,7 @@ msgid "Change the runtime used for the app"
 msgstr "Заменить среду выполнения, используемую приложением"
 
 #: app/flatpak-builtins-build-finish.c:53 app/flatpak-builtins-build-init.c:50
-#: app/flatpak-builtins-run.c:55
+#: app/flatpak-builtins-run.c:56
 msgid "RUNTIME"
 msgstr "СРЕДА_ИСПОЛНЕНИЯ"
 
@@ -661,7 +661,7 @@ msgid "LOCATION and FILENAME must be specified"
 msgstr "Должны быть указаны ПУТЬ и ИМЯ_ФАЙЛА"
 
 #: app/flatpak-builtins-build-init.c:49 app/flatpak-builtins-info.c:48
-#: app/flatpak-builtins-run.c:51
+#: app/flatpak-builtins-run.c:52
 msgid "Arch to use"
 msgstr "Использовать архитектуру"
 
@@ -681,7 +681,7 @@ msgstr "ПРИЛОЖЕНИЕ"
 msgid "Specify version for --base"
 msgstr "Версия приложения для параметра --base"
 
-#: app/flatpak-builtins-build-init.c:52 app/flatpak-builtins-run.c:56
+#: app/flatpak-builtins-build-init.c:52 app/flatpak-builtins-run.c:57
 msgid "VERSION"
 msgstr "ВЕРСИЯ"
 
@@ -1275,7 +1275,7 @@ msgid "APP BRANCH - Make branch of application current"
 msgstr "ПРИЛОЖЕНИЕ ВЕТКА - Сделать ветку текущей для приложения"
 
 #: app/flatpak-builtins-make-current.c:64 app/flatpak-builtins-override.c:63
-#: app/flatpak-builtins-run.c:103
+#: app/flatpak-builtins-run.c:105
 msgid "APP must be specified"
 msgstr "Должно быть указано ПРИЛОЖЕНИЕ"
 
@@ -1408,39 +1408,44 @@ msgstr "Нет недоступных объектов\n"
 msgid "Deleted %u objects, %s freed\n"
 msgstr "Удалено %u объектов, %s освобождено\n"
 
-#: app/flatpak-builtins-run.c:52
+#: app/flatpak-builtins-run.c:53
 msgid "Command to run"
 msgstr "Команда для исполнения"
 
-#: app/flatpak-builtins-run.c:53
+#: app/flatpak-builtins-run.c:54
 msgid "Branch to use"
 msgstr "Используемая ветка"
 
-#: app/flatpak-builtins-run.c:54
+#: app/flatpak-builtins-run.c:55
 msgid "Use development runtime"
 msgstr "Использовать среду исполнения для разработчиков"
 
-#: app/flatpak-builtins-run.c:55
+#: app/flatpak-builtins-run.c:56
 msgid "Runtime to use"
 msgstr "Используемая среда исполнения"
 
-#: app/flatpak-builtins-run.c:56
+#: app/flatpak-builtins-run.c:57
 msgid "Runtime version to use"
 msgstr "Версия среды исполнения"
 
-#: app/flatpak-builtins-run.c:57
+#: app/flatpak-builtins-run.c:58
 msgid "Log session bus calls"
 msgstr "Журналировать вызовы пользовательской шины"
 
-#: app/flatpak-builtins-run.c:58
+#: app/flatpak-builtins-run.c:59
 msgid "Log system bus calls"
 msgstr "Журналировать вызовы системной шины"
 
-#: app/flatpak-builtins-run.c:59
+#: app/flatpak-builtins-run.c:60
+#, fuzzy
+msgid "Log accessibility bus calls"
+msgstr "Журналировать вызовы пользовательской шины"
+
+#: app/flatpak-builtins-run.c:61
 msgid "Enable file forwarding"
 msgstr ""
 
-#: app/flatpak-builtins-run.c:80
+#: app/flatpak-builtins-run.c:82
 msgid "APP [args...] - Run an app"
 msgstr "ПРИЛОЖЕНИЕ [параметры...] - Запустить приложение"
 
@@ -2057,37 +2062,37 @@ msgstr "Отсутствует путь к кэшу в сводной инфор
 msgid "No entry for %s in remote summary flatpak cache "
 msgstr "Нет записи для %s в сводной информации кэша flatpak"
 
-#: common/flatpak-run.c:253
+#: common/flatpak-run.c:257
 #, c-format
 msgid "Unknown share type %s, valid types are: %s"
 msgstr "Неизвестный тип общего каталога %s, доступные типы: %s"
 
-#: common/flatpak-run.c:288
+#: common/flatpak-run.c:292
 #, c-format
 msgid "Unknown policy type %s, valid types are: %s"
 msgstr "Неизвестный тип политики %s, доступные типы: %s"
 
-#: common/flatpak-run.c:326
+#: common/flatpak-run.c:330
 #, c-format
 msgid "Invalid dbus name %s\n"
 msgstr "Некорректное имя dbus %s\n"
 
-#: common/flatpak-run.c:339
+#: common/flatpak-run.c:343
 #, c-format
 msgid "Unknown socket type %s, valid types are: %s"
 msgstr "Неизвестный тип сокета %s, доступные типы: %s"
 
-#: common/flatpak-run.c:368
+#: common/flatpak-run.c:372
 #, c-format
 msgid "Unknown device type %s, valid types are: %s"
 msgstr "Неизвестный тип устройства %s, доступные типы: %s"
 
-#: common/flatpak-run.c:396
+#: common/flatpak-run.c:400
 #, c-format
 msgid "Unknown feature type %s, valid types are: %s"
 msgstr "Неизвестный тип функционала %s, доступные типы: %s"
 
-#: common/flatpak-run.c:769
+#: common/flatpak-run.c:773
 #, fuzzy, c-format
 msgid ""
 "Unknown filesystem location %s, valid locations are: host, home, xdg-"
@@ -2096,161 +2101,161 @@ msgstr ""
 "Неизвестный путь файловой системы %s, доступные типы: host, home, xdg-"
 "*[/...], ~/dir, /dir"
 
-#: common/flatpak-run.c:1035
+#: common/flatpak-run.c:1039
 #, c-format
 msgid "Invalid env format %s"
 msgstr "Неверный формат переменной окружения %s"
 
-#: common/flatpak-run.c:1175
+#: common/flatpak-run.c:1179
 msgid "Share with host"
 msgstr "Добавить общий каталог с хостом"
 
-#: common/flatpak-run.c:1175 common/flatpak-run.c:1176
+#: common/flatpak-run.c:1179 common/flatpak-run.c:1180
 msgid "SHARE"
 msgstr "ОБЩ_КАТАЛОГ"
 
-#: common/flatpak-run.c:1176
+#: common/flatpak-run.c:1180
 msgid "Unshare with host"
 msgstr "Убрать общий каталог с хостом"
 
-#: common/flatpak-run.c:1177
+#: common/flatpak-run.c:1181
 msgid "Expose socket to app"
 msgstr "Пробросить сокет приложению"
 
-#: common/flatpak-run.c:1177 common/flatpak-run.c:1178
+#: common/flatpak-run.c:1181 common/flatpak-run.c:1182
 msgid "SOCKET"
 msgstr "СОКЕТ"
 
-#: common/flatpak-run.c:1178
+#: common/flatpak-run.c:1182
 msgid "Don't expose socket to app"
 msgstr "Убрать проброс сокета приложению"
 
-#: common/flatpak-run.c:1179
+#: common/flatpak-run.c:1183
 msgid "Expose device to app"
 msgstr "Пробросить устройство приложению"
 
-#: common/flatpak-run.c:1179 common/flatpak-run.c:1180
+#: common/flatpak-run.c:1183 common/flatpak-run.c:1184
 msgid "DEVICE"
 msgstr "УСТРОЙСТВО"
 
-#: common/flatpak-run.c:1180
+#: common/flatpak-run.c:1184
 msgid "Don't expose device to app"
 msgstr "Убрать проброс устройства приложению"
 
-#: common/flatpak-run.c:1181
+#: common/flatpak-run.c:1185
 msgid "Allow feature"
 msgstr "Разрешить функционал"
 
-#: common/flatpak-run.c:1181 common/flatpak-run.c:1182
+#: common/flatpak-run.c:1185 common/flatpak-run.c:1186
 msgid "FEATURE"
 msgstr "ФУНКЦИОНАЛ"
 
-#: common/flatpak-run.c:1182
+#: common/flatpak-run.c:1186
 msgid "Don't allow feature"
 msgstr "Запретить функционал"
 
-#: common/flatpak-run.c:1183
+#: common/flatpak-run.c:1187
 msgid "Expose filesystem to app (:ro for read-only)"
 msgstr "Пробросить файловую систему приложению (:ro только для чтения)"
 
-#: common/flatpak-run.c:1183
+#: common/flatpak-run.c:1187
 msgid "FILESYSTEM[:ro]"
 msgstr "ФАЙЛ_СИСТЕМА[:ro]"
 
-#: common/flatpak-run.c:1184
+#: common/flatpak-run.c:1188
 msgid "Don't expose filesystem to app"
 msgstr "Не пробрасывать файловую систему для приложения"
 
-#: common/flatpak-run.c:1184
+#: common/flatpak-run.c:1188
 msgid "FILESYSTEM"
 msgstr "ФАЙЛ_СИСТЕМА"
 
-#: common/flatpak-run.c:1185
+#: common/flatpak-run.c:1189
 msgid "Set environment variable"
 msgstr "Установить переменную окружения"
 
-#: common/flatpak-run.c:1185
+#: common/flatpak-run.c:1189
 msgid "VAR=VALUE"
 msgstr "ПЕРЕМЕННАЯ=ЗНАЧЕНИЕ"
 
-#: common/flatpak-run.c:1186
+#: common/flatpak-run.c:1190
 msgid "Allow app to own name on the session bus"
 msgstr "Разрешить приложению владеть именем на сессионной шине"
 
-#: common/flatpak-run.c:1186 common/flatpak-run.c:1187
-#: common/flatpak-run.c:1188 common/flatpak-run.c:1189
+#: common/flatpak-run.c:1190 common/flatpak-run.c:1191
+#: common/flatpak-run.c:1192 common/flatpak-run.c:1193
 msgid "DBUS_NAME"
 msgstr ""
 
-#: common/flatpak-run.c:1187
+#: common/flatpak-run.c:1191
 msgid "Allow app to talk to name on the session bus"
 msgstr "Разрешить приложению обмениваться с именем на сессионной шине"
 
-#: common/flatpak-run.c:1188
+#: common/flatpak-run.c:1192
 msgid "Allow app to own name on the system bus"
 msgstr "Разрешить приложению владеть именем на системной шине"
 
-#: common/flatpak-run.c:1189
+#: common/flatpak-run.c:1193
 msgid "Allow app to talk to name on the system bus"
 msgstr "Разрешить приложению обмениваться с именем на системной шине"
 
-#: common/flatpak-run.c:1190
+#: common/flatpak-run.c:1194
 msgid "Add generic policy option"
 msgstr "Добавить параметр обобщенной политики"
 
-#: common/flatpak-run.c:1190 common/flatpak-run.c:1191
+#: common/flatpak-run.c:1194 common/flatpak-run.c:1195
 msgid "SUBSYSTEM.KEY=VALUE"
 msgstr "ПОДСИСТЕМА.КЛЮЧ=ЗНАЧЕНИЕ"
 
-#: common/flatpak-run.c:1191
+#: common/flatpak-run.c:1195
 msgid "Remove generic policy option"
 msgstr "Удалить параметр обобщенной политики"
 
-#: common/flatpak-run.c:1192
+#: common/flatpak-run.c:1196
 msgid "Persist home directory"
 msgstr "Сохранять домашний каталог"
 
-#: common/flatpak-run.c:1192
+#: common/flatpak-run.c:1196
 msgid "FILENAME"
 msgstr "ИМЯ_ФАЙЛА"
 
 #. This is not needed/used anymore, so hidden, but we accept it for backwards compat
-#: common/flatpak-run.c:1194
+#: common/flatpak-run.c:1198
 msgid "Don't require a running session (no cgroups creation)"
 msgstr ""
 
-#: common/flatpak-run.c:1878
+#: common/flatpak-run.c:1882
 msgid "Failed to create temporary file"
 msgstr "Ошибка при создании временного файла"
 
-#: common/flatpak-run.c:1885
+#: common/flatpak-run.c:1889
 msgid "Failed to unlink temporary file"
 msgstr "Ошибка удаления временного файла"
 
-#: common/flatpak-run.c:1903
+#: common/flatpak-run.c:1907
 msgid "Failed to write to temporary file"
 msgstr "Ошибка записи во временный файла"
 
-#: common/flatpak-run.c:3502
+#: common/flatpak-run.c:3581
 #, c-format
 msgid "Failed to open flatpak-info temp file: %s"
 msgstr "Ошибка при открытии временного файла flatpak-info: %s"
 
-#: common/flatpak-run.c:3564 common/flatpak-run.c:3574
+#: common/flatpak-run.c:3643 common/flatpak-run.c:3653
 #, c-format
 msgid "Failed to open temp file: %s"
 msgstr "Ошибка при открытии временного файла: %s"
 
-#: common/flatpak-run.c:3895
+#: common/flatpak-run.c:4003
 msgid "Unable to create sync pipe"
 msgstr "Невозможно создать канал синхронизации"
 
-#: common/flatpak-run.c:3920
+#: common/flatpak-run.c:4030
 #, c-format
 msgid "Failed to open app info file: %s"
 msgstr "Ошибка при открытии файла с информацией о приложении: %s"
 
-#: common/flatpak-run.c:3950
+#: common/flatpak-run.c:4060
 msgid "Failed to sync with dbus proxy"
 msgstr "Ошибка при синхронизации с прокси dbus"
 
