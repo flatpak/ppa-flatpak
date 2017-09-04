@@ -1,6 +1,8 @@
 flatpak (0.9.10-1) UNRELEASED; urgency=medium
 
   * New upstream release, fixing a regression in the D-Bus proxy
+  * d/upstream/signing-key.asc: Remove; upstream no longer signs
+    released tarballs (and hasn't for a while)
 
  -- Simon McVittie <smcv@debian.org>  Mon, 04 Sep 2017 10:13:16 +0100
 
