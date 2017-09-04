@@ -1,3 +1,9 @@
+flatpak (0.9.10-1) UNRELEASED; urgency=medium
+
+  * New upstream release, fixing a regression in the D-Bus proxy
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 04 Sep 2017 10:13:16 +0100
+
 flatpak (0.9.9-1) experimental; urgency=medium
 
   * New upstream release, without flatpak-builder included
