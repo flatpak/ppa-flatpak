@@ -1,3 +1,10 @@
+flatpak (0.9.8-3) UNRELEASED; urgency=medium
+
+  * debian/gbp.conf: Don't merge upstream tags while we bundle flatpak
+    and flatpak-builder
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 11 Sep 2017 22:05:30 +0100
+
 flatpak (0.9.8-2) unstable; urgency=medium
 
   * Switch git branch for unstable
