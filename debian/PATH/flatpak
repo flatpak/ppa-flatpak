@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+here="$(cd "$(dirname "$0")"/../..; pwd)"
+
+if test "x$*" = "x--version"; then
+	cd "$here"
+	v="$(dpkg-parsechangelog -n1 -SVersion)"
+	echo "${v%%[-~]*}"
+	exit 0
+fi
+
+exec "$here"/flatpak "$@"

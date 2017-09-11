@@ -1,3 +1,4 @@
 usr/bin/flatpak-builder
+usr/share/doc/flatpak-builder
 usr/share/man/man1/flatpak-builder.1
 usr/share/man/man5/flatpak-manifest.5

@@ -3,4 +3,4 @@
 set -e
 exec 2>&1
 
-exec gnome-desktop-testing-runner Flatpak/test-builder-python.sh.test
+exec gnome-desktop-testing-runner flatpak-builder/test-builder-python.sh.test

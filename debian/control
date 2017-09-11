@@ -94,7 +94,7 @@ Architecture: linux-any
 Section: devel
 Depends:
  gir1.2-flatpak-1.0,
- flatpak (= ${binary:Version}),
+ flatpak (>= 0.9.9~),
  ostree (>= 2017.10),
  ${misc:Depends},
  ${shlibs:Depends},

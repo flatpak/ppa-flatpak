@@ -3,6 +3,11 @@
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
+flatpak_version := $(shell echo $(DEB_VERSION_UPSTREAM) \
+	| perl -pe 's/(.*)~builder.*/$$1/')
+flatpak_builder_version := $(shell echo $(DEB_VERSION_UPSTREAM) \
+	| perl -pe 's/(.*)~builder(.*)/$$2~flatpak$$1/')
+
 %:
 	dh $@ --with=gir
 
@@ -12,6 +17,10 @@ override_dh_autoreconf:
 		debian/autogen.sh \
 		-- \
 		$(NULL)
+
+override_dh_auto_clean:
+	dh_auto_clean
+	dh_auto_clean --sourcedirectory=builder
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
@@ -26,6 +35,24 @@ override_dh_auto_configure:
 		--with-system-bubblewrap=bwrap \
 		--with-systemdsystemunitdir=/lib/systemd/system \
 		$(NULL)
+	PATH=$(CURDIR)/debian/PATH:$(PATH) \
+	dh_auto_configure --sourcedirectory=builder -- \
+		--disable-silent-rules \
+		--enable-docbook-docs \
+		--enable-installed-tests \
+		--libexecdir=/usr/lib/flatpak \
+		--with-html-dir=/usr/share/doc/flatpak-builder \
+		FLATPAK=flatpak \
+		$(NULL)
+
+override_dh_auto_build:
+	dh_auto_build
+	PATH=$(CURDIR)/debian/PATH:$(PATH) \
+	dh_auto_build --sourcedirectory=builder
+
+override_dh_auto_install:
+	dh_auto_install
+	dh_auto_install --sourcedirectory=builder
 
 override_dh_install:
 	install -d debian/tmp/etc/X11/Xsession.d
@@ -37,7 +64,13 @@ override_dh_install:
 override_dh_missing:
 	dh_missing --fail-missing
 
+override_dh_gencontrol:
+	dh_gencontrol -pflatpak-builder -- -v$(flatpak_builder_version)
+	dh_gencontrol --remaining-packages
+
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 	debian/test.sh
+	PATH=$(CURDIR)/debian/PATH:$(PATH) \
+	debian/test-builder.sh
 endif

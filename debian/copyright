@@ -30,10 +30,17 @@ Copyright:
 License: Autoconf-permissive
 
 Files:
- builder/builder-utils.c
+ builder/src/builder-utils.c
 Copyright:
  © 2001-2016 Red Hat, Inc
 License: GPL-2+
+Comment:
+ This is a conservative interpretation of this message in the middle of
+ the file:
+ .
+  This code is based on debugedit.c from rpm
+ .
+ followed by a GPL-2+ license grant.
 
 Files:
  m4/attributes.m4

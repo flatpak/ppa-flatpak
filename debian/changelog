@@ -1,7 +1,20 @@
-flatpak (0.9.8-3) UNRELEASED; urgency=medium
+flatpak (0.9.10~builder0.9.9-1) UNRELEASED; urgency=medium
 
-  * debian/gbp.conf: Don't merge upstream tags while we bundle flatpak
-    and flatpak-builder
+  * New upstream release
+    - Drop patches, applied upstream
+    - Update symbols file
+  * Temporarily re-bundle flatpak-builder (which was separated out
+    upstream) while waiting for the new flatpak-builder source package
+    to get through the NEW queue
+    - Run most build steps twice
+    - Add a horrible script to PATH to build against the
+      just-built flatpak
+    - Add patch from upstream to fix FTBFS on non-x86 non-ARM
+      architectures
+    - debian/gbp.conf: Don't merge upstream tags while we bundle flatpak
+      and flatpak-builder
+    - d/copyright: Clarify GPL-2+ status of one source file in
+      flatpak-builder, which means the binary is effectively GPL-2+
 
  -- Simon McVittie <smcv@debian.org>  Mon, 11 Sep 2017 22:05:30 +0100
 
