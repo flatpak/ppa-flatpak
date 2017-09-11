@@ -3,6 +3,7 @@ flatpak (0.9.8-2) UNRELEASED; urgency=medium
   * Switch git branch for unstable
   * d/upstream/signing-key.asc: Remove; upstream no longer signs
     released tarballs (and hasn't for a while)
+  * Standards-Version: 4.1.0 (no changes required)
 
  -- Simon McVittie <smcv@debian.org>  Thu, 31 Aug 2017 16:04:11 +0100
 
