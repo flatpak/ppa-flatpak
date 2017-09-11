@@ -112,11 +112,39 @@ read_gpg_data (GCancellable *cancellable,
 }
 
 static gboolean
+remote_is_already_configured (FlatpakDir *dir,
+                              const char *url,
+                              const char *collection_id)
+{
+  g_autofree char *old_remote = NULL;
+
+  old_remote = flatpak_dir_find_remote_by_uri (dir, url, collection_id);
+  if (old_remote == NULL && flatpak_dir_is_user (dir))
+    {
+      g_autoptr(GPtrArray) system_dirs = NULL;
+      int i;
+
+      system_dirs = flatpak_dir_get_system_list (NULL, NULL);
+      if (system_dirs == NULL)
+        return FALSE;
+
+      for (i = 0; i < system_dirs->len; i++)
+        {
+          FlatpakDir *system_dir = g_ptr_array_index (system_dirs, i);
+          old_remote = flatpak_dir_find_remote_by_uri (system_dir, url, collection_id);
+          if (old_remote != NULL)
+            break;
+        }
+    }
+
+  return old_remote != NULL;
+}
+
+static gboolean
 handle_runtime_repo_deps (FlatpakDir *dir, const char *dep_url, GError **error)
 {
   g_autoptr(GBytes) dep_data = NULL;
   g_autofree char *runtime_url = NULL;
-  g_autofree char *old_remote = NULL;
   g_autofree char *new_remote = NULL;
   g_autofree char *basename = NULL;
   g_autoptr(SoupURI) uri = NULL;
@@ -160,7 +188,7 @@ handle_runtime_repo_deps (FlatpakDir *dir, const char *dep_url, GError **error)
     }
   while (remotes != NULL && g_strv_contains ((const char * const*)remotes, new_remote));
 
-  config = flatpak_dir_parse_repofile (dir, new_remote, dep_data, &gpg_key, NULL, error);
+  config = flatpak_dir_parse_repofile (dir, new_remote, FALSE, dep_data, &gpg_key, NULL, error);
   if (config == NULL)
     {
       g_prefix_error (error, "Can't parse dependent file %s: ", dep_url);
@@ -175,26 +203,7 @@ handle_runtime_repo_deps (FlatpakDir *dir, const char *dep_url, GError **error)
   runtime_collection_id = g_key_file_get_string (config, group, "collection-id", NULL);
 #endif  /* FLATPAK_ENABLE_P2P */
 
-  old_remote = flatpak_dir_find_remote_by_uri (dir, runtime_url, runtime_collection_id);
-  if (old_remote == NULL && flatpak_dir_is_user (dir))
-    {
-      g_autoptr(GPtrArray) system_dirs = NULL;
-      int i;
-
-      system_dirs = flatpak_dir_get_system_list (NULL, error);
-      if (system_dirs == NULL)
-        return FALSE;
-
-      for (i = 0; i < system_dirs->len; i++)
-        {
-          FlatpakDir *system_dir = g_ptr_array_index (system_dirs, i);
-          old_remote = flatpak_dir_find_remote_by_uri (system_dir, runtime_url, runtime_collection_id);
-          if (old_remote != NULL)
-            break;
-        }
-    }
-
-  if (old_remote != NULL)
+  if (remote_is_already_configured (dir, runtime_url, runtime_collection_id))
     return TRUE;
 
   if (opt_yes ||
@@ -289,6 +298,62 @@ install_bundle (FlatpakDir *dir,
 }
 
 static gboolean
+handle_suggested_remote_name (FlatpakDir *dir, GBytes *data, GError **error)
+{
+  g_autoptr(GKeyFile) keyfile = g_key_file_new ();
+  g_autofree char *suggested_name = NULL;
+  g_autofree char *url = NULL;
+  g_autofree char *collection_id = NULL;
+  g_autoptr(GKeyFile) config = NULL;
+  g_autoptr(GBytes) gpg_key = NULL;
+
+  if (!g_key_file_load_from_data (keyfile, g_bytes_get_data (data, NULL), g_bytes_get_size (data),
+                                  0, error))
+    return FALSE;
+
+  suggested_name = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP,
+                                          FLATPAK_REF_SUGGEST_REMOTE_NAME_KEY, NULL);
+  if (suggested_name == NULL)
+    return TRUE;
+
+  url = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP,
+                               FLATPAK_REF_URL_KEY, NULL);
+  if (url == NULL)
+    return TRUE;
+
+#ifdef FLATPAK_ENABLE_P2P
+  collection_id = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP, FLATPAK_REF_COLLECTION_ID_KEY, NULL);
+#endif  /* FLATPAK_ENABLE_P2P */
+
+  if (remote_is_already_configured (dir, url, collection_id))
+    return TRUE;
+
+  /* The name is already used, ignore */
+  if (ostree_repo_remote_get_url (flatpak_dir_get_repo (dir), suggested_name, NULL, NULL))
+    return TRUE;
+
+  if (opt_yes ||
+      flatpak_yes_no_prompt (_("The remote '%s', at location %s contains additional applications.\nDo you want to install other applications from here?"),
+                             suggested_name, url))
+    {
+      if (opt_yes)
+        g_print (_("Configuring %s as new remote '%s'"), url, suggested_name);
+
+      config = flatpak_dir_parse_repofile (dir, suggested_name, TRUE, data, &gpg_key, NULL, error);
+      if (config == NULL)
+        return FALSE;
+
+      if (!flatpak_dir_modify_remote (dir, suggested_name, config, gpg_key, NULL, error))
+        return FALSE;
+
+      if (!flatpak_dir_recreate_repo (dir, NULL, error))
+        return FALSE;
+    }
+
+  return TRUE;
+}
+
+static gboolean
 handle_runtime_repo_deps_from_keyfile (FlatpakDir *dir, GBytes *data, GError **error)
 {
   g_autoptr(GKeyFile) keyfile = g_key_file_new ();
@@ -355,6 +420,10 @@ install_from (FlatpakDir *dir,
 
       file_data = g_bytes_new_take (g_steal_pointer (&data), data_len);
     }
+
+  /* Handle this before the runtime deps, because they might be the same */
+  if (!handle_suggested_remote_name (dir, file_data, error))
+    return FALSE;
 
   if (!handle_runtime_repo_deps_from_keyfile (dir, file_data, error))
     return FALSE;

@@ -73,8 +73,11 @@
  *    You can call the GetXXX methods on the name/id to get e.g. the peer pid
  *    You get AccessDenied rather than NameHasNoOwner when sending messages to the name/id
  *
+ * FILTERED:
+ *    You can send *some* method calls to the name (not id)
+ *
  * TALK:
- *    You can send method calls and signals to the name/id
+ *    You can send any method calls and signals to the name/id
  *    You will receive broadcast signals from the name/id (if you have a match rule for them)
  *    You can call StartServiceByName on the name
  *
@@ -218,6 +221,13 @@ typedef struct
   guint32     unix_fds;
 } Header;
 
+typedef struct
+{
+  char *path;
+  char *interface;
+  char *member;
+} Filter;
+
 static void header_free (Header *header);
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (Header, header_free)
 
@@ -279,9 +289,11 @@ struct FlatpakProxy
   char          *dbus_address;
 
   gboolean       filter;
+  gboolean       sloppy_names;
 
   GHashTable    *wildcard_policy;
   GHashTable    *policy;
+  GHashTable    *filters;
 };
 
 typedef struct
@@ -457,6 +469,13 @@ flatpak_proxy_set_filter (FlatpakProxy *proxy,
 }
 
 void
+flatpak_proxy_set_sloppy_names (FlatpakProxy *proxy,
+                                gboolean      sloppy_names)
+{
+  proxy->sloppy_names = sloppy_names;
+}
+
+void
 flatpak_proxy_set_log_messages (FlatpakProxy *proxy,
                                 gboolean      log)
 {
@@ -468,7 +487,11 @@ flatpak_proxy_add_policy (FlatpakProxy *proxy,
                           const char   *name,
                           FlatpakPolicy policy)
 {
-  g_hash_table_replace (proxy->policy, g_strdup (name), GINT_TO_POINTER (policy));
+  guint current_policy = GPOINTER_TO_INT (g_hash_table_lookup (proxy->policy, name));
+
+  current_policy = MAX (policy, current_policy);
+
+  g_hash_table_replace (proxy->policy, g_strdup (name), GINT_TO_POINTER (current_policy));
 }
 
 void
@@ -477,6 +500,77 @@ flatpak_proxy_add_wildcarded_policy (FlatpakProxy *proxy,
                                      FlatpakPolicy policy)
 {
   g_hash_table_replace (proxy->wildcard_policy, g_strdup (name), GINT_TO_POINTER (policy));
+}
+
+static void
+filter_free (Filter *filter)
+{
+  g_free (filter->path);
+  g_free (filter->interface);
+  g_free (filter->member);
+  g_free (filter);
+}
+
+static void
+filter_list_free (GList *filters)
+{
+  g_list_free_full (filters, (GDestroyNotify)filter_free);
+}
+
+/* rules are of the form [org.the.interface.[method|*]][@/obj/path] */
+static Filter *
+filter_new (const char *rule)
+{
+  Filter *filter = g_new0 (Filter, 1);
+  const char *obj_path_start = NULL;
+  const char *method_end = NULL;
+
+  obj_path_start = strchr (rule, '@');
+  if (obj_path_start && obj_path_start[1] != 0)
+    filter->path = g_strdup (obj_path_start + 1);
+
+  if (obj_path_start != NULL)
+    method_end = obj_path_start;
+  else
+    method_end = rule + strlen(rule);
+
+  if (rule[0] != '@')
+    {
+      filter->interface = g_strndup (rule, method_end - rule);
+      char *dot = strrchr (filter->interface, '.');
+      if (dot != NULL)
+        {
+          *dot = 0;
+          if (strcmp (dot+1, "*") != 0)
+            filter->member = g_strdup (dot + 1);
+         }
+    }
+
+  return filter;
+}
+
+
+void
+flatpak_proxy_add_filter (FlatpakProxy *proxy,
+                          const char   *name,
+                          const char   *rule)
+{
+  Filter *filter;
+  GList *filters, *new_filters;
+
+  filter = filter_new (rule);
+  if (g_hash_table_lookup_extended (proxy->filters,
+                                    name,
+                                    NULL, (void **)&filters))
+    {
+      new_filters = g_list_append (filters, filter);
+      g_assert (new_filters == filters);
+    }
+  else
+    {
+      filters = g_list_append (NULL, filter);
+      g_hash_table_insert (proxy->filters, g_strdup (name), filters);
+    }
 }
 
 static void
@@ -491,6 +585,7 @@ flatpak_proxy_finalize (GObject *object)
 
   g_hash_table_destroy (proxy->policy);
   g_hash_table_destroy (proxy->wildcard_policy);
+  g_hash_table_destroy (proxy->filters);
 
   g_free (proxy->socket_path);
   g_free (proxy->dbus_address);
@@ -1353,6 +1448,7 @@ typedef enum {
   HANDLE_VALIDATE_OWN,
   HANDLE_VALIDATE_SEE,
   HANDLE_VALIDATE_TALK,
+  HANDLE_VALIDATE_MATCH,
 } BusHandler;
 
 static gboolean
@@ -1398,8 +1494,28 @@ get_dbus_method_handler (FlatpakProxyClient *client, Header *header)
   policy = flatpak_proxy_client_get_policy (client, header->destination);
   if (policy < FLATPAK_POLICY_SEE)
     return HANDLE_HIDE;
-  if (policy < FLATPAK_POLICY_TALK)
+  if (policy < FLATPAK_POLICY_FILTERED)
     return HANDLE_DENY;
+
+  if (policy == FLATPAK_POLICY_FILTERED)
+    {
+      GList *filters = NULL, *l;
+
+      if (header->destination)
+        filters = g_hash_table_lookup (client->proxy->filters, header->destination);
+      for (l = filters; l != NULL; l = l->next)
+        {
+          Filter *filter = l->data;
+
+          if (header->type == G_DBUS_MESSAGE_TYPE_METHOD_CALL &&
+              (filter->path == NULL || g_strcmp0 (filter->path, header->path) == 0) &&
+              (filter->interface == NULL || g_strcmp0 (filter->interface, header->interface) == 0) &&
+              (filter->member == NULL || g_strcmp0 (filter->member, header->member) == 0))
+            return HANDLE_PASS;
+        }
+
+      return HANDLE_DENY;
+    }
 
   if (!is_for_bus (header))
     return HANDLE_PASS;
@@ -1414,8 +1530,10 @@ get_dbus_method_handler (FlatpakProxyClient *client, Header *header)
       if (method == NULL)
         return HANDLE_DENY;
 
+      if (strcmp (method, "AddMatch") == 0)
+        return HANDLE_VALIDATE_MATCH;
+
       if (strcmp (method, "Hello") == 0 ||
-          strcmp (method, "AddMatch") == 0 ||
           strcmp (method, "RemoveMatch") == 0 ||
           strcmp (method, "GetId") == 0)
         return HANDLE_PASS;
@@ -1494,6 +1612,28 @@ get_arg0_string (Buffer *buffer)
   g_object_unref (message);
 
   return name;
+}
+
+static gboolean
+validate_arg0_match (FlatpakProxyClient *client, Buffer *buffer)
+{
+  GDBusMessage *message = g_dbus_message_new_from_blob (buffer->data, buffer->size, 0, NULL);
+  GVariant *body, *arg0;
+  const char *match;
+  gboolean res = TRUE;
+
+  if (message != NULL &&
+      (body = g_dbus_message_get_body (message)) != NULL &&
+      (arg0 = g_variant_get_child_value (body, 0)) != NULL &&
+      g_variant_is_of_type (arg0, G_VARIANT_TYPE_STRING))
+    {
+      match = g_variant_get_string (arg0, NULL);
+      if (strstr (match, "eavesdrop=") != NULL)
+        res = FALSE;
+    }
+
+  g_object_unref (message);
+  return res;
 }
 
 static gboolean
@@ -1597,7 +1737,8 @@ should_filter_name_owner_changed (FlatpakProxyClient *client, Buffer *buffer)
   old = g_variant_get_string (arg1, NULL);
   new = g_variant_get_string (arg2, NULL);
 
-  if (flatpak_proxy_client_get_policy (client, name) >= FLATPAK_POLICY_SEE)
+  if (flatpak_proxy_client_get_policy (client, name) >= FLATPAK_POLICY_SEE ||
+      (client->proxy->sloppy_names && name[0] == ':'))
     {
       if (name[0] != ':')
         {
@@ -1875,6 +2016,20 @@ got_buffer_from_client (FlatpakProxyClient *client, ProxySide *side, Buffer *buf
               else
                 buffer = get_bool_reply_for_roundtrip (client, header, FALSE);
 
+              expecting_reply = EXPECTED_REPLY_REWRITE;
+              break;
+            }
+
+          goto handle_pass;
+
+        case HANDLE_VALIDATE_MATCH:
+          if (!validate_arg0_match (client, buffer))
+            {
+              if (client->proxy->log_messages)
+                g_print ("*DENIED* (ping)\n");
+              g_clear_pointer (&buffer, buffer_unref);
+              buffer = get_error_for_roundtrip (client, header,
+                                                "org.freedesktop.DBus.Error.AccessDenied");
               expecting_reply = EXPECTED_REPLY_REWRITE;
               break;
             }
@@ -2380,6 +2535,7 @@ static void
 flatpak_proxy_init (FlatpakProxy *proxy)
 {
   proxy->policy = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+  proxy->filters = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify)filter_list_free);
   proxy->wildcard_policy = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   flatpak_proxy_add_policy (proxy, "org.freedesktop.DBus", FLATPAK_POLICY_TALK);
 }

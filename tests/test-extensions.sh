@@ -22,7 +22,7 @@ set -euo pipefail
 . $(dirname $0)/libtest.sh
 
 skip_without_bwrap
-skip_without_user_xattrs
+[ x${USE_SYSTEMDIR-} != xyes ] || skip_without_user_xattrs
 
 echo "1..2"
 

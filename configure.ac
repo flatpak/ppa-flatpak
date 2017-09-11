@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [9])
-m4_define([flatpak_micro_version], [8])
-m4_define([flatpak_interface_age], [8])
+m4_define([flatpak_micro_version], [10])
+m4_define([flatpak_interface_age], [10])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -265,28 +265,6 @@ AS_IF([test x$enable_p2p = xyes],[
 ])
 AM_CONDITIONAL([ENABLE_P2P],[test x$enable_p2p = xyes])
 
-dnl ************************
-dnl *** check for libelf ***
-dnl ************************
-PKG_CHECK_MODULES([LIBELF], [libelf >= 0.8.12], [have_libelf=yes], [have_libelf=maybe])
-AS_IF([ test $have_libelf = maybe ], [
-  save_LIBS=$LIBS
-  AC_CHECK_LIB([elf], [elf_begin], [:], [have_libelf=no])
-  AC_CHECK_LIB([elf], [elf_getshdrstrndx], [:], [have_libelf=no])
-  AC_CHECK_LIB([elf], [elf_getshdrnum], [:], [have_libelf=no])
-  AC_CHECK_HEADER([libelf.h], [:], [have_libelf=no])
-  LIBS=$save_LIBS
-
-  if test $have_libelf != no; then
-    LIBELF_LIBS=-lelf
-    have_libelf=yes
-  fi
-])
-
-if test x$have_libelf != xyes; then
-  AC_MSG_ERROR([libelf not found])
-fi
-
 AC_ARG_WITH(system-install-dir,
            [AS_HELP_STRING([--with-system-install-dir=DIR],
                            [Location of system installation [LOCALSTATEDIR/lib/flatpak]])],
@@ -294,34 +272,6 @@ AC_ARG_WITH(system-install-dir,
            [with_system_install_dir='$(localstatedir)/lib/flatpak'])
 SYSTEM_INSTALL_DIR=$with_system_install_dir
 AC_SUBST(SYSTEM_INSTALL_DIR)
-
-dnl This only checks for the header, not the library.
-AC_ARG_WITH([dwarf-header],
-            [AS_HELP_STRING([--with-dwarf-header],
-                            [path containing dwarf.h])],
-            [AS_IF([test "x$with_dwarf_header" = "xno"],
-                   [AC_MSG_WARN([either a path containing dwarf.h must be
-provided, or it will be searched for in includedir])])],
-            [with_dwarf_header=yes])
-
-# We need to check these exist, because otherwise -Werror=missing-include-dirs errors out
-LIBDWARF_INCLUDES=
-if test -d $(eval echo \"$includedir\")/libdwarf; then
-   LIBDWARF_INCLUDES="$LIBDWARF_INCLUDES -I$(eval echo \"$includedir\")/libdwarf"
-fi
-if test -d /usr/include/libdwarf; then
-   LIBDWARF_INCLUDES="$LIBDWARF_INCLUDES -I/usr/include/libdwarf"
-fi
-
-AS_IF([test "x$with_dwarf_header" = "xyes"],
-      [CPPFLAGS="$CPPFLAGS $LIBDWARF_INCLUDES"
-       AC_CHECK_HEADER([dwarf.h])
-       AS_IF([test "x$ac_cv_header_dwarf_h" != "xyes"],
-             [AC_MSG_ERROR([dwarf.h is required but was not found; locate it using --with-dwarf-header=/path/containing/header])])],
-      [CPPFLAGS="$CPPFLAGS -I$with_dwarf_header"
-       AC_CHECK_HEADER([dwarf.h])
-       AS_IF([test "x$ac_cv_header_dwarf_h" != "xyes"],
-             [AC_MSG_ERROR([dwarf.h is required but was not found])])])
 
 AC_ARG_ENABLE(documentation,
               AC_HELP_STRING([--enable-documentation], [Build documentation]),,

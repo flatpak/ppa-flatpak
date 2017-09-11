@@ -111,8 +111,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = $(am__EXEEXT_1) flatpak$(EXEEXT) $(am__EXEEXT_1) \
-	flatpak-builder$(EXEEXT) $(am__EXEEXT_1)
+bin_PROGRAMS = $(am__EXEEXT_1) flatpak$(EXEEXT) $(am__EXEEXT_1)
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_8) \
 	test-libflatpak$(EXEEXT)
 libexec_PROGRAMS = $(am__EXEEXT_1) flatpak-session-helper$(EXEEXT) \
@@ -365,34 +364,6 @@ flatpak_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 flatpak_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(flatpak_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_flatpak_builder_OBJECTS =  \
-	builder/flatpak_builder-builder-main.$(OBJEXT) \
-	builder/flatpak_builder-builder-manifest.$(OBJEXT) \
-	builder/flatpak_builder-builder-options.$(OBJEXT) \
-	builder/flatpak_builder-builder-extension.$(OBJEXT) \
-	builder/flatpak_builder-builder-module.$(OBJEXT) \
-	builder/flatpak_builder-builder-post-process.$(OBJEXT) \
-	builder/flatpak_builder-builder-source.$(OBJEXT) \
-	builder/flatpak_builder-builder-source-archive.$(OBJEXT) \
-	builder/flatpak_builder-builder-source-git.$(OBJEXT) \
-	builder/flatpak_builder-builder-source-bzr.$(OBJEXT) \
-	builder/flatpak_builder-builder-source-file.$(OBJEXT) \
-	builder/flatpak_builder-builder-source-script.$(OBJEXT) \
-	builder/flatpak_builder-builder-source-shell.$(OBJEXT) \
-	builder/flatpak_builder-builder-source-patch.$(OBJEXT) \
-	builder/flatpak_builder-builder-context.$(OBJEXT) \
-	builder/flatpak_builder-builder-cache.$(OBJEXT) \
-	builder/flatpak_builder-builder-utils.$(OBJEXT) \
-	builder/flatpak_builder-builder-git.$(OBJEXT) $(am__objects_1)
-flatpak_builder_OBJECTS = $(am_flatpak_builder_OBJECTS)
-flatpak_builder_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libglnx.la \
-	libflatpak-common.la
-flatpak_builder_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(flatpak_builder_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
 am__flatpak_bwrap_SOURCES_DIST = bubblewrap/bubblewrap.c \
 	bubblewrap/bind-mount.h bubblewrap/bind-mount.c \
 	bubblewrap/network.h bubblewrap/network.c bubblewrap/utils.h \
@@ -580,8 +551,7 @@ SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(nodist_libflatpak_common_la_SOURCES) \
 	$(libflatpak_la_SOURCES) $(nodist_libflatpak_la_SOURCES) \
 	$(libglnx_la_SOURCES) $(flatpak_SOURCES) \
-	$(flatpak_builder_SOURCES) $(flatpak_bwrap_SOURCES) \
-	$(flatpak_dbus_proxy_SOURCES) \
+	$(flatpak_bwrap_SOURCES) $(flatpak_dbus_proxy_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
 	$(flatpak_system_helper_SOURCES) $(test_doc_portal_SOURCES) \
 	$(nodist_test_doc_portal_SOURCES) $(test_libflatpak_SOURCES) \
@@ -594,8 +564,7 @@ SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(nodist_xdg_permission_store_SOURCES)
 DIST_SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(libflatpak_la_SOURCES) $(libglnx_la_SOURCES) \
-	$(flatpak_SOURCES) $(flatpak_builder_SOURCES) \
-	$(am__flatpak_bwrap_SOURCES_DIST) \
+	$(flatpak_SOURCES) $(am__flatpak_bwrap_SOURCES_DIST) \
 	$(flatpak_dbus_proxy_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
 	$(am__flatpak_system_helper_SOURCES_DIST) \
@@ -829,7 +798,6 @@ am__EXEEXT_9 = tests/test-basic.sh tests/test-run.sh \
 	tests/test-repo-collections-server-only.sh \
 	tests/test-repo-system.sh tests/test-extensions.sh \
 	tests/test-bundle.sh tests/test-bundle-system.sh \
-	tests/test-builder.sh tests/test-builder-python.sh \
 	tests/test-oci.sh tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh $(am__EXEEXT_1)
 TEST_SUITE_LOG = test-suite.log
@@ -854,7 +822,6 @@ TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 DIST_SUBDIRS = . doc po
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/app/Makefile.am.inc \
 	$(srcdir)/bubblewrap/Makefile-bwrap.am.inc \
-	$(srcdir)/builder/Makefile.am.inc \
 	$(srcdir)/common/Makefile.am.inc $(srcdir)/config.h.in \
 	$(srcdir)/data/Makefile.am.inc \
 	$(srcdir)/dbus-proxy/Makefile.am.inc \
@@ -868,8 +835,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/app/Makefile.am.inc \
 	$(top_srcdir)/buildutil/glib-tap.mk \
 	$(top_srcdir)/lib/flatpak-version-macros.h.in ABOUT-NLS \
 	COPYING INSTALL NEWS compile config.guess config.rpath \
-	config.sub depcomp install-sh ltmain.sh missing py-compile \
-	test-driver
+	config.sub depcomp install-sh ltmain.sh missing test-driver
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -988,8 +954,6 @@ JSON_CFLAGS = @JSON_CFLAGS@
 JSON_LIBS = @JSON_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
-LIBELF_CFLAGS = @LIBELF_CFLAGS@
-LIBELF_LIBS = @LIBELF_LIBS@
 LIBICONV = @LIBICONV@
 LIBINTL = @LIBINTL@
 LIBOBJS = @LIBOBJS@
@@ -1120,10 +1084,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 NULL = 
 dist_installed_test_extra_scripts = $(NULL) buildutil/tap-driver.sh \
-	tests/empty-configure tests/test-configure \
 	tests/make-test-app.sh tests/make-test-runtime.sh \
-	tests/make-test-bundles.sh tests/testpython.py \
-	tests/test-webserver.sh $(NULL)
+	tests/make-test-bundles.sh tests/test-webserver.sh $(NULL)
 noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
@@ -1508,48 +1470,6 @@ INTROSPECTION_GIRS = $(am__append_17)
 @HAVE_INTROSPECTION_TRUE@nodist_gir_DATA = $(INTROSPECTION_GIRS)
 @HAVE_INTROSPECTION_TRUE@typelibdir = $(libdir)/girepository-1.0
 @HAVE_INTROSPECTION_TRUE@nodist_typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
-flatpak_builder_SOURCES = \
-	builder/builder-main.c \
-	builder/builder-manifest.c \
-	builder/builder-manifest.h \
-	builder/builder-options.c \
-	builder/builder-options.h \
-	builder/builder-extension.c \
-	builder/builder-extension.h \
-	builder/builder-module.c \
-	builder/builder-module.h \
-	builder/builder-post-process.c \
-	builder/builder-post-process.h \
-	builder/builder-source.c \
-	builder/builder-source.h \
-	builder/builder-source-archive.c \
-	builder/builder-source-archive.h \
-	builder/builder-source-git.c \
-	builder/builder-source-git.h \
-	builder/builder-source-bzr.c \
-	builder/builder-source-bzr.h \
-	builder/builder-source-file.c \
-	builder/builder-source-file.h \
-	builder/builder-source-script.c \
-	builder/builder-source-script.h \
-	builder/builder-source-shell.c \
-	builder/builder-source-shell.h \
-	builder/builder-source-patch.c \
-	builder/builder-source-patch.h \
-	builder/builder-context.c \
-	builder/builder-context.h \
-	builder/builder-cache.c \
-	builder/builder-cache.h \
-	builder/builder-utils.c \
-	builder/builder-utils.h \
-	builder/builder-git.c \
-	builder/builder-git.h \
-	$(NULL)
-
-flatpak_builder_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(JSON_LIBS) $(SOUP_LIBS) $(LIBELF_LIBS) \
-			libglnx.la libflatpak-common.la
-
-flatpak_builder_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(JSON_CFLAGS) $(SOUP_CFLAGS)
 flatpak_session_helper_SOURCES = \
 	session-helper/flatpak-session-helper.c	\
 	$(NULL)
@@ -1657,20 +1577,7 @@ dist_installed_test_data = \
 	tests/libtest.sh \
 	tests/org.test.Hello.png \
 	tests/package_version.txt \
-	tests/test.json \
-	tests/test-runtime.json \
-	tests/module1.json \
-	tests/data1 \
-	tests/data1.patch \
-	tests/module2.json \
-	tests/data2 \
-	tests/data2.patch \
 	tests/session.conf.in \
-	tests/0001-Add-test-logo.patch \
-	tests/org.test.Python.json \
-	tests/org.test.Python2.json \
-	tests/importme.py \
-	tests/importme2.py \
 	$(NULL)
 
 installed_test_keyringdir = $(installed_testdir)/test-keyring
@@ -1702,8 +1609,6 @@ dist_test_scripts = \
 	tests/test-extensions.sh \
 	tests/test-bundle.sh \
 	tests/test-bundle-system.sh \
-	tests/test-builder.sh \
-	tests/test-builder-python.sh \
 	tests/test-oci.sh \
 	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
@@ -1751,7 +1656,7 @@ all: $(BUILT_SOURCES) config.h
 .SUFFIXES: .c .lo .log .o .obj .test .test$(EXEEXT) .trs
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/lib/Makefile.am.inc $(srcdir)/builder/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/dbus-proxy/Makefile.am.inc $(srcdir)/permission-store/Makefile.am.inc $(srcdir)/document-portal/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/lib/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/dbus-proxy/Makefile.am.inc $(srcdir)/permission-store/Makefile.am.inc $(srcdir)/document-portal/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1773,7 +1678,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe);; \
 	esac;
-$(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/lib/Makefile.am.inc $(srcdir)/builder/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/dbus-proxy/Makefile.am.inc $(srcdir)/permission-store/Makefile.am.inc $(srcdir)/document-portal/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__empty):
+$(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/lib/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/dbus-proxy/Makefile.am.inc $(srcdir)/permission-store/Makefile.am.inc $(srcdir)/document-portal/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -2288,52 +2193,6 @@ app/flatpak-flatpak-builtins-document-list.$(OBJEXT):  \
 flatpak$(EXEEXT): $(flatpak_OBJECTS) $(flatpak_DEPENDENCIES) $(EXTRA_flatpak_DEPENDENCIES) 
 	@rm -f flatpak$(EXEEXT)
 	$(AM_V_CCLD)$(flatpak_LINK) $(flatpak_OBJECTS) $(flatpak_LDADD) $(LIBS)
-builder/$(am__dirstamp):
-	@$(MKDIR_P) builder
-	@: > builder/$(am__dirstamp)
-builder/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) builder/$(DEPDIR)
-	@: > builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-main.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-manifest.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-options.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-extension.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-module.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-post-process.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-source.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-source-archive.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-source-git.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-source-bzr.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-source-file.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-source-script.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-source-shell.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-source-patch.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-context.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-cache.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-utils.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-builder/flatpak_builder-builder-git.$(OBJEXT):  \
-	builder/$(am__dirstamp) builder/$(DEPDIR)/$(am__dirstamp)
-
-flatpak-builder$(EXEEXT): $(flatpak_builder_OBJECTS) $(flatpak_builder_DEPENDENCIES) $(EXTRA_flatpak_builder_DEPENDENCIES) 
-	@rm -f flatpak-builder$(EXEEXT)
-	$(AM_V_CCLD)$(flatpak_builder_LINK) $(flatpak_builder_OBJECTS) $(flatpak_builder_LDADD) $(LIBS)
 bubblewrap/$(am__dirstamp):
 	@$(MKDIR_P) bubblewrap
 	@: > bubblewrap/$(am__dirstamp)
@@ -2614,7 +2473,6 @@ mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f app/*.$(OBJEXT)
 	-rm -f bubblewrap/*.$(OBJEXT)
-	-rm -f builder/*.$(OBJEXT)
 	-rm -f common/*.$(OBJEXT)
 	-rm -f common/*.lo
 	-rm -f common/gvdb/*.$(OBJEXT)
@@ -2669,24 +2527,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-bubblewrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-network.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-cache.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-context.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-extension.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-git.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-manifest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-module.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-options.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-post-process.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-source-archive.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-source-bzr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-source-file.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-source-git.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-source-patch.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-source-script.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-source-shell.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-source.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@builder/$(DEPDIR)/flatpak_builder-builder-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-chain-input-stream.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-db.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-dbus.Plo@am__quote@
@@ -3425,258 +3265,6 @@ app/flatpak-flatpak-builtins-document-list.obj: app/flatpak-builtins-document-li
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-document-list.c' object='app/flatpak-flatpak-builtins-document-list.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-document-list.obj `if test -f 'app/flatpak-builtins-document-list.c'; then $(CYGPATH_W) 'app/flatpak-builtins-document-list.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-document-list.c'; fi`
-
-builder/flatpak_builder-builder-main.o: builder/builder-main.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-main.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-main.Tpo -c -o builder/flatpak_builder-builder-main.o `test -f 'builder/builder-main.c' || echo '$(srcdir)/'`builder/builder-main.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-main.Tpo builder/$(DEPDIR)/flatpak_builder-builder-main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-main.c' object='builder/flatpak_builder-builder-main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-main.o `test -f 'builder/builder-main.c' || echo '$(srcdir)/'`builder/builder-main.c
-
-builder/flatpak_builder-builder-main.obj: builder/builder-main.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-main.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-main.Tpo -c -o builder/flatpak_builder-builder-main.obj `if test -f 'builder/builder-main.c'; then $(CYGPATH_W) 'builder/builder-main.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-main.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-main.Tpo builder/$(DEPDIR)/flatpak_builder-builder-main.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-main.c' object='builder/flatpak_builder-builder-main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-main.obj `if test -f 'builder/builder-main.c'; then $(CYGPATH_W) 'builder/builder-main.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-main.c'; fi`
-
-builder/flatpak_builder-builder-manifest.o: builder/builder-manifest.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-manifest.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-manifest.Tpo -c -o builder/flatpak_builder-builder-manifest.o `test -f 'builder/builder-manifest.c' || echo '$(srcdir)/'`builder/builder-manifest.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-manifest.Tpo builder/$(DEPDIR)/flatpak_builder-builder-manifest.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-manifest.c' object='builder/flatpak_builder-builder-manifest.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-manifest.o `test -f 'builder/builder-manifest.c' || echo '$(srcdir)/'`builder/builder-manifest.c
-
-builder/flatpak_builder-builder-manifest.obj: builder/builder-manifest.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-manifest.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-manifest.Tpo -c -o builder/flatpak_builder-builder-manifest.obj `if test -f 'builder/builder-manifest.c'; then $(CYGPATH_W) 'builder/builder-manifest.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-manifest.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-manifest.Tpo builder/$(DEPDIR)/flatpak_builder-builder-manifest.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-manifest.c' object='builder/flatpak_builder-builder-manifest.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-manifest.obj `if test -f 'builder/builder-manifest.c'; then $(CYGPATH_W) 'builder/builder-manifest.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-manifest.c'; fi`
-
-builder/flatpak_builder-builder-options.o: builder/builder-options.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-options.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-options.Tpo -c -o builder/flatpak_builder-builder-options.o `test -f 'builder/builder-options.c' || echo '$(srcdir)/'`builder/builder-options.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-options.Tpo builder/$(DEPDIR)/flatpak_builder-builder-options.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-options.c' object='builder/flatpak_builder-builder-options.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-options.o `test -f 'builder/builder-options.c' || echo '$(srcdir)/'`builder/builder-options.c
-
-builder/flatpak_builder-builder-options.obj: builder/builder-options.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-options.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-options.Tpo -c -o builder/flatpak_builder-builder-options.obj `if test -f 'builder/builder-options.c'; then $(CYGPATH_W) 'builder/builder-options.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-options.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-options.Tpo builder/$(DEPDIR)/flatpak_builder-builder-options.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-options.c' object='builder/flatpak_builder-builder-options.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-options.obj `if test -f 'builder/builder-options.c'; then $(CYGPATH_W) 'builder/builder-options.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-options.c'; fi`
-
-builder/flatpak_builder-builder-extension.o: builder/builder-extension.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-extension.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-extension.Tpo -c -o builder/flatpak_builder-builder-extension.o `test -f 'builder/builder-extension.c' || echo '$(srcdir)/'`builder/builder-extension.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-extension.Tpo builder/$(DEPDIR)/flatpak_builder-builder-extension.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-extension.c' object='builder/flatpak_builder-builder-extension.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-extension.o `test -f 'builder/builder-extension.c' || echo '$(srcdir)/'`builder/builder-extension.c
-
-builder/flatpak_builder-builder-extension.obj: builder/builder-extension.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-extension.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-extension.Tpo -c -o builder/flatpak_builder-builder-extension.obj `if test -f 'builder/builder-extension.c'; then $(CYGPATH_W) 'builder/builder-extension.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-extension.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-extension.Tpo builder/$(DEPDIR)/flatpak_builder-builder-extension.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-extension.c' object='builder/flatpak_builder-builder-extension.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-extension.obj `if test -f 'builder/builder-extension.c'; then $(CYGPATH_W) 'builder/builder-extension.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-extension.c'; fi`
-
-builder/flatpak_builder-builder-module.o: builder/builder-module.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-module.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-module.Tpo -c -o builder/flatpak_builder-builder-module.o `test -f 'builder/builder-module.c' || echo '$(srcdir)/'`builder/builder-module.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-module.Tpo builder/$(DEPDIR)/flatpak_builder-builder-module.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-module.c' object='builder/flatpak_builder-builder-module.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-module.o `test -f 'builder/builder-module.c' || echo '$(srcdir)/'`builder/builder-module.c
-
-builder/flatpak_builder-builder-module.obj: builder/builder-module.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-module.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-module.Tpo -c -o builder/flatpak_builder-builder-module.obj `if test -f 'builder/builder-module.c'; then $(CYGPATH_W) 'builder/builder-module.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-module.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-module.Tpo builder/$(DEPDIR)/flatpak_builder-builder-module.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-module.c' object='builder/flatpak_builder-builder-module.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-module.obj `if test -f 'builder/builder-module.c'; then $(CYGPATH_W) 'builder/builder-module.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-module.c'; fi`
-
-builder/flatpak_builder-builder-post-process.o: builder/builder-post-process.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-post-process.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-post-process.Tpo -c -o builder/flatpak_builder-builder-post-process.o `test -f 'builder/builder-post-process.c' || echo '$(srcdir)/'`builder/builder-post-process.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-post-process.Tpo builder/$(DEPDIR)/flatpak_builder-builder-post-process.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-post-process.c' object='builder/flatpak_builder-builder-post-process.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-post-process.o `test -f 'builder/builder-post-process.c' || echo '$(srcdir)/'`builder/builder-post-process.c
-
-builder/flatpak_builder-builder-post-process.obj: builder/builder-post-process.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-post-process.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-post-process.Tpo -c -o builder/flatpak_builder-builder-post-process.obj `if test -f 'builder/builder-post-process.c'; then $(CYGPATH_W) 'builder/builder-post-process.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-post-process.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-post-process.Tpo builder/$(DEPDIR)/flatpak_builder-builder-post-process.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-post-process.c' object='builder/flatpak_builder-builder-post-process.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-post-process.obj `if test -f 'builder/builder-post-process.c'; then $(CYGPATH_W) 'builder/builder-post-process.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-post-process.c'; fi`
-
-builder/flatpak_builder-builder-source.o: builder/builder-source.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source.Tpo -c -o builder/flatpak_builder-builder-source.o `test -f 'builder/builder-source.c' || echo '$(srcdir)/'`builder/builder-source.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source.c' object='builder/flatpak_builder-builder-source.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source.o `test -f 'builder/builder-source.c' || echo '$(srcdir)/'`builder/builder-source.c
-
-builder/flatpak_builder-builder-source.obj: builder/builder-source.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source.Tpo -c -o builder/flatpak_builder-builder-source.obj `if test -f 'builder/builder-source.c'; then $(CYGPATH_W) 'builder/builder-source.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source.c' object='builder/flatpak_builder-builder-source.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source.obj `if test -f 'builder/builder-source.c'; then $(CYGPATH_W) 'builder/builder-source.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source.c'; fi`
-
-builder/flatpak_builder-builder-source-archive.o: builder/builder-source-archive.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-archive.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-archive.Tpo -c -o builder/flatpak_builder-builder-source-archive.o `test -f 'builder/builder-source-archive.c' || echo '$(srcdir)/'`builder/builder-source-archive.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-archive.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-archive.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-archive.c' object='builder/flatpak_builder-builder-source-archive.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-archive.o `test -f 'builder/builder-source-archive.c' || echo '$(srcdir)/'`builder/builder-source-archive.c
-
-builder/flatpak_builder-builder-source-archive.obj: builder/builder-source-archive.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-archive.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-archive.Tpo -c -o builder/flatpak_builder-builder-source-archive.obj `if test -f 'builder/builder-source-archive.c'; then $(CYGPATH_W) 'builder/builder-source-archive.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-archive.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-archive.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-archive.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-archive.c' object='builder/flatpak_builder-builder-source-archive.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-archive.obj `if test -f 'builder/builder-source-archive.c'; then $(CYGPATH_W) 'builder/builder-source-archive.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-archive.c'; fi`
-
-builder/flatpak_builder-builder-source-git.o: builder/builder-source-git.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-git.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-git.Tpo -c -o builder/flatpak_builder-builder-source-git.o `test -f 'builder/builder-source-git.c' || echo '$(srcdir)/'`builder/builder-source-git.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-git.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-git.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-git.c' object='builder/flatpak_builder-builder-source-git.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-git.o `test -f 'builder/builder-source-git.c' || echo '$(srcdir)/'`builder/builder-source-git.c
-
-builder/flatpak_builder-builder-source-git.obj: builder/builder-source-git.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-git.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-git.Tpo -c -o builder/flatpak_builder-builder-source-git.obj `if test -f 'builder/builder-source-git.c'; then $(CYGPATH_W) 'builder/builder-source-git.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-git.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-git.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-git.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-git.c' object='builder/flatpak_builder-builder-source-git.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-git.obj `if test -f 'builder/builder-source-git.c'; then $(CYGPATH_W) 'builder/builder-source-git.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-git.c'; fi`
-
-builder/flatpak_builder-builder-source-bzr.o: builder/builder-source-bzr.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-bzr.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-bzr.Tpo -c -o builder/flatpak_builder-builder-source-bzr.o `test -f 'builder/builder-source-bzr.c' || echo '$(srcdir)/'`builder/builder-source-bzr.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-bzr.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-bzr.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-bzr.c' object='builder/flatpak_builder-builder-source-bzr.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-bzr.o `test -f 'builder/builder-source-bzr.c' || echo '$(srcdir)/'`builder/builder-source-bzr.c
-
-builder/flatpak_builder-builder-source-bzr.obj: builder/builder-source-bzr.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-bzr.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-bzr.Tpo -c -o builder/flatpak_builder-builder-source-bzr.obj `if test -f 'builder/builder-source-bzr.c'; then $(CYGPATH_W) 'builder/builder-source-bzr.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-bzr.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-bzr.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-bzr.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-bzr.c' object='builder/flatpak_builder-builder-source-bzr.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-bzr.obj `if test -f 'builder/builder-source-bzr.c'; then $(CYGPATH_W) 'builder/builder-source-bzr.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-bzr.c'; fi`
-
-builder/flatpak_builder-builder-source-file.o: builder/builder-source-file.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-file.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-file.Tpo -c -o builder/flatpak_builder-builder-source-file.o `test -f 'builder/builder-source-file.c' || echo '$(srcdir)/'`builder/builder-source-file.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-file.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-file.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-file.c' object='builder/flatpak_builder-builder-source-file.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-file.o `test -f 'builder/builder-source-file.c' || echo '$(srcdir)/'`builder/builder-source-file.c
-
-builder/flatpak_builder-builder-source-file.obj: builder/builder-source-file.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-file.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-file.Tpo -c -o builder/flatpak_builder-builder-source-file.obj `if test -f 'builder/builder-source-file.c'; then $(CYGPATH_W) 'builder/builder-source-file.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-file.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-file.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-file.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-file.c' object='builder/flatpak_builder-builder-source-file.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-file.obj `if test -f 'builder/builder-source-file.c'; then $(CYGPATH_W) 'builder/builder-source-file.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-file.c'; fi`
-
-builder/flatpak_builder-builder-source-script.o: builder/builder-source-script.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-script.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-script.Tpo -c -o builder/flatpak_builder-builder-source-script.o `test -f 'builder/builder-source-script.c' || echo '$(srcdir)/'`builder/builder-source-script.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-script.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-script.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-script.c' object='builder/flatpak_builder-builder-source-script.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-script.o `test -f 'builder/builder-source-script.c' || echo '$(srcdir)/'`builder/builder-source-script.c
-
-builder/flatpak_builder-builder-source-script.obj: builder/builder-source-script.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-script.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-script.Tpo -c -o builder/flatpak_builder-builder-source-script.obj `if test -f 'builder/builder-source-script.c'; then $(CYGPATH_W) 'builder/builder-source-script.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-script.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-script.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-script.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-script.c' object='builder/flatpak_builder-builder-source-script.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-script.obj `if test -f 'builder/builder-source-script.c'; then $(CYGPATH_W) 'builder/builder-source-script.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-script.c'; fi`
-
-builder/flatpak_builder-builder-source-shell.o: builder/builder-source-shell.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-shell.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-shell.Tpo -c -o builder/flatpak_builder-builder-source-shell.o `test -f 'builder/builder-source-shell.c' || echo '$(srcdir)/'`builder/builder-source-shell.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-shell.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-shell.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-shell.c' object='builder/flatpak_builder-builder-source-shell.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-shell.o `test -f 'builder/builder-source-shell.c' || echo '$(srcdir)/'`builder/builder-source-shell.c
-
-builder/flatpak_builder-builder-source-shell.obj: builder/builder-source-shell.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-shell.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-shell.Tpo -c -o builder/flatpak_builder-builder-source-shell.obj `if test -f 'builder/builder-source-shell.c'; then $(CYGPATH_W) 'builder/builder-source-shell.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-shell.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-shell.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-shell.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-shell.c' object='builder/flatpak_builder-builder-source-shell.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-shell.obj `if test -f 'builder/builder-source-shell.c'; then $(CYGPATH_W) 'builder/builder-source-shell.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-shell.c'; fi`
-
-builder/flatpak_builder-builder-source-patch.o: builder/builder-source-patch.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-patch.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-patch.Tpo -c -o builder/flatpak_builder-builder-source-patch.o `test -f 'builder/builder-source-patch.c' || echo '$(srcdir)/'`builder/builder-source-patch.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-patch.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-patch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-patch.c' object='builder/flatpak_builder-builder-source-patch.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-patch.o `test -f 'builder/builder-source-patch.c' || echo '$(srcdir)/'`builder/builder-source-patch.c
-
-builder/flatpak_builder-builder-source-patch.obj: builder/builder-source-patch.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-source-patch.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-source-patch.Tpo -c -o builder/flatpak_builder-builder-source-patch.obj `if test -f 'builder/builder-source-patch.c'; then $(CYGPATH_W) 'builder/builder-source-patch.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-patch.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-source-patch.Tpo builder/$(DEPDIR)/flatpak_builder-builder-source-patch.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-source-patch.c' object='builder/flatpak_builder-builder-source-patch.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-source-patch.obj `if test -f 'builder/builder-source-patch.c'; then $(CYGPATH_W) 'builder/builder-source-patch.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-source-patch.c'; fi`
-
-builder/flatpak_builder-builder-context.o: builder/builder-context.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-context.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-context.Tpo -c -o builder/flatpak_builder-builder-context.o `test -f 'builder/builder-context.c' || echo '$(srcdir)/'`builder/builder-context.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-context.Tpo builder/$(DEPDIR)/flatpak_builder-builder-context.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-context.c' object='builder/flatpak_builder-builder-context.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-context.o `test -f 'builder/builder-context.c' || echo '$(srcdir)/'`builder/builder-context.c
-
-builder/flatpak_builder-builder-context.obj: builder/builder-context.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-context.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-context.Tpo -c -o builder/flatpak_builder-builder-context.obj `if test -f 'builder/builder-context.c'; then $(CYGPATH_W) 'builder/builder-context.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-context.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-context.Tpo builder/$(DEPDIR)/flatpak_builder-builder-context.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-context.c' object='builder/flatpak_builder-builder-context.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-context.obj `if test -f 'builder/builder-context.c'; then $(CYGPATH_W) 'builder/builder-context.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-context.c'; fi`
-
-builder/flatpak_builder-builder-cache.o: builder/builder-cache.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-cache.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-cache.Tpo -c -o builder/flatpak_builder-builder-cache.o `test -f 'builder/builder-cache.c' || echo '$(srcdir)/'`builder/builder-cache.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-cache.Tpo builder/$(DEPDIR)/flatpak_builder-builder-cache.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-cache.c' object='builder/flatpak_builder-builder-cache.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-cache.o `test -f 'builder/builder-cache.c' || echo '$(srcdir)/'`builder/builder-cache.c
-
-builder/flatpak_builder-builder-cache.obj: builder/builder-cache.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-cache.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-cache.Tpo -c -o builder/flatpak_builder-builder-cache.obj `if test -f 'builder/builder-cache.c'; then $(CYGPATH_W) 'builder/builder-cache.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-cache.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-cache.Tpo builder/$(DEPDIR)/flatpak_builder-builder-cache.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-cache.c' object='builder/flatpak_builder-builder-cache.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-cache.obj `if test -f 'builder/builder-cache.c'; then $(CYGPATH_W) 'builder/builder-cache.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-cache.c'; fi`
-
-builder/flatpak_builder-builder-utils.o: builder/builder-utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-utils.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-utils.Tpo -c -o builder/flatpak_builder-builder-utils.o `test -f 'builder/builder-utils.c' || echo '$(srcdir)/'`builder/builder-utils.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-utils.Tpo builder/$(DEPDIR)/flatpak_builder-builder-utils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-utils.c' object='builder/flatpak_builder-builder-utils.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-utils.o `test -f 'builder/builder-utils.c' || echo '$(srcdir)/'`builder/builder-utils.c
-
-builder/flatpak_builder-builder-utils.obj: builder/builder-utils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-utils.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-utils.Tpo -c -o builder/flatpak_builder-builder-utils.obj `if test -f 'builder/builder-utils.c'; then $(CYGPATH_W) 'builder/builder-utils.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-utils.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-utils.Tpo builder/$(DEPDIR)/flatpak_builder-builder-utils.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-utils.c' object='builder/flatpak_builder-builder-utils.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-utils.obj `if test -f 'builder/builder-utils.c'; then $(CYGPATH_W) 'builder/builder-utils.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-utils.c'; fi`
-
-builder/flatpak_builder-builder-git.o: builder/builder-git.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-git.o -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-git.Tpo -c -o builder/flatpak_builder-builder-git.o `test -f 'builder/builder-git.c' || echo '$(srcdir)/'`builder/builder-git.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-git.Tpo builder/$(DEPDIR)/flatpak_builder-builder-git.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-git.c' object='builder/flatpak_builder-builder-git.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-git.o `test -f 'builder/builder-git.c' || echo '$(srcdir)/'`builder/builder-git.c
-
-builder/flatpak_builder-builder-git.obj: builder/builder-git.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -MT builder/flatpak_builder-builder-git.obj -MD -MP -MF builder/$(DEPDIR)/flatpak_builder-builder-git.Tpo -c -o builder/flatpak_builder-builder-git.obj `if test -f 'builder/builder-git.c'; then $(CYGPATH_W) 'builder/builder-git.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-git.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) builder/$(DEPDIR)/flatpak_builder-builder-git.Tpo builder/$(DEPDIR)/flatpak_builder-builder-git.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='builder/builder-git.c' object='builder/flatpak_builder-builder-git.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_builder_CFLAGS) $(CFLAGS) -c -o builder/flatpak_builder-builder-git.obj `if test -f 'builder/builder-git.c'; then $(CYGPATH_W) 'builder/builder-git.c'; else $(CYGPATH_W) '$(srcdir)/builder/builder-git.c'; fi`
 
 bubblewrap/flatpak_bwrap-bubblewrap.o: bubblewrap/bubblewrap.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_bwrap_CFLAGS) $(CFLAGS) -MT bubblewrap/flatpak_bwrap-bubblewrap.o -MD -MP -MF bubblewrap/$(DEPDIR)/flatpak_bwrap-bubblewrap.Tpo -c -o bubblewrap/flatpak_bwrap-bubblewrap.o `test -f 'bubblewrap/bubblewrap.c' || echo '$(srcdir)/'`bubblewrap/bubblewrap.c
@@ -4894,20 +4482,6 @@ tests/test-bundle-system.sh.log: tests/test-bundle-system.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-builder.sh.log: tests/test-builder.sh
-	@p='tests/test-builder.sh'; \
-	b='tests/test-builder.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-builder-python.sh.log: tests/test-builder-python.sh
-	@p='tests/test-builder-python.sh'; \
-	b='tests/test-builder-python.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 tests/test-oci.sh.log: tests/test-oci.sh
 	@p='tests/test-oci.sh'; \
 	b='tests/test-oci.sh'; \
@@ -5209,8 +4783,6 @@ distclean-generic:
 	-rm -f app/$(am__dirstamp)
 	-rm -f bubblewrap/$(DEPDIR)/$(am__dirstamp)
 	-rm -f bubblewrap/$(am__dirstamp)
-	-rm -f builder/$(DEPDIR)/$(am__dirstamp)
-	-rm -f builder/$(am__dirstamp)
 	-rm -f common/$(DEPDIR)/$(am__dirstamp)
 	-rm -f common/$(am__dirstamp)
 	-rm -f common/gvdb/$(DEPDIR)/$(am__dirstamp)
@@ -5250,7 +4822,7 @@ clean-am: clean-binPROGRAMS clean-bwrapPROGRAMS clean-checkLTLIBRARIES \
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf app/$(DEPDIR) bubblewrap/$(DEPDIR) builder/$(DEPDIR) common/$(DEPDIR) common/gvdb/$(DEPDIR) dbus-proxy/$(DEPDIR) document-portal/$(DEPDIR) lib/$(DEPDIR) libglnx/$(DEPDIR) libglnx/tests/$(DEPDIR) permission-store/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf app/$(DEPDIR) bubblewrap/$(DEPDIR) common/$(DEPDIR) common/gvdb/$(DEPDIR) dbus-proxy/$(DEPDIR) document-portal/$(DEPDIR) lib/$(DEPDIR) libglnx/$(DEPDIR) libglnx/tests/$(DEPDIR) permission-store/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -5316,7 +4888,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf app/$(DEPDIR) bubblewrap/$(DEPDIR) builder/$(DEPDIR) common/$(DEPDIR) common/gvdb/$(DEPDIR) dbus-proxy/$(DEPDIR) document-portal/$(DEPDIR) lib/$(DEPDIR) libglnx/$(DEPDIR) libglnx/tests/$(DEPDIR) permission-store/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf app/$(DEPDIR) bubblewrap/$(DEPDIR) common/$(DEPDIR) common/gvdb/$(DEPDIR) dbus-proxy/$(DEPDIR) document-portal/$(DEPDIR) lib/$(DEPDIR) libglnx/$(DEPDIR) libglnx/tests/$(DEPDIR) permission-store/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
