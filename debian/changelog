@@ -1,4 +1,4 @@
-flatpak (0.9.10~builder0.9.9-1) UNRELEASED; urgency=medium
+flatpak (0.9.10~builder0.9.9-1) unstable; urgency=medium
 
   * New upstream release
     - Drop patches, applied upstream
@@ -16,7 +16,7 @@ flatpak (0.9.10~builder0.9.9-1) UNRELEASED; urgency=medium
     - d/copyright: Clarify GPL-2+ status of one source file in
       flatpak-builder, which means the binary is effectively GPL-2+
 
- -- Simon McVittie <smcv@debian.org>  Mon, 11 Sep 2017 22:05:30 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 12 Sep 2017 10:05:10 +0100
 
 flatpak (0.9.8-2) unstable; urgency=medium
 
