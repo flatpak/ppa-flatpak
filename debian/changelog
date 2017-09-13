@@ -1,9 +1,9 @@
-flatpak (0.9.11-1) UNRELEASED; urgency=medium
+flatpak (0.9.11-1) experimental; urgency=medium
 
   * New upstream release
   * Standards-Version: 4.1.0 (no changes required)
 
- -- Simon McVittie <smcv@debian.org>  Mon, 11 Sep 2017 22:00:45 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 13 Sep 2017 21:04:20 +0100
 
 flatpak (0.9.10-1) experimental; urgency=medium
 
