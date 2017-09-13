@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flatpak\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2017-09-04 08:40+0200\n"
-"PO-Revision-Date: 2017-08-18 18:42+0200\n"
+"POT-Creation-Date: 2017-09-13 15:50+0200\n"
+"PO-Revision-Date: 2017-09-06 18:14+0200\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish <community-poland@mozilla.org>\n"
 "Language: pl\n"
@@ -148,7 +148,7 @@ msgstr "Należy podać POŁOŻENIE"
 #: app/flatpak-builtins-document-unexport.c:67 app/flatpak-builtins-info.c:111
 #: app/flatpak-builtins-install.c:265 app/flatpak-builtins-install.c:399
 #: app/flatpak-builtins-list.c:377 app/flatpak-builtins-list-remotes.c:66
-#: app/flatpak-builtins-ls-remote.c:86 app/flatpak-builtins-make-current.c:67
+#: app/flatpak-builtins-ls-remote.c:84 app/flatpak-builtins-make-current.c:67
 #: app/flatpak-builtins-override.c:66
 msgid "Too many arguments"
 msgstr "Za dużo parametrów"
@@ -336,7 +336,7 @@ msgstr "Używa alternatywnego pliku dla metadanych"
 
 #: app/flatpak-builtins-build.c:50
 msgid "Kill processes when the parent process dies"
-msgstr ""
+msgstr "Usuwa procesy po usunięciu procesu nadrzędnego"
 
 #: app/flatpak-builtins-build.c:109
 msgid "DIRECTORY [COMMAND [args...]] - Build in directory"
@@ -367,7 +367,7 @@ msgstr "Brak punktu rozszerzeń pasującego do %s w %s"
 msgid "Missing '=' in bind mount option '%s'"
 msgstr "Brak „=” w opcji montowania dowiązania „%s”"
 
-#: app/flatpak-builtins-build.c:416 common/flatpak-run.c:4960
+#: app/flatpak-builtins-build.c:416 common/flatpak-run.c:4976
 msgid "Unable to start app"
 msgstr "Nie można uruchomić programu"
 
@@ -1134,6 +1134,8 @@ msgid ""
 "The remote '%s', at location %s contains additional applications.\n"
 "Do you want to install other applications from here?"
 msgstr ""
+"Repozytorium „%s” w położeniu %s zawiera dodatkowe programy.\n"
+"Zainstalować pozostałe programy z tego repozytorium?"
 
 #: app/flatpak-builtins-install.c:396
 msgid "Filename or uri must be specified"
@@ -1174,12 +1176,12 @@ msgstr "Wyświetlana architektura"
 msgid "List all refs (including locale/debug)"
 msgstr "Wyświetla listę wszystkich odniesień (także lokalizacji/debugowania)"
 
-#: app/flatpak-builtins-list.c:131 app/flatpak-builtins-ls-remote.c:203
+#: app/flatpak-builtins-list.c:131 app/flatpak-builtins-ls-remote.c:129
 #: app/flatpak-builtins-repo.c:98
 msgid "Ref"
 msgstr "Odniesienie"
 
-#: app/flatpak-builtins-list.c:134
+#: app/flatpak-builtins-list.c:134 app/flatpak-builtins-ls-remote.c:131
 msgid "Origin"
 msgstr "Pochodzenie"
 
@@ -1191,7 +1193,7 @@ msgstr "Aktywne zatwierdzenie"
 msgid "Latest commit"
 msgstr "Najnowsze zatwierdzenie"
 
-#: app/flatpak-builtins-list.c:137 app/flatpak-builtins-ls-remote.c:205
+#: app/flatpak-builtins-list.c:137 app/flatpak-builtins-ls-remote.c:133
 msgid "Installed size"
 msgstr "Rozmiar po instalacji"
 
@@ -1248,26 +1250,22 @@ msgstr "Wyświetla tylko z dostępnymi aktualizacjami"
 msgid "Limit to this arch (* for all)"
 msgstr "Ogranicza do tej architektury (* dla wszystkich)"
 
-#: app/flatpak-builtins-ls-remote.c:73
+#: app/flatpak-builtins-ls-remote.c:74
 msgid " REMOTE - Show available runtimes and applications"
 msgstr ""
 " REPOZYTORIUM — wyświetla listę dostępnych środowisk wykonawczych i programów"
 
-#: app/flatpak-builtins-ls-remote.c:83
-msgid "REMOTE must be specified"
-msgstr "Należy podać REPOZYTORIUM"
-
-#: app/flatpak-builtins-ls-remote.c:105
-msgid "No ref information available in repository"
-msgstr "Brak dostępnych informacji o odniesieniu w repozytorium"
-
-#: app/flatpak-builtins-ls-remote.c:204
+#: app/flatpak-builtins-ls-remote.c:132
 msgid "Commit"
 msgstr "Zatwierdzenie"
 
-#: app/flatpak-builtins-ls-remote.c:206
+#: app/flatpak-builtins-ls-remote.c:134
 msgid "Download size"
 msgstr "Rozmiar do pobrania"
+
+#: app/flatpak-builtins-ls-remote.c:245
+msgid "No ref information available in repository"
+msgstr "Brak dostępnych informacji o odniesieniu w repozytorium"
 
 #: app/flatpak-builtins-make-current.c:38
 msgid "Arch to make current for"
@@ -1437,9 +1435,8 @@ msgid "Log system bus calls"
 msgstr "Zapisywanie wywołań magistrali systemu w dzienniku"
 
 #: app/flatpak-builtins-run.c:60
-#, fuzzy
 msgid "Log accessibility bus calls"
-msgstr "Zapisywanie wywołań magistrali sesji w dzienniku"
+msgstr "Zapisywanie wywołań magistrali ułatwień dostępu w dzienniku"
 
 #: app/flatpak-builtins-run.c:61
 msgid "Enable file forwarding"
@@ -1763,7 +1760,7 @@ msgstr ""
 
 #: app/flatpak-transaction.c:469 common/flatpak-dir.c:1079
 #: common/flatpak-dir.c:1336 common/flatpak-dir.c:1372
-#: common/flatpak-dir.c:1394 common/flatpak-dir.c:9655
+#: common/flatpak-dir.c:1394 common/flatpak-dir.c:9714
 #: common/flatpak-utils.c:1256 common/flatpak-utils.c:1350
 #, c-format
 msgid "%s not installed"
@@ -1864,12 +1861,12 @@ msgid "Unsupported extra data uri %s"
 msgstr "Nieobsługiwany adres URI %s dodatkowych danych"
 
 #: common/flatpak-dir.c:2366
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to load local extra-data %s: %s"
-msgstr "Odczytanie zatwierdzenia %s się nie powiodło: "
+msgstr "Wczytanie lokalnych dodatkowych danych %s się nie powiodło: %s"
 
 #: common/flatpak-dir.c:2369
-#, fuzzy, c-format
+#, c-format
 msgid "Wrong size for extra-data %s"
 msgstr "Błędny rozmiar dodatkowych danych %s"
 
@@ -1959,9 +1956,9 @@ msgstr "Podczas rozwiązywania odniesienia %s: "
 msgid "%s is not available"
 msgstr "%s jest niedostępne"
 
-#: common/flatpak-dir.c:4976 common/flatpak-dir.c:5255
-#: common/flatpak-dir.c:6023 common/flatpak-dir.c:6036
-#: common/flatpak-dir.c:6112
+#: common/flatpak-dir.c:4976 common/flatpak-dir.c:5314
+#: common/flatpak-dir.c:6082 common/flatpak-dir.c:6095
+#: common/flatpak-dir.c:6171
 #, c-format
 msgid "%s branch %s already installed"
 msgstr "Już zainstalowano %s gałąź %s"
@@ -1988,77 +1985,107 @@ msgstr "Podczas usuwania istniejącego dodatkowego katalogu: "
 msgid "While trying to apply extra data: "
 msgstr "Podczas zastosowywania dodatkowych danych: "
 
-#: common/flatpak-dir.c:5103
+#: common/flatpak-dir.c:5119
+#, fuzzy, c-format
+msgid "Invalid deployed ref %s: "
+msgstr "Nieprawidłowy PID %s"
+
+#: common/flatpak-dir.c:5126
+#, fuzzy, c-format
+msgid "Invalid commit ref %s: "
+msgstr "Nieprawidłowy PID %s"
+
+#: common/flatpak-dir.c:5134
+#, fuzzy, c-format
+msgid "Deployed ref %s kind does not match commit (%s)"
+msgstr "Wdrożone odniesienie %s nie pasuje do zatwierdzenia (%s)"
+
+#: common/flatpak-dir.c:5142
+#, fuzzy, c-format
+msgid "Deployed ref %s name does not match commit (%s)"
+msgstr "Wdrożone odniesienie %s nie pasuje do zatwierdzenia (%s)"
+
+#: common/flatpak-dir.c:5150
+#, fuzzy, c-format
+msgid "Deployed ref %s arch does not match commit (%s)"
+msgstr "Wdrożone odniesienie %s nie pasuje do zatwierdzenia (%s)"
+
+#: common/flatpak-dir.c:5156
+#, fuzzy, c-format
+msgid "Deployed ref %s branch does not match commit (%s)"
+msgstr "Wdrożone odniesienie %s nie pasuje do zatwierdzenia (%s)"
+
+#: common/flatpak-dir.c:5162
 #, c-format
 msgid "Deployed ref %s does not match commit (%s)"
 msgstr "Wdrożone odniesienie %s nie pasuje do zatwierdzenia (%s)"
 
-#: common/flatpak-dir.c:5122
+#: common/flatpak-dir.c:5181
 msgid "Deployed metadata does not match commit"
 msgstr "Wdrożone metadane nie pasują do zatwierdzenia"
 
-#: common/flatpak-dir.c:5884
+#: common/flatpak-dir.c:5943
 #, c-format
 msgid "This version of %s is already installed"
 msgstr "Ta wersja programu %s jest już zainstalowana"
 
-#: common/flatpak-dir.c:5891
+#: common/flatpak-dir.c:5950
 msgid "Can't change remote during bundle install"
 msgstr "Nie można zmienić repozytorium podczas instalacji pakietu"
 
-#: common/flatpak-dir.c:6434
+#: common/flatpak-dir.c:6493
 #, c-format
 msgid "%s branch %s is not installed"
 msgstr "Nie zainstalowano %s gałęzi %s"
 
-#: common/flatpak-dir.c:6678
+#: common/flatpak-dir.c:6737
 #, c-format
 msgid "%s branch %s not installed"
 msgstr "Nie zainstalowano %s gałęzi %s"
 
-#: common/flatpak-dir.c:7543
+#: common/flatpak-dir.c:7602
 #, c-format
 msgid "Nothing matches %s"
 msgstr "Nic nie pasuje do %s"
 
-#: common/flatpak-dir.c:7629
+#: common/flatpak-dir.c:7688
 #, c-format
 msgid "Can't find %s%s%s%s%s in remote %s"
 msgstr "Nie można odnaleźć %s%s%s%s%s w repozytorium %s"
 
-#: common/flatpak-dir.c:7746
+#: common/flatpak-dir.c:7805
 #, c-format
 msgid "%s %s not installed"
 msgstr "Nie zainstalowano %s %s"
 
-#: common/flatpak-dir.c:7819
+#: common/flatpak-dir.c:7878
 #, c-format
 msgid "Could not find installation %s"
 msgstr "Nie można odnaleźć instalacji %s"
 
-#: common/flatpak-dir.c:8348
+#: common/flatpak-dir.c:8407
 #, c-format
 msgid "Runtime %s, branch %s is already installed"
 msgstr "Już zainstalowano środowisko wykonawcze %s, gałąź %s"
 
-#: common/flatpak-dir.c:8349
+#: common/flatpak-dir.c:8408
 #, c-format
 msgid "App %s, branch %s is already installed"
 msgstr "Już zainstalowano program %s, gałąź %s"
 
-#: common/flatpak-dir.c:8808
+#: common/flatpak-dir.c:8867
 msgid "Remote title not set"
 msgstr "Nie ustawiono tytułu repozytorium"
 
-#: common/flatpak-dir.c:8830
+#: common/flatpak-dir.c:8889
 msgid "Remote default-branch not set"
 msgstr "Nie ustawiono domyślnej gałęzi repozytorium"
 
-#: common/flatpak-dir.c:9324
+#: common/flatpak-dir.c:9383
 msgid "No flatpak cache in remote summary"
 msgstr "Brak pamięci podręcznej Flatpak w podsumowaniu repozytorium"
 
-#: common/flatpak-dir.c:9334
+#: common/flatpak-dir.c:9393
 #, c-format
 msgid "No entry for %s in remote summary flatpak cache "
 msgstr ""
@@ -2238,26 +2265,26 @@ msgstr "Odwiązanie pliku tymczasowego się nie powiodło"
 msgid "Failed to write to temporary file"
 msgstr "Zapisanie do pliku tymczasowego się nie powiodło"
 
-#: common/flatpak-run.c:3581
+#: common/flatpak-run.c:3596
 #, c-format
 msgid "Failed to open flatpak-info temp file: %s"
 msgstr "Otwarcie pliku tymczasowego „flatpak-info” się nie powiodło: %s"
 
-#: common/flatpak-run.c:3643 common/flatpak-run.c:3653
+#: common/flatpak-run.c:3658 common/flatpak-run.c:3668
 #, c-format
 msgid "Failed to open temp file: %s"
 msgstr "Otwarcie pliku tymczasowego się nie powiodło: %s"
 
-#: common/flatpak-run.c:4003
+#: common/flatpak-run.c:4018
 msgid "Unable to create sync pipe"
 msgstr "Utworzenie potoku synchronizacji się nie powiodło"
 
-#: common/flatpak-run.c:4030
+#: common/flatpak-run.c:4045
 #, c-format
 msgid "Failed to open app info file: %s"
 msgstr "Otwarcie pliku informacji o programie się nie powiodło: %s"
 
-#: common/flatpak-run.c:4060
+#: common/flatpak-run.c:4075
 msgid "Failed to sync with dbus proxy"
 msgstr "Synchronizacja z pośrednikiem D-Bus się nie powiodła"
 
@@ -2362,24 +2389,3 @@ msgstr ""
 #: system-helper/org.freedesktop.Flatpak.policy.in:153
 msgid "Update appstream"
 msgstr "Aktualizacja danych AppStream"
-
-#~ msgid "Could not parse URI “%s”"
-#~ msgstr "Nie można przetworzyć adresu URI „%s”"
-
-#~ msgid "Downloading %s"
-#~ msgstr "Pobieranie %s"
-
-#~ msgid "Building %s"
-#~ msgstr "Budowanie %s"
-
-#~ msgid "Installing %s"
-#~ msgstr "Instalowanie %s"
-
-#~ msgid "Post-Install %s"
-#~ msgstr "Wykonywanie zadań po instalacji %s"
-
-#~ msgid "Cleanup %s"
-#~ msgstr "Czyszczenie %s"
-
-#~ msgid "Updating %s"
-#~ msgstr "Aktualizowanie %s"

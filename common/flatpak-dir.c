@@ -639,7 +639,7 @@ flatpak_ensure_system_user_cache_dir_location (GError **error)
       /* Must be owned by us */
       st_buf.st_uid == getuid () &&
       /* and not writeable by others */
-      (st_buf.st_mode && 0022) != 0)
+      (st_buf.st_mode & 0022) != 0)
     return g_file_new_for_path (path);
 
   path = g_strdup ("/var/tmp/flatpak-cache-XXXXXX");
@@ -5097,7 +5097,66 @@ flatpak_dir_deploy (FlatpakDir          *self,
   g_variant_lookup (commit_metadata, "xa.ref", "s", &xa_ref);
   if (xa_ref != NULL)
     {
-      if (strcmp (ref, xa_ref) != 0)
+      gboolean gpg_verify_summary;
+
+      if (!ostree_repo_remote_get_gpg_verify_summary (self->repo, origin, &gpg_verify_summary, error))
+        return FALSE;
+
+      if (gpg_verify_summary)
+        {
+          /* If we're using signed summaries, then the security is really due to the signatures on
+           * the summary, and the xa.ref is not needed for security. In particular, endless are
+           * currently using one single commit on multiple branches to handle devel/stable promotion.
+           * So, to support this we report branch discrepancies as a warning, rather than as an error.
+           * See https://github.com/flatpak/flatpak/pull/1013 for more discussion.
+           */
+          g_auto(GStrv) checkout_ref = NULL;
+          g_auto(GStrv) commit_ref = NULL;
+
+          checkout_ref = flatpak_decompose_ref (ref, error);
+          if (checkout_ref == NULL)
+            {
+              g_prefix_error (error, _("Invalid deployed ref %s: "), ref);
+              return FALSE;
+            }
+
+          commit_ref = flatpak_decompose_ref (xa_ref, error);
+          if (commit_ref == NULL)
+            {
+              g_prefix_error (error, _("Invalid commit ref %s: "), xa_ref);
+              return FALSE;
+            }
+
+          /* Fatal if kind/name/arch don't match. Warn for branch mismatch. */
+          if (strcmp (checkout_ref[0], commit_ref[0]) != 0)
+            {
+              g_set_error (error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED,
+                           _("Deployed ref %s kind does not match commit (%s)"),
+                           ref, xa_ref);
+              return FALSE;
+            }
+
+          if (strcmp (checkout_ref[1], commit_ref[1]) != 0)
+            {
+              g_set_error (error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED,
+                           _("Deployed ref %s name does not match commit (%s)"),
+                           ref, xa_ref);
+              return FALSE;
+            }
+
+          if (strcmp (checkout_ref[2], commit_ref[2]) != 0)
+            {
+              g_set_error (error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED,
+                           _("Deployed ref %s arch does not match commit (%s)"),
+                           ref, xa_ref);
+              return FALSE;
+            }
+
+          if (strcmp (checkout_ref[3], commit_ref[3]) != 0)
+            g_warning (_("Deployed ref %s branch does not match commit (%s)"),
+                       ref, xa_ref);
+        }
+      else if (strcmp (ref, xa_ref) != 0)
         {
           g_set_error (error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED,
                        _("Deployed ref %s does not match commit (%s)"), ref, xa_ref);
@@ -9780,7 +9839,7 @@ get_locale_subpaths_from_accounts_dbus (GDBusProxy *proxy)
 {
   const char *accounts_bus_name = "org.freedesktop.Accounts";
   const char *accounts_interface_name = "org.freedesktop.Accounts.User";
-  char **object_path;
+  char **object_path = NULL;
   GList *langs = NULL;
   GList *l = NULL;
   g_autoptr(GString) langs_cache = g_string_new (NULL);
