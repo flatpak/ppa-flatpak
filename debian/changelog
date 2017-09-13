@@ -1,3 +1,9 @@
+flatpak (0.9.10~builder0.9.9-2) UNRELEASED; urgency=medium
+
+  * Switch git branch for upstream imports to upstream/with-builder
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 13 Sep 2017 21:50:58 +0100
+
 flatpak (0.9.10~builder0.9.9-1) unstable; urgency=medium
 
   * New upstream release
