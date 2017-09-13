@@ -1,10 +1,10 @@
-flatpak (0.9.11~builder0.9.11-1) UNRELEASED; urgency=medium
+flatpak (0.9.11~builder0.9.11-1) unstable; urgency=medium
 
   * Switch git branch for upstream imports to upstream/with-builder
   * New upstream releases
     - Drop patch to flatpak-builder
 
- -- Simon McVittie <smcv@debian.org>  Wed, 13 Sep 2017 21:50:58 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 13 Sep 2017 22:02:55 +0100
 
 flatpak (0.9.10~builder0.9.9-1) unstable; urgency=medium
 
