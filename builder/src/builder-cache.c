@@ -228,11 +228,10 @@ gboolean
 builder_cache_open (BuilderCache *self,
                     GError      **error)
 {
-  self->repo = ostree_repo_new (builder_context_get_cache_dir (self->context));
+  g_autoptr(GKeyFile) config = NULL;
+  g_autofree char *old_mfsp = NULL;
 
-  /* We don't need fsync on checkouts as they are transient, and we
-     rely on the syncfs() in the transaction commit for commits. */
-  ostree_repo_set_disable_fsync (self->repo, TRUE);
+  self->repo = ostree_repo_new (builder_context_get_cache_dir (self->context));
 
   if (!g_file_query_exists (builder_context_get_cache_dir (self->context), NULL))
     {
@@ -247,6 +246,27 @@ builder_cache_open (BuilderCache *self,
 
   if (!ostree_repo_open (self->repo, NULL, error))
     return FALSE;
+
+  config = ostree_repo_copy_config (self->repo);
+
+  old_mfsp = g_key_file_get_value (config, "core", "min-free-space-percent", NULL);
+  if (g_strcmp0 (old_mfsp, "0") != 0)
+    {
+      g_key_file_set_value (config, "core", "min-free-space-percent", "0");
+
+      if (!ostree_repo_write_config (self->repo, config, error))
+        return FALSE;
+
+      /* Re-open */
+      g_clear_object (&self->repo);
+      self->repo = ostree_repo_new (builder_context_get_cache_dir (self->context));
+      if (!ostree_repo_open (self->repo, NULL, error))
+          return FALSE;
+    }
+
+  /* We don't need fsync on checkouts as they are transient, and we
+     rely on the syncfs() in the transaction commit for commits. */
+  ostree_repo_set_disable_fsync (self->repo, TRUE);
 
   /* At one point we used just the branch name as a ref, make sure to
    * remove this to handle using the branch as a subdir */

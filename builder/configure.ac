@@ -15,13 +15,13 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_builder_major_version], [0])
 m4_define([flatpak_builder_minor_version], [9])
-m4_define([flatpak_builder_micro_version], [9])
+m4_define([flatpak_builder_micro_version], [11])
 m4_define([flatpak_builder_version],
           [flatpak_builder_major_version.flatpak_builder_minor_version.flatpak_builder_micro_version])
 
 AC_INIT([flatpak-builder],
         [flatpak_builder_version],
-        [https://github.com/flatpak/flatpak/issues],
+        [https://github.com/flatpak/flatpak-builder/issues],
         [flatpak-builder],
         [http://flatpak.org/])
 
@@ -169,8 +169,6 @@ if test x$enable_documentation = xyes; then
   fi
 fi
 AM_CONDITIONAL(BUILD_DOCUMENTATION, test x$enable_documentation = xyes)
-
-GOBJECT_INTROSPECTION_CHECK([1.40.0])
 
 AC_ARG_ENABLE(docbook-docs,
         [AS_HELP_STRING([--enable-docbook-docs],[build documentation (requires xmlto)])],
