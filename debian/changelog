@@ -3,6 +3,7 @@ flatpak (0.9.11~builder0.9.11-2) UNRELEASED; urgency=medium
   * d/watch: Append ~builderFIXME to the output filenames.
     They will still need renaming manually to insert the right
     flatpak-builder version before importing.
+  * d/gbp.conf: Make sure we import the builder tarball on this branch
 
  -- Simon McVittie <smcv@debian.org>  Thu, 14 Sep 2017 12:01:42 +0100
 
