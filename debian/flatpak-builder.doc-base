@@ -1,8 +1,0 @@
-Document: flatpak-builder
-Title: flatpak-builder Command Reference
-Author: Alexander Larsson et al.
-Section: Programming
-
-Format: HTML
-Index: /usr/share/doc/flatpak-builder/flatpak-builder-docs.html
-Files: /usr/share/doc/flatpak-builder/flatpak-builder-docs.html /usr/share/doc/flatpak-builder/docbook.css

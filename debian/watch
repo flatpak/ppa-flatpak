@@ -1,3 +1,2 @@
 version=4
-opts="dversionmangle=s/~builder[0-9.]+//,oversionmangle=s/$/~builderFIXME/" https://github.com/@PACKAGE@/@PACKAGE@/releases .*/@PACKAGE@-(\d+\.\d\.\S*)@ARCHIVE_EXT@ ignore
-opts="dversionmangle=s/[0-9.]+~builder//,oversionmangle=s/$/~builderFIXME/,component=builder" https://github.com/flatpak/flatpak-builder/releases .*/flatpak-builder-(\d+\.\d\.\S*)@ARCHIVE_EXT@ ignore
+https://github.com/@PACKAGE@/@PACKAGE@/releases .*/@PACKAGE@-(\d+\.\d\.\S*)@ARCHIVE_EXT@
