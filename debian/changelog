@@ -1,8 +1,11 @@
-flatpak (0.9.12-2) UNRELEASED; urgency=medium
+flatpak (0.9.12-2) unstable; urgency=medium
 
   * Merge experimental branch to unstable
+    - src:flatpak no longer has a bundled copy of flatpak-builder, which
+      is now produced by the new src:flatpak-builder
+  * Release to unstable
 
- -- Simon McVittie <smcv@debian.org>  Fri, 22 Sep 2017 18:58:46 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 22 Sep 2017 19:06:01 +0100
 
 flatpak (0.9.12-1) experimental; urgency=medium
 
