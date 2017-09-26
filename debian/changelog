@@ -1,4 +1,4 @@
-flatpak (0.9.98-1) UNRELEASED; urgency=medium
+flatpak (0.9.98-1) unstable; urgency=medium
 
   * New upstream release
     - Increase libostree dependency to 2017.11
@@ -6,7 +6,7 @@ flatpak (0.9.98-1) UNRELEASED; urgency=medium
     cannot create all the new namespaces that Flatpak would
     (Closes: #876743)
 
- -- Simon McVittie <smcv@debian.org>  Tue, 26 Sep 2017 08:58:47 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 26 Sep 2017 09:30:48 +0100
 
 flatpak (0.9.12-2) unstable; urgency=medium
 
