@@ -1,0 +1,46 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Tue, 26 Sep 2017 09:29:00 +0100
+Subject: tests: Use a more realistic bwrap invocation to check for support
+
+The kernel used on some autobuilders for the Debian PA-RISC port
+can do "bwrap --ro-bind / / /bin/true", but not the bwrap invocations
+made during the actual testing, which fail with "Creating new namespace
+failed: Invalid argument". Make the trial bwrap invocation more like
+what Flatpak actually does, so that these tests will hopefully be
+skipped on such kernels.
+
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=876743
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ tests/libtest.sh    | 3 ++-
+ tests/testlibrary.c | 3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/tests/libtest.sh b/tests/libtest.sh
+index c12ffb9..1100a0d 100644
+--- a/tests/libtest.sh
++++ b/tests/libtest.sh
+@@ -321,7 +321,8 @@ skip_without_bwrap () {
+     if [ -z "${FLATPAK_BWRAP:-}" ]; then
+         # running installed-tests: assume we know what we're doing
+         :
+-    elif ! "$FLATPAK_BWRAP" --ro-bind / / /bin/true > bwrap-result 2>&1; then
++    elif ! "$FLATPAK_BWRAP" --unshare-ipc --unshare-net --unshare-pid \
++            --ro-bind / / /bin/true > bwrap-result 2>&1; then
+         sed -e 's/^/# /' < bwrap-result
+         echo "1..0 # SKIP Cannot run bwrap"
+         exit 0
+diff --git a/tests/testlibrary.c b/tests/testlibrary.c
+index 77d5c8f..34e75b8 100644
+--- a/tests/testlibrary.c
++++ b/tests/testlibrary.c
+@@ -377,7 +377,8 @@ test_install_launch_uninstall (void)
+   if (bwrap != NULL)
+     {
+       gint exit_code = 0;
+-      char *argv[] = { (char *)bwrap, "--ro-bind", "/", "/", "/bin/true", NULL };
++      char *argv[] = { (char *)bwrap, "--unshare-ipc", "--unshare-net",
++          "--unshare-pid", "--ro-bind", "/", "/", "/bin/true", NULL };
+       g_autofree char *argv_str = g_strjoinv (" ", argv);
+       g_test_message ("Spawning %s", argv_str);
+       g_spawn_sync (NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, NULL, &exit_code, &error);
