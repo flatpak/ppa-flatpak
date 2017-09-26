@@ -695,6 +695,13 @@ flatpak_installation_install (<em class="parameter"><code><a class="link" href="
                               <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
                               <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Install a new application or runtime.</p>
+<p>Note that this function was originally written to always return a
+<a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a>. Since 0.9.13, passing
+FLATPAK_INSTALL_FLAGS_NO_DEPLOY will only pull refs into the local flatpak
+repository without deploying them, however this function will
+be unable to provide information on the installed ref, so
+FLATPAK_ERROR_ONLY_PULLED will be set and the caller must respond
+accordingly.</p>
 <div class="refsect3">
 <a name="flatpak-installation-install.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -781,6 +788,13 @@ flatpak_installation_install_full (<em class="parameter"><code><a class="link" h
                                    <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
                                    <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Install a new application or runtime.</p>
+<p>Note that this function was originally written to always return a
+<a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a>. Since 0.9.13, passing
+FLATPAK_INSTALL_FLAGS_NO_DEPLOY will only pull refs into the local flatpak
+repository without deploying them, however this function will
+be unable to provide information on the installed ref, so
+FLATPAK_ERROR_ONLY_PULLED will be set and the caller must respond
+accordingly.</p>
 <div class="refsect3">
 <a name="flatpak-installation-install-full.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -2612,6 +2626,16 @@ is just an estimate</p></td>
 </tr>
 <tr>
 <td class="enum_member_name"><p><a name="FLATPAK-INSTALL-FLAGS-NO-STATIC-DELTAS:CAPS"></a>FLATPAK_INSTALL_FLAGS_NO_STATIC_DELTAS</p></td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-INSTALL-FLAGS-NO-DEPLOY:CAPS"></a>FLATPAK_INSTALL_FLAGS_NO_DEPLOY</p></td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-INSTALL-FLAGS-NO-PULL:CAPS"></a>FLATPAK_INSTALL_FLAGS_NO_PULL</p></td>
 <td> </td>
 <td> </td>
 </tr>

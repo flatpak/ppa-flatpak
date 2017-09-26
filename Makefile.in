@@ -1009,6 +1009,7 @@ SOUP_LIBS = @SOUP_LIBS@
 STRIP = @STRIP@
 SUDO_BIN = @SUDO_BIN@
 SYSTEM_FONTS_DIR = @SYSTEM_FONTS_DIR@
+SYSTEM_FONT_CACHE_DIRS = @SYSTEM_FONT_CACHE_DIRS@
 SYSTEM_INSTALL_DIR = @SYSTEM_INSTALL_DIR@
 USE_NLS = @USE_NLS@
 VALGRIND = @VALGRIND@
@@ -1192,6 +1193,7 @@ AM_CPPFLAGS = -DFLATPAK_BINDIR=\"$(FLATPAK_BINDIR)\" \
 	-DFLATPAK_BASEDIR=\"$(pkgdatadir)\" \
 	-DFLATPAK_TRIGGERDIR=\"$(pkgdatadir)/triggers\" \
 	-DSYSTEM_FONTS_DIR=\"$(SYSTEM_FONTS_DIR)\" \
+	-DSYSTEM_FONT_CACHE_DIRS=\"$(SYSTEM_FONT_CACHE_DIRS)\" \
 	-DDBUSPROXY=\"$(libexecdir)/flatpak-dbus-proxy\" \
 	-DG_LOG_DOMAIN=\"flatpak\" -I$(srcdir)/libglnx \
 	-I$(srcdir)/common -I$(builddir)/common -I$(srcdir)/lib \
@@ -1244,6 +1246,7 @@ libglnx_la_SOURCES = \
 	libglnx/glnx-shutil.h \
 	libglnx/glnx-shutil.c \
 	libglnx/libglnx.h \
+	libglnx/tests/libglnx-testlib.h \
 	$(NULL)
 
 libglnx_la_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)

@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [9])
-m4_define([flatpak_micro_version], [12])
-m4_define([flatpak_interface_age], [12])
+m4_define([flatpak_micro_version], [98])
+m4_define([flatpak_interface_age], [98])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
 m4_define([flatpak_version],
@@ -30,7 +30,7 @@ AC_INIT([Flatpak],
 
 GLIB_REQS=2.44
 SYSTEM_BWRAP_REQS=0.1.8
-OSTREE_REQS=2017.10
+OSTREE_REQS=2017.11
 
 AC_USE_SYSTEM_EXTENSIONS
 AC_SYS_LARGEFILE
@@ -123,6 +123,12 @@ AC_ARG_WITH(system_fonts_dir,
 SYSTEM_FONTS_DIR=$with_system_fonts_dir
 AC_SUBST(SYSTEM_FONTS_DIR)
 
+AC_ARG_WITH(system_font_cache_dirs,
+		AS_HELP_STRING([--with-system-font-cache-dirs=PATHS],[Directory where the system font cache is, [default=/var/cache/fontconfig:/usr/lib/fontconfig/cache]]),
+            with_system_font_cache_dirs="$withval", with_system_font_cache_dirs=/var/cache/fontconfig:/usr/lib/fontconfig/cache)
+SYSTEM_FONT_CACHE_DIRS=$with_system_font_cache_dirs
+AC_SUBST(SYSTEM_FONT_CACHE_DIRS)
+
 AC_ARG_WITH(profile_dir,
 		AS_HELP_STRING([--with-profile-dir=PATH],[choose directory for profile.d files, [default=SYSCONFDIR/profile.d]]),
             with_profile_dir="$withval", with_profile_dir=${sysconfdir}/profile.d)
@@ -144,7 +150,7 @@ AS_CASE([$BWRAP],
 if test "x$BWRAP" != xfalse; then
    BWRAP_VERSION=`$BWRAP --version | sed 's,.*\ \([0-9]*\.[0-9]*\.[0-9]*\)$,\1,'`
    AX_COMPARE_VERSION([$SYSTEM_BWRAP_REQS],[gt],[$BWRAP_VERSION],
-         AC_MSG_ERROR([You need at least version $SYSTEM_BWRAP_REQS of bubblewrap to use the system installed version]))
+                      [AC_MSG_ERROR([You need at least version $SYSTEM_BWRAP_REQS of bubblewrap to use the system installed version])])
    AM_CONDITIONAL([WITH_SYSTEM_BWRAP], [true])
 else
    AM_CONDITIONAL([WITH_SYSTEM_BWRAP], [false])
@@ -152,8 +158,8 @@ fi
 
 AC_CHECK_FUNCS(fdwalk)
 
-AC_CHECK_HEADER([sys/xattr.h], [], AC_MSG_ERROR([You must have sys/xattr.h from glibc]))
-AC_CHECK_HEADER([sys/capability.h], have_caps=yes, AC_MSG_ERROR([sys/capability.h header not found]))
+AC_CHECK_HEADER([sys/xattr.h], [], [AC_MSG_ERROR([You must have sys/xattr.h from glibc])])
+AC_CHECK_HEADER([sys/capability.h], have_caps=yes, [AC_MSG_ERROR([sys/capability.h header not found])])
 
 AC_SUBST([GLIB_MKENUMS], [`$PKG_CONFIG --variable glib_mkenums glib-2.0`])
 AC_SUBST([GLIB_COMPILE_RESOURCES], [`$PKG_CONFIG --variable glib_compile_resources gio-2.0`])

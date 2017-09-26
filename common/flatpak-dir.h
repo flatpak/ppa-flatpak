@@ -202,6 +202,9 @@ gint        flatpak_dir_get_priority (FlatpakDir *self);
 FlatpakDirStorageType flatpak_dir_get_storage_type (FlatpakDir *self);
 GFile *     flatpak_dir_get_deploy_dir (FlatpakDir *self,
                                         const char *ref);
+char *      flatpak_dir_get_deploy_subdir (FlatpakDir *self,
+                                           const char *checksum,
+                                           const char * const * subpaths);
 GFile *     flatpak_dir_get_unmaintained_extension_dir (FlatpakDir *self,
                                                         const char *name,
                                                         const char *arch,
@@ -255,6 +258,16 @@ char **     flatpak_dir_find_remote_refs (FlatpakDir   *self,
                                           FlatpakKinds  kinds,
                                           GCancellable *cancellable,
                                           GError      **error);
+char *      flatpak_dir_find_local_ref (FlatpakDir   *self,
+                                        const char   *remote,
+                                        const char   *name,
+                                        const char   *opt_branch,
+                                        const char   *opt_default_branch,
+                                        const char   *opt_arch,
+                                        FlatpakKinds  kinds,
+                                        FlatpakKinds *out_kind,
+                                        GCancellable *cancellable,
+                                        GError      **error);
 char *      flatpak_dir_find_installed_ref (FlatpakDir  *self,
                                             const char  *opt_name,
                                             const char  *opt_branch,
@@ -374,6 +387,11 @@ gboolean    flatpak_dir_lock (FlatpakDir   *self,
                               GLnxLockFile *lockfile,
                               GCancellable *cancellable,
                               GError      **error);
+gboolean    flatpak_dir_repo_lock (FlatpakDir   *self,
+                                   GLnxLockFile *lockfile,
+                                   gboolean      exclusive,
+                                   GCancellable *cancellable,
+                                   GError      **error);
 gboolean    flatpak_dir_deploy (FlatpakDir          *self,
                                 const char          *origin,
                                 const char          *ref,

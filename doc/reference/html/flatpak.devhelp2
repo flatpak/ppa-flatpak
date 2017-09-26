@@ -136,6 +136,8 @@
     <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NO_STATIC_DELTAS" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NO-STATIC-DELTAS:CAPS"/>
     <keyword type="constant" name="FLATPAK_INSTALL_FLAGS_NONE" link="FlatpakInstallation.html#FLATPAK-INSTALL-FLAGS-NONE:CAPS"/>
     <keyword type="constant" name="FLATPAK_INSTALL_FLAGS_NO_STATIC_DELTAS" link="FlatpakInstallation.html#FLATPAK-INSTALL-FLAGS-NO-STATIC-DELTAS:CAPS"/>
+    <keyword type="constant" name="FLATPAK_INSTALL_FLAGS_NO_DEPLOY" link="FlatpakInstallation.html#FLATPAK-INSTALL-FLAGS-NO-DEPLOY:CAPS"/>
+    <keyword type="constant" name="FLATPAK_INSTALL_FLAGS_NO_PULL" link="FlatpakInstallation.html#FLATPAK-INSTALL-FLAGS-NO-PULL:CAPS"/>
     <keyword type="constant" name="FLATPAK_STORAGE_TYPE_DEFAULT" link="FlatpakInstallation.html#FLATPAK-STORAGE-TYPE-DEFAULT:CAPS"/>
     <keyword type="constant" name="FLATPAK_STORAGE_TYPE_HARD_DISK" link="FlatpakInstallation.html#FLATPAK-STORAGE-TYPE-HARD-DISK:CAPS"/>
     <keyword type="constant" name="FLATPAK_STORAGE_TYPE_SDCARD" link="FlatpakInstallation.html#FLATPAK-STORAGE-TYPE-SDCARD:CAPS"/>
@@ -144,5 +146,6 @@
     <keyword type="constant" name="FLATPAK_REF_KIND_RUNTIME" link="FlatpakRef.html#FLATPAK-REF-KIND-RUNTIME:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_ALREADY_INSTALLED" link="flatpak-Error-codes.html#FLATPAK-ERROR-ALREADY-INSTALLED:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_NOT_INSTALLED" link="flatpak-Error-codes.html#FLATPAK-ERROR-NOT-INSTALLED:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_ONLY_PULLED" link="flatpak-Error-codes.html#FLATPAK-ERROR-ONLY-PULLED:CAPS"/>
   </functions>
 </book>

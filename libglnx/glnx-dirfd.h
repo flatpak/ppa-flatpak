@@ -92,7 +92,7 @@ void glnx_gen_temp_name (gchar *tmpl);
  * @mode: Mode
  * @error: Return location for a #GError, or %NULL
  *
- * Wrapper around mkdirat() which ignores adds #GError support, ensures that
+ * Wrapper around mkdirat() which adds #GError support, ensures that
  * it retries on %EINTR, and also ignores `EEXIST`.
  *
  * See also `glnx_shutil_mkdir_p_at()` for recursive handling.
@@ -113,20 +113,25 @@ glnx_ensure_dir (int           dfd,
   return TRUE;
 }
 
-gboolean glnx_mkdtempat (int dfd,
-                         gchar *tmpl,
-                         int mode,
-                         GError **error);
+typedef struct {
+  gboolean initialized;
+  int src_dfd;
+  int fd;
+  char *path;
+} GLnxTmpDir;
+gboolean glnx_tmpdir_delete (GLnxTmpDir *tmpf, GCancellable *cancellable, GError **error);
+void glnx_tmpdir_unset (GLnxTmpDir *tmpf);
+static inline void
+glnx_tmpdir_cleanup (GLnxTmpDir *tmpf)
+{
+  (void)glnx_tmpdir_delete (tmpf, NULL, NULL);
+}
+G_DEFINE_AUTO_CLEANUP_CLEAR_FUNC(GLnxTmpDir, glnx_tmpdir_cleanup)
 
-gboolean glnx_mkdtempat_open (int      dfd,
-                              gchar   *tmpl,
-                              int      mode,
-                              int     *out_dfd,
-                              GError **error);
+gboolean glnx_mkdtempat (int dfd, const char *tmpl, int mode,
+                         GLnxTmpDir *out_tmpdir, GError **error);
 
-gboolean glnx_mkdtempat_open_in_system (gchar   *tmpl,
-                                        int      mode,
-                                        int     *out_dfd,
-                                        GError **error);
+gboolean glnx_mkdtemp (const char *tmpl, int      mode,
+                       GLnxTmpDir *out_tmpdir, GError **error);
 
 G_END_DECLS
