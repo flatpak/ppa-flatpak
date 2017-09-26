@@ -11,6 +11,8 @@ skipped on such kernels.
 
 Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=876743
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/flatpak/flatpak/pull/1035
+Applied-upstream: 0.9.99, commit:f8e5c200bcb17706ab756b632df411c6c52aad1b
 ---
  tests/libtest.sh    | 3 ++-
  tests/testlibrary.c | 3 ++-
