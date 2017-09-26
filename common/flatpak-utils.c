@@ -3338,7 +3338,7 @@ flatpak_repo_update (OstreeRepo   *repo,
                              "s", collection_ref.collection_id);
       g_variant_dict_insert_value (new_summary_commit_dict, "ostree.ref-binding",
                                    g_variant_new_strv ((const gchar * const *) &collection_ref.ref_name, 1));
-      new_summary_commit = g_variant_dict_end (new_summary_commit_dict);
+      new_summary_commit = g_variant_ref_sink (g_variant_dict_end (new_summary_commit_dict));
 
       if (!ostree_repo_prepare_transaction (repo, NULL, cancellable, error))
         goto out;
@@ -3953,7 +3953,10 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
             goto out;
 
           if (g_file_equal (root, parent_root))
-            skip_commit = TRUE;
+            {
+              skip_commit = TRUE;
+              g_debug ("Not updating %s, no change", branch);
+            }
         }
 
       if (!skip_commit)
@@ -3968,7 +3971,7 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
                                  "s", (collection_id != NULL) ? collection_id : "");
           g_variant_dict_insert_value (metadata_dict, "ostree.ref-binding",
                                        g_variant_new_strv ((const gchar * const *) &branch, 1));
-          metadata = g_variant_dict_end (metadata_dict);
+          metadata = g_variant_ref_sink (g_variant_dict_end (metadata_dict));
 
           if (timestamp > 0)
             {
@@ -5231,20 +5234,16 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
   while (tmpdir_name == NULL)
     {
       g_autofree char *tmpdir_name_template = g_strconcat (tmpdir_prefix, "XXXXXX", NULL);
-      glnx_fd_close int new_tmpdir_fd = -1;
       g_autoptr(GError) local_error = NULL;
       g_autofree char *lock_name = NULL;
-
+      g_auto(GLnxTmpDir) new_tmpdir = { 0, };
       /* No existing tmpdir found, create a new */
 
-      if (!glnx_mkdtempat (dfd_iter.fd, tmpdir_name_template, 0777, error))
+      if (!glnx_mkdtempat (dfd_iter.fd, tmpdir_name_template, 0777,
+                           &new_tmpdir, error))
         return FALSE;
 
-      if (!glnx_opendirat (dfd_iter.fd, tmpdir_name_template, FALSE,
-                           &new_tmpdir_fd, error))
-        return FALSE;
-
-      lock_name = g_strconcat (tmpdir_name_template, "-lock", NULL);
+      lock_name = g_strconcat (new_tmpdir.path, "-lock", NULL);
 
       /* Note, at this point we can race with another process that picks up this
        * new directory. If that happens we need to retry, making a new directory. */
@@ -5253,6 +5252,7 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
         {
           if (g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK))
             {
+              glnx_tmpdir_unset (&new_tmpdir); /* Don't delete */
               continue;
             }
           else
@@ -5262,8 +5262,9 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
             }
         }
 
-      tmpdir_name = g_steal_pointer (&tmpdir_name_template);
-      tmpdir_fd = glnx_steal_fd (&new_tmpdir_fd);
+      tmpdir_name = g_strdup (new_tmpdir.path);
+      tmpdir_fd = dup (new_tmpdir.fd);
+      glnx_tmpdir_unset (&new_tmpdir); /* Don't delete */
     }
 
   if (tmpdir_name_out)
@@ -5320,6 +5321,9 @@ flatpak_yes_no_prompt (const char *prompt, ...)
 static gboolean
 is_number (const char *s)
 {
+  if (*s == '\0')
+    return FALSE;
+
   while (*s != 0)
     {
       if (!g_ascii_isdigit (*s))

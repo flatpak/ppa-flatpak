@@ -1057,6 +1057,11 @@ flatpak_save_override_keyfile (GKeyFile   *metakey,
   return g_key_file_save_to_file (metakey, filename, error);
 }
 
+/* Note: passing a checksum only works here for non-sub-set deploys, not
+   e.g. a partial locale install, because it will not find the real
+   deploy directory. This is ok for now, because checksum is only
+   currently passed from flatpak_installation_launch() when launching
+   a particular version of an app, which is not used for locales. */
 FlatpakDeploy *
 flatpak_dir_load_deployed (FlatpakDir   *self,
                            const char   *ref,
@@ -1120,6 +1125,32 @@ flatpak_dir_get_deploy_dir (FlatpakDir *self,
   return g_file_resolve_relative_path (self->basedir, ref);
 }
 
+char *
+flatpak_dir_get_deploy_subdir (FlatpakDir *self,
+                               const char *checksum,
+                               const char * const * subpaths)
+{
+  if (subpaths == NULL || *subpaths == NULL)
+    return g_strdup (checksum);
+  else
+    {
+      GString *str = g_string_new (checksum);
+      int i;
+      for (i = 0; subpaths[i] != NULL; i++)
+        {
+          const char *s = subpaths[i];
+          g_string_append_c (str, '-');
+          while (*s)
+            {
+              if (*s != '/')
+                g_string_append_c (str, *s);
+              s++;
+            }
+        }
+      return g_string_free (str, FALSE);
+    }
+}
+
 GFile *
 flatpak_dir_get_unmaintained_extension_dir (FlatpakDir *self,
                                             const char *name,
@@ -1169,6 +1200,34 @@ flatpak_dir_lock (FlatpakDir   *self,
 
   return glnx_make_lock_file (AT_FDCWD, lock_path, LOCK_EX, lockfile, error);
 }
+
+
+/* This is an lock that protects the repo itself. Any operation that
+ * relies on objects not disappearing from the repo need to hold this
+ * in a non-exclusive mode, while anything that can remove objects
+ * (i.e. prune) need to take it in exclusive mode.
+ *
+ * The following operations depends on objects not disappearing:
+ *  * pull into a staging directory (pre-existing objects are not downloaded)
+ *  * moving a staging directory into the repo (no ref keeps the object alive during copy)
+ *  * Deploying a ref (a parallel update + prune could cause objects to be removed)
+ *
+ * In practice this means we hold a shared lock during deploy and
+ * pull, and an excusive lock during prune.
+ */
+gboolean
+flatpak_dir_repo_lock (FlatpakDir   *self,
+                       GLnxLockFile *lockfile,
+                       int           operation,
+                       GCancellable *cancellable,
+                       GError      **error)
+{
+  g_autoptr(GFile) lock_file = g_file_get_child (flatpak_dir_get_path (self), "repo-lock");
+  g_autofree char *lock_path = g_file_get_path (lock_file);
+
+  return glnx_make_lock_file (AT_FDCWD, lock_path, operation, lockfile, error);
+}
+
 
 const char *
 flatpak_deploy_data_get_origin (GVariant *deploy_data)
@@ -1465,15 +1524,14 @@ flatpak_dir_ensure_repo (FlatpakDir   *self,
                          GCancellable *cancellable,
                          GError      **error)
 {
-  gboolean ret = FALSE;
-
   g_autoptr(GFile) repodir = NULL;
   g_autoptr(OstreeRepo) repo = NULL;
+  gboolean use_helper = FALSE;
 
   if (self->repo == NULL)
     {
       if (!flatpak_dir_ensure_path (self, cancellable, error))
-        goto out;
+        return FALSE;
 
       repodir = g_file_get_child (self->basedir, "repo");
       if (self->no_system_helper || self->user || getuid () == 0)
@@ -1486,16 +1544,17 @@ flatpak_dir_ensure_repo (FlatpakDir   *self,
           g_autofree char *cache_path = NULL;
 
           repo = system_ostree_repo_new (repodir);
+          use_helper = TRUE;
 
           cache_dir = flatpak_ensure_user_cache_dir_location (error);
           if (cache_dir == NULL)
-            goto out;
+            return FALSE;
 
           cache_path = g_file_get_path (cache_dir);
           if (!ostree_repo_set_cache_dir (repo,
                                           AT_FDCWD, cache_path,
                                           cancellable, error))
-            goto out;
+            return FALSE;
         }
 
       if (!g_file_query_exists (repodir, cancellable))
@@ -1511,7 +1570,7 @@ flatpak_dir_ensure_repo (FlatpakDir   *self,
           if (!ostree_repo_create (repo, mode, cancellable, error))
             {
               flatpak_rm_rf (repodir, cancellable, NULL);
-              goto out;
+              return FALSE;
             }
 
           /* Create .changes file early to avoid polling non-existing file in monitor */
@@ -1525,7 +1584,28 @@ flatpak_dir_ensure_repo (FlatpakDir   *self,
 
               repopath = g_file_get_path (repodir);
               g_prefix_error (error, _("While opening repository %s: "), repopath);
-              goto out;
+              return FALSE;
+            }
+        }
+
+      /* Reset min-free-space-percent to 0, this keeps being a problem for a lot of people */
+      if (!use_helper)
+        {
+          GKeyFile *orig_config = NULL;
+          g_autofree char *orig_min_free_space_percent = NULL;
+
+          orig_config = ostree_repo_get_config (repo);
+          orig_min_free_space_percent = g_key_file_get_value (orig_config, "core", "min-free-space-percent", NULL);
+          if (orig_min_free_space_percent == NULL)
+            {
+              GKeyFile *config = ostree_repo_copy_config (repo);
+
+              g_key_file_set_string (config, "core", "min-free-space-percent", "0");
+              if (!ostree_repo_write_config (repo, config, error))
+                return FALSE;
+
+              if (!ostree_repo_reload_config (repo, cancellable, error))
+                return FALSE;
             }
         }
 
@@ -1534,9 +1614,7 @@ flatpak_dir_ensure_repo (FlatpakDir   *self,
       self->repo = g_object_ref (repo);
     }
 
-  ret = TRUE;
-out:
-  return ret;
+  return TRUE;
 }
 
 gboolean
@@ -1604,6 +1682,13 @@ flatpak_dir_deploy_appstream (FlatpakDir          *self,
   glnx_fd_close int dfd = -1;
   g_autoptr(GFileInfo) file_info = NULL;
   g_autofree char *tmpname = g_strdup (".active-XXXXXX");
+  g_auto(GLnxLockFile) lock = GLNX_LOCK_FILE_INIT;
+
+  /* Keep a shared repo lock to avoid prunes removing objects we're relying on
+   * while we do the checkout. This could happen if the ref changes after we
+   * read its current value for the checkout. */
+  if (!flatpak_dir_repo_lock (self, &lock, LOCK_SH, cancellable, error))
+    return FALSE;
 
   appstream_dir = g_file_get_child (flatpak_dir_get_path (self), "appstream");
   remote_dir = g_file_get_child (appstream_dir, remote);
@@ -2418,7 +2503,7 @@ flatpak_dir_pull_extra_data (FlatpakDir          *self,
 
   g_variant_dict_init (&new_metadata_dict, detached_metadata);
   g_variant_dict_insert_value (&new_metadata_dict, "xa.extra-data", extra_data);
-  new_detached_metadata = g_variant_dict_end (&new_metadata_dict);
+  new_detached_metadata = g_variant_ref_sink (g_variant_dict_end (&new_metadata_dict));
 
   /* There is a commitmeta size limit when pulling, so we have to side-load it
      when installing in the system repo */
@@ -2813,11 +2898,21 @@ flatpak_dir_pull (FlatpakDir          *self,
   g_autoptr(GPtrArray) subdirs_arg = NULL;
   g_auto(OstreeRepoFinderResultv) allocated_results = NULL;
   const OstreeRepoFinderResult * const *results;
+  g_auto(GLnxLockFile) lock = GLNX_LOCK_FILE_INIT;
 
   /* If @opt_results is set, @opt_rev must be. */
   g_return_val_if_fail (opt_results == NULL || opt_rev != NULL, FALSE);
 
   if (!flatpak_dir_ensure_repo (self, cancellable, error))
+    return FALSE;
+
+  /* Keep a shared repo lock to avoid prunes removing objects we're relying on
+   * while we do the pull. There are two cases we protect against. 1) objects
+   * we need but that were already decided was locall available could be removed,
+   * and 2) during the transaction commit objects that not yet have a ref to the
+   * could be considered unreachable.
+   */
+  if (!flatpak_dir_repo_lock (self, &lock, LOCK_SH, cancellable, error))
     return FALSE;
 
   if (flatpak_dir_get_remote_oci (self, repository))
@@ -3102,9 +3197,19 @@ flatpak_dir_pull_untrusted_local (FlatpakDir          *self,
   g_autoptr(GVariant) new_commit = NULL;
   g_autoptr(GVariant) extra_data_sources = NULL;
   g_autoptr(GPtrArray) subdirs_arg = NULL;
+  g_auto(GLnxLockFile) lock = GLNX_LOCK_FILE_INIT;
   gboolean ret = FALSE;
 
   if (!flatpak_dir_ensure_repo (self, cancellable, error))
+    return FALSE;
+
+  /* Keep a shared repo lock to avoid prunes removing objects we're relying on
+   * while we do the pull. There are two cases we protect against. 1) objects
+   * we need but that were already decided was locall available could be removed,
+   * and 2) during the transaction commit objects that not yet have a ref to the
+   * could be considered unreachable.
+   */
+  if (!flatpak_dir_repo_lock (self, &lock, LOCK_SH, cancellable, error))
     return FALSE;
 
   if (!ostree_repo_remote_get_gpg_verify_summary (self->repo, remote_name,
@@ -4913,8 +5018,15 @@ flatpak_dir_deploy (FlatpakDir          *self,
   gboolean created_extra_data = FALSE;
   g_autoptr(GVariant) commit_metadata = NULL;
   GVariantBuilder metadata_builder;
+  g_auto(GLnxLockFile) lock = GLNX_LOCK_FILE_INIT;
 
   if (!flatpak_dir_ensure_repo (self, cancellable, error))
+    return FALSE;
+
+  /* Keep a shared repo lock to avoid prunes removing objects we're relying on
+   * while we do the checkout. This could happen if the ref changes after we
+   * read its current value for the checkout. */
+  if (!flatpak_dir_repo_lock (self, &lock, LOCK_SH, cancellable, error))
     return FALSE;
 
   deploy_base = flatpak_dir_get_deploy_dir (self, ref);
@@ -4950,25 +5062,7 @@ flatpak_dir_deploy (FlatpakDir          *self,
   commit_metadata = g_variant_get_child_value (commit_data, 0);
   g_variant_lookup (commit_metadata, "xa.alt-id", "s", &alt_id);
 
-  if (subpaths == NULL || *subpaths == NULL)
-    checkout_basename = g_strdup (checksum);
-  else
-    {
-      GString *str = g_string_new (checksum);
-      int i;
-      for (i = 0; subpaths[i] != NULL; i++)
-        {
-          const char *s = subpaths[i];
-          g_string_append_c (str, '-');
-          while (*s)
-            {
-              if (*s != '/')
-                g_string_append_c (str, *s);
-              s++;
-            }
-        }
-      checkout_basename = g_string_free (str, FALSE);
-    }
+  checkout_basename = flatpak_dir_get_deploy_subdir (self, checksum, subpaths);
 
   real_checkoutdir = g_file_get_child (deploy_base, checkout_basename);
   if (g_file_query_exists (real_checkoutdir, cancellable))
@@ -6947,6 +7041,8 @@ flatpak_dir_prune (FlatpakDir   *self,
   guint64 pruned_object_size_total;
   g_autofree char *formatted_freed_size = NULL;
   g_autoptr(GError) local_error = NULL;
+  g_autoptr(GError) lock_error = NULL;
+  g_auto(GLnxLockFile) lock = GLNX_LOCK_FILE_INIT;
 
   if (error == NULL)
     error = &local_error;
@@ -6954,6 +7050,22 @@ flatpak_dir_prune (FlatpakDir   *self,
   if (!flatpak_dir_ensure_repo (self, cancellable, error))
     goto out;
 
+  /* This could remove objects, so take an exclusive repo lock */
+  if (!flatpak_dir_repo_lock (self, &lock, LOCK_EX | LOCK_NB, cancellable, &lock_error))
+    {
+      /* If we can't get an exclusive lock, don't block for a long time. Eventually
+         the shared lock operation is released and we will do a prune then */
+      if (g_error_matches (lock_error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK))
+        {
+          g_debug ("Skipping prune do to in progress operation");
+          return TRUE;
+        }
+
+      g_propagate_error (error, g_steal_pointer (&lock_error));
+      return FALSE;
+    }
+
+  g_debug ("Pruning repo");
   if (!ostree_repo_prune (self->repo,
                           OSTREE_REPO_PRUNE_FLAGS_REFS_ONLY,
                           0,
@@ -7635,6 +7747,57 @@ flatpak_dir_find_remote_refs (FlatpakDir   *self,
   return (char **)g_ptr_array_free (matched_refs, FALSE);
 }
 
+static char *
+find_ref_for_refs_set (GHashTable *refs,
+                       const char   *name,
+                       const char   *opt_branch,
+                       const char   *opt_default_branch,
+                       const char   *opt_arch,
+                       FlatpakKinds  kinds,
+                       FlatpakKinds *out_kind,
+                       GError      **error)
+{
+  g_autoptr(GError) my_error = NULL;
+  g_autofree gchar *ref = find_matching_ref (refs,
+                                             name,
+                                             opt_branch,
+                                             opt_default_branch,
+                                             opt_arch,
+                                             kinds,
+                                             &my_error);
+  if (ref == NULL)
+    {
+      if (g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+        g_clear_error (&my_error);
+      else
+        {
+          g_propagate_error (error, g_steal_pointer (&my_error));
+          return NULL;
+        }
+    }
+  else
+    {
+      if (out_kind != NULL)
+        {
+          if (g_str_has_prefix (ref, "app/"))
+            *out_kind = FLATPAK_KINDS_APP;
+          else
+            *out_kind = FLATPAK_KINDS_RUNTIME;
+        }
+
+      return g_steal_pointer (&ref);
+    }
+
+  g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+               _("Can't find ref %s%s%s%s%s"), name,
+               (opt_arch != NULL || opt_branch != NULL) ? "/" : "",
+               opt_arch ? opt_arch : "",
+               opt_branch ? "/" : "",
+               opt_branch ? opt_branch : "");
+
+  return NULL;
+}
+
 /* FIXME: For command line completion support for collection–refs over P2P,
  * we need a version which works with collections. */
 char *
@@ -7660,40 +7823,71 @@ flatpak_dir_find_remote_ref (FlatpakDir   *self,
                                      &remote_refs, cancellable, error))
     return NULL;
 
-  remote_ref = find_matching_ref (remote_refs, name, opt_branch, opt_default_branch,
-                                  opt_arch, kinds, &my_error);
-  if (remote_ref == NULL)
+  remote_ref = find_ref_for_refs_set (remote_refs, name, opt_branch,
+                                      opt_default_branch, opt_arch, kinds,
+                                      out_kind, &my_error);
+  if (!remote_ref)
     {
       if (g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
-        g_clear_error (&my_error);
+        {
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                       _("Error searching remote %s: %s"),
+                       remote,
+                       my_error->message);
+          return NULL;
+        }
       else
         {
           g_propagate_error (error, g_steal_pointer (&my_error));
           return NULL;
         }
     }
-  else
-    {
-      if (out_kind != NULL)
-        {
-          if (g_str_has_prefix (remote_ref, "app/"))
-            *out_kind = FLATPAK_KINDS_APP;
-          else
-            *out_kind = FLATPAK_KINDS_RUNTIME;
-        }
 
-      return g_steal_pointer (&remote_ref);
+  return g_steal_pointer (&remote_ref);
+}
+
+char *
+flatpak_dir_find_local_ref (FlatpakDir   *self,
+                            const char   *remote,
+                            const char   *name,
+                            const char   *opt_branch,
+                            const char   *opt_default_branch,
+                            const char   *opt_arch,
+                            FlatpakKinds  kinds,
+                            FlatpakKinds *out_kind,
+                            GCancellable *cancellable,
+                            GError      **error)
+{
+  g_autofree char *local_ref = NULL;
+  g_autoptr(GHashTable) local_refs = NULL;
+  g_autoptr(GError) my_error = NULL;
+
+  if (!flatpak_dir_ensure_repo (self, NULL, error))
+    return NULL;
+
+  if (!ostree_repo_list_refs (self->repo, NULL, &local_refs, cancellable, error))
+    return NULL;
+
+  local_ref = find_ref_for_refs_set (local_refs, name, opt_branch,
+                                     opt_default_branch, opt_arch, kinds,
+                                     out_kind, &my_error);
+  if (!local_ref)
+    {
+      if (g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+        {
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                       _("Error searching local repository: %s"),
+                       my_error->message);
+          return NULL;
+        }
+      else
+        {
+          g_propagate_error (error, g_steal_pointer (&my_error));
+          return NULL;
+        }
     }
 
-  g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-               _("Can't find %s%s%s%s%s in remote %s"), name,
-               (opt_arch != NULL || opt_branch != NULL) ? "/" : "",
-               opt_arch ? opt_arch : "",
-               opt_branch ? "/" : "",
-               opt_branch ? opt_branch : "",
-               remote);
-
-  return NULL;
+  return g_steal_pointer (&local_ref);
 }
 
 
@@ -9452,7 +9646,8 @@ add_related (FlatpakDir *self,
              const char *checksum,
              gboolean no_autodownload,
              const char *download_if,
-             gboolean autodelete)
+             gboolean autodelete,
+             gboolean locale_subset)
 {
   g_autoptr(GVariant) deploy_data = NULL;
   g_autofree const char **old_subpaths = NULL;
@@ -9484,13 +9679,16 @@ add_related (FlatpakDir *self,
       delete = TRUE;
     }
 
+  if (g_str_has_suffix (extension, ".Locale"))
+    locale_subset = TRUE;
+
   if (old_subpaths)
     {
       for (i = 0; old_subpaths[i] != NULL; i++)
         g_ptr_array_add (subpaths, g_strdup (old_subpaths[i]));
     }
 
-  if (g_str_has_suffix (extension, ".Locale"))
+  if (locale_subset)
     {
       g_autofree char ** current_subpaths = flatpak_dir_get_locale_subpaths (self);
       for (i = 0; current_subpaths[i] != NULL; i++)
@@ -9584,6 +9782,8 @@ flatpak_dir_find_remote_related (FlatpakDir *self,
                                                                     FLATPAK_METADATA_KEY_DOWNLOAD_IF, NULL);
               gboolean autodelete = g_key_file_get_boolean (metakey, groups[i],
                                                             FLATPAK_METADATA_KEY_AUTODELETE, NULL);
+              gboolean locale_subset = g_key_file_get_boolean (metakey, groups[i],
+                                                               FLATPAK_METADATA_KEY_LOCALE_SUBSET, NULL);
               g_autofree char *extension_collection_id = NULL;
               const char *branch;
               g_autofree char *extension_ref = NULL;
@@ -9617,7 +9817,7 @@ flatpak_dir_find_remote_related (FlatpakDir *self,
 
               if (flatpak_summary_lookup_ref (summary, extension_collection_id, extension_ref, &checksum, NULL))
                 {
-                  add_related (self, related, extension, extension_collection_id, extension_ref, checksum, no_autodownload, download_if, autodelete);
+                  add_related (self, related, extension, extension_collection_id, extension_ref, checksum, no_autodownload, download_if, autodelete, locale_subset);
                 }
               else if (subdirectories)
                 {
@@ -9626,7 +9826,7 @@ flatpak_dir_find_remote_related (FlatpakDir *self,
                   for (j = 0; refs[j] != NULL; j++)
                     {
                       if (flatpak_summary_lookup_ref (summary, extension_collection_id, refs[j], &checksum, NULL))
-                        add_related (self, related, extension, extension_collection_id, refs[j], checksum, no_autodownload, download_if, autodelete);
+                        add_related (self, related, extension, extension_collection_id, refs[j], checksum, no_autodownload, download_if, autodelete, locale_subset);
                     }
                 }
             }
@@ -9742,6 +9942,8 @@ flatpak_dir_find_local_related (FlatpakDir *self,
                                                                     FLATPAK_METADATA_KEY_DOWNLOAD_IF, NULL);
               gboolean autodelete = g_key_file_get_boolean (metakey, groups[i],
                                                             FLATPAK_METADATA_KEY_AUTODELETE, NULL);
+              gboolean locale_subset = g_key_file_get_boolean (metakey, groups[i],
+                                                               FLATPAK_METADATA_KEY_LOCALE_SUBSET, NULL);
               const char *branch;
               g_autofree char *extension_ref = NULL;
               g_autofree char *prefixed_extension_ref = NULL;
@@ -9782,7 +9984,7 @@ flatpak_dir_find_local_related (FlatpakDir *self,
                                            NULL))
                 {
                   add_related (self, related, extension, extension_collection_id, extension_ref,
-                               checksum, no_autodownload, download_if, autodelete);
+                               checksum, no_autodownload, download_if, autodelete, locale_subset);
                 }
               else if (subdirectories)
                 {
@@ -9804,7 +10006,7 @@ flatpak_dir_find_local_related (FlatpakDir *self,
                         {
                           add_related (self, related, extension,
                                        extension_collection_id, match, match_checksum,
-                                       no_autodownload, download_if, autodelete);
+                                       no_autodownload, download_if, autodelete, locale_subset);
                         }
                     }
                 }

@@ -1,146 +1,141 @@
-# German translation for flatpak.
-# Copyright (C) 2016 flatpak's COPYRIGHT HOLDER
+# Brazilian Portuguese translation for flatpak.
+# Copyright (C) 2017 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the flatpak package.
-# Wolfgang Stöggl <c72578@yahoo.de>, 2016.
-# Mario Blättermann <mario.blaettermann@gmail.com>, 2016-2017.
-# Christian Kirbach <christian.kirbach@gmail.com>, 2017.
+# Fábio Nogueira <fnogueira@gnome.org>, 2017.
+# Rafael Fontenelle <rafaelff@gnome.org>, 2017.
 msgid ""
 msgstr ""
 "Project-Id-Version: flatpak master\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
 "POT-Creation-Date: 2017-09-25 17:16+0200\n"
-"PO-Revision-Date: 2017-04-07 13:52+0200\n"
-"Last-Translator: Mario Blättermann <mario.blaettermann@gmail.com>\n"
-"Language-Team: German <gnome-de@gnome.org>\n"
-"Language: de\n"
+"PO-Revision-Date: 2017-09-12 17:20+0200\n"
+"Last-Translator: Aitor González Fernández <reimashi@gmail.com>\n"
+"Language-Team: Brazilian Portuguese <gnome-pt_br-list@gnome.org>\n"
+"Language: es_ES\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 1.8.12\n"
+"X-Generator: Poedit 1.8.7.1\n"
 
 #: app/flatpak-builtins-add-remote.c:57
 msgid "Do nothing if the provided remote exists"
-msgstr "Nichts unternehmen, wenn die entfernte Quelle existiert"
+msgstr "No hacer nada si el repositorio remoto ya existe"
 
 #: app/flatpak-builtins-add-remote.c:58
 msgid "LOCATION specifies a configuration file, not the repo location"
-msgstr "ORT legt eine Konfigurationsdatei fest, nicht den Quellort"
+msgstr ""
+"LOCATION establece un archivo de configuración, lo la localización de un "
+"repositorio"
 
 #: app/flatpak-builtins-add-remote.c:63
 msgid "Enable GPG verification"
-msgstr "GPG-Überprüfung aktivieren"
+msgstr "Habilitar la verificación GPG"
 
 #: app/flatpak-builtins-add-remote.c:64
 msgid "Mark the remote as enumerate"
-msgstr "Entfernte Quelle markieren als »berücksichtigen«"
+msgstr "Establecer el remoto como enumerado"
 
-# Bedeutung aus flatpak-remote-add.xml
-# Mark the remote as not enumerated. This means the remote will not be used to list applications, for instance in graphical installation tools.
 #: app/flatpak-builtins-add-remote.c:65
 msgid "Mark the remote as used for dependencies"
-msgstr "Ferne Quelle markieren als »Verwendet für Abhängigkeiten«"
+msgstr "Establecer el remoto como usado por las dependencias"
 
 #: app/flatpak-builtins-add-remote.c:66
 msgid "Set a new url"
-msgstr "Eine neue Adresse festlegen"
+msgstr "Establecer una nueva url"
 
 #: app/flatpak-builtins-add-remote.c:66 app/flatpak-builtins-build-bundle.c:57
 #: app/flatpak-builtins-build-bundle.c:58
 #: app/flatpak-builtins-list-remotes.c:109
 #: app/flatpak-builtins-repo-update.c:52
 msgid "URL"
-msgstr "ADRESSE"
+msgstr "URL"
 
 #: app/flatpak-builtins-add-remote.c:67
 msgid "Enable the remote"
-msgstr "Entfernte Quelle aktivieren"
+msgstr "Habilitar el repositorio remoto"
 
 #: app/flatpak-builtins-add-remote.c:68
 msgid "Update extra metadata from the summary file"
-msgstr "Zusätzliche Metadaten aus der Zusammenfassungsdatei aktualisieren"
+msgstr "Actualizar los metadatos extra desde el archivo de resumen"
 
 #: app/flatpak-builtins-add-remote.c:73
 msgid "Disable GPG verification"
-msgstr "GPG-Überprüfung deaktivieren"
+msgstr "Desactivar la verificación GPG"
 
-# Bedeutung aus flatpak-remote-add.xml
-# Mark the remote as not enumerated. This means the remote will not be used to list applications, for instance in graphical installation tools.
 #: app/flatpak-builtins-add-remote.c:74
 msgid "Mark the remote as don't enumerate"
-msgstr "Entfernte Quelle markieren als »nicht berücksichtigen«"
+msgstr "Establecer el remoto como no enumerado"
 
-# Bedeutung aus flatpak-remote-add.xml
-# Mark the remote as not enumerated. This means the remote will not be used to list applications, for instance in graphical installation tools.
 #: app/flatpak-builtins-add-remote.c:75
 msgid "Mark the remote as don't use for deps"
-msgstr "Ferne Quelle markieren als »Nicht für Abhängigkeiten verwenden«"
+msgstr "Establecer el remoto como no usado por las dependencias"
 
 #: app/flatpak-builtins-add-remote.c:76
 msgid "Set priority (default 1, higher is more prioritized)"
-msgstr "Priorität festlegen (Standard 1, mehr bedeutet höhere Priorität)"
+msgstr "Establecer prioridad (1 por defecto, mayor prioridad cuanto más alto)"
 
 #: app/flatpak-builtins-add-remote.c:76
 msgid "PRIORITY"
-msgstr "PRIORITÄT"
+msgstr "PRIORIDAD"
 
 #: app/flatpak-builtins-add-remote.c:77
 msgid "A nice name to use for this remote"
-msgstr "Ein passender Name für diese entfernte Quelle"
+msgstr "Un buen nombre para usar en este repositorio remoto"
 
 #: app/flatpak-builtins-add-remote.c:77 app/flatpak-builtins-repo-update.c:53
 msgid "TITLE"
-msgstr "TITEL"
+msgstr "TÍTULO"
 
 #: app/flatpak-builtins-add-remote.c:78
 msgid "Default branch to use for this remote"
-msgstr "Zu verwendender Vorgabe-Zweig für diese ferne Quelle"
+msgstr "Rama por defecto para usar en este repositorio remoto"
 
 #: app/flatpak-builtins-add-remote.c:78 app/flatpak-builtins-repo.c:153
 #: app/flatpak-builtins-repo-update.c:54 app/flatpak-builtins-run.c:54
 msgid "BRANCH"
-msgstr "ZWEIG"
+msgstr "RAMA"
 
 #: app/flatpak-builtins-add-remote.c:80 app/flatpak-builtins-build-export.c:67
 #: app/flatpak-builtins-repo-update.c:56
 msgid "Collection ID"
-msgstr ""
+msgstr "ID de colección"
 
 #: app/flatpak-builtins-add-remote.c:80 app/flatpak-builtins-repo-update.c:56
 msgid "COLLECTION-ID"
-msgstr ""
+msgstr "ID-COLECCIÓN"
 
 #: app/flatpak-builtins-add-remote.c:82
 msgid "Import GPG key from FILE (- for stdin)"
-msgstr "GPG-Schlüssel aus DATEI importieren (- für stdin)"
+msgstr "Importar la clave GPG desde un ARCHIVO (- para stdin)"
 
 #: app/flatpak-builtins-add-remote.c:82 app/flatpak-builtins-build-bundle.c:59
 #: app/flatpak-builtins-build.c:50 app/flatpak-builtins-build-export.c:60
 #: app/flatpak-builtins-install.c:66 app/flatpak-builtins-repo-update.c:59
 msgid "FILE"
-msgstr "DATEI"
+msgstr "ARCHIVO"
 
 #: app/flatpak-builtins-add-remote.c:83
 msgid "Disable the remote"
-msgstr "Entfernte Quelle deaktivieren"
+msgstr "Desactivar el repositorio remoto"
 
 #: app/flatpak-builtins-add-remote.c:84
 msgid "Add OCI registry"
-msgstr "OCI-Registrierung hinzufügen"
+msgstr "Añadir registro OCI"
 
 #: app/flatpak-builtins-add-remote.c:312
 msgid "NAME LOCATION - Add a remote repository"
-msgstr "NAME ORT - Eine ferne Quelle hinzufügen"
+msgstr "NOMBRE LOCALIZACIÓN - Añadir un repositorio remoto"
 
 #: app/flatpak-builtins-add-remote.c:321
 #: app/flatpak-builtins-delete-remote.c:58 app/flatpak-builtins-info.c:104
 msgid "NAME must be specified"
-msgstr "NAME muss angegeben werden"
+msgstr "Se debe especificar el NOMBRE"
 
 #: app/flatpak-builtins-add-remote.c:324 app/flatpak-builtins-build-sign.c:71
 #: app/flatpak-builtins-repo.c:174 app/flatpak-builtins-repo-update.c:429
 msgid "LOCATION must be specified"
-msgstr "ORT muss angegeben werden"
+msgstr "Se debe especificar la LOCALIZACIÓN"
 
 #: app/flatpak-builtins-add-remote.c:327
 #: app/flatpak-builtins-build-bundle.c:479
@@ -157,68 +152,71 @@ msgstr "ORT muss angegeben werden"
 #: app/flatpak-builtins-ls-remote.c:84 app/flatpak-builtins-make-current.c:67
 #: app/flatpak-builtins-override.c:66
 msgid "Too many arguments"
-msgstr "Zu viele Argumente"
+msgstr "Demasiados argumentos"
 
 #: app/flatpak-builtins-add-remote.c:332
 #: app/flatpak-builtins-build-export.c:692
-#, fuzzy, c-format
+#, c-format
 msgid "‘%s’ is not a valid collection ID: %s"
-msgstr "»%s« ist kein gültiger Anwendungsname: %s"
+msgstr "'%s' no es una colección válida de ID's: %s"
 
 #: app/flatpak-builtins-add-remote.c:336
 msgid "GPG verification is required if collections are enabled"
 msgstr ""
+"La verificación GPG es obligatoria si las colecciones están habilitadas"
 
 #. Do nothing
 #: app/flatpak-builtins-add-remote.c:351
 #, c-format
 msgid "Remote %s already exists"
-msgstr "Entfernt gelegene Quelle %s existiert bereits"
+msgstr "El repositorio remoto %s ya existe"
 
 #: app/flatpak-builtins-add-remote.c:359
 msgid "No url specified in flatpakrepo file"
-msgstr "In der flatpakrepo-Datei ist keine Adresse angegeben"
+msgstr "No se ha especificado una url en el archivo flatpakrepo"
 
 #: app/flatpak-builtins-add-remote.c:403
-#, fuzzy, c-format
+#, c-format
 msgid "Warning: Could not update extra metadata for '%s': %s\n"
-msgstr "Zusätzliche Metadaten für %s konnten nicht aktualisiert werden"
+msgstr ""
+"Aviso: No se pueden actualizar los metadatos adicionales para '%s': %s\n"
 
 #: app/flatpak-builtins-add-remote.c:451
 msgid "NAME - Modify a remote repository"
-msgstr "NAME - Entfernte Quelle verändern"
+msgstr "NOMBRE - Modificar un repositorio remoto"
 
 #: app/flatpak-builtins-add-remote.c:460
 msgid "Remote NAME must be specified"
-msgstr "Entfernter NAME muss angegeben werden"
+msgstr "Se debe especificar el NOMBRE del repositorio remoto"
 
 #: app/flatpak-builtins-add-remote.c:465
 #, c-format
 msgid "No remote %s"
-msgstr "Keine entfernte Quelle %s"
+msgstr "Sin remoto %s"
 
 #: app/flatpak-builtins-add-remote.c:471
 #, c-format
 msgid "Updating extra metadata from remote summary for %s\n"
 msgstr ""
+"Actualizando los metadatos adicionales desde el resumen remoto para %s\n"
 
 #: app/flatpak-builtins-add-remote.c:474
 #, c-format
 msgid "Error updating extra metadata for '%s': %s\n"
-msgstr "Fehler beim Aktualisieren der Metadaten für »%s«: %s\n"
+msgstr "Error al actualizar los metados adicionales para '%s': %s\n"
 
 #: app/flatpak-builtins-add-remote.c:475
 #, c-format
 msgid "Could not update extra metadata for %s"
-msgstr "Zusätzliche Metadaten für %s konnten nicht aktualisiert werden"
+msgstr "No se han podido actualizar los metadatos adicionales para %s"
 
 #: app/flatpak-builtins-build-bundle.c:55
 msgid "Export runtime instead of app"
-msgstr "Laufzeit anstatt der Anwendung exportieren"
+msgstr "Exportar el runtime en lugar de la aplicación"
 
 #: app/flatpak-builtins-build-bundle.c:56
 msgid "Arch to bundle for"
-msgstr "Architektur für die gebündelt wird"
+msgstr "Arquitectura para empaquetar"
 
 #: app/flatpak-builtins-build-bundle.c:56
 #: app/flatpak-builtins-build-export.c:55 app/flatpak-builtins-build-init.c:49
@@ -228,27 +226,27 @@ msgstr "Architektur für die gebündelt wird"
 #: app/flatpak-builtins-run.c:52 app/flatpak-builtins-uninstall.c:44
 #: app/flatpak-builtins-update.c:53
 msgid "ARCH"
-msgstr "ARCH"
+msgstr "ARQUITECTURA"
 
 #: app/flatpak-builtins-build-bundle.c:57
 msgid "Url for repo"
-msgstr "Adresse für Quelle"
+msgstr "Url del repositorio"
 
 #: app/flatpak-builtins-build-bundle.c:58
 msgid "Url for runtime flatpakrepo file"
-msgstr "Adresse der flatpakrepo-Datei der Laufzeit"
+msgstr "Url del archivo flatpakrepo del runtime"
 
 #: app/flatpak-builtins-build-bundle.c:59
 msgid "Add GPG key from FILE (- for stdin)"
-msgstr "GPG-Schlüssel aus DATEI hinzufügen (- für stdin)"
+msgstr "Añadir clave GPG desde ARCHIVO (- para stdin)"
 
 #: app/flatpak-builtins-build-bundle.c:60
 msgid "Export oci image instead of flatpak bundle"
-msgstr "In ein OCI-Abbild anstelle eines Flatpak-Bündels exportieren"
+msgstr "Exportar imagen oci en lugar de un paquete flatpak"
 
 #: app/flatpak-builtins-build-bundle.c:61
 msgid "GPG Key ID to sign the OCI image with"
-msgstr "GPG-Schlüsselkennung zum Unterschreiben des OCI-Abbilds"
+msgstr "ID de la clave GPG para firmar la imagen OCI con"
 
 #: app/flatpak-builtins-build-bundle.c:61
 #: app/flatpak-builtins-build-commit-from.c:55
@@ -256,15 +254,18 @@ msgstr "GPG-Schlüsselkennung zum Unterschreiben des OCI-Abbilds"
 #: app/flatpak-builtins-build-import-bundle.c:46
 #: app/flatpak-builtins-build-sign.c:43 app/flatpak-builtins-repo-update.c:60
 msgid "KEY-ID"
-msgstr "SCHLÜSSEL-Kennung"
+msgstr "ID-CLAVE"
 
+# "Llaveros" is the literal translate of keyrings, but in spanish don't mean exactly the same in software slang. A more correct translation would be "repositorios de claves" that means "key repositories".
 #: app/flatpak-builtins-build-bundle.c:62
 #: app/flatpak-builtins-build-commit-from.c:56
 #: app/flatpak-builtins-build-export.c:64
 #: app/flatpak-builtins-build-import-bundle.c:47
 #: app/flatpak-builtins-build-sign.c:44 app/flatpak-builtins-repo-update.c:61
 msgid "GPG Homedir to use when looking for keyrings"
-msgstr "GPG-Basisordner für die Suche nach Schlüsselbünden"
+msgstr ""
+"Directorio de origen de los archivos GPG para usar cuando se busquen "
+"repositorios de claves"
 
 #: app/flatpak-builtins-build-bundle.c:62
 #: app/flatpak-builtins-build-commit-from.c:56
@@ -272,19 +273,19 @@ msgstr "GPG-Basisordner für die Suche nach Schlüsselbünden"
 #: app/flatpak-builtins-build-import-bundle.c:47
 #: app/flatpak-builtins-build-sign.c:44 app/flatpak-builtins-repo-update.c:61
 msgid "HOMEDIR"
-msgstr "BASISORDNER"
+msgstr "DIRECTORIO_DE_INICIO"
 
 #: app/flatpak-builtins-build-bundle.c:469
 msgid ""
 "LOCATION FILENAME NAME [BRANCH] - Create a single file bundle from a local "
 "repository"
 msgstr ""
-"ORT DATEINAME NAME [ZWEIG] - Ein einzelnes Dateibündel aus lokaler Quelle "
-"erstellen"
+"LOCALIZACIÓN NOMBRE_ARCHIVO NOMBRE [RAMA] - Crear un paquete único desde un "
+"repositorio local"
 
 #: app/flatpak-builtins-build-bundle.c:476
 msgid "LOCATION, FILENAME and NAME must be specified"
-msgstr "ORT, DATEINAME und NAME müssen angegeben werden"
+msgstr "Se deben especificar LOCALIZACIÓN, NOMBRE_ARCHIVO y NOMBRE"
 
 #: app/flatpak-builtins-build-bundle.c:494
 #: app/flatpak-builtins-build-commit-from.c:103
@@ -292,51 +293,51 @@ msgstr "ORT, DATEINAME und NAME müssen angegeben werden"
 #: app/flatpak-builtins-build-import-bundle.c:191
 #, c-format
 msgid "'%s' is not a valid repository"
-msgstr "»%s« ist keine gültige Quelle"
+msgstr "'%s' no es un repositorio válido"
 
 #: app/flatpak-builtins-build-bundle.c:506 app/flatpak-builtins-build-sign.c:86
 #, c-format
 msgid "'%s' is not a valid name: %s"
-msgstr "»%s« ist kein gültiger Name: %s"
+msgstr "'%s' no es un nombre válido: %s"
 
 #: app/flatpak-builtins-build-bundle.c:509
 #: app/flatpak-builtins-build-export.c:699 app/flatpak-builtins-build-sign.c:89
 #, c-format
 msgid "'%s' is not a valid branch name: %s"
-msgstr "»%s« ist kein gültiger Zweig-Name: %s"
+msgstr "'%s' no es un nombre válido para una rama: %s"
 
 #: app/flatpak-builtins-build.c:46
 msgid "Use Platform runtime rather than Sdk"
-msgstr "Plattform-Laufzeit eher verwenden als Sdk"
+msgstr "Usar el runtime de la plataforma en en lugar del Sdk"
 
 #: app/flatpak-builtins-build.c:47
 msgid "Add bind mount"
-msgstr "»Bind-Mount« hinzufügen"
+msgstr "Añadir punto de montaje"
 
 #: app/flatpak-builtins-build.c:47
 msgid "DEST=SRC"
-msgstr "ZIEL=QUELLE"
+msgstr "DEST=ORIG"
 
 #: app/flatpak-builtins-build.c:48
 msgid "Start build in this directory"
-msgstr "Erstellung in diesem Ordner starten"
+msgstr "Iniciar la compilación en este directorio"
 
 #: app/flatpak-builtins-build.c:48 app/flatpak-builtins-build.c:49
 #: app/flatpak-builtins-build-init.c:58
 msgid "DIR"
-msgstr "ORDNER"
+msgstr "DIR"
 
 #: app/flatpak-builtins-build.c:49
 msgid "Where to look for custom sdk dir (defaults to 'usr')"
-msgstr "Legt fest, wo der eigene sdk-Ordner gesucht wird (Standard ist »usr«)"
+msgstr "Donde buscar el directorio personalizado de SDK (Por defecto 'usr)"
 
 #: app/flatpak-builtins-build.c:50 app/flatpak-builtins-build-export.c:60
 msgid "Use alternative file for the metadata"
-msgstr "Alternative Datei für diese Metadaten verwenden"
+msgstr "Usar un archivo alternativo para los metadatos"
 
 #: app/flatpak-builtins-build.c:51
 msgid "Kill processes when the parent process dies"
-msgstr ""
+msgstr "Matar el proceso cuando el proceso padre muere"
 
 #: app/flatpak-builtins-build.c:52
 msgid "Export application homedir directory to build"
@@ -344,236 +345,238 @@ msgstr ""
 
 #: app/flatpak-builtins-build.c:112
 msgid "DIRECTORY [COMMAND [args...]] - Build in directory"
-msgstr "ORDNER [BEFEHL [Argumente …]] - In Ordner Erstellen"
+msgstr "DIRECTORIO [COMANDO [argumentos...]] - Compilar en directorio"
 
 #: app/flatpak-builtins-build.c:135 app/flatpak-builtins-build-finish.c:526
 msgid "DIRECTORY must be specified"
-msgstr "ORDNER muss angegeben werden"
+msgstr "Se debe especificar el DIRECTORIO"
 
 #: app/flatpak-builtins-build.c:146 app/flatpak-builtins-build-export.c:721
 #, c-format
 msgid "Build directory %s not initialized, use flatpak build-init"
 msgstr ""
-"Erstellungsordner %s ist nicht initialisiert. Verwenden Sie flatpak build-"
-"init"
+"El directorio de compilación %s no está inicializado, usa el comando flatpak "
+"build-init"
 
 #: app/flatpak-builtins-build.c:165
 msgid "metadata invalid, not application or runtime"
-msgstr "Metadaten sind ungültig. Es ist keine Anwendung oder Laufzeit"
+msgstr "metadatos inválidos, sin aplicación o runtime"
 
 #: app/flatpak-builtins-build.c:261
 #, c-format
 msgid "No extension point matching %s in %s"
-msgstr "Kein Erweiterungspunkt entspricht %s in %s"
+msgstr "No hay un punto de extensión que coincida con %s en %s"
 
 #: app/flatpak-builtins-build.c:397
 #, c-format
 msgid "Missing '=' in bind mount option '%s'"
-msgstr "Fehlendes »=« in Bind-Mount-Option »%s«"
+msgstr "Falta un '=' en las opciones de punto de montaje '%s'"
 
 #: app/flatpak-builtins-build.c:423 common/flatpak-run.c:5088
 msgid "Unable to start app"
-msgstr "Anwendung kann nicht gestartet werden"
+msgstr "No se pudo iniciar la aplicación"
 
 #: app/flatpak-builtins-build-commit-from.c:47
 msgid "Source repo dir"
-msgstr "Quellenordner"
+msgstr "Dirección del repositorio de código fuente"
 
 #: app/flatpak-builtins-build-commit-from.c:47
 msgid "SRC-REPO"
-msgstr "QUELL-REPO"
+msgstr "SRC-REPO"
 
 #: app/flatpak-builtins-build-commit-from.c:48
 msgid "Source repo ref"
-msgstr "Quellenreferenz"
+msgstr "Referencia del repositorio de código fuente"
 
 #: app/flatpak-builtins-build-commit-from.c:48
 msgid "SRC-REF"
-msgstr "QUELL-REF"
+msgstr "SRC-REF"
 
 #: app/flatpak-builtins-build-commit-from.c:51
 #: app/flatpak-builtins-build-export.c:53
 msgid "One line subject"
-msgstr "Einzeiliger Betreff"
+msgstr "Resumen en una linea"
 
 #: app/flatpak-builtins-build-commit-from.c:51
 #: app/flatpak-builtins-build-export.c:53
 msgid "SUBJECT"
-msgstr "BETREFF"
+msgstr "RESUMEN"
 
 #: app/flatpak-builtins-build-commit-from.c:52
 #: app/flatpak-builtins-build-export.c:54
 msgid "Full description"
-msgstr "Vollständige Beschreibung"
+msgstr "Descripción completa"
 
 #: app/flatpak-builtins-build-commit-from.c:52
 #: app/flatpak-builtins-build-export.c:54
 msgid "BODY"
-msgstr "TEXTKÖRPER"
+msgstr "CUERPO"
 
 #: app/flatpak-builtins-build-commit-from.c:53
 #: app/flatpak-builtins-build-export.c:57
 #: app/flatpak-builtins-build-import-bundle.c:48
 msgid "Update the appstream branch"
-msgstr "Appstream-Zweig aktualisieren"
+msgstr "Actualizar la rama de appstream"
 
 #: app/flatpak-builtins-build-commit-from.c:54
 #: app/flatpak-builtins-build-export.c:58
 #: app/flatpak-builtins-build-import-bundle.c:49
 msgid "Don't update the summary"
-msgstr "Die Zusammenfassung nicht aktualisieren"
+msgstr "No actualizar el resumen"
 
 #: app/flatpak-builtins-build-commit-from.c:55
 #: app/flatpak-builtins-build-export.c:61
 #: app/flatpak-builtins-build-import-bundle.c:46
 #: app/flatpak-builtins-build-sign.c:43
 msgid "GPG Key ID to sign the commit with"
-msgstr "GPG-Schlüsselkennung zum Unterschreiben des »Commit«"
+msgstr "ID de la clave GPG con la que firmar el commit"
 
 #: app/flatpak-builtins-build-commit-from.c:78
 msgid "DST-REPO [DST-REF]... - Make a new commit based on existing commit(s)"
 msgstr ""
-"ZIEL-REPO [ZIEL-REF]... - Einen neuen Commit auf Basis eines/mehrerer "
-"vorhandener Commits ausführen"
+"REPO-DEST [REF-DEST]... - Realiza un nuevo commit basado en en los commit(s) "
+"existentes"
 
 #: app/flatpak-builtins-build-commit-from.c:85
 msgid "DST-REPO must be specified"
-msgstr "ZIEL-REPO muss angegeben werden"
+msgstr "Se debe especificar REPO-DEST"
 
 #: app/flatpak-builtins-build-commit-from.c:93
 msgid ""
 "If --src-repo is not specified, exactly one destination ref must be specified"
 msgstr ""
-"Wenn --src-repo nicht angegeben ist, so muss genau eine Zielreferenz "
-"angegeben werden"
+"Si no se especifica --src-repo, se debe especificar exactamente una "
+"referencia de destino"
 
 #: app/flatpak-builtins-build-commit-from.c:96
 msgid ""
 "If --src-ref is specified, exactly one destination ref must be specified"
 msgstr ""
-"Wenn --src-ref nicht angegeben ist, so muss genau eine Zielreferenz "
-"angegeben werden"
+"Si se especifica --src-ref, se debe especificar exactamente una referencia "
+"de destino"
 
 #: app/flatpak-builtins-build-commit-from.c:99
 msgid "Either --src-repo or --src-ref must be specified."
-msgstr "Es muss entweder --src-repo oder --src-ref angegeben werden."
+msgstr "Se debe especificar --src-repo o -src-ref."
 
 #: app/flatpak-builtins-build-commit-from.c:251
 msgid "Can't commit from partial source commit."
-msgstr ""
+msgstr "No se puede hacer un commit a partir de otro commit parcial."
 
 #: app/flatpak-builtins-build-export.c:55
 msgid "Architecture to export for (must be host compatible)"
-msgstr "Zu exportierende Architektur (muss kompatibel mit dem Rechner sein)"
+msgstr "Arquitectura en la que exportar (debe ser compatible con el anfitrión)"
 
 #: app/flatpak-builtins-build-export.c:56
 msgid "Commit runtime (/usr), not /app"
-msgstr "Commit von Laufzeit (/usr), nicht /app"
+msgstr "Runtime del commit (/usr), no /app"
 
 #: app/flatpak-builtins-build-export.c:59
 msgid "Use alternative directory for the files"
-msgstr "Alternativen Ordner für die Dateien verwenden"
+msgstr "Usar un directorio alternativo para estos archivos"
 
 #: app/flatpak-builtins-build-export.c:59
 msgid "SUBDIR"
-msgstr "UNTERORDNER"
+msgstr "SUBDIR"
 
 #: app/flatpak-builtins-build-export.c:62
 msgid "Files to exclude"
-msgstr "Auszuschließende Dateien"
+msgstr "Archivos a excluir"
 
 #: app/flatpak-builtins-build-export.c:62
 #: app/flatpak-builtins-build-export.c:63
 msgid "PATTERN"
-msgstr "MUSTER"
+msgstr "PATRÓN"
 
 #: app/flatpak-builtins-build-export.c:63
 msgid "Excluded files to include"
-msgstr "Einzuschließende ausgeschlossene Dateien"
+msgstr "Archivos excluidos a incluir"
 
 #: app/flatpak-builtins-build-export.c:65
 msgid "Override the timestamp of the commit"
-msgstr ""
+msgstr "Sobrescribir la marca de tiempo del commit"
 
 #: app/flatpak-builtins-build-export.c:65
 msgid "ISO-8601-TIMESTAMP"
-msgstr ""
+msgstr "ISO-8601-TIMESTAMP"
 
 #: app/flatpak-builtins-build-export.c:551
 #, c-format
 msgid "Invalid uri type %s, only http/https supported"
-msgstr "Ungültiger URI-Typ %s, nur http/https werden unterstützt"
+msgstr "Tipo de enlace %s inválido, solo se soportan http/https"
 
 #: app/flatpak-builtins-build-export.c:569
 #, c-format
 msgid "Unable to find basename in %s, specify a name explicitly"
 msgstr ""
-"Basisname konnte in %s nicht gefunden werden, bitte geben Sie einen Namen "
-"explizit an"
+"No se puede encontrar el nombre base en %s, especifica un nombre "
+"explicitamente"
 
 #: app/flatpak-builtins-build-export.c:578
 msgid "No slashes allowed in extra data name"
-msgstr "Schrägstriche sind nicht im zusätzlichen Datennamen erlaubt"
+msgstr "No se permiten barras en el nombre de los datos adicionales"
 
 #: app/flatpak-builtins-build-export.c:590
 #, c-format
 msgid "Invalid format for sha256 checksum: '%s'"
-msgstr "Ungültiges Format der sha256-Prüfsumme: »%s«"
+msgstr "Formato inválido de la suma de verificación sha256: '%s'"
 
 #: app/flatpak-builtins-build-export.c:600
 msgid "Extra data sizes of zero not supported"
-msgstr "Größe 0 der Extradaten wird nicht unterstützt"
+msgstr "Los datos adicionales no pueden tener tamaño 0"
 
 #: app/flatpak-builtins-build-export.c:662
 msgid ""
 "LOCATION DIRECTORY [BRANCH] - Create a repository from a build directory"
-msgstr "ORT ORDNER [ZWEIG] - Quelle aus Erstellungsordner erzeugen"
+msgstr ""
+"LOCALIZACIÓN DIRECTORIO [RAMA] - Crea un repositorio desde un directorio de "
+"compilación"
 
 #: app/flatpak-builtins-build-export.c:670
 msgid "LOCATION and DIRECTORY must be specified"
-msgstr "ORT und ORDNER müssen angegeben werden"
+msgstr "Se debe especificar LOCALIZACION y DIRECTORIO"
 
 #: app/flatpak-builtins-build-export.c:738
 #: app/flatpak-builtins-build-finish.c:554
 msgid "No name specified in the metadata"
-msgstr "In den Metadaten ist kein Name angegeben"
+msgstr "No se ha especificado un nombre en los metadatos"
 
 #: app/flatpak-builtins-build-finish.c:47
 msgid "Command to set"
-msgstr "Festzulegender Befehl"
+msgstr "Comando a establecer"
 
 #: app/flatpak-builtins-build-finish.c:47 app/flatpak-builtins-run.c:53
 #: app/flatpak-main.c:146
 msgid "COMMAND"
-msgstr "BEFEHL"
+msgstr "COMANDO"
 
 #: app/flatpak-builtins-build-finish.c:48
 msgid "Flatpak version to require"
-msgstr "Benötigte Flatpak-Version"
+msgstr "Versión de Flatpak requerida"
 
 #: app/flatpak-builtins-build-finish.c:48
 msgid "MAJOR.MINOR.MICRO"
-msgstr ""
+msgstr "MAJOR.MINOR.MICRO"
 
 #: app/flatpak-builtins-build-finish.c:49
 msgid "Don't process exports"
-msgstr "Exporte nicht verarbeiten"
+msgstr "No procesar los exports"
 
 #: app/flatpak-builtins-build-finish.c:50
 msgid "Extra data info"
-msgstr "Zusätzliche Dateninformation"
+msgstr "Información de datos adicionales"
 
 #: app/flatpak-builtins-build-finish.c:51
 msgid "Add extension point info"
-msgstr "Information zu Erweiterungspunkt hinzufügen"
+msgstr "Añadir información del punto de extensión"
 
 #: app/flatpak-builtins-build-finish.c:51
 msgid "NAME=VARIABLE[=VALUE]"
-msgstr "NAME=VARIABLE[=WERT]"
+msgstr "NOMBRE=VARIABLE[=VALOR]"
 
 #: app/flatpak-builtins-build-finish.c:52
 msgid "Change the sdk used for the app"
-msgstr "Die für die App verwendete Laufzeit ändern"
+msgstr "Cambiar el SDK usado por la aplicación"
 
 #: app/flatpak-builtins-build-finish.c:52
 msgid "SDK"
@@ -581,25 +584,25 @@ msgstr "SDK"
 
 #: app/flatpak-builtins-build-finish.c:53
 msgid "Change the runtime used for the app"
-msgstr "Die für die App verwendete Laufzeit ändern"
+msgstr "Cambiar el runtime usado por la aplicación"
 
 #: app/flatpak-builtins-build-finish.c:53 app/flatpak-builtins-build-init.c:50
 #: app/flatpak-builtins-run.c:56
 msgid "RUNTIME"
-msgstr "LAUFZEIT"
+msgstr "RUNTIME"
 
 #: app/flatpak-builtins-build-finish.c:54
 msgid "Set generic metadata option"
-msgstr "Allgemeine Metadaten-Einstellungen festlegen"
+msgstr "Establecer la opción de metadatos genéricos"
 
 #: app/flatpak-builtins-build-finish.c:54
 msgid "GROUP=KEY[=VALUE]"
-msgstr "GRUPPE=SCHLÜSSEL[=WERT]]"
+msgstr "GRUPO=CLAVE[=VALOR]"
 
 #: app/flatpak-builtins-build-finish.c:431
 #, c-format
 msgid "Too few elements in --extra-data argument %s"
-msgstr "Zu wenige Elemente im Argument %s von --extra-data"
+msgstr "Demasiados elementos en el argumento --extra-data %s"
 
 #: app/flatpak-builtins-build-finish.c:463
 #, c-format
@@ -607,8 +610,8 @@ msgid ""
 "Too few elements in --metadata argument %s, format should be "
 "GROUP=KEY[=VALUE]]"
 msgstr ""
-"Zu wenige Elemente im Argument %s von --metadata. Das Format ist "
-"GRUPPE=SCHLÜSSEL[=WERT]]"
+"Demasiados elementos en el argumento --metadata %s, el formato debe ser "
+"GRUPO=CLAVE[=VALOR]"
 
 #: app/flatpak-builtins-build-finish.c:478
 #, c-format
@@ -616,500 +619,496 @@ msgid ""
 "Too few elements in --extension argument %s, format should be "
 "NAME=VAR[=VALUE]"
 msgstr ""
-"Zu wenige Elemente für den Parameter %s von --extension. Das Format ist "
-"NAME=VAR[=WERT]"
+"Demasiados argumentos en el parámetro --extension %s, el formato debe ser "
+"NOMBRE=VARIABLE[=VALOR]"
 
 #: app/flatpak-builtins-build-finish.c:516
 msgid "DIRECTORY - Finalize a build directory"
-msgstr "ORDNER - einen Erstellungsordner abschließen"
+msgstr "DIRECTORIO - Finalizar un directorio de compilación"
 
 #: app/flatpak-builtins-build-finish.c:538
 #, c-format
 msgid "Build directory %s not initialized"
-msgstr "Erstellungsordner %s ist nicht initialisiert"
+msgstr "El directorio de compilación %s no está inicializado"
 
 #: app/flatpak-builtins-build-finish.c:559
 #, c-format
 msgid "Build directory %s already finalized"
-msgstr "Erstellungsordner %s wurde bereits finalisiert"
+msgstr "El directorio de compilación %s ya está inicializado"
 
 #: app/flatpak-builtins-build-finish.c:572
 msgid "Please review the exported files and the metadata\n"
-msgstr "Bitte überprüfen Sie die exportierten Dateien und die Metadaten\n"
+msgstr "Por favor, revisa los archivos exportados y los metadatos\n"
 
 #: app/flatpak-builtins-build-import-bundle.c:44
 msgid "Override the ref used for the imported bundle"
-msgstr "Referenz für das importierte Bündel ersetzen"
+msgstr "Sobrescribir la referencia usada en el paquete importado"
 
 #: app/flatpak-builtins-build-import-bundle.c:44
 msgid "REF"
-msgstr "REF"
+msgstr "REFERENCIA"
 
 #: app/flatpak-builtins-build-import-bundle.c:45
 msgid "Import oci image instead of flatpak bundle"
-msgstr "OCI-Abbild anstelle eines Flatpak-Bündels importieren"
+msgstr "Importar la imagen OCI en lugar del paquete flatpak"
 
 #: app/flatpak-builtins-build-import-bundle.c:82
 #, c-format
 msgid "Ref '%s' not found in registry"
-msgstr "Referenz »%s« wurde in der Registrierungsdatenbank nicht gefunden"
+msgstr "La referencia '%s' no se encuentra en el registro"
 
 #: app/flatpak-builtins-build-import-bundle.c:91
 msgid "Multiple images in registry, specify a ref with --ref"
-msgstr ""
-"Mehrere Abbilder in der Registrierungsdatenbank, geben Sie eine Referenz mit "
-"--ref an"
+msgstr "Hay múltiples imágenes en el registro, especifica una con --ref"
 
 #: app/flatpak-builtins-build-import-bundle.c:172
 msgid "LOCATION FILENAME - Import a file bundle into a local repository"
-msgstr "ORT DATEINAME - Ein Dateibündel in eine lokale Quelle importieren"
+msgstr "LOCALIZACIÓN NOMBRE_ARCHIVO - Importa un paquete al repositorio local"
 
 #: app/flatpak-builtins-build-import-bundle.c:179
 msgid "LOCATION and FILENAME must be specified"
-msgstr "ORT und DATEINAME müssen angegeben werden"
+msgstr "Se debe especificar LOCALIZACIÓN y NOMBRE_ARCHIVO"
 
 #: app/flatpak-builtins-build-init.c:49 app/flatpak-builtins-info.c:48
 #: app/flatpak-builtins-run.c:52
 msgid "Arch to use"
-msgstr "Zu verwendende Architektur"
+msgstr "Arquitectura a usar"
 
 #: app/flatpak-builtins-build-init.c:50
 msgid "Initialize var from named runtime"
-msgstr "Variable anhand angegebener Laufzeit initialisieren"
+msgstr "Inicializar variable desde el runtime nombrado"
 
 #: app/flatpak-builtins-build-init.c:51
-#, fuzzy
 msgid "Initialize apps from named app"
-msgstr "Variable anhand angegebener Laufzeit initialisieren"
+msgstr "Inicializar aplicaciones desde la aplicación nombrada"
 
 #: app/flatpak-builtins-build-init.c:51
 msgid "APP"
-msgstr "APP"
+msgstr "APLICACION"
 
 #: app/flatpak-builtins-build-init.c:52
 msgid "Specify version for --base"
-msgstr "Version für --base angeben"
+msgstr "Especifica una versión para --base"
 
 #: app/flatpak-builtins-build-init.c:52 app/flatpak-builtins-run.c:57
 msgid "VERSION"
-msgstr "VERSION"
+msgstr "VERSIÓN"
 
 #: app/flatpak-builtins-build-init.c:53
 msgid "Include this base extension"
-msgstr "Diese Basiserweiterung einschließen"
+msgstr "Incluir esta extensión base"
 
 #: app/flatpak-builtins-build-init.c:53 app/flatpak-builtins-build-init.c:57
 msgid "EXTENSION"
-msgstr "ERWEITERUNG"
+msgstr "EXTENSIÓN"
 
 #: app/flatpak-builtins-build-init.c:54
 msgid "Initialize /usr with a writable copy of the sdk"
-msgstr "/usr mit einer schreibbaren Kopie der sdk initialisieren"
+msgstr "Inicializar /usr con una copia con permisos de escritura del SDK"
 
 #: app/flatpak-builtins-build-init.c:55
 msgid "Specify the build type (app, runtime, extension)"
-msgstr "Geben Sie den Erstellungstyp an (App, Laufzeit, Erweiterung)"
+msgstr "Especificar el tipo de compilación (aplicación, runtime, extensión)"
 
 #: app/flatpak-builtins-build-init.c:55
 msgid "TYPE"
-msgstr "TYP"
+msgstr "TIPO"
 
 #: app/flatpak-builtins-build-init.c:56
 msgid "Add a tag"
-msgstr "Schlagwort hinzufügen"
+msgstr "Añadir una etiqueta"
 
 #: app/flatpak-builtins-build-init.c:56
 msgid "TAG"
-msgstr "SCHLAGWORT"
+msgstr "ETIQUETA"
 
 #: app/flatpak-builtins-build-init.c:57
 msgid "Include this sdk extension in /usr"
-msgstr "Diese sdk-Erweiterung in /usr einschließen"
+msgstr "Incluir la extensión de este SDK en /usr"
 
 #: app/flatpak-builtins-build-init.c:58
 msgid "Where to store sdk (defaults to 'usr')"
-msgstr "Legt fest, wo sdk gespeichert wird (Standard ist »usr«)"
+msgstr "Donde almacenar el SDK (Por defecto en 'usr')"
 
 #: app/flatpak-builtins-build-init.c:59
 msgid "Re-initialize the sdk/var"
-msgstr "sdk/var reinitialisieren"
+msgstr "Re-inicializar el sdk/variable"
 
 #: app/flatpak-builtins-build-init.c:102
 #, c-format
 msgid "Requested extension %s is only partially installed"
-msgstr "Angeforderte Erweiterung »%s« ist nur teilweise installiert"
+msgstr "La extensión %s requerida solo está instalada parcialmente"
 
 #: app/flatpak-builtins-build-init.c:131
 #, c-format
 msgid "Requested extension %s not installed"
-msgstr "Angeforderte Erweiterung »%s« ist nicht installiert"
+msgstr "La extensión %s requerida no está instalada"
 
 #: app/flatpak-builtins-build-init.c:171
 msgid ""
 "DIRECTORY APPNAME SDK RUNTIME [BRANCH] - Initialize a directory for building"
 msgstr ""
-"ORDNER ANWENDUNGSNAME SDK LAUFZEIT [ZWEIG] - Einen Erstellungsordner "
-"initialisieren"
+"DIRECTORIO NOMBRE_APLICACIÓN SDK RUNTIME [RAMA] - Inicializa un directorio "
+"de compilación"
 
 #: app/flatpak-builtins-build-init.c:178
 msgid "RUNTIME must be specified"
-msgstr "LAUFZEIT muss angegeben werden"
+msgstr "Se debe especificar un RUNTIME"
 
 #: app/flatpak-builtins-build-init.c:199
 #, c-format
 msgid "'%s' is not a valid build type name, use app, runtime or extension"
 msgstr ""
+"'%s' no es un tipo de compilación válido, usa aplicación, runtime o extensión"
 
 #: app/flatpak-builtins-build-init.c:205 app/flatpak-builtins-override.c:71
 #, c-format
 msgid "'%s' is not a valid application name: %s"
-msgstr "»%s« ist kein gültiger Anwendungsname: %s"
+msgstr "'%s' no es un nombre de aplicación valido: %s"
 
 #: app/flatpak-builtins-build-init.c:235
 #, c-format
 msgid "Build directory %s already initialized"
-msgstr "Erstellungsordner %s ist bereits initialisiert"
+msgstr "El directorio de compilación %s ya está inicializado"
 
 #: app/flatpak-builtins-build-sign.c:41 app/flatpak-builtins-install.c:56
 msgid "Arch to install for"
-msgstr "Architektur, für die installiert wird"
+msgstr "Arquitectura en la que instalar"
 
 #: app/flatpak-builtins-build-sign.c:42 app/flatpak-builtins-install.c:62
 #: app/flatpak-builtins-uninstall.c:48 app/flatpak-builtins-update.c:61
 msgid "Look for runtime with the specified name"
-msgstr "Nach Laufzeit unter dem angegebenen Namen suchen"
+msgstr "Buscar un runtime con el nombre especifico"
 
 #: app/flatpak-builtins-build-sign.c:64
 msgid "LOCATION [ID [BRANCH]] - Sign an application or runtime"
-msgstr "QUELLE [NAME [ZWEIG]] - Eine Anwendung oder Laufzeit signieren"
+msgstr "LOCALIZACIÓN [ID [RAMA]] - Firma una aplicación o runtime"
 
 #: app/flatpak-builtins-build-sign.c:92
 msgid "No gpg key ids specified"
-msgstr "Keine gpg-Schlüsselkennungen angegeben"
+msgstr "No se han especificado los ids de las claves GPG"
 
 #: app/flatpak-builtins-delete-remote.c:37
 msgid "Remove remote even if in use"
-msgstr "Entfernte Quelle entfernen, selbst wenn sie in Verwendung ist"
+msgstr "Borrar remoto incluso si está en uso"
 
 #: app/flatpak-builtins-delete-remote.c:49
 msgid "NAME - Delete a remote repository"
-msgstr "NAME - Entfernte Quelle löschen"
+msgstr "NOMBRE - Borra un repositorio remoto"
 
 #: app/flatpak-builtins-document-export.c:54
 msgid "Create a unique document reference"
-msgstr "Eine eindeutige Dokumentenreferenz erstellen"
+msgstr "Crear una referencia única de documento"
 
 #: app/flatpak-builtins-document-export.c:55
 msgid "Make the document transient for the current session"
-msgstr "Das Dokument transient für die aktuelle Sitzung machen"
+msgstr "Hacer el documento transitorio para la sesión actual"
 
 #: app/flatpak-builtins-document-export.c:56
 msgid "Don't require the file to exist already"
-msgstr "Es ist nicht erforderlich, dass die Datei bereits vorhanden ist"
+msgstr "No requerir la existencia del archivo"
 
 #: app/flatpak-builtins-document-export.c:57
 msgid "Give the app read permissions"
-msgstr "Der Anwendung Lese-Berechtigungen erteilen"
+msgstr "Obtener los permisos de lectura de la aplicación"
 
 #: app/flatpak-builtins-document-export.c:58
 msgid "Give the app write permissions"
-msgstr "Der Anwendung Schreib-Berechtigungen erteilen"
+msgstr "Obtener los permisos de escritura de la aplicación"
 
 #: app/flatpak-builtins-document-export.c:59
 msgid "Give the app delete permissions"
-msgstr "Der Anwendung Lösch-Berechtigungen erteilen"
+msgstr "Obtener los permisos de borrado de la aplicación"
 
 #: app/flatpak-builtins-document-export.c:60
 msgid "Give the app permissions to grant further permissions"
 msgstr ""
-"Der Anwendung Berechtigungen erteilen, weitere Berechtigungen zu gewähren"
+"Obtener los permisos de la aplicación para conceder permisos adicionales"
 
 #: app/flatpak-builtins-document-export.c:61
 msgid "Revoke read permissions of the app"
-msgstr "Lese-Berechtigungen der Anwendung widerrufen"
+msgstr "Revocar permiso de lectura de la aplicación"
 
 #: app/flatpak-builtins-document-export.c:62
 msgid "Revoke write permissions of the app"
-msgstr "Schreib-Berechtigungen der Anwendung widerrufen"
+msgstr "Revocar permiso de escritura de la aplicación"
 
 #: app/flatpak-builtins-document-export.c:63
 msgid "Revoke delete permissions of the app"
-msgstr "Lösch-Berechtigungen der Anwendung widerrufen"
+msgstr "Revocar permiso de borrado de la aplicación"
 
 #: app/flatpak-builtins-document-export.c:64
 msgid "Revoke the permission to grant further permissions"
-msgstr "Berechtigungen widerrufen, weitere Berechtigungen zu gewähren"
+msgstr ""
+"Revocar los permisos de la aplicación para conceder permisos adicionales"
 
 #: app/flatpak-builtins-document-export.c:65
 msgid "Add permissions for this app"
-msgstr "Dieser Anwendung Berechtigungen erteilen"
+msgstr "Añadir permisos a esta aplicación"
 
 #: app/flatpak-builtins-document-export.c:65
 msgid "APPID"
-msgstr "ANWENDUNGSKENNUNG"
+msgstr "ID_APLICACIÓN"
 
 #: app/flatpak-builtins-document-export.c:90
 msgid "FILE - Export a file to apps"
-msgstr "DATEI - Eine Datei an Anwendungen exportieren"
+msgstr "ARCHIVO - Exportar un archivo a las aplicaciones"
 
 #: app/flatpak-builtins-document-export.c:99
 #: app/flatpak-builtins-document-info.c:72
 #: app/flatpak-builtins-document-unexport.c:64
 msgid "FILE must be specified"
-msgstr "DATEI muss angegeben werden"
+msgstr "Se debe especificar el ARCHIVO"
 
 #: app/flatpak-builtins-document-info.c:63
 msgid "FILE - Get information about an exported file"
-msgstr "DATEI - Informationen über die exportierte Datei erhalten"
+msgstr "ARCHIVO - Obtiene información sobre un archivo exportado"
 
 #: app/flatpak-builtins-document-info.c:100
 #: app/flatpak-builtins-document-unexport.c:87
 msgid "Not exported\n"
-msgstr "Nicht exportiert\n"
+msgstr "No exportado\n"
 
 #: app/flatpak-builtins-document-list.c:56
 msgid "[APPID] - List exported files"
-msgstr "[ANWENDUNGSKENNUNG] - Exportierte Dateien auflisten"
+msgstr "[ID_APLICACIÓN] - Obtiene una lista de los archivos exportados"
 
 #: app/flatpak-builtins-document-unexport.c:55
 msgid "FILE - Unexport a file to apps"
-msgstr "DATEI - Export einer Datei an Anwendungen rückgängig machen"
+msgstr "ARCHIVO - Elimina la exportación de un archivo a las aplicaciones"
 
 #: app/flatpak-builtins-enter.c:82
 msgid ""
 "SANDBOXEDPID [COMMAND [args...]] - Run a command inside a running sandbox"
 msgstr ""
-"SANDBOXEDPID [BEFEHL [Argumente …]] - Einen Befehl in einer laufenden "
-"Sandbox ausführen"
+"SANDBOXEDPID [COMANDO [argumentos...]] - Ejecuta un comando dentro de una "
+"sandbox en ejecución"
 
 #: app/flatpak-builtins-enter.c:103
 msgid "SANDBOXEDPID and COMMAND must be specified"
-msgstr "SANDBOXEDPID und BEFEHL müssen angegeben werden"
+msgstr "Se deben especificar SANDBOXEDPID y COMANDO"
 
 #: app/flatpak-builtins-enter.c:109
 msgid "Not running as root, may be unable to enter namespace"
 msgstr ""
+"No se está ejecutando como root, puede ser imposible entrar al espacio de "
+"nombres"
 
 #: app/flatpak-builtins-enter.c:115
 #, c-format
 msgid "Invalid pid %s"
-msgstr "Ungültige Prozesskennung %s"
+msgstr "PID %s inválido"
 
 #: app/flatpak-builtins-enter.c:119
 #, c-format
 msgid "No such pid %s"
-msgstr "Prozesskennung %s nicht vorhanden"
+msgstr "No existe el PID %s"
 
 #: app/flatpak-builtins-enter.c:131
 msgid "Can't read cwd"
-msgstr "cwd kann nicht gelesen werden"
+msgstr "No se puede leer cwd"
 
 #: app/flatpak-builtins-enter.c:136
 msgid "Can't read root"
-msgstr "root kann nicht gelesen werden"
+msgstr "No se puede leer root"
 
 #: app/flatpak-builtins-enter.c:145
 #, c-format
 msgid "Invalid %s namespace for pid %d"
-msgstr "Ungültiger %s-Namensraum für Prozesskennung %d"
+msgstr "Espacio de nombres %s inválido para el PID %d"
 
 #: app/flatpak-builtins-enter.c:150
 #, c-format
 msgid "Invalid %s namespace for self"
-msgstr "Ungültiger %s-Namensraum für sich selbst"
+msgstr "Espacio de nombres %s inválido para si mismo"
 
 #: app/flatpak-builtins-enter.c:162
 #, c-format
 msgid "Can't open %s namespace: %s"
-msgstr "Namensraum %s konnte nicht geöffnet werden: %s"
+msgstr "No se puede abrir el espacio de nombres %s: %s"
 
 #: app/flatpak-builtins-enter.c:171
 #, c-format
 msgid "Can't enter %s namespace: %s"
-msgstr "In den Namensraum %s konnte nicht gewechselt werden: %s"
+msgstr "No se puede entrar al espacio de nombres %s: %s"
 
 #: app/flatpak-builtins-enter.c:177
 msgid "Can't chdir"
-msgstr "chdir nicht möglich"
+msgstr "No se puede hacer chdir"
 
 #: app/flatpak-builtins-enter.c:180
 msgid "Can't chroot"
-msgstr "chroot nicht möglich"
+msgstr "No se puede hacer chroot"
 
 #: app/flatpak-builtins-enter.c:227
 msgid "Can't switch gid"
-msgstr "Gruppenkennung kann nicht gewechselt werden"
+msgstr "No se puede cambiar el GID"
 
 #: app/flatpak-builtins-enter.c:230
 msgid "Can't switch uid"
-msgstr "Benutzerkennung kann nicht gewechselt werden"
+msgstr "No se puede cambiar el UID"
 
 #: app/flatpak-builtins-info.c:49 app/flatpak-builtins-list.c:46
 #: app/flatpak-builtins-list-remotes.c:43
 msgid "Show user installations"
-msgstr "Benutzerinstallationen anzeigen"
+msgstr "Mostrar instalaciones del usuario"
 
 #: app/flatpak-builtins-info.c:50 app/flatpak-builtins-list.c:47
 #: app/flatpak-builtins-list-remotes.c:44
 msgid "Show system-wide installations"
-msgstr "Systemweite Installationen anzeigen"
+msgstr "Mostrar instalaciones del sistema"
 
 #: app/flatpak-builtins-info.c:51 app/flatpak-builtins-list.c:48
 #: app/flatpak-builtins-list-remotes.c:45
 msgid "Show specific system-wide installations"
-msgstr "Spezifische systemweite Installationen anzeigen"
+msgstr "Mostrar instalaciones especificas del sistema"
 
 #: app/flatpak-builtins-info.c:52
 msgid "Show ref"
-msgstr "Referenz anzeigen"
+msgstr "Mostrar referencia"
 
 #: app/flatpak-builtins-info.c:53
 msgid "Show commit"
-msgstr "Commit anzeigen"
+msgstr "Mostrar commit"
 
 #: app/flatpak-builtins-info.c:54
 msgid "Show origin"
-msgstr "Ursprung anzeigen"
+msgstr "Mostrar origen"
 
 #: app/flatpak-builtins-info.c:55
-#, fuzzy
 msgid "Show size"
-msgstr "Referenz anzeigen"
+msgstr "Mostrar tamaño"
 
 #: app/flatpak-builtins-info.c:56
-#, fuzzy
 msgid "Show metadata"
-msgstr "Details zur entfernten Quelle anzeigen"
+msgstr "Mostrar metadatos"
 
 #: app/flatpak-builtins-info.c:57
-#, fuzzy
 msgid "Show extensions"
-msgstr "Hilfeoptionen anzeigen"
+msgstr "Mostrar extensiones"
 
 #: app/flatpak-builtins-info.c:97
 msgid "NAME [BRANCH] - Get info about installed app and/or runtime"
 msgstr ""
-"NAME [ZWEIG] - Informationen über installierte Anwendung und/oder Laufzeit "
-"erhalten"
+"NOMBRE [RAMA] - Obtiene información a cerca de una aplicación y/o runtime "
+"instalado"
 
 #: app/flatpak-builtins-info.c:157
 msgid "ref not present in origin"
-msgstr ""
+msgstr "referencia no presente en el origen"
 
 #: app/flatpak-builtins-info.c:159
 msgid "Ref:"
-msgstr ""
+msgstr "Referencia:"
 
 #: app/flatpak-builtins-info.c:160 app/flatpak-builtins-info.c:270
 msgid "ID:"
-msgstr ""
+msgstr "ID:"
 
 #: app/flatpak-builtins-info.c:161
 msgid "Arch:"
-msgstr ""
+msgstr "Arquitectura:"
 
 #: app/flatpak-builtins-info.c:162
-#, fuzzy
 msgid "Branch:"
-msgstr "Zu verwendender Zweig"
+msgstr "Rama:"
 
 #: app/flatpak-builtins-info.c:163 app/flatpak-builtins-info.c:271
 msgid "Origin:"
-msgstr ""
+msgstr "Origen:"
 
 #: app/flatpak-builtins-info.c:166
 msgid "Active commit:"
-msgstr ""
+msgstr "Commit activo:"
 
 #: app/flatpak-builtins-info.c:167
 msgid "Latest commit:"
-msgstr ""
+msgstr "Ultimo commit:"
 
 #: app/flatpak-builtins-info.c:170 app/flatpak-builtins-info.c:272
 msgid "Commit:"
-msgstr ""
+msgstr "Commit:"
 
 #: app/flatpak-builtins-info.c:172
 msgid "alt-id:"
-msgstr ""
+msgstr "id-alternativo:"
 
 #: app/flatpak-builtins-info.c:173
 msgid "Location:"
-msgstr ""
+msgstr "Localización:"
 
 #: app/flatpak-builtins-info.c:174 app/flatpak-builtins-info.c:273
-#, fuzzy
 msgid "Installed size:"
-msgstr "Signierte Laufzeitumgebung installieren"
+msgstr "Tamaño de la instalación:"
 
 #: app/flatpak-builtins-info.c:179
-#, fuzzy
 msgid "Runtime:"
-msgstr "Zu verwendende Laufzeitumgebung"
+msgstr "Runtime:"
 
 #: app/flatpak-builtins-info.c:184
 msgid "Installed subdirectories:"
-msgstr ""
+msgstr "Subdirectorios de la instalación:"
 
 #: app/flatpak-builtins-info.c:269
-#, fuzzy
 msgid "Extension:"
-msgstr "Hilfeoptionen anzeigen"
+msgstr "Extensión:"
 
 #: app/flatpak-builtins-info.c:280
 msgid "Subpaths:"
-msgstr ""
+msgstr "Subdirectorios:"
 
 #: app/flatpak-builtins-install.c:57
 msgid "Don't pull, only install from local cache"
-msgstr "Keinen »Pull« ausführen, Installation nur aus lokalem Zwischenspeicher"
+msgstr "No hacer pull, solo instalar del caché local"
 
 #: app/flatpak-builtins-install.c:58 app/flatpak-builtins-update.c:57
 msgid "Don't deploy, only download to local cache"
-msgstr "Nicht bereitstellen, nur in lokalen Zwischenspeicher herunterladen"
+msgstr "No desplegar, solo descargar al caché local"
 
 #: app/flatpak-builtins-install.c:59
 msgid "Don't install related refs"
-msgstr "Zugehörige Referenzen nicht installieren"
+msgstr "No instalar referencias relacionadas"
 
 #: app/flatpak-builtins-install.c:60 app/flatpak-builtins-update.c:59
 msgid "Don't verify/install runtime dependencies"
-msgstr "Laufzeitabhängigkeiten nicht prüfen/installieren"
+msgstr "No verificar/instalar las dependencias de runtime"
 
 #: app/flatpak-builtins-install.c:61 app/flatpak-builtins-update.c:60
 msgid "Don't use static deltas"
-msgstr ""
+msgstr "No usar deltas estáticos"
 
 #: app/flatpak-builtins-install.c:63 app/flatpak-builtins-uninstall.c:49
 #: app/flatpak-builtins-update.c:62
 msgid "Look for app with the specified name"
-msgstr "Nach einer Anwendung mit dem angegebenen Namen suchen"
+msgstr "Buscar una aplicación con el nombre especifico"
 
 #: app/flatpak-builtins-install.c:64
 msgid "Assume LOCATION is a .flatpak single-file bundle"
-msgstr "ORT als .flatpak Einzelbündel-Datei ansehen"
+msgstr "Asumir que LOCALIZACIÓN es un paquete .flatpak de un solo archivo."
 
 #: app/flatpak-builtins-install.c:65
 msgid "Assume LOCATION is a .flatpakref application description"
-msgstr "ORT als .flatpakref-Anwendungsbeschreibung ansehen"
+msgstr ""
+"Asumir que LOCALIZACIÓN es un paquete de descripción de aplicación ."
+"flatpakref"
 
 #: app/flatpak-builtins-install.c:66
 msgid "Check bundle signatures with GPG key from FILE (- for stdin)"
 msgstr ""
-"Bündel-Signaturen anhand des GPG-Schlüssels aus DATEI prüfen (- für "
-"Standardeingabe)"
+"Comprobar las firmas del paquete con las claves GPG del ARCHIVO (- para "
+"stdin)"
 
 #: app/flatpak-builtins-install.c:67
 msgid "Only install this subpath"
-msgstr "Nur diesen Unterpfad installieren"
+msgstr "Solo instalar este subdirectorio"
 
 #: app/flatpak-builtins-install.c:67 app/flatpak-builtins-update.c:64
 msgid "PATH"
-msgstr "PFAD"
+msgstr "RUTA"
 
 #: app/flatpak-builtins-install.c:68 app/flatpak-builtins-update.c:65
 msgid "Automatically answer yes for all questions"
-msgstr "Automatisch alle Fragen mit ja beantworten"
+msgstr "Responder si automáticamente a todas las preguntas"
 
 #: app/flatpak-builtins-install.c:210
 #, c-format
@@ -1118,20 +1117,22 @@ msgid ""
 "  %s\n"
 "Configure this as new remote '%s'"
 msgstr ""
+"Esta aplicación depende de los tiempos de ejecución de:\n"
+"  %s\n"
+"Configura esto como un nuevo repositorio remoto '%s'"
 
 #: app/flatpak-builtins-install.c:214 app/flatpak-builtins-install.c:340
 #, c-format
 msgid "Configuring %s as new remote '%s'"
-msgstr "%s wird als neue ferne Quelle »%s« eingerichtet"
+msgstr "Configurando %s como un nuevo repositorio remoto '%s'"
 
 #: app/flatpak-builtins-install.c:262
 msgid "Bundle filename must be specified"
-msgstr "Name der Bündel-Datei muss angegeben werden"
+msgstr "Se debe especificar el nombre de archivo del paquete"
 
 #: app/flatpak-builtins-install.c:272
-#, fuzzy
 msgid "Remote bundles are not supported"
-msgstr "Entfernter Titel nicht festgelegt"
+msgstr "Los paquetes remotos no están soportados"
 
 #: app/flatpak-builtins-install.c:336
 #, c-format
@@ -1139,355 +1140,356 @@ msgid ""
 "The remote '%s', at location %s contains additional applications.\n"
 "Do you want to install other applications from here?"
 msgstr ""
+"El repositorio remoto '%s', en la localización %s contiene aplicaciones "
+"adicionales.\n"
+"¿Quieres instalar otras aplicaciones desde aquí?"
 
 #: app/flatpak-builtins-install.c:396
 msgid "Filename or uri must be specified"
-msgstr "Dateiname oder URI muss angegeben werden"
+msgstr "Se debe especificar el nombre de archivo o el uri"
 
 #: app/flatpak-builtins-install.c:440
 #, c-format
 msgid "Installing: %s\n"
-msgstr "Installieren: %s\n"
+msgstr "Instalando: %s\n"
 
 #: app/flatpak-builtins-install.c:470
 msgid "LOCATION/REMOTE [REF...] - Install applications or runtimes"
-msgstr "ORT/GEGENSTELLE [REF…] - Anwendungen oder Laufzeiten installieren"
+msgstr ""
+"LOCALIZACION/REMOTO [REFERENCIA ...] - Instala aplicaciones o tiempos de "
+"ejecución"
 
 #: app/flatpak-builtins-install.c:491
 msgid "REMOTE and REF must be specified"
-msgstr "FERNE QUELLE und REFERENZ muss angegeben werden"
+msgstr "Se debe especificar REMOTO y REFERENCIA"
 
 #: app/flatpak-builtins-list.c:49
 msgid "Show extra information"
-msgstr "Zusätzliche Informationen anzeigen"
+msgstr "Mostrar información adicional"
 
 #: app/flatpak-builtins-list.c:50
 msgid "List installed runtimes"
-msgstr "Installierte Laufzeitumgebungen auflisten"
+msgstr "Mostrar lista con los tiempos de ejecución instalados"
 
 #: app/flatpak-builtins-list.c:51
 msgid "List installed applications"
-msgstr "Installierte Anwendungen auflisten"
+msgstr "Mostrar lista con las aplicaciones instaladas"
 
 #: app/flatpak-builtins-list.c:52
 msgid "Arch to show"
-msgstr "Anzuzeigende Architektur"
+msgstr "Arquitectura a mostrar"
 
 #: app/flatpak-builtins-list.c:53 app/flatpak-builtins-ls-remote.c:49
 msgid "List all refs (including locale/debug)"
-msgstr ""
+msgstr "Mostrar todas las referencias (incluyendo locales/depuración)"
 
 #: app/flatpak-builtins-list.c:131 app/flatpak-builtins-ls-remote.c:129
 #: app/flatpak-builtins-repo.c:98
 msgid "Ref"
-msgstr ""
+msgstr "Referencia"
 
 #: app/flatpak-builtins-list.c:134 app/flatpak-builtins-ls-remote.c:131
 msgid "Origin"
-msgstr ""
+msgstr "Origen"
 
 #: app/flatpak-builtins-list.c:135
 msgid "Active commit"
-msgstr ""
+msgstr "Commit activo"
 
 #: app/flatpak-builtins-list.c:136
 msgid "Latest commit"
-msgstr ""
+msgstr "Último commit"
 
 #: app/flatpak-builtins-list.c:137 app/flatpak-builtins-ls-remote.c:133
-#, fuzzy
 msgid "Installed size"
-msgstr "Signierte Laufzeitumgebung installieren"
+msgstr "Tamaño de la instalación"
 
 #: app/flatpak-builtins-list.c:139 app/flatpak-builtins-list-remotes.c:112
 msgid "Options"
-msgstr ""
+msgstr "Opciones"
 
 #: app/flatpak-builtins-list.c:370
 msgid " - List installed apps and/or runtimes"
-msgstr " - Installierte Anwendungen und/oder Laufzeiten auflisten"
+msgstr " - Mostrar lista de aplicaciones y/o tiempos de ejecución instalados"
 
 #: app/flatpak-builtins-list-remotes.c:46
 msgid "Show remote details"
-msgstr "Details zur entfernten Quelle anzeigen"
+msgstr "Mostrar detalles del repositorio remoto"
 
 #: app/flatpak-builtins-list-remotes.c:47
 msgid "Show disabled remotes"
-msgstr "Deaktivierte entfernte Quellen anzeigen"
+msgstr "Mostrar repositorios remotos desactivados"
 
 #: app/flatpak-builtins-list-remotes.c:59
 msgid " - List remote repositories"
-msgstr " - Entfernte Quellen auflisten"
+msgstr " - Mostrar lista de repositorios remotos"
 
 #: app/flatpak-builtins-list-remotes.c:105
 msgid "Name"
-msgstr ""
+msgstr "Nombre"
 
 #: app/flatpak-builtins-list-remotes.c:108
 msgid "Title"
-msgstr ""
+msgstr "Título"
 
 #: app/flatpak-builtins-list-remotes.c:110
 msgid "Priority"
-msgstr ""
+msgstr "Prioridad"
 
 #: app/flatpak-builtins-ls-remote.c:44
 msgid "Show arches and branches"
-msgstr "Architekturen und Zweige zeigen"
+msgstr "Mostrar arquitecturas y ramas"
 
 #: app/flatpak-builtins-ls-remote.c:45
 msgid "Show only runtimes"
-msgstr "Nur Laufzeitumgebungen anzeigen"
+msgstr "Mostrar solo tiempos de ejecución"
 
 #: app/flatpak-builtins-ls-remote.c:46
 msgid "Show only apps"
-msgstr "Nur Anwendungen anzeigen"
+msgstr "Mostrar solo aplicaciones"
 
 #: app/flatpak-builtins-ls-remote.c:47
 msgid "Show only those where updates are available"
-msgstr "Nur Anwendungen anzeigen, die aktualisiert werden können"
+msgstr "Mostrar solo elementos si hay actualizaciones disponibles"
 
 #: app/flatpak-builtins-ls-remote.c:48
 msgid "Limit to this arch (* for all)"
-msgstr "Auf diese Architektur begrenzen (* für alle)"
+msgstr "Limitar a esta arquitectura (* para mostrar todas)"
 
 #: app/flatpak-builtins-ls-remote.c:74
 msgid " REMOTE - Show available runtimes and applications"
-msgstr "ENTFERNTE QUELLE - Verfügbare Laufzeiten und Anwendungen anzeigen"
+msgstr "REMOTO - Mostrar tiempos de ejecución y aplicaciones disponibles"
 
 #: app/flatpak-builtins-ls-remote.c:132
 msgid "Commit"
-msgstr ""
+msgstr "Commit"
 
 #: app/flatpak-builtins-ls-remote.c:134
-#, fuzzy
 msgid "Download size"
-msgstr "Referenz anzeigen"
+msgstr "Tamaño de la descarga"
 
 #: app/flatpak-builtins-ls-remote.c:245
-#, fuzzy
 msgid "No ref information available in repository"
-msgstr "DATEI - Informationen über die exportierte Datei erhalten"
+msgstr "Información de referencia no disponible en el repositorio"
 
 #: app/flatpak-builtins-make-current.c:38
 msgid "Arch to make current for"
-msgstr "Architektur als aktuell festlegen für"
+msgstr "Arquitectura para construir el actual"
 
 #: app/flatpak-builtins-make-current.c:57
 msgid "APP BRANCH - Make branch of application current"
-msgstr "ANWENDUNG ZWEIG - Zweig der Anwendung aktuell setzen"
+msgstr "APLICACIÓN RAMA - Establece la rama de la aplicación a usar"
 
 #: app/flatpak-builtins-make-current.c:64 app/flatpak-builtins-override.c:63
 #: app/flatpak-builtins-run.c:105
 msgid "APP must be specified"
-msgstr "ANWENDUNG muss angegeben werden"
+msgstr "Se debe especificar APLICACIÓN"
 
 #: app/flatpak-builtins-make-current.c:79
 msgid "BRANCH must be specified"
-msgstr "ZWEIG muss angegeben werden"
+msgstr "Se debe especificar RAMA"
 
 #: app/flatpak-builtins-make-current.c:92
 #, c-format
 msgid "App %s branch %s is not installed"
-msgstr "Anwendung %s Zweig %s ist nicht installiert"
+msgstr "La aplicación %s rama %s no está instalada"
 
 #: app/flatpak-builtins-override.c:53
 msgid "APP - Override settings for application"
-msgstr "ANWENDUNG - Einstellungen für Anwendung ersetzen"
+msgstr "APLICACIÓN - Sobrescribe la configuración de la aplicación"
 
 #: app/flatpak-builtins-repo.c:99
-#, fuzzy
 msgid "Installed"
-msgstr "installieren"
+msgstr "Instalada"
 
 #: app/flatpak-builtins-repo.c:100
 msgid "Download"
-msgstr ""
+msgstr "Descarga"
 
 #: app/flatpak-builtins-repo.c:151
-#, fuzzy
 msgid "Print general information about the repository"
-msgstr "DATEI - Informationen über die exportierte Datei erhalten"
+msgstr "Imprime información general acerca del repositorio"
 
 #: app/flatpak-builtins-repo.c:152
-#, fuzzy
 msgid "List the branches in the repository"
-msgstr "Vorgabezweig für diese Quelle"
+msgstr "Mostrar una lista de las ramas en el repositorio"
 
 #: app/flatpak-builtins-repo.c:153
 msgid "Print metadata for a branch"
-msgstr ""
+msgstr "Imprime los metadatos de una rama"
 
 #: app/flatpak-builtins-repo.c:167
-#, fuzzy
 msgid "LOCATION - Repository maintenance"
-msgstr "ORT - Metadaten der Quelle aktualisieren"
+msgstr "LOCALIZACIÓN - Mantenimiento del repositorio"
 
 #: app/flatpak-builtins-repo-update.c:52
 msgid "Redirect this repo to a new URL"
-msgstr ""
+msgstr "Redirige este repositorio a una nueva URL"
 
 #: app/flatpak-builtins-repo-update.c:53
 msgid "A nice name to use for this repository"
-msgstr "Ein passender Name für diese Quelle"
+msgstr "Un buen nombre para usar en este repositorio"
 
 #: app/flatpak-builtins-repo-update.c:54
 msgid "Default branch to use for this repository"
-msgstr "Vorgabezweig für diese Quelle"
+msgstr "Rama por defecto a usar en este repositorio"
 
 #: app/flatpak-builtins-repo-update.c:57
 msgid "Permanently deploy collection ID to client remote configurations"
 msgstr ""
+"Desplegar de forma permanente el identificador de colección en las "
+"configuraciones remotas del cliente"
 
 #: app/flatpak-builtins-repo-update.c:59
 msgid "Import new default GPG public key from FILE"
-msgstr ""
+msgstr "Importar una nueva clave pública GPG por defecto desde ARCHIVO"
 
 #: app/flatpak-builtins-repo-update.c:60
 msgid "GPG Key ID to sign the summary with"
-msgstr "GPG-Schlüsselkennung zum Unterschreiben der Zusammenfassung"
+msgstr "Identificador de la clave GPG con la que firmar el resumen"
 
 #: app/flatpak-builtins-repo-update.c:62
 msgid "Generate delta files"
-msgstr "Differenzdateien erzeugen"
+msgstr "Generando archivos de diferencias"
 
 #: app/flatpak-builtins-repo-update.c:63
 msgid "Prune unused objects"
-msgstr "Ungenutzte Objekte abschneiden"
+msgstr "Eliminando objetos sin uso"
 
 #: app/flatpak-builtins-repo-update.c:64
 msgid "Only traverse DEPTH parents for each commit (default: -1=infinite)"
 msgstr ""
-"Nur übergeordnete Ebenen der angegebenen TIEFE für jeden Commit durchqueren "
-"(Standard: -1=unendlich)"
+"Solo recorrer PROFUNDIDAD padres para cada commit (por defecto: -1=infinitos)"
 
 #: app/flatpak-builtins-repo-update.c:64
 msgid "DEPTH"
-msgstr "TIEFE"
+msgstr "PROFUNDIDAD"
 
 #: app/flatpak-builtins-repo-update.c:193
 #, c-format
 msgid "Generating delta: %s (%.10s)\n"
-msgstr "Delta wird erstellt: %s (%.10s)\n"
+msgstr "Generando archivos de diferencias: %s (%.10s)\n"
 
 #: app/flatpak-builtins-repo-update.c:195
 #, c-format
 msgid "Generating delta: %s (%.10s-%.10s)\n"
-msgstr "Delta wird erstellt: %s (%.10s-%.10s)\n"
+msgstr "Generando archivos de diferencias: %s (%.10s-%.10s)\n"
 
 #: app/flatpak-builtins-repo-update.c:203
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to generate delta %s (%.10s): "
-msgstr "Erstellung des Delta %s (%.10s) fehlgeschlagen: %s\n"
+msgstr ""
+"Ha ocurrido un error al generar los archivos de diferencias %s (%.10s) "
 
 #: app/flatpak-builtins-repo-update.c:206
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to generate delta %s (%.10s-%.10s): "
-msgstr "Erstellung des Delta %s (%.10s-%.10s) fehlgeschlagen: %s\n"
+msgstr ""
+"Ha ocurrido un error al generar los archivos de diferencias %s (%.10s-"
+"%.10s): "
 
 #: app/flatpak-builtins-repo-update.c:422
 msgid "LOCATION - Update repository metadata"
-msgstr "ORT - Metadaten der Quelle aktualisieren"
+msgstr "LOCALIZACIÓN - Actualizar los metadatos del repositorio"
 
 #: app/flatpak-builtins-repo-update.c:494
 msgid "Updating appstream branch\n"
-msgstr "Appstream-Zweig wird aktualisiert\n"
+msgstr "Actualizando rama de appstream\n"
 
 #: app/flatpak-builtins-repo-update.c:515
 msgid "Updating summary\n"
-msgstr "Zusammenfassung wird aktualisiert\n"
+msgstr "Actualizando resumen\n"
 
 #: app/flatpak-builtins-repo-update.c:534
 #, c-format
 msgid "Total objects: %u\n"
-msgstr "Objekte gesamt: %u\n"
+msgstr "Objetos totales: %u\n"
 
 #: app/flatpak-builtins-repo-update.c:536
 msgid "No unreachable objects\n"
-msgstr "Keine unerreichbaren Objekte\n"
+msgstr "No hay objetos inaccesibles\n"
 
 #: app/flatpak-builtins-repo-update.c:538
 #, c-format
 msgid "Deleted %u objects, %s freed\n"
-msgstr "%u Objekte gelöscht, %s freigemacht\n"
+msgstr "%u objetos borrados, se han liberado %s\n"
 
 #: app/flatpak-builtins-run.c:53
 msgid "Command to run"
-msgstr "Auszuführender Befehl"
+msgstr "Comando a ejecutar"
 
 #: app/flatpak-builtins-run.c:54
 msgid "Branch to use"
-msgstr "Zu verwendender Zweig"
+msgstr "Rama a usar"
 
 #: app/flatpak-builtins-run.c:55
 msgid "Use development runtime"
-msgstr "Entwickler-Laufzeitumgebung verwenden"
+msgstr "Usar tiempo de ejecución de desarrollo"
 
 #: app/flatpak-builtins-run.c:56
 msgid "Runtime to use"
-msgstr "Zu verwendende Laufzeitumgebung"
+msgstr "Tiempo de ejecución a usar"
 
 #: app/flatpak-builtins-run.c:57
 msgid "Runtime version to use"
-msgstr "Zu verwendende Laufzeit"
+msgstr "Versión de tiempo de ejecución a usar"
 
 #: app/flatpak-builtins-run.c:58
 msgid "Log session bus calls"
-msgstr "Sitzungsbus-Aufrufe protokollieren"
+msgstr "Llamadas al bus de registro de sesión"
 
 #: app/flatpak-builtins-run.c:59
 msgid "Log system bus calls"
-msgstr "Systembus-Aufrufe protokollieren"
+msgstr "Llamadas al bus de registro de sistema"
 
 #: app/flatpak-builtins-run.c:60
-#, fuzzy
 msgid "Log accessibility bus calls"
-msgstr "Sitzungsbus-Aufrufe protokollieren"
+msgstr "Llamadas al bus de registro de accesibilidad"
 
 #: app/flatpak-builtins-run.c:61
 msgid "Enable file forwarding"
-msgstr ""
+msgstr "Habilitar el reenvío de archivos"
 
 #: app/flatpak-builtins-run.c:82
 msgid "APP [args...] - Run an app"
-msgstr "ANWENDUNG [Argumente …] - Eine Anwendung ausführen"
+msgstr "APLICACION [argumentos...] - Ejecuta una aplicación"
 
 #: app/flatpak-builtins-uninstall.c:44
 msgid "Arch to uninstall"
-msgstr "Zu installierende Architektur"
+msgstr "Arquitectura a desinstalar"
 
 #: app/flatpak-builtins-uninstall.c:45
 msgid "Keep ref in local repository"
-msgstr "Referenz in lokaler Quelle behalten"
+msgstr "Mantener referencia en el repositorio local"
 
 #: app/flatpak-builtins-uninstall.c:46
 msgid "Don't uninstall related refs"
-msgstr "Zugehörige Referenzen nicht deinstallieren"
+msgstr "No desinstalar referencias relacionadas"
 
 #: app/flatpak-builtins-uninstall.c:47
 msgid "Remove files even if running"
-msgstr "Dateien entfernen, selbst wenn sie in Verwendung sind"
+msgstr "Borrar archivos aún si se encuentra en ejecución"
 
 #: app/flatpak-builtins-uninstall.c:69
 msgid "REF... - Uninstall an application"
-msgstr "REF… - Eine Anwendung deinstallieren"
+msgstr "REFERENCIA ... - Desinstala una aplicación"
 
 #: app/flatpak-builtins-uninstall.c:76
 msgid "Must specify at least one REF"
-msgstr "Es muss zumindest eine REFERENZ angegeben werden"
+msgstr "Se debe especificar al menos una REFERENCIA"
 
 #: app/flatpak-builtins-uninstall.c:129 app/flatpak-transaction.c:340
 #, c-format
 msgid "Warning: Problem looking for related refs: %s\n"
-msgstr "Warnung: Problem bei der Suche nach zugehörigen Referenzen: %s\n"
+msgstr "Aviso: Problema al buscar referencias relacionadas: %s\n"
 
 #: app/flatpak-builtins-update.c:53
 msgid "Arch to update for"
-msgstr "Architektur für Aktualisierung"
+msgstr "Arquitectura a actualizar"
 
 #: app/flatpak-builtins-update.c:54
 msgid "Commit to deploy"
-msgstr "Bereitzustellender Commit"
+msgstr "Commit a desplegar"
 
 #: app/flatpak-builtins-update.c:54
 msgid "COMMIT"
@@ -1495,59 +1497,58 @@ msgstr "COMMIT"
 
 #: app/flatpak-builtins-update.c:55
 msgid "Remove old files even if running"
-msgstr "Alte Dateien entfernen, selbst wenn sie in Verwendung sind"
+msgstr "Borrar archivos antiguos aún si se encuentra en ejecución"
 
-# Alternative: Nicht herunterziehen, …
 #: app/flatpak-builtins-update.c:56
 msgid "Don't pull, only update from local cache"
-msgstr ""
-"Keinen »Pull« ausführen, nur aus lokalem Zwischenspeicher aktualisieren"
+msgstr "No hacer pull, solo actualizar del caché local"
 
 #: app/flatpak-builtins-update.c:58
 msgid "Don't update related refs"
-msgstr "Zugehörige Referenzen nicht aktualisieren"
+msgstr "No actualizar referencias relacionadas"
 
 #: app/flatpak-builtins-update.c:63
 msgid "Update appstream for remote"
-msgstr "Appstream für entfernte Quelle aktualisieren"
+msgstr "Actualizar appstream para un repositorio remoto"
 
 #: app/flatpak-builtins-update.c:64
 msgid "Only update this subpath"
-msgstr "Nur diesen Unterpfad aktualisieren"
+msgstr "Solo actualizar este subdirectorio"
 
 #: app/flatpak-builtins-update.c:95
 #, c-format
 msgid "Updating appstream for remote %s\n"
-msgstr "Appstream für ferne Quelle %s wird aktualisiert\n"
+msgstr "Actualizando appstream para el repositorio remoto %s\n"
 
 #: app/flatpak-builtins-update.c:133
 msgid "[REF...] - Update applications or runtimes"
-msgstr "[REF…] - Anwendungen oder Laufzeitumgebungen aktualisieren"
+msgstr "[REFERENCIA ...] - Actualiza aplicaciones y tiempos de ejecución"
 
 #. translators: please keep the leading space
 #: app/flatpak-main.c:59
 msgid " Manage installed apps and runtimes"
-msgstr " Installierte Anwendungen und Laufzeitumgebungen verwalten"
+msgstr " Administra las aplicaciones y tiempos de ejecución instalados"
 
 #: app/flatpak-main.c:60
 msgid "Install an application or runtime"
-msgstr "Eine Anwendung oder Laufzeitumgebung installieren"
+msgstr "Instalar una aplicación o tiempo de ejecución"
 
 #: app/flatpak-main.c:61
 msgid "Update an installed application or runtime"
-msgstr "Eine installierte Anwendung oder Laufzeitumgebung aktualisieren"
+msgstr "Actualizar una aplicación o tiempo de ejecución"
 
 #: app/flatpak-main.c:62
 msgid "Uninstall an installed application or runtime"
-msgstr "Eine installierte Anwendung oder Laufzeitumgebung deinstallieren"
+msgstr "Desinstalar una aplicación o tiempo de ejecución instalado"
 
 #: app/flatpak-main.c:63
 msgid "List installed apps and/or runtimes"
-msgstr "Installierte Anwendungen und/oder Laufzeitumgebungen auflisten"
+msgstr "Mostrar lista de aplicaciones y/o tiempos de ejecución instalados"
 
 #: app/flatpak-main.c:64
 msgid "Show info for installed app or runtime"
-msgstr "Informationen zu installierter Anwendung oder Laufzeit anzeigen"
+msgstr ""
+"Mostrar información de las aplicaciones o tiempos de ejecución instalados"
 
 #. translators: please keep the leading newline and space
 #: app/flatpak-main.c:67
@@ -1556,23 +1557,23 @@ msgid ""
 " Running applications"
 msgstr ""
 "\n"
-" Anwendungen ausführen"
+" Aplicaciones en ejecución"
 
 #: app/flatpak-main.c:68
 msgid "Run an application"
-msgstr "Eine Anwendung ausführen"
+msgstr "Ejecutar una aplicación"
 
 #: app/flatpak-main.c:69
 msgid "Override permissions for an application"
-msgstr "Berechtigungen für eine Anwendung ersetzen"
+msgstr "Sobrescribir permisos para una aplicación"
 
 #: app/flatpak-main.c:70
 msgid "Specify default version to run"
-msgstr "Die als Standard auszuführende Version angeben"
+msgstr "Especificar la versión por defecto a ejecutar"
 
 #: app/flatpak-main.c:71
 msgid "Enter the namespace of a running application"
-msgstr "In den Namensraum einer laufenden Anwendung wechseln"
+msgstr "Introduce el espacio de nombres de una aplicación en ejecución"
 
 #. translators: please keep the leading newline and space
 #: app/flatpak-main.c:74
@@ -1581,23 +1582,23 @@ msgid ""
 " Manage file access"
 msgstr ""
 "\n"
-" Dateizugriff verwalten"
+" Administrar el acceso a archivos"
 
 #: app/flatpak-main.c:75
 msgid "Grant an application access to a specific file"
-msgstr "Einer Anwendung den Zugriff auf eine bestimmte Datei gewähren"
+msgstr "Conceder a una aplicación acceso a un archivo específico"
 
 #: app/flatpak-main.c:76
 msgid "Revoke access to a specific file"
-msgstr "Den Zugriff auf eine bestimmte Datei widerrufen"
+msgstr "Revocar acceso a un archivo específico"
 
 #: app/flatpak-main.c:77
 msgid "Show information about a specific file"
-msgstr "Informationen zu einer bestimmten Datei anzeigen"
+msgstr "Mostrar información sobre un archivo específico"
 
 #: app/flatpak-main.c:78
 msgid "List exported files"
-msgstr "Exportierte Dateien auflisten"
+msgstr "Mostrar una lista de los archivos exportados"
 
 #. translators: please keep the leading newline and space
 #: app/flatpak-main.c:81
@@ -1606,27 +1607,28 @@ msgid ""
 " Manage remote repositories"
 msgstr ""
 "\n"
-" Entfernte Quellen verwalten"
+" Administrar repositorios remotos"
 
 #: app/flatpak-main.c:82
 msgid "List all configured remotes"
-msgstr "Alle konfigurierten entfernten Quellen auflisten"
+msgstr "Obtener lista de todos los repositorios remotos configurados"
 
 #: app/flatpak-main.c:83
 msgid "Add a new remote repository (by URL)"
-msgstr "Eine neue entfernte Quelle hinzufügen (mittels Adresse)"
+msgstr "Añadir un nuevo repositorio (por URL)"
 
 #: app/flatpak-main.c:84
 msgid "Modify properties of a configured remote"
-msgstr "Eigenschaften einer konfigurierten entfernten Quelle verändern"
+msgstr "Modificar las propiedades de un repositorio remoto configurado"
 
 #: app/flatpak-main.c:85
 msgid "Delete a configured remote"
-msgstr "Eine konfigurierte entfernte Quelle löschen"
+msgstr "Borrar un repositorio remoto configurado"
 
 #: app/flatpak-main.c:87
 msgid "List contents of a configured remote"
-msgstr "Inhalt einer konfigurierten entfernten Quelle auflisten"
+msgstr ""
+"Obtener una lista de los contenidos de un repositorio remoto configurado"
 
 #. translators: please keep the leading newline and space
 #: app/flatpak-main.c:90
@@ -1635,137 +1637,139 @@ msgid ""
 " Build applications"
 msgstr ""
 "\n"
-" Anwendungen erstellen"
+"Compilar aplicaciones"
 
 #: app/flatpak-main.c:91
 msgid "Initialize a directory for building"
-msgstr "Einen Ordner für die Erstellung initialisieren"
+msgstr "Inicializar un directorio para compilar"
 
 #: app/flatpak-main.c:92
 msgid "Run a build command inside the build dir"
-msgstr "Einen Erstellungsbefehl innerhalb des Erstellungsordners ausführen"
+msgstr ""
+"Ejecutar un comando de compilación dentro del directorio de compilación"
 
 #: app/flatpak-main.c:93
 msgid "Finish a build dir for export"
-msgstr "Einen Erstellungsordner für den Export finalisieren"
+msgstr "Finalizar un directorio de compilación para exportar"
 
 #: app/flatpak-main.c:94
 msgid "Export a build dir to a repository"
-msgstr "Erstellungsordner in eine Quelle exportieren"
+msgstr "Exportar un directorio de compilación a un repositorio"
 
 #: app/flatpak-main.c:95
 msgid "Create a bundle file from a build directory"
-msgstr "Eine Bündel-Datei aus einem Erstellungsordner erzeugen"
+msgstr "Crear un paquete desde un directorio de compilación"
 
 #: app/flatpak-main.c:96
 msgid "Import a bundle file"
-msgstr "Eine Bündel-Datei importieren"
+msgstr "Importar un archivo de paquete"
 
 #: app/flatpak-main.c:97
 msgid "Sign an application or runtime"
-msgstr "Eine Anwendung oder Laufzeitumgebung signieren"
+msgstr "Firmar una aplicación o runtime"
 
 #: app/flatpak-main.c:98
 msgid "Update the summary file in a repository"
-msgstr "Zusammenfassungsdatei in einer Quelle aktualisieren"
+msgstr "Actualizar el archivo de resumen en un repositorio"
 
 #: app/flatpak-main.c:99
 msgid "Create new commit based on existing ref"
-msgstr "Neuen Commit basierend auf existierendem Ref erstellen"
+msgstr "Crear un nuevo commit basado un en una referencia existente"
 
 #: app/flatpak-main.c:100
-#, fuzzy
 msgid "Print information about a repo"
-msgstr "DATEI - Informationen über die exportierte Datei erhalten"
+msgstr "Imprimir información acerca de un repositorio"
 
 #: app/flatpak-main.c:106
 msgid "Print debug information during command processing"
-msgstr "Fehlerdiagnoseinformationen während der Befehlsverarbeitung ausgeben"
+msgstr "Imprimir información de depuración durante el procesado del comando"
 
 #: app/flatpak-main.c:107
 msgid "Print OSTree debug information during command processing"
 msgstr ""
-"OSTree-Fehlerdiagnoseinformationen während der Befehlsverarbeitung ausgeben"
+"Imprimir información de depuración de OSTree durante el procesado del comando"
 
 #: app/flatpak-main.c:108
 msgid "Show help options"
-msgstr "Hilfeoptionen anzeigen"
+msgstr "Mostrar las opciones de ayuda"
 
 #: app/flatpak-main.c:113
 msgid "Print version information and exit"
-msgstr "Versionsinformationen ausgeben und beenden"
+msgstr "Imprimir la información de la versión y salir"
 
 #: app/flatpak-main.c:114
 msgid "Print default arch and exit"
-msgstr "Standard-Architektur ausgeben und beenden"
+msgstr "Imprimir la arquitectura por defecto y salir"
 
 #: app/flatpak-main.c:115
 msgid "Print supported arches and exit"
-msgstr "Unterstützte Architekturen ausgeben und beenden"
+msgstr "Imprimir las arquitecturas soportadas y salir"
 
 #: app/flatpak-main.c:116
 msgid "Print active gl drivers and exit"
-msgstr "Aktiven GL-Treiber ausgeben und beenden"
+msgstr "Imprimir los drivers gl activos y salir"
 
 #: app/flatpak-main.c:121
 msgid "Work on user installations"
-msgstr "Benutzerinstallationen bearbeiten"
+msgstr ""
+"Trabajar con instalaciones de\n"
+" usuario"
 
 #: app/flatpak-main.c:122
 msgid "Work on system-wide installations (default)"
-msgstr "Systemweite Installationen bearbeiten (Standard)"
+msgstr "Trabajar con ins"
 
 #: app/flatpak-main.c:123
 msgid "Work on a specific system-wide installation"
-msgstr "Auf einer spezifischen systemweiten Installation arbeiten"
+msgstr "Trabajar con instalaciones especificas del sistema"
 
 #: app/flatpak-main.c:123
-#, fuzzy
 msgid "NAME"
-msgstr "DATEINAME"
+msgstr "NOMBRE"
 
 #: app/flatpak-main.c:149
 msgid "Builtin Commands:"
-msgstr "Eingebaute Befehle:"
+msgstr "Comandos Incorporados:"
 
 #: app/flatpak-main.c:367
 #, c-format
 msgid "Unknown command '%s'"
-msgstr "Unbekannter Befehl »%s«"
+msgstr "Comando desconocido '%s'"
 
 #: app/flatpak-main.c:375
 msgid "No command specified"
-msgstr "Kein Befehl angegeben"
+msgstr "Comando no especificado"
 
 #: app/flatpak-main.c:491
 msgid "error:"
-msgstr "Fehler:"
+msgstr "error:"
 
 #: app/flatpak-transaction.c:302
 #, c-format
 msgid "Found in remote %s, do you want to install it?"
-msgstr ""
+msgstr "%s encontrado en repositorio remoto, quieres instalarlo?"
 
 #: app/flatpak-transaction.c:307
 msgid "Found in several remotes:\n"
-msgstr "In verschiedenen fernen Quellen gefunden:\n"
+msgstr "Encontrado en varios repositorios remotos:\n"
 
 #: app/flatpak-transaction.c:312
 msgid "Which do you want to install (0 to abort)?"
-msgstr "Was wollen Sie installieren (0 zum Abbrechen)?"
+msgstr "¿Cual quieres instalar (0 para abortar)?"
 
 #: app/flatpak-transaction.c:402
 #, c-format
 msgid "Required runtime for %s (%s) is not installed, searching...\n"
 msgstr ""
-"Erforderliche Laufzeit für %s (%s) ist nicht installiert. Suche läuft …\n"
+"Se requiere un tiempo de ejecución para %s (%s) que no está instalado, "
+"buscando...\n"
 
 #: app/flatpak-transaction.c:408
 #, c-format
 msgid "The required runtime %s was not found in a configured remote.\n"
 msgstr ""
-"Die erforderliche Laufzeit %s wurde in keiner konfigurierten entfernten "
-"Quelle gefunden.\n"
+"El tiempo de ejecución %s requerido no se ha podido encontrar en un "
+"repositorio remoto de entre los configurados.\n"
 
 #: app/flatpak-transaction.c:469 common/flatpak-dir.c:1084
 #: common/flatpak-dir.c:1395 common/flatpak-dir.c:1431
@@ -1773,403 +1777,407 @@ msgstr ""
 #: common/flatpak-utils.c:1256 common/flatpak-utils.c:1350
 #, c-format
 msgid "%s not installed"
-msgstr "%s ist nicht installiert"
+msgstr "%s no está instalado"
 
 #: app/flatpak-transaction.c:475
 #, c-format
 msgid "Remote %s disabled, ignoring %s update"
-msgstr "Entfernte Quelle %s ist deaktiviert. Aktualisierung %s wird ignoriert"
+msgstr ""
+"El repositorio remoto %s está deshabilitado, ignorando la actualización %s"
 
 #: app/flatpak-transaction.c:485
-#, fuzzy, c-format
+#, c-format
 msgid "%s already installed, skipping\n"
-msgstr "%s ist bereits installiert"
+msgstr "%s ya está instalado, ignorando\n"
 
 #: app/flatpak-transaction.c:529
 #, c-format
 msgid "%s needs a later flatpak version (%s)"
-msgstr "%s verlangt eine neuere Version von flatpak (%s)"
+msgstr "%s necesita una versión de flatpak superior (%s)"
 
 #: app/flatpak-transaction.c:703
 msgid "install"
-msgstr "installieren"
+msgstr "instalar"
 
 #: app/flatpak-transaction.c:704
 #, c-format
 msgid "Installing: %s from %s\n"
-msgstr "Installieren: %s von %s\n"
+msgstr "Instalando: %s desde %s\n"
 
 #: app/flatpak-transaction.c:720
 msgid "update"
-msgstr "update"
+msgstr "actualizar"
 
 #: app/flatpak-transaction.c:728
 #, c-format
 msgid "Updating: %s from %s\n"
-msgstr "Aktualisieren: %s von %s\n"
+msgstr ""
+"Actualizando: %s desde\n"
+" %s\n"
 
 #: app/flatpak-transaction.c:748
 #, c-format
 msgid "Now at %s.\n"
-msgstr "Jetzt bei %s.\n"
+msgstr "Ahora a las %s.\n"
 
 #: app/flatpak-transaction.c:754
 msgid "No updates.\n"
-msgstr "Keine Aktualisierungen.\n"
+msgstr "Sin actualizaciones.\n"
 
 #: app/flatpak-transaction.c:772
 msgid "install bundle"
-msgstr "Bündel installieren"
+msgstr "instalar paquete"
 
 #: app/flatpak-transaction.c:773
 #, c-format
 msgid "Installing: %s from bundle %s\n"
-msgstr "Installieren: %s von Bündel %s\n"
+msgstr "Instalando: %s desde el paquete %s\n"
 
 #: app/flatpak-transaction.c:785
 #, c-format
 msgid "Warning: Failed to %s %s: %s\n"
-msgstr "Warnung:  %s %s fehlgeschlagen: %s\n"
+msgstr "Aviso: Fallo al %s %s: %s\n"
 
 #: app/flatpak-transaction.c:790
 #, c-format
 msgid "Error: Failed to %s %s: %s\n"
-msgstr "Fehler: %s %s ist fehlgeschlagen: %s\n"
+msgstr "Error: Fallo al %s %s: %s\n"
 
 #: app/flatpak-transaction.c:795
 msgid "One or more operations failed"
-msgstr "Ein oder mehrere Vorgänge sind fehlgeschlagen"
+msgstr "Han fallado una o más operaciones"
 
 #: common/flatpak-dir.c:972
 #, c-format
 msgid "No overrides found for %s"
-msgstr "Keine Ersetzungen für %s gefunden"
+msgstr "No se han encontrado anulaciones para %s"
 
 #: common/flatpak-dir.c:1586
 #, c-format
 msgid "While opening repository %s: "
-msgstr "Während des Öffnens der Quelle %s: "
+msgstr "Mientras se abría el repositorio %s: "
 
 #: common/flatpak-dir.c:1745 common/flatpak-dir.c:5082
 msgid "Can't create deploy directory"
-msgstr "Bereitstellungsordner konnte nicht erstellt werden"
+msgstr "No se puede crear el directorio de despliegue"
 
 #: common/flatpak-dir.c:2425
 #, c-format
 msgid "Invalid sha256 for extra data uri %s"
-msgstr "Ungültiges sha256 für die Adresse %s der Extradaten"
+msgstr ""
+"Suma de verificación sha256 inválida para los datos adicionales de la uri %s"
 
 #: common/flatpak-dir.c:2430
 #, c-format
 msgid "Empty name for extra data uri %s"
-msgstr "Leerer Name für die Adresse %s der Extradaten"
+msgstr "Nombre vacío para los datos adicionales de la uri %s"
 
 #: common/flatpak-dir.c:2437
 #, c-format
 msgid "Unsupported extra data uri %s"
-msgstr "Nicht unterstützte Adresse %s der Extradaten"
+msgstr "Uri de datos adicionales no soportada %s"
 
 #: common/flatpak-dir.c:2451
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to load local extra-data %s: %s"
-msgstr "Commit %s konnte nicht gelesen werden: "
+msgstr "Fallo al cargar los datos adicionales locales %s: %s"
 
 #: common/flatpak-dir.c:2454
-#, fuzzy, c-format
+#, c-format
 msgid "Wrong size for extra-data %s"
-msgstr "Falsche Größe für Extradaten %s"
+msgstr "Tamaño incorrecto en los datos adicionales %s"
 
 #: common/flatpak-dir.c:2469
 #, c-format
 msgid "While downloading %s: "
-msgstr "Während des Herunterladens von %s: "
+msgstr "Mientras se descargan %s: "
 
 #: common/flatpak-dir.c:2476
 #, c-format
 msgid "Wrong size for extra data %s"
-msgstr "Falsche Größe für Extradaten %s"
+msgstr "Tamaño incorrecto en los datos adicionales %s"
 
 #: common/flatpak-dir.c:2487
 #, c-format
 msgid "Invalid checksum for extra data %s"
-msgstr "Ungültige Prüfsumme für Extradaten %s"
+msgstr "Suma de verificación inválida en los datos adicionales %s"
 
 #: common/flatpak-dir.c:2743
 #, c-format
 msgid "%s commit %s already installed"
-msgstr "%s-Commit %s wurde bereits installiert"
+msgstr "%s commit %s ya está instalado"
 
 #: common/flatpak-dir.c:3070 common/flatpak-dir.c:3384
 #, c-format
 msgid "While pulling %s from remote %s: "
-msgstr "Während des Holens von %s von der entfernten Quelle %s: "
+msgstr "Mientras se está cargando %s desde el repositorio remoto %s: "
 
 #: common/flatpak-dir.c:3269
 #, c-format
 msgid "Can't find %s in remote %s"
-msgstr "%s konnte nicht in entfernter Quelle %s gefunden werden"
+msgstr "No se puede encontrar %s en el repositorio remoto %s"
 
 #: common/flatpak-dir.c:3942
 msgid "Not enough memory"
-msgstr "Nicht genug Speicher"
+msgstr "No hay suficiente memoria"
 
 #: common/flatpak-dir.c:3961
 msgid "Failed to read from exported file"
-msgstr "Lesen aus der exportierten Datei fehlgeschlagen"
+msgstr "Fallo al leer desde un archivo exportado"
 
 #: common/flatpak-dir.c:4152
 msgid "Error reading mimetype xml file"
-msgstr ""
+msgstr "Error al leer un archivo de tipo mime XML"
 
 #: common/flatpak-dir.c:4157
 msgid "Invalid mimetype xml file"
-msgstr ""
+msgstr "Archivo de tipo mime XML inválido"
 
 #: common/flatpak-dir.c:4699
 msgid "While getting detached metadata: "
-msgstr "Während des Versuchs, abgekoppelte Metadaten zu holen: "
+msgstr "Al obtener metadatos individuales: "
 
 #: common/flatpak-dir.c:4717
 msgid "While creating extradir: "
-msgstr "Beim Anlegen von extradir: "
+msgstr "Al crear directorios adicionales:"
 
 #: common/flatpak-dir.c:4738
 msgid "Invalid sha256 for extra data"
-msgstr "Ungültige sha256 für zusätzliche Daten"
+msgstr "Suma de verificación sha256 inválida para los datos adicionales"
 
 #: common/flatpak-dir.c:4767
 msgid "Wrong size for extra data"
-msgstr "Falsche Größe für zusätzliche Daten"
+msgstr "Tamaño  incorrecto para los datos adicionales"
 
 #: common/flatpak-dir.c:4771
 msgid "Invalid checksum for extra data"
-msgstr "Ungültige Prüfsumme für zusätzliche Daten"
+msgstr "Firma de verificación incorrecta para los datos adicionales"
 
 #: common/flatpak-dir.c:4780
 #, c-format
 msgid "While writing extra data file '%s': "
-msgstr "Fehler beim Schreiben der zusätzlichen Datendatei: »%s«: "
+msgstr "Al escribir el archivo de datos adicionales '%s': "
 
 #: common/flatpak-dir.c:4964
-#, fuzzy, c-format
+#, c-format
 msgid "apply_extra script failed, exit status %d"
-msgstr "Skript apply_extra ist fehlgeschlagen"
+msgstr "Ha fallado el script apply_extra, código de error %d"
 
 #: common/flatpak-dir.c:5041
 #, c-format
 msgid "While trying to resolve ref %s: "
-msgstr "Während des Auflösens der Referenz %s: "
+msgstr "Mientras se intentan resolver las referencias %s: "
 
 #: common/flatpak-dir.c:5056
 #, c-format
 msgid "%s is not available"
-msgstr "%s ist nicht verfügbar"
+msgstr "%s no está disponible"
 
 #: common/flatpak-dir.c:5071 common/flatpak-dir.c:5409
 #: common/flatpak-dir.c:6177 common/flatpak-dir.c:6190
 #: common/flatpak-dir.c:6266
 #, c-format
 msgid "%s branch %s already installed"
-msgstr "%s Zweig %s wurde bereits installiert"
+msgstr "%s rama %s ya se encuentra instalada"
 
 #: common/flatpak-dir.c:5090
 #, c-format
 msgid "Failed to read commit %s: "
-msgstr "Commit %s konnte nicht gelesen werden: "
+msgstr "Error al leer el commit %s: "
 
 #: common/flatpak-dir.c:5110
 #, c-format
 msgid "While trying to checkout %s into %s: "
-msgstr "Während des Versuchs, eine Arbeitskopie von %s nach %s zu erstellen: "
+msgstr "Al intentar revisar %s en %s: "
 
 #: common/flatpak-dir.c:5135 common/flatpak-dir.c:5166
 msgid "While trying to checkout metadata subpath: "
-msgstr ""
-"Während des Versuchs, eine Arbeitskopie des Metadaten-Unterordners zu "
-"erstellen: "
+msgstr "Al intentar revisar el subdirectorio de metadatos: "
 
 #: common/flatpak-dir.c:5176
 msgid "While trying to remove existing extra dir: "
-msgstr "Während des Versuchs, den bestehenden Extraordner zu entfernen: "
+msgstr "Al intentar eliminar el directorio extra existente:"
 
 #: common/flatpak-dir.c:5187
 msgid "While trying to apply extra data: "
-msgstr "Während des Versuchs, zusätzliche Daten anzuwenden: "
+msgstr "Al intentar aplicar datos adicionales: "
 
 #: common/flatpak-dir.c:5214
 #, fuzzy, c-format
 msgid "Invalid deployed ref %s: "
-msgstr "Ungültige Prozesskennung %s"
+msgstr "PID %s inválido"
 
 #: common/flatpak-dir.c:5221
 #, fuzzy, c-format
 msgid "Invalid commit ref %s: "
-msgstr "Ungültige Prozesskennung %s"
+msgstr "PID %s inválido"
 
 #: common/flatpak-dir.c:5229
-#, c-format
+#, fuzzy, c-format
 msgid "Deployed ref %s kind does not match commit (%s)"
-msgstr ""
+msgstr "La referencias desplegadas %s no coinciden con el commit (%s)"
 
 #: common/flatpak-dir.c:5237
-#, c-format
+#, fuzzy, c-format
 msgid "Deployed ref %s name does not match commit (%s)"
-msgstr ""
+msgstr "La referencias desplegadas %s no coinciden con el commit (%s)"
 
 #: common/flatpak-dir.c:5245
-#, c-format
+#, fuzzy, c-format
 msgid "Deployed ref %s arch does not match commit (%s)"
-msgstr ""
+msgstr "La referencias desplegadas %s no coinciden con el commit (%s)"
 
 #: common/flatpak-dir.c:5251
-#, c-format
+#, fuzzy, c-format
 msgid "Deployed ref %s branch does not match commit (%s)"
-msgstr ""
+msgstr "La referencias desplegadas %s no coinciden con el commit (%s)"
 
 #: common/flatpak-dir.c:5257
 #, c-format
 msgid "Deployed ref %s does not match commit (%s)"
-msgstr ""
+msgstr "La referencias desplegadas %s no coinciden con el commit (%s)"
 
 #: common/flatpak-dir.c:5276
 msgid "Deployed metadata does not match commit"
-msgstr ""
+msgstr "Los metadatos no coinciden con el commit"
 
 #: common/flatpak-dir.c:6038
 #, c-format
 msgid "This version of %s is already installed"
-msgstr "Diese Version von %s ist bereits installiert"
+msgstr "Esta versión de %s ya está instalada"
 
 #: common/flatpak-dir.c:6045
 msgid "Can't change remote during bundle install"
 msgstr ""
+"No se puede cambiar el repositorio remoto durante la instalación de un "
+"paquete"
 
 #: common/flatpak-dir.c:6588
 #, c-format
 msgid "%s branch %s is not installed"
-msgstr "%s Zweig %s ist nicht installiert"
+msgstr "%s rama %s no está instalada"
 
 #: common/flatpak-dir.c:6832
 #, c-format
 msgid "%s branch %s not installed"
-msgstr "%s Zweig %s ist nicht installiert"
+msgstr "%s rama %s no instalada"
 
 #: common/flatpak-dir.c:7715
 #, c-format
 msgid "Nothing matches %s"
-msgstr "Kein Treffer für %s"
+msgstr "Ninguna coincidencia %s"
 
 #: common/flatpak-dir.c:7792
 #, fuzzy, c-format
 msgid "Can't find ref %s%s%s%s%s"
-msgstr "%s%s%s%s%s kann nicht in ferner Quelle %s gefunden werden"
+msgstr "No se ha encontrado %s%s%s%s%s en el repositorio remoto %s"
 
 #: common/flatpak-dir.c:7834
 #, fuzzy, c-format
 msgid "Error searching remote %s: %s"
-msgstr "Fehler: %s %s ist fehlgeschlagen: %s\n"
+msgstr "Error: Fallo al %s %s: %s\n"
 
 #: common/flatpak-dir.c:7879
 #, fuzzy, c-format
 msgid "Error searching local repository: %s"
-msgstr "Referenz in lokaler Quelle behalten"
+msgstr "Mantener referencia en el repositorio local"
 
 #: common/flatpak-dir.c:8000
 #, c-format
 msgid "%s %s not installed"
-msgstr "%s %s ist nicht installiert"
+msgstr "%s %s no instalado"
 
 #: common/flatpak-dir.c:8073
 #, c-format
 msgid "Could not find installation %s"
-msgstr "Installation %s konnte nicht gefunden werden"
+msgstr "No se pudo encontrar la instalación %s"
 
 #: common/flatpak-dir.c:8602
 #, c-format
 msgid "Runtime %s, branch %s is already installed"
-msgstr "Laufzeitumgebung %s, Zweig %s ist bereits installiert"
+msgstr "El tiempo de ejecución %s, rama %s ya se encuentra instalado"
 
 #: common/flatpak-dir.c:8603
 #, c-format
 msgid "App %s, branch %s is already installed"
-msgstr "Anwendung %s, Zweig %s ist bereits installiert"
+msgstr "La aplicación %s, rama %s ya se encuentra instalada"
 
 #: common/flatpak-dir.c:9062
 msgid "Remote title not set"
-msgstr "Entfernter Titel nicht gesetzt"
+msgstr "Titulo de repositorio remoto no establecido"
 
 #: common/flatpak-dir.c:9084
 msgid "Remote default-branch not set"
-msgstr "Vorgabe-Zweig für ferne Quelle nicht definiert"
+msgstr "Rama por defecto del repositorio remoto no establecida"
 
 #: common/flatpak-dir.c:9578
 msgid "No flatpak cache in remote summary"
-msgstr ""
+msgstr "No hay un caché de flatpak en el repositorio remoto"
 
 #: common/flatpak-dir.c:9588
 #, c-format
 msgid "No entry for %s in remote summary flatpak cache "
-msgstr ""
+msgstr "Ninguna entrada para %s en el caché de flatpak del repositorio remoto "
 
 #: common/flatpak-run.c:257
 #, c-format
 msgid "Unknown share type %s, valid types are: %s"
-msgstr "Unbekannter Freigabetyp %s, zulässige Typen sind: %s"
+msgstr "Tipo de recurso compartido %s inválido, los tipos válidos son: %s"
 
 #: common/flatpak-run.c:292
 #, c-format
 msgid "Unknown policy type %s, valid types are: %s"
-msgstr "Unbekannter Regeltyp %s, zulässige Typen sind: %s"
+msgstr "Tipo de póliza  %s inválida, los tipos válidos son: %s"
 
 #: common/flatpak-run.c:330
 #, c-format
 msgid "Invalid dbus name %s\n"
-msgstr "Ungültiger Dbus-Name %s\n"
+msgstr "Nombre dbus inválido: %s\n"
 
 #: common/flatpak-run.c:343
 #, c-format
 msgid "Unknown socket type %s, valid types are: %s"
-msgstr "Unbekannter Socket-Typ %s, zulässige Typen sind: %s"
+msgstr "Tipo de socket desconocido %s, los tipos válidos son: %s"
 
 #: common/flatpak-run.c:372
 #, c-format
 msgid "Unknown device type %s, valid types are: %s"
-msgstr "Unbekannter Gerätetyp %s, zulässige Typen sind: %s"
+msgstr "Tipo de dispositivo desconocido %s, los tipos válidos son: %s"
 
 #: common/flatpak-run.c:400
 #, c-format
 msgid "Unknown feature type %s, valid types are: %s"
-msgstr "Unbekannter Funktionstyp %s, zulässige Typen sind: %s"
+msgstr "Tipo de característica desconocido %s, los tipos válidos son: %s"
 
 #: common/flatpak-run.c:773
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Unknown filesystem location %s, valid locations are: host, home, xdg-"
 "*[/...], ~/dir, /dir"
 msgstr ""
-"Unbekannter Dateisystem-Ort %s, zulässige Typen sind: host, home, xdg-"
-"*[/...], ~/Ordner, /Ordner"
+"Ruta desconocida en el sistema de archivos %s, algunas rutas válidas son: "
+"host, home, xdg-*[/...], ~/dir, /dir"
 
 #: common/flatpak-run.c:1039
 #, c-format
 msgid "Invalid env format %s"
-msgstr "Ungültiges Umgebungsformat: %s"
+msgstr "Formato de entorno inválido %s"
 
 #: common/flatpak-run.c:1179
 msgid "Share with host"
-msgstr "Mit Rechner teilen"
+msgstr "Compartir con el huesped"
 
 #: common/flatpak-run.c:1179 common/flatpak-run.c:1180
 msgid "SHARE"
-msgstr "FREIGABE"
+msgstr "COMPARTIR"
 
 #: common/flatpak-run.c:1180
 msgid "Unshare with host"
-msgstr "Freigabe für Rechner aufheben"
+msgstr "Dejar de compartir con el huesped"
 
 #: common/flatpak-run.c:1181
 msgid "Expose socket to app"
-msgstr "Socket für die Anwendung sichtbar machen"
+msgstr "Exponer socket a la aplicación"
 
 #: common/flatpak-run.c:1181 common/flatpak-run.c:1182
 msgid "SOCKET"
@@ -2177,145 +2185,141 @@ msgstr "SOCKET"
 
 #: common/flatpak-run.c:1182
 msgid "Don't expose socket to app"
-msgstr "Socket vor der Anwendung verbergen"
+msgstr "No exponer socket a la aplicación"
 
 #: common/flatpak-run.c:1183
 msgid "Expose device to app"
-msgstr "Gerät für die Anwendung sichtbar machen"
+msgstr "Exponer dispositivo a la aplicación"
 
 #: common/flatpak-run.c:1183 common/flatpak-run.c:1184
 msgid "DEVICE"
-msgstr "GERÄT"
+msgstr "DISPOSITIVO"
 
 #: common/flatpak-run.c:1184
 msgid "Don't expose device to app"
-msgstr "Gerät vor der Anwendung verbergen"
+msgstr "No exponer dispositivo a la aplicación"
 
 #: common/flatpak-run.c:1185
 msgid "Allow feature"
-msgstr "Funktion erlauben"
+msgstr "Permitir característica"
 
 #: common/flatpak-run.c:1185 common/flatpak-run.c:1186
 msgid "FEATURE"
-msgstr "FUNKTION"
+msgstr "CARACTERÍSTICA"
 
 #: common/flatpak-run.c:1186
 msgid "Don't allow feature"
-msgstr "Funktion nicht erlauben"
+msgstr "No permitir característica"
 
 #: common/flatpak-run.c:1187
 msgid "Expose filesystem to app (:ro for read-only)"
 msgstr ""
-"Das Dateisystem für die Anwendung sichtbar machen (:ro für schreibgeschützt)"
+"Exponer los archivos del sistema a la aplicación (:ro solo en modo lectura)"
 
 #: common/flatpak-run.c:1187
 msgid "FILESYSTEM[:ro]"
-msgstr "DATEISYSTEM[:ro]"
+msgstr "SISTEMA_ARCHIVOS[:ro]"
 
 #: common/flatpak-run.c:1188
 msgid "Don't expose filesystem to app"
-msgstr "Das Dateisystem vor der Anwendung verbergen"
+msgstr "No exponer los archivos del sistema a la aplicación"
 
 #: common/flatpak-run.c:1188
 msgid "FILESYSTEM"
-msgstr "DATEISYSTEM"
+msgstr "SISTEMA_ARCHIVOS"
 
 #: common/flatpak-run.c:1189
 msgid "Set environment variable"
-msgstr "Umgebungsvariable festlegen"
+msgstr "Establecer variable de entorno"
 
 #: common/flatpak-run.c:1189
 msgid "VAR=VALUE"
-msgstr "VAR=WERT"
+msgstr "VARIABLE=VALOR"
 
 #: common/flatpak-run.c:1190
 msgid "Allow app to own name on the session bus"
-msgstr ""
-"Der Anwendung erlauben, einen Namen auf dem Sitzungsbus zu beanspruchen"
+msgstr "Permitir que la aplicación tenga nombre propio en el bus de sesión"
 
 #: common/flatpak-run.c:1190 common/flatpak-run.c:1191
 #: common/flatpak-run.c:1192 common/flatpak-run.c:1193
 msgid "DBUS_NAME"
-msgstr "DBUS_NAME"
+msgstr "NOMBRE_DBUS"
 
 #: common/flatpak-run.c:1191
 msgid "Allow app to talk to name on the session bus"
-msgstr "Der Anwendung erlauben, mit Namen auf dem Sitzungsbus zu kommunizieren"
+msgstr "Permitir a la aplicación hablar con un nombre en el bus de sesión"
 
 #: common/flatpak-run.c:1192
 msgid "Allow app to own name on the system bus"
-msgstr ""
-"Der Anwendung erlauben, einen Namen auf dem Sitzungsbus zu beanspruchen"
+msgstr "Permitir que la aplicación tenga nombre propio en el bus de sistema"
 
 #: common/flatpak-run.c:1193
 msgid "Allow app to talk to name on the system bus"
-msgstr "Der Anwendung erlauben, mit Namen auf dem Systembus zu kommunizieren"
+msgstr "Permitir a la aplicación hablar con un nombre en el bus de sistema"
 
 #: common/flatpak-run.c:1194
 msgid "Add generic policy option"
-msgstr "Allgemeine Richtlinien-Einstellungen hinzufügen"
+msgstr "Añadir opción de póliza genérica"
 
 #: common/flatpak-run.c:1194 common/flatpak-run.c:1195
 msgid "SUBSYSTEM.KEY=VALUE"
-msgstr "SUBSYSTEM.SCHLÜSSEL=WERT"
+msgstr "SUBSISTEMA.CLAVE=VALOR"
 
 #: common/flatpak-run.c:1195
 msgid "Remove generic policy option"
-msgstr "Allgemeine Richtlinien-Einstellungen entfernen"
+msgstr "Eliminar opción de póliza genérica"
 
 #: common/flatpak-run.c:1196
 msgid "Persist home directory"
-msgstr "Basisordner beständig machen"
+msgstr "Directorio de inicio con persistencia"
 
 #: common/flatpak-run.c:1196
 msgid "FILENAME"
-msgstr "DATEINAME"
+msgstr "NOMBRE_ARCHIVO"
 
 #. This is not needed/used anymore, so hidden, but we accept it for backwards compat
 #: common/flatpak-run.c:1198
 msgid "Don't require a running session (no cgroups creation)"
-msgstr ""
-"Laufende Sitzung als nicht erforderlich festlegen (keine Erstellung von "
-"cgroups)"
+msgstr "No requerir una sesión en ejecución (no se crearán cgroups)"
 
 #: common/flatpak-run.c:1882
 msgid "Failed to create temporary file"
-msgstr "Temporäre Datei konnte nicht erstellt werden"
+msgstr "Fallo al crear un archivo temporal"
 
 #: common/flatpak-run.c:1889
 msgid "Failed to unlink temporary file"
-msgstr "Verbindung zur temporären Datei konnte nicht gelöst werden"
+msgstr "Fallo al desvincular un archivo temporal"
 
 #: common/flatpak-run.c:1907
 msgid "Failed to write to temporary file"
-msgstr "In temporäre Datei konnte nicht geschrieben werden"
+msgstr "Fallo al escribir un archivo temporal"
 
 #: common/flatpak-run.c:3710
 #, c-format
 msgid "Failed to open flatpak-info temp file: %s"
-msgstr "Öffnen der temporären flatpak-Informationsdatei fehlgeschlagen: %s"
+msgstr "Fallo al abrir un archivo temporal de flatpak-info: %s"
 
 #: common/flatpak-run.c:3772 common/flatpak-run.c:3782
 #, c-format
 msgid "Failed to open temp file: %s"
-msgstr "Temporäre Datei konnte nicht geöffnet werden: %s"
+msgstr "Fallo al abrir un archivo temporal: %s"
 
 #: common/flatpak-run.c:4132
 msgid "Unable to create sync pipe"
-msgstr "»Sync-Pipe« konnte nicht erstellt werden"
+msgstr "Ha sido imposible crear una tubería sincronizada"
 
 #: common/flatpak-run.c:4159
 #, c-format
 msgid "Failed to open app info file: %s"
-msgstr "Öffnen der Informationsdatei der Anwendung fehlgeschlagen: %s"
+msgstr "Fallo al abrir el archivo de información de una aplicación: %s"
 
 #: common/flatpak-run.c:4189
 msgid "Failed to sync with dbus proxy"
-msgstr "Abgleich mit Dbus-Proxy ist fehlgeschlagen"
+msgstr "Fallo al sincronizar con el proxy de dbus"
 
 #: common/flatpak-utils.c:2815
 msgid "No extra data sources"
-msgstr "Keine zusätzlichen Datenquellen"
+msgstr "Sin orígenes de datos adicionales"
 
 #. SECURITY:
 #. - Normal users do not need authentication to install signed applications
@@ -2324,13 +2328,13 @@ msgstr "Keine zusätzlichen Datenquellen"
 #. 'auth_admin_keep'.
 #: system-helper/org.freedesktop.Flatpak.policy.in:23
 msgid "Install signed application"
-msgstr "Signierte Anwendung installieren"
+msgstr "Instalar aplicación firmada"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:24
 #: system-helper/org.freedesktop.Flatpak.policy.in:41
 #: system-helper/org.freedesktop.Flatpak.policy.in:103
 msgid "Authentication is required to install software"
-msgstr "Legitimierung wird benötigt, um Software zu installieren"
+msgstr "La autentificación es obligatoria para instalar un programa"
 
 #. SECURITY:
 #. - Normal users do not need authentication to install signed applications
@@ -2339,7 +2343,7 @@ msgstr "Legitimierung wird benötigt, um Software zu installieren"
 #. 'auth_admin_keep'.
 #: system-helper/org.freedesktop.Flatpak.policy.in:40
 msgid "Install signed runtime"
-msgstr "Signierte Laufzeitumgebung installieren"
+msgstr "Instalar tiempo de ejecución firmado"
 
 #. SECURITY:
 #. - Normal users do not require admin authentication to update an
@@ -2349,13 +2353,13 @@ msgstr "Signierte Laufzeitumgebung installieren"
 #. updates.
 #: system-helper/org.freedesktop.Flatpak.policy.in:58
 msgid "Update signed application"
-msgstr "Signierte Anwendung aktualisieren"
+msgstr "Actualizar aplicación firmada"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:59
 #: system-helper/org.freedesktop.Flatpak.policy.in:77
 #: system-helper/org.freedesktop.Flatpak.policy.in:154
 msgid "Authentication is required to update software"
-msgstr "Legitimierung wird benötigt, um Software zu aktualisieren"
+msgstr "La autentificación es obligatoria para actualizar un programa"
 
 #. SECURITY:
 #. - Normal users do not require admin authentication to update a
@@ -2365,45 +2369,45 @@ msgstr "Legitimierung wird benötigt, um Software zu aktualisieren"
 #. updates.
 #: system-helper/org.freedesktop.Flatpak.policy.in:76
 msgid "Update signed runtime"
-msgstr "Signierte Laufzeitumgebung aktualisieren"
+msgstr "Actualizar tiempo de ejecución firmado"
 
 #. SECURITY:
 #. - Normal users do not need authentication to update metadata
 #. from signed repositories.
 #: system-helper/org.freedesktop.Flatpak.policy.in:91
-#, fuzzy
 msgid "Update remote metadata"
-msgstr "ORT - Metadaten der Quelle aktualisieren"
+msgstr "Actualizar metadatos remotos"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:92
-#, fuzzy
 msgid "Authentication is required to update remote info"
-msgstr "Legitimierung wird benötigt, um Software zu aktualisieren"
+msgstr ""
+"La autentificación es obligatoria para actualizar la información remota"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:102
 msgid "Install bundle"
-msgstr "Bündel installieren"
+msgstr "Instalar paquete"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:113
 msgid "Uninstall runtime"
-msgstr "Laufzeitumgebung deinstallieren"
+msgstr "Desinstalar tiempo de ejecución"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:114
 #: system-helper/org.freedesktop.Flatpak.policy.in:125
 msgid "Authentication is required to uninstall software"
-msgstr "Legitimierung wird benötigt, um Software zu deinstallieren"
+msgstr "La autentificación es obligatoria para desinstalar un programa"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:124
 msgid "Uninstall app"
-msgstr "Anwendung deinstallieren"
+msgstr "Desinstalar aplicación"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:135
 msgid "Configure Remote"
-msgstr "Ferne Quelle einrichten"
+msgstr "Configurar Repositorio Remoto"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:136
 msgid "Authentication is required to configure software repositories"
-msgstr "Legitimierung wird benötigt, um die Softwarequellen zu konfigurieren"
+msgstr ""
+"La autentificación es obligatoria para configurar repositorio de software"
 
 #. SECURITY:
 #. - Normal users do not require admin authentication to update
@@ -2413,134 +2417,22 @@ msgstr "Legitimierung wird benötigt, um die Softwarequellen zu konfigurieren"
 #. updates.
 #: system-helper/org.freedesktop.Flatpak.policy.in:153
 msgid "Update appstream"
-msgstr "Appstream aktualisieren"
+msgstr "Actualizar appstream"
 
 #~ msgid "REMOTE must be specified"
-#~ msgstr "ENTFERNTE QUELLE muss angegeben werden"
+#~ msgstr "Se debe especificar REMOTO"
 
-#, fuzzy
 #~ msgid "Downloading %s"
-#~ msgstr "Referenz anzeigen"
+#~ msgstr "Descargando %s"
 
-#, fuzzy
 #~ msgid "Installing %s"
-#~ msgstr "Installieren: %s\n"
+#~ msgstr "Instalando %s"
 
-#, fuzzy
 #~ msgid "Post-Install %s"
-#~ msgstr "Installieren: %s\n"
+#~ msgstr "Post instalación %s"
 
-#, fuzzy
 #~ msgid "Updating %s"
-#~ msgstr "Zusammenfassung wird aktualisiert\n"
+#~ msgstr "Actualizando %s"
 
-#, fuzzy
 #~ msgid "Metadata:"
-#~ msgstr "Details zur entfernten Quelle anzeigen"
-
-#, fuzzy
-#~ msgid "Assume LOCATION is an oci registry"
-#~ msgstr "NAME [ORT] - eine ferne Quelle hinzufügen"
-
-#, fuzzy
-#~ msgid "OCI repo Filename or uri must be specified"
-#~ msgstr "Name der Bündel-Datei muss angegeben werden"
-
-#~ msgid "'%s' is not a valid runtime name: %s"
-#~ msgstr "»%s« ist kein gültiger Laufzeitname: %s"
-
-#~ msgid "'%s' is not a valid sdk name: %s"
-#~ msgstr "»%s« ist kein gültiger sdk-Name: %s"
-
-#~ msgid "Data not found"
-#~ msgstr "Daten wurden nicht gefunden"
-
-#~ msgid "Data not found for ref %s"
-#~ msgstr "Daten für Referenz %s nicht gefunden"
-
-#~ msgid "Install from local bundle file"
-#~ msgstr "Aus einer lokalen Bündel-Datei installieren"
-
-#, fuzzy
-#~ msgid "Load options from file or uri"
-#~ msgstr "Einstellungen aus Datei laden"
-
-#~ msgid "Install an application or runtime from a remote"
-#~ msgstr "Anwendung oder Laufzeit von einer entfernten Quelle installieren"
-
-#, fuzzy
-#~ msgid "Invalid ref format"
-#~ msgstr "Ungültiges Umgebungsformat: %s"
-
-#, fuzzy
-#~ msgid "Invalid ref, no digest"
-#~ msgstr "Ungültiges Umgebungsformat: %s"
-
-#, fuzzy
-#~ msgid "No manfest found for arch %s, os %s"
-#~ msgstr "Daten für Referenz %s nicht gefunden"
-
-#, fuzzy
-#~ msgid "Remote extra metadata not available; server has no summary file"
-#~ msgstr ""
-#~ "Entfernter Titel nicht verfügbar; Server hat keine Zusammenfassungsdatei"
-
-#~ msgid "Data not available; server has no summary file"
-#~ msgstr "Daten sind nicht verfügbar, der Server hat keine Summary-Datei"
-
-#~ msgid "This version of ostree is to old to support OCI exports"
-#~ msgstr "Diese Version von ostree ist zu alt, um OCI-Exporte zu unterstützen"
-
-#~ msgid "This version of flatpak is not compiled with libarchive support"
-#~ msgstr ""
-#~ "Diese Version von flatpak ist nicht mit libarchive-Unterstützung "
-#~ "kompiliert"
-
-#~ msgid "While pulling %s from remote %s, metadata: "
-#~ msgstr "Während des Holens von %s von der entfernten Quelle %s, Metadaten: "
-
-#~ msgid "While pulling %s from remote %s, subpath %s: "
-#~ msgstr ""
-#~ "Während des Holens von %s von der entfernten Quelle %s: Unterordner %s: "
-
-#~ msgid "The Flatpak Project"
-#~ msgstr "Das Flatpak-Projekt"
-
-#~ msgid "auth_admin"
-#~ msgstr "auth_admin"
-
-#~ msgid "yes"
-#~ msgstr "ja"
-
-#~ msgid "Installing related: %s\n"
-#~ msgstr "Zugehörige werden installiert: %s\n"
-
-#~ msgid "REPOSITORY and NAME must be specified"
-#~ msgstr "QUELLE und NAME müssen angegeben werden"
-
-#~ msgid "Uninstalling related: %s\n"
-#~ msgstr "Zugehörige werden deinstalliert: %s\n"
-
-#~ msgid "Warning: Failed to uninstall related ref: %s\n"
-#~ msgstr "Warnung: Deinstallation zugehöriger Referenz fehlgeschlagen: %s\n"
-
-#~ msgid "Updating application %s, branch %s\n"
-#~ msgstr "Anwendung %s, Zweig %s wird aktualisiert\n"
-
-#~ msgid "Updating runtime %s, branch %s\n"
-#~ msgstr "Laufzeitumgebung %s, Zweig %s wird aktualisiert\n"
-
-#~ msgid "LOCATION ID [BRANCH] - Create a repository from a build directory"
-#~ msgstr "ORT KENNUNG [ZWEIG] - Quelle aus Erstellungsordner erzeugen"
-
-#~ msgid ""
-#~ "Warning: Can't find appstream-builder, unable to update appstream branch\n"
-#~ msgstr ""
-#~ "Warnung: Appstream-Builder nicht gefunden, eine Aktualisierung des "
-#~ "Appstream-Zweiges ist nicht möglich\n"
-
-#~ msgid "Looking for %s\n"
-#~ msgstr "Nach %s suchen\n"
-
-#~ msgid "Generating from-parent delta for %s (%s)\n"
-#~ msgstr "»Von-Vorläufer«-Delta wird erstellt für %s (%s)\n"
+#~ msgstr "Metadatos:"
