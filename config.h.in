@@ -85,6 +85,9 @@
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
+/* Extra version */
+#undef PACKAGE_EXTRA_VERSION
+
 /* Major version */
 #undef PACKAGE_MAJOR_VERSION
 
