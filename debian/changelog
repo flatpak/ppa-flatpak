@@ -1,6 +1,7 @@
-flatpak (0.9.98-2) UNRELEASED; urgency=medium
+flatpak (0.9.98.2-1) UNRELEASED; urgency=medium
 
-  * Mark patch as applied upstream
+  * New upstream release
+    - Drop patch, applied upstream
 
  -- Simon McVittie <smcv@debian.org>  Tue, 26 Sep 2017 10:15:45 +0100
 
