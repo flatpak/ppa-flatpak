@@ -161,6 +161,16 @@ test_fstatat (void)
     return;
   g_assert_cmpint (errno, ==, ENOENT);
   g_assert_no_error (local_error);
+
+  /* test NULL parameter for stat */
+  if (!glnx_fstatat_allow_noent (AT_FDCWD, ".", NULL, 0, error))
+    return;
+  g_assert_cmpint (errno, ==, 0);
+  g_assert_no_error (local_error);
+  if (!glnx_fstatat_allow_noent (AT_FDCWD, "nosuchfile", NULL, 0, error))
+    return;
+  g_assert_cmpint (errno, ==, ENOENT);
+  g_assert_no_error (local_error);
 }
 
 static void
@@ -169,13 +179,23 @@ test_filecopy (void)
   _GLNX_TEST_DECLARE_ERROR(local_error, error);
   g_auto(GLnxTmpfile) tmpf = { 0, };
   const char foo[] = "foo";
+  struct stat stbuf;
+
+  if (!glnx_ensure_dir (AT_FDCWD, "subdir", 0755, error))
+    return;
 
   if (!glnx_file_replace_contents_at (AT_FDCWD, foo, (guint8*)foo, sizeof (foo),
                                       GLNX_FILE_REPLACE_NODATASYNC, NULL, error))
     return;
 
+  /* Copy it into both the same dir and a subdir */
   if (!glnx_file_copy_at (AT_FDCWD, foo, NULL, AT_FDCWD, "bar",
                           GLNX_FILE_COPY_NOXATTRS, NULL, error))
+    return;
+  if (!glnx_file_copy_at (AT_FDCWD, foo, NULL, AT_FDCWD, "subdir/bar",
+                          GLNX_FILE_COPY_NOXATTRS, NULL, error))
+    return;
+  if (!glnx_fstatat (AT_FDCWD, "subdir/bar", &stbuf, 0, error))
     return;
 
   if (glnx_file_copy_at (AT_FDCWD, foo, NULL, AT_FDCWD, "bar",
@@ -206,7 +226,6 @@ test_filecopy (void)
                           NULL, error))
     return;
 
-  struct stat stbuf;
   if (!glnx_fstatat_allow_noent (AT_FDCWD, "nosuchtarget", &stbuf, AT_SYMLINK_NOFOLLOW, error))
     return;
   g_assert_cmpint (errno, ==, ENOENT);

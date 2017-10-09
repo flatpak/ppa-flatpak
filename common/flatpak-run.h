@@ -50,9 +50,13 @@ gboolean flatpak_run_in_transient_unit (const char *app_id,
 
 #define FLATPAK_METADATA_GROUP_INSTANCE "Instance"
 #define FLATPAK_METADATA_KEY_APP_PATH "app-path"
+#define FLATPAK_METADATA_KEY_APP_COMMIT "app-commit"
+#define FLATPAK_METADATA_KEY_APP_EXTENSIONS "app-extensions"
 #define FLATPAK_METADATA_KEY_BRANCH "branch"
 #define FLATPAK_METADATA_KEY_FLATPAK_VERSION "flatpak-version"
 #define FLATPAK_METADATA_KEY_RUNTIME_PATH "runtime-path"
+#define FLATPAK_METADATA_KEY_RUNTIME_COMMIT "runtime-commit"
+#define FLATPAK_METADATA_KEY_RUNTIME_EXTENSIONS "runtime-extensions"
 #define FLATPAK_METADATA_KEY_SESSION_BUS_PROXY "session-bus-proxy"
 #define FLATPAK_METADATA_KEY_SYSTEM_BUS_PROXY "system-bus-proxy"
 
@@ -155,9 +159,12 @@ FlatpakExports *flatpak_exports_from_context (FlatpakContext *context,
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakExports, flatpak_exports_free);
 
 gboolean  flatpak_run_add_extension_args (GPtrArray    *argv_array,
+                                          GArray       *fd_array,
                                           char       ***envp_p,
                                           GKeyFile     *metakey,
                                           const char   *full_ref,
+                                          gboolean      use_ld_so_cache,
+                                          char        **extensions_out,
                                           GCancellable *cancellable,
                                           GError      **error);
 gboolean flatpak_run_add_environment_args (GPtrArray      *argv_array,
@@ -171,8 +178,8 @@ gboolean flatpak_run_add_environment_args (GPtrArray      *argv_array,
                                            FlatpakExports **exports_out,
                                            GCancellable *cancellable,
                                            GError      **error);
-char **  flatpak_run_get_minimal_env (gboolean devel);
-char **  flatpak_run_apply_env_default (char **envp);
+char **  flatpak_run_get_minimal_env (gboolean devel, gboolean use_ld_so_cache);
+char **  flatpak_run_apply_env_default (char **envp, gboolean use_ld_so_cache);
 char **  flatpak_run_apply_env_appid (char **envp,
                                       GFile *app_dir);
 char **  flatpak_run_apply_env_vars (char          **envp,
@@ -196,7 +203,11 @@ gboolean flatpak_run_setup_base_argv (GPtrArray      *argv_array,
 gboolean flatpak_run_add_app_info_args (GPtrArray      *argv_array,
                                         GArray         *fd_array,
                                         GFile          *app_files,
+                                        GVariant       *app_deploy_data,
+					const char     *app_extensions,
                                         GFile          *runtime_files,
+                                        GVariant       *runtime_deploy_data,
+					const char     *runtime_extensions,
                                         const char     *app_id,
                                         const char     *app_branch,
                                         const char     *runtime_ref,

@@ -1,5 +1,8 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if we should avoid using O_TMPFILE */
+#undef DISABLE_OTMPFILE
+
 /* Define if sandboxed triggers are disabled */
 #undef DISABLE_SANDBOXED_TRIGGERS
 
@@ -9,6 +12,9 @@
 
 /* Define if using seccomp */
 #undef ENABLE_SECCOMP
+
+/* Define if we should be compatible with wrpseudo */
+#undef ENABLE_WRPSEUDO_COMPAT
 
 /* Define if using xauth */
 #undef ENABLE_XAUTH
@@ -36,6 +42,14 @@
 /* Define if the GNU dcgettext() function is already present or preinstalled.
    */
 #undef HAVE_DCGETTEXT
+
+/* Define to 1 if you have the declaration of `memfd_create', and to 0 if you
+   don't. */
+#undef HAVE_DECL_MEMFD_CREATE
+
+/* Define to 1 if you have the declaration of `renameat2', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RENAMEAT2
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H

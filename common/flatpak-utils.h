@@ -61,6 +61,8 @@ typedef void (*FlatpakLoadUriProgress) (guint64 downloaded_bytes,
  */
 #define flatpak_fail glnx_throw
 
+void flatpak_debug2 (const char *format, ...) G_GNUC_PRINTF(1, 2);
+
 gint flatpak_strcmp0_ptr (gconstpointer a,
                           gconstpointer b);
 
@@ -286,6 +288,10 @@ flatpak_auto_lock_helper (GMutex *mutex)
   return mutex;
 }
 
+gboolean
+flatpak_switch_symlink_and_remove (const char *symlink_path,
+                                   const char *target,
+                                   GError **error);
 gint flatpak_mkstempat (int    dir_fd,
                         gchar *tmpl,
                         int    flags,
@@ -386,6 +392,7 @@ typedef struct
 {
   char *id;
   char *installed_id;
+  char *commit;
   char *ref;
   char *directory;
   char *files_path;
@@ -699,5 +706,7 @@ typedef void (*FlatpakProgressCallback)(const char *status,
 
 OstreeAsyncProgress *flatpak_progress_new (FlatpakProgressCallback progress,
                                            gpointer                progress_data);
+
+void flatpak_log_dir_access (FlatpakDir *dir);
 
 #endif /* __FLATPAK_UTILS_H__ */

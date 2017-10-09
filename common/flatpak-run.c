@@ -51,6 +51,7 @@
 #include "flatpak-dir.h"
 #include "flatpak-systemd-dbus.h"
 #include "document-portal/xdp-dbus.h"
+#include "lib/flatpak-error.h"
 
 #define DEFAULT_SHELL "/bin/sh"
 
@@ -1853,6 +1854,15 @@ write_xauth (char *number, FILE *output)
 #endif /* ENABLE_XAUTH */
 
 static void
+append_args (GPtrArray *argv_array, GPtrArray *other_array)
+{
+  int i;
+
+  for (i = 0; i < other_array->len; i++)
+    g_ptr_array_add (argv_array, g_strdup (g_ptr_array_index (other_array, i)));
+}
+
+static void
 add_args (GPtrArray *argv_array, ...)
 {
   va_list args;
@@ -1864,60 +1874,93 @@ add_args (GPtrArray *argv_array, ...)
   va_end (args);
 }
 
-static int
-create_tmp_fd (const char *contents,
-               gssize      length,
-               GError    **error)
+static void
+add_args_data_fd (GPtrArray *argv_array,
+                  GArray    *fd_array,
+                  const char *op,
+                  int fd,
+                  const char *path_optional)
 {
-  char template[] = "/tmp/tmp_fd_XXXXXX";
-  int fd;
+  g_autofree char *fd_str = g_strdup_printf ("%d", fd);
+  if (fd_array)
+    g_array_append_val (fd_array, fd);
 
-  if (length < 0)
-    length = strlen (contents);
+  add_args (argv_array,
+            op, fd_str, path_optional,
+            NULL);
+}
 
-  fd = g_mkstemp (template);
-  if (fd < 0)
+
+/* If memfd_create() is available, generate a sealed memfd with contents of
+ * @str. Otherwise use an O_TMPFILE @tmpf in anonymous mode, write @str to
+ * @tmpf, and lseek() back to the start. See also similar uses in e.g.
+ * rpm-ostree for running dracut.
+ */
+static gboolean
+buffer_to_sealed_memfd_or_tmpfile (GLnxTmpfile *tmpf,
+                                   const char  *name,
+                                   const char  *str,
+                                   size_t       len,
+                                   GError     **error)
+{
+  if (len == -1)
+    len = strlen (str);
+  glnx_autofd int memfd = memfd_create (name, MFD_CLOEXEC | MFD_ALLOW_SEALING);
+  int fd; /* Unowned */
+  if (memfd != -1)
     {
-      g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),
-                           _("Failed to create temporary file"));
-      return -1;
+      fd = memfd;
     }
-
-  if (unlink (template) != 0)
+  else
     {
-      g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),
-                           _("Failed to unlink temporary file"));
-      close (fd);
-      return -1;
+      /* We use an anonymous fd (i.e. O_EXCL) since we don't want
+       * the target container to potentially be able to re-link it.
+       */
+      if (!G_IN_SET (errno, ENOSYS, EOPNOTSUPP))
+        return glnx_throw_errno_prefix (error, "memfd_create");
+      if (!glnx_open_anonymous_tmpfile (O_RDWR | O_CLOEXEC, tmpf, error))
+        return FALSE;
+      fd = tmpf->fd;
     }
-
-  while (length > 0)
+  if (ftruncate (fd, len) < 0)
+    return glnx_throw_errno_prefix (error, "ftruncate");
+  if (glnx_loop_write (fd, str, len) < 0)
+    return glnx_throw_errno_prefix (error, "write");
+  if (lseek (fd, 0, SEEK_SET) < 0)
+    return glnx_throw_errno_prefix (error, "lseek");
+  if (memfd != -1)
     {
-      gssize s;
-
-      s = write (fd, contents, length);
-
-      if (s < 0)
-        {
-          int saved_errno = errno;
-          if (saved_errno == EINTR)
-            continue;
-
-          g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (saved_errno),
-                               _("Failed to write to temporary file"));
-          close (fd);
-          return -1;
-        }
-
-      g_assert (s <= length);
-
-      contents += s;
-      length -= s;
+      if (fcntl (memfd, F_ADD_SEALS, F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_WRITE | F_SEAL_SEAL) < 0)
+        return glnx_throw_errno_prefix (error, "fcntl(F_ADD_SEALS)");
+      /* The other values can stay default */
+      tmpf->fd = glnx_steal_fd (&memfd);
+      tmpf->initialized = TRUE;
     }
+  return TRUE;
+}
 
-  lseek (fd, 0, SEEK_SET);
+/* Given a buffer @content of size @content_size, generate a fd (memfd if available)
+ * of the data.  The @name parameter is used by memfd_create() as a debugging aid;
+ * it has no semantic meaning.  The bwrap command line will inject it into the target
+ * container as @path.
+ */
+static gboolean
+add_args_data (GPtrArray *argv_array,
+               GArray    *fd_array,
+               const char *name,
+               const char *content,
+               gssize content_size,
+               const char *path,
+               GError **error)
+{
+  g_auto(GLnxTmpfile) args_tmpf  = { 0, };
 
-  return fd;
+  if (!buffer_to_sealed_memfd_or_tmpfile (&args_tmpf, name, content, content_size, error))
+    return FALSE;
+
+  add_args_data_fd (argv_array, fd_array,
+                    "--bind-data", glnx_steal_fd (&args_tmpf.fd), path);
+  return TRUE;
 }
 
 static void
@@ -1951,7 +1994,6 @@ flatpak_run_add_x11_args (GPtrArray *argv_array,
       const char *display_nr = &display[1];
       const char *display_nr_end = display_nr;
       g_autofree char *d = NULL;
-      g_autofree char *tmp_path = NULL;
 
       while (g_ascii_isdigit (*display_nr_end))
         display_nr_end++;
@@ -1965,38 +2007,30 @@ flatpak_run_add_x11_args (GPtrArray *argv_array,
       *envp_p = g_environ_setenv (*envp_p, "DISPLAY", ":99.0", TRUE);
 
 #ifdef ENABLE_XAUTH
-      int fd;
-      fd = g_file_open_tmp ("flatpak-xauth-XXXXXX", &tmp_path, NULL);
-      if (fd >= 0)
+      g_auto(GLnxTmpfile) xauth_tmpf  = { 0, };
+
+      if (glnx_open_anonymous_tmpfile (O_RDWR | O_CLOEXEC, &xauth_tmpf, NULL))
         {
-          FILE *output = fdopen (fd, "wb");
+          FILE *output = fdopen (xauth_tmpf.fd, "wb");
           if (output != NULL)
             {
-              int tmp_fd = dup (fd);
+	      /* fd is now owned by output, steal it from the tmpfile */
+              int tmp_fd = dup (glnx_steal_fd (&xauth_tmpf.fd));
               if (tmp_fd != -1)
                 {
-                  g_autofree char *tmp_fd_str = g_strdup_printf ("%d", tmp_fd);
                   g_autofree char *dest = g_strdup_printf ("/run/user/%d/Xauthority", getuid ());
 
                   write_xauth (d, output);
-                  add_args (argv_array,
-                            "--bind-data", tmp_fd_str, dest,
-                            NULL);
-                  if (fd_array)
-                    g_array_append_val (fd_array, tmp_fd);
-                  *envp_p = g_environ_setenv (*envp_p, "XAUTHORITY", dest, TRUE);
+                  add_args_data_fd (argv_array, fd_array,
+                                    "--bind-data", tmp_fd, dest);
 
+                  *envp_p = g_environ_setenv (*envp_p, "XAUTHORITY", dest, TRUE);
                 }
 
               fclose (output);
-              unlink (tmp_path);
 
               if (tmp_fd != -1)
                 lseek (tmp_fd, 0, SEEK_SET);
-            }
-          else
-            {
-              close (fd);
             }
         }
 #endif
@@ -2046,20 +2080,13 @@ flatpak_run_add_pulseaudio_args (GPtrArray *argv_array,
       g_autofree char *sandbox_socket_path = g_strdup_printf ("/run/user/%d/pulse/native", getuid ());
       g_autofree char *pulse_server = g_strdup_printf ("unix:/run/user/%d/pulse/native", getuid ());
       g_autofree char *config_path = g_strdup_printf ("/run/user/%d/pulse/config", getuid ());
-      int fd;
-      g_autofree char *fd_str = NULL;
 
-      fd = create_tmp_fd (client_config, -1, NULL);
-      if (fd == -1)
+      /* FIXME - error handling */
+      if (!add_args_data (argv_array, fd_array, "pulseaudio", client_config, -1, config_path, NULL))
         return;
-
-      fd_str = g_strdup_printf ("%d", fd);
-      if (fd_array)
-        g_array_append_val (fd_array, fd);
 
       add_args (argv_array,
                 "--bind", pulseaudio_socket, sandbox_socket_path,
-                "--bind-data", fd_str, config_path,
                 NULL);
 
       *envp_p = g_environ_setenv (*envp_p, "PULSE_SERVER", pulse_server, TRUE);
@@ -2230,17 +2257,33 @@ flatpak_add_bus_filters (GPtrArray      *dbus_proxy_argv,
     }
 }
 
+static int
+flatpak_extension_compare_by_path (gconstpointer  _a,
+                                   gconstpointer  _b)
+{
+  const FlatpakExtension *a = _a;
+  const FlatpakExtension *b = _b;
+
+  return g_strcmp0 (a->directory, b->directory);
+}
+
 gboolean
 flatpak_run_add_extension_args (GPtrArray    *argv_array,
+                                GArray       *fd_array,
                                 char       ***envp_p,
                                 GKeyFile     *metakey,
                                 const char   *full_ref,
+                                gboolean      use_ld_so_cache,
+                                char        **extensions_out,
                                 GCancellable *cancellable,
                                 GError      **error)
 {
   g_auto(GStrv) parts = NULL;
+  g_autoptr(GString) used_extensions = g_string_new ("");
   gboolean is_app;
-  GList *extensions, *l;
+  GList *extensions, *path_sorted_extensions, *l;
+  g_autoptr(GString) ld_library_path = g_string_new ("");
+  int count = 0;
   g_autoptr(GHashTable) mounted_tmpfs =
     g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
   g_autoptr(GHashTable) created_symlink =
@@ -2255,14 +2298,18 @@ flatpak_run_add_extension_args (GPtrArray    *argv_array,
   extensions = flatpak_list_extensions (metakey,
                                         parts[2], parts[3]);
 
-  for (l = extensions; l != NULL; l = l->next)
+  /* First we apply all the bindings, they are sorted alphabetically in order for parent directory
+     to be mounted before child directories */
+  path_sorted_extensions = g_list_copy (extensions);
+  path_sorted_extensions = g_list_sort (path_sorted_extensions, flatpak_extension_compare_by_path);
+
+  for (l = path_sorted_extensions; l != NULL; l = l->next)
     {
       FlatpakExtension *ext = l->data;
       g_autofree char *directory = g_build_filename (is_app ? "/app" : "/usr", ext->directory, NULL);
       g_autofree char *full_directory = g_build_filename (directory, ext->subdir_suffix, NULL);
       g_autofree char *ref = g_build_filename (full_directory, ".ref", NULL);
       g_autofree char *real_ref = g_build_filename (ext->files_path, ext->directory, ".ref", NULL);
-      int i;
 
       if (ext->needs_tmpfs)
         {
@@ -2285,19 +2332,49 @@ flatpak_run_add_extension_args (GPtrArray    *argv_array,
         add_args (argv_array,
                   "--lock-file", ref,
                   NULL);
+    }
+
+  g_list_free (path_sorted_extensions);
+
+  /* Then apply library directories and file merging, in extension prio order */
+
+  for (l = extensions; l != NULL; l = l->next)
+    {
+      FlatpakExtension *ext = l->data;
+      g_autofree char *directory = g_build_filename (is_app ? "/app" : "/usr", ext->directory, NULL);
+      g_autofree char *full_directory = g_build_filename (directory, ext->subdir_suffix, NULL);
+      int i;
+
+      if (used_extensions->len > 0)
+        g_string_append (used_extensions, ";");
+      g_string_append (used_extensions, ext->installed_id);
+      g_string_append (used_extensions, "=");
+      if (ext->commit != NULL)
+        g_string_append (used_extensions, ext->commit);
+      else
+        g_string_append (used_extensions, "local");
 
       if (ext->add_ld_path)
         {
           g_autofree char *ld_path = g_build_filename (full_directory, ext->add_ld_path, NULL);
-          const gchar *old_ld_path = g_environ_getenv (*envp_p, "LD_LIBRARY_PATH");
-          g_autofree char *new_ld_path = NULL;
 
-          if (old_ld_path != NULL)
-            new_ld_path = g_strconcat (old_ld_path, ":", ld_path, NULL);
+          if (use_ld_so_cache)
+            {
+              g_autofree char *contents = g_strconcat (ld_path, "\n", NULL);
+              /* We prepend app or runtime and a counter in order to get the include order correct for the conf files */
+              g_autofree char *ld_so_conf_file = g_strdup_printf ("%s-%03d-%s.conf", parts[0], ++count, ext->installed_id);
+              g_autofree char *ld_so_conf_file_path = g_build_filename ("/run/flatpak/ld.so.conf.d", ld_so_conf_file, NULL);
+
+              if (!add_args_data (argv_array, fd_array, "ld-so-conf",
+                                  contents, -1, ld_so_conf_file_path, error))
+                return FALSE;
+            }
           else
-            new_ld_path = g_strdup (new_ld_path);
-
-          *envp_p = g_environ_setenv (*envp_p, "LD_LIBRARY_PATH", new_ld_path , TRUE);
+            {
+              if (ld_library_path->len != 0)
+                g_string_append (ld_library_path, ":");
+              g_string_append (ld_library_path, ld_path);
+            }
         }
 
       for (i = 0; ext->merge_dirs != NULL && ext->merge_dirs[i] != NULL; i++)
@@ -2328,6 +2405,30 @@ flatpak_run_add_extension_args (GPtrArray    *argv_array,
     }
 
   g_list_free_full (extensions, (GDestroyNotify) flatpak_extension_free);
+
+  if (ld_library_path->len != 0)
+    {
+      const gchar *old_ld_path = g_environ_getenv (*envp_p, "LD_LIBRARY_PATH");
+
+      if (old_ld_path != NULL && *old_ld_path != 0)
+        {
+          if (is_app)
+            {
+              g_string_append (ld_library_path, ":");
+              g_string_append (ld_library_path, old_ld_path);
+            }
+          else
+            {
+              g_string_prepend (ld_library_path, ":");
+              g_string_prepend (ld_library_path, old_ld_path);
+            }
+        }
+
+      *envp_p = g_environ_setenv (*envp_p, "LD_LIBRARY_PATH", ld_library_path->str , TRUE);
+    }
+
+  if (extensions_out)
+    *extensions_out = g_string_free (g_steal_pointer (&used_extensions), FALSE);
 
   return TRUE;
 }
@@ -3014,7 +3115,10 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
 
           g_mkdir_with_parents (src, 0755);
 
-          add_bind_arg (argv_array, "--bind", src, dest);
+          /* We stick to add_args instead of add_bind_arg because persisted
+           * folders don't need to exist outside the chroot.
+           */
+          add_args (argv_array, "--bind", src, dest, NULL);
         }
     }
 
@@ -3090,30 +3194,12 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
     }
   else if (xdg_dirs_conf->len > 0 && app_id_dir != NULL)
     {
-      g_autofree char *tmp_path = NULL;
-      g_autofree char *path = NULL;
-      int fd;
+      g_autofree char *path =
+        g_build_filename (flatpak_file_get_path_cached (app_id_dir),
+                          "config/user-dirs.dirs", NULL);
 
-      fd = g_file_open_tmp ("flatpak-user-dir-XXXXXX.dirs", &tmp_path, NULL);
-      if (fd >= 0)
-        {
-          close (fd);
-          if (g_file_set_contents (tmp_path, xdg_dirs_conf->str, xdg_dirs_conf->len, NULL))
-            {
-              int tmp_fd = open (tmp_path, O_RDONLY);
-              unlink (tmp_path);
-              if (tmp_fd != -1)
-                {
-                  g_autofree char *tmp_fd_str = g_strdup_printf ("%d", tmp_fd);
-                  if (fd_array)
-                    g_array_append_val (fd_array, tmp_fd);
-                  path = g_build_filename (flatpak_file_get_path_cached (app_id_dir),
-                                           "config/user-dirs.dirs", NULL);
-
-                  add_args (argv_array, "--file", tmp_fd_str, path, NULL);
-                }
-            }
-        }
+      add_args_data (argv_array, fd_array, "xdg-config-dirs",
+                     xdg_dirs_conf->str, xdg_dirs_conf->len, path, NULL);
     }
 
   flatpak_run_add_x11_args (argv_array, fd_array, envp_p,
@@ -3256,20 +3342,35 @@ flatpak_run_add_environment_args (GPtrArray      *argv_array,
   return TRUE;
 }
 
-static const struct {const char *env;
-                     const char *val;
-} default_exports[] = {
+typedef struct {
+  const char *env;
+  const char *val;
+} ExportData;
+
+static const ExportData default_exports[] = {
   {"PATH", "/app/bin:/usr/bin"},
-  {"LD_LIBRARY_PATH", "/app/lib"},
+  /* We always want to unset LD_LIBRARY_PATH to avoid inheriting weird
+   * dependencies from the host. But if not using ld.so.cache this is
+   * later set. */
+  {"LD_LIBRARY_PATH", NULL},
   {"XDG_CONFIG_DIRS", "/app/etc/xdg:/etc/xdg"},
   {"XDG_DATA_DIRS", "/app/share:/usr/share"},
   {"SHELL", "/bin/sh"},
   {"TMPDIR", NULL}, /* Unset TMPDIR as it may not exist in the sandbox */
+
+  /* Some env vars are common enough and will affect the sandbox badly
+     if set on the host. We clear these always. */
+  {"PYTHONPATH", NULL},
+  {"PERLLIB", NULL},
+  {"PERL5LIB", NULL},
+  {"XCURSOR_PATH", NULL},
 };
 
-static const struct {const char *env;
-                     const char *val;
-} devel_exports[] = {
+static const ExportData no_ld_so_cache_exports[] = {
+  {"LD_LIBRARY_PATH", "/app/lib"},
+};
+
+static const ExportData devel_exports[] = {
   {"ACLOCAL_PATH", "/app/share/aclocal"},
   {"C_INCLUDE_PATH", "/app/include"},
   {"CPLUS_INCLUDE_PATH", "/app/include"},
@@ -3278,8 +3379,22 @@ static const struct {const char *env;
   {"LC_ALL", "en_US.utf8"},
 };
 
+static void
+add_exports (GPtrArray *env_array,
+             const ExportData *exports,
+             gsize n_exports)
+{
+  int i;
+
+  for (i = 0; i < n_exports; i++)
+    {
+      if (exports[i].val)
+        g_ptr_array_add (env_array, g_strdup_printf ("%s=%s", exports[i].env, exports[i].val));
+    }
+}
+
 char **
-flatpak_run_get_minimal_env (gboolean devel)
+flatpak_run_get_minimal_env (gboolean devel, gboolean use_ld_so_cache)
 {
   GPtrArray *env_array;
   static const char * const copy[] = {
@@ -3318,20 +3433,13 @@ flatpak_run_get_minimal_env (gboolean devel)
 
   env_array = g_ptr_array_new_with_free_func (g_free);
 
-  for (i = 0; i < G_N_ELEMENTS (default_exports); i++)
-    {
-      if (default_exports[i].val)
-        g_ptr_array_add (env_array, g_strdup_printf ("%s=%s", default_exports[i].env, default_exports[i].val));
-    }
+  add_exports (env_array, default_exports, G_N_ELEMENTS (default_exports));
+
+  if (!use_ld_so_cache)
+    add_exports (env_array, no_ld_so_cache_exports, G_N_ELEMENTS (no_ld_so_cache_exports));
 
   if (devel)
-    {
-      for (i = 0; i < G_N_ELEMENTS(devel_exports); i++)
-        {
-          if (devel_exports[i].val)
-            g_ptr_array_add (env_array, g_strdup_printf ("%s=%s", devel_exports[i].env, devel_exports[i].val));
-        }
-    }
+    add_exports (env_array, devel_exports, G_N_ELEMENTS (devel_exports));
 
   for (i = 0; i < G_N_ELEMENTS (copy); i++)
     {
@@ -3354,20 +3462,33 @@ flatpak_run_get_minimal_env (gboolean devel)
   return (char **) g_ptr_array_free (env_array, FALSE);
 }
 
-char **
-flatpak_run_apply_env_default (char **envp)
+static char **
+apply_exports (char **envp,
+               const ExportData *exports,
+               gsize n_exports)
 {
   int i;
 
-  for (i = 0; i < G_N_ELEMENTS (default_exports); i++)
+  for (i = 0; i < n_exports; i++)
     {
-      const char *value = default_exports[i].val;
+      const char *value = exports[i].val;
 
       if (value)
-        envp = g_environ_setenv (envp, default_exports[i].env, value, TRUE);
+        envp = g_environ_setenv (envp, exports[i].env, value, TRUE);
       else
-        envp = g_environ_unsetenv (envp, default_exports[i].env);
+        envp = g_environ_unsetenv (envp, exports[i].env);
     }
+
+  return envp;
+}
+
+char **
+flatpak_run_apply_env_default (char **envp, gboolean use_ld_so_cache)
+{
+  envp = apply_exports (envp, default_exports, G_N_ELEMENTS (default_exports));
+
+  if (!use_ld_so_cache)
+    envp = apply_exports (envp, no_ld_so_cache_exports, G_N_ELEMENTS (no_ld_so_cache_exports));
 
   return envp;
 }
@@ -3682,7 +3803,11 @@ gboolean
 flatpak_run_add_app_info_args (GPtrArray      *argv_array,
                                GArray         *fd_array,
                                GFile          *app_files,
+                               GVariant       *app_deploy_data,
+			       const char     *app_extensions,
                                GFile          *runtime_files,
+                               GVariant       *runtime_deploy_data,
+			       const char     *runtime_extensions,
                                const char     *app_id,
                                const char     *app_branch,
                                const char     *runtime_ref,
@@ -3694,8 +3819,6 @@ flatpak_run_add_app_info_args (GPtrArray      *argv_array,
   int fd, fd2;
   g_autoptr(GKeyFile) keyfile = NULL;
   g_autofree char *runtime_path = NULL;
-  g_autofree char *fd_str = NULL;
-  g_autofree char *fd2_str = NULL;
   g_autofree char *old_dest = g_strdup_printf ("/run/user/%d/flatpak-info", getuid ());
   const char *group;
 
@@ -3727,9 +3850,21 @@ flatpak_run_add_app_info_args (GPtrArray      *argv_array,
       g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
                              FLATPAK_METADATA_KEY_APP_PATH, app_path);
     }
+  if (app_deploy_data)
+    g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                           FLATPAK_METADATA_KEY_APP_COMMIT, flatpak_deploy_data_get_commit (app_deploy_data));
+  if (app_extensions && *app_extensions != 0)
+    g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                           FLATPAK_METADATA_KEY_APP_EXTENSIONS, app_extensions);
   runtime_path = g_file_get_path (runtime_files);
   g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
                          FLATPAK_METADATA_KEY_RUNTIME_PATH, runtime_path);
+  if (runtime_deploy_data)
+    g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                           FLATPAK_METADATA_KEY_RUNTIME_COMMIT, flatpak_deploy_data_get_commit (runtime_deploy_data));
+  if (runtime_extensions && *runtime_extensions != 0)
+    g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                           FLATPAK_METADATA_KEY_RUNTIME_EXTENSIONS, runtime_extensions);
   if (app_branch != NULL)
     g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
                            FLATPAK_METADATA_KEY_BRANCH, app_branch);
@@ -3782,17 +3917,11 @@ flatpak_run_add_app_info_args (GPtrArray      *argv_array,
 
   unlink (tmp_path);
 
-  fd_str = g_strdup_printf ("%d", fd);
-  fd2_str = g_strdup_printf ("%d", fd2);
-  if (fd_array)
-    {
-      g_array_append_val (fd_array, fd);
-      g_array_append_val (fd_array, fd2);
-    }
-
+  add_args_data_fd (argv_array, fd_array,
+                    "--file", fd, "/.flatpak-info");
+  add_args_data_fd (argv_array, fd_array,
+                    "--ro-bind-data", fd2, "/.flatpak-info");
   add_args (argv_array,
-            "--file", fd_str, "/.flatpak-info",
-            "--ro-bind-data", fd2_str, "/.flatpak-info",
             "--symlink", "../../../.flatpak-info", old_dest,
             NULL);
 
@@ -3992,7 +4121,7 @@ prepend_bwrap_argv_wrapper (GPtrArray *argv,
   struct dirent *dent;
   g_autoptr(GPtrArray) bwrap_args = g_ptr_array_new_with_free_func (g_free);
   gsize bwrap_args_len;
-  glnx_fd_close int bwrap_args_fd = -1;
+  g_auto(GLnxTmpfile) args_tmpf  = { 0, };
   g_autofree char *bwrap_args_data = NULL;
   g_autofree char *proxy_socket_dir = g_build_filename (g_get_user_runtime_dir (), ".dbus-proxy/", NULL);
 
@@ -4053,21 +4182,18 @@ prepend_bwrap_argv_wrapper (GPtrArray *argv,
 
   {
     g_autofree char *commandline = flatpak_quote_argv ((const char **) bwrap_args->pdata);
-    g_debug ("bwrap args '%s'", commandline);
+    flatpak_debug2 ("bwrap args '%s'", commandline);
   }
 
   bwrap_args_data = join_args (bwrap_args, &bwrap_args_len);
-  bwrap_args_fd = create_tmp_fd (bwrap_args_data, bwrap_args_len, error);
-  if (bwrap_args_fd < 0)
+  if (!buffer_to_sealed_memfd_or_tmpfile (&args_tmpf, "bwrap-args", bwrap_args_data, bwrap_args_len, error))
     return FALSE;
 
   g_ptr_array_insert (argv, i++, g_strdup (flatpak_get_bwrap ()));
   g_ptr_array_insert (argv, i++, g_strdup ("--args"));
-  g_ptr_array_insert (argv, i++, g_strdup_printf ("%d", bwrap_args_fd));
+  g_ptr_array_insert (argv, i++, g_strdup_printf ("%d", args_tmpf.fd));
 
-  *bwrap_fd_out = bwrap_args_fd;
-  bwrap_args_fd = -1; /* Steal it */
-
+  *bwrap_fd_out = glnx_steal_fd (&args_tmpf.fd);
   return TRUE;
 }
 
@@ -4110,8 +4236,8 @@ add_dbus_proxy_args (GPtrArray *argv_array,
   const char *proxy;
   g_autofree char *commandline = NULL;
   DbusProxySpawnData spawn_data;
-  glnx_fd_close int app_info_fd = -1;
-  glnx_fd_close int bwrap_args_fd = -1;
+  glnx_autofd int app_info_fd = -1;
+  glnx_autofd int bwrap_args_fd = -1;
   g_autoptr(GPtrArray) dbus_proxy_argv = NULL;
 
   if (!has_args (session_dbus_proxy_argv) &&
@@ -4121,8 +4247,6 @@ add_dbus_proxy_args (GPtrArray *argv_array,
 
   if (sync_fds[0] == -1)
     {
-      g_autofree char *fd_str = NULL;
-
       if (pipe (sync_fds) < 0)
         {
           g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),
@@ -4130,8 +4254,8 @@ add_dbus_proxy_args (GPtrArray *argv_array,
           return FALSE;
         }
 
-      fd_str = g_strdup_printf ("%d", sync_fds[0]);
-      add_args (argv_array, "--sync-fd", fd_str, NULL);
+      add_args_data_fd (argv_array, NULL,
+                        "--sync-fd", sync_fds[0], NULL);
     }
 
   proxy = g_getenv ("FLATPAK_DBUSPROXY");
@@ -4161,7 +4285,7 @@ add_dbus_proxy_args (GPtrArray *argv_array,
     return FALSE;
 
   commandline = flatpak_quote_argv ((const char **) dbus_proxy_argv->pdata);
-  g_debug ("Running '%s'", commandline);
+  flatpak_debug2 ("Running '%s'", commandline);
 
   spawn_data.sync_fd = sync_fds[1];
   spawn_data.app_info_fd = app_info_fd;
@@ -4318,9 +4442,7 @@ setup_seccomp (GPtrArray  *argv_array,
     AF_NETLINK + 1, /* Last gets CMP_GE, so order is important */
   };
   int i, r;
-  glnx_fd_close int fd = -1;
-  g_autofree char *fd_str = NULL;
-  g_autofree char *path = NULL;
+  g_auto(GLnxTmpfile) seccomp_tmpf  = { 0, };
 
   seccomp = seccomp_init (SCMP_ACT_ALLOW);
   if (!seccomp)
@@ -4421,30 +4543,45 @@ setup_seccomp (GPtrArray  *argv_array,
         seccomp_rule_add_exact (seccomp, SCMP_ACT_ERRNO (EAFNOSUPPORT), SCMP_SYS (socket), 1, SCMP_A0 (SCMP_CMP_EQ, family));
     }
 
-  fd = g_file_open_tmp ("flatpak-seccomp-XXXXXX", &path, error);
-  if (fd == -1)
+  if (!glnx_open_anonymous_tmpfile (O_RDWR | O_CLOEXEC, &seccomp_tmpf, error))
     return FALSE;
 
-  unlink (path);
-
-  if (seccomp_export_bpf (seccomp, fd) != 0)
+  if (seccomp_export_bpf (seccomp, seccomp_tmpf.fd) != 0)
     return flatpak_fail (error, "Failed to export bpf");
 
-  lseek (fd, 0, SEEK_SET);
+  lseek (seccomp_tmpf.fd, 0, SEEK_SET);
 
-  fd_str = g_strdup_printf ("%d", fd);
-  if (fd_array)
-    g_array_append_val (fd_array, fd);
-
-  add_args (argv_array,
-            "--seccomp", fd_str,
-            NULL);
-
-  fd = -1; /* Don't close on success */
+  add_args_data_fd (argv_array, fd_array,
+                    "--seccomp", glnx_steal_fd (&seccomp_tmpf.fd), NULL);
 
   return TRUE;
 }
 #endif
+
+static void
+flatpak_run_setup_usr_links (GPtrArray      *argv_array,
+                             GFile          *runtime_files)
+{
+  const char *usr_links[] = {"lib", "lib32", "lib64", "bin", "sbin"};
+  int i;
+
+  if (runtime_files == NULL)
+    return;
+
+  for (i = 0; i < G_N_ELEMENTS (usr_links); i++)
+    {
+      const char *subdir = usr_links[i];
+      g_autoptr(GFile) runtime_subdir = g_file_get_child (runtime_files, subdir);
+      if (g_file_query_exists (runtime_subdir, NULL))
+        {
+          g_autofree char *link = g_strconcat ("usr/", subdir, NULL);
+          g_autofree char *dest = g_strconcat ("/", subdir, NULL);
+          add_args (argv_array,
+                    "--symlink", link, dest,
+                    NULL);
+        }
+    }
+}
 
 gboolean
 flatpak_run_setup_base_argv (GPtrArray      *argv_array,
@@ -4455,14 +4592,8 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
                              FlatpakRunFlags flags,
                              GError        **error)
 {
-  const char *usr_links[] = {"lib", "lib32", "lib64", "bin", "sbin"};
   g_autofree char *run_dir = g_strdup_printf ("/run/user/%d", getuid ());
-  int i;
-  int passwd_fd = -1;
-  g_autofree char *passwd_fd_str = NULL;
   g_autofree char *passwd_contents = NULL;
-  int group_fd = -1;
-  g_autofree char *group_fd_str = NULL;
   g_autofree char *group_contents = NULL;
   struct group *g = getgrgid (getgid ());
   gulong pers;
@@ -4477,21 +4608,10 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
                                      g_get_home_dir (),
                                      DEFAULT_SHELL);
 
-  if ((passwd_fd = create_tmp_fd (passwd_contents, -1, error)) < 0)
-    return FALSE;
-  passwd_fd_str = g_strdup_printf ("%d", passwd_fd);
-  if (fd_array)
-    g_array_append_val (fd_array, passwd_fd);
-
   group_contents = g_strdup_printf ("%s:x:%d:%s\n"
                                     "nfsnobody:x:65534:\n",
                                     g->gr_name,
                                     getgid (), g_get_user_name ());
-  if ((group_fd = create_tmp_fd (group_contents, -1, error)) < 0)
-    return FALSE;
-  group_fd_str = g_strdup_printf ("%d", group_fd);
-  if (fd_array)
-    g_array_append_val (fd_array, group_fd);
 
   add_args (argv_array,
             "--unshare-pid",
@@ -4520,10 +4640,11 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
               "--symlink", "usr/etc", "/etc",
               NULL);
 
-  add_args (argv_array,
-            "--bind-data", passwd_fd_str, "/etc/passwd",
-            "--bind-data", group_fd_str, "/etc/group",
-            NULL);
+  if (!add_args_data (argv_array, fd_array, "passwd", passwd_contents, -1, "/etc/passwd", error))
+    return FALSE;
+
+  if (!add_args_data (argv_array, fd_array, "group", group_contents, -1, "/etc/group", error))
+    return FALSE;
 
   if (g_file_test ("/etc/machine-id", G_FILE_TEST_EXISTS))
     add_args (argv_array, "--ro-bind", "/etc/machine-id", "/etc/machine-id", NULL);
@@ -4597,19 +4718,7 @@ flatpak_run_setup_base_argv (GPtrArray      *argv_array,
                 NULL);
     }
 
-  for (i = 0; runtime_files != NULL && i < G_N_ELEMENTS (usr_links); i++)
-    {
-      const char *subdir = usr_links[i];
-      g_autoptr(GFile) runtime_subdir = g_file_get_child (runtime_files, subdir);
-      if (g_file_query_exists (runtime_subdir, NULL))
-        {
-          g_autofree char *link = g_strconcat ("usr/", subdir, NULL);
-          g_autofree char *dest = g_strconcat ("/", subdir, NULL);
-          add_args (argv_array,
-                    "--symlink", link, dest,
-                    NULL);
-        }
-    }
+  flatpak_run_setup_usr_links (argv_array, runtime_files);
 
   pers = PER_LINUX;
 
@@ -4648,6 +4757,7 @@ clear_fd (gpointer data)
     close (*fd_p);
 }
 
+/* Unset FD_CLOEXEC on the array of fds passed in @user_data */
 static void
 child_setup (gpointer user_data)
 {
@@ -4830,6 +4940,162 @@ flatpak_context_load_for_app (const char     *app_id,
   return g_steal_pointer (&app_context);
 }
 
+static char *
+calculate_ld_cache_checksum (GVariant *app_deploy_data,
+                             GVariant *runtime_deploy_data,
+                             const char *app_extensions,
+                             const char *runtime_extensions)
+{
+  g_autoptr(GChecksum) ld_so_checksum = g_checksum_new (G_CHECKSUM_SHA256);
+  if (app_deploy_data)
+    g_checksum_update (ld_so_checksum, (guchar *)flatpak_deploy_data_get_commit (app_deploy_data), -1);
+  g_checksum_update (ld_so_checksum, (guchar *)flatpak_deploy_data_get_commit (runtime_deploy_data), -1);
+  if (app_extensions)
+    g_checksum_update (ld_so_checksum, (guchar *)app_extensions, -1);
+  if (runtime_extensions)
+    g_checksum_update (ld_so_checksum, (guchar *)runtime_extensions, -1);
+
+  return g_strdup (g_checksum_get_string (ld_so_checksum));
+}
+
+static gboolean
+add_ld_so_conf (GPtrArray      *argv_array,
+                GArray         *fd_array,
+                GError        **error)
+{
+  const char *contents =
+    "include /run/flatpak/ld.so.conf.d/app-*.conf\n"
+    "include /app/etc/ld.so.conf\n"
+    "/app/lib\n"
+    "include /run/flatpak/ld.so.conf.d/runtime-*.conf\n";
+
+  return add_args_data (argv_array, fd_array, "ld-so-conf",
+                        contents, -1, "/etc/ld.so.conf", error);
+}
+
+static int
+regenerate_ld_cache (GPtrArray      *base_argv_array,
+                     GArray         *base_fd_array,
+                     GFile          *app_id_dir,
+                     const char     *checksum,
+                     GFile          *runtime_files,
+                     gboolean        generate_ld_so_conf,
+                     GCancellable   *cancellable,
+                     GError        **error)
+{
+  g_autoptr(GPtrArray) argv_array = NULL;
+  g_autoptr(GArray) fd_array = NULL;
+  g_autoptr(GArray) combined_fd_array = NULL;
+  g_autoptr(GFile) ld_so_cache = NULL;
+  g_autofree char *sandbox_cache_path = NULL;
+  g_auto(GStrv) envp = NULL;
+  g_autofree char *commandline = NULL;
+  int exit_status;
+  glnx_autofd int ld_so_fd = -1;
+  g_autoptr(GFile) ld_so_dir = NULL;
+
+  if (app_id_dir)
+    ld_so_dir = g_file_get_child (app_id_dir, ".ld.so");
+  else
+    {
+      g_autoptr(GFile) base_dir = g_file_new_for_path (g_get_user_cache_dir ());
+      ld_so_dir = g_file_resolve_relative_path (base_dir, "flatpak/ld.so");
+    }
+
+  ld_so_cache = g_file_get_child (ld_so_dir, checksum);
+  ld_so_fd = open (flatpak_file_get_path_cached (ld_so_cache), O_RDONLY);
+  if (ld_so_fd >= 0)
+    return glnx_steal_fd (&ld_so_fd);
+
+  g_debug ("Regenerating ld.so.cache %s", flatpak_file_get_path_cached (ld_so_cache));
+
+  if (!flatpak_mkdir_p (ld_so_dir, cancellable, error))
+    return FALSE;
+
+  argv_array = g_ptr_array_new_with_free_func (g_free);
+  g_ptr_array_add (argv_array, g_strdup (flatpak_get_bwrap ()));
+  append_args (argv_array, base_argv_array);
+
+  fd_array = g_array_new (FALSE, TRUE, sizeof (int));
+  g_array_set_clear_func (fd_array, clear_fd);
+
+  envp = flatpak_run_get_minimal_env (FALSE, FALSE);
+
+  flatpak_run_setup_usr_links (argv_array, runtime_files);
+
+  if (generate_ld_so_conf)
+    {
+      if (!add_ld_so_conf(argv_array, fd_array, error))
+        return -1;
+    }
+  else
+    add_args (argv_array,
+              "--symlink", "../usr/etc/ld.so.conf", "/etc/ld.so.conf",
+              NULL);
+
+  sandbox_cache_path = g_build_filename ("/run/ld-so-cache-dir", checksum, NULL);
+
+  add_args (argv_array,
+            "--unshare-pid",
+            "--unshare-ipc",
+            "--unshare-net",
+            "--proc", "/proc",
+            "--dev", "/dev",
+            "--bind", flatpak_file_get_path_cached (ld_so_dir), "/run/ld-so-cache-dir",
+            "ldconfig", "-X", "-C", sandbox_cache_path, NULL);
+
+  g_ptr_array_add (argv_array, NULL);
+
+  commandline = flatpak_quote_argv ((const char **) argv_array->pdata);
+  flatpak_debug2 ("Running: '%s'", commandline);
+
+  combined_fd_array = g_array_new (FALSE, TRUE, sizeof (int));
+  g_array_append_vals (combined_fd_array, base_fd_array->data, base_fd_array->len);
+  g_array_append_vals (combined_fd_array, fd_array->data, fd_array->len);
+
+  if (!g_spawn_sync (NULL,
+                     (char **) argv_array->pdata,
+                     envp,
+                     G_SPAWN_SEARCH_PATH,
+                     child_setup, combined_fd_array,
+                     NULL, NULL,
+                     &exit_status,
+                     error))
+    return -1;
+
+  if (!WIFEXITED(exit_status) || WEXITSTATUS(exit_status) != 0)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                   _("ldconfig failed, exit status %d"), exit_status);
+      return -1;
+    }
+
+  ld_so_fd = open (flatpak_file_get_path_cached (ld_so_cache), O_RDONLY);
+  if (ld_so_fd < 0)
+    {
+      flatpak_fail (error, "Can't open generated ld.so.cache");
+      return -1;
+    }
+
+  if (app_id_dir == NULL)
+    {
+      /* For runs without an app id dir we always regenerate the ld.so.cache */
+      unlink (flatpak_file_get_path_cached (ld_so_cache));
+    }
+  else
+    {
+      g_autoptr(GFile) active = g_file_get_child (ld_so_dir, "active");
+
+      /* For app-dirs we keep one checksum alive, by pointing the active symlink to it */
+
+      if (!flatpak_switch_symlink_and_remove (flatpak_file_get_path_cached (active),
+                                              checksum, error))
+        return -1;
+    }
+
+  return glnx_steal_fd (&ld_so_fd);
+}
+
 gboolean
 flatpak_run_app (const char     *app_ref,
                  FlatpakDeploy  *app_deploy,
@@ -4844,6 +5110,8 @@ flatpak_run_app (const char     *app_ref,
                  GError        **error)
 {
   g_autoptr(FlatpakDeploy) runtime_deploy = NULL;
+  g_autoptr(GVariant) runtime_deploy_data = NULL;
+  g_autoptr(GVariant) app_deploy_data = NULL;
   g_autoptr(GFile) app_files = NULL;
   g_autoptr(GFile) runtime_files = NULL;
   g_autoptr(GFile) app_id_dir = NULL;
@@ -4853,6 +5121,7 @@ flatpak_run_app (const char     *app_ref,
   g_autoptr(GKeyFile) metakey = NULL;
   g_autoptr(GKeyFile) runtime_metakey = NULL;
   g_autoptr(GPtrArray) argv_array = NULL;
+  g_auto(GLnxTmpfile) arg_tmpf = { 0, };
   g_autoptr(GArray) fd_array = NULL;
   g_autoptr(GPtrArray) real_argv_array = NULL;
   g_auto(GStrv) envp = NULL;
@@ -4866,7 +5135,17 @@ flatpak_run_app (const char     *app_ref,
   g_autoptr(FlatpakExports) exports = NULL;
   g_auto(GStrv) app_ref_parts = NULL;
   g_autofree char *commandline = NULL;
+  int commandline_2_start;
+  g_autofree char *commandline2 = NULL;
   g_autofree char *doc_mount_path = NULL;
+  g_autofree char *app_extensions = NULL;
+  g_autofree char *runtime_extensions = NULL;
+  g_autofree char *checksum = NULL;
+  int ld_so_fd = -1;
+  g_autoptr(GFile) runtime_ld_so_conf = NULL;
+  gboolean generate_ld_so_conf = TRUE;
+  gboolean use_ld_so_cache = TRUE;
+  struct stat s;
 
   app_ref_parts = flatpak_decompose_ref (app_ref, error);
   if (app_ref_parts == NULL)
@@ -4884,6 +5163,10 @@ flatpak_run_app (const char     *app_ref,
   else
     {
       const gchar *key;
+
+      app_deploy_data = flatpak_deploy_get_deploy_data (app_deploy, cancellable, error);
+      if (app_deploy_data == NULL)
+        return FALSE;
 
       if ((flags & FLATPAK_RUN_FLAG_DEVEL) != 0)
         key = FLATPAK_METADATA_KEY_SDK;
@@ -4937,6 +5220,10 @@ flatpak_run_app (const char     *app_ref,
   if (runtime_deploy == NULL)
     return FALSE;
 
+  runtime_deploy_data = flatpak_deploy_get_deploy_data (runtime_deploy, cancellable, error);
+  if (runtime_deploy_data == NULL)
+    return FALSE;
+
   runtime_metakey = flatpak_deploy_get_metadata (runtime_deploy);
 
   app_context = flatpak_app_compute_permissions (metakey, runtime_metakey, error);
@@ -4961,7 +5248,7 @@ flatpak_run_app (const char     *app_ref,
     }
 
   envp = g_get_environ ();
-  envp = flatpak_run_apply_env_default (envp);
+  envp = flatpak_run_apply_env_default (envp, use_ld_so_cache);
   envp = flatpak_run_apply_env_vars (envp, app_context);
 
   add_args (argv_array,
@@ -4979,6 +5266,33 @@ flatpak_run_app (const char     *app_ref,
               "--dir", "/app",
               NULL);
 
+  if (metakey != NULL &&
+      !flatpak_run_add_extension_args (argv_array, fd_array, &envp, metakey, app_ref, use_ld_so_cache, &app_extensions, cancellable, error))
+    return FALSE;
+
+  if (!flatpak_run_add_extension_args (argv_array, fd_array, &envp, runtime_metakey, runtime_ref, use_ld_so_cache, &runtime_extensions, cancellable, error))
+    return FALSE;
+
+  runtime_ld_so_conf = g_file_resolve_relative_path (runtime_files, "etc/ld.so.conf");
+  if (lstat (flatpak_file_get_path_cached (runtime_ld_so_conf), &s) == 0)
+    generate_ld_so_conf = S_ISREG (s.st_mode) && s.st_size == 0;
+
+  /* At this point we have the minimal argv set up, with just the app, runtime and extensions.
+     We can reuse this to generate the ld.so.cache (if needed) */
+  checksum = calculate_ld_cache_checksum (app_deploy_data, runtime_deploy_data,
+                                                  app_extensions, runtime_extensions);
+  ld_so_fd = regenerate_ld_cache (argv_array,
+                                  fd_array,
+                                  app_id_dir,
+                                  checksum,
+                                  runtime_files,
+                                  generate_ld_so_conf,
+                                  cancellable, error);
+  if (ld_so_fd == -1)
+    return FALSE;
+  if (fd_array)
+    g_array_append_val (fd_array, ld_so_fd);
+
   if (app_context->features & FLATPAK_CONTEXT_FEATURE_DEVEL)
     flags |= FLATPAK_RUN_FLAG_DEVEL;
 
@@ -4988,15 +5302,23 @@ flatpak_run_app (const char     *app_ref,
   if (!flatpak_run_setup_base_argv (argv_array, fd_array, runtime_files, app_id_dir, app_ref_parts[2], flags, error))
     return FALSE;
 
-  if (!flatpak_run_add_app_info_args (argv_array, fd_array, app_files, runtime_files, app_ref_parts[1], app_ref_parts[3],
+  if (generate_ld_so_conf)
+    {
+      if (!add_ld_so_conf(argv_array, fd_array, error))
+        return FALSE;
+    }
+
+  if (ld_so_fd != -1)
+    {
+      /* Don't add to fd_array, its already there */
+      add_args_data_fd (argv_array, NULL, "--ro-bind-data", ld_so_fd, "/etc/ld.so.cache");
+    }
+
+  if (!flatpak_run_add_app_info_args (argv_array, fd_array,
+                                      app_files, app_deploy_data, app_extensions,
+                                      runtime_files, runtime_deploy_data, runtime_extensions,
+                                      app_ref_parts[1], app_ref_parts[3],
                                       runtime_ref, app_context, &app_info_path, error))
-    return FALSE;
-
-  if (metakey != NULL &&
-      !flatpak_run_add_extension_args (argv_array, &envp, metakey, app_ref, cancellable, error))
-    return FALSE;
-
-  if (!flatpak_run_add_extension_args (argv_array, &envp, runtime_metakey, runtime_ref, cancellable, error))
     return FALSE;
 
   add_document_portal_args (argv_array, app_ref_parts[1], &doc_mount_path);
@@ -5039,21 +5361,16 @@ flatpak_run_app (const char     *app_ref,
 
   {
     gsize len;
-    int arg_fd;
-    g_autofree char *arg_fd_str = NULL;
     g_autofree char *args = join_args (argv_array, &len);
 
-    arg_fd = create_tmp_fd (args, len, error);
-    if (arg_fd < 0)
+    if (!buffer_to_sealed_memfd_or_tmpfile (&arg_tmpf, "bwrap-args", args, len, error))
       return FALSE;
 
-    arg_fd_str = g_strdup_printf ("%d", arg_fd);
-    g_array_append_val (fd_array, arg_fd);
-
-    add_args (real_argv_array,
-              "--args", arg_fd_str,
-              NULL);
+    add_args_data_fd (real_argv_array, fd_array,
+                      "--args", glnx_steal_fd (&arg_tmpf.fd), NULL);
   }
+
+  commandline_2_start = real_argv_array->len;
 
   g_ptr_array_add (real_argv_array, g_strdup (command));
   if (!add_rest_args (app_ref_parts[1], exports, (flags & FLATPAK_RUN_FLAG_FILE_FORWARDING) != 0,
@@ -5062,9 +5379,11 @@ flatpak_run_app (const char     *app_ref,
     return FALSE;
 
   g_ptr_array_add (real_argv_array, NULL);
+  g_ptr_array_add (argv_array, NULL);
 
-  commandline = flatpak_quote_argv ((const char **) real_argv_array->pdata);
-  g_debug ("Running '%s'", commandline);
+  commandline = flatpak_quote_argv ((const char **) argv_array->pdata);
+  commandline2 = flatpak_quote_argv (((const char **) real_argv_array->pdata) + commandline_2_start);
+  flatpak_debug2 ("Running '%s %s'", commandline, commandline2);
 
   if ((flags & FLATPAK_RUN_FLAG_BACKGROUND) != 0)
     {
@@ -5079,6 +5398,8 @@ flatpak_run_app (const char     *app_ref,
     }
   else
     {
+      /* Ensure we unset O_CLOEXEC */
+      child_setup (fd_array);
       if (execvpe (flatpak_get_bwrap (), (char **) real_argv_array->pdata, envp) == -1)
         {
           g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),
