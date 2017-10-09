@@ -5,8 +5,9 @@ flatpak (0.9.99-1) unstable; urgency=medium
     - Increase libostree dependency to 2017.12
   * d/tests/gnome-desktop-testing: Treat debci as a test-specific user
   * Ensure that /sbin/ldconfig is in tests' PATH
+  * Standards-Version: 4.1.1 (no changes required)
 
- -- Simon McVittie <smcv@debian.org>  Mon, 09 Oct 2017 13:59:15 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 09 Oct 2017 14:17:06 +0100
 
 flatpak (0.9.98.2-1) unstable; urgency=medium
 
