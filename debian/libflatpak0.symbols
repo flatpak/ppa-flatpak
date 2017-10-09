@@ -15,6 +15,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_get_supported_arches@Base 0.6.6
  flatpak_get_system_installations@Base 0.8.0
  flatpak_install_flags_get_type@Base 0.6.5
+ flatpak_installation_cleanup_local_refs_sync@Base 0.9.99
  flatpak_installation_create_monitor@Base 0.5.2
  flatpak_installation_drop_caches@Base 0.5.2+git20160516
  flatpak_installation_fetch_remote_metadata_sync@Base 0.5.2
@@ -48,6 +49,8 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_new_system@Base 0.5.2
  flatpak_installation_new_system_with_id@Base 0.8.0
  flatpak_installation_new_user@Base 0.5.2
+ flatpak_installation_prune_local_repo@Base 0.9.99
+ flatpak_installation_remove_local_ref_sync@Base 0.9.99
  flatpak_installation_remove_remote@Base 0.5.2+git20160516
  flatpak_installation_uninstall@Base 0.5.2
  flatpak_installation_update@Base 0.5.2
