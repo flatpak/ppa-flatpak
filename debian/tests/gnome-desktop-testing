@@ -3,6 +3,9 @@
 set -e
 exec 2>&1
 
+# The tests want /sbin/ldconfig to be in PATH
+export PATH="$PATH:/usr/sbin:/sbin"
+
 # Don't pollute the home directory unless this looks like a dedicated
 # autopkgtest environment
 case "$(id -nu)" in

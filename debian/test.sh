@@ -1,6 +1,9 @@
 #!/bin/sh
 set -e
 
+# The tests want /sbin/ldconfig to be in PATH
+export PATH="$PATH:/usr/sbin:/sbin"
+
 e=0
 dh_auto_test || e=$?
 

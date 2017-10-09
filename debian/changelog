@@ -2,6 +2,7 @@ flatpak (0.9.99-1) UNRELEASED; urgency=medium
 
   * New upstream release
   * d/tests/gnome-desktop-testing: Treat debci as a test-specific user
+  * Ensure that /sbin/ldconfig is in tests' PATH
 
  -- Simon McVittie <smcv@debian.org>  Mon, 09 Oct 2017 13:54:37 +0100
 
