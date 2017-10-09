@@ -77,12 +77,28 @@ flatpak_error_quark (void)
   return (GQuark) quark_volatile;
 }
 
+void
+flatpak_debug2 (const char *format, ...)
+{
+  va_list var_args;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+  va_start (var_args, format);
+  g_logv (G_LOG_DOMAIN"2",
+          G_LOG_LEVEL_DEBUG,
+          format, var_args);
+  va_end (var_args);
+#pragma GCC diagnostic pop
+
+}
+
 GFile *
 flatpak_file_new_tmp_in (GFile *dir,
                          const char *template,
                          GError        **error)
 {
-  glnx_fd_close int tmp_fd = -1;
+  glnx_autofd int tmp_fd = -1;
   g_autofree char *tmpl = g_build_filename (flatpak_file_get_path_cached (dir), template, NULL);
 
   tmp_fd = g_mkstemp_full (tmpl, O_RDWR, 0644);
@@ -1362,6 +1378,7 @@ flatpak_find_deploy_for_ref (const char   *ref,
   g_autoptr(GError) my_error = NULL;
 
   user_dir = flatpak_dir_get_user ();
+  flatpak_log_dir_access (user_dir);
   system_dirs = flatpak_dir_get_system_list (cancellable, error);
   if (system_dirs == NULL)
     return NULL;
@@ -1377,6 +1394,7 @@ flatpak_find_deploy_for_ref (const char   *ref,
         {
           FlatpakDir *system_dir = g_ptr_array_index (system_dirs, i);
 
+          flatpak_log_dir_access (system_dir);
           g_clear_error (&my_error);
           deploy = flatpak_dir_load_deployed (system_dir, ref, NULL, cancellable, &my_error);
         }
@@ -1401,7 +1419,7 @@ overlay_symlink_tree_dir (int           source_parent_fd,
   int res;
 
   g_auto(GLnxDirFdIterator) source_iter = { 0 };
-  glnx_fd_close int destination_dfd = -1;
+  glnx_autofd int destination_dfd = -1;
   struct dirent *dent;
 
   if (!glnx_dirfd_iterator_init_at (source_parent_fd, source_name, FALSE, &source_iter, error))
@@ -1552,6 +1570,74 @@ out:
   return ret;
 }
 
+/* This atomically replaces a symlink with a new value, removing the
+ * existing symlink target, if any. This is atomic in the sense that
+ * we're guaranteed to remove any existing symlink target (once),
+ * independent of how many processes do the same operation in
+ * parallele. However, it is still possible that we remove the old and
+ * then fail to create the new symlink for some reason, ending up with
+ * neither the old or the new target. That is fine if the reason for
+ * the symlink is keeping a cache though.
+ */
+gboolean
+flatpak_switch_symlink_and_remove (const char *symlink_path,
+                                   const char *target,
+                                   GError **error)
+{
+  g_autofree char *symlink_dir = g_path_get_dirname (symlink_path);
+  int try;
+
+  for (try = 0; try < 100; try++)
+    {
+      g_autofree char *tmp_path = NULL;
+      int fd;
+
+      /* Try to atomically create the symlink */
+      if (TEMP_FAILURE_RETRY (symlink (target, symlink_path)) == 0)
+        return TRUE;
+
+      if (errno != EEXIST)
+        {
+          /* Unexpected failure, bail */
+          glnx_set_error_from_errno (error);
+          return FALSE;
+        }
+
+      /* The symlink existed, move it to a temporary name atomically, and remove target
+         if that succeeded. */
+      tmp_path = g_build_filename (symlink_dir, ".switched-symlink-XXXXXX", NULL);
+
+      fd = g_mkstemp_full (tmp_path, O_RDWR, 0644);
+      if (fd == -1)
+        {
+          glnx_set_error_from_errno (error);
+          return FALSE;
+        }
+      close (fd);
+
+      if (TEMP_FAILURE_RETRY (rename (symlink_path, tmp_path)) == 0)
+        {
+          /* The move succeeded, now we can remove the old target */
+          g_autofree char *old_target = flatpak_resolve_link (tmp_path, error);
+          if (old_target == NULL)
+            return FALSE;
+          unlink (old_target);
+        }
+      else if (errno != ENOENT)
+        {
+          glnx_set_error_from_errno (error);
+          unlink (tmp_path);
+          return -1;
+        }
+      unlink (tmp_path);
+
+      /* An old target was removed, try again */
+    }
+
+  return flatpak_fail (error, "flatpak_switch_symlink_and_remove looped too many times");
+}
+
+
 /* Based on g_mkstemp from glib */
 
 gint
@@ -1649,8 +1735,8 @@ static GKeyFile *
 parse_app_id_from_fileinfo (int pid)
 {
   g_autofree char *root_path = NULL;
-  glnx_fd_close int root_fd = -1;
-  glnx_fd_close int info_fd = -1;
+  glnx_autofd int root_fd = -1;
+  glnx_autofd int info_fd = -1;
   struct stat stat_buf;
   g_autoptr(GError) local_error = NULL;
   g_autoptr(GMappedFile) mapped = NULL;
@@ -3004,7 +3090,7 @@ GVariant *
 flatpak_repo_load_summary (OstreeRepo *repo,
                            GError **error)
 {
-  glnx_fd_close int fd = -1;
+  glnx_autofd int fd = -1;
   g_autoptr(GMappedFile) mfile = NULL;
   g_autoptr(GBytes) bytes = NULL;
 
@@ -3342,8 +3428,9 @@ flatpak_repo_update (OstreeRepo   *repo,
       if (!ostree_repo_prepare_transaction (repo, NULL, cancellable, error))
         goto out;
 
+      /* Set up an empty mtree. */
       mtree = ostree_mutable_tree_new ();
-      if (!ostree_repo_write_dfd_to_mtree (repo, AT_FDCWD, ".", mtree, NULL, NULL, error))
+      if (!flatpak_mtree_create_root (repo, mtree, cancellable, error))
         goto out;
       if (!ostree_repo_write_mtree (repo, mtree, (GFile **) &repo_file, NULL, error))
         goto out;
@@ -4040,6 +4127,7 @@ flatpak_extension_free (FlatpakExtension *extension)
 {
   g_free (extension->id);
   g_free (extension->installed_id);
+  g_free (extension->commit);
   g_free (extension->ref);
   g_free (extension->directory);
   g_free (extension->files_path);
@@ -4068,9 +4156,11 @@ flatpak_extension_new (const char *id,
                        const char *subdir_suffix,
                        char **merge_dirs,
                        GFile *files,
+		       GFile *deploy_dir,
                        gboolean is_unmaintained)
 {
   FlatpakExtension *ext = g_new0 (FlatpakExtension, 1);
+  g_autoptr(GVariant) deploy_data = NULL;
 
   ext->id = g_strdup (id);
   ext->installed_id = g_strdup (extension);
@@ -4081,6 +4171,13 @@ flatpak_extension_new (const char *id,
   ext->subdir_suffix = g_strdup (subdir_suffix);
   ext->merge_dirs = g_strdupv (merge_dirs);
   ext->is_unmaintained = is_unmaintained;
+
+  if (deploy_dir)
+    {
+      deploy_data = flatpak_load_deploy_data (deploy_dir, NULL, NULL);
+      if (deploy_data)
+	ext->commit = g_strdup (flatpak_deploy_data_get_commit (deploy_data));
+    }
 
   if (is_unmaintained)
     ext->priority = 1000;
@@ -4159,6 +4256,7 @@ add_extension (GKeyFile   *metakey,
   g_autofree char *ref = NULL;
   gboolean is_unmaintained = FALSE;
   g_autoptr(GFile) files = NULL;
+  g_autoptr(GFile) deploy_dir = NULL;
 
   if (directory == NULL)
     return res;
@@ -4168,7 +4266,11 @@ add_extension (GKeyFile   *metakey,
   files = flatpak_find_unmaintained_extension_dir_if_exists (extension, arch, branch, NULL);
 
   if (files == NULL)
-    files = flatpak_find_files_dir_for_ref (ref, NULL, NULL);
+    {
+      deploy_dir = flatpak_find_deploy_dir_for_ref (ref, NULL, NULL, NULL);
+      if (deploy_dir)
+        files = g_file_get_child (deploy_dir, "files");
+    }
   else
     is_unmaintained = TRUE;
 
@@ -4177,7 +4279,7 @@ add_extension (GKeyFile   *metakey,
     {
       if (flatpak_extension_matches_reason (extension, enable_if, TRUE))
         {
-          ext = flatpak_extension_new (extension, extension, ref, directory, add_ld_path, subdir_suffix, merge_dirs, files, is_unmaintained);
+          ext = flatpak_extension_new (extension, extension, ref, directory, add_ld_path, subdir_suffix, merge_dirs, files, deploy_dir, is_unmaintained);
           res = g_list_prepend (res, ext);
         }
     }
@@ -4195,11 +4297,15 @@ add_extension (GKeyFile   *metakey,
         {
           g_autofree char *extended_dir = g_build_filename (directory, refs[j] + strlen (prefix), NULL);
           g_autofree char *dir_ref = g_build_filename ("runtime", refs[j], arch, branch, NULL);
-          g_autoptr(GFile) subdir_files = flatpak_find_files_dir_for_ref (dir_ref, NULL, NULL);
+	  g_autoptr(GFile) subdir_deploy_dir = NULL;
+          g_autoptr(GFile) subdir_files = NULL;
+	  subdir_deploy_dir = flatpak_find_deploy_dir_for_ref (dir_ref, NULL, NULL, NULL);
+	  if (subdir_deploy_dir)
+	    subdir_files = g_file_get_child (subdir_deploy_dir, "files");
 
           if (subdir_files && flatpak_extension_matches_reason (refs[j], enable_if, TRUE))
             {
-              ext = flatpak_extension_new (extension, refs[j], dir_ref, extended_dir, add_ld_path, subdir_suffix, merge_dirs, subdir_files, FALSE);
+              ext = flatpak_extension_new (extension, refs[j], dir_ref, extended_dir, add_ld_path, subdir_suffix, merge_dirs, subdir_files, subdir_deploy_dir, FALSE);
               ext->needs_tmpfs = TRUE;
               res = g_list_prepend (res, ext);
             }
@@ -4215,7 +4321,7 @@ add_extension (GKeyFile   *metakey,
 
           if (subdir_files && flatpak_extension_matches_reason (unmaintained_refs[j], enable_if, TRUE))
             {
-              ext = flatpak_extension_new (extension, unmaintained_refs[j], dir_ref, extended_dir, add_ld_path, subdir_suffix, merge_dirs, subdir_files, TRUE);
+              ext = flatpak_extension_new (extension, unmaintained_refs[j], dir_ref, extended_dir, add_ld_path, subdir_suffix, merge_dirs, subdir_files, NULL, TRUE);
               ext->needs_tmpfs = TRUE;
               res = g_list_prepend (res, ext);
             }
@@ -5060,7 +5166,7 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
       FlatpakOciDescriptor *layer = manifest->layers[i];
       OstreeRepoImportArchiveOptions opts = { 0, };
       g_autoptr(FlatpakAutoArchiveRead) a = NULL;
-      glnx_fd_close int layer_fd = -1;
+      glnx_autofd int layer_fd = -1;
       g_autoptr(GChecksum) checksum = g_checksum_new (G_CHECKSUM_SHA256);
       const char *layer_checksum;
 
@@ -5158,7 +5264,7 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
 {
   gboolean reusing_dir = FALSE;
   g_autofree char *tmpdir_name = NULL;
-  glnx_fd_close int tmpdir_fd = -1;
+  glnx_autofd int tmpdir_fd = -1;
 
   g_auto(GLnxDirFdIterator) dfd_iter = { 0, };
 
@@ -5169,7 +5275,7 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
   while (tmpdir_name == NULL)
     {
       struct dirent *dent;
-      glnx_fd_close int existing_tmpdir_fd = -1;
+      glnx_autofd int existing_tmpdir_fd = -1;
       g_autoptr(GError) local_error = NULL;
       g_autofree char *lock_name = NULL;
 
@@ -6163,8 +6269,9 @@ flatpak_terminal_progress_cb (const char *status,
   if (!term->inited)
     {
       struct winsize w;
-      ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-      term->n_columns = w.ws_col;
+      term->n_columns = 80;
+      if (ioctl (STDOUT_FILENO, TIOCGWINSZ, &w) == 0)
+        term->n_columns = w.ws_col;
       term->last_width = 0;
       term->inited = 1;
     }
@@ -6434,4 +6541,21 @@ flatpak_progress_new (FlatpakProgressCallback progress,
     g_object_set_data (G_OBJECT (ostree_progress), "update-frequency", GUINT_TO_POINTER (FLATPAK_CLI_UPDATE_FREQUENCY));
 
   return ostree_progress;
+}
+
+void
+flatpak_log_dir_access (FlatpakDir *dir)
+{
+  if (dir != NULL)
+    {
+      GFile *dir_path = NULL;
+      g_autofree char *dir_path_str = NULL;
+      g_autofree char *dir_name = NULL;
+
+      dir_path = flatpak_dir_get_path (dir);
+      if (dir_path != NULL)
+        dir_path_str = g_file_get_path (dir_path);
+      dir_name = flatpak_dir_get_name (dir);
+      g_debug ("Opening %s flatpak installation at path %s", dir_name, dir_path_str);
+    }
 }

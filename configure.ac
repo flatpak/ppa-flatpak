@@ -15,8 +15,8 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [9])
-m4_define([flatpak_micro_version], [98])
-m4_define([flatpak_extra_version], [.2])
+m4_define([flatpak_micro_version], [99])
+m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [98])
 m4_define([flatpak_binary_age],
           [m4_eval(10000 * flatpak_major_version + 100 * flatpak_minor_version + flatpak_micro_version)])
@@ -31,7 +31,7 @@ AC_INIT([Flatpak],
 
 GLIB_REQS=2.44
 SYSTEM_BWRAP_REQS=0.1.8
-OSTREE_REQS=2017.11
+OSTREE_REQS=2017.12
 
 AC_USE_SYSTEM_EXTENSIONS
 AC_SYS_LARGEFILE
@@ -158,6 +158,7 @@ else
 fi
 
 AC_CHECK_FUNCS(fdwalk)
+LIBGLNX_CONFIGURE
 
 AC_CHECK_HEADER([sys/xattr.h], [], [AC_MSG_ERROR([You must have sys/xattr.h from glibc])])
 AC_CHECK_HEADER([sys/capability.h], have_caps=yes, [AC_MSG_ERROR([sys/capability.h header not found])])

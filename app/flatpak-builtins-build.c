@@ -65,11 +65,36 @@ add_args (GPtrArray *argv_array, ...)
   va_end (args);
 }
 
+static void
+clear_fd (gpointer data)
+{
+  int *fd_p = data;
+  if (fd_p != NULL && *fd_p != -1)
+    close (*fd_p);
+}
+
+/* Unset FD_CLOEXEC on the array of fds passed in @user_data */
+static void
+child_setup (gpointer user_data)
+{
+  GArray *fd_array = user_data;
+  int i;
+
+  /* If no fd_array was specified, don't care. */
+  if (fd_array == NULL)
+    return;
+
+  /* Otherwise, mark not - close-on-exec all the fds in the array */
+  for (i = 0; i < fd_array->len; i++)
+    fcntl (g_array_index (fd_array, int, i), F_SETFD, 0);
+}
+
 gboolean
 flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError **error)
 {
   g_autoptr(GOptionContext) context = NULL;
   g_autoptr(FlatpakDeploy) runtime_deploy = NULL;
+  g_autoptr(GVariant) runtime_deploy_data = NULL;
   g_autoptr(FlatpakDeploy) extensionof_deploy = NULL;
   g_autoptr(GFile) var = NULL;
   g_autoptr(GFile) usr = NULL;
@@ -88,6 +113,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   g_autoptr(GKeyFile) metakey = NULL;
   g_autoptr(GKeyFile) runtime_metakey = NULL;
   g_autoptr(GPtrArray) argv_array = NULL;
+  g_autoptr(GArray) fd_array = NULL;
   g_auto(GStrv) envp = NULL;
   gsize metadata_size;
   const char *directory = NULL;
@@ -107,6 +133,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   gboolean is_extension = FALSE;
   gboolean is_app_extension = FALSE;
   g_autofree char *app_info_path = NULL;
+  g_autofree char *runtime_extensions = NULL;
   g_autoptr(GFile) app_id_dir = NULL;
 
   context = g_option_context_new (_("DIRECTORY [COMMAND [args...]] - Build in directory"));
@@ -207,6 +234,10 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
       if (runtime_deploy == NULL)
         return FALSE;
 
+      runtime_deploy_data = flatpak_deploy_get_deploy_data (runtime_deploy, cancellable, error);
+      if (runtime_deploy_data == NULL)
+        return FALSE;
+
       runtime_metakey = flatpak_deploy_get_metadata (runtime_deploy);
 
       runtime_files = flatpak_deploy_get_files (runtime_deploy);
@@ -289,6 +320,8 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
     }
 
   argv_array = g_ptr_array_new_with_free_func (g_free);
+  fd_array = g_array_new (FALSE, TRUE, sizeof (int));
+  g_array_set_clear_func (fd_array, clear_fd);
   g_ptr_array_add (argv_array, g_strdup (flatpak_get_bwrap ()));
 
   run_flags =
@@ -309,7 +342,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   /* Never set up an a11y bus for builds */
   run_flags |= FLATPAK_RUN_FLAG_NO_A11Y_BUS_PROXY;
 
-  if (!flatpak_run_setup_base_argv (argv_array, NULL, runtime_files, app_id_dir, runtime_ref_parts[2],
+  if (!flatpak_run_setup_base_argv (argv_array, fd_array, runtime_files, app_id_dir, runtime_ref_parts[2],
                                     run_flags, error))
     return FALSE;
 
@@ -350,6 +383,8 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
 
   add_args (argv_array,
             "--setenv", "FLATPAK_DEST", dest,
+            "--setenv", "FLATPAK_ID", id,
+            "--setenv", "FLATPAK_ARCH", runtime_ref_parts[2],
             NULL);
 
   app_context = flatpak_app_compute_permissions (metakey,
@@ -361,10 +396,17 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   flatpak_context_allow_host_fs (app_context);
   flatpak_context_merge (app_context, arg_context);
 
+  envp = flatpak_run_get_minimal_env (TRUE, FALSE);
+  envp = flatpak_run_apply_env_vars (envp, app_context);
+
+  if (!custom_usr && !(is_extension && !is_app_extension) &&
+      !flatpak_run_add_extension_args (argv_array, fd_array, &envp, runtime_metakey, runtime_ref, FALSE, &runtime_extensions, cancellable, error))
+    return FALSE;
+
   if (!flatpak_run_add_app_info_args (argv_array,
-                                      NULL,
-                                      app_files,
-                                      runtime_files,
+                                      fd_array,
+                                      app_files, NULL, NULL,
+                                      runtime_files, runtime_deploy_data, runtime_extensions,
                                       id, NULL,
                                       runtime_ref,
                                       app_context,
@@ -372,14 +414,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
                                       error))
     return FALSE;
 
-  envp = flatpak_run_get_minimal_env (TRUE);
-  envp = flatpak_run_apply_env_vars (envp, app_context);
-
-  if (!custom_usr && !(is_extension && !is_app_extension) &&
-      !flatpak_run_add_extension_args (argv_array, &envp, runtime_metakey, runtime_ref, cancellable, error))
-    return FALSE;
-
-  if (!flatpak_run_add_environment_args (argv_array, NULL, &envp, app_info_path, run_flags, id,
+  if (!flatpak_run_add_environment_args (argv_array, fd_array, &envp, app_info_path, run_flags, id,
                                          app_context, app_id_dir, NULL, cancellable, error))
     return FALSE;
 
@@ -417,6 +452,8 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
 
   g_ptr_array_add (argv_array, NULL);
 
+  /* Ensure we unset O_CLOEXEC */
+  child_setup (fd_array);
   if (execvpe (flatpak_get_bwrap (), (char **) argv_array->pdata, envp) == -1)
     {
       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno),

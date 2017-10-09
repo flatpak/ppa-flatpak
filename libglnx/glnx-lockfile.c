@@ -119,28 +119,24 @@ glnx_make_lock_file(int dfd, const char *p, int operation, GLnxLockFile *out_loc
                 if (st.st_nlink > 0)
                         break;
 
-                (void) close(fd);
-                fd = -1;
+                glnx_close_fd (&fd);
         }
 
         /* Note that if this is not AT_FDCWD, the caller takes responsibility
          * for the fd's lifetime being >= that of the lock.
          */
+        out_lock->initialized = TRUE;
         out_lock->dfd = dfd;
-        out_lock->path = t;
-        out_lock->fd = fd;
+        out_lock->path = g_steal_pointer (&t);
+        out_lock->fd = glnx_steal_fd (&fd);
         out_lock->operation = operation;
-
-        fd = -1;
-        t = NULL;
-
         return TRUE;
 }
 
 void glnx_release_lock_file(GLnxLockFile *f) {
         int r;
 
-        if (!f)
+        if (!(f && f->initialized))
                 return;
 
         if (f->path) {
@@ -177,8 +173,7 @@ void glnx_release_lock_file(GLnxLockFile *f) {
                 f->path = NULL;
         }
 
-        if (f->fd != -1)
-                (void) close (f->fd);
-        f->fd = -1;
+        glnx_close_fd (&f->fd);
         f->operation = 0;
+        f->initialized = FALSE;
 }

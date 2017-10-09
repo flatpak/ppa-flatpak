@@ -141,7 +141,14 @@ glnx_renameat2_exchange (int olddirfd, const char *oldpath,
 #endif
 
   /* Fallback */
-  { const char *old_tmp_name = glnx_strjoina (oldpath, ".XXXXXX");
+  { char *old_tmp_name_buf = glnx_strjoina (oldpath, ".XXXXXX");
+    /* This obviously isn't race-free, but doing better gets tricky, since if
+     * we're here the kernel isn't likely to support RENAME_NOREPLACE either.
+     * Anyways, upgrade the kernel. Failing that, avoid use of this function in
+     * shared subdirectories like /tmp.
+     */
+    glnx_gen_temp_name (old_tmp_name_buf);
+    const char *old_tmp_name = old_tmp_name_buf;
 
     /* Move old out of the way */
     if (renameat (olddirfd, oldpath, olddirfd, old_tmp_name) < 0)
@@ -930,11 +937,16 @@ glnx_file_copy_at (int                   src_dfd,
   if (!glnx_openat_rdonly (src_dfd, src_subpath, FALSE, &src_fd, error))
     return FALSE;
 
-  /* Open a tmpfile for dest */
+  /* Open a tmpfile for dest. Particularly for AT_FDCWD calls, we really want to
+   * open in the target directory, otherwise we may not be able to link.
+   */
   g_auto(GLnxTmpfile) tmp_dest = { 0, };
-  if (!glnx_open_tmpfile_linkable_at (dest_dfd, ".", O_WRONLY | O_CLOEXEC,
-                                      &tmp_dest, error))
-    return FALSE;
+  { char *dnbuf = strdupa (dest_subpath);
+    const char *dn = dirname (dnbuf);
+    if (!glnx_open_tmpfile_linkable_at (dest_dfd, dn, O_WRONLY | O_CLOEXEC,
+                                        &tmp_dest, error))
+      return FALSE;
+  }
 
   if (glnx_regfile_copy_bytes (src_fd, tmp_dest.fd, (off_t) -1) < 0)
     return glnx_throw_errno_prefix (error, "regfile copy");
