@@ -3,8 +3,6 @@
 set -e
 exec 2>&1
 
-e=0
-
 # Don't pollute the home directory unless this looks like a dedicated
 # autopkgtest environment
 if [ "$(id -nu)" = adt ]; then
