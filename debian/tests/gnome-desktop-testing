@@ -5,8 +5,10 @@ exec 2>&1
 
 # Don't pollute the home directory unless this looks like a dedicated
 # autopkgtest environment
-if [ "$(id -nu)" = adt ]; then
-	install -d ~/.flatpak-tests/
-fi
+case "$(id -nu)" in
+	(adt|debci)
+		install -d ~/.flatpak-tests/
+		;;
+esac
 
 exec gnome-desktop-testing-runner Flatpak
