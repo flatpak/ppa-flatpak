@@ -2,6 +2,7 @@ flatpak (0.9.99-1) UNRELEASED; urgency=medium
 
   * New upstream release
     - Update symbols file for new ABI
+    - Increase libostree dependency to 2017.12
   * d/tests/gnome-desktop-testing: Treat debci as a test-specific user
   * Ensure that /sbin/ldconfig is in tests' PATH
 
