@@ -14,6 +14,7 @@ flatpak (0.9.99-2) UNRELEASED; urgency=medium
     - Install dpkg-maintscript-helper fragments for this migration
   * Disable documentation generation under nodoc DEB_BUILD_OPTIONS
   * Disable libflatpak-doc under nodoc DEB_BUILD_OPTIONS
+  * Don't run build-time tests if building only Arch: all packages
 
  -- Simon McVittie <smcv@debian.org>  Mon, 16 Oct 2017 10:19:48 +0100
 
