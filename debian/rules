@@ -5,6 +5,8 @@ export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
 include /usr/share/dpkg/default.mk
 
+binaries := $(shell dh_listpackages)
+
 %:
 	dh $@ --with=gir
 
@@ -15,11 +17,18 @@ override_dh_autoreconf:
 		-- \
 		$(NULL)
 
+configure_options =
+
+ifneq ($(filter libflatpak-doc,$(binaries)),)
+configure_options += --enable-gtk-doc
+else
+configure_options += --disable-gtk-doc
+endif
+
 override_dh_auto_configure:
 	dh_auto_configure -- \
 		--disable-silent-rules \
 		--enable-docbook-docs \
-		--enable-gtk-doc \
 		--enable-installed-tests \
 		--libexecdir=/usr/lib/flatpak \
 		--with-priv-mode=none \
@@ -27,7 +36,7 @@ override_dh_auto_configure:
 		--with-privileged-group=sudo \
 		--with-system-bubblewrap=bwrap \
 		--with-systemdsystemunitdir=/lib/systemd/system \
-		$(NULL)
+		$(configure_options)
 
 override_dh_install:
 	install -d debian/tmp/etc/X11/Xsession.d
