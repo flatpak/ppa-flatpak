@@ -31,7 +31,6 @@ override_dh_auto_configure:
 		--enable-installed-tests \
 		--libexecdir=/usr/lib/flatpak \
 		--with-priv-mode=none \
-		--with-html-dir=/usr/share/doc/libflatpak-doc \
 		--with-privileged-group=sudo \
 		--with-system-bubblewrap=bwrap \
 		--with-systemdsystemunitdir=/lib/systemd/system \
