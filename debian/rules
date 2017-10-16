@@ -19,6 +19,14 @@ override_dh_autoreconf:
 
 configure_options =
 
+ifneq ($(filter nodoc,$(DEB_BUILD_OPTIONS)),)
+configure_options += --disable-docbook-docs
+configure_options += --disable-documentation
+else
+configure_options += --enable-docbook-docs
+configure_options += --enable-documentation
+endif
+
 ifneq ($(filter libflatpak-doc,$(binaries)),)
 configure_options += --enable-gtk-doc
 else
@@ -27,7 +35,6 @@ endif
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
-		--enable-docbook-docs \
 		--enable-installed-tests \
 		--libexecdir=/usr/lib/flatpak \
 		--with-priv-mode=none \

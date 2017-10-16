@@ -1,3 +1,5 @@
+#!/usr/bin/dh-exec
+
 debian/org.freedesktop.Flatpak.pkla     var/lib/polkit-1/localauthority/10-vendor.d/
 etc/X11/Xsession.d
 etc/dbus-1/system.d
@@ -16,41 +18,12 @@ usr/lib/systemd/user/xdg-permission-store.service
 usr/share/bash-completion
 usr/share/dbus-1/services
 usr/share/dbus-1/system-services
-usr/share/doc/flatpak/docbook.css
-usr/share/doc/flatpak/flatpak-docs.html
 usr/share/flatpak
 usr/share/gdm/env.d
 usr/share/locale/*/LC_MESSAGES/flatpak.mo
-usr/share/man/man1/flatpak-build-bundle.1
-usr/share/man/man1/flatpak-build-commit-from.1
-usr/share/man/man1/flatpak-build-export.1
-usr/share/man/man1/flatpak-build-finish.1
-usr/share/man/man1/flatpak-build-import-bundle.1
-usr/share/man/man1/flatpak-build-init.1
-usr/share/man/man1/flatpak-build-sign.1
-usr/share/man/man1/flatpak-build-update-repo.1
-usr/share/man/man1/flatpak-build.1
-usr/share/man/man1/flatpak-document-*.1
-usr/share/man/man1/flatpak-enter.1
-usr/share/man/man1/flatpak-info.1
-usr/share/man/man1/flatpak-install.1
-usr/share/man/man1/flatpak-list.1
-usr/share/man/man1/flatpak-make-current.1
-usr/share/man/man1/flatpak-override.1
-usr/share/man/man1/flatpak-remote-add.1
-usr/share/man/man1/flatpak-remote-delete.1
-usr/share/man/man1/flatpak-remote-ls.1
-usr/share/man/man1/flatpak-remote-modify.1
-usr/share/man/man1/flatpak-remotes.1
-usr/share/man/man1/flatpak-repo.1
-usr/share/man/man1/flatpak-run.1
-usr/share/man/man1/flatpak-uninstall.1
-usr/share/man/man1/flatpak-update.1
-usr/share/man/man1/flatpak.1
-usr/share/man/man5/flatpak-flatpakref.5
-usr/share/man/man5/flatpak-flatpakrepo.5
-usr/share/man/man5/flatpak-installation.5
-usr/share/man/man5/flatpak-metadata.5
-usr/share/man/man5/flatpak-remote.5
 usr/share/polkit-1/actions
 usr/share/polkit-1/rules.d
+<!nodoc> usr/share/man/man1
+<!nodoc> usr/share/man/man5
+<!nodoc> usr/share/doc/flatpak/docbook.css
+<!nodoc> usr/share/doc/flatpak/flatpak-docs.html
