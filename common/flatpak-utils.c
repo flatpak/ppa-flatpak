@@ -581,13 +581,13 @@ flatpak_migrate_from_xdg_app (void)
   if (!g_file_test (dest, G_FILE_TEST_EXISTS) &&
       g_file_test (source, G_FILE_TEST_EXISTS))
     {
-      g_print ("Migrating %s to %s\n", source, dest);
+      g_print (_("Migrating %s to %s\n"), source, dest);
       if (rename (source, dest) != 0)
         {
           if (errno != ENOENT &&
               errno != ENOTEMPTY &&
               errno != EEXIST)
-            g_print ("Error during migration: %s\n", g_strerror (errno));
+            g_print (_("Error during migration: %s\n"), g_strerror (errno));
         }
     }
 }
@@ -4156,7 +4156,7 @@ flatpak_extension_new (const char *id,
                        const char *subdir_suffix,
                        char **merge_dirs,
                        GFile *files,
-		       GFile *deploy_dir,
+                       GFile *deploy_dir,
                        gboolean is_unmaintained)
 {
   FlatpakExtension *ext = g_new0 (FlatpakExtension, 1);
@@ -4176,7 +4176,7 @@ flatpak_extension_new (const char *id,
     {
       deploy_data = flatpak_load_deploy_data (deploy_dir, NULL, NULL);
       if (deploy_data)
-	ext->commit = g_strdup (flatpak_deploy_data_get_commit (deploy_data));
+        ext->commit = g_strdup (flatpak_deploy_data_get_commit (deploy_data));
     }
 
   if (is_unmaintained)
@@ -4297,11 +4297,11 @@ add_extension (GKeyFile   *metakey,
         {
           g_autofree char *extended_dir = g_build_filename (directory, refs[j] + strlen (prefix), NULL);
           g_autofree char *dir_ref = g_build_filename ("runtime", refs[j], arch, branch, NULL);
-	  g_autoptr(GFile) subdir_deploy_dir = NULL;
+          g_autoptr(GFile) subdir_deploy_dir = NULL;
           g_autoptr(GFile) subdir_files = NULL;
-	  subdir_deploy_dir = flatpak_find_deploy_dir_for_ref (dir_ref, NULL, NULL, NULL);
-	  if (subdir_deploy_dir)
-	    subdir_files = g_file_get_child (subdir_deploy_dir, "files");
+          subdir_deploy_dir = flatpak_find_deploy_dir_for_ref (dir_ref, NULL, NULL, NULL);
+          if (subdir_deploy_dir)
+            subdir_files = g_file_get_child (subdir_deploy_dir, "files");
 
           if (subdir_files && flatpak_extension_matches_reason (refs[j], enable_if, TRUE))
             {
@@ -6218,37 +6218,100 @@ flatpak_completion_free (FlatpakCompletion *completion)
   g_free (completion);
 }
 
+/* In this NULL means don't care about these paths, while
+   an empty array means match anything */
 char **
-flatpak_get_current_locale_subpaths (void)
+flatpak_subpaths_merge (char **subpaths1,
+                        char **subpaths2)
 {
-  const gchar * const *langs = g_get_language_names ();
-  GPtrArray *subpaths = g_ptr_array_new ();
+  GPtrArray *array;
   int i;
 
-  for (i = 0; langs[i] != NULL; i++)
+  /* Maybe either (or both) is unspecified */
+  if (subpaths1 == NULL)
+    return g_strdupv (subpaths2);
+  if (subpaths2 == NULL)
+    return g_strdupv (subpaths1);
+
+  /* Check for any "everything" match */
+  if (subpaths1[0] == NULL)
+    return g_strdupv (subpaths1);
+  if (subpaths2[0] == NULL)
+    return g_strdupv (subpaths2);
+
+  /* Combine both */
+  array = g_ptr_array_new ();
+
+  for (i = 0; subpaths1[i] != NULL; i++)
     {
-      g_autofree char *dir = g_strconcat ("/", langs[i], NULL);
-      char *c;
-
-      c = strchr (dir, '@');
-      if (c != NULL)
-        *c = 0;
-      c = strchr (dir, '_');
-      if (c != NULL)
-        *c = 0;
-      c = strchr (dir, '.');
-      if (c != NULL)
-        *c = 0;
-
-      if (strcmp (dir, "/C") == 0)
-        continue;
-
-      g_ptr_array_add (subpaths, g_steal_pointer (&dir));
+      if (!flatpak_g_ptr_array_contains_string (array, subpaths1[i]))
+        g_ptr_array_add (array, g_strdup (subpaths1[i]));
     }
 
-  g_ptr_array_add (subpaths, NULL);
+  for (i = 0; subpaths2[i] != NULL; i++)
+    {
+      if (!flatpak_g_ptr_array_contains_string (array, subpaths2[i]))
+        g_ptr_array_add (array, g_strdup (subpaths2[i]));
+    }
 
-  return (char **)g_ptr_array_free (subpaths, FALSE);
+  g_ptr_array_sort (array, flatpak_strcmp0_ptr);
+  g_ptr_array_add (array, NULL);
+
+  return (char **)g_ptr_array_free (array, FALSE);
+}
+
+char *
+flatpak_get_lang_from_locale (const char *locale)
+{
+  g_autofree char *lang = g_strdup (locale);
+  char *c;
+
+  c = strchr (lang, '@');
+  if (c != NULL)
+    *c = 0;
+  c = strchr (lang, '_');
+  if (c != NULL)
+    *c = 0;
+  c = strchr (lang, '.');
+  if (c != NULL)
+    *c = 0;
+
+  if (strcmp (lang, "C") == 0)
+    return NULL;
+
+  return g_steal_pointer (&lang);
+}
+
+gboolean
+flatpak_g_ptr_array_contains_string (GPtrArray *array, const char *str)
+{
+  int i ;
+  for (i = 0; i < array->len; i++)
+    {
+      if (strcmp (g_ptr_array_index(array, i), str) == 0)
+        return TRUE;
+    }
+  return FALSE;
+}
+
+char **
+flatpak_get_current_locale_langs (void)
+{
+  const gchar * const *locales = g_get_language_names ();
+  GPtrArray *langs = g_ptr_array_new ();
+  int i;
+
+  for (i = 0; locales[i] != NULL; i++)
+    {
+      char *lang = flatpak_get_lang_from_locale (locales[i]);
+      if (lang != NULL && !flatpak_g_ptr_array_contains_string (langs, lang))
+        g_ptr_array_add (langs, lang);
+    }
+
+  g_ptr_array_sort (langs, flatpak_strcmp0_ptr);
+  g_ptr_array_add (langs, NULL);
+
+  return (char **)g_ptr_array_free (langs, FALSE);
 }
 
 #define BAR_LENGTH 20
@@ -6451,7 +6514,7 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
 
       estimating = TRUE;
 
-      g_string_append_printf (buf, "Downloading metadata: %u/(estimating) %s",
+      g_string_append_printf (buf, _("Downloading metadata: %u/(estimating) %s"),
                               fetched, formatted_bytes_total_transferred);
 
       /* Go up to 5% until the metadata is all fetched */
@@ -6475,7 +6538,7 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
           total = total_delta_part_size - fetched_delta_part_size + total_extra_data_bytes;
           formatted_bytes_total = g_format_size_full (total, 0);
 
-          g_string_append_printf (buf, "Downloading: %s/%s",
+          g_string_append_printf (buf, _("Downloading: %s/%s"),
                                   formatted_bytes_total_transferred,
                                   formatted_bytes_total);
         }
@@ -6495,12 +6558,12 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
           if (downloading_extra_data)
             {
               g_autofree gchar *formatted_bytes_total = g_format_size_full (total, 0);;
-              g_string_append_printf (buf, "Downloading extra data: %s/%s",
+              g_string_append_printf (buf, _("Downloading extra data: %s/%s"),
                                       formatted_bytes_total_transferred,
                                       formatted_bytes_total);
             }
           else
-            g_string_append_printf (buf, "Downloading files: %d/%d %s",
+            g_string_append_printf (buf, _("Downloading files: %d/%d %s"),
                                     fetched, requested, formatted_bytes_total_transferred);
         }
 

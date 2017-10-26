@@ -40,6 +40,7 @@ typedef enum {
 struct FlatpakTransactionOp {
   char *remote;
   char *ref;
+  /* NULL means unspecified (normally keep whatever was there before), [] means force everything */
   char **subpaths;
   char *commit;
   GFile *bundle;
@@ -267,13 +268,8 @@ flatpak_transaction_add_op (FlatpakTransaction *self,
   op = g_hash_table_lookup (self->refs, ref);
   if (op != NULL)
     {
-      /* Only override subpaths if already specified,
-         we always want the un-subpathed to win if specified. */
-      if (op->subpaths != NULL && op->subpaths[0] != NULL && subpaths != NULL)
-        {
-          g_strfreev (op->subpaths);
-          op->subpaths = g_strdupv ((char **)subpaths);
-        }
+      g_auto(GStrv) old_subpaths = op->subpaths;
+      op->subpaths = flatpak_subpaths_merge (old_subpaths, (char **)subpaths);
 
       return op;
     }
@@ -295,7 +291,7 @@ ask_for_remote (FlatpakTransaction *self, const char **remotes)
   if (self->no_interaction)
     {
       chosen = 1;
-      g_print ("Found in remote %s\n", remotes[0]);
+      g_print (_("Found in remote %s\n"), remotes[0]);
     }
   else if (n_remotes == 1)
     {
@@ -493,7 +489,7 @@ flatpak_transaction_add_ref (FlatpakTransaction *self,
         metadata = remote_metadata;
       else
         {
-          g_print ("Warning: Can't find dependencies: %s\n", local_error->message);
+          g_print (_("Warning: Can't find dependencies: %s\n"), local_error->message);
           g_clear_error (&local_error);
         }
     }
@@ -520,7 +516,7 @@ flatpak_transaction_add_ref (FlatpakTransaction *self,
       if (required_version)
         {
           if (sscanf (required_version, "%d.%d.%d", &required_major, &required_minor, &required_micro) != 3)
-            g_print ("Invalid require-flatpak argument %s\n", required_version);
+            g_print (_("Invalid require-flatpak argument %s\n"), required_version);
           else
             {
               if (required_major > PACKAGE_MAJOR_VERSION ||
@@ -638,7 +634,7 @@ flatpak_transaction_update_metadata (FlatpakTransaction  *self,
 
       g_debug ("Updating remote metadata for %s", remote);
       if (!flatpak_dir_update_remote_configuration (self->dir, remote, cancellable, &my_error))
-        g_printerr("Error updating remote metadata for '%s': %s\n", remote, my_error->message);
+        g_printerr (_("Error updating remote metadata for '%s': %s\n"), remote, my_error->message);
     }
 
   /* Reload changed configuration */
@@ -676,14 +672,6 @@ flatpak_transaction_run (FlatpakTransaction *self,
 
           if (dir_ref_is_installed (self->dir, op->ref, NULL, &deploy_data))
             {
-              g_autofree const char **current_subpaths = NULL;
-
-              /* When we update a dependency, we always inherit the subpaths
-                 rather than use the default. */
-              g_strfreev (op->subpaths);
-              current_subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
-              op->subpaths = g_strdupv ((char **)current_subpaths);
-
               /* Don't use the remote from related ref on update, always use
                  the current remote. */
               g_free (op->remote);

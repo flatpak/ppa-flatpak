@@ -682,7 +682,7 @@ flatpak_ensure_system_user_cache_dir_location (GError **error)
       /* Must be owned by us */
       st_buf.st_uid == getuid () &&
       /* and not writeable by others */
-      (st_buf.st_mode & 0022) != 0)
+      (st_buf.st_mode & 0022) == 0)
     return g_file_new_for_path (path);
 
   path = g_strdup ("/var/tmp/flatpak-cache-XXXXXX");
@@ -693,7 +693,12 @@ flatpak_ensure_system_user_cache_dir_location (GError **error)
       return NULL;
     }
 
-  symlink (path, symlink_path);
+  unlink (symlink_path);
+  if (symlink (path, symlink_path) != 0)
+    {
+      glnx_set_error_from_errno (error);
+      return NULL;
+    }
 
   return g_file_new_for_path (path);
 }
@@ -1638,6 +1643,65 @@ flatpak_dir_ensure_repo (FlatpakDir   *self,
       g_assert (self->repo == NULL);
       self->repo = g_object_ref (repo);
     }
+
+  return TRUE;
+}
+
+char *
+flatpak_dir_get_config (FlatpakDir *self,
+                        const char *key,
+                        GError    **error)
+{
+  GKeyFile *config = ostree_repo_get_config (self->repo);
+  g_autofree char *ostree_key = g_strconcat ("xa.", key, NULL);
+
+  return g_key_file_get_string (config, "core", ostree_key, error);
+}
+
+gboolean
+flatpak_dir_set_config (FlatpakDir *self,
+                        const char *key,
+                        const char *value,
+                        GError    **error)
+{
+  GKeyFile *config = ostree_repo_copy_config (self->repo);
+  g_autofree char *ostree_key = g_strconcat ("xa.", key, NULL);
+
+  if (flatpak_dir_use_system_helper (self, NULL))
+    {
+      FlatpakSystemHelper *system_helper;
+      FlatpakHelperConfigureFlags flags = 0;
+      const char *installation = flatpak_dir_get_id (self);
+
+      system_helper = flatpak_dir_get_system_helper (self);
+      g_assert (system_helper != NULL);
+
+      if (value == NULL)
+	{
+	  flags |= FLATPAK_HELPER_CONFIGURE_FLAGS_UNSET;
+	  value = "";
+	}
+
+      g_debug ("Calling system helper: Configure");
+      if (!flatpak_system_helper_call_configure_sync (system_helper,
+						      flags, key, value,
+						      installation ? installation : "",
+						      NULL, error))
+        return FALSE;
+
+      return TRUE;
+    }
+
+  if (value == NULL)
+    g_key_file_remove_key (config, "core", ostree_key, NULL);
+  else
+    g_key_file_set_value (config, "core", ostree_key, value);
+
+  if (!ostree_repo_write_config (self->repo, config, error))
+    return FALSE;
+
+  if (!ostree_repo_reload_config (self->repo, NULL, error))
+    return FALSE;
 
   return TRUE;
 }
@@ -4820,26 +4884,6 @@ extract_extra_data (FlatpakDir          *self,
 }
 
 static void
-add_args (GPtrArray *argv_array, ...)
-{
-  va_list args;
-  const gchar *arg;
-
-  va_start (args, argv_array);
-  while ((arg = va_arg (args, const gchar *)))
-    g_ptr_array_add (argv_array, g_strdup (arg));
-  va_end (args);
-}
-
-static void
-clear_fd (gpointer data)
-{
-  int *fd_p = data;
-  if (fd_p != NULL && *fd_p != -1)
-    close (*fd_p);
-}
-
-static void
 child_setup (gpointer user_data)
 {
   GArray *fd_array = user_data;
@@ -4851,7 +4895,16 @@ child_setup (gpointer user_data)
 
   /* Otherwise, mark not - close-on-exec all the fds in the array */
   for (i = 0; i < fd_array->len; i++)
-    fcntl (g_array_index (fd_array, int, i), F_SETFD, 0);
+    {
+      int fd = g_array_index (fd_array, int, i);
+
+      /* We also seek all fds to the start, because this lets
+         us use the same fd_array multiple times */
+      if (lseek (fd, 0, SEEK_SET) < 0)
+        g_printerr ("lseek error in child setup");
+
+      fcntl (fd, F_SETFD, 0);
+    }
 }
 
 static gboolean
@@ -4868,17 +4921,16 @@ apply_extra_data (FlatpakDir          *self,
   g_autofree char *runtime = NULL;
   g_autofree char *runtime_ref = NULL;
   g_autoptr(FlatpakDeploy) runtime_deploy = NULL;
+  g_autoptr(FlatpakBwrap) bwrap = NULL;
   g_autoptr(GFile) app_files = NULL;
   g_autoptr(GFile) apply_extra_file = NULL;
   g_autoptr(GFile) app_export_file = NULL;
   g_autoptr(GFile) extra_export_file = NULL;
   g_autoptr(GFile) extra_files = NULL;
   g_autoptr(GFile) runtime_files = NULL;
-  g_autoptr(GPtrArray) argv_array = NULL;
   g_auto(GStrv) runtime_ref_parts = NULL;
   g_autoptr(FlatpakContext) app_context = NULL;
-  g_autoptr(GArray) fd_array = NULL;
-  g_auto(GStrv) envp = NULL;
+  g_auto(GStrv) minimal_envp = NULL;
   int exit_status;
   const char *group = FLATPAK_METADATA_GROUP_APPLICATION;
   g_autoptr(GError) local_error = NULL;
@@ -4936,32 +4988,30 @@ apply_extra_data (FlatpakDir          *self,
   extra_files = g_file_get_child (app_files, "extra");
   extra_export_file = g_file_get_child (extra_files, "export");
 
-  argv_array = g_ptr_array_new_with_free_func (g_free);
-  fd_array = g_array_new (FALSE, TRUE, sizeof (int));
-  g_array_set_clear_func (fd_array, clear_fd);
-  g_ptr_array_add (argv_array, g_strdup (flatpak_get_bwrap ()));
+  minimal_envp = flatpak_run_get_minimal_env (FALSE, FALSE);
+  bwrap = flatpak_bwrap_new (minimal_envp);
+  flatpak_bwrap_add_args (bwrap, flatpak_get_bwrap (), NULL);
 
   if (runtime_files)
-    add_args (argv_array,
-              "--ro-bind", flatpak_file_get_path_cached (runtime_files), "/usr",
-            "--lock-file", "/usr/.ref",
-              NULL);
+    flatpak_bwrap_add_args (bwrap,
+                            "--ro-bind", flatpak_file_get_path_cached (runtime_files), "/usr",
+                            "--lock-file", "/usr/.ref",
+                            NULL);
 
-  add_args (argv_array,
-            "--ro-bind", flatpak_file_get_path_cached (app_files), "/app",
-            "--bind", flatpak_file_get_path_cached (extra_files), "/app/extra",
-            "--chdir", "/app/extra",
-            NULL);
+  flatpak_bwrap_add_args (bwrap,
+                          "--ro-bind", flatpak_file_get_path_cached (app_files), "/app",
+                          "--bind", flatpak_file_get_path_cached (extra_files), "/app/extra",
+                          "--chdir", "/app/extra",
+                          NULL);
 
-  if (!flatpak_run_setup_base_argv (argv_array, fd_array, runtime_files, NULL, runtime_ref_parts[2],
+  if (!flatpak_run_setup_base_argv (bwrap, runtime_files, NULL, runtime_ref_parts[2],
                                     FLATPAK_RUN_FLAG_NO_SESSION_HELPER,
                                     error))
     return FALSE;
 
   app_context = flatpak_context_new ();
 
-  envp = flatpak_run_get_minimal_env (FALSE, FALSE);
-  if (!flatpak_run_add_environment_args (argv_array, fd_array, &envp, NULL,
+  if (!flatpak_run_add_environment_args (bwrap, NULL,
                                          FLATPAK_RUN_FLAG_NO_SESSION_BUS_PROXY |
                                          FLATPAK_RUN_FLAG_NO_SYSTEM_BUS_PROXY |
                                          FLATPAK_RUN_FLAG_NO_A11Y_BUS_PROXY,
@@ -4969,17 +5019,17 @@ apply_extra_data (FlatpakDir          *self,
                                          app_context, NULL, NULL, cancellable, error))
     return FALSE;
 
-  g_ptr_array_add (argv_array, g_strdup ("/app/bin/apply_extra"));
+  g_ptr_array_add (bwrap->argv, g_strdup ("/app/bin/apply_extra"));
 
-  g_ptr_array_add (argv_array, NULL);
+  g_ptr_array_add (bwrap->argv, NULL);
 
   g_debug ("Running /app/bin/apply_extra ");
 
   if (!g_spawn_sync (NULL,
-                     (char **) argv_array->pdata,
-                     envp,
+                     (char **) bwrap->argv->pdata,
+                     bwrap->envp,
                      G_SPAWN_SEARCH_PATH,
-                     child_setup, fd_array,
+                     child_setup, bwrap->fds,
                      NULL, NULL,
                      &exit_status,
                      error))
@@ -6313,6 +6363,7 @@ flatpak_dir_update (FlatpakDir          *self,
   const char **subpaths = NULL;
   g_autofree char *url = NULL;
   FlatpakPullFlags flatpak_flags;
+  g_autofree const char **old_subpaths = NULL;
   gboolean is_oci;
 
   /* This and @results are calculated in check_for_update. @results will be
@@ -6327,10 +6378,14 @@ flatpak_dir_update (FlatpakDir          *self,
 
   deploy_data = flatpak_dir_get_deploy_data (self, ref,
                                              cancellable, NULL);
+
+  if (deploy_data != NULL)
+    old_subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
+
   if (opt_subpaths)
     subpaths = opt_subpaths;
-  else if (deploy_data != NULL)
-    subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
+  else
+    subpaths = old_subpaths;
 
   if (!ostree_repo_remote_get_url (self->repo, remote_name, &url, error))
     return FALSE;
@@ -6355,6 +6410,17 @@ flatpak_dir_update (FlatpakDir          *self,
 
       system_helper = flatpak_dir_get_system_helper (self);
       g_assert (system_helper != NULL);
+
+      if (!OSTREE_CHECK_VERSION(2017,13))
+        {
+          /* If the existing pull is partial, disable static deltas. They can
+           * break on ostree < 2017.13 which doesn't look at the parent repo for
+           * commitpartial state. This was fixed in
+           * https://github.com/ostreedev/ostree/commit/90ebd48f6aaf45c47b48c44354359f973dcf22a8
+           */
+          if (old_subpaths && old_subpaths[0] != NULL)
+            flatpak_flags |= FLATPAK_PULL_FLAGS_NO_STATIC_DELTAS;
+        }
 
       if (!flatpak_dir_ensure_repo (self, cancellable, error))
         return FALSE;
@@ -7174,7 +7240,7 @@ flatpak_dir_prune (FlatpakDir   *self,
   /* There was an issue in ostree where for local pulls we don't get a .commitpartial (now fixed),
      which caused errors when pruning. We print these here, but don't stop processing. */
   if (local_error != NULL)
-    g_print ("Pruning repo failed: %s", local_error->message);
+    g_print (_("Pruning repo failed: %s"), local_error->message);
 
   return ret;
 
@@ -7794,7 +7860,7 @@ find_matching_ref (GHashTable *refs,
 
       /* Nothing to do other than reporting the different choices */
       g_autoptr(GString) err = g_string_new ("");
-      g_string_printf (err, "Multiple branches available for %s, you must specify one of: ", name);
+      g_string_printf (err, _("Multiple branches available for %s, you must specify one of: "), name);
       g_ptr_array_sort (matched_refs, flatpak_strcmp0_ptr);
       for (j = 0; j < matched_refs->len; j++)
         {
@@ -8524,7 +8590,8 @@ create_origin_remote_config (OstreeRepo   *repo,
   group = g_strdup_printf ("remote \"%s\"", remote);
 
   g_key_file_set_string (new_config, group, "url", url ? url : "");
-  g_key_file_set_string (new_config, group, "xa.title", title);
+  if (title)
+    g_key_file_set_string (new_config, group, "xa.title", title);
   g_key_file_set_string (new_config, group, "xa.noenumerate", "true");
   g_key_file_set_string (new_config, group, "xa.prio", "0");
   /* Don’t enable summary verification if a collection ID is set, as collection
@@ -9829,21 +9896,6 @@ flatpak_related_free (FlatpakRelated *self)
   g_free (self);
 }
 
-static gboolean
-string_in_array (GPtrArray *array,
-                 const char *str)
-{
-  int i;
-
-  for (i = 0; i < array->len; i++)
-    {
-      if (strcmp (g_ptr_array_index (array, i), str) == 0)
-        return TRUE;
-    }
-
-  return FALSE;
-}
-
 static void
 add_related (FlatpakDir *self,
              GPtrArray *related,
@@ -9858,8 +9910,8 @@ add_related (FlatpakDir *self,
 {
   g_autoptr(GVariant) deploy_data = NULL;
   g_autofree const char **old_subpaths = NULL;
-  g_autoptr(GPtrArray) subpaths = g_ptr_array_new_with_free_func (g_free);
-  int i;
+  g_auto(GStrv) extra_subpaths = NULL;
+  g_auto(GStrv) subpaths = NULL;
   FlatpakRelated *rel;
   gboolean download;
   gboolean delete = autodelete;
@@ -9903,34 +9955,21 @@ add_related (FlatpakDir *self,
   if (g_str_has_suffix (extension, ".Locale"))
     locale_subset = TRUE;
 
-  if (old_subpaths)
-    {
-      for (i = 0; old_subpaths[i] != NULL; i++)
-        g_ptr_array_add (subpaths, g_strdup (old_subpaths[i]));
-    }
-
   if (locale_subset)
     {
-      g_autofree char ** current_subpaths = flatpak_dir_get_locale_subpaths (self);
-      for (i = 0; current_subpaths[i] != NULL; i++)
-        {
-          g_autofree char *subpath = current_subpaths[i];
-
-          if (!string_in_array (subpaths, subpath))
-            g_ptr_array_add (subpaths, g_steal_pointer (&subpath));
-        }
+      extra_subpaths = flatpak_dir_get_locale_subpaths (self);
 
       /* Always remove locale */
       delete = TRUE;
     }
 
-  g_ptr_array_add (subpaths, NULL);
+  subpaths = flatpak_subpaths_merge ((char **)old_subpaths, extra_subpaths);
 
   rel = g_new0 (FlatpakRelated, 1);
   rel->collection_id = g_strdup (extension_collection_id);
   rel->ref = g_strdup (extension_ref);
   rel->commit = g_strdup (checksum);
-  rel->subpaths = (char **)g_ptr_array_free (g_steal_pointer (&subpaths), FALSE);
+  rel->subpaths = g_steal_pointer (&subpaths);
   rel->download = download;
   rel->delete = delete;
 
@@ -10259,16 +10298,12 @@ get_accounts_dbus_proxy (void)
 }
 
 static char **
-get_locale_subpaths_from_accounts_dbus (GDBusProxy *proxy)
+get_locale_langs_from_accounts_dbus (GDBusProxy *proxy)
 {
   const char *accounts_bus_name = "org.freedesktop.Accounts";
   const char *accounts_interface_name = "org.freedesktop.Accounts.User";
-  char **object_path = NULL;
-  GList *langs = NULL;
-  GList *l = NULL;
-  g_autoptr(GString) langs_cache = g_string_new (NULL);
-  g_autoptr(GPtrArray) subpaths = g_ptr_array_new ();
-  gboolean use_full_language = FALSE;
+  char **object_paths = NULL;
+  g_autoptr(GPtrArray) langs = g_ptr_array_new ();
   int i;
   g_autoptr(GVariant) ret = NULL;
 
@@ -10282,11 +10317,11 @@ get_locale_subpaths_from_accounts_dbus (GDBusProxy *proxy)
   if (ret != NULL)
     g_variant_get (ret,
                    "(^ao)",
-                   &object_path);
+                   &object_paths);
 
-  if (object_path != NULL)
+  if (object_paths != NULL)
     {
-      for (i = 0; object_path[i] != NULL; i++)
+      for (i = 0; object_paths[i] != NULL; i++)
         {
           g_autoptr(GDBusProxy) accounts_proxy = NULL;
           g_autoptr(GVariant) value = NULL;
@@ -10295,7 +10330,7 @@ get_locale_subpaths_from_accounts_dbus (GDBusProxy *proxy)
                                                           G_DBUS_PROXY_FLAGS_NONE,
                                                           NULL,
                                                           accounts_bus_name,
-                                                          object_path[i],
+                                                          object_paths[i],
                                                           accounts_interface_name,
                                                           NULL,
                                                           NULL);
@@ -10304,84 +10339,95 @@ get_locale_subpaths_from_accounts_dbus (GDBusProxy *proxy)
             {
               value = g_dbus_proxy_get_cached_property (accounts_proxy, "Language");
               if (value != NULL)
-                langs = g_list_append (langs, g_variant_dup_string (value, NULL));
+                {
+                  const char *locale = g_variant_get_string (value, NULL);
+                  g_autofree char *lang = NULL;
+
+                  if (strcmp (locale, "") == 0)
+                    return NULL; /* At least one user with no defined language, fall back to all languages */
+
+                  lang = flatpak_get_lang_from_locale (locale);
+                  if (lang != NULL && !flatpak_g_ptr_array_contains_string (langs, lang))
+                    g_ptr_array_add (langs, g_steal_pointer (&lang));
+                }
             }
         }
   }
 
-  for (l = langs; l != NULL; l = l->next)
+  if (langs->len == 0)
+    return NULL; /* No defined languages, fall back to all languages */
+
+  g_ptr_array_sort (langs, flatpak_strcmp0_ptr);
+  g_ptr_array_add (langs, NULL);
+
+  return (char **)g_ptr_array_free (g_steal_pointer (&langs), FALSE);
+}
+
+static int
+cmpstringp (const void *p1, const void *p2)
+{
+  return strcmp (*(char * const *) p1, *(char * const *) p2);
+}
+
+static char **
+sort_strv (char **strv)
+{
+  qsort (strv, g_strv_length (strv), sizeof (const char *), cmpstringp);
+  return strv;
+}
+
+char **
+flatpak_dir_get_default_locale_languages (FlatpakDir *self)
+{
+  char **langs = NULL;
+
+  if (flatpak_dir_is_user (self))
+    return flatpak_get_current_locale_langs ();
+
+  /* If proxy is not NULL, it means that AccountService exists
+   * and gets the list of languages from AccountService. */
+  g_autoptr(GDBusProxy) proxy = get_accounts_dbus_proxy ();
+  if (proxy != NULL)
+    langs = get_locale_langs_from_accounts_dbus (proxy);
+
+  /* Iif langs is NULL, it means using all languages */
+  if (langs == NULL)
+    langs = g_new0 (char *, 1);
+
+  return langs;
+}
+
+char **
+flatpak_dir_get_locale_languages (FlatpakDir *self)
+{
+  GKeyFile *config = ostree_repo_get_config (self->repo);
+
+  if (config)
     {
-      g_autofree char *dir = g_strconcat ("/", l->data, NULL);
-      char *c;
-
-      c = strchr (dir, '@');
-      if (c != NULL)
-        *c = 0;
-      c = strchr (dir, '_');
-      if (c != NULL)
-        *c = 0;
-      c = strchr (dir, '.');
-      if (c != NULL)
-        *c = 0;
-
-      if (strcmp (dir, "/C") == 0)
-        continue;
-
-      /* handle language == "" */
-      if (strcmp (dir, "/") == 0)
-        {
-          use_full_language = TRUE;
-          break;
-        }
-
-      /* filter duplicate language */
-      if (g_strrstr (langs_cache->str, dir) == NULL)
-        {
-          g_string_append (langs_cache, dir);
-          g_string_append_c (langs_cache, ':');
-          g_ptr_array_add (subpaths, g_steal_pointer (&dir));
-        }
+      char **langs = g_key_file_get_string_list (config, "core", "xa.languages", NULL, NULL);
+      if (langs)
+        return sort_strv (langs);
     }
 
-  if (langs == NULL)
-    return NULL;
-
-  g_list_free_full (langs, g_free);
-
-  g_ptr_array_add (subpaths, NULL);
-
-  if (use_full_language)
-    return NULL;
-  else
-    return (char **)g_ptr_array_free (g_steal_pointer (&subpaths), FALSE);
+  return flatpak_dir_get_default_locale_languages (self);
 }
 
 char **
 flatpak_dir_get_locale_subpaths (FlatpakDir *self)
 {
-  GKeyFile *config = ostree_repo_get_config (self->repo);
-  char **subpaths = NULL;
+  char **subpaths = flatpak_dir_get_locale_languages (self);
+  int i;
 
-  if (config)
-    subpaths = g_key_file_get_string_list (config, "core", "xa.languages", NULL, NULL);
-
-  if (!subpaths)
+  /* Convert languages to paths */
+  for (i = 0; subpaths[i] != NULL; i++)
     {
-      if (flatpak_dir_is_user (self))
-        subpaths = flatpak_get_current_locale_subpaths ();
-      else
+      char *lang = subpaths[i];
+      /* For backwards compat with old xa.languages we support the configuration having slashes already */
+      if (*lang != '/')
         {
-          /* If proxy is not NULL, it means that AccountService exists
-           * and gets the list of languages from AccountService. */
-          g_autoptr(GDBusProxy) proxy = get_accounts_dbus_proxy ();
-          if (proxy != NULL)
-            subpaths = get_locale_subpaths_from_accounts_dbus (proxy);
-
-          /* If subpaths is NULL, it means using all languages */
-          if (subpaths == NULL)
-            subpaths = g_new0 (char *, 1);
+          subpaths[i] = g_strconcat ("/", lang, NULL);
+          g_free (lang);
         }
     }
-
   return subpaths;
 }
