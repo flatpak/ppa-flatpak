@@ -1,4 +1,4 @@
-flatpak (0.10.0-1) UNRELEASED; urgency=medium
+flatpak (0.10.0-1) unstable; urgency=medium
 
   * d/watch: Track stable-branches (x.y.z where y is even), and fix to
     cope with multi-digit minor versions
@@ -20,7 +20,7 @@ flatpak (0.10.0-1) UNRELEASED; urgency=medium
   * Disable libflatpak-doc under nodoc build profile
   * Don't run build-time tests if building only Arch: all packages
 
- -- Simon McVittie <smcv@debian.org>  Mon, 16 Oct 2017 10:19:48 +0100
+ -- Simon McVittie <smcv@debian.org>  Thu, 26 Oct 2017 12:35:52 +0100
 
 flatpak (0.9.99-1) unstable; urgency=medium
 
