@@ -108,6 +108,13 @@ typedef enum {
 #define FLATPAK_HELPER_CONFIGURE_REMOTE_FLAGS_ALL (FLATPAK_HELPER_CONFIGURE_REMOTE_FLAGS_FORCE_REMOVE)
 
 typedef enum {
+  FLATPAK_HELPER_CONFIGURE_FLAGS_NONE = 0,
+  FLATPAK_HELPER_CONFIGURE_FLAGS_UNSET = 1 << 0,
+} FlatpakHelperConfigureFlags;
+
+#define FLATPAK_HELPER_CONFIGURE_FLAGS_ALL (FLATPAK_HELPER_CONFIGURE_FLAGS_UNSET)
+
+typedef enum {
   FLATPAK_HELPER_UPDATE_REMOTE_FLAGS_NONE = 0,
 } FlatpakHelperUpdateRemoteFlags;
 
@@ -309,6 +316,13 @@ gboolean    flatpak_dir_recreate_repo (FlatpakDir   *self,
 gboolean    flatpak_dir_ensure_repo (FlatpakDir   *self,
                                      GCancellable *cancellable,
                                      GError      **error);
+char *      flatpak_dir_get_config (FlatpakDir *self,
+				    const char *key,
+				    GError    **error);
+gboolean    flatpak_dir_set_config (FlatpakDir *self,
+                                    const char *key,
+                                    const char *value,
+                                    GError    **error);
 gboolean    flatpak_dir_mark_changed (FlatpakDir *self,
                                       GError    **error);
 gboolean    flatpak_dir_remove_appstream (FlatpakDir   *self,
@@ -643,6 +657,8 @@ gboolean flatpak_dir_lookup_repo_metadata (FlatpakDir    *self,
                                            const char    *format_string,
                                            ...);
 
+char ** flatpak_dir_get_default_locale_languages (FlatpakDir *self);
+char ** flatpak_dir_get_locale_languages (FlatpakDir *self);
 char ** flatpak_dir_get_locale_subpaths (FlatpakDir *self);
 
 #endif /* __FLATPAK_DIR_H__ */
