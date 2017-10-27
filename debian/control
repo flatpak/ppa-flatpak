@@ -13,7 +13,7 @@ Build-Depends:
  dbus,
  debhelper (>= 10~),
  desktop-file-utils <!nocheck>,
- dh-exec,
+ dh-exec (>= 0.23~),
  docbook-xml <!nodoc>,
  docbook-xsl <!nodoc>,
  fuse <!nocheck>,
