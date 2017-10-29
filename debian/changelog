@@ -4,6 +4,12 @@ flatpak (0.10.0-2) UNRELEASED; urgency=medium
     The version in oldstable doesn't support build profiles. Strictly
     speaking 0.15 might be enough, but I'm not going to test with anything
     older than oldstable-backports.
+  * d/tests/gnome-desktop-testing: Clear proxy-related environment
+    variables, as was previously done for ostree. These are set on
+    Ubuntu's infrastructure to allow accessing the Internet (which we
+    don't need), at the cost of breaking access to 127.0.0.1 (which we
+    do need) for anything that doesn't respect $no_proxy (in
+    particular libostree). (Closes: #880043)
 
  -- Simon McVittie <smcv@debian.org>  Fri, 27 Oct 2017 15:11:47 +0100
 
