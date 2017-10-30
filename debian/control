@@ -17,7 +17,7 @@ Build-Depends:
  docbook-xml <!nodoc>,
  docbook-xsl <!nodoc>,
  fuse <!nocheck>,
- gobject-introspection,
+ gobject-introspection (>= 1.54.1-2~),
  gtk-doc-tools,
  gtk-update-icon-cache <!nocheck>,
  hicolor-icon-theme <!nocheck>,
@@ -50,6 +50,7 @@ Standards-Version: 4.1.1
 Homepage: http://flatpak.org/
 Vcs-Git: https://anonscm.debian.org/git/collab-maint/flatpak.git
 Vcs-Browser: https://anonscm.debian.org/cgit/collab-maint/flatpak.git
+Rules-Requires-Root: no
 
 Package: flatpak
 Architecture: linux-any
