@@ -1,4 +1,4 @@
 #!/bin/sh
 set -e
-gtkdocize
+gtkdocize --copy
 autoreconf -fi

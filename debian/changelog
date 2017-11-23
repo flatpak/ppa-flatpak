@@ -1,3 +1,12 @@
+flatpak (0.10.0-3) UNRELEASED; urgency=medium
+
+  * d/autogen.sh: Run gtkdocize --copy. Plain gtkdocize replaces
+    gtk-doc.make with a symlink, which dh_autoreconf_clean won't remove,
+    breaking the ability to build twice in a row from the same directory.
+    (See #881915)
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 23 Nov 2017 11:14:11 +0000
+
 flatpak (0.10.0-2) unstable; urgency=medium
 
   * Version the dh-exec build-dependency to (>= 0.23~).
