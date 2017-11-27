@@ -21,6 +21,7 @@ Build-Depends:
  gtk-doc-tools,
  gtk-update-icon-cache <!nocheck>,
  hicolor-icon-theme <!nocheck>,
+ libappstream-glib-dev,
  libarchive-dev (>= 2.8.0),
  libattr1-dev,
  libcap-dev,

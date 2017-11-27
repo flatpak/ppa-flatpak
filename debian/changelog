@@ -1,5 +1,8 @@
-flatpak (0.10.0-3) UNRELEASED; urgency=medium
+flatpak (0.10.1-1) UNRELEASED; urgency=medium
 
+  * New upstream release
+    - d/copyright: Update
+    - d/control: Add build-dependency on appstream-glib
   * d/autogen.sh: Run gtkdocize --copy. Plain gtkdocize replaces
     gtk-doc.make with a symlink, which dh_autoreconf_clean won't remove,
     breaking the ability to build twice in a row from the same directory.
