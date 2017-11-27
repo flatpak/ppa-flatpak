@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [10])
-m4_define([flatpak_micro_version], [0])
+m4_define([flatpak_micro_version], [1])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -225,6 +225,8 @@ PKG_CHECK_MODULES(OSTREE, [ostree-1 >= $OSTREE_REQS])
 PKG_CHECK_MODULES(FUSE, [fuse])
 
 PKG_CHECK_MODULES(JSON, [json-glib-1.0])
+
+PKG_CHECK_MODULES(APPSTREAM_GLIB, [appstream-glib])
 
 AC_ARG_ENABLE([seccomp],
               AC_HELP_STRING([--disable-seccomp],

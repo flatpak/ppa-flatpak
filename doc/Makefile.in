@@ -228,6 +228,8 @@ am__relativize = \
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
+APPSTREAM_GLIB_CFLAGS = @APPSTREAM_GLIB_CFLAGS@
+APPSTREAM_GLIB_LIBS = @APPSTREAM_GLIB_LIBS@
 AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
@@ -448,6 +450,7 @@ man1 = \
 	flatpak-remote-delete.1		\
 	flatpak-remote-modify.1		\
 	flatpak-remote-ls.1		\
+	flatpak-remote-info.1		\
 	flatpak-install.1		\
 	flatpak-config.1		\
 	flatpak-update.1		\
@@ -472,6 +475,7 @@ man1 = \
 	flatpak-build-sign.1		\
 	flatpak-build-commit-from.1	\
 	flatpak-repo.1			\
+	flatpak-search.1		\
 	$(NULL)
 
 man5 = \

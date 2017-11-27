@@ -2426,6 +2426,7 @@ typedef struct {
 
 struct _FlatpakExports {
   GHashTable *hash;
+  FlatpakFilesystemMode host_fs;
 };
 
 static void
@@ -2599,6 +2600,18 @@ exports_add_bwrap_args (FlatpakExports *exports,
                                   (ep->mode == FLATPAK_FILESYSTEM_MODE_READ_ONLY) ? "--ro-bind" : "--bind",
                                   path, path, NULL);
         }
+    }
+
+  if (exports->host_fs != 0)
+    {
+      if (g_file_test ("/usr", G_FILE_TEST_IS_DIR))
+	flatpak_bwrap_add_args (bwrap,
+				(exports->host_fs == FLATPAK_FILESYSTEM_MODE_READ_ONLY) ? "--ro-bind" : "--bind",
+				"/usr", "/run/host/usr", NULL);
+      if (g_file_test ("/etc", G_FILE_TEST_IS_DIR))
+	flatpak_bwrap_add_args (bwrap,
+				(exports->host_fs == FLATPAK_FILESYSTEM_MODE_READ_ONLY) ? "--ro-bind" : "--bind",
+				"/etc", "/run/host/etc", NULL);
     }
 }
 
@@ -2844,6 +2857,7 @@ export_paths_export_context (FlatpakContext *context,
           closedir (dir);
         }
       exports_path_expose (exports, fs_mode, "/run/media");
+      exports->host_fs = fs_mode;
     }
 
   home_mode = (FlatpakFilesystemMode) g_hash_table_lookup (context->filesystems, "home");
@@ -5180,6 +5194,7 @@ flatpak_run_app (const char     *app_ref,
   g_autoptr(GVariant) app_deploy_data = NULL;
   g_autoptr(GFile) app_files = NULL;
   g_autoptr(GFile) runtime_files = NULL;
+  g_autoptr(GFile) bin_ldconfig = NULL;
   g_autoptr(GFile) app_id_dir = NULL;
   g_autofree char *default_runtime = NULL;
   g_autofree char *default_command = NULL;
@@ -5302,6 +5317,10 @@ flatpak_run_app (const char     *app_ref,
     flatpak_context_merge (app_context, extra_context);
 
   runtime_files = flatpak_deploy_get_files (runtime_deploy);
+  bin_ldconfig = g_file_resolve_relative_path (runtime_files, "bin/ldconfig");
+  if (!g_file_query_exists (bin_ldconfig, NULL))
+    use_ld_so_cache = FALSE;
+
   if (app_deploy != NULL)
     {
       app_files = flatpak_deploy_get_files (app_deploy);
@@ -5340,18 +5359,21 @@ flatpak_run_app (const char     *app_ref,
 
   /* At this point we have the minimal argv set up, with just the app, runtime and extensions.
      We can reuse this to generate the ld.so.cache (if needed) */
-  checksum = calculate_ld_cache_checksum (app_deploy_data, runtime_deploy_data,
-                                                  app_extensions, runtime_extensions);
-  ld_so_fd = regenerate_ld_cache (bwrap->argv,
-                                  bwrap->fds,
-                                  app_id_dir,
-                                  checksum,
-                                  runtime_files,
-                                  generate_ld_so_conf,
-                                  cancellable, error);
-  if (ld_so_fd == -1)
-    return FALSE;
-  g_array_append_val (bwrap->fds, ld_so_fd);
+  if (use_ld_so_cache)
+    {
+      checksum = calculate_ld_cache_checksum (app_deploy_data, runtime_deploy_data,
+					      app_extensions, runtime_extensions);
+      ld_so_fd = regenerate_ld_cache (bwrap->argv,
+				      bwrap->fds,
+				      app_id_dir,
+				      checksum,
+				      runtime_files,
+				      generate_ld_so_conf,
+				      cancellable, error);
+      if (ld_so_fd == -1)
+	return FALSE;
+      g_array_append_val (bwrap->fds, ld_so_fd);
+    }
 
   if (app_context->features & FLATPAK_CONTEXT_FEATURE_DEVEL)
     flags |= FLATPAK_RUN_FLAG_DEVEL;

@@ -2,10 +2,10 @@
 <!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
     "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
 
-<refentry id="flatpak-remote-ls">
+<refentry id="flatpak-remote-info">
 
     <refentryinfo>
-        <title>flatpak remote-ls</title>
+        <title>flatpak remote-info</title>
         <productname>flatpak</productname>
 
         <authorgroup>
@@ -19,20 +19,21 @@
     </refentryinfo>
 
     <refmeta>
-        <refentrytitle>flatpak remote-ls</refentrytitle>
+        <refentrytitle>flatpak remote-info</refentrytitle>
         <manvolnum>1</manvolnum>
     </refmeta>
 
     <refnamediv>
-        <refname>flatpak-remote-ls</refname>
-        <refpurpose>Show available runtimes and applications</refpurpose>
+        <refname>flatpak-remote-info</refname>
+        <refpurpose>Show information about an application or runtime in a remote</refpurpose>
     </refnamediv>
 
     <refsynopsisdiv>
             <cmdsynopsis>
-                <command>flatpak remote-ls</command>
+                <command>flatpak remote-info</command>
                 <arg choice="opt" rep="repeat">OPTION</arg>
                 <arg choice="plain">REMOTE</arg>
+                <arg choice="plain">REF</arg>
             </cmdsynopsis>
     </refsynopsisdiv>
 
@@ -40,9 +41,15 @@
         <title>Description</title>
 
         <para>
-            Shows runtimes and applications that are available in the
+            Shows information about the runtime or application <arg choice="plain">REF</arg> from the
             remote repository with the name <arg choice="plain">REMOTE</arg>.
-            You can find all configured remote repositories with <citerefentry><refentrytitle>flatpak-remotes</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+            You can find all configured remote repositories with flatpak remotes.
+        </para>
+        <para>
+            By default, the output is formatted in a friendly format.
+            If you specify one of the options --show-ref, --show-commit,
+            --show-parent, or --show-metadata, the output is instead formatted
+            in a machine-readable format.
         </para>
         <para>
             Unless overridden with the --user or --installation options, this command
@@ -94,19 +101,10 @@
             </varlistentry>
 
             <varlistentry>
-                <term><option>-d</option></term>
-                <term><option>--show-details</option></term>
-
-                <listitem><para>
-                    Show arches, branches and commit ids, in addition to the names.
-                </para></listitem>
-            </varlistentry>
-
-            <varlistentry>
                 <term><option>--runtime</option></term>
 
                 <listitem><para>
-                    Show only runtimes, omit applications.
+                    Assume that <arg choice="plain">REF</arg> is a runtime if not explicitly specified.
                 </para></listitem>
             </varlistentry>
 
@@ -114,25 +112,7 @@
                 <term><option>--app</option></term>
 
                 <listitem><para>
-                    Show only applications, omit runtimes.
-                </para></listitem>
-            </varlistentry>
-
-            <varlistentry>
-                <term><option>--all</option></term>
-                <term><option>-a</option></term>
-
-                <listitem><para> Show everything. By default locale and
-                debug extensions as well as secondary arches when the primary
-                arch in available are hidden.
-                </para></listitem>
-            </varlistentry>
-
-            <varlistentry>
-                <term><option>--updates</option></term>
-
-                <listitem><para>
-                    Show only those which have updates available.
+                    Assume that <arg choice="plain">REF</arg> is an app if not explicitly specified.
                 </para></listitem>
             </varlistentry>
 
@@ -140,8 +120,59 @@
                 <term><option>--arch=ARCH</option></term>
 
                 <listitem><para>
-                    Show only those matching the specied architecture. By default, only
-                    supported architectures are shown. Use --arch=* to show all archtectures.
+                    The default architecture to look for, if not given explicitly in the <arg choice="plain">REF</arg>.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--commit=COMMIT</option></term>
+
+                <listitem><para>
+                    Show information about the specific commit, rather than the latest version.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--log</option></term>
+
+                <listitem><para>
+                    Display a log of previous versions.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>-r</option></term>
+                <term><option>--show-ref</option></term>
+
+                <listitem><para>
+                    Show the matched ref.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>-c</option></term>
+                <term><option>--show-commit</option></term>
+
+                <listitem><para>
+                    Show the commit id.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>-p</option></term>
+                <term><option>--show-parent</option></term>
+
+                <listitem><para>
+                    Show the parent commit id.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>-m</option></term>
+                <term><option>--show-metadata</option></term>
+
+                <listitem><para>
+                    Show the metadata.
                 </para></listitem>
             </varlistentry>
 
@@ -162,13 +193,6 @@
                 </para></listitem>
             </varlistentry>
 
-            <varlistentry>
-                <term><option>--version</option></term>
-
-                <listitem><para>
-                    Print version information and exit.
-                </para></listitem>
-            </varlistentry>
         </variablelist>
     </refsect1>
 
@@ -176,11 +200,20 @@
         <title>Examples</title>
 
         <para>
-            <command>$ flatpak --user remote-ls --app testrepo</command>
+            <command>$ flatpak --user remote-info flathub org.gnome.gedit</command>
         </para>
 <programlisting>
-org.gnome.Builder
-org.freedesktop.glxgears
+Ref: app/org.gnome.gedit/x86_64/stable
+ID: org.gnome.gedit
+Arch: x86_64
+Branch: stable
+Date: 2017-07-31 16:05:22 +0000
+Subject: Build org.gnome.gedit at 3ec291fc1ce4d78220527fa79576f4cc1481ebe5
+Commit: 3de7e9dde3bb8382aad9dfbbff20eccd9bf2100bc1887a3619ec0372e8066bf7
+Parent: -
+Download size: 3,4 MB
+Installed size: 11,1 MB
+Runtime: org.gnome.Platform/x86_64/3.24
 </programlisting>
 
     </refsect1>
@@ -191,6 +224,7 @@ org.freedesktop.glxgears
             <para>
                 <citerefentry><refentrytitle>flatpak</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
                 <citerefentry><refentrytitle>flatpak-remotes</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+                <citerefentry><refentrytitle>flatpak-remote-ls</refentrytitle><manvolnum>1</manvolnum></citerefentry>
             </para>
     </refsect1>
 
