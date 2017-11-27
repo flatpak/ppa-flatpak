@@ -67,6 +67,10 @@ static FlatpakCommand commands[] = {
   { "config", N_("Configure flatpak"), flatpak_builtin_config, flatpak_complete_config },
 
    /* translators: please keep the leading newline and space */
+  { N_("\n Finding applications and runtimes") },
+  { "search", N_("Search for remote apps/runtimes"), flatpak_builtin_search, flatpak_complete_search },
+
+   /* translators: please keep the leading newline and space */
   { N_("\n Running applications") },
   { "run", N_("Run an application"), flatpak_builtin_run, flatpak_complete_run },
   { "override", N_("Override permissions for an application"), flatpak_builtin_override, flatpak_complete_override },
@@ -88,6 +92,7 @@ static FlatpakCommand commands[] = {
   { "remote-delete", N_("Delete a configured remote"), flatpak_builtin_delete_remote, flatpak_complete_delete_remote },
   { "remote-list", NULL, flatpak_builtin_list_remotes, flatpak_complete_list_remotes, TRUE },
   { "remote-ls", N_("List contents of a configured remote"), flatpak_builtin_ls_remote, flatpak_complete_ls_remote },
+  { "remote-info", N_("Show information about a remote app or runtime"), flatpak_builtin_info_remote, flatpak_complete_info_remote },
 
    /* translators: please keep the leading newline and space */
   { N_("\n Build applications") },
@@ -146,7 +151,7 @@ message_handler (const gchar   *log_domain,
 {
   /* Make this look like normal console output */
   if (log_level & G_LOG_LEVEL_DEBUG)
-    g_printerr ("XA: %s\n", message);
+    g_printerr ("F: %s\n", message);
   else
     g_printerr ("%s: %s\n", g_get_prgname (), message);
 }
@@ -288,12 +293,16 @@ flatpak_option_context_parse (GOptionContext     *context,
             return FALSE;
         }
 
-      if (!flatpak_dir_ensure_path (dir, cancellable, error))
-        return FALSE;
-
-      if (!(flags & FLATPAK_BUILTIN_FLAG_NO_REPO) &&
-          !flatpak_dir_ensure_repo (dir, cancellable, error))
-        return FALSE;
+      if (flags & FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO)
+        {
+          if (!flatpak_dir_maybe_ensure_repo (dir, cancellable, error))
+            return FALSE;
+        }
+      else
+        {
+          if (!flatpak_dir_ensure_repo (dir, cancellable, error))
+            return FALSE;
+        }
 
       flatpak_log_dir_access (dir);
     }

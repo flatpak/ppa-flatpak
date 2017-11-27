@@ -346,6 +346,16 @@ key=v1;v2;
             </varlistentry>
 
             <varlistentry>
+                <term><option>--readonly</option></term>
+
+                <listitem><para>
+                  Mount the normally writable destination directories read-only. This can
+                  be useful if you want to run something in the sandbox but guarantee that
+                  it doesn't affect the build results. For example tests.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--metadata=FILE</option></term>
 
                 <listitem><para>
@@ -356,7 +366,25 @@ key=v1;v2;
                 </para></listitem>
             </varlistentry>
 
-        </variablelist>
+            <varlistentry>
+                <term><option>--log-session-bus</option></term>
+
+                <listitem><para>
+                    Log session bus traffic. This can be useful to see what access you need to allow in
+                    your D-Bus policy.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--log-system-bus</option></term>
+
+                <listitem><para>
+                    Log system bus traffic. This can be useful to see what access you need to allow in
+                    your D-Bus policy.
+                </para></listitem>
+            </varlistentry>
+
+          </variablelist>
     </refsect1>
 
     <refsect1>
