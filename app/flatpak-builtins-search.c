@@ -28,17 +28,6 @@
 #include "flatpak-table-printer.h"
 #include "flatpak-utils.h"
 
-static gboolean opt_user;
-static gboolean opt_system;
-static char **opt_installations;
-
-static GOptionEntry options[] = {
-  { "user", 0, 0, G_OPTION_ARG_NONE, &opt_user, N_("Search only user installations"), NULL },
-  { "system", 0, 0, G_OPTION_ARG_NONE, &opt_system, N_("Search only system-wide installations"), NULL },
-  { "installation", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_installations, N_("Search specific system-wide installations"), NULL },
-  { NULL }
-};
-
 static GPtrArray *
 get_remote_stores (GPtrArray *dirs, GCancellable *cancellable)
 {
@@ -71,8 +60,10 @@ get_remote_stores (GPtrArray *dirs, GCancellable *cancellable)
                                                               NULL);
           g_autoptr(GFile) appstream_file = g_file_new_for_path (appstream_path);
           g_autoptr(AsStore) store = as_store_new ();
+#if AS_CHECK_VERSION(0, 6, 1)
           // We want to see multiple versions/branches of same app-id's, e.g. org.gnome.Platform
           as_store_set_add_flags (store, as_store_get_add_flags (store) | AS_STORE_ADD_FLAG_USE_UNIQUE_ID);
+#endif
           as_store_from_file (store, appstream_file, NULL, cancellable, &error);
           if (error)
             {
@@ -135,6 +126,44 @@ compare_by_score (MatchResult *a, MatchResult *b, gpointer user_data)
   return (int)b->score - (int)a->score;
 }
 
+#if !AS_CHECK_VERSION(0, 6, 1)
+/* Roughly copied directly from appstream-glib */
+
+static const gchar *
+as_app_fix_unique_nullable (const gchar *tmp)
+{
+  if (tmp == NULL || tmp[0] == '\0')
+    return "*";
+  return tmp;
+}
+
+static char *
+as_app_get_unique_id (AsApp *app)
+{
+  const gchar *id_str = NULL;
+  const gchar *kind_str = NULL;
+  AsAppKind kind = as_app_get_kind (app);
+
+  if (kind != AS_APP_KIND_UNKNOWN)
+    kind_str = as_app_kind_to_string (kind);
+  id_str = as_app_get_id_no_prefix (app);
+  return g_strdup_printf ("%s/%s",
+           as_app_fix_unique_nullable (kind_str),
+           as_app_fix_unique_nullable (id_str));
+}
+
+static gboolean
+as_app_equal (AsApp *app1, AsApp *app2)
+{
+  if (app1 == app2)
+    return TRUE;
+
+  g_autofree char *app1_id = as_app_get_unique_id (app1);
+  g_autofree char *app2_id = as_app_get_unique_id (app2);
+  return strcmp (app1_id, app2_id) == 0;
+}
+#endif
+
 static int
 compare_apps (MatchResult *a, AsApp *b)
 {
@@ -162,12 +191,13 @@ print_app (MatchResult *res, FlatpakTablePrinter *printer)
   AsRelease *release = as_app_get_release_default (res->app);
   const char *version = release ? as_release_get_version (release) : NULL;
   const char *id = as_app_get_id_filename (res->app);
-  const char *branch = as_app_get_branch (res->app);
   guint i;
 
   flatpak_table_printer_add_column (printer, id);
   flatpak_table_printer_add_column (printer, version);
-  flatpak_table_printer_add_column (printer, branch);
+#if AS_CHECK_VERSION(0, 6, 1)
+  flatpak_table_printer_add_column (printer, as_app_get_branch (res->app));
+#endif
   flatpak_table_printer_add_column (printer, g_ptr_array_index (res->remotes, 0));
   for (i = 1; i < res->remotes->len; ++i)
     flatpak_table_printer_append_with_comma (printer, g_ptr_array_index (res->remotes, i));
@@ -178,43 +208,13 @@ print_app (MatchResult *res, FlatpakTablePrinter *printer)
 gboolean
 flatpak_builtin_search (int argc, char **argv, GCancellable *cancellable, GError **error)
 {
-  g_autoptr(GPtrArray) dirs = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
+  g_autoptr(GPtrArray) dirs = NULL;
   g_autoptr(GOptionContext) context = g_option_context_new (_("TEXT - Search remote apps/runtimes for text"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
-  if (!flatpak_option_context_parse (context, options, &argc, &argv, FLATPAK_BUILTIN_FLAG_NO_DIR,
-                                     NULL, cancellable, error))
+  if (!flatpak_option_context_parse (context, NULL, &argc, &argv,
+                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS, &dirs, cancellable, error))
     return FALSE;
-
-  // Default: All system and user remotes
-  if (!opt_user && !opt_system && opt_installations == NULL)
-      opt_user = opt_system = TRUE;
-
-  if (opt_user)
-    g_ptr_array_add (dirs, flatpak_dir_get_user ());
-
-  if (opt_system)
-    g_ptr_array_add (dirs, flatpak_dir_get_system_default ());
-
-  if (opt_installations != NULL)
-    {
-      int i = 0;
-
-      for (i = 0; opt_installations[i] != NULL; i++)
-        {
-          FlatpakDir *installation_dir = NULL;
-
-          /* Already included the default system installation. */
-          if (opt_system && g_strcmp0 (opt_installations[i], "default") == 0)
-            continue;
-
-          installation_dir = flatpak_dir_get_system_by_id (opt_installations[i], cancellable, error);
-          if (installation_dir == NULL)
-            return FALSE;
-
-          g_ptr_array_add (dirs, installation_dir);
-        }
-    }
 
   if (argc < 2)
     return usage_error (context, _("TEXT must be specified"), error);
@@ -269,7 +269,9 @@ flatpak_builtin_search (int argc, char **argv, GCancellable *cancellable, GError
 
       flatpak_table_printer_set_column_title (printer, col++, _("Application ID"));
       flatpak_table_printer_set_column_title (printer, col++, _("Version"));
+#if AS_CHECK_VERSION(0, 6, 1)
       flatpak_table_printer_set_column_title (printer, col++, _("Branch"));
+#endif
       flatpak_table_printer_set_column_title (printer, col++, _("Remotes"));
       flatpak_table_printer_set_column_title (printer, col++, _("Description"));
       g_slist_foreach (matches, (GFunc)print_app, printer);
@@ -291,11 +293,11 @@ flatpak_complete_search (FlatpakCompletion *completion)
   g_autoptr(GOptionContext) context = NULL;
 
   context = g_option_context_new ("");
-  if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv,
-                                     FLATPAK_BUILTIN_FLAG_NO_DIR, NULL, NULL, NULL))
+  if (!flatpak_option_context_parse (context, NULL, &completion->argc, &completion->argv,
+                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS, NULL, NULL, NULL))
     return FALSE;
 
-  flatpak_complete_options (completion, options);
   flatpak_complete_options (completion, global_entries);
+  flatpak_complete_options (completion, user_entries);
   return TRUE;
 }

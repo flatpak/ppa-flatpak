@@ -230,7 +230,7 @@ add_file_to_mtree (GFile             *file,
   g_file_info_set_file_type (file_info, G_FILE_TYPE_REGULAR);
   g_file_info_set_attribute_uint32 (file_info, "unix::uid", 0);
   g_file_info_set_attribute_uint32 (file_info, "unix::gid", 0);
-  g_file_info_set_attribute_uint32 (file_info, "unix::mode", 0100744);
+  g_file_info_set_attribute_uint32 (file_info, "unix::mode", 0100644);
 
   raw_input = (GInputStream *) g_file_read (file, cancellable, error);
   if (raw_input == NULL)
@@ -820,6 +820,12 @@ flatpak_builtin_build_export (int argc, char **argv, GCancellable *cancellable, 
 #endif  /* !FLATPAK_ENABLE_P2P */
 
   if (!ostree_repo_prepare_transaction (repo, NULL, cancellable, error))
+    goto out;
+
+  /* This is useful only if the target is a "bare" rep, but this happens
+     in flatpak-builder when commiting to the cache repo. For other repos
+     this is a no-op */
+  if (!ostree_repo_scan_hardlinks (repo, cancellable, error))
     goto out;
 
   mtree = ostree_mutable_tree_new ();

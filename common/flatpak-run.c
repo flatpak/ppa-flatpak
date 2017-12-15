@@ -1586,6 +1586,8 @@ flatpak_context_save_metadata (FlatpakContext *context,
             g_ptr_array_add (array, g_strconcat (key, ":create", NULL));
           else if (value != NULL)
             g_ptr_array_add (array, g_strdup (key));
+          else
+            g_ptr_array_add (array, g_strconcat ("!", key, NULL));
         }
 
       g_key_file_set_string_list (metakey,
@@ -2812,6 +2814,17 @@ exports_path_tmpfs (FlatpakExports *exports,
 }
 
 static void
+exports_path_expose_or_hide (FlatpakExports *exports,
+                             FlatpakFilesystemMode mode,
+                             const char *path)
+{
+  if (mode == 0)
+    exports_path_tmpfs (exports, path);
+  else
+    exports_path_expose (exports, mode, path);
+}
+
+static void
 exports_path_dir (FlatpakExports *exports,
                   const char *path)
 {
@@ -2875,8 +2888,7 @@ export_paths_export_context (FlatpakContext *context,
       const char *filesystem = key;
       FlatpakFilesystemMode mode = GPOINTER_TO_INT (value);
 
-      if (value == NULL ||
-          strcmp (filesystem, "host") == 0 ||
+      if (strcmp (filesystem, "host") == 0 ||
           strcmp (filesystem, "home") == 0)
         continue;
 
@@ -2915,7 +2927,7 @@ export_paths_export_context (FlatpakContext *context,
                 g_string_append_printf (xdg_dirs_conf, "%s=\"%s\"\n",
                                         config_key, path);
 
-              exports_path_expose (exports, mode, subpath);
+              exports_path_expose_or_hide (exports, mode, subpath);
             }
         }
       else if (g_str_has_prefix (filesystem, "~/"))
@@ -2928,7 +2940,7 @@ export_paths_export_context (FlatpakContext *context,
             g_mkdir_with_parents (path, 0755);
 
           if (g_file_test (path, G_FILE_TEST_EXISTS))
-            exports_path_expose (exports, mode, path);
+            exports_path_expose_or_hide (exports, mode, path);
         }
       else if (g_str_has_prefix (filesystem, "/"))
         {
@@ -2936,7 +2948,7 @@ export_paths_export_context (FlatpakContext *context,
             g_mkdir_with_parents (filesystem, 0755);
 
           if (g_file_test (filesystem, G_FILE_TEST_EXISTS))
-            exports_path_expose (exports, mode, filesystem);
+            exports_path_expose_or_hide (exports, mode, filesystem);
         }
       else
         {
@@ -5009,19 +5021,28 @@ flatpak_bwrap_add_args_data (FlatpakBwrap *bwrap,
   return TRUE;
 }
 
-/* This resolves the target here rather than the destination, because
-   it may not resolve in bwrap setup due to absolute relative links
-   conflicting with /newroot root. */
+/* This resolves the target here rather than in bwrap, because it may
+ * not resolve in bwrap setup due to absolute symlinks conflicting
+ * with /newroot root. For example, dest could be inside
+ * ~/.var/app/XXX where XXX is an absolute symlink.  However, in the
+ * usecases here the destination file often doesn't exist, so we
+ * only resolve the directory part.
+ */
 void
 flatpak_bwrap_add_bind_arg (FlatpakBwrap *bwrap,
                             const char *type,
                             const char *src,
                             const char *dest)
 {
-  g_autofree char *dest_real = realpath (dest, NULL);
+  g_autofree char *dest_dirname = g_path_get_dirname (dest);
+  g_autofree char *dest_dirname_real = realpath (dest_dirname, NULL);
 
-  if (dest_real)
-    flatpak_bwrap_add_args (bwrap, type, src, dest_real, NULL);
+  if (dest_dirname_real)
+    {
+      g_autofree char *dest_basename = g_path_get_basename (dest);
+      g_autofree char *dest_real = g_build_filename (dest_dirname_real, dest_basename, NULL);
+      flatpak_bwrap_add_args (bwrap, type, src, dest_real, NULL);
+    }
 }
 
 
