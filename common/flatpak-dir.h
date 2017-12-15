@@ -88,9 +88,10 @@ typedef enum {
   FLATPAK_HELPER_DEPLOY_FLAGS_UPDATE = 1 << 0,
   FLATPAK_HELPER_DEPLOY_FLAGS_NO_DEPLOY = 1 << 1,
   FLATPAK_HELPER_DEPLOY_FLAGS_LOCAL_PULL = 1 << 2,
+  FLATPAK_HELPER_DEPLOY_FLAGS_REINSTALL = 1 << 3,
 } FlatpakHelperDeployFlags;
 
-#define FLATPAK_HELPER_DEPLOY_FLAGS_ALL (FLATPAK_HELPER_DEPLOY_FLAGS_UPDATE|FLATPAK_HELPER_DEPLOY_FLAGS_NO_DEPLOY|FLATPAK_HELPER_DEPLOY_FLAGS_LOCAL_PULL)
+#define FLATPAK_HELPER_DEPLOY_FLAGS_ALL (FLATPAK_HELPER_DEPLOY_FLAGS_UPDATE|FLATPAK_HELPER_DEPLOY_FLAGS_NO_DEPLOY|FLATPAK_HELPER_DEPLOY_FLAGS_LOCAL_PULL|FLATPAK_HELPER_DEPLOY_FLAGS_REINSTALL)
 
 typedef enum {
   FLATPAK_HELPER_UNINSTALL_FLAGS_NONE = 0,
@@ -338,6 +339,9 @@ gboolean    flatpak_dir_deploy_appstream (FlatpakDir          *self,
                                           gboolean            *out_changed,
                                           GCancellable        *cancellable,
                                           GError             **error);
+gboolean    flatpak_dir_check_for_appstream_update (FlatpakDir          *self,
+                                                    const char          *remote,
+                                                    const char          *arch);
 gboolean    flatpak_dir_update_appstream (FlatpakDir          *self,
                                           const char          *remote,
                                           const char          *arch,
@@ -433,12 +437,14 @@ gboolean   flatpak_dir_deploy_install (FlatpakDir   *self,
                                        const char   *ref,
                                        const char   *origin,
                                        const char  **subpaths,
+                                       gboolean      reinstall,
                                        GCancellable *cancellable,
                                        GError      **error);
 gboolean   flatpak_dir_install (FlatpakDir          *self,
                                 gboolean             no_pull,
                                 gboolean             no_deploy,
                                 gboolean             no_static_deltas,
+                                gboolean             reinstall,
                                 const char          *ref,
                                 const char          *remote_name,
                                 const char         **subpaths,
@@ -543,6 +549,8 @@ char      *flatpak_dir_create_origin_remote (FlatpakDir   *self,
                                              const char   *collection_id,
                                              GCancellable *cancellable,
                                              GError      **error);
+void       flatpak_dir_prune_origin_remote (FlatpakDir *self,
+                                            const char *remote);
 gboolean   flatpak_dir_create_remote_for_ref_file (FlatpakDir   *self,
                                                    GBytes  *data,
                                                    const char *default_arch,
@@ -563,6 +571,8 @@ GKeyFile * flatpak_dir_parse_repofile (FlatpakDir   *self,
 char      *flatpak_dir_find_remote_by_uri (FlatpakDir   *self,
                                            const char   *uri,
                                            const char   *collection_id);
+gboolean   flatpak_dir_has_remote (FlatpakDir   *self,
+                                   const char   *remote_name);
 char     **flatpak_dir_list_remotes (FlatpakDir   *self,
                                      GCancellable *cancellable,
                                      GError      **error);
