@@ -1,4 +1,4 @@
-flatpak (0.10.2-1) UNRELEASED; urgency=medium
+flatpak (0.10.2-1) unstable; urgency=medium
 
   * New upstream release
     - d/control: Be specific about the appstream-glib dependency,
@@ -6,7 +6,7 @@ flatpak (0.10.2-1) UNRELEASED; urgency=medium
     - d/control: Update build-dependency on ostree to 2017.14
   * Standards-Version: 4.1.2 (no changes required)
 
- -- Simon McVittie <smcv@debian.org>  Fri, 08 Dec 2017 19:14:16 +0000
+ -- Simon McVittie <smcv@debian.org>  Fri, 15 Dec 2017 15:26:30 +0000
 
 flatpak (0.10.1-1) unstable; urgency=medium
 
