@@ -346,6 +346,9 @@ flatpak_option_context_parse (GOptionContext     *context,
               g_ptr_array_add (dirs, flatpak_dir_get_user ());
 
               system_dirs = flatpak_dir_get_system_list (cancellable, error);
+              if (system_dirs == NULL)
+                return FALSE;
+
               for (i = 0; i < system_dirs->len; i++)
                 {
                   FlatpakDir *dir = g_ptr_array_index (system_dirs, i);
@@ -364,7 +367,7 @@ flatpak_option_context_parse (GOptionContext     *context,
           else if (opt_installations != NULL)
             {
               if (g_strv_length (opt_installations) > 1)
-                return usage_error (context, _("The --installation option was used multiple times"
+                return usage_error (context, _("The --installation option was used multiple times "
                                                "for a command that works on one installation"), error);
               dir = flatpak_dir_get_system_by_id (opt_installations[0], cancellable, error);
               if (dir == NULL)
