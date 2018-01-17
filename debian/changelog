@@ -1,4 +1,4 @@
-flatpak (0.10.2.1-2) UNRELEASED; urgency=medium
+flatpak (0.10.2.1-2) unstable; urgency=medium
 
   * Move Vcs-* to salsa.debian.org
   * Standards-Version: 4.1.3 (no changes required)
@@ -6,7 +6,7 @@ flatpak (0.10.2.1-2) UNRELEASED; urgency=medium
     d/p/debian/Use-Python-3-for-test-web-server.patch:
     Use Python 3 for tests
 
- -- Simon McVittie <smcv@debian.org>  Mon, 15 Jan 2018 01:21:03 +0000
+ -- Simon McVittie <smcv@debian.org>  Wed, 17 Jan 2018 20:55:34 +0000
 
 flatpak (0.10.2.1-1) unstable; urgency=medium
 
