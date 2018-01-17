@@ -8,4 +8,4 @@ Restrictions: isolation-machine
 Depends:
  flatpak-tests,
  gnome-desktop-testing,
- python,
+ python3,

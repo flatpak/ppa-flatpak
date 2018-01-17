@@ -2,6 +2,9 @@ flatpak (0.10.2.1-2) UNRELEASED; urgency=medium
 
   * Move Vcs-* to salsa.debian.org
   * Standards-Version: 4.1.3 (no changes required)
+  * d/control, d/tests/control,
+    d/p/debian/Use-Python-3-for-test-web-server.patch:
+    Use Python 3 for tests
 
  -- Simon McVittie <smcv@debian.org>  Mon, 15 Jan 2018 01:21:03 +0000
 

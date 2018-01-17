@@ -104,7 +104,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
- python,
+ python3,
 Description: Application deployment framework for desktop apps (tests)
  Flatpak installs, manages and runs sandboxed desktop application bundles.
  See the flatpak package for a more comprehensive description.
