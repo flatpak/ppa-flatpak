@@ -1,3 +1,11 @@
+flatpak (0.10.3-1) unstable; urgency=medium
+
+  * New upstream bugfix release
+    - Fixes a D-Bus filtering bypass in flatpak-dbus-proxy
+      (Closes: #888842)
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 30 Jan 2018 14:38:24 +0000
+
 flatpak (0.10.2.1-2) unstable; urgency=medium
 
   * Move Vcs-* to salsa.debian.org
