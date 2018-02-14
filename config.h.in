@@ -43,6 +43,10 @@
    */
 #undef HAVE_DCGETTEXT
 
+/* Define to 1 if you have the declaration of `copy_file_range', and to 0 if
+   you don't. */
+#undef HAVE_DECL_COPY_FILE_RANGE
+
 /* Define to 1 if you have the declaration of `memfd_create', and to 0 if you
    don't. */
 #undef HAVE_DECL_MEMFD_CREATE
