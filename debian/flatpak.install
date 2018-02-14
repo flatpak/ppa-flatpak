@@ -9,12 +9,8 @@ usr/bin/flatpak
 usr/lib/flatpak/flatpak-dbus-proxy
 usr/lib/flatpak/flatpak-session-helper
 usr/lib/flatpak/flatpak-system-helper
-usr/lib/flatpak/xdg-document-portal
-usr/lib/flatpak/xdg-permission-store
 usr/lib/systemd/user/dbus.service.d/flatpak.conf
 usr/lib/systemd/user/flatpak-session-helper.service
-usr/lib/systemd/user/xdg-document-portal.service
-usr/lib/systemd/user/xdg-permission-store.service
 usr/share/bash-completion
 usr/share/dbus-1/services
 usr/share/dbus-1/system-services

@@ -35,6 +35,7 @@ endif
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
+		--disable-document-portal \
 		--enable-installed-tests \
 		--libexecdir=/usr/lib/flatpak \
 		--with-priv-mode=none \

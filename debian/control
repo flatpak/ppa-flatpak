@@ -58,6 +58,7 @@ Architecture: linux-any
 Depends:
  bubblewrap (>= 0.1.8),
  fuse,
+ xdg-desktop-portal (>= 0.10),
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
