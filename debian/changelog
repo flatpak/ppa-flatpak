@@ -3,6 +3,8 @@ flatpak (0.10.4-1) UNRELEASED; urgency=medium
   * New upstream release
   * Don't install documents portal or permission store. Depend on
     xdg-desktop-portal (>= 0.10) instead: they have moved there.
+  * d/p/Only-require-FUSE-if-we-re-still-building-the-document-po.patch:
+    Don't depend on FUSE at build-time
 
  -- Simon McVittie <smcv@debian.org>  Wed, 14 Feb 2018 12:03:02 +0000
 

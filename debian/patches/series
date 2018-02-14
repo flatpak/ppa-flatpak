@@ -1,1 +1,2 @@
 debian/Use-Python-3-for-test-web-server.patch
+Only-require-FUSE-if-we-re-still-building-the-document-po.patch
