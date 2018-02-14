@@ -25,6 +25,7 @@
 
 #include "libglnx/libglnx.h"
 #include <flatpak-common-types.h>
+#include <flatpak-context.h>
 
 #define FLATPAK_TYPE_DIR flatpak_dir_get_type ()
 #define FLATPAK_DIR(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), FLATPAK_TYPE_DIR, FlatpakDir))
@@ -134,6 +135,7 @@ typedef enum {
   FLATPAK_DIR_STORAGE_TYPE_HARD_DISK,
   FLATPAK_DIR_STORAGE_TYPE_SDCARD,
   FLATPAK_DIR_STORAGE_TYPE_MMC,
+  FLATPAK_DIR_STORAGE_TYPE_NETWORK,
 } FlatpakDirStorageType;
 
 GQuark       flatpak_dir_error_quark (void);
@@ -341,6 +343,13 @@ gboolean    flatpak_dir_deploy_appstream (FlatpakDir          *self,
                                           gboolean            *out_changed,
                                           GCancellable        *cancellable,
                                           GError             **error);
+gboolean    flatpak_dir_find_latest_rev (FlatpakDir               *self,
+                                         const char               *remote,
+                                         const char               *ref,
+                                         char                    **out_rev,
+                                         OstreeRepoFinderResult ***out_results,
+                                         GCancellable             *cancellable,
+                                         GError                  **error);
 gboolean    flatpak_dir_check_for_appstream_update (FlatpakDir          *self,
                                                     const char          *remote,
                                                     const char          *arch);

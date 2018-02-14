@@ -225,7 +225,9 @@ flatpak_get_system_installations (GCancellable *cancellable,
       else
         {
           /* Warn about the problem and continue without listing this installation. */
-          g_warning ("Unable to create FlatpakInstallation for: %s", local_error->message);
+          g_autofree char *dir_name = flatpak_dir_get_name (install_dir);
+          g_warning ("Unable to create FlatpakInstallation for %s: %s",
+                     dir_name, local_error->message);
         }
     }
 
@@ -517,6 +519,9 @@ flatpak_installation_get_storage_type (FlatpakInstallation *self)
 
     case FLATPAK_DIR_STORAGE_TYPE_MMC:
       return FLATPAK_STORAGE_TYPE_MMC;
+
+    case FLATPAK_DIR_STORAGE_TYPE_NETWORK:
+      return FLATPAK_STORAGE_TYPE_NETWORK;
 
     default:
       return FLATPAK_STORAGE_TYPE_DEFAULT;
@@ -1590,7 +1595,13 @@ flatpak_installation_install (FlatpakInstallation    *self,
  *
  * Update an application or runtime.
  *
- * Returns: (transfer full): The ref for the newly updated app (or the same if no update) or %NULL on failure
+ * If the specified package is not installed, then %FLATPAK_ERROR_NOT_INSTALLED
+ * will be thrown.
+ *
+ * If no updates could be found on the remote end and the package is
+ * already up to date, then %FLATPAK_ERROR_ALREADY_INSTALLED will be thrown.
+ *
+ * Returns: (transfer full): The ref for the newly updated app or %NULL on failure
  */
 FlatpakInstalledRef *
 flatpak_installation_update_full (FlatpakInstallation    *self,
@@ -1699,7 +1710,13 @@ out:
  *
  * Update an application or runtime.
  *
- * Returns: (transfer full): The ref for the newly updated app (or the same if no update) or %NULL on failure
+ * If the specified package is not installed, then %FLATPAK_ERROR_NOT_INSTALLED
+ * will be thrown.
+ *
+ * If no updates could be found on the remote end and the package is
+ * already up to date, then %FLATPAK_ERROR_ALREADY_INSTALLED will be thrown.
+ *
+ * Returns: (transfer full): The ref for the newly updated app or %NULL on failure
  */
 FlatpakInstalledRef *
 flatpak_installation_update (FlatpakInstallation    *self,
