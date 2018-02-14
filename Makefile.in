@@ -112,15 +112,14 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = $(am__EXEEXT_1) flatpak$(EXEEXT) $(am__EXEEXT_1)
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_8) \
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_10) \
 	test-libflatpak$(EXEEXT)
 libexec_PROGRAMS = $(am__EXEEXT_1) flatpak-session-helper$(EXEEXT) \
-	$(am__EXEEXT_1) $(am__EXEEXT_7) flatpak-dbus-proxy$(EXEEXT) \
-	$(am__EXEEXT_1) xdg-permission-store$(EXEEXT) $(am__EXEEXT_1) \
-	xdg-document-portal$(EXEEXT) $(am__EXEEXT_1)
-TESTS = $(am__EXEEXT_2) $(am__EXEEXT_9) $(am__EXEEXT_5)
-installed_test_PROGRAMS = $(am__EXEEXT_6)
-check_PROGRAMS = $(am__EXEEXT_4) $(am__EXEEXT_5)
+	$(am__EXEEXT_1) $(am__EXEEXT_8) flatpak-dbus-proxy$(EXEEXT) \
+	$(am__EXEEXT_1) $(am__EXEEXT_9)
+TESTS = $(am__EXEEXT_3) $(am__EXEEXT_11) $(am__EXEEXT_6)
+installed_test_PROGRAMS = $(am__EXEEXT_7)
+check_PROGRAMS = $(am__EXEEXT_5) $(am__EXEEXT_6)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_1 = $(all_test_ltlibs)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_2 = $(all_test_programs)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_3 = $(all_test_scripts)
@@ -149,18 +148,31 @@ check_PROGRAMS = $(am__EXEEXT_4) $(am__EXEEXT_5)
 @BUILD_DOCUMENTATION_TRUE@am__append_14 = . doc
 @WITH_SYSTEM_BWRAP_TRUE@am__append_15 = -DHELPER=\"$(BWRAP)\"
 @WITH_SYSTEM_BWRAP_FALSE@am__append_16 = -DHELPER=\"$(libexecdir)/flatpak-bwrap\"
-@HAVE_INTROSPECTION_TRUE@am__append_17 = Flatpak-1.0.gir
-@HAVE_INTROSPECTION_TRUE@am__append_18 = $(nodist_gir_DATA) \
+@ENABLE_DOCUMENT_PORTAL_TRUE@am__append_17 = \
+@ENABLE_DOCUMENT_PORTAL_TRUE@	data/org.freedesktop.impl.portal.PermissionStore.xml \
+@ENABLE_DOCUMENT_PORTAL_TRUE@	data/org.freedesktop.portal.Documents.xml \
+@ENABLE_DOCUMENT_PORTAL_TRUE@	$(NULL)
+
+@HAVE_INTROSPECTION_TRUE@am__append_18 = Flatpak-1.0.gir
+@HAVE_INTROSPECTION_TRUE@am__append_19 = $(nodist_gir_DATA) \
 @HAVE_INTROSPECTION_TRUE@	$(nodist_typelib_DATA)
-@BUILD_SYSTEM_HELPER_TRUE@am__append_19 = \
+@BUILD_SYSTEM_HELPER_TRUE@am__append_20 = \
 @BUILD_SYSTEM_HELPER_TRUE@	flatpak-system-helper \
 @BUILD_SYSTEM_HELPER_TRUE@	$(NULL)
 
-@BUILD_SYSTEM_HELPER_TRUE@am__append_20 = system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
+@BUILD_SYSTEM_HELPER_TRUE@am__append_21 = system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/flatpak-system-helper.service.in
-@BUILD_SYSTEM_HELPER_TRUE@am__append_21 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service
-@WITH_SYSTEM_BWRAP_TRUE@am__append_22 = FLATPAK_BWRAP=$(BWRAP)
-@WITH_SYSTEM_BWRAP_FALSE@am__append_23 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
+@BUILD_SYSTEM_HELPER_TRUE@am__append_22 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service
+@ENABLE_DOCUMENT_PORTAL_TRUE@am__append_23 = permission-store/xdg-permission-store.service \
+@ENABLE_DOCUMENT_PORTAL_TRUE@	document-portal/xdg-document-portal.service
+@ENABLE_DOCUMENT_PORTAL_TRUE@am__append_24 = permission-store/org.freedesktop.impl.portal.PermissionStore.service \
+@ENABLE_DOCUMENT_PORTAL_TRUE@	document-portal/org.freedesktop.portal.Documents.service
+@ENABLE_DOCUMENT_PORTAL_TRUE@am__append_25 = xdg-permission-store \
+@ENABLE_DOCUMENT_PORTAL_TRUE@	$(NULL) xdg-document-portal \
+@ENABLE_DOCUMENT_PORTAL_TRUE@	$(NULL)
+@WITH_SYSTEM_BWRAP_TRUE@am__append_26 = FLATPAK_BWRAP=$(BWRAP)
+@WITH_SYSTEM_BWRAP_FALSE@am__append_27 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
+@ENABLE_DOCUMENT_PORTAL_TRUE@am__append_28 = testdb test-doc-portal
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_PROGRAMS = flatpak-bwrap$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -313,18 +325,24 @@ libglnx_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libglnx_la_CFLAGS) \
 	$(CFLAGS) $(libglnx_la_LDFLAGS) $(LDFLAGS) -o $@
 am__EXEEXT_1 =
-am__EXEEXT_2 = testdb$(EXEEXT) test-doc-portal$(EXEEXT) \
-	testlibrary$(EXEEXT)
-am__EXEEXT_3 = $(am__EXEEXT_2)
-@ENABLE_ALWAYS_BUILD_TESTS_FALSE@am__EXEEXT_4 = $(am__EXEEXT_3)
-am__EXEEXT_5 = test-libglnx-xattrs$(EXEEXT) test-libglnx-fdio$(EXEEXT) \
+@ENABLE_DOCUMENT_PORTAL_TRUE@am__EXEEXT_2 = testdb$(EXEEXT) \
+@ENABLE_DOCUMENT_PORTAL_TRUE@	test-doc-portal$(EXEEXT)
+am__EXEEXT_3 = testlibrary$(EXEEXT) $(am__EXEEXT_2)
+am__EXEEXT_4 = $(am__EXEEXT_3)
+@ENABLE_ALWAYS_BUILD_TESTS_FALSE@am__EXEEXT_5 = $(am__EXEEXT_4)
+am__EXEEXT_6 = test-libglnx-xattrs$(EXEEXT) test-libglnx-fdio$(EXEEXT) \
 	test-libglnx-errors$(EXEEXT) test-libglnx-macros$(EXEEXT) \
 	test-libglnx-shutil$(EXEEXT)
-@ENABLE_INSTALLED_TESTS_TRUE@am__EXEEXT_6 = $(am__EXEEXT_2)
-@BUILD_SYSTEM_HELPER_TRUE@am__EXEEXT_7 =  \
+@ENABLE_INSTALLED_TESTS_TRUE@am__EXEEXT_7 = $(am__EXEEXT_3)
+@BUILD_SYSTEM_HELPER_TRUE@am__EXEEXT_8 =  \
 @BUILD_SYSTEM_HELPER_TRUE@	flatpak-system-helper$(EXEEXT) \
 @BUILD_SYSTEM_HELPER_TRUE@	$(am__EXEEXT_1)
-@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__EXEEXT_8 = $(am__EXEEXT_3)
+@ENABLE_DOCUMENT_PORTAL_TRUE@am__EXEEXT_9 =  \
+@ENABLE_DOCUMENT_PORTAL_TRUE@	xdg-permission-store$(EXEEXT) \
+@ENABLE_DOCUMENT_PORTAL_TRUE@	$(am__EXEEXT_1) \
+@ENABLE_DOCUMENT_PORTAL_TRUE@	xdg-document-portal$(EXEEXT) \
+@ENABLE_DOCUMENT_PORTAL_TRUE@	$(am__EXEEXT_1)
+@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__EXEEXT_10 = $(am__EXEEXT_4)
 PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(installed_test_PROGRAMS) $(libexec_PROGRAMS) \
 	$(noinst_PROGRAMS)
@@ -803,7 +821,7 @@ am__set_TESTS_bases = \
   bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
   bases=`echo $$bases`
 RECHECK_LOGS = $(TEST_LOGS)
-am__EXEEXT_9 = tests/test-basic.sh tests/test-run.sh \
+am__EXEEXT_11 = tests/test-basic.sh tests/test-run.sh \
 	tests/test-run-system.sh tests/test-run-deltas.sh \
 	tests/test-run-system-deltas.sh tests/test-repo.sh \
 	tests/test-repo-collections.sh \
@@ -1105,10 +1123,10 @@ noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
 	$(systemduserunit_DATA) $(nodist_libflatpak_common_la_SOURCES) \
-	$(am__append_18) $(nodist_xdg_permission_store_SOURCES)
+	$(am__append_19) $(nodist_xdg_permission_store_SOURCES)
 MAINTAINERCLEANFILES = $(NULL)
 DISTCLEANFILES = $(NULL) $(nodist_flatpakinclude_HEADERS) \
-	$(nodist_libflatpak_la_SOURCES) $(NULL) $(am__append_21) \
+	$(nodist_libflatpak_la_SOURCES) $(NULL) $(am__append_22) \
 	tests/services/org.freedesktop.Flatpak.service \
 	tests/services/org.freedesktop.portal.Documents.service \
 	tests/services/org.freedesktop.impl.portal.PermissionStore.service \
@@ -1187,19 +1205,16 @@ dbus_servicedir = $(DBUS_SERVICE_DIR)
 service_in_files = $(NULL) \
 	session-helper/flatpak-session-helper.service.in \
 	session-helper/org.freedesktop.Flatpak.service.in \
-	$(am__append_20) \
+	$(am__append_21) \
 	permission-store/xdg-permission-store.service.in \
 	permission-store/org.freedesktop.impl.portal.PermissionStore.service.in \
 	document-portal/xdg-document-portal.service.in \
 	document-portal/org.freedesktop.portal.Documents.service.in
 dbus_service_DATA = $(NULL) \
 	session-helper/org.freedesktop.Flatpak.service \
-	permission-store/org.freedesktop.impl.portal.PermissionStore.service \
-	document-portal/org.freedesktop.portal.Documents.service
+	$(am__append_24)
 systemduserunit_DATA = $(NULL) \
-	session-helper/flatpak-session-helper.service \
-	permission-store/xdg-permission-store.service \
-	document-portal/xdg-document-portal.service
+	session-helper/flatpak-session-helper.service $(am__append_23)
 FLATPAK_BINDIR = $(bindir)
 ACLOCAL_AMFLAGS = -I m4 -I libglnx ${ACLOCAL_FLAGS}
 AM_CPPFLAGS = -DFLATPAK_BINDIR=\"$(FLATPAK_BINDIR)\" \
@@ -1335,12 +1350,8 @@ libflatpak_common_la_CFLAGS = \
 
 libflatpak_common_la_LIBADD = $(AM_LIBADD) libglnx.la $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(XAUTH_LIBS) $(LIBSECCOMP_LIBS) $(INTERNAL_GPGME_LIBS)
 introspectiondir = $(datadir)/dbus-1/interfaces
-introspection_DATA = \
-	data/org.freedesktop.impl.portal.PermissionStore.xml \
-	data/org.freedesktop.portal.Documents.xml \
-	data/org.freedesktop.Flatpak.xml \
-	$(NULL)
-
+introspection_DATA = data/org.freedesktop.Flatpak.xml $(NULL) \
+	$(am__append_17)
 flatpak_SOURCES = \
 	app/flatpak-main.c \
 	app/flatpak-builtins.h \
@@ -1474,7 +1485,7 @@ test_libflatpak_LDADD = \
         libflatpak.la \
 	$(NULL)
 
-INTROSPECTION_GIRS = $(am__append_17)
+INTROSPECTION_GIRS = $(am__append_18)
 @HAVE_INTROSPECTION_TRUE@introspected_headers = \
 @HAVE_INTROSPECTION_TRUE@	$(flatpakinclude_HEADERS) \
 @HAVE_INTROSPECTION_TRUE@	$(nodist_flatpakinclude_HEADERS) \
@@ -1566,8 +1577,8 @@ AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 FLATPAK_TRIGGERSDIR=$$(cd \
 	pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
 	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && \
 	pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} PATH=$$(cd \
-	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_22) \
-	$(am__append_23)
+	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_26) \
+	$(am__append_27)
 testdb_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
 testdb_LDADD = \
              $(AM_LDADD) \
@@ -1640,7 +1651,7 @@ dist_test_scripts = \
 	tests/test-update-remote-configuration.sh \
 	$(NULL)
 
-test_programs = testdb test-doc-portal testlibrary
+test_programs = testlibrary $(am__append_28)
 VALGRIND_SUPPRESSIONS_FILES = tests/flatpak.supp tests/glib.supp
 @WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_SOURCES = $(bwrap_SOURCES)
 @WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_CFLAGS = $(AM_CFLAGS) $(bwrap_CFLAGS)
@@ -4476,6 +4487,13 @@ recheck: all $(check_LTLIBRARIES) $(check_PROGRAMS) $(check_SCRIPTS) $(check_DAT
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
+testlibrary.log: testlibrary$(EXEEXT)
+	@p='testlibrary$(EXEEXT)'; \
+	b='testlibrary'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 testdb.log: testdb$(EXEEXT)
 	@p='testdb$(EXEEXT)'; \
 	b='testdb'; \
@@ -4486,13 +4504,6 @@ testdb.log: testdb$(EXEEXT)
 test-doc-portal.log: test-doc-portal$(EXEEXT)
 	@p='test-doc-portal$(EXEEXT)'; \
 	b='test-doc-portal'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-testlibrary.log: testlibrary$(EXEEXT)
-	@p='testlibrary$(EXEEXT)'; \
-	b='testlibrary'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5193,7 +5204,7 @@ tests/services/org.freedesktop.Flatpak.SystemHelper.service: system-helper/org.f
 	mkdir -p tests/services
 	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(abs_top_builddir)|" -e "s|\@extraargs\@| --session --no-idle-exit|" $< > $@
 
-tests/libtest.sh: tests/services/org.freedesktop.impl.portal.PermissionStore.service tests/services/org.freedesktop.portal.Documents.service  tests/services/org.freedesktop.Flatpak.service
+tests/libtest.sh: tests/services/org.freedesktop.impl.portal.PermissionStore.service tests/services/org.freedesktop.portal.Documents.service  tests/services/org.freedesktop.Flatpak.service tests/services/org.freedesktop.Flatpak.SystemHelper.service
 
 install-test-data-hook:
 @ENABLE_INSTALLED_TESTS_TRUE@	mkdir -p $(DESTDIR)$(installed_testdir)/services

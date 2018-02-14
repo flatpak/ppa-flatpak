@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [10])
-m4_define([flatpak_micro_version], [3])
+m4_define([flatpak_micro_version], [4])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -158,7 +158,21 @@ else
 fi
 
 AC_CHECK_FUNCS(fdwalk)
+
 LIBGLNX_CONFIGURE
+# This is copied from a newer libglnx: https://github.com/GNOME/libglnx/commit/4577dc826a923d976ad1a98b4ed5ecc36eac6efe
+# We do this manually in the 0.10.x branch instead of bumping libglnx as on master
+AC_CHECK_DECLS([copy_file_range],
+        [], [], [[
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/mount.h>
+#include <fcntl.h>
+#include <sched.h>
+#include <linux/loop.h>
+#include <linux/random.h>
+]])
+
 
 AC_CHECK_HEADER([sys/xattr.h], [], [AC_MSG_ERROR([You must have sys/xattr.h from glibc])])
 AC_CHECK_HEADER([sys/capability.h], have_caps=yes, [AC_MSG_ERROR([sys/capability.h header not found])])
@@ -219,6 +233,13 @@ if test "x$enable_sandboxed_triggers" = "xno"; then
    AC_DEFINE([DISABLE_SANDBOXED_TRIGGERS], [1],
       [Define if sandboxed triggers are disabled])
 fi
+
+AC_ARG_ENABLE([document-portal],
+              AC_HELP_STRING([--disable-document-portal],
+                             [Disable document portal]),
+              [],
+              [enable_document_portal=yes])
+AM_CONDITIONAL(ENABLE_DOCUMENT_PORTAL, test "x$enable_document_portal" = "xyes")
 
 PKG_CHECK_MODULES(OSTREE, [ostree-1 >= $OSTREE_REQS])
 
@@ -444,6 +465,7 @@ echo "          ============="
 echo ""
 echo "          Build system helper:    $enable_system_helper"
 echo "          Build bubblewrap:       $build_bwrap"
+echo "          Build document portal:  $enable_document_portal"
 echo "          Use sandboxed triggers: $enable_sandboxed_triggers"
 echo "          Use seccomp:            $enable_seccomp"
 echo "          Privileged group:       $PRIVILEGED_GROUP"

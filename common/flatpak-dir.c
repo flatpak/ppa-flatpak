@@ -1243,7 +1243,7 @@ flatpak_dir_get_unmaintained_extension_dir (FlatpakDir *self,
                                             const char *arch,
                                             const char *branch)
 {
-  const char *unmaintained_ref;
+  g_autofree char *unmaintained_ref = NULL;
 
   unmaintained_ref = g_build_filename ("extension", name, arch, branch, NULL);
   return g_file_resolve_relative_path (self->basedir, unmaintained_ref);
@@ -2186,7 +2186,14 @@ default_progress_changed (OstreeAsyncProgress *progress,
       glnx_console_text (line);
     }
   else
-    ostree_repo_pull_default_console_progress_changed (progress, user_data);
+    {
+      /* We get some extra calls before we've really started due to the initialization of the
+         extra data, so ignore those */
+      if (ostree_async_progress_get_variant (progress, "outstanding-fetches") == NULL)
+        return;
+
+      ostree_repo_pull_default_console_progress_changed (progress, user_data);
+    }
 }
 
 /* Get the configured collection-id for @remote_name, squashing empty strings into
@@ -6658,6 +6665,9 @@ flatpak_dir_update (FlatpakDir          *self,
       gboolean gpg_verify_summary;
       gboolean gpg_verify;
       g_autofree char *collection_id = NULL;
+
+      if (allow_downgrade)
+        return flatpak_fail (error, "Can't update to a specific commit without root permissions");
 
       system_helper = flatpak_dir_get_system_helper (self);
       g_assert (system_helper != NULL);
