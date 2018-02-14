@@ -31,12 +31,18 @@ struct GLnxConsoleRef {
 
 typedef struct GLnxConsoleRef GLnxConsoleRef;
 
+gboolean glnx_stdout_is_tty (void);
+
 void	 glnx_console_lock (GLnxConsoleRef *ref);
 
 void	 glnx_console_text (const char     *text);
 
 void	 glnx_console_progress_text_percent (const char     *text,
-                                             guint           percentage);
+                                           guint           percentage);
+
+void	 glnx_console_progress_n_items (const char     *text,
+                                      guint           current,
+                                      guint           total);
 
 void	 glnx_console_unlock (GLnxConsoleRef *ref);
 

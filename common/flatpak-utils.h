@@ -29,9 +29,9 @@
 #include <gio/gunixfdlist.h>
 #include <libsoup/soup.h>
 #include "flatpak-dbus.h"
+#include "flatpak-document-dbus.h"
 #include <ostree.h>
 #include <json-glib/json-glib.h>
-#include "document-portal/xdp-dbus.h"
 
 typedef enum {
   FLATPAK_HOST_COMMAND_FLAGS_CLEAR_ENV = 1 << 0,
@@ -486,6 +486,13 @@ gboolean flatpak_open_in_tmpdir_at (int                tmpdir_fd,
                                     GOutputStream    **out_stream,
                                     GCancellable      *cancellable,
                                     GError           **error);
+
+gboolean
+flatpak_buffer_to_sealed_memfd_or_tmpfile (GLnxTmpfile *tmpf,
+                                           const char  *name,
+                                           const char  *str,
+                                           size_t       len,
+                                           GError     **error);
 
 static inline void
 flatpak_temp_dir_destroy (void *p)
