@@ -7,6 +7,7 @@ flatpak (0.11.1-1) UNRELEASED; urgency=medium
     Drop, not applicable to 0.11.x
   * d/p/Remove-unused-FUSE-build-dependency.patch:
     Remove unnecessary check for FUSE
+  * Build-depend on gnupg, needed to run tests
 
  -- Simon McVittie <smcv@debian.org>  Wed, 14 Feb 2018 19:14:20 +0000
 
