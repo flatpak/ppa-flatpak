@@ -2,6 +2,8 @@ flatpak (0.10.4-2) UNRELEASED; urgency=medium
 
   * d/gbp.conf: Import new upstream versions to upstream/0.10.x branch
   * Mark patch as forwarded
+  * Build-depend on gnupg, needed to run tests if running in an
+    environment where bwrap works
 
  -- Simon McVittie <smcv@debian.org>  Wed, 14 Feb 2018 19:14:20 +0000
 
