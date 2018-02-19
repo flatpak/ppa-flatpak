@@ -1,2 +1,1 @@
-Remove-unused-FUSE-build-dependency.patch
 debian/Use-Python-3-for-test-web-server.patch
