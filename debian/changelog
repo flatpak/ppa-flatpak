@@ -1,10 +1,10 @@
-flatpak (0.11.3-1) UNRELEASED; urgency=medium
+flatpak (0.11.3-1) experimental; urgency=medium
 
   * New upstream release
     - d/p/Remove-unused-FUSE-build-dependency.patch:
       Drop, applied upstream
 
- -- Simon McVittie <smcv@debian.org>  Mon, 19 Feb 2018 14:44:42 +0000
+ -- Simon McVittie <smcv@debian.org>  Mon, 19 Feb 2018 15:18:05 +0000
 
 flatpak (0.11.1-1) experimental; urgency=medium
 
