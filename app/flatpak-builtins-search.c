@@ -37,7 +37,8 @@ get_remote_stores (GPtrArray *dirs, GCancellable *cancellable)
 {
   GError *error = NULL;
   GPtrArray *ret = g_ptr_array_new_with_free_func (g_object_unref);
-  guint i,j;
+  const char **arches = flatpak_get_arches ();
+  guint i,j,k;
   for (i = 0; i < dirs->len; ++i)
     {
       FlatpakDir *dir = g_ptr_array_index (dirs, i);
@@ -59,31 +60,44 @@ get_remote_stores (GPtrArray *dirs, GCancellable *cancellable)
 
       for (j = 0; remotes[j]; ++j)
         {
-          g_autofree char *appstream_path = g_build_filename (install_path, "appstream", remotes[j],
-                                                              flatpak_get_arch(), "active", "appstream.xml.gz",
-                                                              NULL);
-          g_autoptr(GFile) appstream_file = g_file_new_for_path (appstream_path);
           g_autoptr(AsStore) store = as_store_new ();
+
 #if AS_CHECK_VERSION(0, 6, 1)
           // We want to see multiple versions/branches of same app-id's, e.g. org.gnome.Platform
           as_store_set_add_flags (store, as_store_get_add_flags (store) | AS_STORE_ADD_FLAG_USE_UNIQUE_ID);
 #endif
-          as_store_from_file (store, appstream_file, NULL, cancellable, &error);
-          if (error)
+
+          for (k = 0; arches[k]; ++k)
             {
-              // We want to ignore this error as it is harmless and valid
-              // NOTE: appstream-glib doesn't have granular file-not-found error
-              if (!g_str_has_suffix (error->message, "No such file or directory"))
-                g_warning ("%s", error->message);
-              g_clear_error (&error);
-              continue;
+              g_autofree char *appstream_path = g_build_filename (install_path, "appstream", remotes[j],
+                                                                  arches[k], "active", "appstream.xml.gz",
+                                                                  NULL);
+              g_autoptr(GFile) appstream_file = g_file_new_for_path (appstream_path);
+
+              as_store_from_file (store, appstream_file, NULL, cancellable, &error);
+              if (error)
+                {
+                  // We want to ignore this error as it is harmless and valid
+                  // NOTE: appstream-glib doesn't have granular file-not-found error
+                  if (!g_str_has_suffix (error->message, "No such file or directory"))
+                    g_warning ("%s", error->message);
+                  g_clear_error (&error);
+                  continue;
+                }
             }
 
-          g_object_set_data_full (G_OBJECT(store), "remote-name", g_strdup(remotes[j]), g_free);
-          g_ptr_array_add (ret, g_steal_pointer (&store));
+            g_object_set_data_full (G_OBJECT(store), "remote-name", g_strdup (remotes[j]), g_free);
+            g_ptr_array_add (ret, g_steal_pointer (&store));
         }
     }
   return ret;
+}
+
+static void
+clear_app_arches (AsApp *app)
+{
+  GPtrArray *arches = as_app_get_architectures (app);
+  g_ptr_array_set_size (arches, 0);
 }
 
 typedef struct MatchResult {
@@ -107,6 +121,9 @@ match_result_new (AsApp *app, guint score)
   result->app = g_object_ref (app);
   result->remotes = g_ptr_array_new_with_free_func (g_free);
   result->score = score;
+
+  clear_app_arches (result->app);
+
   return result;
 }
 
@@ -171,6 +188,12 @@ as_app_equal (AsApp *app1, AsApp *app2)
 static int
 compare_apps (MatchResult *a, AsApp *b)
 {
+  /* For now we want to ignore arch when comparing applications
+   * It may be valuable to show runtime arches in the future though.
+   * This is a naughty hack but for our purposes totally fine.
+   */
+  clear_app_arches (b);
+
   return !as_app_equal (a->app, b);
 }
 
@@ -215,7 +238,8 @@ flatpak_builtin_search (int argc, char **argv, GCancellable *cancellable, GError
   g_autoptr(GPtrArray) dirs = NULL;
   g_autoptr(GOptionContext) context = g_option_context_new (_("TEXT - Search remote apps/runtimes for text"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
-  const char *arch = NULL;
+  const char **arches = flatpak_get_arches ();
+  int i;
 
   if (!flatpak_option_context_parse (context, NULL, &argc, &argv,
                                      FLATPAK_BUILTIN_FLAG_STANDARD_DIRS, &dirs, cancellable, error))
@@ -224,9 +248,11 @@ flatpak_builtin_search (int argc, char **argv, GCancellable *cancellable, GError
   if (argc < 2)
     return usage_error (context, _("TEXT must be specified"), error);
 
-  arch = flatpak_get_arch ();
-  if (!update_appstream (dirs, NULL, arch, FLATPAK_APPSTREAM_TTL, TRUE, cancellable, error))
-    return FALSE;
+  for (i = 0; arches[i] != NULL; i++)
+    {
+      if (!update_appstream (dirs, NULL, arches[i], FLATPAK_APPSTREAM_TTL, TRUE, cancellable, error))
+        return FALSE;
+    }
 
   const char *search_text = argv[1];
   GSList *matches = NULL;

@@ -1918,10 +1918,7 @@ flatpak_context_append_bwrap_filesystem (FlatpakContext *context,
 
           g_mkdir_with_parents (src, 0755);
 
-          /* We stick to flatpak_bwrap_add_args instead of flatpak_bwrap_add_bind_arg because persisted
-           * folders don't need to exist outside the chroot.
-           */
-          flatpak_bwrap_add_args (bwrap, "--bind", src, dest, NULL);
+          flatpak_bwrap_add_bind_arg (bwrap, "--bind", src, dest);
         }
     }
 
@@ -2004,4 +2001,7 @@ flatpak_context_append_bwrap_filesystem (FlatpakContext *context,
       flatpak_bwrap_add_args_data (bwrap, "xdg-config-dirs",
                                    xdg_dirs_conf->str, xdg_dirs_conf->len, path, NULL);
     }
+
+  if (exports_out)
+    *exports_out = g_steal_pointer (&exports);
 }
