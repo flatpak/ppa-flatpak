@@ -1,4 +1,4 @@
-flatpak (0.11.3-2) UNRELEASED; urgency=medium
+flatpak (0.11.3-2) unstable; urgency=medium
 
   * Merge from experimental to unstable
   * d/p/Update-*-translation.patch: Update Czech and Indonesian
@@ -7,7 +7,7 @@ flatpak (0.11.3-2) UNRELEASED; urgency=medium
     Add patch from upstream fixing an assertion failure if no
     GSettings schemas are installed
 
- -- Simon McVittie <smcv@debian.org>  Thu, 01 Mar 2018 09:02:55 +0000
+ -- Simon McVittie <smcv@debian.org>  Thu, 01 Mar 2018 09:21:46 +0000
 
 flatpak (0.11.3-1) experimental; urgency=medium
 
