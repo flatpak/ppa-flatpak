@@ -29,12 +29,25 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 
-static char *current_text = NULL;
-static gint current_percent = -1;
-static gboolean locked;
+/* For people with widescreen monitors and maximized terminals, it looks pretty
+ * bad to have an enormous progress bar. For much the same reason as web pages
+ * tend to have a maximum width;
+ * https://ux.stackexchange.com/questions/48982/suggest-good-max-width-for-fluid-width-design
+ */
+#define MAX_PROGRESSBAR_COLUMNS 20
 
-static gboolean
-stdout_is_tty (void)
+/* Max updates output per second.  On a tty there's no point to rendering
+ * extremely fast; and for a non-tty we're probably in a Jenkins job
+ * or whatever and having percentages spam multiple lines there is annoying.
+ */
+#define MAX_TTY_UPDATE_HZ (5)
+#define MAX_NONTTY_UPDATE_HZ (1)
+
+static gboolean locked;
+static guint64 last_update_ms; /* monotonic time in millis we last updated */
+
+gboolean
+glnx_stdout_is_tty (void)
 {
   static gsize initialized = 0;
   static gboolean stdout_is_tty_v;
@@ -143,11 +156,9 @@ glnx_console_lock (GLnxConsoleRef *console)
   g_return_if_fail (!locked);
   g_return_if_fail (!console->locked);
 
-  console->is_tty = stdout_is_tty ();
+  console->is_tty = glnx_stdout_is_tty ();
 
   locked = console->locked = TRUE;
-
-  current_percent = 0;
 
   if (console->is_tty)
     {
@@ -181,6 +192,26 @@ static void
 text_percent_internal (const char *text,
                        int percentage)
 {
+  /* Check whether we're trying to render too fast; unless percentage is 100, in
+   * which case we assume this is the last call, so we always render it.
+   */
+  const guint64 current_ms = g_get_monotonic_time () / 1000;
+  if (percentage != 100)
+    {
+      const guint64 diff_ms = current_ms - last_update_ms;
+      if (glnx_stdout_is_tty ())
+        {
+          if (diff_ms < (1000/MAX_TTY_UPDATE_HZ))
+            return;
+        }
+      else
+        {
+          if (diff_ms < (1000/MAX_NONTTY_UPDATE_HZ))
+            return;
+        }
+    }
+  last_update_ms = current_ms;
+
   static const char equals[] = "====================";
   const guint n_equals = sizeof (equals) - 1;
   static const char spaces[] = "                    ";
@@ -193,11 +224,7 @@ text_percent_internal (const char *text,
 
   const guint input_textlen = text ? strlen (text) : 0;
 
-  if (percentage == current_percent
-      && g_strcmp0 (text, current_text) == 0)
-    return;
-
-  if (!stdout_is_tty ())
+  if (!glnx_stdout_is_tty ())
     {
       if (text)
         fprintf (stdout, "%s", text);
@@ -232,7 +259,7 @@ text_percent_internal (const char *text,
   else
     {
       const guint textlen = MIN (input_textlen, ncolumns - bar_min);
-      const guint barlen = ncolumns - (textlen + 1);;
+      const guint barlen = MIN (MAX_PROGRESSBAR_COLUMNS, ncolumns - (textlen + 1));
 
       if (textlen > 0)
         {
@@ -245,7 +272,7 @@ text_percent_internal (const char *text,
         const guint textpercent_len = 5;
         const guint bar_internal_len = barlen - nbraces - textpercent_len;
         const guint eqlen = bar_internal_len * (percentage / 100.0);
-        const guint spacelen = bar_internal_len - eqlen; 
+        const guint spacelen = bar_internal_len - eqlen;
 
         fputc ('[', stdout);
         printpad (equals, n_equals, eqlen);
@@ -280,6 +307,32 @@ glnx_console_progress_text_percent (const char *text,
   text_percent_internal (text, percentage);
 }
 
+/**
+ * glnx_console_progress_n_items:
+ * @text: Show this text before the progress bar
+ * @current: An integer for how many items have been processed
+ * @total: An integer for how many items there are total
+ *
+ * On a tty, print to the console @text followed by [@current/@total],
+ * then an ASCII art progress bar, like glnx_console_progress_text_percent().
+ *
+ * You must have called glnx_console_lock() before invoking this
+ * function.
+ */
+void
+glnx_console_progress_n_items (const char     *text,
+                               guint           current,
+                               guint           total)
+{
+  g_return_if_fail (current <= total);
+  g_return_if_fail (total > 0);
+
+  g_autofree char *newtext = g_strdup_printf ("%s (%u/%u)", text, current, total);
+  /* Special case current == total to ensure we end at 100% */
+  int percentage = (current == total) ? 100 : (((double)current) / total * 100);
+  glnx_console_progress_text_percent (newtext, percentage);
+}
+
 void
 glnx_console_text (const char *text)
 {
@@ -298,9 +351,6 @@ glnx_console_unlock (GLnxConsoleRef *console)
 {
   g_return_if_fail (locked);
   g_return_if_fail (console->locked);
-
-  current_percent = -1;
-  g_clear_pointer (&current_text, g_free);
 
   if (console->is_tty)
     fputc ('\n', stdout);

@@ -99,7 +99,7 @@ glnx_dirfd_iterator_init_at (int                     dfd,
                              GLnxDirFdIterator      *out_dfd_iter,
                              GError                **error)
 {
-  glnx_fd_close int fd = -1;
+  glnx_autofd int fd = -1;
   if (!glnx_opendirat (dfd, path, follow, &fd, error))
     return FALSE;
 
@@ -190,15 +190,12 @@ glnx_dirfd_iterator_next_dent_ensure_dtype (GLnxDirFdIterator  *dfd_iter,
                                             GCancellable       *cancellable,
                                             GError            **error)
 {
-  struct dirent *ret_dent;
-
   g_return_val_if_fail (out_dent, FALSE);
 
   if (!glnx_dirfd_iterator_next_dent (dfd_iter, out_dent, cancellable, error))
     return FALSE;
 
-  ret_dent = *out_dent;
-
+  struct dirent *ret_dent = *out_dent;
   if (ret_dent)
     {
 
@@ -265,20 +262,16 @@ glnx_fdrel_abspath (int         dfd,
 void
 glnx_gen_temp_name (gchar *tmpl)
 {
-  size_t len;
-  char *XXXXXX;
-  int i;
+  g_return_if_fail (tmpl != NULL);
+  const size_t len = strlen (tmpl);
+  g_return_if_fail (len >= 6);
+
   static const char letters[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   static const int NLETTERS = sizeof (letters) - 1;
 
-  g_return_if_fail (tmpl != NULL);
-  len = strlen (tmpl);
-  g_return_if_fail (len >= 6);
-
-  XXXXXX = tmpl + (len - 6);
-
-  for (i = 0; i < 6; i++)
+  char *XXXXXX = tmpl + (len - 6);
+  for (int i = 0; i < 6; i++)
     XXXXXX[i] = letters[g_random_int_range(0, NLETTERS)];
 }
 
@@ -326,7 +319,7 @@ glnx_mkdtempat (int dfd, const char *tmpl, int mode,
         }
 
       /* And open it */
-      glnx_fd_close int ret_dfd = -1;
+      glnx_autofd int ret_dfd = -1;
       if (!glnx_opendirat (dfd, path, FALSE, &ret_dfd, error))
         {
           /* If we fail to open, let's try to clean up */
