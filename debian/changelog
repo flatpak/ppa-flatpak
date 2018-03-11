@@ -1,3 +1,12 @@
+flatpak (0.11.3-3) UNRELEASED; urgency=medium
+
+  * Add Recommends: policykit-1. This is required when installing apps and
+    runtimes system-wide, which is the default for the CLI, but is not
+    required when installing into your own home directory with
+    "flatpak --user install...". (Closes: #892583)
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 11 Mar 2018 00:29:09 +0000
+
 flatpak (0.11.3-2) unstable; urgency=medium
 
   * Merge from experimental to unstable
