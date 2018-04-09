@@ -1,3 +1,9 @@
+flatpak (0.11.3-4) UNRELEASED; urgency=medium
+
+  * Standards-Version: 4.1.4 (no changes required)
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 09 Apr 2018 08:19:04 +0100
+
 flatpak (0.11.3-3) unstable; urgency=medium
 
   * Add Recommends: policykit-1. This is required when installing apps and
