@@ -97,6 +97,14 @@
 <a class="link" href="flatpak-flatpak-bundle-ref.html#flatpak-bundle-ref-get-installed-size" title="flatpak_bundle_ref_get_installed_size ()">flatpak_bundle_ref_get_installed_size</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">char</span> *
+</td>
+<td class="function_name">
+<a class="link" href="flatpak-flatpak-bundle-ref.html#flatpak-bundle-ref-get-runtime-repo-url" title="flatpak_bundle_ref_get_runtime_repo_url ()">flatpak_bundle_ref_get_runtime_repo_url</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
 </tbody>
 </table></div>
 </div>
@@ -112,7 +120,7 @@
 <td class="property_type">
 <span class="type">GFile</span> *</td>
 <td class="property_name"><a class="link" href="flatpak-flatpak-bundle-ref.html#FlatpakBundleRef--file" title="The “file” property">file</a></td>
-<td class="property_flags">Read / Write</td>
+<td class="property_flags">Read / Write / Construct Only</td>
 </tr></tbody>
 </table></div>
 </div>
@@ -338,6 +346,13 @@ flatpak_bundle_ref_get_installed_size (<em class="parameter"><code><a class="lin
 <p> the installed size</p>
 </div>
 </div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-bundle-ref-get-runtime-repo-url"></a><h3>flatpak_bundle_ref_get_runtime_repo_url ()</h3>
+<pre class="programlisting"><span class="returnvalue">char</span> *
+flatpak_bundle_ref_get_runtime_repo_url
+                               (<em class="parameter"><code><a class="link" href="flatpak-flatpak-bundle-ref.html#FlatpakBundleRef"><span class="type">FlatpakBundleRef</span></a> *self</code></em>);</pre>
+</div>
 </div>
 <div class="refsect1">
 <a name="flatpak-flatpak-bundle-ref.other_details"></a><h2>Types and Values</h2>
@@ -351,7 +366,7 @@ flatpak_bundle_ref_get_installed_size (<em class="parameter"><code><a class="lin
 <div class="refsect2">
 <a name="FlatpakBundleRef--file"></a><h3>The <code class="literal">“file”</code> property</h3>
 <pre class="programlisting">  “file”                     <span class="type">GFile</span> *</pre>
-<p>Flags: Read / Write</p>
+<p>Flags: Read / Write / Construct Only</p>
 </div>
 </div>
 </div>

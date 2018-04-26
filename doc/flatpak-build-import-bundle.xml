@@ -110,7 +110,7 @@
 
                 <listitem><para>
                     Don't update the summary file after the new commit is added. This means
-                    the repository will not be useful for serving over http until build-repo-update
+                    the repository will not be useful for serving over http until build-update-repo
                     has been run. This is useful is you want to do multiple repo operations before
                     finally updating the summary.
                 </para></listitem>
@@ -150,7 +150,7 @@
             <citerefentry><refentrytitle>ostree</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
             <citerefentry><refentrytitle>flatpak</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
             <citerefentry><refentrytitle>flatpak-build-bundle</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
-            <citerefentry><refentrytitle>flatpak-repo-update</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+            <citerefentry><refentrytitle>flatpak-build-update-repo</refentrytitle><manvolnum>1</manvolnum></citerefentry>
         </para>
 
     </refsect1>

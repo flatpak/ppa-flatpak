@@ -74,6 +74,38 @@
 </tr>
 <tr>
 <td class="function_type">
+<span class="returnvalue">char</span> *
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakRemote.html#flatpak-remote-get-collection-id" title="flatpak_remote_get_collection_id ()">flatpak_remote_get_collection_id</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakRemote.html#flatpak-remote-set-collection-id" title="flatpak_remote_set_collection_id ()">flatpak_remote_set_collection_id</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">char</span> *
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakRemote.html#flatpak-remote-get-default-branch" title="flatpak_remote_get_default_branch ()">flatpak_remote_get_default_branch</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakRemote.html#flatpak-remote-set-default-branch" title="flatpak_remote_set_default_branch ()">flatpak_remote_set_default_branch</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
 <span class="returnvalue">gboolean</span>
 </td>
 <td class="function_name">
@@ -94,6 +126,22 @@
 </td>
 <td class="function_name">
 <a class="link" href="FlatpakRemote.html#flatpak-remote-set-gpg-key" title="flatpak_remote_set_gpg_key ()">flatpak_remote_set_gpg_key</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">gboolean</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakRemote.html#flatpak-remote-get-nodeps" title="flatpak_remote_get_nodeps ()">flatpak_remote_get_nodeps</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakRemote.html#flatpak-remote-set-nodeps" title="flatpak_remote_set_nodeps ()">flatpak_remote_set_nodeps</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
@@ -126,6 +174,14 @@
 </td>
 <td class="function_name">
 <a class="link" href="FlatpakRemote.html#flatpak-remote-set-prio" title="flatpak_remote_set_prio ()">flatpak_remote_set_prio</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="FlatpakRemote.html#FlatpakRemoteType" title="enum FlatpakRemoteType"><span class="returnvalue">FlatpakRemoteType</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakRemote.html#flatpak-remote-get-remote-type" title="flatpak_remote_get_remote_type ()">flatpak_remote_get_remote_type</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
@@ -195,7 +251,7 @@
 <td class="property_flags">Read / Write</td>
 </tr>
 <tr>
-<td class="property_type"><span class="type">FlatpakRemoteType</span></td>
+<td class="property_type"><a class="link" href="FlatpakRemote.html#FlatpakRemoteType" title="enum FlatpakRemoteType"><span class="type">FlatpakRemoteType</span></a></td>
 <td class="property_name"><a class="link" href="FlatpakRemote.html#FlatpakRemote--type" title="The “type” property">type</a></td>
 <td class="property_flags">Read / Write / Construct Only</td>
 </tr>
@@ -209,10 +265,16 @@
 <col width="150px" class="name">
 <col class="description">
 </colgroup>
-<tbody><tr>
+<tbody>
+<tr>
 <td class="datatype_keyword">struct</td>
 <td class="function_name"><a class="link" href="FlatpakRemote.html#FlatpakRemote-struct" title="struct FlatpakRemote">FlatpakRemote</a></td>
-</tr></tbody>
+</tr>
+<tr>
+<td class="datatype_keyword">enum</td>
+<td class="function_name"><a class="link" href="FlatpakRemote.html#FlatpakRemoteType" title="enum FlatpakRemoteType">FlatpakRemoteType</a></td>
+</tr>
+</tbody>
 </table></div>
 </div>
 <div class="refsect1">
@@ -369,6 +431,128 @@ has been updated (or tried to update) for the specified <em class="parameter"><c
 </div>
 <hr>
 <div class="refsect2">
+<a name="flatpak-remote-get-collection-id"></a><h3>flatpak_remote_get_collection_id ()</h3>
+<pre class="programlisting"><span class="returnvalue">char</span> *
+flatpak_remote_get_collection_id (<em class="parameter"><code><a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> *self</code></em>);</pre>
+<p>Returns the repository collection ID of this remote, if set.</p>
+<div class="refsect3">
+<a name="flatpak-remote-get-collection-id.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-remote-get-collection-id.returns"></a><h4>Returns</h4>
+<p>the collection ID, or <code class="literal">NULL</code> if unset. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-remote-set-collection-id"></a><h3>flatpak_remote_set_collection_id ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+flatpak_remote_set_collection_id (<em class="parameter"><code><a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> *self</code></em>,
+                                  <em class="parameter"><code>const <span class="type">char</span> *collection_id</code></em>);</pre>
+<p>Sets the repository collection ID of this remote.</p>
+<p>Note: This is a local modification of this object, you must commit changes
+using <a class="link" href="FlatpakInstallation.html#flatpak-installation-modify-remote" title="flatpak_installation_modify_remote ()"><code class="function">flatpak_installation_modify_remote()</code></a> for the changes to take
+effect.</p>
+<div class="refsect3">
+<a name="flatpak-remote-set-collection-id.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>collection_id</p></td>
+<td class="parameter_description"><p>The new collection ID, or <code class="literal">NULL</code> to unset. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-remote-get-default-branch"></a><h3>flatpak_remote_get_default_branch ()</h3>
+<pre class="programlisting"><span class="returnvalue">char</span> *
+flatpak_remote_get_default_branch (<em class="parameter"><code><a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> *self</code></em>);</pre>
+<p>Returns the default branch configured for the remote.</p>
+<div class="refsect3">
+<a name="flatpak-remote-get-default-branch.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-remote-get-default-branch.returns"></a><h4>Returns</h4>
+<p>the default branch, or <code class="literal">NULL</code>. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 0.6.12</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-remote-set-default-branch"></a><h3>flatpak_remote_set_default_branch ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+flatpak_remote_set_default_branch (<em class="parameter"><code><a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> *self</code></em>,
+                                   <em class="parameter"><code>const <span class="type">char</span> *default_branch</code></em>);</pre>
+<p>Sets the default branch configured for this remote.</p>
+<p>Note: This is a local modification of this object, you must commit changes
+using <a class="link" href="FlatpakInstallation.html#flatpak-installation-modify-remote" title="flatpak_installation_modify_remote ()"><code class="function">flatpak_installation_modify_remote()</code></a> for the changes to take
+effect.</p>
+<div class="refsect3">
+<a name="flatpak-remote-set-default-branch.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>default_branch</p></td>
+<td class="parameter_description"><p>The new default_branch</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 0.6.12</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="flatpak-remote-get-gpg-verify"></a><h3>flatpak_remote_get_gpg_verify ()</h3>
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
 flatpak_remote_get_gpg_verify (<em class="parameter"><code><a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> *self</code></em>);</pre>
@@ -453,6 +637,65 @@ effect.</p>
 <tr>
 <td class="parameter_name"><p>gpg_key</p></td>
 <td class="parameter_description"><p>a <span class="type">GBytes</span> with gpg binary key data</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-remote-get-nodeps"></a><h3>flatpak_remote_get_nodeps ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>
+flatpak_remote_get_nodeps (<em class="parameter"><code><a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> *self</code></em>);</pre>
+<p>Returns whether this remote should be used to find dependencies.</p>
+<div class="refsect3">
+<a name="flatpak-remote-get-nodeps.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-remote-get-nodeps.returns"></a><h4>Returns</h4>
+<p> whether the remote is marked as "don't use for dependencies"</p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-remote-set-nodeps"></a><h3>flatpak_remote_set_nodeps ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+flatpak_remote_set_nodeps (<em class="parameter"><code><a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> *self</code></em>,
+                           <em class="parameter"><code><span class="type">gboolean</span> nodeps</code></em>);</pre>
+<p>Sets the nodeps config of this remote. See <a class="link" href="FlatpakRemote.html#flatpak-remote-get-nodeps" title="flatpak_remote_get_nodeps ()"><code class="function">flatpak_remote_get_nodeps()</code></a>.</p>
+<p>Note: This is a local modification of this object, you must commit changes
+using <a class="link" href="FlatpakInstallation.html#flatpak-installation-modify-remote" title="flatpak_installation_modify_remote ()"><code class="function">flatpak_installation_modify_remote()</code></a> for the changes to take
+effect.</p>
+<div class="refsect3">
+<a name="flatpak-remote-set-nodeps.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>nodeps</p></td>
+<td class="parameter_description"><p>a bool</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
@@ -576,6 +819,33 @@ effect.</p>
 </tbody>
 </table></div>
 </div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-remote-get-remote-type"></a><h3>flatpak_remote_get_remote_type ()</h3>
+<pre class="programlisting"><a class="link" href="FlatpakRemote.html#FlatpakRemoteType" title="enum FlatpakRemoteType"><span class="returnvalue">FlatpakRemoteType</span></a>
+flatpak_remote_get_remote_type (<em class="parameter"><code><a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> *self</code></em>);</pre>
+<p>Get the value of <a class="link" href="FlatpakRemote.html#FlatpakRemote--type" title="The “type” property"><span class="type">“type”</span></a>.</p>
+<div class="refsect3">
+<a name="flatpak-remote-get-remote-type.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-remote-get-remote-type.returns"></a><h4>Returns</h4>
+<p> the type of remote this is</p>
+</div>
+<p class="since">Since: 0.9.8</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -729,7 +999,7 @@ flatpak_remote_get_disabled (<em class="parameter"><code><a class="link" href="F
 <pre class="programlisting"><span class="returnvalue">void</span>
 flatpak_remote_set_disabled (<em class="parameter"><code><a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> *self</code></em>,
                              <em class="parameter"><code><span class="type">gboolean</span> disabled</code></em>);</pre>
-<p>Sets the disabled config of this remote. See <code class="function">flatpak_remote_get_disable()</code>.</p>
+<p>Sets the disabled config of this remote. See <a class="link" href="FlatpakRemote.html#flatpak-remote-get-disabled" title="flatpak_remote_get_disabled ()"><code class="function">flatpak_remote_get_disabled()</code></a>.</p>
 <p>Note: This is a local modification of this object, you must commit changes
 using <a class="link" href="FlatpakInstallation.html#flatpak-installation-modify-remote" title="flatpak_installation_modify_remote ()"><code class="function">flatpak_installation_modify_remote()</code></a> for the changes to take
 effect.</p>
@@ -763,6 +1033,37 @@ effect.</p>
 <a name="FlatpakRemote-struct"></a><h3>struct FlatpakRemote</h3>
 <pre class="programlisting">struct FlatpakRemote;</pre>
 </div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakRemoteType"></a><h3>enum FlatpakRemoteType</h3>
+<div class="refsect3">
+<a name="FlatpakRemoteType.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="300px" class="enum_members_name">
+<col class="enum_members_description">
+<col width="200px" class="enum_members_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-REMOTE-TYPE-STATIC:CAPS"></a>FLATPAK_REMOTE_TYPE_STATIC</p></td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-REMOTE-TYPE-USB:CAPS"></a>FLATPAK_REMOTE_TYPE_USB</p></td>
+<td> </td>
+<td> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-REMOTE-TYPE-LAN:CAPS"></a>FLATPAK_REMOTE_TYPE_LAN</p></td>
+<td> </td>
+<td> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
 </div>
 <div class="refsect1">
 <a name="FlatpakRemote.property-details"></a><h2>Property Details</h2>
@@ -779,7 +1080,7 @@ presented in the UI.</p>
 <hr>
 <div class="refsect2">
 <a name="FlatpakRemote--type"></a><h3>The <code class="literal">“type”</code> property</h3>
-<pre class="programlisting">  “type”                     <span class="type">FlatpakRemoteType</span></pre>
+<pre class="programlisting">  “type”                     <a class="link" href="FlatpakRemote.html#FlatpakRemoteType" title="enum FlatpakRemoteType"><span class="type">FlatpakRemoteType</span></a></pre>
 <p>The type of the remote: whether it comes from static configuration files
 (<em class="parameter"><code>FLATPAK_REMOTE_TYPE_STATIC</code></em>
 ) or has been dynamically found from the local

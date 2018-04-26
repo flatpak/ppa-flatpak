@@ -415,6 +415,22 @@ flatpak_context_set_session_bus_policy (FlatpakContext *context,
   g_hash_table_insert (context->session_bus_policy, g_strdup (name), GINT_TO_POINTER (policy));
 }
 
+GStrv
+flatpak_context_get_session_bus_policy_allowed_own_names (FlatpakContext *context)
+{
+  GHashTableIter iter;
+  gpointer key, value;
+  g_autoptr(GPtrArray) names = g_ptr_array_new_with_free_func (g_free);
+
+  g_hash_table_iter_init (&iter, context->session_bus_policy);
+  while (g_hash_table_iter_next (&iter, &key, &value))
+    if (GPOINTER_TO_INT (value) == FLATPAK_POLICY_OWN)
+      g_ptr_array_add (names, g_strdup (key));
+
+  g_ptr_array_add (names, NULL);
+  return (GStrv) g_ptr_array_free (g_steal_pointer (&names), FALSE);
+}
+
 void
 flatpak_context_set_system_bus_policy (FlatpakContext *context,
                                        const char     *name,
@@ -641,33 +657,81 @@ get_xdg_user_dir_from_string (const char  *filesystem,
 }
 
 static char *
-parse_filesystem_flags (const char *filesystem, FlatpakFilesystemMode *mode)
+unparse_filesystem_flags (const char *path,
+                          FlatpakFilesystemMode mode)
 {
-  gsize len = strlen (filesystem);
+  g_autoptr(GString) s = g_string_new ("");
+  const char *p;
 
-  if (mode)
-    *mode = FLATPAK_FILESYSTEM_MODE_READ_WRITE;
-
-  if (g_str_has_suffix (filesystem, ":ro"))
+  for (p = path; *p != 0; p++)
     {
-      len -= 3;
-      if (mode)
-        *mode = FLATPAK_FILESYSTEM_MODE_READ_ONLY;
-    }
-  else if (g_str_has_suffix (filesystem, ":rw"))
-    {
-      len -= 3;
-      if (mode)
-        *mode = FLATPAK_FILESYSTEM_MODE_READ_WRITE;
-    }
-  else if (g_str_has_suffix (filesystem, ":create"))
-    {
-      len -= 7;
-      if (mode)
-        *mode = FLATPAK_FILESYSTEM_MODE_CREATE;
+      if (*p == ':')
+        g_string_append (s, "\\:");
+      else if (*p == '\\')
+        g_string_append (s, "\\\\");
+      else
+        g_string_append_c (s, *p);
     }
 
-  return g_strndup (filesystem, len);
+  switch (mode)
+    {
+    case FLATPAK_FILESYSTEM_MODE_READ_ONLY:
+      g_string_append (s, ":ro");
+      break;
+    case FLATPAK_FILESYSTEM_MODE_CREATE:
+      g_string_append (s, ":create");
+      break;
+    case FLATPAK_FILESYSTEM_MODE_READ_WRITE:
+      break;
+    default:
+      g_warning ("Unexpected filesystem mode %d", mode);
+      break;
+    }
+
+  return g_string_free (g_steal_pointer (&s), FALSE);
+}
+
+static char *
+parse_filesystem_flags (const char *filesystem,
+                        FlatpakFilesystemMode *mode_out)
+{
+  g_autoptr(GString) s = g_string_new ("");
+  const char *p, *suffix;
+  FlatpakFilesystemMode mode;
+
+  p = filesystem;
+  while (*p != 0 && *p != ':')
+    {
+      if (*p == '\\')
+        {
+          p++;
+          if (*p != 0)
+            g_string_append_c (s, *p++);
+        }
+      else
+        g_string_append_c (s, *p++);
+    }
+
+  mode = FLATPAK_FILESYSTEM_MODE_READ_WRITE;
+
+  if (*p == ':')
+    {
+      suffix = p + 1;
+
+      if (strcmp (suffix, "ro") == 0)
+        mode = FLATPAK_FILESYSTEM_MODE_READ_ONLY;
+      else if (strcmp (suffix, "rw") == 0)
+        mode = FLATPAK_FILESYSTEM_MODE_READ_WRITE;
+      else if (strcmp (suffix, "create") == 0)
+        mode = FLATPAK_FILESYSTEM_MODE_CREATE;
+      else if (*suffix != 0)
+        g_warning ("Unexpected filesystem suffix %s, ignoring", suffix);
+    }
+
+  if (mode_out)
+    *mode_out = mode;
+
+  return g_string_free (g_steal_pointer (&s), FALSE);
 }
 
 static gboolean
@@ -1514,12 +1578,8 @@ flatpak_context_save_metadata (FlatpakContext *context,
         {
           FlatpakFilesystemMode mode = GPOINTER_TO_INT (value);
 
-          if (mode == FLATPAK_FILESYSTEM_MODE_READ_ONLY)
-            g_ptr_array_add (array, g_strconcat (key, ":ro", NULL));
-          else if (mode == FLATPAK_FILESYSTEM_MODE_CREATE)
-            g_ptr_array_add (array, g_strconcat (key, ":create", NULL));
-          else if (value != NULL)
-            g_ptr_array_add (array, g_strdup (key));
+          if (mode != 0)
+            g_ptr_array_add (array, unparse_filesystem_flags (key, mode));
           else
             g_ptr_array_add (array, g_strconcat ("!", key, NULL));
         }
@@ -1690,12 +1750,11 @@ flatpak_context_to_args (FlatpakContext *context,
     {
       FlatpakFilesystemMode mode = GPOINTER_TO_INT (value);
 
-      if (mode == FLATPAK_FILESYSTEM_MODE_READ_ONLY)
-        g_ptr_array_add (args, g_strdup_printf ("--filesystem=%s:ro", (char *)key));
-      else if (mode == FLATPAK_FILESYSTEM_MODE_READ_WRITE)
-        g_ptr_array_add (args, g_strdup_printf ("--filesystem=%s", (char *)key));
-      else if (mode == FLATPAK_FILESYSTEM_MODE_CREATE)
-        g_ptr_array_add (args, g_strdup_printf ("--filesystem=%s:create", (char *)key));
+      if (mode != 0)
+        {
+          g_autofree char *fs = unparse_filesystem_flags (key, mode);
+          g_ptr_array_add (args, g_strdup_printf ("--filesystem=%s", fs));
+        }
       else
         g_ptr_array_add (args, g_strdup_printf ("--nofilesystem=%s", (char *)key));
     }
@@ -1730,6 +1789,29 @@ flatpak_context_add_bus_filters (FlatpakContext *context,
       if (policy > 0)
         g_ptr_array_add (dbus_proxy_argv, g_strdup_printf ("--%s=%s", flatpak_policy_to_string (policy), (char *) key));
     }
+}
+
+void
+flatpak_context_make_sandboxed (FlatpakContext *context)
+{
+  /* We drop almost everything from the app permission, except
+   * multiarch which is inherited, to make sure app code keeps
+   * running. */
+  context->shares_valid &= 0;
+  context->sockets_valid &= 0;
+  context->devices_valid &= 0;
+  context->features_valid &= FLATPAK_CONTEXT_FEATURE_MULTIARCH;
+
+  context->shares &= context->shares_valid;
+  context->sockets &= context->sockets_valid;
+  context->devices &= context->devices_valid;
+  context->features &= context->features_valid;
+
+  g_hash_table_remove_all (context->persistent);
+  g_hash_table_remove_all (context->filesystems);
+  g_hash_table_remove_all (context->session_bus_policy);
+  g_hash_table_remove_all (context->system_bus_policy);
+  g_hash_table_remove_all (context->generic_policy);
 }
 
 const char *dont_mount_in_root[] = {
@@ -1922,19 +2004,20 @@ flatpak_context_append_bwrap_filesystem (FlatpakContext *context,
         }
     }
 
-  {
-    g_autofree char *run_user_app_dst = g_strdup_printf ("/run/user/%d/app/%s", getuid (), app_id);
-    g_autofree char *run_user_app_src = g_build_filename (g_get_user_runtime_dir (), "app", app_id, NULL);
+  if (app_id_dir != NULL)
+    {
+      g_autofree char *run_user_app_dst = g_strdup_printf ("/run/user/%d/app/%s", getuid (), app_id);
+      g_autofree char *run_user_app_src = g_build_filename (g_get_user_runtime_dir (), "app", app_id, NULL);
 
-    if (glnx_shutil_mkdir_p_at (AT_FDCWD,
-                                run_user_app_src,
-                                0700,
-                                NULL,
-                                NULL))
+      if (glnx_shutil_mkdir_p_at (AT_FDCWD,
+                                  run_user_app_src,
+                                  0700,
+                                  NULL,
+                                  NULL))
         flatpak_bwrap_add_args (bwrap,
                                 "--bind", run_user_app_src, run_user_app_dst,
                                 NULL);
-  }
+    }
 
   /* Hide the flatpak dir by default (unless explicitly made visible) */
   user_flatpak_dir = flatpak_get_user_base_dir_location ();

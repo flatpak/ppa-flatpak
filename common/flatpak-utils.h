@@ -72,8 +72,6 @@ gboolean  flatpak_has_path_prefix (const char *str,
 const char * flatpak_path_match_prefix (const char *pattern,
                                         const char *path);
 
-gboolean flatpak_is_in_sandbox (void);
-
 gboolean flatpak_fancy_output (void);
 
 const char * flatpak_get_arch (void);
@@ -98,7 +96,6 @@ void flatpak_migrate_from_xdg_app (void);
 GFile *flatpak_file_new_tmp_in (GFile *dir,
                                 const char *templatename,
                                 GError        **error);
-gboolean flatpak_break_hardlink (GFile *file, GError **error);
 
 gboolean flatpak_write_update_checksum (GOutputStream  *out,
                                         gconstpointer   data,
@@ -145,6 +142,10 @@ gboolean flatpak_summary_lookup_ref (GVariant    *summary,
 
 gboolean flatpak_has_name_prefix (const char *string,
                                   const char *name);
+gboolean flatpak_name_matches_one_prefix (const char         *string,
+                                          const char * const *prefixes);
+gboolean flatpak_name_matches_one_wildcard_prefix (const char         *string,
+                                                   const char * const *maybe_wildcard_prefixes);
 gboolean flatpak_is_valid_name (const char *string,
                                 GError **error);
 gboolean flatpak_is_valid_branch (const char *string,
@@ -206,6 +207,7 @@ GFile * flatpak_find_unmaintained_extension_dir_if_exists (const char   *name,
                                                            const char   *branch,
                                                            GCancellable *cancellable);
 FlatpakDeploy * flatpak_find_deploy_for_ref (const char   *ref,
+                                             const char   *commit,
                                              GCancellable *cancellable,
                                              GError      **error);
 char ** flatpak_list_deployed_refs (const char   *type,
@@ -220,25 +222,9 @@ char ** flatpak_list_unmaintained_refs (const char   *name_prefix,
                                         GCancellable *cancellable,
                                         GError      **error);
 
-gboolean flatpak_overlay_symlink_tree (GFile        *source,
-                                       GFile        *destination,
-                                       const char   *symlink_prefix,
-                                       GCancellable *cancellable,
-                                       GError      **error);
 gboolean flatpak_remove_dangling_symlinks (GFile        *dir,
                                            GCancellable *cancellable,
                                            GError      **error);
-
-void  flatpak_invocation_lookup_app_info (GDBusMethodInvocation *invocation,
-                                          GCancellable          *cancellable,
-                                          GAsyncReadyCallback    callback,
-                                          gpointer               user_data);
-
-GKeyFile *flatpak_invocation_lookup_app_info_finish (GDBusMethodInvocation *invocation,
-                                                     GAsyncResult          *result,
-                                                     GError               **error);
-
-void  flatpak_connection_track_name_owners (GDBusConnection *connection);
 
 #if !GLIB_CHECK_VERSION (2, 40, 0)
 static inline gboolean
@@ -412,24 +398,16 @@ typedef struct
 
 void flatpak_extension_free (FlatpakExtension *extension);
 
+void flatpak_parse_extension_with_tag (const char  *extension,
+                                       char       **name,
+                                       char       **tag);
+
 GList *flatpak_list_extensions (GKeyFile   *metakey,
                                 const char *arch,
                                 const char *branch);
 
 char * flatpak_quote_argv (const char *argv[]);
 gboolean flatpak_file_arg_has_suffix (const char *arg, const char *suffix);
-
-gboolean            flatpak_spawn (GFile       *dir,
-                                   char       **output,
-                                   GError     **error,
-                                   const gchar *argv0,
-                                   va_list      args);
-
-gboolean            flatpak_spawnv (GFile                *dir,
-                                    char                **output,
-                                    GSubprocessFlags      flags,
-                                    GError              **error,
-                                    const gchar * const  *argv);
 
 const char *flatpak_file_get_path_cached (GFile *file);
 
@@ -626,8 +604,10 @@ gboolean   flatpak_appstream_xml_migrate (FlatpakXml *source,
                                           const char *ref,
                                           const char *id,
                                           GKeyFile   *metadata);
-GBytes *flatpak_appstream_xml_root_to_data (FlatpakXml *appstream_root,
-                                            GError    **error);
+gboolean flatpak_appstream_xml_root_to_data (FlatpakXml *appstream_root,
+                                             GBytes **uncompressed,
+                                             GBytes **compressed,
+                                             GError    **error);
 gboolean   flatpak_repo_generate_appstream (OstreeRepo   *repo,
                                             const char  **gpg_key_ids,
                                             const char   *gpg_homedir,

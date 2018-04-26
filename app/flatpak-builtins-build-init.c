@@ -32,13 +32,16 @@
 #include "flatpak-builtins.h"
 #include "flatpak-builtins-utils.h"
 #include "flatpak-utils.h"
+#include "flatpak-run.h"
 
 static char *opt_arch;
 static char *opt_var;
 static char *opt_type;
 static char *opt_sdk_dir;
 static char **opt_sdk_extensions;
+static char **opt_extensions;
 static char **opt_tags;
+static char *opt_extension_tag;
 static char *opt_base;
 static char *opt_base_version;
 static char **opt_base_extensions;
@@ -51,10 +54,12 @@ static GOptionEntry options[] = {
   { "base", 0, 0, G_OPTION_ARG_STRING, &opt_base, N_("Initialize apps from named app"), N_("APP") },
   { "base-version", 0, 0, G_OPTION_ARG_STRING, &opt_base_version, N_("Specify version for --base"), N_("VERSION") },
   { "base-extension", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_base_extensions, N_("Include this base extension"), N_("EXTENSION") },
+  { "extension-tag", 0, 0, G_OPTION_ARG_STRING, &opt_extension_tag, N_("Extension tag to use if building extension"), N_("EXTENSION_TAG") },
   { "writable-sdk", 'w', 0, G_OPTION_ARG_NONE, &opt_writable_sdk, N_("Initialize /usr with a writable copy of the sdk"), NULL },
   { "type", 0, 0, G_OPTION_ARG_STRING, &opt_type, N_("Specify the build type (app, runtime, extension)"), N_("TYPE") },
   { "tag", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_tags, N_("Add a tag"), N_("TAG") },
   { "sdk-extension", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_sdk_extensions, N_("Include this sdk extension in /usr"), N_("EXTENSION") },
+  { "extension", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_extensions, N_("Add extension point info"),  N_("NAME=VARIABLE[=VALUE]") },
   { "sdk-dir", 0, 0, G_OPTION_ARG_STRING, &opt_sdk_dir, N_("Where to store sdk (defaults to 'usr')"), N_("DIR") },
   { "update", 0, 0, G_OPTION_ARG_NONE, &opt_update, N_("Re-initialize the sdk/var"), NULL },
   { NULL }
@@ -74,14 +79,20 @@ ensure_extensions (FlatpakDeploy *src_deploy, const char *default_branch,
   for (i = 0; src_extensions[i] != NULL; i++)
     {
       const char *requested_extension = src_extensions[i];
+      g_autofree char *requested_extension_name = NULL;
       gboolean found = FALSE;
+
+      /* Remove any '@' from the name */
+      flatpak_parse_extension_with_tag (requested_extension,
+                                        &requested_extension_name,
+                                        NULL);
 
       for (l = extensions; l != NULL; l = l->next)
         {
           FlatpakExtension *ext = l->data;
 
-          if (strcmp (ext->installed_id, requested_extension) == 0 ||
-              strcmp (ext->id, requested_extension) == 0)
+          if (strcmp (ext->installed_id, requested_extension_name) == 0 ||
+              strcmp (ext->id, requested_extension_name) == 0)
             {
               if (!ext->is_unmaintained)
                 {
@@ -128,13 +139,24 @@ ensure_extensions (FlatpakDeploy *src_deploy, const char *default_branch,
       if (!found)
         {
           g_list_free_full (extensions, (GDestroyNotify) flatpak_extension_free);
-          return flatpak_fail (error, _("Requested extension %s not installed"), requested_extension);
+          return flatpak_fail (error, _("Requested extension %s not installed"), requested_extension_name);
         }
     }
 
   g_list_free_full (extensions, (GDestroyNotify) flatpak_extension_free);
 
   return TRUE;
+}
+
+static char *
+maybe_format_extension_tag (const char *extension_tag)
+{
+  if (extension_tag != NULL)
+    {
+      return g_strdup_printf ("tag=%s\n", extension_tag);
+    }
+
+  return g_strdup ("");
 }
 
 gboolean
@@ -167,6 +189,9 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
   gboolean is_app = FALSE;
   gboolean is_extension = FALSE;
   gboolean is_runtime = FALSE;
+  g_autoptr(GKeyFile) keyfile = g_key_file_new ();
+  g_autofree char *keyfile_data = NULL;
+  gsize keyfile_data_len;
 
   context = g_option_context_new (_("DIRECTORY APPNAME SDK RUNTIME [BRANCH] - Initialize a directory for building"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
@@ -203,6 +228,7 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
 
   if (!flatpak_is_valid_name (app_id, &my_error))
     return flatpak_fail (error, _("'%s' is not a valid application name: %s"), app_id, my_error->message);
+
 
   kinds = FLATPAK_KINDS_RUNTIME;
   sdk_dir = flatpak_find_installed_pref (sdk_pref, kinds, opt_arch, default_branch, TRUE, FALSE, FALSE, NULL,
@@ -292,7 +318,7 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
 
       base_branch = opt_base_version ? opt_base_version : "master";
       base_ref = flatpak_build_app_ref (opt_base, base_branch, opt_arch);
-      base_deploy = flatpak_find_deploy_for_ref (base_ref, cancellable, error);
+      base_deploy = flatpak_find_deploy_for_ref (base_ref, NULL, cancellable, error);
       if (base_deploy == NULL)
         return FALSE;
 
@@ -360,14 +386,41 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
     }
 
   if (is_extension)
-    g_string_append_printf (metadata_contents,
-                            "\n"
-                            "[ExtensionOf]\n"
-                            "ref=%s\n",
-                            runtime_ref);
+    {
+      g_autofree char *optional_extension_tag = maybe_format_extension_tag (opt_extension_tag);
+      g_string_append_printf (metadata_contents,
+                              "\n"
+                              "[ExtensionOf]\n"
+                              "ref=%s\n"
+                              "%s",
+                              runtime_ref,
+                              optional_extension_tag);
+    }
+
+  /* Do the rest of the work as a keyfile, as we need things like full escaping, etc.
+   * We should probably do everything this way actually...   */
+  if (!g_key_file_load_from_data (keyfile, metadata_contents->str, metadata_contents->len, 0, NULL))
+    return flatpak_fail (error, "Internal error parsing generated keyfile");
+
+  for (i = 0; opt_extensions != NULL && opt_extensions[i] != NULL; i++)
+    {
+      g_auto(GStrv) elements = NULL;
+      g_autofree char *groupname = NULL;
+
+      elements = g_strsplit (opt_extensions[i], "=", 3);
+      if (g_strv_length (elements) < 2)
+        return flatpak_fail (error, _("Too few elements in --extension argument %s, format should be NAME=VAR[=VALUE]"), opt_extensions[i]);
+
+      groupname = g_strconcat (FLATPAK_METADATA_GROUP_PREFIX_EXTENSION,
+                               elements[0], NULL);
+
+      g_key_file_set_string (keyfile, groupname, elements[1], elements[2] ? elements[2] : "true");
+    }
+
+  keyfile_data = g_key_file_to_data (keyfile, &keyfile_data_len, NULL);
 
   if (!g_file_replace_contents (metadata_file,
-                                metadata_contents->str, metadata_contents->len, NULL, FALSE,
+                                keyfile_data, keyfile_data_len, NULL, FALSE,
                                 G_FILE_CREATE_REPLACE_DESTINATION,
                                 NULL, cancellable, error))
     return FALSE;
@@ -381,7 +434,6 @@ flatpak_complete_build_init (FlatpakCompletion *completion)
   g_autoptr(GOptionContext) context = NULL;
   g_autoptr(FlatpakDir) user_dir = NULL;
   g_autoptr(FlatpakDir) system_dir = NULL;
-  g_autoptr(GError) error = NULL;
   int i;
 
   context = g_option_context_new ("");
@@ -407,6 +459,7 @@ flatpak_complete_build_init (FlatpakCompletion *completion)
     case 4: /* SDK */
       user_dir = flatpak_dir_get_user ();
       {
+        g_autoptr(GError) error = NULL;
         g_auto(GStrv) refs = flatpak_dir_find_installed_refs (user_dir, NULL, NULL, opt_arch,
                                                               FLATPAK_KINDS_RUNTIME, &error);
         if (refs == NULL)
@@ -421,6 +474,7 @@ flatpak_complete_build_init (FlatpakCompletion *completion)
 
       system_dir = flatpak_dir_get_system_default ();
       {
+        g_autoptr(GError) error = NULL;
         g_auto(GStrv) refs = flatpak_dir_find_installed_refs (system_dir, NULL, NULL, opt_arch,
                                                               FLATPAK_KINDS_RUNTIME, &error);
         if (refs == NULL)
@@ -438,6 +492,7 @@ flatpak_complete_build_init (FlatpakCompletion *completion)
     case 5: /* BRANCH */
       user_dir = flatpak_dir_get_user ();
       {
+        g_autoptr(GError) error = NULL;
         g_auto(GStrv) refs = flatpak_dir_find_installed_refs (user_dir, completion->argv[3], NULL, opt_arch,
                                                               FLATPAK_KINDS_RUNTIME, &error);
         if (refs == NULL)
@@ -452,6 +507,7 @@ flatpak_complete_build_init (FlatpakCompletion *completion)
 
       system_dir = flatpak_dir_get_system_default ();
       {
+        g_autoptr(GError) error = NULL;
         g_auto(GStrv) refs = flatpak_dir_find_installed_refs (system_dir, completion->argv[3], NULL, opt_arch,
                                                               FLATPAK_KINDS_RUNTIME, &error);
         if (refs == NULL)

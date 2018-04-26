@@ -589,7 +589,7 @@ flatpak_remote_get_disabled (FlatpakRemote *self)
  * @self: a #FlatpakRemote
  * @disabled: a bool
  *
- * Sets the disabled config of this remote. See flatpak_remote_get_disable().
+ * Sets the disabled config of this remote. See flatpak_remote_get_disabled().
  *
  * Note: This is a local modification of this object, you must commit changes
  * using flatpak_installation_modify_remote() for the changes to take
@@ -751,6 +751,7 @@ flatpak_remote_new_from_ostree (OstreeRemote     *remote,
                                 OstreeRepoFinder *repo_finder,
                                 FlatpakDir       *dir)
 {
+  g_autofree gchar *url = NULL;
   FlatpakRemotePrivate *priv;
   FlatpakRemote *self = g_object_new (FLATPAK_TYPE_REMOTE,
                                       "name", ostree_remote_get_name (remote),
@@ -760,6 +761,10 @@ flatpak_remote_new_from_ostree (OstreeRemote     *remote,
   priv = flatpak_remote_get_instance_private (self);
   if (dir)
     priv->dir = g_object_ref (dir);
+
+  url = ostree_remote_get_url (remote);
+  if (url != NULL)
+    flatpak_remote_set_url (self, url);
 
   return self;
 }
@@ -814,9 +819,26 @@ flatpak_remote_commit (FlatpakRemote   *self,
   if (priv->local_collection_id_set)
     {
       if (priv->local_collection_id != NULL)
-        g_key_file_set_string (config, group, "collection-id", priv->local_collection_id);
+        {
+          g_key_file_set_string (config, group, "collection-id", priv->local_collection_id);
+
+          /* When a collection ID is set, flatpak uses signed per-repo and
+           * per-commit metadata instead of summary signatures. */
+          g_key_file_set_boolean (config, group, "gpg-verify-summary", FALSE);
+        }
       else
-        g_key_file_remove_key (config, group, "collection-id", NULL);
+        {
+          g_autoptr(GError) local_error = NULL;
+          gboolean gpg_verify_value;
+
+          g_key_file_remove_key (config, group, "collection-id", NULL);
+
+          /* Without a collection ID gpg-verify-summary should go back to
+           * matching gpg-verify. */
+          gpg_verify_value = g_key_file_get_boolean (config, group, "gpg-verify", &local_error);
+          if (local_error == NULL)
+            g_key_file_set_boolean (config, group, "gpg-verify-summary", gpg_verify_value);
+        }
     }
 
   if (priv->local_title_set)
@@ -828,7 +850,9 @@ flatpak_remote_commit (FlatpakRemote   *self,
   if (priv->local_gpg_verify_set)
     {
       g_key_file_set_boolean (config, group, "gpg-verify", priv->local_gpg_verify);
-      g_key_file_set_boolean (config, group, "gpg-verify-summary", priv->local_gpg_verify);
+
+      if (!priv->local_collection_id_set || priv->local_collection_id == NULL)
+        g_key_file_set_boolean (config, group, "gpg-verify-summary", priv->local_gpg_verify);
     }
 
   if (priv->local_noenumerate_set)

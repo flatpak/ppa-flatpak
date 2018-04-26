@@ -28,10 +28,23 @@ if [ x${USE_COLLECTIONS_IN_CLIENT-} == xyes ] || [ x${USE_COLLECTIONS_IN_SERVER-
     skip_without_p2p
 fi
 
-echo "1..12"
+echo "1..19"
 
 #Regular repo
 setup_repo
+
+# Ensure we have appdata
+if ! ostree show --repo=repos/test appstream/${ARCH} > /dev/null; then
+    assert_not_reached "No appstream branch"
+fi
+if ! ostree show --repo=repos/test appstream2/${ARCH} > /dev/null; then
+    assert_not_reached "No appstream2 branch"
+fi
+ostree cat --repo=repos/test appstream/${ARCH} /appstream.xml.gz | gunzip -d > appdata.xml
+assert_file_has_content appdata.xml "<id>org.test.Hello.desktop</id>"
+
+ostree cat --repo=repos/test appstream2/${ARCH} /appstream.xml > appdata2.xml
+assert_file_has_content appdata2.xml "<id>org.test.Hello.desktop</id>"
 
 # Unsigned repo (not supported with collections; client-side use of collections requires GPG)
 if [ x${USE_COLLECTIONS_IN_CLIENT-} == xyes ] ; then
@@ -46,6 +59,8 @@ elif [ x${USE_COLLECTIONS_IN_SERVER-} == xyes ] ; then
 else
     GPGPUBKEY="" GPGARGS="" setup_repo test-no-gpg
 fi
+
+flatpak remote-add ${U} --no-gpg-verify local-test-no-gpg-repo `pwd`/repos/test-no-gpg
 
 #alternative gpg key repo
 GPGPUBKEY="${FL_GPG_HOMEDIR2}/pubring.gpg" GPGARGS="${FL_GPGARGS2}" setup_repo test-gpg2 org.test.Collection.Gpg2
@@ -64,6 +79,36 @@ if flatpak remote-add ${U} --gpg-import=${FL_GPG_HOMEDIR2}/pubring.gpg test-wron
     assert_not_reached "Should fail metadata-update due to wrong gpg key"
 fi
 
+# Remove new appstream branch so we can test deploying the old one
+rm -rf repos/test/refs/heads/appstream2
+ostree summary -u --repo=repos/test ${FL_GPGARGS}
+
+flatpak ${U} --appstream update test-repo
+
+assert_has_file $FL_DIR/repo/refs/remotes/test-repo/appstream/$ARCH
+assert_not_has_file $FL_DIR/repo/refs/remotes/test-repo/appstream2/$ARCH
+
+assert_has_file $FL_DIR/appstream/test-repo/$ARCH/.timestamp
+assert_has_symlink $FL_DIR/appstream/test-repo/$ARCH/active
+assert_not_has_file $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml
+assert_has_file $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml.gz
+
+echo "ok update compat appstream"
+
+# Then regenerate new appstream branch and verify that we update to it
+update_repo
+
+flatpak ${U} --appstream update test-repo
+
+assert_has_file $FL_DIR/repo/refs/remotes/test-repo/appstream2/$ARCH
+
+assert_has_file $FL_DIR/appstream/test-repo/$ARCH/.timestamp
+assert_has_symlink $FL_DIR/appstream/test-repo/$ARCH/active
+assert_has_file $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml
+assert_has_file $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml.gz
+
+echo "ok update appstream"
+
 if [ x${USE_COLLECTIONS_IN_CLIENT-} != xyes ] ; then
     install_repo test-no-gpg
     echo "ok install without gpg key"
@@ -72,6 +117,12 @@ if [ x${USE_COLLECTIONS_IN_CLIENT-} != xyes ] ; then
 else
     echo "ok install without gpg key # skip not supported for collections"
 fi
+
+install_repo local-test-no-gpg
+${FLATPAK} ${U} uninstall org.test.Platform org.test.Hello
+${FLATPAK} ${U} update --appstream local-test-no-gpg-repo
+
+echo "ok local without gpg key"
 
 install_repo test-gpg2
 echo "ok with alternative gpg key"
@@ -123,6 +174,61 @@ assert_file_has_content repo-info "new-title"
 
 echo "ok update metadata"
 
+if [ x${USE_COLLECTIONS_IN_SERVER-} == xyes ] ; then
+    COPY_COLLECTION_ID=org.test.Collection.test
+    copy_collection_args=--collection-id=${COLLECTION_ID}
+else
+    COPY_COLLECTION_ID=
+    copy_collection_args=
+fi
+
+ostree init --repo=repos/test-copy --mode=archive-z2 ${copy_collection_args}
+${FLATPAK} build-commit-from --end-of-life=Reason1 --src-repo=repos/test repos/test-copy app/org.test.Hello/$ARCH/master
+update_repo test-copy ${COPY_COLLECTION_ID}
+
+# Ensure we have no eol app in appdata
+if ! ostree show --repo=repos/test-copy appstream/${ARCH} > /dev/null; then
+    assert_not_reached "No appstream branch"
+fi
+ostree cat --repo=repos/test-copy appstream/${ARCH} /appstream.xml.gz | gunzip -d > appdata.xml
+assert_not_file_has_content appdata.xml "org.test.Hello.desktop"
+
+${FLATPAK} repo --branches repos/test-copy > branches-log
+assert_file_has_content branches-log "^app/org.test.Hello/.*eol=Reason1"
+
+echo "ok eol build-commit-from"
+
+${FLATPAK} ${U} install -y test-repo org.test.Hello
+
+EXPORT_ARGS="--end-of-life=Reason2" make_updated_app
+
+# Ensure we have no eol app in appdata
+if ! ostree show --repo=repos/test appstream/${ARCH} > /dev/null; then
+    assert_not_reached "No appstream branch"
+fi
+ostree cat --repo=repos/test appstream/${ARCH} /appstream.xml.gz | gunzip -d > appdata.xml
+assert_not_file_has_content appdata.xml "org.test.Hello.desktop"
+
+${FLATPAK} repo --branches repos/test > branches-log
+assert_file_has_content branches-log "^app/org.test.Hello/.*eol=Reason2"
+
+${FLATPAK} ${U} remote-ls -d test-repo > remote-ls-log
+assert_file_has_content remote-ls-log "^app/org.test.Hello/.*eol=Reason2"
+
+${FLATPAK} ${U} update org.test.Hello 2> update-log
+assert_file_has_content update-log "app/org.test.Hello/.*Reason2"
+
+${FLATPAK} ${U} info org.test.Hello > info-log
+assert_file_has_content info-log "end-of-life: Reason2"
+
+${FLATPAK} ${U} list -d > list-log
+assert_file_has_content list-log "^org.test.Hello/.*eol=Reason2"
+
+${FLATPAK} ${U} uninstall org.test.Hello
+
+echo "ok eol build-export"
+
+
 port=$(cat httpd-port-main)
 UPDATE_REPO_ARGS="--redirect-url=http://127.0.0.1:${port}/test-gpg3 --gpg-import=${FL_GPG_HOMEDIR2}/pubring.gpg" update_repo
 GPGPUBKEY="${FL_GPG_HOMEDIR2}/pubring.gpg" GPGARGS="${FL_GPGARGS2}" setup_repo_no_add test-gpg3 org.test.Collection.test
@@ -139,9 +245,16 @@ update_repo test-gpg3 org.test.Collection.test
 ${FLATPAK} ${U} install test-repo org.test.Hello
 assert_file_has_content $FL_DIR/app/org.test.Hello/$ARCH/master/active/files/bin/hello.sh UPDATED
 
-${FLATPAK} ${U} uninstall org.test.Platform org.test.Hello
-
 echo "ok redirect url and gpg key"
+
+if ${FLATPAK} ${INVERT_U} uninstall org.test.Platform org.test.Hello; then
+    assert_not_reached "Should not be able to uninstall ${INVERT_U} when installed ${U}"
+fi
+
+# Test that unspecified --user/--system finds the right one, so no ${U}
+${FLATPAK} uninstall org.test.Platform org.test.Hello
+
+echo "ok uninstall vs installations"
 
 # Test that remote-ls works in all of the following cases:
 # * system remote, and --system is used
@@ -176,6 +289,13 @@ else
 fi
 
 echo "ok remote-ls"
+
+# Test that remote-ls can take a file:// URI
+ostree --repo=repos/test summary -u
+${FLATPAK} remote-ls file://`pwd`/repos/test > repo-list
+assert_file_has_content repo-list "org.test.Hello"
+
+echo "ok remote-ls URI"
 
 # Test that remote-modify works in all of the following cases:
 # * system remote, and --system is used
