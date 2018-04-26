@@ -1,4 +1,4 @@
-flatpak (0.11.4-1) UNRELEASED; urgency=medium
+flatpak (0.11.4-1) unstable; urgency=medium
 
   * New upstream release
     - Drop patches that were applied upstream
@@ -8,7 +8,7 @@ flatpak (0.11.4-1) UNRELEASED; urgency=medium
     - Update symbols file for new ABI
   * Standards-Version: 4.1.4 (no changes required)
 
- -- Simon McVittie <smcv@debian.org>  Mon, 09 Apr 2018 08:19:04 +0100
+ -- Simon McVittie <smcv@debian.org>  Thu, 26 Apr 2018 20:06:07 +0100
 
 flatpak (0.11.3-3) unstable; urgency=medium
 
