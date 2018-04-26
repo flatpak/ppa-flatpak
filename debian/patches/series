@@ -1,4 +1,1 @@
-Update-Indonesian-translation.patch
-Fix-assertion-when-no-gsettings-schema-installed.patch
-Update-Czech-translation.patch
 debian/Use-Python-3-for-test-web-server.patch
