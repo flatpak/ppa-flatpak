@@ -7,9 +7,11 @@ etc/profile.d/
 lib/systemd/system/flatpak-system-helper.service
 usr/bin/flatpak
 usr/lib/flatpak/flatpak-dbus-proxy
+usr/lib/flatpak/flatpak-portal
 usr/lib/flatpak/flatpak-session-helper
 usr/lib/flatpak/flatpak-system-helper
 usr/lib/systemd/user/dbus.service.d/flatpak.conf
+usr/lib/systemd/user/flatpak-portal.service
 usr/lib/systemd/user/flatpak-session-helper.service
 usr/share/bash-completion
 usr/share/dbus-1/services
