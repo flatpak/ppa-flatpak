@@ -51,9 +51,11 @@ gboolean flatpak_run_in_transient_unit (const char *app_id,
 #define FLATPAK_METADATA_KEY_FEATURES "features"
 
 #define FLATPAK_METADATA_GROUP_INSTANCE "Instance"
+#define FLATPAK_METADATA_KEY_INSTANCE_PATH "instance-path"
 #define FLATPAK_METADATA_KEY_APP_PATH "app-path"
 #define FLATPAK_METADATA_KEY_APP_COMMIT "app-commit"
 #define FLATPAK_METADATA_KEY_APP_EXTENSIONS "app-extensions"
+#define FLATPAK_METADATA_KEY_ARCH "arch"
 #define FLATPAK_METADATA_KEY_BRANCH "branch"
 #define FLATPAK_METADATA_KEY_FLATPAK_VERSION "flatpak-version"
 #define FLATPAK_METADATA_KEY_RUNTIME_PATH "runtime-path"
@@ -61,6 +63,9 @@ gboolean flatpak_run_in_transient_unit (const char *app_id,
 #define FLATPAK_METADATA_KEY_RUNTIME_EXTENSIONS "runtime-extensions"
 #define FLATPAK_METADATA_KEY_SESSION_BUS_PROXY "session-bus-proxy"
 #define FLATPAK_METADATA_KEY_SYSTEM_BUS_PROXY "system-bus-proxy"
+#define FLATPAK_METADATA_KEY_EXTRA_ARGS "extra-args"
+#define FLATPAK_METADATA_KEY_SANDBOX "sandbox"
+#define FLATPAK_METADATA_KEY_BUILD "build"
 
 #define FLATPAK_METADATA_GROUP_SESSION_BUS_POLICY "Session Bus Policy"
 #define FLATPAK_METADATA_GROUP_SYSTEM_BUS_POLICY "System Bus Policy"
@@ -96,6 +101,7 @@ gboolean flatpak_run_in_transient_unit (const char *app_id,
 #define FLATPAK_METADATA_GROUP_EXTENSION_OF "ExtensionOf"
 #define FLATPAK_METADATA_KEY_PRIORITY "priority"
 #define FLATPAK_METADATA_KEY_REF "ref"
+#define FLATPAK_METADATA_KEY_TAG "tag"
 
 
 typedef enum {
@@ -113,6 +119,8 @@ typedef enum {
   FLATPAK_RUN_FLAG_DIE_WITH_PARENT    = (1 << 11),
   FLATPAK_RUN_FLAG_LOG_A11Y_BUS       = (1 << 12),
   FLATPAK_RUN_FLAG_NO_A11Y_BUS_PROXY  = (1 << 13),
+  FLATPAK_RUN_FLAG_SANDBOX            = (1 << 14),
+  FLATPAK_RUN_FLAG_NO_DOCUMENTS_PORTAL = (1 << 15),
 } FlatpakRunFlags;
 
 gboolean  flatpak_run_add_extension_args (FlatpakBwrap   *bwrap,
@@ -161,7 +169,11 @@ gboolean flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
                                         const char     *app_id,
                                         const char     *app_branch,
                                         const char     *runtime_ref,
+                                        GFile          *app_id_dir,
                                         FlatpakContext *final_app_context,
+                                        FlatpakContext *cmdline_context,
+                                        gboolean        sandbox,
+                                        gboolean        build,
                                         char          **app_info_path_out,
                                         GError        **error);
 
@@ -170,6 +182,7 @@ gboolean flatpak_run_app (const char     *app_ref,
                           FlatpakContext *extra_context,
                           const char     *custom_runtime,
                           const char     *custom_runtime_version,
+                          const char     *custom_runtime_commit,
                           FlatpakRunFlags flags,
                           const char     *custom_command,
                           char           *args[],

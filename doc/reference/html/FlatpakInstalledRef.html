@@ -7,7 +7,7 @@
 <link rel="home" href="index.html" title="Flatpak Library Reference Manual">
 <link rel="up" href="ch01.html" title="Flatpak">
 <link rel="prev" href="FlatpakRef.html" title="FlatpakRef">
-<link rel="next" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef">
+<link rel="next" href="FlatpakRelatedRef.html" title="FlatpakRelatedRef">
 <meta name="generator" content="GTK-Doc V1.26.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
@@ -22,7 +22,7 @@
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
 <td><a accesskey="p" href="FlatpakRef.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="FlatpakRemoteRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="n" href="FlatpakRelatedRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="FlatpakInstalledRef"></a><div class="titlepage"></div>
@@ -110,6 +110,18 @@
 <span class="type">gchar</span> *</td>
 <td class="property_name"><a class="link" href="FlatpakInstalledRef.html#FlatpakInstalledRef--deploy-dir" title="The “deploy-dir” property">deploy-dir</a></td>
 <td class="property_flags">Read / Write</td>
+</tr>
+<tr>
+<td class="property_type">
+<span class="type">gchar</span> *</td>
+<td class="property_name"><a class="link" href="FlatpakInstalledRef.html#FlatpakInstalledRef--end-of-life" title="The “end-of-life” property">end-of-life</a></td>
+<td class="property_flags">Read / Write / Construct Only</td>
+</tr>
+<tr>
+<td class="property_type">
+<span class="type">gchar</span> *</td>
+<td class="property_name"><a class="link" href="FlatpakInstalledRef.html#FlatpakInstalledRef--end-of-life-rebase" title="The “end-of-life-rebase” property">end-of-life-rebase</a></td>
+<td class="property_flags">Read / Write / Construct Only</td>
 </tr>
 <tr>
 <td class="property_type"><span class="type">guint64</span></td>
@@ -387,6 +399,22 @@ flatpak_installed_ref_get_subpaths (<em class="parameter"><code><a class="link" 
 <pre class="programlisting">  “deploy-dir”               <span class="type">gchar</span> *</pre>
 <p>Where the application is installed.</p>
 <p>Flags: Read / Write</p>
+<p>Default value: NULL</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakInstalledRef--end-of-life"></a><h3>The <code class="literal">“end-of-life”</code> property</h3>
+<pre class="programlisting">  “end-of-life”              <span class="type">gchar</span> *</pre>
+<p>The reason for the ref to be end of life.</p>
+<p>Flags: Read / Write / Construct Only</p>
+<p>Default value: NULL</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakInstalledRef--end-of-life-rebase"></a><h3>The <code class="literal">“end-of-life-rebase”</code> property</h3>
+<pre class="programlisting">  “end-of-life-rebase”       <span class="type">gchar</span> *</pre>
+<p>The new ref for the end of lifeed ref.</p>
+<p>Flags: Read / Write / Construct Only</p>
 <p>Default value: NULL</p>
 </div>
 <hr>

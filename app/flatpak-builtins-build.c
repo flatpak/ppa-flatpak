@@ -75,6 +75,80 @@ child_setup (gpointer user_data)
     fcntl (g_array_index (fd_array, int, i), F_SETFD, 0);
 }
 
+static gboolean
+find_matching_extension_group_in_metakey (GKeyFile    *metakey,
+                                          const char  *id,
+                                          const char  *specified_tag,
+                                          char       **out_extension_group,
+                                          GError     **error)
+{
+  g_auto(GStrv) groups = NULL;
+  g_autofree char *extension_prefix = NULL;
+  const char *last_seen_group = NULL;
+  guint n_extension_groups = 0;
+  GStrv iter = NULL;
+
+  g_return_val_if_fail (out_extension_group != NULL, FALSE);
+
+  groups =  g_key_file_get_groups (metakey, NULL);
+  extension_prefix = g_strconcat (FLATPAK_METADATA_GROUP_PREFIX_EXTENSION,
+                                  id,
+                                  NULL);
+
+  for (iter = groups; *iter != NULL; ++iter)
+    {
+      const char *group_name = *iter;
+      const char *extension_name = NULL;;
+      g_autofree char *extension_tag = NULL;
+
+      if (!g_str_has_prefix (group_name, extension_prefix))
+        continue;
+
+      ++n_extension_groups;
+      extension_name = group_name + strlen (FLATPAK_METADATA_GROUP_PREFIX_EXTENSION);
+
+      flatpak_parse_extension_with_tag (extension_name,
+                                        NULL,
+                                        &extension_tag);
+
+      /* Check 1: Does this extension have the same tag as the
+       * specified tag (including if both are NULL)? If so, use it */
+      if (g_strcmp0 (extension_tag, specified_tag) == 0)
+        {
+          *out_extension_group = g_strdup (group_name);
+          return TRUE;
+        }
+
+      /* Check 2: Keep track of this extension group as the last
+        * seen one. If it was the only one then we can use it. */
+      last_seen_group = group_name;
+    }
+
+    if (n_extension_groups == 1 && last_seen_group != NULL)
+      {
+        *out_extension_group = g_strdup (last_seen_group);
+        return TRUE;
+      }
+    else if (n_extension_groups == 0)
+      {
+        /* Check 2: No extension groups, this is not an error case as
+         * we check the parent later. */
+        *out_extension_group = NULL;
+        return TRUE;
+      }
+
+  g_set_error (error,
+               G_IO_ERROR,
+               G_IO_ERROR_FAILED,
+               "Unable to resolve extension %s to a unique "
+               "extension point in the parent app or runtime. Consider "
+               "using the 'tag' key in ExtensionOf to disambiguate which "
+               "extension point to build against.",
+               id);
+
+  return FALSE;
+}
+
 gboolean
 flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError **error)
 {
@@ -96,6 +170,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   g_autofree char *runtime = NULL;
   g_autofree char *runtime_ref = NULL;
   g_autofree char *extensionof_ref = NULL;
+  g_autofree char *extensionof_tag = NULL;
   g_autofree char *extension_point = NULL;
   g_autofree char *extension_tmpfs_point = NULL;
   g_autoptr(GKeyFile) metakey = NULL;
@@ -120,6 +195,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   gboolean is_extension = FALSE;
   gboolean is_app_extension = FALSE;
   g_autofree char *app_info_path = NULL;
+  g_autofree char *app_extensions = NULL;
   g_autofree char *runtime_extensions = NULL;
   g_autoptr(GFile) app_id_dir = NULL;
 
@@ -188,6 +264,9 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
         is_app_extension = TRUE;
     }
 
+  extensionof_tag = g_key_file_get_string (metakey,
+                                           FLATPAK_METADATA_GROUP_EXTENSION_OF,
+                                           FLATPAK_METADATA_KEY_TAG, NULL);
 
   id = g_key_file_get_string (metakey, group, FLATPAK_METADATA_KEY_NAME, error);
   if (id == NULL)
@@ -217,7 +296,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
     }
   else
     {
-      runtime_deploy = flatpak_find_deploy_for_ref (runtime_ref, cancellable, error);
+      runtime_deploy = flatpak_find_deploy_for_ref (runtime_ref, NULL, cancellable, error);
       if (runtime_deploy == NULL)
         return FALSE;
 
@@ -255,14 +334,29 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
       char *x_subdir = NULL;
       g_autofree char *bare_extension_point = NULL;
 
-      extensionof_deploy = flatpak_find_deploy_for_ref (extensionof_ref, cancellable, error);
+      extensionof_deploy = flatpak_find_deploy_for_ref (extensionof_ref, NULL, cancellable, error);
       if (extensionof_deploy == NULL)
         return FALSE;
 
       x_metakey = flatpak_deploy_get_metadata (extensionof_deploy);
 
-      x_group = g_strconcat (FLATPAK_METADATA_GROUP_PREFIX_EXTENSION, id, NULL);
-      if (!g_key_file_has_group (x_metakey, x_group))
+      /* Since we have tagged extensions, it is possible that an extension could
+       * be listed more than once in the "parent" flatpak. In that case, we should
+       * try and disambiguate using the following rules:
+       *
+       * 1. Use the 'tag=' key in the ExtensionOfSection and if not found:
+       * 2. Use the only extension point available if there is only one.
+       * 3. If there are no matching groups, return NULL.
+       * 4. In all other cases, error out.
+       */
+      if (!find_matching_extension_group_in_metakey (x_metakey,
+                                                     id,
+                                                     extensionof_tag,
+                                                     &x_group,
+                                                     error))
+        return FALSE;
+
+      if (x_group == NULL)
         {
           /* Failed, look for subdirectories=true parent */
           char *last_dot = strrchr (id, '.');
@@ -270,10 +364,15 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
           if (last_dot != NULL)
             {
               char *parent_id = g_strndup (id, last_dot - id);
-              g_free (x_group);
-              x_group = g_strconcat (FLATPAK_METADATA_GROUP_PREFIX_EXTENSION,
-                                     parent_id, NULL);
-              if (g_key_file_get_boolean (x_metakey, x_group,
+              if (!find_matching_extension_group_in_metakey (x_metakey,
+                                                             parent_id,
+                                                             extensionof_tag,
+                                                             &x_group,
+                                                             error))
+                return FALSE;
+
+              if (x_group != NULL &&
+                  g_key_file_get_boolean (x_metakey, x_group,
                                           FLATPAK_METADATA_KEY_SUBDIRECTORIES,
                                           NULL))
                 x_subdir = last_dot + 1;
@@ -315,7 +414,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   flatpak_bwrap_add_args (bwrap, flatpak_get_bwrap (), NULL);
 
   run_flags =
-    FLATPAK_RUN_FLAG_DEVEL | FLATPAK_RUN_FLAG_NO_SESSION_HELPER |
+    FLATPAK_RUN_FLAG_DEVEL | FLATPAK_RUN_FLAG_MULTIARCH | FLATPAK_RUN_FLAG_NO_SESSION_HELPER |
     FLATPAK_RUN_FLAG_SET_PERSONALITY | FLATPAK_RUN_FLAG_NO_A11Y_BUS_PROXY;
   if (opt_die_with_parent)
     run_flags |= FLATPAK_RUN_FLAG_DIE_WITH_PARENT;
@@ -406,16 +505,26 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
 
   flatpak_run_apply_env_vars (bwrap, app_context);
 
+  if (is_app)
+    {
+      /* We don't actually know the final branchname yet, so use "nobranch" as fallback to avoid unexpected matches.
+         This means any extension point used at build time must have explicit versions to work. */
+      g_autofree char *fake_ref = g_strdup_printf ("app/%s/%s/nobranch", id, runtime_ref_parts[2]);
+      if (!flatpak_run_add_extension_args (bwrap, metakey, fake_ref, FALSE, &app_extensions, cancellable, error))
+        return FALSE;
+    }
+
   if (!custom_usr && !(is_extension && !is_app_extension) &&
       !flatpak_run_add_extension_args (bwrap, runtime_metakey, runtime_ref, FALSE, &runtime_extensions, cancellable, error))
     return FALSE;
 
   if (!flatpak_run_add_app_info_args (bwrap,
-                                      app_files, NULL, NULL,
+                                      app_files, NULL, app_extensions,
                                       runtime_files, runtime_deploy_data, runtime_extensions,
                                       id, NULL,
                                       runtime_ref,
-                                      app_context,
+                                      app_id_dir, app_context, NULL,
+                                      FALSE, TRUE,
                                       &app_info_path,
                                       error))
     return FALSE;

@@ -1437,7 +1437,11 @@ flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
                                const char     *app_id,
                                const char     *app_branch,
                                const char     *runtime_ref,
+                               GFile          *app_id_dir,
                                FlatpakContext *final_app_context,
+                               FlatpakContext *cmdline_context,
+                               gboolean        sandbox,
+                               gboolean        build,
                                char          **app_info_path_out,
                                GError        **error)
 {
@@ -1446,6 +1450,7 @@ flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
   g_autoptr(GKeyFile) keyfile = NULL;
   g_autofree char *runtime_path = NULL;
   g_autofree char *old_dest = g_strdup_printf ("/run/user/%d/flatpak-info", getuid ());
+  g_auto(GStrv) runtime_ref_parts = g_strsplit (runtime_ref, "/", 0);
   const char *group;
 
   fd = g_file_open_tmp ("flatpak-context-XXXXXX", &tmp_path, NULL);
@@ -1469,6 +1474,13 @@ flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
   g_key_file_set_string (keyfile, group, FLATPAK_METADATA_KEY_NAME, app_id);
   g_key_file_set_string (keyfile, group, FLATPAK_METADATA_KEY_RUNTIME,
                          runtime_ref);
+
+  if (app_id_dir)
+    {
+      g_autofree char *instance_path = g_file_get_path (app_id_dir);
+      g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                             FLATPAK_METADATA_KEY_INSTANCE_PATH, instance_path);
+    }
 
   if (app_files)
     {
@@ -1494,6 +1506,8 @@ flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
   if (app_branch != NULL)
     g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
                            FLATPAK_METADATA_KEY_BRANCH, app_branch);
+  g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                         FLATPAK_METADATA_KEY_ARCH, runtime_ref_parts[2]);
 
   g_key_file_set_string (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
                          FLATPAK_METADATA_KEY_FLATPAK_VERSION, PACKAGE_VERSION);
@@ -1505,6 +1519,26 @@ flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
   if ((final_app_context->sockets & FLATPAK_CONTEXT_SOCKET_SYSTEM_BUS) == 0)
     g_key_file_set_boolean (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
                             FLATPAK_METADATA_KEY_SYSTEM_BUS_PROXY, TRUE);
+
+  if (sandbox)
+    g_key_file_set_boolean (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                            FLATPAK_METADATA_KEY_SANDBOX, TRUE);
+  if (build)
+    g_key_file_set_boolean (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                            FLATPAK_METADATA_KEY_BUILD, TRUE);
+
+  if (cmdline_context)
+    {
+      g_autoptr(GPtrArray) cmdline_args = g_ptr_array_new_with_free_func (g_free);
+      flatpak_context_to_args (cmdline_context, cmdline_args);
+      if (cmdline_args->len > 0)
+        {
+          g_key_file_set_string_list (keyfile, FLATPAK_METADATA_GROUP_INSTANCE,
+                                      FLATPAK_METADATA_KEY_EXTRA_ARGS,
+                                      (const char * const *)cmdline_args->pdata,
+                                      cmdline_args->len);
+        }
+    }
 
   flatpak_context_save_metadata (final_app_context, TRUE, keyfile);
 
@@ -2569,7 +2603,7 @@ flatpak_context_load_for_app (const char     *app_id,
   if (app_ref == NULL)
     return NULL;
 
-  app_deploy = flatpak_find_deploy_for_ref (app_ref, NULL, error);
+  app_deploy = flatpak_find_deploy_for_ref (app_ref, NULL, NULL, error);
   if (app_deploy == NULL)
     return NULL;
 
@@ -2733,6 +2767,7 @@ flatpak_run_app (const char     *app_ref,
                  FlatpakContext *extra_context,
                  const char     *custom_runtime,
                  const char     *custom_runtime_version,
+                 const char     *custom_runtime_commit,
                  FlatpakRunFlags flags,
                  const char     *custom_command,
                  char           *args[],
@@ -2747,6 +2782,7 @@ flatpak_run_app (const char     *app_ref,
   g_autoptr(GFile) runtime_files = NULL;
   g_autoptr(GFile) bin_ldconfig = NULL;
   g_autoptr(GFile) app_id_dir = NULL;
+  g_autoptr(GFile) real_app_id_dir = NULL;
   g_autofree char *default_runtime = NULL;
   g_autofree char *default_command = NULL;
   g_autofree char *runtime_ref = NULL;
@@ -2775,6 +2811,8 @@ flatpak_run_app (const char     *app_ref,
   g_autoptr(GFile) runtime_ld_so_conf = NULL;
   gboolean generate_ld_so_conf = TRUE;
   gboolean use_ld_so_cache = TRUE;
+  gboolean sandboxed = (flags & FLATPAK_RUN_FLAG_SANDBOX) != 0;
+
   struct stat s;
 
   app_ref_parts = flatpak_decompose_ref (app_ref, error);
@@ -2844,7 +2882,7 @@ flatpak_run_app (const char     *app_ref,
   if (runtime_ref == NULL)
     return FALSE;
 
-  runtime_deploy = flatpak_find_deploy_for_ref (runtime_ref, cancellable, error);
+  runtime_deploy = flatpak_find_deploy_for_ref (runtime_ref, custom_runtime_commit, cancellable, error);
   if (runtime_deploy == NULL)
     return FALSE;
 
@@ -2864,6 +2902,15 @@ flatpak_run_app (const char     *app_ref,
       flatpak_context_merge (app_context, overrides);
     }
 
+  if (sandboxed)
+    {
+      flatpak_context_make_sandboxed (app_context);
+      flags |=
+        FLATPAK_RUN_FLAG_NO_SESSION_BUS_PROXY |
+        FLATPAK_RUN_FLAG_NO_SYSTEM_BUS_PROXY |
+        FLATPAK_RUN_FLAG_NO_A11Y_BUS_PROXY;
+    }
+
   if (extra_context)
     flatpak_context_merge (app_context, extra_context);
 
@@ -2875,12 +2922,23 @@ flatpak_run_app (const char     *app_ref,
   if (app_deploy != NULL)
     {
       app_files = flatpak_deploy_get_files (app_deploy);
-      if ((app_id_dir = flatpak_ensure_data_dir (app_ref_parts[1], cancellable, error)) == NULL)
+
+      real_app_id_dir = flatpak_ensure_data_dir (app_ref_parts[1], cancellable, error);
+      if (real_app_id_dir == NULL)
         return FALSE;
+
+      if (!sandboxed)
+        app_id_dir = g_object_ref (real_app_id_dir);
     }
 
   flatpak_run_apply_env_default (bwrap, use_ld_so_cache);
   flatpak_run_apply_env_vars (bwrap, app_context);
+
+  if (real_app_id_dir)
+    {
+      g_autoptr(GFile) sandbox_dir = g_file_get_child (real_app_id_dir, "sandbox");
+      flatpak_bwrap_set_env (bwrap, "FLATPAK_SANDBOX_DIR", flatpak_file_get_path_cached (sandbox_dir), TRUE);
+    }
 
   flatpak_bwrap_add_args (bwrap,
                           "--ro-bind", flatpak_file_get_path_cached (runtime_files), "/usr",
@@ -2951,10 +3009,13 @@ flatpak_run_app (const char     *app_ref,
                                       app_files, app_deploy_data, app_extensions,
                                       runtime_files, runtime_deploy_data, runtime_extensions,
                                       app_ref_parts[1], app_ref_parts[3],
-                                      runtime_ref, app_context, &app_info_path, error))
+                                      runtime_ref, app_id_dir, app_context, extra_context,
+                                      sandboxed, FALSE,
+                                      &app_info_path, error))
     return FALSE;
 
-  add_document_portal_args (bwrap, app_ref_parts[1], &doc_mount_path);
+  if (!sandboxed && !(flags & FLATPAK_RUN_FLAG_NO_DOCUMENTS_PORTAL))
+    add_document_portal_args (bwrap, app_ref_parts[1], &doc_mount_path);
 
   if (!flatpak_run_add_environment_args (bwrap, app_info_path, flags,
                                          app_ref_parts[1], app_context, app_id_dir, &exports, cancellable, error))

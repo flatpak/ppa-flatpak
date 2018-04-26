@@ -54,14 +54,14 @@ libflatpak_common_la_SOURCES = \
 	common/flatpak-context.h \
 	common/flatpak-exports.c \
 	common/flatpak-exports.h \
-	common/flatpak-portal-error.c \
-	common/flatpak-portal-error.h \
 	common/flatpak-utils.c \
 	common/flatpak-utils.h \
 	common/flatpak-table-printer.c \
 	common/flatpak-table-printer.h \
 	common/flatpak-chain-input-stream.c \
 	common/flatpak-chain-input-stream.h \
+	common/flatpak-portal-error.c \
+	common/flatpak-portal-error.h \
 	common/flatpak-json.c \
 	common/flatpak-json.h \
 	common/flatpak-json-oci.c \

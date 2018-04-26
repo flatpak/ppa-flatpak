@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [11])
-m4_define([flatpak_micro_version], [3])
+m4_define([flatpak_micro_version], [4])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -142,6 +142,7 @@ AC_ARG_WITH([system-bubblewrap],
             [AS_HELP_STRING([--with-system-bubblewrap], [Use system bwrap executable [default=check $BWRAP]])],
             [BWRAP="$withval"],
             [BWRAP="${BWRAP:-false}"])
+CAP_LIB=
 AS_CASE([$BWRAP],
         [yes],
             [BWRAP=bwrap],
@@ -155,8 +156,15 @@ if test "x$BWRAP" != xfalse; then
                       [AC_MSG_ERROR([You need at least version $SYSTEM_BWRAP_REQS of bubblewrap to use the system installed version])])
    AM_CONDITIONAL([WITH_SYSTEM_BWRAP], [true])
 else
+   AC_CHECK_LIB(cap, cap_from_text, CAP_LIB=-lcap)
+   if test "$ac_cv_lib_cap_cap_from_text" != "yes"; then
+      AC_MSG_ERROR([*** libcap needed by bubblewrap but not found])
+   fi
+
    AM_CONDITIONAL([WITH_SYSTEM_BWRAP], [false])
 fi
+AC_SUBST([CAP_LIB])
+
 
 AC_CHECK_FUNCS(fdwalk)
 LIBGLNX_CONFIGURE
@@ -222,6 +230,9 @@ if test "x$enable_sandboxed_triggers" = "xno"; then
 fi
 
 PKG_CHECK_MODULES(OSTREE, [ostree-1 >= $OSTREE_REQS])
+
+# FIXME: Remove this check and the use of it when the ostree requirement is at least 2018.5
+PKG_CHECK_MODULES(OSTREE_2018_5, [ostree-1 >= 2018.5], AC_DEFINE([OSTREE_VERSION_2018_5], [1], [Define if ostree is at least version 2018.5]), :)
 
 PKG_CHECK_MODULES(JSON, [json-glib-1.0])
 

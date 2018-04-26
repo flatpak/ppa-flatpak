@@ -92,6 +92,7 @@ include data/Makefile.am.inc
 include app/Makefile.am.inc
 include lib/Makefile.am.inc
 include session-helper/Makefile.am.inc
+include portal/Makefile.am.inc
 include system-helper/Makefile.am.inc
 include dbus-proxy/Makefile.am.inc
 include tests/Makefile.am.inc
@@ -101,7 +102,7 @@ if !WITH_SYSTEM_BWRAP
 bwrap_PROGRAMS = flatpak-bwrap
 flatpak_bwrap_SOURCES = $(bwrap_SOURCES)
 flatpak_bwrap_CFLAGS = $(AM_CFLAGS) $(bwrap_CFLAGS)
-flatpak_bwrap_LDADD = $(AM_LDADD) $(bwrap_LDADD)
+flatpak_bwrap_LDADD = $(AM_LDADD) $(bwrap_LDADD) $(CAP_LIB)
 bwrapdir = $(libexecdir)
 include bubblewrap/Makefile-bwrap.am.inc
 

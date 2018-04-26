@@ -67,6 +67,13 @@
 <td class="function_type">const <span class="returnvalue">char</span> *
 </td>
 <td class="function_name">
+<a class="link" href="FlatpakRef.html#flatpak-ref-get-collection-id" title="flatpak_ref_get_collection_id ()">flatpak_ref_get_collection_id</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">const <span class="returnvalue">char</span> *
+</td>
+<td class="function_name">
 <a class="link" href="FlatpakRef.html#flatpak-ref-get-commit" title="flatpak_ref_get_commit ()">flatpak_ref_get_commit</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
@@ -109,36 +116,36 @@
 <td class="property_type">
 <span class="type">gchar</span> *</td>
 <td class="property_name"><a class="link" href="FlatpakRef.html#FlatpakRef--arch" title="The “arch” property">arch</a></td>
-<td class="property_flags">Read / Write</td>
+<td class="property_flags">Read / Write / Construct Only</td>
 </tr>
 <tr>
 <td class="property_type">
 <span class="type">gchar</span> *</td>
 <td class="property_name"><a class="link" href="FlatpakRef.html#FlatpakRef--branch" title="The “branch” property">branch</a></td>
-<td class="property_flags">Read / Write</td>
+<td class="property_flags">Read / Write / Construct Only</td>
 </tr>
 <tr>
 <td class="property_type">
 <span class="type">gchar</span> *</td>
 <td class="property_name"><a class="link" href="FlatpakRef.html#FlatpakRef--collection-id" title="The “collection-id” property">collection-id</a></td>
-<td class="property_flags">Read / Write</td>
+<td class="property_flags">Read / Write / Construct Only</td>
 </tr>
 <tr>
 <td class="property_type">
 <span class="type">gchar</span> *</td>
 <td class="property_name"><a class="link" href="FlatpakRef.html#FlatpakRef--commit" title="The “commit” property">commit</a></td>
-<td class="property_flags">Read / Write</td>
+<td class="property_flags">Read / Write / Construct Only</td>
 </tr>
 <tr>
 <td class="property_type"><a class="link" href="FlatpakRef.html#FlatpakRefKind" title="enum FlatpakRefKind"><span class="type">FlatpakRefKind</span></a></td>
 <td class="property_name"><a class="link" href="FlatpakRef.html#FlatpakRef--kind" title="The “kind” property">kind</a></td>
-<td class="property_flags">Read / Write</td>
+<td class="property_flags">Read / Write / Construct Only</td>
 </tr>
 <tr>
 <td class="property_type">
 <span class="type">gchar</span> *</td>
 <td class="property_name"><a class="link" href="FlatpakRef.html#FlatpakRef--name" title="The “name” property">name</a></td>
-<td class="property_flags">Read / Write</td>
+<td class="property_flags">Read / Write / Construct Only</td>
 </tr>
 </tbody>
 </table></div>
@@ -168,6 +175,7 @@
     <span class="lineart">╰──</span> FlatpakRef
         <span class="lineart">├──</span> <a class="link" href="flatpak-flatpak-bundle-ref.html#FlatpakBundleRef">FlatpakBundleRef</a>
         <span class="lineart">├──</span> <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef">FlatpakInstalledRef</a>
+        <span class="lineart">├──</span> <a class="link" href="FlatpakRelatedRef.html" title="FlatpakRelatedRef">FlatpakRelatedRef</a>
         <span class="lineart">╰──</span> <a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef">FlatpakRemoteRef</a>
 </pre>
 </div>
@@ -266,6 +274,33 @@ flatpak_ref_get_branch (<em class="parameter"><code><a class="link" href="Flatpa
 <div class="refsect3">
 <a name="flatpak-ref-get-branch.returns"></a><h4>Returns</h4>
 <p>the branch. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-ref-get-collection-id"></a><h3>flatpak_ref_get_collection_id ()</h3>
+<pre class="programlisting">const <span class="returnvalue">char</span> *
+flatpak_ref_get_collection_id (<em class="parameter"><code><a class="link" href="FlatpakRef.html" title="FlatpakRef"><span class="type">FlatpakRef</span></a> *self</code></em>);</pre>
+<p>Gets the collection ID of the ref.</p>
+<div class="refsect3">
+<a name="flatpak-ref-get-collection-id.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakRef.html" title="FlatpakRef"><span class="type">FlatpakRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-ref-get-collection-id.returns"></a><h4>Returns</h4>
+<p>the collection ID. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 </div>
@@ -430,7 +465,7 @@ commit set) or fail if the ref is invalid somehow.</p>
 <a name="FlatpakRef--arch"></a><h3>The <code class="literal">“arch”</code> property</h3>
 <pre class="programlisting">  “arch”                     <span class="type">gchar</span> *</pre>
 <p>The architecture of the application or runtime.</p>
-<p>Flags: Read / Write</p>
+<p>Flags: Read / Write / Construct Only</p>
 <p>Default value: NULL</p>
 </div>
 <hr>
@@ -438,7 +473,7 @@ commit set) or fail if the ref is invalid somehow.</p>
 <a name="FlatpakRef--branch"></a><h3>The <code class="literal">“branch”</code> property</h3>
 <pre class="programlisting">  “branch”                   <span class="type">gchar</span> *</pre>
 <p>The branch of the application or runtime.</p>
-<p>Flags: Read / Write</p>
+<p>Flags: Read / Write / Construct Only</p>
 <p>Default value: NULL</p>
 </div>
 <hr>
@@ -446,7 +481,7 @@ commit set) or fail if the ref is invalid somehow.</p>
 <a name="FlatpakRef--collection-id"></a><h3>The <code class="literal">“collection-id”</code> property</h3>
 <pre class="programlisting">  “collection-id”            <span class="type">gchar</span> *</pre>
 <p>The collection ID.</p>
-<p>Flags: Read / Write</p>
+<p>Flags: Read / Write / Construct Only</p>
 <p>Default value: NULL</p>
 </div>
 <hr>
@@ -454,7 +489,7 @@ commit set) or fail if the ref is invalid somehow.</p>
 <a name="FlatpakRef--commit"></a><h3>The <code class="literal">“commit”</code> property</h3>
 <pre class="programlisting">  “commit”                   <span class="type">gchar</span> *</pre>
 <p>The commit.</p>
-<p>Flags: Read / Write</p>
+<p>Flags: Read / Write / Construct Only</p>
 <p>Default value: NULL</p>
 </div>
 <hr>
@@ -462,7 +497,7 @@ commit set) or fail if the ref is invalid somehow.</p>
 <a name="FlatpakRef--kind"></a><h3>The <code class="literal">“kind”</code> property</h3>
 <pre class="programlisting">  “kind”                     <a class="link" href="FlatpakRef.html#FlatpakRefKind" title="enum FlatpakRefKind"><span class="type">FlatpakRefKind</span></a></pre>
 <p>The kind of artifact.</p>
-<p>Flags: Read / Write</p>
+<p>Flags: Read / Write / Construct Only</p>
 <p>Default value: FLATPAK_REF_KIND_APP</p>
 </div>
 <hr>
@@ -470,7 +505,7 @@ commit set) or fail if the ref is invalid somehow.</p>
 <a name="FlatpakRef--name"></a><h3>The <code class="literal">“name”</code> property</h3>
 <pre class="programlisting">  “name”                     <span class="type">gchar</span> *</pre>
 <p>The name of the application or runtime.</p>
-<p>Flags: Read / Write</p>
+<p>Flags: Read / Write / Construct Only</p>
 <p>Default value: NULL</p>
 </div>
 </div>

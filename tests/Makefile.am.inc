@@ -12,10 +12,11 @@ else
 AM_TESTS_ENVIRONMENT += FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
 endif
 
-testlibrary_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
+testlibrary_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS)
 testlibrary_LDADD = \
              $(AM_LDADD) \
              $(BASE_LIBS) \
+             $(OSTREE_LIBS) \
              libglnx.la \
              libflatpak.la \
              $(NULL)
@@ -45,6 +46,7 @@ tests/test-basic.sh: tests/package_version.txt
 
 dist_installed_test_extra_scripts += \
 	buildutil/tap-driver.sh \
+	tests/make-multi-collection-id-repo.sh \
 	tests/make-test-app.sh \
 	tests/make-test-runtime.sh \
 	tests/make-test-bundles.sh \

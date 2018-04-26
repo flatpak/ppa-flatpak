@@ -88,11 +88,13 @@ flatpak_builtin_update (int           argc,
                                      &dirs, cancellable, error))
     return FALSE;
 
-  if (opt_arch == NULL)
-    opt_arch = (char *)flatpak_get_arch ();
-
   if (opt_appstream)
-    return update_appstream (dirs, argc >= 2 ? argv[1] : NULL, opt_arch, 0, FALSE, cancellable, error);
+    {
+      if (!update_appstream (dirs, argc >= 2 ? argv[1] : NULL, opt_arch, 0, FALSE, cancellable, error))
+        return FALSE;
+
+      return TRUE;
+    }
 
   prefs = &argv[1];
   n_prefs = argc - 1;
@@ -229,7 +231,10 @@ flatpak_builtin_update (int           argc,
     }
 
   if (n_prefs == 0)
-    return update_appstream (dirs, NULL, opt_arch, 0, FALSE, cancellable, error);
+    {
+      if (!update_appstream (dirs, NULL, opt_arch, FLATPAK_APPSTREAM_TTL, TRUE, cancellable, error))
+        return FALSE;
+    }
 
   return TRUE;
 }
@@ -239,15 +244,13 @@ flatpak_complete_update (FlatpakCompletion *completion)
 {
   g_autoptr(GOptionContext) context = NULL;
   g_autoptr(GPtrArray) dirs = NULL;
-  FlatpakDir *dir;
   FlatpakKinds kinds;
+  int i;
 
   context = g_option_context_new ("");
   if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv,
-                                     FLATPAK_BUILTIN_FLAG_ONE_DIR, &dirs, NULL, NULL))
+                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS, &dirs, NULL, NULL))
     return FALSE;
-
-  dir = g_ptr_array_index (dirs, 0);
 
   kinds = flatpak_kinds_from_bools (opt_app, opt_runtime);
 
@@ -258,7 +261,13 @@ flatpak_complete_update (FlatpakCompletion *completion)
       flatpak_complete_options (completion, global_entries);
       flatpak_complete_options (completion, options);
       flatpak_complete_options (completion, user_entries);
-      flatpak_complete_partial_ref (completion, kinds, opt_arch, dir, NULL);
+
+      for (i = 0; i < dirs->len; i++)
+        {
+          FlatpakDir *dir = g_ptr_array_index (dirs, i);
+          flatpak_complete_partial_ref (completion, kinds, opt_arch, dir, NULL);
+        }
+
       break;
     }
 
