@@ -5,6 +5,7 @@ flatpak (0.11.4-1) UNRELEASED; urgency=medium
     - d/copyright: Update
     - Build-depend on bison
     - Add new flatpak-portal to flatpak.deb
+    - Update symbols file for new ABI
   * Standards-Version: 4.1.4 (no changes required)
 
  -- Simon McVittie <smcv@debian.org>  Mon, 09 Apr 2018 08:19:04 +0100
