@@ -3,9 +3,6 @@
 set -e
 exec 2>&1
 
-# The tests want /sbin/ldconfig to be in PATH
-export PATH="$PATH:/usr/sbin:/sbin"
-
 # Ubuntu provides internet access via a proxy, but libostree doesn't need
 # that. However, libostree also doesn't support no_proxy, so it will try
 # to use Ubuntu's proxy for localhost, and fail to reach itself.

@@ -1,6 +1,9 @@
 flatpak (0.11.5-1) UNRELEASED; urgency=medium
 
   * New upstream release
+  * d/p/make-test-runtime-Look-in-usr-sbin-for-ldconfig.patch:
+    Use an upstreamable patch to detect /sbin/ldconfig in tests, instead
+    of working around lack of /sbin in PATH in Debian test scripts
 
  -- Simon McVittie <smcv@debian.org>  Mon, 30 Apr 2018 14:03:09 +0100
 
