@@ -226,7 +226,7 @@ flatpak_remote_state_ensure_metadata (FlatpakRemoteState *self,
                                       GError            **error)
 {
   if (self->metadata == NULL)
-    return flatpak_fail (error, "Unable to load medata from remote %s", self->remote_name);
+    return flatpak_fail (error, "Unable to load metadata from remote %s", self->remote_name);
 
   return TRUE;
 }
@@ -2421,6 +2421,7 @@ flatpak_dir_update_appstream (FlatpakDir          *self,
   g_autofree char *remote_and_branch = NULL;
   g_autofree char *new_checksum = NULL;
   g_autoptr(GError) first_error = NULL;
+  g_autoptr(GError) second_error = NULL;
   g_autoptr(FlatpakRemoteState) state = NULL;
   const char *installation;
 
@@ -2522,9 +2523,11 @@ flatpak_dir_update_appstream (FlatpakDir          *self,
               used_branch = old_branch;
               if (!flatpak_dir_pull (self, state, used_branch, NULL, NULL, NULL,
                                      child_repo, FLATPAK_PULL_FLAGS_NONE, OSTREE_REPO_PULL_FLAGS_MIRROR,
-                                     progress, cancellable, NULL))
+                                     progress, cancellable, &second_error))
                 {
-                  g_propagate_error (error, g_steal_pointer (&first_error));
+                  g_prefix_error (&first_error, "Error updating appstream2: ");
+                  g_prefix_error (&second_error, "Error updating appstream: ");
+                  g_propagate_prefixed_error (error, g_steal_pointer (&second_error), "%s; ", first_error->message);
                   return FALSE;
                 }
             }
@@ -2532,7 +2535,9 @@ flatpak_dir_update_appstream (FlatpakDir          *self,
           if (!child_repo_ensure_summary (child_repo, state, cancellable, error))
             return FALSE;
 
-          if (!ostree_repo_resolve_rev (child_repo, used_branch, TRUE, &new_checksum, error))
+          remote_and_branch = g_strdup_printf ("%s:%s", remote, used_branch);
+
+          if (!ostree_repo_resolve_rev (child_repo, remote_and_branch, TRUE, &new_checksum, error))
             return FALSE;
 
           child_repo_file = g_object_ref (ostree_repo_get_path (child_repo));
@@ -2569,9 +2574,11 @@ flatpak_dir_update_appstream (FlatpakDir          *self,
       used_branch = old_branch;
       if (!flatpak_dir_pull (self, state, used_branch, NULL, NULL, NULL, NULL,
                              FLATPAK_PULL_FLAGS_NONE, OSTREE_REPO_PULL_FLAGS_NONE, progress,
-                             cancellable, NULL))
+                             cancellable, &second_error))
         {
-          g_propagate_error (error, g_steal_pointer (&first_error));
+          g_prefix_error (&first_error, "Error updating appstream2: ");
+          g_prefix_error (&second_error, "Error updating appstream: ");
+          g_propagate_prefixed_error (error, g_steal_pointer (&second_error), "%s; ", first_error->message);
           return FALSE;
         }
     }
@@ -3454,7 +3461,7 @@ flatpak_dir_pull (FlatpakDir          *self,
                   GError             **error)
 {
   gboolean ret = FALSE;
-  const char *rev;
+  g_autofree char *rev = NULL;
   g_autofree char *url = NULL;
   g_auto(GLnxConsoleRef) console = { 0, };
   g_autoptr(OstreeAsyncProgress) console_progress = NULL;
@@ -3509,7 +3516,7 @@ flatpak_dir_pull (FlatpakDir          *self,
      pulls (e.g. with subpaths) */
   if (opt_rev != NULL)
     {
-      rev = opt_rev;
+      rev = g_strdup (opt_rev);
       results = opt_results;
     }
   else
@@ -3571,7 +3578,7 @@ flatpak_dir_pull (FlatpakDir          *self,
             return FALSE;
 
           for (i = 0, rev = NULL; results[i] != NULL && rev == NULL; i++)
-            rev = g_hash_table_lookup (results[i]->ref_to_checksum, &collection_ref);
+            rev = g_strdup (g_hash_table_lookup (results[i]->ref_to_checksum, &collection_ref));
 
           if (rev == NULL)
             return flatpak_fail (error, "No such ref (%s, %s) in remote %s or elsewhere",
@@ -3841,22 +3848,6 @@ flatpak_dir_pull_untrusted_local (FlatpakDir          *self,
 
   g_clear_object (&gpg_result);
 
-  summary = g_variant_ref_sink (g_variant_new_from_bytes (OSTREE_SUMMARY_GVARIANT_FORMAT, summary_bytes, FALSE));
-  if (!flatpak_summary_lookup_ref (summary,
-                                   collection_id,
-                                   ref,
-                                   &checksum, NULL))
-    {
-      if (collection_id != NULL)
-        g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-                     _("No such ref (%s, %s) in remote %s"), collection_id, ref, remote_name);
-      else
-        g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-                     _("No such ref '%s' in remote %s"), ref, remote_name);
-
-      return FALSE;
-    }
-
   remote_and_branch = g_strdup_printf ("%s:%s", remote_name, ref);
   if (!ostree_repo_resolve_rev (self->repo, remote_and_branch, TRUE, &current_checksum, error))
     return FALSE;
@@ -3868,6 +3859,26 @@ flatpak_dir_pull_untrusted_local (FlatpakDir          *self,
   src_repo = ostree_repo_new (path_file);
   if (!ostree_repo_open (src_repo, cancellable, error))
     return FALSE;
+
+  if (collection_id == NULL)
+    {
+      summary = g_variant_ref_sink (g_variant_new_from_bytes (OSTREE_SUMMARY_GVARIANT_FORMAT, summary_bytes, FALSE));
+      if (!flatpak_summary_lookup_ref (summary,
+                                       NULL,
+                                       ref,
+                                       &checksum, NULL))
+        {
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                       _("No such ref '%s' in remote %s"), ref, remote_name);
+
+          return FALSE;
+        }
+    }
+  else
+    {
+      if (!ostree_repo_resolve_rev (src_repo, remote_and_branch, FALSE, &checksum, error))
+        return FALSE;
+    }
 
   if (gpg_verify)
     {
@@ -4950,19 +4961,16 @@ static GStrv
 get_permissible_prefixes (FlatpakContext                  *context,
                           const char                      *source_path,
                           const char                      *app_id,
-                          MultiplePrefixesComparisonFunc  *out_match_prefixes_func,
                           GError                         **error)
 {
   g_autoptr(GPtrArray) prefixes = NULL;
-
-  g_return_val_if_fail (out_match_prefixes_func != NULL, NULL);
 
   prefixes = g_ptr_array_new_with_free_func (g_free);
 
   /* Create a new pointer array with prefixes including the app
    * ID and in the case of d-bus service files, the allowed own
    * names. */
-  g_ptr_array_add (prefixes, g_strdup (app_id));
+  g_ptr_array_add (prefixes, g_strdup_printf ("%s.*", app_id));
 
   if (flatpak_has_path_prefix (source_path, "share/dbus-1/services"))
     {
@@ -4972,12 +4980,6 @@ get_permissible_prefixes (FlatpakContext                  *context,
 
       for (; *iter != NULL; ++iter)
         g_ptr_array_add (prefixes, g_strdup (*iter));
-
-      *out_match_prefixes_func = flatpak_name_matches_one_wildcard_prefix;
-    }
-  else
-    {
-      *out_match_prefixes_func = flatpak_name_matches_one_prefix;
     }
 
   g_ptr_array_add (prefixes, NULL);
@@ -5048,18 +5050,16 @@ rewrite_export_dir (const char     *app,
         }
       else if (S_ISREG (stbuf.st_mode))
         {
-          MultiplePrefixesComparisonFunc match_prefixes_func;
           g_auto(GStrv) permissible_prefixes = get_permissible_prefixes (context,
                                                                          source_path,
                                                                          app,
-                                                                         &match_prefixes_func,
                                                                          error);
           g_autofree gchar *new_name = NULL;
 
           if (permissible_prefixes == NULL)
             return FALSE;
 
-          if (!match_prefixes_func (dent->d_name, (const char * const *) permissible_prefixes))
+          if (!flatpak_name_matches_one_wildcard_prefix (dent->d_name, (const char * const *) permissible_prefixes))
             {
               g_warning ("Non-prefixed filename %s in app %s, removing.", dent->d_name, app);
               if (unlinkat (source_iter.fd, dent->d_name, 0) != 0 && errno != ENOENT)
