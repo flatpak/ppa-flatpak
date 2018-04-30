@@ -1,0 +1,51 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Mon, 30 Apr 2018 14:23:13 +0100
+Subject: parse-datetime: Build YACC parser from source
+
+This requires bison.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/1631
+---
+ app/Makefile.am.inc | 11 ++++++++++-
+ configure.ac        |  1 +
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/app/Makefile.am.inc b/app/Makefile.am.inc
+index 7cd51b6..5026a07 100644
+--- a/app/Makefile.am.inc
++++ b/app/Makefile.am.inc
+@@ -41,11 +41,20 @@ flatpak_SOURCES = \
+ 	app/flatpak-builtins-document-info.c \
+ 	app/flatpak-builtins-document-list.c \
+ 	app/flatpak-builtins-search.c \
+-	app/parse-datetime.c \
+ 	app/parse-datetime.h \
+ 	$(NULL)
+ 
++nodist_flatpak_SOURCES = \
++	app/parse-datetime.c \
++	$(NULL)
++
++app/parse-datetime.c: app/parse-datetime.y Makefile
++	$(AM_V_GEN) $(YACC) $< -o $@
++
++CLEANFILES += app/parse-datetime.c
++
+ flatpak_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) \
+ 	libglnx.la libflatpak-common.la
+ flatpak_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
++        -I$(srcdir)/app \
+         -DLOCALEDIR=\"$(localedir)\"
+diff --git a/configure.ac b/configure.ac
+index 7ccc6ce..ffb4fc9 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -49,6 +49,7 @@ AC_CONFIG_HEADERS([config.h])
+ AC_CONFIG_MACRO_DIR([m4])
+ AM_INIT_AUTOMAKE([1.13.4 no-define no-dist-gzip dist-xz tar-ustar foreign subdir-objects])
+ AC_PROG_SED
++AC_PROG_YACC
+ 
+ AM_GNU_GETTEXT([external])
+ AM_GNU_GETTEXT_VERSION([0.18.2])
