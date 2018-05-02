@@ -356,9 +356,10 @@ am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-unexport.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-info.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-list.$(OBJEXT) \
-	app/flatpak-flatpak-builtins-search.$(OBJEXT) \
-	app/flatpak-parse-datetime.$(OBJEXT) $(am__objects_1)
-flatpak_OBJECTS = $(am_flatpak_OBJECTS)
+	app/flatpak-flatpak-builtins-search.$(OBJEXT) $(am__objects_1)
+nodist_flatpak_OBJECTS = app/flatpak-parse-datetime.$(OBJEXT) \
+	$(am__objects_1)
+flatpak_OBJECTS = $(am_flatpak_OBJECTS) $(nodist_flatpak_OBJECTS)
 flatpak_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) libglnx.la libflatpak-common.la
@@ -523,8 +524,9 @@ SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(nodist_libflatpak_common_la_SOURCES) \
 	$(libflatpak_la_SOURCES) $(nodist_libflatpak_la_SOURCES) \
 	$(libglnx_la_SOURCES) $(flatpak_SOURCES) \
-	$(flatpak_bwrap_SOURCES) $(flatpak_dbus_proxy_SOURCES) \
-	$(flatpak_portal_SOURCES) $(nodist_flatpak_portal_SOURCES) \
+	$(nodist_flatpak_SOURCES) $(flatpak_bwrap_SOURCES) \
+	$(flatpak_dbus_proxy_SOURCES) $(flatpak_portal_SOURCES) \
+	$(nodist_flatpak_portal_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
 	$(flatpak_system_helper_SOURCES) $(test_libflatpak_SOURCES) \
 	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
@@ -994,6 +996,8 @@ XMLTO = @XMLTO@
 XMLTO_FLAGS = @XMLTO_FLAGS@
 XML_CATALOG_FILE = @XML_CATALOG_FILE@
 XSLTPROC = @XSLTPROC@
+YACC = @YACC@
+YFLAGS = @YFLAGS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -1059,7 +1063,8 @@ noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
 	$(systemduserunit_DATA) $(nodist_libflatpak_common_la_SOURCES) \
-	$(am__append_18) $(nodist_flatpak_portal_SOURCES)
+	app/parse-datetime.c $(am__append_18) \
+	$(nodist_flatpak_portal_SOURCES)
 MAINTAINERCLEANFILES = $(NULL)
 DISTCLEANFILES = $(NULL) $(nodist_flatpakinclude_HEADERS) \
 	$(nodist_libflatpak_la_SOURCES) $(NULL) $(am__append_21) \
@@ -1323,14 +1328,18 @@ flatpak_SOURCES = \
 	app/flatpak-builtins-document-info.c \
 	app/flatpak-builtins-document-list.c \
 	app/flatpak-builtins-search.c \
-	app/parse-datetime.c \
 	app/parse-datetime.h \
+	$(NULL)
+
+nodist_flatpak_SOURCES = \
+	app/parse-datetime.c \
 	$(NULL)
 
 flatpak_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) \
 	libglnx.la libflatpak-common.la
 
 flatpak_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
+        -I$(srcdir)/app \
         -DLOCALEDIR=\"$(localedir)\"
 
 flatpakincludedir = $(includedir)/flatpak
@@ -4862,6 +4871,9 @@ common/flatpak-systemd-dbus.c: data/org.freedesktop.systemd1.xml Makefile
 
 common/%-dbus.h: common/%-dbus.c
 	@true # Built as a side-effect of the rules for the .c
+
+app/parse-datetime.c: app/parse-datetime.y Makefile
+	$(AM_V_GEN) $(YACC) $< -o $@
 
 lib/flatpak-enum-types.h: $(flatpakinclude_HEADERS) lib/flatpak-enum-types.h.template
 	$(AM_V_GEN) $(GLIB_MKENUMS) --template $(filter %.template,$^) $(filter-out %.template,$^) > \
