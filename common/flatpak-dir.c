@@ -206,7 +206,9 @@ flatpak_remote_state_free (FlatpakRemoteState *remote_state)
   g_free (remote_state->collection_id);
   g_clear_pointer (&remote_state->summary, g_variant_unref);
   g_clear_pointer (&remote_state->summary_sig_bytes, g_bytes_unref);
+  g_clear_error (&remote_state->summary_fetch_error);
   g_clear_pointer (&remote_state->metadata, g_variant_unref);
+  g_clear_error (&remote_state->metadata_fetch_error);
 
   g_free (remote_state);
 }
@@ -216,7 +218,8 @@ flatpak_remote_state_ensure_summary (FlatpakRemoteState *self,
                                      GError            **error)
 {
   if (self->summary == NULL)
-    return flatpak_fail (error, "Unable to load summary from remote %s", self->remote_name);
+    return flatpak_fail (error, "Unable to load summary from remote %s: %s", self->remote_name,
+                         self->summary_fetch_error != NULL ? self->summary_fetch_error->message : "unknown error");
 
   return TRUE;
 }
@@ -226,7 +229,8 @@ flatpak_remote_state_ensure_metadata (FlatpakRemoteState *self,
                                       GError            **error)
 {
   if (self->metadata == NULL)
-    return flatpak_fail (error, "Unable to load metadata from remote %s", self->remote_name);
+    return flatpak_fail (error, "Unable to load metadata from remote %s: %s", self->remote_name,
+                         self->metadata_fetch_error != NULL ? self->metadata_fetch_error->message : "unknown error");
 
   return TRUE;
 }
@@ -8143,7 +8147,7 @@ flatpak_dir_remote_fetch_summary (FlatpakDir   *self,
   if (!ostree_repo_remote_get_url (self->repo, name_or_uri, &url, error))
     return FALSE;
 
-  if (*url == '\0')
+  if (!g_str_has_prefix (name_or_uri, "file:") && flatpak_dir_get_remote_disabled (self, name_or_uri))
     {
       g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA,
                    "Can't fetch summary from disabled remote ‘%s’", name_or_uri);
@@ -8254,8 +8258,9 @@ _flatpak_dir_get_remote_state (FlatpakDir   *self,
         }
       else
         {
-          if (optional && state->collection_id != NULL)
+          if (optional)
             {
+              state->summary_fetch_error = g_steal_pointer (&local_error);
               g_debug ("Failed to download optional summary");
             }
           else
@@ -8285,6 +8290,7 @@ _flatpak_dir_get_remote_state (FlatpakDir   *self,
             {
               /* This happens for instance in the case where a p2p remote is invalid (wrong signature)
                  and we should just silently fail to update to it. */
+              state->metadata_fetch_error = g_steal_pointer (&local_error);
               g_debug ("Failed to download optional metadata");
             }
           else
@@ -8342,10 +8348,12 @@ flatpak_dir_get_remote_state_for_summary (FlatpakDir   *self,
 }
 
 /* This is an alternative way to get the remote state that doesn't
- * error out if the summary or metadata is not available in the p2p
- * case. For example, we want to be able to update an app even when
+ * error out if the summary or metadata is not available.
+ * For example, we want to be able to update an app even when
  * we can't talk to the main repo, but there is a local (p2p/sdcard)
- * source for apps.
+ * source for apps, and we want to be able to deploy a ref without pulling it,
+ * e.g. because we are installing with FLATPAK_INSTALL_FLAGS_NO_PULL, and we
+ * already pulled it out of band beforehand.
  */
 FlatpakRemoteState *
 flatpak_dir_get_remote_state_optional (FlatpakDir   *self,
