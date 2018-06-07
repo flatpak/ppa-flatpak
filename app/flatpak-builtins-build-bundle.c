@@ -34,9 +34,9 @@
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
-#include "flatpak-utils.h"
-#include "flatpak-oci-registry.h"
-#include "flatpak-chain-input-stream.h"
+#include "flatpak-utils-private.h"
+#include "flatpak-oci-registry-private.h"
+#include "flatpak-chain-input-stream-private.h"
 #include "flatpak-builtins-utils.h"
 
 #include <archive.h>
@@ -143,7 +143,7 @@ build_bundle (OstreeRepo *repo, GFile *file,
    * figure out the type. The uint32 is basically a random value, but
    * it ensures we have both zero and high bits sets, so we don't get
    * sniffed as text. Also, the last 01 can be used as a version
-   * later.  Furthermore, the use of an uint32 lets use detect
+   * later.  Furthermore, the use of an uint32 lets us detect
    * byteorder issues.
    */
   g_variant_builder_add (&metadata_builder, "{sv}", "flatpak",

@@ -31,9 +31,9 @@
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
-#include "flatpak-context.h"
-#include "flatpak-utils.h"
-#include "flatpak-run.h"
+#include "flatpak-context-private.h"
+#include "flatpak-utils-private.h"
+#include "flatpak-run-private.h"
 
 static char *opt_command;
 static char *opt_require_version;
@@ -654,7 +654,7 @@ flatpak_complete_build_finish (FlatpakCompletion *completion)
     case 1: /* DIR */
       flatpak_complete_options (completion, global_entries);
       flatpak_complete_options (completion, options);
-      flatpak_context_complete (arg_context, completion);
+      flatpak_complete_context (completion);
 
       flatpak_complete_dir (completion);
       break;

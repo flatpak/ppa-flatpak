@@ -25,9 +25,9 @@
 
 #include "flatpak-builtins.h"
 #include "flatpak-builtins-utils.h"
-#include "flatpak-dir.h"
+#include "flatpak-dir-private.h"
 #include "flatpak-table-printer.h"
-#include "flatpak-utils.h"
+#include "flatpak-utils-private.h"
 
 static char *opt_arch;
 
@@ -243,7 +243,8 @@ flatpak_builtin_search (int argc, char **argv, GCancellable *cancellable, GError
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv,
-                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS, &dirs, cancellable, error))
+                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
+                                     &dirs, cancellable, error))
     return FALSE;
 
   if (argc < 2)

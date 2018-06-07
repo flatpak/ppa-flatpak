@@ -20,11 +20,12 @@
 
 #include "config.h"
 
-#include "flatpak-utils.h"
-#include "lib/flatpak-error.h"
-#include "flatpak-dir.h"
-#include "flatpak-oci-registry.h"
-#include "flatpak-run.h"
+#include "flatpak-utils-private.h"
+#include "flatpak-error.h"
+#include "flatpak-dir-private.h"
+#include "flatpak-oci-registry-private.h"
+#include "flatpak-run-private.h"
+#include "valgrind-private.h"
 
 #include <glib/gi18n.h>
 
@@ -631,7 +632,8 @@ is_valid_name_character (gint c, gboolean allow_dash)
     (c >= '0' && c <= '9');
 }
 
-/** flatpak_is_valid_name:
+/**
+ * flatpak_is_valid_name:
  * @string: The string to check
  * @error: Return location for an error
  *
@@ -1746,7 +1748,7 @@ needs_quoting (const char *arg)
       if (!g_ascii_isalnum (c) &&
           !(c == '-' || c == '/' || c == '~' ||
             c == ':' || c == '.' || c == '_' ||
-            c == '='))
+            c == '=' || c == '@'))
         return TRUE;
       arg++;
     }
@@ -1754,12 +1756,16 @@ needs_quoting (const char *arg)
 }
 
 char *
-flatpak_quote_argv (const char *argv[])
+flatpak_quote_argv (const char *argv[],
+                    gssize len)
 {
   GString *res = g_string_new ("");
   int i;
 
-  for (i = 0; argv[i] != NULL; i++)
+  if (len == -1)
+    len = g_strv_length ((char **)argv);
+
+  for (i = 0; i < len; i++)
     {
       if (i != 0)
         g_string_append_c (res, ' ');
@@ -2186,7 +2192,9 @@ flatpak_buffer_to_sealed_memfd_or_tmpfile (GLnxTmpfile *tmpf,
     return glnx_throw_errno_prefix (error, "lseek");
   if (memfd != -1)
     {
-      if (fcntl (memfd, F_ADD_SEALS, F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_WRITE | F_SEAL_SEAL) < 0)
+      /* Valgrind doesn't currently handle G_ADD_SEALS, so lets not seal when debugging... */
+      if ((!RUNNING_ON_VALGRIND) &&
+          fcntl (memfd, F_ADD_SEALS, F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_WRITE | F_SEAL_SEAL) < 0)
         return glnx_throw_errno_prefix (error, "fcntl(F_ADD_SEALS)");
       /* The other values can stay default */
       tmpf->fd = glnx_steal_fd (&memfd);
@@ -2576,10 +2584,10 @@ flatpak_repo_set_collection_id (OstreeRepo  *repo,
 #ifdef FLATPAK_ENABLE_P2P
   g_autoptr(GKeyFile) config = NULL;
 
-  config = ostree_repo_copy_config (repo);
   if (!ostree_repo_set_collection_id (repo, collection_id, error))
     return FALSE;
 
+  config = ostree_repo_copy_config (repo);
   if (!ostree_repo_write_config (repo, config, error))
     return FALSE;
 #endif  /* FLATPAK_ENABLE_P2P */
@@ -2706,7 +2714,7 @@ _flatpak_repo_collect_sizes (OstreeRepo   *repo,
                 base_input = g_filter_input_stream_get_base_stream (G_FILTER_INPUT_STREAM (base_input));
 
               if (!G_IS_UNIX_INPUT_STREAM (base_input))
-                return flatpak_fail (error, "Unable to find size of commit %s, not an unix stream\n", checksum);
+                return flatpak_fail (error, "Unable to find size of commit %s, not an unix stream", checksum);
 
               fd = g_unix_input_stream_get_fd (G_UNIX_INPUT_STREAM (base_input));
 
@@ -4933,13 +4941,13 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
                                           metadata_builder);
   if (manifest_ref == NULL)
     {
-      flatpak_fail (error, "No ref specified for OCI image %s\n", digest);
+      flatpak_fail (error, "No ref specified for OCI image %s", digest);
       return NULL;
     }
 
   if (strcmp (manifest_ref, ref) != 0)
     {
-      flatpak_fail (error, "Wrong ref (%s) specified for OCI image %s, expected %s\n", manifest_ref, digest, ref);
+      flatpak_fail (error, "Wrong ref (%s) specified for OCI image %s, expected %s", manifest_ref, digest, ref);
       return NULL;
     }
 
@@ -5008,7 +5016,7 @@ flatpak_pull_from_oci (OstreeRepo   *repo,
       if (!g_str_has_prefix (layer->digest, "sha256:") ||
           strcmp (layer->digest + strlen ("sha256:"), layer_checksum) != 0)
         {
-          flatpak_fail (error, "Wrong layer checksum, expected %s, was %s\n", layer->digest, layer_checksum);
+          flatpak_fail (error, "Wrong layer checksum, expected %s, was %s", layer->digest, layer_checksum);
           goto error;
         }
 
@@ -5560,496 +5568,6 @@ flatpak_download_http_uri (SoupSession *soup_session,
   return TRUE;
 }
 
-/* Uncomment to get debug traces in /tmp/flatpak-completion-debug.txt (nice
- * to not have it interfere with stdout/stderr)
- */
-#if 0
-void
-flatpak_completion_debug (const gchar *format, ...)
-{
-  va_list var_args;
-  gchar *s;
-  static FILE *f = NULL;
-
-  va_start (var_args, format);
-  s = g_strdup_vprintf (format, var_args);
-  if (f == NULL)
-    f = fopen ("/tmp/flatpak-completion-debug.txt", "a+");
-  fprintf (f, "%s\n", s);
-  fflush (f);
-  g_free (s);
-}
-#else
-void
-flatpak_completion_debug (const gchar *format, ...)
-{
-}
-#endif
-
-static gboolean
-is_word_separator (char c)
-{
-  return g_ascii_isspace (c);
-}
-
-void
-flatpak_complete_file (FlatpakCompletion *completion,
-                       const char        *file_type)
-{
-  flatpak_completion_debug ("completing FILE");
-  g_print ("%s\n", file_type);
-}
-
-void
-flatpak_complete_dir (FlatpakCompletion *completion)
-{
-  flatpak_completion_debug ("completing DIR");
-  g_print ("%s\n", "__FLATPAK_DIR");
-}
-
-void
-flatpak_complete_word (FlatpakCompletion *completion,
-                       char *format, ...)
-{
-  va_list args;
-  const char *rest;
-  const char *shell_cur;
-  const char *shell_cur_end;
-  g_autofree char *string = NULL;
-
-  g_return_if_fail (format != NULL);
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-  va_start (args, format);
-  string = g_strdup_vprintf (format, args);
-  va_end (args);
-#pragma GCC diagnostic pop
-
-  if (!g_str_has_prefix (string, completion->cur))
-    return;
-
-  shell_cur = completion->shell_cur ? completion->shell_cur : "";
-
-  rest = string + strlen (completion->cur);
-
-  shell_cur_end = shell_cur + strlen(shell_cur);
-  while (shell_cur_end > shell_cur &&
-         rest > string &&
-         shell_cur_end[-1] == rest[-1] &&
-         /* I'm not sure exactly what bash is doing here with =, but this seems to work... */
-         shell_cur_end[-1] != '=')
-    {
-      rest--;
-      shell_cur_end--;
-    }
-
-  flatpak_completion_debug ("completing word: '%s' (%s)", string, rest);
-
-  g_print ("%s\n", rest);
-}
-
-void
-flatpak_complete_ref (FlatpakCompletion *completion,
-                      OstreeRepo *repo)
-{
-  g_autoptr(GHashTable) refs = NULL;
-  flatpak_completion_debug ("completing REF");
-
-  if (ostree_repo_list_refs (repo,
-                             NULL,
-                             &refs, NULL, NULL))
-    {
-      GHashTableIter hashiter;
-      gpointer hashkey, hashvalue;
-
-      g_hash_table_iter_init (&hashiter, refs);
-      while ((g_hash_table_iter_next (&hashiter, &hashkey, &hashvalue)))
-        {
-          const char *ref = (const char *)hashkey;
-          if (!(g_str_has_prefix (ref, "runtime/") ||
-                g_str_has_prefix (ref, "app/")))
-            continue;
-          flatpak_complete_word (completion, "%s", ref);
-        }
-    }
-}
-
-static int
-find_current_element (const char *str)
-{
-  int count = 0;
-
-  if (g_str_has_prefix (str, "app/"))
-    str += strlen ("app/");
-  else if (g_str_has_prefix (str, "runtime/"))
-    str += strlen ("runtime/");
-
-  while (str != NULL && count <= 3)
-    {
-      str = strchr (str, '/');
-      count++;
-      if (str != NULL)
-        str = str + 1;
-    }
-
-  return count;
-}
-
-void
-flatpak_complete_partial_ref (FlatpakCompletion *completion,
-                              FlatpakKinds kinds,
-                              const char *only_arch,
-                              FlatpakDir *dir,
-                              const char *remote)
-{
-  FlatpakKinds matched_kinds;
-  const char *pref;
-  g_autofree char *id = NULL;
-  g_autofree char *arch = NULL;
-  g_autofree char *branch = NULL;
-  g_auto(GStrv) refs = NULL;
-  int element;
-  const char *cur_parts[4] = { NULL };
-  g_autoptr(GError) error = NULL;
-  int i;
-
-  pref = completion->cur;
-  element = find_current_element (pref);
-
-  flatpak_split_partial_ref_arg_novalidate (pref, kinds,
-                                            NULL, NULL,
-                                            &matched_kinds, &id, &arch, &branch);
-
-  cur_parts[1] = id;
-  cur_parts[2] = arch ? arch : "";
-  cur_parts[3] = branch ? branch : "";
-
-  if (remote)
-    {
-      refs = flatpak_dir_find_remote_refs (dir, completion->argv[1],
-                                           (element > 1) ? id : NULL,
-                                           (element > 3) ? branch : NULL,
-                                           (element > 2 )? arch : only_arch,
-                                           matched_kinds, NULL, &error);
-    }
-  else
-    {
-      refs = flatpak_dir_find_installed_refs (dir,
-                                              (element > 1) ? id : NULL,
-                                              (element > 3) ? branch : NULL,
-                                              (element > 2 )? arch : only_arch,
-                                              matched_kinds, &error);
-    }
-  if (refs == NULL)
-    flatpak_completion_debug ("find refs error: %s", error->message);
-  for (i = 0; refs != NULL && refs[i] != NULL; i++)
-    {
-      int j;
-      g_autoptr(GString) comp = NULL;
-      g_auto(GStrv) parts = flatpak_decompose_ref (refs[i], NULL);
-      if (parts == NULL)
-        continue;
-
-      if (!g_str_has_prefix (parts[element], cur_parts[element]))
-        continue;
-
-      if (flatpak_id_has_subref_suffix (parts[element]))
-        {
-          char *last_dot = strrchr (parts[element], '.');
-
-          if (last_dot == NULL)
-            continue; /* Shouldn't really happen */
-
-          /* Only complete to subrefs is fully matching real part.
-           * For example, only match org.foo.Bar.Sources for
-           * "org.foo.Bar", "org.foo.Bar." or "org.foo.Bar.S", but
-           * not for "org.foo" or other shorter prefixes.
-           */
-          if (strncmp (parts[element], cur_parts[element], last_dot - parts[element] - 1) != 0)
-            continue;
-        }
-
-      comp = g_string_new (pref);
-      g_string_append (comp, parts[element] + strlen (cur_parts[element]));
-
-      /* Only complete on the last part if the user explicitly adds a / */
-      if (element >= 2)
-        {
-          for (j = element + 1; j < 4; j++)
-            {
-              g_string_append (comp, "/");
-              g_string_append (comp, parts[j]);
-            }
-        }
-
-      flatpak_complete_word (completion, "%s", comp->str);
-    }
-}
-
-static gboolean
-switch_already_in_line (FlatpakCompletion *completion,
-                        GOptionEntry      *entry)
-{
-  guint i = 0;
-  guint line_part_len = 0;
-
-  for (; i < completion->original_argc; ++i)
-    {
-      line_part_len = strlen (completion->original_argv[i]);
-      if (line_part_len > 2 &&
-          g_strcmp0 (&completion->original_argv[i][2], entry->long_name) == 0)
-        return TRUE;
-
-      if (line_part_len == 2 &&
-          completion->original_argv[i][1] == entry->short_name)
-        return TRUE;
-    }
-
-  return FALSE;
-}
-
-static gboolean
-should_filter_out_option_from_completion (FlatpakCompletion *completion,
-                                          GOptionEntry      *entry)
-{
-  switch (entry->arg)
-    {
-      case G_OPTION_ARG_NONE:
-      case G_OPTION_ARG_STRING:
-      case G_OPTION_ARG_INT:
-      case G_OPTION_ARG_FILENAME:
-      case G_OPTION_ARG_DOUBLE:
-      case G_OPTION_ARG_INT64:
-        return switch_already_in_line (completion, entry);
-      default:
-        return FALSE;
-    }
-}
-
-void
-flatpak_complete_options (FlatpakCompletion *completion,
-                          GOptionEntry *entries)
-{
-  GOptionEntry *e = entries;
-  int i;
-
-  while (e->long_name != NULL)
-    {
-      if (e->arg_description)
-        {
-          g_autofree char *prefix = g_strdup_printf ("--%s=", e->long_name);
-
-          if (g_str_has_prefix (completion->cur, prefix))
-            {
-              if (strcmp (e->arg_description, "ARCH") == 0)
-                {
-                  const char *arches[] = {"i386", "x86_64", "aarch64", "arm"};
-                  for (i = 0; i < G_N_ELEMENTS (arches); i++)
-                    flatpak_complete_word (completion, "%s%s ", prefix, arches[i]);
-                }
-              else if (strcmp (e->arg_description, "SHARE") == 0)
-                {
-                  for (i = 0; flatpak_context_shares[i] != NULL; i++)
-                    flatpak_complete_word (completion, "%s%s ", prefix, flatpak_context_shares[i]);
-                }
-              else if (strcmp (e->arg_description, "DEVICE") == 0)
-                {
-                  for (i = 0; flatpak_context_devices[i] != NULL; i++)
-                    flatpak_complete_word (completion, "%s%s ", prefix, flatpak_context_devices[i]);
-                }
-              else if (strcmp (e->arg_description, "FEATURE") == 0)
-                {
-                  for (i = 0; flatpak_context_features[i] != NULL; i++)
-                    flatpak_complete_word (completion, "%s%s ", prefix, flatpak_context_features[i]);
-                }
-              else if (strcmp (e->arg_description, "SOCKET") == 0)
-                {
-                  for (i = 0; flatpak_context_sockets[i] != NULL; i++)
-                    flatpak_complete_word (completion, "%s%s ", prefix, flatpak_context_sockets[i]);
-                }
-              else if (strcmp (e->arg_description, "FILE") == 0)
-                {
-                  flatpak_complete_file (completion, "__FLATPAK_FILE");
-                }
-              else
-                flatpak_complete_word (completion, "%s", prefix);
-            }
-          else
-            flatpak_complete_word (completion, "%s", prefix);
-        }
-      else
-        {
-          /* If this is just a switch, then don't add it multiple
-           * times */
-          if (!should_filter_out_option_from_completion (completion, e)) {
-            flatpak_complete_word (completion, "--%s ", e->long_name);
-          }  else {
-            flatpak_completion_debug ("switch --%s is already in line %s", e->long_name, completion->line);
-          }
-        }
-
-      /* We may end up checking switch_already_in_line twice, but this is
-       * for simplicity's sake - the alternative solution would be to
-       * continue the loop early and have to increment e. */
-      if (e->short_name != 0)
-        {
-          /* This is a switch, we may not want to add it */
-          if (!e->arg_description)
-            {
-              if (!should_filter_out_option_from_completion (completion, e)) {
-                flatpak_complete_word (completion, "-%c ", e->short_name);
-              } else {
-                flatpak_completion_debug ("switch -%c is already in line %s", e->short_name, completion->line);
-              }
-            }
-          else
-            {
-              flatpak_complete_word (completion, "-%c ", e->short_name);
-            }
-        }
-      e++;
-    }
-}
-
-static gchar *
-pick_word_at (const char  *s,
-              int          cursor,
-              int         *out_word_begins_at)
-{
-  int begin, end;
-
-  if (s[0] == '\0')
-    {
-      if (out_word_begins_at != NULL)
-        *out_word_begins_at = -1;
-      return NULL;
-    }
-
-  if (is_word_separator (s[cursor]) && ((cursor > 0 && is_word_separator(s[cursor-1])) || cursor == 0))
-    {
-      if (out_word_begins_at != NULL)
-        *out_word_begins_at = cursor;
-      return g_strdup ("");
-    }
-
-  while (!is_word_separator (s[cursor - 1]) && cursor > 0)
-    cursor--;
-  begin = cursor;
-
-  end = begin;
-  while (!is_word_separator (s[end]) && s[end] != '\0')
-    end++;
-
-  if (out_word_begins_at != NULL)
-    *out_word_begins_at = begin;
-
-  return g_strndup (s + begin, end - begin);
-}
-
-static gboolean
-parse_completion_line_to_argv (const char        *initial_completion_line,
-                               FlatpakCompletion *completion)
-{
-  gboolean parse_result = g_shell_parse_argv (initial_completion_line,
-                                              &completion->original_argc,
-                                              &completion->original_argv,
-                                              NULL);
-
-  /* Make a shallow copy of argv, which will be our "working set" */
-  completion->argc = completion->original_argc;
-  completion->argv = g_memdup (completion->original_argv,
-                               sizeof (gchar *) * (completion->original_argc + 1));
-
-  return parse_result;
-}
-
-FlatpakCompletion *
-flatpak_completion_new (const char *arg_line,
-                        const char *arg_point,
-                        const char *arg_cur)
-{
-  FlatpakCompletion *completion;
-  g_autofree char *initial_completion_line = NULL;
-  int _point;
-  char *endp;
-  int cur_begin;
-  int i;
-
-  _point = strtol (arg_point, &endp, 10);
-  if (endp == arg_point || *endp != '\0')
-    return NULL;
-
-  completion = g_new0 (FlatpakCompletion, 1);
-  completion->line = g_strdup (arg_line);
-  completion->shell_cur = g_strdup (arg_cur);
-  completion->point = _point;
-
-  flatpak_completion_debug ("========================================");
-  flatpak_completion_debug ("completion_point=%d", completion->point);
-  flatpak_completion_debug ("completion_shell_cur='%s'", completion->shell_cur);
-  flatpak_completion_debug ("----");
-  flatpak_completion_debug (" 0123456789012345678901234567890123456789012345678901234567890123456789");
-  flatpak_completion_debug ("'%s'", completion->line);
-  flatpak_completion_debug (" %*s^", completion->point, "");
-
-  /* compute cur and prev */
-  completion->prev = NULL;
-  completion->cur = pick_word_at (completion->line, completion->point, &cur_begin);
-  if (cur_begin > 0)
-    {
-      gint prev_end;
-      for (prev_end = cur_begin - 1; prev_end >= 0; prev_end--)
-        {
-          if (!is_word_separator (completion->line[prev_end]))
-            {
-              completion->prev = pick_word_at (completion->line, prev_end, NULL);
-              break;
-            }
-        }
-
-      initial_completion_line = g_strndup (completion->line, cur_begin);
-    }
-  else
-    initial_completion_line = g_strdup ("");
-
-  flatpak_completion_debug ("'%s'", initial_completion_line);
-  flatpak_completion_debug ("----");
-
-  flatpak_completion_debug (" cur='%s'", completion->cur);
-  flatpak_completion_debug ("prev='%s'", completion->prev);
-
-  if (!parse_completion_line_to_argv (initial_completion_line,
-                                      completion))
-    {
-      /* it's very possible the command line can't be parsed (for
-       * example, missing quotes etc) - in that case, we just
-       * don't autocomplete at all
-       */
-      flatpak_completion_free (completion);
-      return NULL;
-    }
-
-  flatpak_completion_debug ("completion_argv %i:", completion->original_argc);
-  for (i = 0; i < completion->original_argc; i++)
-    flatpak_completion_debug (completion->original_argv[i]);
-
-  flatpak_completion_debug ("----");
-
-  return completion;
-}
-
-void
-flatpak_completion_free (FlatpakCompletion *completion)
-{
-  g_free (completion->cur);
-  g_free (completion->prev);
-  g_free (completion->line);
-  g_free (completion->argv);
-  g_strfreev (completion->original_argv);
-  g_free (completion);
-}
-
 /* In this NULL means don't care about these paths, while
    an empty array means match anything */
 char **
@@ -6144,66 +5662,6 @@ flatpak_get_current_locale_langs (void)
   g_ptr_array_add (langs, NULL);
 
   return (char **)g_ptr_array_free (langs, FALSE);
-}
-
-#define BAR_LENGTH 20
-#define BAR_CHARS " -=#"
-
-void
-flatpak_terminal_progress_cb (const char *status,
-                              guint       progress,
-                              gboolean    estimating,
-                              gpointer    user_data)
-{
-  g_autoptr(GString) str = g_string_new ("");
-  FlatpakTerminalProgress *term = user_data;
-  int i;
-  int n_full, remainder, partial;
-  int width, padded_width;
-
-  if (!term->inited)
-    {
-      struct winsize w;
-      term->n_columns = 80;
-      if (ioctl (STDOUT_FILENO, TIOCGWINSZ, &w) == 0)
-        term->n_columns = w.ws_col;
-      term->last_width = 0;
-      term->inited = 1;
-    }
-
-  g_string_append (str, "[");
-
-  n_full = (BAR_LENGTH * progress) / 100;
-  remainder = progress - (n_full * 100 / BAR_LENGTH);
-  partial = (remainder * strlen(BAR_CHARS) * BAR_LENGTH) / 100;
-
-  for (i = 0; i < n_full; i++)
-    g_string_append_c (str, BAR_CHARS[strlen(BAR_CHARS)-1]);
-
-  if (i < BAR_LENGTH)
-    {
-      g_string_append_c (str, BAR_CHARS[partial]);
-      i++;
-    }
-
-  for (; i < BAR_LENGTH; i++)
-    g_string_append (str, " ");
-
-  g_string_append (str, "] ");
-  g_string_append (str, status);
-
-  g_print ("\r");
-  width = MIN (strlen (str->str), term->n_columns);
-  padded_width = MAX (term->last_width, width);
-  term->last_width = width;
-  g_print ("%-*.*s", padded_width, padded_width, str->str);
-}
-
-void
-flatpak_terminal_progress_end (FlatpakTerminalProgress *term)
-{
-  if (term->inited)
-    g_print("\n");
 }
 
 static inline guint
@@ -6436,9 +5894,6 @@ flatpak_progress_new (FlatpakProgressCallback progress,
   g_object_set_data (G_OBJECT (ostree_progress), "callback", progress);
   g_object_set_data (G_OBJECT (ostree_progress), "last_progress", GUINT_TO_POINTER (0));
 
-  if (progress == flatpak_terminal_progress_cb)
-    g_object_set_data (G_OBJECT (ostree_progress), "update-frequency", GUINT_TO_POINTER (FLATPAK_CLI_UPDATE_FREQUENCY));
-
   return ostree_progress;
 }
 
@@ -6457,4 +5912,38 @@ flatpak_log_dir_access (FlatpakDir *dir)
       dir_name = flatpak_dir_get_name (dir);
       g_debug ("Opening %s flatpak installation at path %s", dir_name, dir_path_str);
     }
+}
+
+gboolean
+flatpak_check_required_version (const char *ref,
+                                GKeyFile *metakey,
+                                GError **error)
+{
+  g_autofree char *required_version = NULL;
+  const char *group;
+  int required_major, required_minor, required_micro;
+
+  if (g_str_has_prefix (ref, "app/"))
+    group = "Application";
+  else
+    group = "Runtime";
+
+  required_version = g_key_file_get_string (metakey, group, "required-flatpak", NULL);
+  if (required_version)
+    {
+      if (sscanf (required_version, "%d.%d.%d", &required_major, &required_minor, &required_micro) != 3)
+        g_warning ("Invalid require-flatpak argument %s", required_version);
+      else
+        {
+          if (required_major > PACKAGE_MAJOR_VERSION ||
+              (required_major == PACKAGE_MAJOR_VERSION && required_minor > PACKAGE_MINOR_VERSION) ||
+              (required_major == PACKAGE_MAJOR_VERSION && required_minor == PACKAGE_MINOR_VERSION && required_micro > PACKAGE_MICRO_VERSION))
+            {
+              g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NEED_NEW_FLATPAK, _("%s needs a later flatpak version (%s)"), ref, required_version);
+              return FALSE;
+            }
+        }
+    }
+
+  return TRUE;
 }

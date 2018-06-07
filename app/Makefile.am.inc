@@ -9,8 +9,6 @@ flatpak_SOURCES = \
 	app/flatpak-builtins.h \
 	app/flatpak-builtins-utils.h \
 	app/flatpak-builtins-utils.c \
-	app/flatpak-transaction.h \
-	app/flatpak-transaction.c \
 	app/flatpak-builtins-add-remote.c \
 	app/flatpak-builtins-delete-remote.c \
 	app/flatpak-builtins-list-remotes.c \
@@ -41,6 +39,13 @@ flatpak_SOURCES = \
 	app/flatpak-builtins-document-info.c \
 	app/flatpak-builtins-document-list.c \
 	app/flatpak-builtins-search.c \
+	app/flatpak-builtins-repair.c \
+	app/flatpak-table-printer.c \
+	app/flatpak-table-printer.h \
+	app/flatpak-complete.c \
+	app/flatpak-complete.h \
+	app/flatpak-cli-transaction.c \
+	app/flatpak-cli-transaction.h \
 	app/parse-datetime.h \
 	$(NULL)
 
@@ -56,5 +61,6 @@ CLEANFILES += app/parse-datetime.c
 flatpak_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) \
 	libglnx.la libflatpak-common.la
 flatpak_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
+	-DFLATPAK_COMPILATION \
         -I$(srcdir)/app \
         -DLOCALEDIR=\"$(localedir)\"

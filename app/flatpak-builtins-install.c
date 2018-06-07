@@ -33,10 +33,10 @@
 
 #include "flatpak-builtins.h"
 #include "flatpak-builtins-utils.h"
-#include "flatpak-transaction.h"
-#include "flatpak-utils.h"
-#include "lib/flatpak-error.h"
-#include "flatpak-chain-input-stream.h"
+#include "flatpak-cli-transaction.h"
+#include "flatpak-utils-private.h"
+#include "flatpak-error.h"
+#include "flatpak-chain-input-stream-private.h"
 
 static char *opt_arch;
 static char **opt_gpg_file;
@@ -287,13 +287,21 @@ install_bundle (FlatpakDir *dir,
   if (!flatpak_dir_ensure_repo (dir, cancellable, error))
     return FALSE;
 
-  transaction = flatpak_transaction_new (dir, opt_yes, opt_no_pull, opt_no_deploy,
-                                         opt_no_static_deltas, !opt_no_deps, !opt_no_related, opt_reinstall);
+  transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
+  if (transaction == NULL)
+    return FALSE;
+
+  flatpak_transaction_set_no_pull (transaction, opt_no_pull);
+  flatpak_transaction_set_no_deploy (transaction, opt_no_deploy);
+  flatpak_transaction_set_disable_static_deltas (transaction, opt_no_static_deltas);
+  flatpak_transaction_set_disable_dependencies (transaction, opt_no_deps);
+  flatpak_transaction_set_disable_related (transaction, opt_no_related);
+  flatpak_transaction_set_reinstall (transaction, opt_reinstall);
 
   if (!flatpak_transaction_add_install_bundle (transaction, file, gpg_data, error))
     return FALSE;
 
-  if (!flatpak_transaction_run (transaction, TRUE, cancellable, error))
+  if (!flatpak_cli_transaction_run (transaction, cancellable, error))
     return FALSE;
 
   return TRUE;
@@ -441,16 +449,21 @@ install_from (FlatpakDir *dir,
   slash = strchr (ref, '/');
   g_print (_("Installing: %s\n"), slash + 1);
 
-  transaction = flatpak_transaction_new (clone, opt_yes, opt_no_pull, opt_no_deploy,
-                                         opt_no_static_deltas, !opt_no_deps, !opt_no_related, opt_reinstall);
-
-  if (!flatpak_transaction_add_install (transaction, remote, ref, (const char **)opt_subpaths, error))
+  transaction = flatpak_cli_transaction_new (clone, opt_yes, TRUE, error);
+  if (transaction == NULL)
     return FALSE;
 
-  if (!flatpak_transaction_update_metadata (transaction, FALSE, cancellable, error))
+  flatpak_transaction_set_no_pull (transaction, opt_no_pull);
+  flatpak_transaction_set_no_deploy (transaction, opt_no_deploy);
+  flatpak_transaction_set_disable_static_deltas (transaction, opt_no_static_deltas);
+  flatpak_transaction_set_disable_dependencies (transaction, opt_no_deps);
+  flatpak_transaction_set_disable_related (transaction, opt_no_related);
+  flatpak_transaction_set_reinstall (transaction, opt_reinstall);
+
+  if (!flatpak_cli_transaction_add_install (transaction, remote, ref, (const char **)opt_subpaths, error))
     return FALSE;
 
-  if (!flatpak_transaction_run (transaction, TRUE, cancellable, error))
+  if (!flatpak_cli_transaction_run (transaction, cancellable, error))
     return FALSE;
 
   return TRUE;
@@ -520,8 +533,16 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
   default_branch = flatpak_dir_get_remote_default_branch (dir, remote);
   kinds = flatpak_kinds_from_bools (opt_app, opt_runtime);
 
-  transaction = flatpak_transaction_new (dir, opt_yes, opt_no_pull, opt_no_deploy,
-                                         opt_no_static_deltas, !opt_no_deps, !opt_no_related, opt_reinstall);
+  transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
+  if (transaction == NULL)
+    return FALSE;
+
+  flatpak_transaction_set_no_pull (transaction, opt_no_pull);
+  flatpak_transaction_set_no_deploy (transaction, opt_no_deploy);
+  flatpak_transaction_set_disable_static_deltas (transaction, opt_no_static_deltas);
+  flatpak_transaction_set_disable_dependencies (transaction, opt_no_deps);
+  flatpak_transaction_set_disable_related (transaction, opt_no_related);
+  flatpak_transaction_set_reinstall (transaction, opt_reinstall);
 
   for (i = 0; i < n_prefs; i++)
     {
@@ -548,15 +569,11 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
       if (ref == NULL)
         return FALSE;
 
-      if (!flatpak_transaction_add_install (transaction, remote, ref, (const char **)opt_subpaths, error))
+      if (!flatpak_cli_transaction_add_install (transaction, remote, ref, (const char **)opt_subpaths, error))
         return FALSE;
     }
 
-  if (!opt_no_pull &&
-      !flatpak_transaction_update_metadata (transaction, FALSE, cancellable, error))
-    return FALSE;
-
-  if (!flatpak_transaction_run (transaction, TRUE, cancellable, error))
+  if (!flatpak_cli_transaction_run (transaction, cancellable, error))
     return FALSE;
 
   return TRUE;

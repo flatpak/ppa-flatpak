@@ -22,12 +22,23 @@
 #ifndef FLATPAK_PORTAL_ERROR_H
 #define FLATPAK_PORTAL_ERROR_H
 
+#if !defined(__FLATPAK_H_INSIDE__) && !defined(FLATPAK_COMPILATION)
+#error "Only <flatpak.h> can be included directly."
+#endif
+
 #include <glib.h>
 
 G_BEGIN_DECLS
 
 /**
- * XdpErrorEnum:
+ * FlatpakPortalError:
+ * @FLATPAK_PORTAL_ERROR_FAILED: General portal failure
+ * @FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT: An argument was invalid
+ * @FLATPAK_PORTAL_ERROR_NOT_FOUND: The object was not fount
+ * @FLATPAK_PORTAL_ERROR_EXISTS: The object already exists
+ * @FLATPAK_PORTAL_ERROR_NOT_ALLOWED: The call was not allowed
+ * @FLATPAK_PORTAL_ERROR_CANCELLED: The call was cancelled by the user
+ * @FLATPAK_PORTAL_ERROR_WINDOW_DESTROYED: The window was destroyed by the user
  */
 typedef enum {
   FLATPAK_PORTAL_ERROR_FAILED     = 0,
@@ -37,7 +48,7 @@ typedef enum {
   FLATPAK_PORTAL_ERROR_NOT_ALLOWED,
   FLATPAK_PORTAL_ERROR_CANCELLED,
   FLATPAK_PORTAL_ERROR_WINDOW_DESTROYED,
-} FlatpakErrorEnum;
+} FlatpakPortalError;
 
 
 #define FLATPAK_PORTAL_ERROR flatpak_portal_error_quark ()

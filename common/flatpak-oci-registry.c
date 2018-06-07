@@ -28,8 +28,8 @@
 
 #include <gpgme.h>
 #include <libsoup/soup.h>
-#include "flatpak-oci-registry.h"
-#include "flatpak-utils.h"
+#include "flatpak-oci-registry-private.h"
+#include "flatpak-utils-private.h"
 
 G_DEFINE_QUARK (flatpak_oci_error, flatpak_oci_error)
 
@@ -1882,7 +1882,7 @@ flatpak_oci_verify_signature (OstreeRepo *repo,
   if (json == NULL)
     return FALSE;
 
-  return g_steal_pointer (&json);
+  return (FlatpakOciSignature *)g_steal_pointer (&json);
 }
 
 static const char *
@@ -2143,5 +2143,5 @@ flatpak_oci_index_verify_ref (SoupSession *soup_session,
         }
     }
 
-  return flatpak_fail (error, "No matching image for %s\n", ref);
+  return flatpak_fail (error, "No matching image for %s", ref);
 }

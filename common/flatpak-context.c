@@ -37,12 +37,12 @@
 #include <gio/gio.h>
 #include "libglnx/libglnx.h"
 
-#include "flatpak-run.h"
+#include "flatpak-run-private.h"
 #include "flatpak-proxy.h"
-#include "flatpak-utils.h"
-#include "flatpak-dir.h"
-#include "flatpak-systemd-dbus.h"
-#include "lib/flatpak-error.h"
+#include "flatpak-utils-private.h"
+#include "flatpak-dir-private.h"
+#include "flatpak-systemd-dbus-generated.h"
+#include "flatpak-error.h"
 
 /* Same order as enum */
 const char *flatpak_context_shares[] = {
@@ -72,6 +72,7 @@ const char *flatpak_context_devices[] = {
 const char *flatpak_context_features[] = {
   "devel",
   "multiarch",
+  "bluetooth",
   NULL
 };
 
@@ -245,7 +246,7 @@ flatpak_verify_dbus_name (const char *name, GError **error)
     return TRUE;
 
   g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-               _("Invalid dbus name %s\n"), name);
+               _("Invalid dbus name %s"), name);
   return FALSE;
 }
 
@@ -1187,10 +1188,10 @@ static GOptionEntry context_options[] = {
   { NULL }
 };
 
-void
-flatpak_context_complete (FlatpakContext *context, FlatpakCompletion *completion)
+GOptionEntry *
+flatpak_context_get_option_entries (void)
 {
-  flatpak_complete_options (completion, context_options);
+  return context_options;
 }
 
 GOptionGroup  *
@@ -1764,30 +1765,30 @@ void
 flatpak_context_add_bus_filters (FlatpakContext *context,
                                  const char     *app_id,
                                  gboolean        session_bus,
-                                 GPtrArray      *dbus_proxy_argv)
+                                 FlatpakBwrap   *bwrap)
 {
   GHashTable *ht;
   GHashTableIter iter;
   gpointer key, value;
 
-  g_ptr_array_add (dbus_proxy_argv, g_strdup ("--filter"));
+  flatpak_bwrap_add_arg (bwrap, "--filter");
   if (app_id && session_bus)
-    {
-      g_ptr_array_add (dbus_proxy_argv, g_strdup_printf ("--own=%s", app_id));
-      g_ptr_array_add (dbus_proxy_argv, g_strdup_printf ("--own=%s.*", app_id));
-    }
+    flatpak_bwrap_add_arg_printf (bwrap, "--own=%s.*", app_id);
 
   if (session_bus)
     ht = context->session_bus_policy;
   else
     ht = context->system_bus_policy;
+
   g_hash_table_iter_init (&iter, ht);
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       FlatpakPolicy policy = GPOINTER_TO_INT (value);
 
       if (policy > 0)
-        g_ptr_array_add (dbus_proxy_argv, g_strdup_printf ("--%s=%s", flatpak_policy_to_string (policy), (char *) key));
+        flatpak_bwrap_add_arg_printf (bwrap, "--%s=%s",
+                                      flatpak_policy_to_string (policy),
+                                      (char *) key);
     }
 }
 
@@ -1967,6 +1968,23 @@ flatpak_context_get_exports (FlatpakContext *context,
 
   flatpak_context_export (context, exports, app_id_dir, FALSE, NULL, NULL);
   return g_steal_pointer (&exports);
+}
+
+FlatpakRunFlags
+flatpak_context_get_run_flags (FlatpakContext *context)
+{
+  FlatpakRunFlags flags = 0;
+
+  if (flatpak_context_allows_features (context, FLATPAK_CONTEXT_FEATURE_DEVEL))
+    flags |= FLATPAK_RUN_FLAG_DEVEL;
+
+  if (flatpak_context_allows_features (context, FLATPAK_CONTEXT_FEATURE_MULTIARCH))
+    flags |= FLATPAK_RUN_FLAG_MULTIARCH;
+
+  if (flatpak_context_allows_features (context, FLATPAK_CONTEXT_FEATURE_BLUETOOTH))
+    flags |= FLATPAK_RUN_FLAG_BLUETOOTH;
+
+  return flags;
 }
 
 void
