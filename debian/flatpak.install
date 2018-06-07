@@ -21,6 +21,7 @@ usr/share/gdm/env.d
 usr/share/locale/*/LC_MESSAGES/flatpak.mo
 usr/share/polkit-1/actions
 usr/share/polkit-1/rules.d
+usr/share/zsh/site-functions/_flatpak   usr/share/zsh/vendor-completions
 <!nodoc> usr/share/man/man1
 <!nodoc> usr/share/man/man5
 <!nodoc> usr/share/doc/flatpak/docbook.css
