@@ -6,6 +6,7 @@ flatpak (0.11.8-1) UNRELEASED; urgency=medium
     - d/control: Update bubblewrap and ostree dependencies
     - d/control: Depend on python3 for build-time tests
     - Update symbols file for new ABI
+  * d/test.sh: Output test logs in the build log, even on success
 
  -- Simon McVittie <smcv@debian.org>  Thu, 07 Jun 2018 16:57:55 +0100
 
