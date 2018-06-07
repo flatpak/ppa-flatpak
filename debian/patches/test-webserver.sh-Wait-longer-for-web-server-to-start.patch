@@ -1,0 +1,28 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Thu, 7 Jun 2018 19:23:54 +0100
+Subject: test-webserver.sh: Wait longer for web server to start
+
+When under load (for example running parallel tests) it can take a
+while to get the web server ready.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+---
+ tests/test-webserver.sh | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/tests/test-webserver.sh b/tests/test-webserver.sh
+index 0bfa51f..48e545c 100755
+--- a/tests/test-webserver.sh
++++ b/tests/test-webserver.sh
+@@ -8,8 +8,10 @@ test_tmpdir=$(pwd)
+ cd ${dir}
+ env PYTHONUNBUFFERED=1 setsid python -m SimpleHTTPServer 0 >${test_tmpdir}/httpd-output &
+ child_pid=$!
++echo "Web server pid: $child_pid" >&2
+ 
+-for x in $(seq 50); do
++for x in $(seq 300); do
++    echo "Waiting for web server ($x/300)..." >&2
+     # Snapshot the output
+     cp ${test_tmpdir}/httpd-output{,.tmp}
+     sed -ne 's/^/# httpd-output.tmp: /' < ${test_tmpdir}/httpd-output.tmp >&2

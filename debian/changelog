@@ -7,6 +7,13 @@ flatpak (0.11.8-1) UNRELEASED; urgency=medium
     - d/control: Depend on python3 for build-time tests
     - Update symbols file for new ABI
   * d/test.sh: Output test logs in the build log, even on success
+  * d/p/testlibrary-Let-the-test-web-server-s-stderr-go-to-the-te.patch,
+    d/p/testlibrary-Correct-a-wrong-string-in-a-debug-message.patch,
+    d/p/test-webserver-Print-http-server-output.patch:
+    Add patches to improve test diagnostics
+  * d/p/test-webserver.sh-Wait-longer-for-web-server-to-start.patch:
+    Add patch to allow up to 30 seconds for the web server to start
+  * d/p/debian/Use-Python-3-for-test-web-server.patch: Rebase
 
  -- Simon McVittie <smcv@debian.org>  Thu, 07 Jun 2018 16:57:55 +0100
 

@@ -1,0 +1,23 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Thu, 7 Jun 2018 19:03:03 +0100
+Subject: testlibrary: Let the test web server's stderr go to the test's
+ stderr
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+---
+ tests/testlibrary.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/testlibrary.c b/tests/testlibrary.c
+index 2f450e7..c1df93c 100644
+--- a/tests/testlibrary.c
++++ b/tests/testlibrary.c
+@@ -889,7 +889,7 @@ run_test_subprocess (char **argv,
+   g_test_message ("Spawning %s", argv_str);
+ 
+   if (flags & RUN_TEST_SUBPROCESS_NO_CAPTURE)
+-    g_spawn_sync (NULL, argv, NULL, G_SPAWN_SEARCH_PATH | G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL, NULL, NULL, NULL, NULL, &status, &error);
++    g_spawn_sync (NULL, argv, NULL, G_SPAWN_SEARCH_PATH | G_SPAWN_STDOUT_TO_DEV_NULL, NULL, NULL, NULL, NULL, &status, &error);
+   else
+     g_spawn_sync (NULL, argv, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, &output, &errors, &status, &error);
+ 

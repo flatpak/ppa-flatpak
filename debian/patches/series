@@ -1,1 +1,5 @@
+testlibrary-Let-the-test-web-server-s-stderr-go-to-the-te.patch
+testlibrary-Correct-a-wrong-string-in-a-debug-message.patch
+test-webserver-Print-http-server-output.patch
+test-webserver.sh-Wait-longer-for-web-server-to-start.patch
 debian/Use-Python-3-for-test-web-server.patch

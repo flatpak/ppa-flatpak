@@ -1,0 +1,25 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Thu, 7 Jun 2018 19:04:05 +0100
+Subject: testlibrary: Correct a wrong string in a debug message
+
+This always printed "setting HOME=(null)" because we didn't set
+datadir yet, but it should have been looking at homedir anyway.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+---
+ tests/testlibrary.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tests/testlibrary.c b/tests/testlibrary.c
+index c1df93c..2167a0c 100644
+--- a/tests/testlibrary.c
++++ b/tests/testlibrary.c
+@@ -1152,7 +1152,7 @@ global_setup (void)
+   g_mkdir_with_parents (homedir, S_IRWXU|S_IRWXG|S_IRWXO);
+ 
+   g_setenv ("HOME", homedir, TRUE);
+-  g_test_message ("setting HOME=%s", datadir);
++  g_test_message ("setting HOME=%s", homedir);
+ 
+   cachedir = g_strconcat (testdir, "/home/cache", NULL);
+   g_mkdir_with_parents (cachedir, S_IRWXU|S_IRWXG|S_IRWXO);
