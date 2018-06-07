@@ -57,6 +57,7 @@ add_extensions () {
     mkdir -p $DIR/files/foo/none
     mkdir -p $DIR/files/foo/dir
     mkdir -p $DIR/files/foo/dir2
+    mkdir -p $DIR/files/foo/multiversion
 
     cat >> $DIR/metadata <<EOF
 [Extension org.test.Extension1]
@@ -85,6 +86,11 @@ subdirectories=true
 directory=foo/dir2
 subdirectories=true
 
+[Extension org.test.Multiversion]
+directory=foo/multiversion
+versions=not-master;master
+subdirectories=true
+
 EOF
 }
 
@@ -96,8 +102,8 @@ ostree init --repo=repos/test --mode=archive-z2
 # Modify platform metadata
 ostree checkout -U --repo=repos/test runtime/org.test.Platform/${ARCH}/master platform
 add_extensions platform
-ostree commit --repo=repos/test --owner-uid=0 --owner-gid=0 --no-xattrs --branch=runtime/org.test.Platform/${ARCH}/master -s "modified metadata" platform
-ostree summary -u --repo=repos/test
+ostree commit --repo=repos/test --owner-uid=0 --owner-gid=0 --no-xattrs --canonical-permissions  --branch=runtime/org.test.Platform/${ARCH}/master -s "modified metadata" platform
+${FLATPAK} build-update-repo repos/test
 
 ${FLATPAK} remote-add --user --no-gpg-verify test-repo repos/test
 ${FLATPAK} --user install test-repo org.test.Platform master
@@ -112,6 +118,8 @@ make_extension org.test.Extension3 not-master
 make_extension org.test.Extension4 master
 make_extension org.test.Dir.foo master
 make_extension org.test.Dir.bar master
+make_extension org.test.Multiversion.master master
+make_extension org.test.Multiversion.notmaster not-master
 
 assert_has_extension_file () {
     local prefix=$1
@@ -139,14 +147,17 @@ assert_has_extension_file /usr dir/foo/exists
 assert_has_extension_file /usr dir/foo/extension-org.test.Dir.foo:master
 assert_has_extension_file /usr dir/bar/extension-org.test.Dir.bar:master
 assert_not_has_extension_file /usr dir2/foo/exists
+run_sh "ls -lR /usr/foo/multiversion"
+assert_has_extension_file /usr multiversion/master/extension-org.test.Multiversion.master:master
+assert_has_extension_file /usr multiversion/notmaster/extension-org.test.Multiversion.notmaster:not-master
 
 echo "ok runtime extensions"
 
 # Modify app metadata
 ostree checkout -U --repo=repos/test app/org.test.Hello/${ARCH}/master hello
 add_extensions hello
-ostree commit --repo=repos/test --owner-uid=0 --owner-gid=0 --no-xattrs --branch=app/org.test.Hello/${ARCH}/master -s "modified metadata" hello
-ostree summary -u --repo=repos/test
+ostree commit --repo=repos/test --owner-uid=0 --owner-gid=0 --no-xattrs --canonical-permissions --branch=app/org.test.Hello/${ARCH}/master -s "modified metadata" hello
+${FLATPAK} build-update-repo repos/test
 
 ${FLATPAK} --user update org.test.Hello master
 
@@ -161,5 +172,7 @@ assert_has_extension_file /app dir/foo/exists
 assert_has_extension_file /app dir/foo/extension-org.test.Dir.foo:master
 assert_has_extension_file /app dir/bar/extension-org.test.Dir.bar:master
 assert_not_has_extension_file /app dir2/foo/exists
+assert_has_extension_file /app multiversion/master/extension-org.test.Multiversion.master:master
+assert_has_extension_file /app multiversion/notmaster/extension-org.test.Multiversion.notmaster:not-master
 
 echo "ok app extensions"

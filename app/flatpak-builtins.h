@@ -24,8 +24,9 @@
 #include <ostree.h>
 #include <gio/gio.h>
 
-#include "flatpak-utils.h"
-#include "flatpak-dir.h"
+#include "flatpak-complete.h"
+#include "flatpak-utils-private.h"
+#include "flatpak-dir-private.h"
 
 G_BEGIN_DECLS
 
@@ -90,6 +91,7 @@ BUILTINPROTO (override)
 BUILTINPROTO (repo)
 BUILTINPROTO (config)
 BUILTINPROTO (search)
+BUILTINPROTO (repair)
 
 #undef BUILTINPROTO
 

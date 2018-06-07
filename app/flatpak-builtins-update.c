@@ -31,8 +31,8 @@
 
 #include "flatpak-builtins.h"
 #include "flatpak-builtins-utils.h"
-#include "flatpak-transaction.h"
-#include "flatpak-utils.h"
+#include "flatpak-cli-transaction.h"
+#include "flatpak-utils-private.h"
 #include "flatpak-error.h"
 
 static char *opt_arch;
@@ -106,13 +106,20 @@ flatpak_builtin_update (int           argc,
       n_prefs = 1;
     }
 
-  transactions = g_ptr_array_new_with_free_func ((GDestroyNotify)flatpak_transaction_free);
+  transactions = g_ptr_array_new_with_free_func ((GDestroyNotify)g_object_unref);
 
   for (k = 0; k < dirs->len; k++)
     {
-      FlatpakTransaction *transaction = flatpak_transaction_new (g_ptr_array_index (dirs, k),
-                                                                 opt_yes, opt_no_pull, opt_no_deploy,
-                                                                 opt_no_static_deltas, !opt_no_deps, !opt_no_related, FALSE);
+      FlatpakTransaction *transaction = flatpak_cli_transaction_new (g_ptr_array_index (dirs, k), opt_yes, FALSE, error);
+      if (transaction == NULL)
+        return FALSE;
+
+      flatpak_transaction_set_no_pull (transaction, opt_no_pull);
+      flatpak_transaction_set_no_deploy (transaction, opt_no_deploy);
+      flatpak_transaction_set_disable_static_deltas (transaction, opt_no_static_deltas);
+      flatpak_transaction_set_disable_dependencies (transaction, opt_no_deps);
+      flatpak_transaction_set_disable_related (transaction, opt_no_related);
+
       g_ptr_array_add (transactions, transaction);
     }
 
@@ -220,14 +227,9 @@ flatpak_builtin_update (int           argc,
     {
       FlatpakTransaction *transaction = g_ptr_array_index (transactions, k);
 
-      if (!flatpak_transaction_is_empty (transaction))
-        {
-          if (!flatpak_transaction_update_metadata (transaction, n_prefs == 0, cancellable, error))
-            return FALSE;
-
-          if (!flatpak_transaction_run (transaction, FALSE, cancellable, error))
-            return FALSE;
-        }
+      if (!flatpak_transaction_is_empty (transaction) &&
+          !flatpak_cli_transaction_run (transaction, cancellable, error))
+        return FALSE;
     }
 
   if (n_prefs == 0)

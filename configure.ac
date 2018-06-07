@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [11])
-m4_define([flatpak_micro_version], [7])
+m4_define([flatpak_micro_version], [8])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -30,8 +30,8 @@ AC_INIT([Flatpak],
         [http://flatpak.org/])
 
 GLIB_REQS=2.44
-SYSTEM_BWRAP_REQS=0.1.8
-OSTREE_REQS=2017.14
+SYSTEM_BWRAP_REQS=0.2.1
+OSTREE_REQS=2017.15
 OSTREE_P2P_REQS=2018.2
 
 AC_USE_SYSTEM_EXTENSIONS
@@ -40,6 +40,7 @@ AC_SYS_LARGEFILE
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_DISABLE_STATIC
+AC_PROG_CC_STDC
 
 LT_PREREQ([2.2.6])
 LT_INIT([disable-static])
@@ -264,26 +265,27 @@ AC_ARG_ENABLE(sudo,
               [SUDO_BIN="sudo"], [SUDO_BIN=""])
 AC_SUBST([SUDO_BIN])
 
-# Do we enable building peer to peer support using libostree’s experimental (non-stable) API?
-# If so, OSTREE_ENABLE_EXPERIMENTAL_API needs to be #defined before ostree.h is
-# included.
-AC_ARG_ENABLE([p2p],
-  [AS_HELP_STRING([--enable-p2p],
-                  [Enable unstable peer to peer support [default=no]])],,
-  [enable_p2p=no])
-AS_IF([test x$enable_p2p = xyes],[
-  PKG_CHECK_MODULES(OSTREE, [ostree-1 >= $OSTREE_P2P_REQS])
+# Decide whether to build with peer to peer support. This requires API in
+# libostree which before 2018.6 was experimental.
+#FIXME: Clean up when flatpak depends on 2018.6
+enable_p2p=no
+PKG_CHECK_MODULES(OSTREE_P2P_REQ, [ostree-1 >= $OSTREE_P2P_REQS],[
 
   ostree_features=$($PKG_CONFIG --variable=features ostree-1)
   AS_CASE(["$ostree_features"],
-          [*experimental*],[have_ostree_experimental=yes])
+          [*experimental*],[have_ostree_experimental=yes],
+          [*p2p*],[have_ostree_p2p=yes])
 
-  AS_IF([test "x$have_ostree_experimental" != "xyes"],
-        [AC_MSG_ERROR([Experimental API not found in ostree-1, which is needed for --enable-p2p. OSTree must be compiled with --enable-experimental-api.])])
-
-  AC_DEFINE([OSTREE_ENABLE_EXPERIMENTAL_API],[1],[Define if libostree experimental API should be enabled])
-  AC_DEFINE([FLATPAK_ENABLE_P2P],[1],[Define if peer to peer support should be enabled])
-])
+  AS_IF([test "x$have_ostree_experimental" != "xyes" && test "x$have_ostree_p2p" != "xyes"],[
+      AC_MSG_WARN([Experimental/P2P API not found in ostree-1, so flatpak will be compiled without P2P support. OSTree < 2018.6 must be compiled with --enable-experimental-api.])
+    ],[
+      enable_p2p=yes
+      AC_DEFINE([FLATPAK_ENABLE_P2P],[1],[Define if peer to peer support should be enabled])
+      AS_IF([test "x$have_ostree_experimental" == "xyes"],[
+        AC_DEFINE([OSTREE_ENABLE_EXPERIMENTAL_API],[1],[Define if libostree experimental API should be enabled])
+      ])
+    ])
+], :)
 AM_CONDITIONAL([ENABLE_P2P],[test x$enable_p2p = xyes])
 
 AC_ARG_WITH(system-install-dir,
@@ -436,7 +438,7 @@ Makefile
 doc/Makefile
 doc/reference/Makefile
 flatpak.pc
-lib/flatpak-version-macros.h
+common/flatpak-version-macros.h
 doc/reference/version.xml
 doc/flatpak-docs.xml
 po/Makefile.in

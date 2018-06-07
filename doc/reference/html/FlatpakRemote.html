@@ -6,8 +6,8 @@
 <meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="Flatpak Library Reference Manual">
 <link rel="up" href="ch01.html" title="Flatpak">
-<link rel="prev" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef">
-<link rel="next" href="flatpak-flatpak-bundle-ref.html" title="flatpak-bundle-ref">
+<link rel="prev" href="FlatpakInstallation.html" title="FlatpakInstallation">
+<link rel="next" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress">
 <meta name="generator" content="GTK-Doc V1.28.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
@@ -21,8 +21,8 @@
 </td>
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
-<td><a accesskey="p" href="FlatpakRemoteRef.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="flatpak-flatpak-bundle-ref.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="p" href="FlatpakInstallation.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="FlatpakTransactionProgress.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="FlatpakRemote"></a><div class="titlepage"></div>
@@ -990,7 +990,7 @@ flatpak_remote_get_disabled (<em class="parameter"><code><a class="link" href="F
 </div>
 <div class="refsect3">
 <a name="flatpak-remote-get-disabled.returns"></a><h4>Returns</h4>
-<p> whether the remote is marked as "don't enumerate"</p>
+<p> whether the remote is marked as disabled</p>
 </div>
 </div>
 <hr>
@@ -1036,6 +1036,8 @@ effect.</p>
 <hr>
 <div class="refsect2">
 <a name="FlatpakRemoteType"></a><h3>enum FlatpakRemoteType</h3>
+<p>Different types of <em class="parameter"><code>FlatpakRemote</code></em>
+.</p>
 <div class="refsect3">
 <a name="FlatpakRemoteType.members"></a><h4>Members</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1047,18 +1049,24 @@ effect.</p>
 <tbody>
 <tr>
 <td class="enum_member_name"><p><a name="FLATPAK-REMOTE-TYPE-STATIC:CAPS"></a>FLATPAK_REMOTE_TYPE_STATIC</p></td>
-<td> </td>
-<td> </td>
+<td class="enum_member_description">
+<p>Statically configured remote</p>
+</td>
+<td class="enum_member_annotations"> </td>
 </tr>
 <tr>
 <td class="enum_member_name"><p><a name="FLATPAK-REMOTE-TYPE-USB:CAPS"></a>FLATPAK_REMOTE_TYPE_USB</p></td>
-<td> </td>
-<td> </td>
+<td class="enum_member_description">
+<p>Dynamically detected local pathname remote</p>
+</td>
+<td class="enum_member_annotations"> </td>
 </tr>
 <tr>
 <td class="enum_member_name"><p><a name="FLATPAK-REMOTE-TYPE-LAN:CAPS"></a>FLATPAK_REMOTE_TYPE_LAN</p></td>
-<td> </td>
-<td> </td>
+<td class="enum_member_description">
+<p>Dynamically detected network remote</p>
+</td>
+<td class="enum_member_annotations"> </td>
 </tr>
 </tbody>
 </table></div>

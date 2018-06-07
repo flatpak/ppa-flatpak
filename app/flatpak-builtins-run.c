@@ -32,10 +32,10 @@
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
-#include "flatpak-utils.h"
+#include "flatpak-utils-private.h"
 #include "flatpak-error.h"
-#include "flatpak-dbus.h"
-#include "flatpak-run.h"
+#include "flatpak-dbus-generated.h"
+#include "flatpak-run-private.h"
 
 static char *opt_arch;
 static char *opt_branch;
@@ -230,7 +230,7 @@ flatpak_complete_run (FlatpakCompletion *completion)
     case 1: /* NAME */
       flatpak_complete_options (completion, global_entries);
       flatpak_complete_options (completion, options);
-      flatpak_context_complete (arg_context, completion);
+      flatpak_complete_context (completion);
 
       user_dir = flatpak_dir_get_user ();
       {

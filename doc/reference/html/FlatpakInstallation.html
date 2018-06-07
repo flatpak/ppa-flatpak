@@ -7,7 +7,7 @@
 <link rel="home" href="index.html" title="Flatpak Library Reference Manual">
 <link rel="up" href="ch01.html" title="Flatpak">
 <link rel="prev" href="ch01.html" title="Flatpak">
-<link rel="next" href="FlatpakRef.html" title="FlatpakRef">
+<link rel="next" href="FlatpakRemote.html" title="FlatpakRemote">
 <meta name="generator" content="GTK-Doc V1.28.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
@@ -21,7 +21,7 @@
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
 <td><a accesskey="p" href="ch01.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="FlatpakRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="n" href="FlatpakRemote.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="FlatpakInstallation"></a><div class="titlepage"></div>
@@ -141,6 +141,14 @@
 <span class="returnvalue">gboolean</span>
 </td>
 <td class="function_name">
+<a class="link" href="FlatpakInstallation.html#flatpak-installation-uninstall-full" title="flatpak_installation_uninstall_full ()">flatpak_installation_uninstall_full</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">gboolean</span>
+</td>
+<td class="function_name">
 <a class="link" href="FlatpakInstallation.html#flatpak-installation-launch" title="flatpak_installation_launch ()">flatpak_installation_launch</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
@@ -228,6 +236,14 @@
 </td>
 <td class="function_name">
 <a class="link" href="FlatpakInstallation.html#flatpak-installation-list-remote-refs-sync" title="flatpak_installation_list_remote_refs_sync ()">flatpak_installation_list_remote_refs_sync</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">GPtrArray</span> *
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstallation.html#flatpak-installation-list-remotes-by-type" title="flatpak_installation_list_remotes_by_type ()">flatpak_installation_list_remotes_by_type</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
@@ -445,6 +461,10 @@
 </tr>
 <tr>
 <td class="datatype_keyword">enum</td>
+<td class="function_name"><a class="link" href="FlatpakInstallation.html#FlatpakUninstallFlags" title="enum FlatpakUninstallFlags">FlatpakUninstallFlags</a></td>
+</tr>
+<tr>
+<td class="datatype_keyword">enum</td>
 <td class="function_name"><a class="link" href="FlatpakInstallation.html#FlatpakStorageType" title="enum FlatpakStorageType">FlatpakStorageType</a></td>
 </tr>
 </tbody>
@@ -465,7 +485,7 @@ location for flatpak applications. Typical installation locations are either
 system-wide (in $prefix/var/lib/flatpak) or per-user (in ~/.local/share/flatpak).</p>
 <p>FlatpakInstallation can list configured remotes as well as installed application
 and runtime references (in short: refs). It can also run, install, update and
-uninstall applications and runtimes.</p>
+uninstall applications and runtimes, using <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a>.</p>
 </div>
 <div class="refsect1">
 <a name="FlatpakInstallation.functions_details"></a><h2>Functions</h2>
@@ -1183,6 +1203,90 @@ flatpak_installation_uninstall (<em class="parameter"><code><a class="link" href
 </div>
 <hr>
 <div class="refsect2">
+<a name="flatpak-installation-uninstall-full"></a><h3>flatpak_installation_uninstall_full ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>
+flatpak_installation_uninstall_full (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>,
+                                     <em class="parameter"><code><a class="link" href="FlatpakInstallation.html#FlatpakUninstallFlags" title="enum FlatpakUninstallFlags"><span class="type">FlatpakUninstallFlags</span></a> flags</code></em>,
+                                     <em class="parameter"><code><a class="link" href="FlatpakRef.html#FlatpakRefKind" title="enum FlatpakRefKind"><span class="type">FlatpakRefKind</span></a> kind</code></em>,
+                                     <em class="parameter"><code>const <span class="type">char</span> *name</code></em>,
+                                     <em class="parameter"><code>const <span class="type">char</span> *arch</code></em>,
+                                     <em class="parameter"><code>const <span class="type">char</span> *branch</code></em>,
+                                     <em class="parameter"><code><a class="link" href="FlatpakInstallation.html#FlatpakProgressCallback" title="FlatpakProgressCallback ()"><span class="type">FlatpakProgressCallback</span></a> progress</code></em>,
+                                     <em class="parameter"><code><span class="type">gpointer</span> progress_data</code></em>,
+                                     <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
+                                     <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>Uninstall an application or runtime.</p>
+<div class="refsect3">
+<a name="flatpak-installation-uninstall-full.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>flags</p></td>
+<td class="parameter_description"><p>set of <a class="link" href="FlatpakInstallation.html#FlatpakUninstallFlags" title="enum FlatpakUninstallFlags"><span class="type">FlatpakUninstallFlags</span></a> flags</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>kind</p></td>
+<td class="parameter_description"><p>what this ref contains (an <a class="link" href="FlatpakRef.html#FlatpakRefKind" title="enum FlatpakRefKind"><span class="type">FlatpakRefKind</span></a>)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>name</p></td>
+<td class="parameter_description"><p>name of the app or runtime to uninstall</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>arch</p></td>
+<td class="parameter_description"><p>architecture of the app or runtime to uninstall</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>branch</p></td>
+<td class="parameter_description"><p>name of the branch of the app or runtime to uninstall</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>progress</p></td>
+<td class="parameter_description"><p>the callback. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="The callback is valid only during the call to the method."><span class="acronym">scope call</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>progress_data</p></td>
+<td class="parameter_description"><p>user data passed to <em class="parameter"><code>progress</code></em>
+. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="This parameter is a 'user_data', for callbacks; many bindings can pass NULL here."><span class="acronym">closure</span></acronym> progress][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <span class="type">GError</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installation-uninstall-full.returns"></a><h4>Returns</h4>
+<p> <code class="literal">TRUE</code> on success</p>
+</div>
+<p class="since">Since: 0.11.8</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="flatpak-installation-launch"></a><h3>flatpak_installation_launch ()</h3>
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
 flatpak_installation_launch (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>,
@@ -1738,6 +1842,63 @@ flatpak_installation_list_remote_refs_sync
 </div>
 <hr>
 <div class="refsect2">
+<a name="flatpak-installation-list-remotes-by-type"></a><h3>flatpak_installation_list_remotes_by_type ()</h3>
+<pre class="programlisting"><span class="returnvalue">GPtrArray</span> *
+flatpak_installation_list_remotes_by_type
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code>const <a class="link" href="FlatpakRemote.html#FlatpakRemoteType" title="enum FlatpakRemoteType"><span class="type">FlatpakRemoteType</span></a> types[]</code></em>,
+                                <em class="parameter"><code><span class="type">gsize</span> num_types</code></em>,
+                                <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
+                                <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>Lists only the remotes whose type is included in the <em class="parameter"><code>types</code></em>
+ argument.</p>
+<div class="refsect3">
+<a name="flatpak-installation-list-remotes-by-type.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>types</p></td>
+<td class="parameter_description"><p>an array of <a class="link" href="FlatpakRemote.html#FlatpakRemoteType" title="enum FlatpakRemoteType"><span class="type">FlatpakRemoteType</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=num_types]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>num_types</p></td>
+<td class="parameter_description"><p>the number of types provided in <em class="parameter"><code>types</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <span class="type">GError</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installation-list-remotes-by-type.returns"></a><h4>Returns</h4>
+<p>a GPtrArray of
+<a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> instances. </p>
+<p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakRemote]</span></p>
+</div>
+</div>
+<hr>
+<div class="refsect2">
 <a name="flatpak-installation-list-remote-related-refs-sync"></a><h3>flatpak_installation_list_remote_related_refs_sync ()</h3>
 <pre class="programlisting"><span class="returnvalue">GPtrArray</span> *
 flatpak_installation_list_remote_related_refs_sync
@@ -1759,6 +1920,8 @@ everyone should always be installed. For example,
 reference should be installed/updated with the app, and
 <a class="link" href="FlatpakRelatedRef.html#flatpak-related-ref-should-delete" title="flatpak_related_ref_should_delete ()"><code class="function">flatpak_related_ref_should_delete()</code></a> returns TRUE if it
 should be uninstalled with the main ref.</p>
+<p>The commit property of each FlatpakRelatedRef is not guaranteed to be
+non-<code class="literal">NULL</code>.</p>
 <div class="refsect3">
 <a name="flatpak-installation-list-remote-related-refs-sync.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -2989,8 +3152,17 @@ is just an estimate</p></td>
 </tr>
 <tr>
 <td class="enum_member_name"><p><a name="FLATPAK-UPDATE-FLAGS-NO-STATIC-DELTAS:CAPS"></a>FLATPAK_UPDATE_FLAGS_NO_STATIC_DELTAS</p></td>
-<td> </td>
-<td> </td>
+<td class="enum_member_description">
+<p>Don't use static deltas when pulling</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-UPDATE-FLAGS-NO-PRUNE:CAPS"></a>FLATPAK_UPDATE_FLAGS_NO_PRUNE</p></td>
+<td class="enum_member_description">
+<p>Don't prune the local OSTree repository after updating (Since: 0.11.8)</p>
+</td>
+<td class="enum_member_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
@@ -3018,22 +3190,60 @@ is just an estimate</p></td>
 </tr>
 <tr>
 <td class="enum_member_name"><p><a name="FLATPAK-INSTALL-FLAGS-NO-STATIC-DELTAS:CAPS"></a>FLATPAK_INSTALL_FLAGS_NO_STATIC_DELTAS</p></td>
-<td> </td>
-<td> </td>
+<td class="enum_member_description">
+<p>Don't use static deltas when pulling</p>
+</td>
+<td class="enum_member_annotations"> </td>
 </tr>
 <tr>
 <td class="enum_member_name"><p><a name="FLATPAK-INSTALL-FLAGS-NO-DEPLOY:CAPS"></a>FLATPAK_INSTALL_FLAGS_NO_DEPLOY</p></td>
-<td> </td>
-<td> </td>
+<td class="enum_member_description">
+<p>Don't install any new builds that might be fetched</p>
+</td>
+<td class="enum_member_annotations"> </td>
 </tr>
 <tr>
 <td class="enum_member_name"><p><a name="FLATPAK-INSTALL-FLAGS-NO-PULL:CAPS"></a>FLATPAK_INSTALL_FLAGS_NO_PULL</p></td>
-<td> </td>
-<td> </td>
+<td class="enum_member_description">
+<p>Don't try to fetch new builds from the remote repo</p>
+</td>
+<td class="enum_member_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakUninstallFlags"></a><h3>enum FlatpakUninstallFlags</h3>
+<p>Flags to alter the behavior of <a class="link" href="FlatpakInstallation.html#flatpak-installation-uninstall-full" title="flatpak_installation_uninstall_full ()"><code class="function">flatpak_installation_uninstall_full()</code></a>.</p>
+<div class="refsect3">
+<a name="FlatpakUninstallFlags.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="300px" class="enum_members_name">
+<col class="enum_members_description">
+<col width="200px" class="enum_members_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-UNINSTALL-FLAGS-NONE:CAPS"></a>FLATPAK_UNINSTALL_FLAGS_NONE</p></td>
+<td class="enum_member_description">
+<p>Default</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-UNINSTALL-FLAGS-NO-PRUNE:CAPS"></a>FLATPAK_UNINSTALL_FLAGS_NO_PRUNE</p></td>
+<td class="enum_member_description">
+<p>Don't prune the local OSTree repository after uninstalling</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 0.11.8</p>
 </div>
 <hr>
 <div class="refsect2">

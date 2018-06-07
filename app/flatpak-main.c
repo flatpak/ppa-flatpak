@@ -31,7 +31,7 @@
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
-#include "flatpak-utils.h"
+#include "flatpak-utils-private.h"
 
 static int opt_verbose;
 static gboolean opt_ostree_verbose;
@@ -68,6 +68,7 @@ static FlatpakCommand commands[] = {
   { "list", N_("List installed apps and/or runtimes"), flatpak_builtin_list, flatpak_complete_list },
   { "info", N_("Show info for installed app or runtime"), flatpak_builtin_info, flatpak_complete_info },
   { "config", N_("Configure flatpak"), flatpak_builtin_config, flatpak_complete_config },
+  { "repair", N_("Repair flatpak installation"), flatpak_builtin_repair, flatpak_complete_repair },
 
    /* translators: please keep the leading newline and space */
   { N_("\n Finding applications and runtimes") },
@@ -583,7 +584,7 @@ main (int    argc,
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
   textdomain (GETTEXT_PACKAGE);
 
-  g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_MESSAGE, message_handler, NULL);
+  g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_MESSAGE|G_LOG_LEVEL_WARNING, message_handler, NULL);
 
   g_set_prgname (argv[0]);
 

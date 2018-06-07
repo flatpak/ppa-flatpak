@@ -12,7 +12,7 @@ else
 AM_TESTS_ENVIRONMENT += FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
 endif
 
-testlibrary_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS)
+testlibrary_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) -DFLATPAK_COMPILATION
 testlibrary_LDADD = \
              $(AM_LDADD) \
              $(BASE_LIBS) \
@@ -78,6 +78,7 @@ endif
 
 dist_test_scripts = \
 	tests/test-basic.sh \
+	tests/test-build-update-repo.sh \
 	tests/test-run.sh \
 	tests/test-run-system.sh \
 	tests/test-run-deltas.sh \

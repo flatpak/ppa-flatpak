@@ -186,7 +186,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
-CONFIG_CLEAN_FILES = flatpak.pc lib/flatpak-version-macros.h
+CONFIG_CLEAN_FILES = flatpak.pc common/flatpak-version-macros.h
 CONFIG_CLEAN_VPATH_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -220,8 +220,8 @@ am__installdirs = "$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" \
-	"$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" \
-	"$(DESTDIR)$(dbussnippetdir)" \
+	"$(DESTDIR)$(bashcompletiondir)" \
+	"$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussnippetdir)" \
 	"$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" \
 	"$(DESTDIR)$(installed_test_keyringdir)" \
 	"$(DESTDIR)$(installed_test_keyring2dir)" \
@@ -233,6 +233,7 @@ am__installdirs = "$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" \
 	"$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" \
 	"$(DESTDIR)$(systemduserunitdir)" \
+	"$(DESTDIR)$(zshcompletiondir)" \
 	"$(DESTDIR)$(flatpakincludedir)" \
 	"$(DESTDIR)$(flatpakincludedir)"
 LTLIBRARIES = $(installed_test_LTLIBRARIES) $(lib_LTLIBRARIES) \
@@ -243,27 +244,39 @@ libflatpak_common_la_DEPENDENCIES = libglnx.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
-am__dirstamp = $(am__leading_dot)dirstamp
 am__objects_1 =
-am_libflatpak_common_la_OBJECTS =  \
+am__objects_2 = $(am__objects_1)
+am__dirstamp = $(am__leading_dot)dirstamp
+am_libflatpak_common_la_OBJECTS = $(am__objects_2) \
 	common/libflatpak_common_la-flatpak-bwrap.lo \
 	common/libflatpak_common_la-flatpak-dir.lo \
 	common/libflatpak_common_la-flatpak-run.lo \
 	common/libflatpak_common_la-flatpak-context.lo \
 	common/libflatpak_common_la-flatpak-exports.lo \
+	common/libflatpak_common_la-flatpak-transaction.lo \
 	common/libflatpak_common_la-flatpak-utils.lo \
-	common/libflatpak_common_la-flatpak-table-printer.lo \
 	common/libflatpak_common_la-flatpak-chain-input-stream.lo \
 	common/libflatpak_common_la-flatpak-portal-error.lo \
 	common/libflatpak_common_la-flatpak-json.lo \
 	common/libflatpak_common_la-flatpak-json-oci.lo \
 	common/libflatpak_common_la-flatpak-oci-registry.lo \
+	common/libflatpak_common_la-flatpak-ref.lo \
+	common/libflatpak_common_la-flatpak-installed-ref.lo \
+	common/libflatpak_common_la-flatpak-remote-ref.lo \
+	common/libflatpak_common_la-flatpak-bundle-ref.lo \
+	common/libflatpak_common_la-flatpak-related-ref.lo \
+	common/libflatpak_common_la-flatpak-remote.lo \
+	common/libflatpak_common_la-flatpak-error.lo \
+	common/libflatpak_common_la-flatpak-installation.lo \
 	$(am__objects_1)
-am__objects_2 = common/libflatpak_common_la-flatpak-dbus.lo \
-	common/libflatpak_common_la-flatpak-document-dbus.lo
-am__objects_3 = common/libflatpak_common_la-flatpak-systemd-dbus.lo
+am__objects_3 = common/libflatpak_common_la-flatpak-dbus-generated.lo \
+	common/libflatpak_common_la-flatpak-document-dbus-generated.lo
+am__objects_4 =  \
+	common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo
 nodist_libflatpak_common_la_OBJECTS = $(am__objects_2) \
-	$(am__objects_3) $(am__objects_1)
+	$(am__objects_3) $(am__objects_4) \
+	common/libflatpak_common_la-flatpak-enum-types.lo \
+	$(am__objects_1)
 libflatpak_common_la_OBJECTS = $(am_libflatpak_common_la_OBJECTS) \
 	$(nodist_libflatpak_common_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -278,19 +291,9 @@ libflatpak_la_DEPENDENCIES = libflatpak-common.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
-am_libflatpak_la_OBJECTS = lib/libflatpak_la-flatpak.lo \
-	lib/libflatpak_la-flatpak-ref.lo \
-	lib/libflatpak_la-flatpak-installed-ref.lo \
-	lib/libflatpak_la-flatpak-remote-ref.lo \
-	lib/libflatpak_la-flatpak-bundle-ref.lo \
-	lib/libflatpak_la-flatpak-related-ref.lo \
-	lib/libflatpak_la-flatpak-remote.lo \
-	lib/libflatpak_la-flatpak-error.lo \
-	lib/libflatpak_la-flatpak-installation.lo $(am__objects_1)
-nodist_libflatpak_la_OBJECTS =  \
-	lib/libflatpak_la-flatpak-enum-types.lo $(am__objects_1)
-libflatpak_la_OBJECTS = $(am_libflatpak_la_OBJECTS) \
-	$(nodist_libflatpak_la_OBJECTS)
+am_libflatpak_la_OBJECTS = common/libflatpak_la-flatpak.lo \
+	$(am__objects_1)
+libflatpak_la_OBJECTS = $(am_libflatpak_la_OBJECTS)
 libflatpak_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libflatpak_la_CFLAGS) \
 	$(CFLAGS) $(libflatpak_la_LDFLAGS) $(LDFLAGS) -o $@
@@ -326,7 +329,6 @@ PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(noinst_PROGRAMS)
 am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-utils.$(OBJEXT) \
-	app/flatpak-flatpak-transaction.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-add-remote.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-delete-remote.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-list-remotes.$(OBJEXT) \
@@ -356,7 +358,11 @@ am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-unexport.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-info.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-list.$(OBJEXT) \
-	app/flatpak-flatpak-builtins-search.$(OBJEXT) $(am__objects_1)
+	app/flatpak-flatpak-builtins-search.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-repair.$(OBJEXT) \
+	app/flatpak-flatpak-table-printer.$(OBJEXT) \
+	app/flatpak-flatpak-complete.$(OBJEXT) \
+	app/flatpak-flatpak-cli-transaction.$(OBJEXT) $(am__objects_1)
 nodist_flatpak_OBJECTS = app/flatpak-parse-datetime.$(OBJEXT) \
 	$(am__objects_1)
 flatpak_OBJECTS = $(am_flatpak_OBJECTS) $(nodist_flatpak_OBJECTS)
@@ -370,12 +376,12 @@ am__flatpak_bwrap_SOURCES_DIST = bubblewrap/bubblewrap.c \
 	bubblewrap/bind-mount.h bubblewrap/bind-mount.c \
 	bubblewrap/network.h bubblewrap/network.c bubblewrap/utils.h \
 	bubblewrap/utils.c
-@WITH_SYSTEM_BWRAP_FALSE@am__objects_4 = bubblewrap/flatpak_bwrap-bubblewrap.$(OBJEXT) \
+@WITH_SYSTEM_BWRAP_FALSE@am__objects_5 = bubblewrap/flatpak_bwrap-bubblewrap.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-bind-mount.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-network.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-utils.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	$(am__objects_1)
-@WITH_SYSTEM_BWRAP_FALSE@am_flatpak_bwrap_OBJECTS = $(am__objects_4)
+@WITH_SYSTEM_BWRAP_FALSE@am_flatpak_bwrap_OBJECTS = $(am__objects_5)
 flatpak_bwrap_OBJECTS = $(am_flatpak_bwrap_OBJECTS)
 @WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_DEPENDENCIES =  \
 @WITH_SYSTEM_BWRAP_FALSE@	$(am__DEPENDENCIES_1) \
@@ -417,9 +423,8 @@ flatpak_session_helper_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(flatpak_session_helper_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am__flatpak_system_helper_SOURCES_DIST =  \
-	system-helper/flatpak-system-helper.c lib/flatpak-error.c
+	system-helper/flatpak-system-helper.c
 @BUILD_SYSTEM_HELPER_TRUE@am_flatpak_system_helper_OBJECTS = system-helper/flatpak_system_helper-flatpak-system-helper.$(OBJEXT) \
-@BUILD_SYSTEM_HELPER_TRUE@	lib/flatpak_system_helper-flatpak-error.$(OBJEXT) \
 @BUILD_SYSTEM_HELPER_TRUE@	$(am__objects_1)
 flatpak_system_helper_OBJECTS = $(am_flatpak_system_helper_OBJECTS)
 @BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_DEPENDENCIES =  \
@@ -432,8 +437,8 @@ flatpak_system_helper_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_system_helper_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_test_libflatpak_OBJECTS = lib/test_libflatpak-test-lib.$(OBJEXT) \
-	$(am__objects_1)
+am_test_libflatpak_OBJECTS =  \
+	common/test_libflatpak-test-lib.$(OBJEXT) $(am__objects_1)
 test_libflatpak_OBJECTS = $(am_test_libflatpak_OBJECTS)
 test_libflatpak_DEPENDENCIES = $(am__DEPENDENCIES_1) libflatpak.la \
 	$(am__DEPENDENCIES_1)
@@ -522,11 +527,10 @@ am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(nodist_libflatpak_common_la_SOURCES) \
-	$(libflatpak_la_SOURCES) $(nodist_libflatpak_la_SOURCES) \
-	$(libglnx_la_SOURCES) $(flatpak_SOURCES) \
-	$(nodist_flatpak_SOURCES) $(flatpak_bwrap_SOURCES) \
-	$(flatpak_dbus_proxy_SOURCES) $(flatpak_portal_SOURCES) \
-	$(nodist_flatpak_portal_SOURCES) \
+	$(libflatpak_la_SOURCES) $(libglnx_la_SOURCES) \
+	$(flatpak_SOURCES) $(nodist_flatpak_SOURCES) \
+	$(flatpak_bwrap_SOURCES) $(flatpak_dbus_proxy_SOURCES) \
+	$(flatpak_portal_SOURCES) $(nodist_flatpak_portal_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
 	$(flatpak_system_helper_SOURCES) $(test_libflatpak_SOURCES) \
 	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
@@ -562,7 +566,7 @@ am__dist_installed_test_keyring_DATA_DIST = tests/test-keyring/README \
 am__dist_installed_test_keyring2_DATA_DIST =  \
 	tests/test-keyring2/README tests/test-keyring2/pubring.gpg \
 	tests/test-keyring2/secring.gpg
-DATA = $(completion_DATA) $(dbus_service_DATA) $(dbussnippet_DATA) \
+DATA = $(bashcompletion_DATA) $(dbus_service_DATA) $(dbussnippet_DATA) \
 	$(dbussystemservice_DATA) $(dist_dbusconf_DATA) \
 	$(dist_installed_test_keyring_DATA) \
 	$(dist_installed_test_keyring2_DATA) $(env_DATA) \
@@ -571,7 +575,7 @@ DATA = $(completion_DATA) $(dbus_service_DATA) $(dbussnippet_DATA) \
 	$(nodist_gir_DATA) $(nodist_typelib_DATA) $(noinst_DATA) \
 	$(pkgconfig_DATA) $(polkit_policy_DATA) $(polkit_rules_DATA) \
 	$(profile_DATA) $(systemdsystemunit_DATA) \
-	$(systemduserunit_DATA)
+	$(systemduserunit_DATA) $(zshcompletion_DATA)
 HEADERS = $(flatpakinclude_HEADERS) $(nodist_flatpakinclude_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
@@ -758,10 +762,10 @@ am__set_TESTS_bases = \
   bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
   bases=`echo $$bases`
 RECHECK_LOGS = $(TEST_LOGS)
-am__EXEEXT_9 = tests/test-basic.sh tests/test-run.sh \
-	tests/test-run-system.sh tests/test-run-deltas.sh \
-	tests/test-run-system-deltas.sh tests/test-repo.sh \
-	tests/test-repo-collections.sh \
+am__EXEEXT_9 = tests/test-basic.sh tests/test-build-update-repo.sh \
+	tests/test-run.sh tests/test-run-system.sh \
+	tests/test-run-deltas.sh tests/test-run-system-deltas.sh \
+	tests/test-repo.sh tests/test-repo-collections.sh \
 	tests/test-repo-collections-server-only.sh \
 	tests/test-repo-system.sh tests/test-extensions.sh \
 	tests/test-bundle.sh tests/test-bundle-system.sh \
@@ -792,14 +796,13 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/app/Makefile.am.inc \
 	$(srcdir)/common/Makefile.am.inc $(srcdir)/config.h.in \
 	$(srcdir)/data/Makefile.am.inc \
 	$(srcdir)/dbus-proxy/Makefile.am.inc $(srcdir)/flatpak.pc.in \
-	$(srcdir)/lib/Makefile.am.inc \
 	$(srcdir)/libglnx/Makefile-libglnx.am.inc \
 	$(srcdir)/portal/Makefile.am.inc \
 	$(srcdir)/session-helper/Makefile.am.inc \
 	$(srcdir)/system-helper/Makefile.am.inc \
 	$(srcdir)/tests/Makefile.am.inc \
 	$(top_srcdir)/buildutil/glib-tap.mk \
-	$(top_srcdir)/lib/flatpak-version-macros.h.in ABOUT-NLS \
+	$(top_srcdir)/common/flatpak-version-macros.h.in ABOUT-NLS \
 	COPYING INSTALL NEWS compile config.guess config.rpath \
 	config.sub depcomp install-sh ltmain.sh missing test-driver
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -951,6 +954,8 @@ OSTREE_2018_5_CFLAGS = @OSTREE_2018_5_CFLAGS@
 OSTREE_2018_5_LIBS = @OSTREE_2018_5_LIBS@
 OSTREE_CFLAGS = @OSTREE_CFLAGS@
 OSTREE_LIBS = @OSTREE_LIBS@
+OSTREE_P2P_REQ_CFLAGS = @OSTREE_P2P_REQ_CFLAGS@
+OSTREE_P2P_REQ_LIBS = @OSTREE_P2P_REQ_LIBS@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -1063,38 +1068,36 @@ noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
 	$(systemduserunit_DATA) $(nodist_libflatpak_common_la_SOURCES) \
-	app/parse-datetime.c $(am__append_18) \
+	$(am__append_18) app/parse-datetime.c \
 	$(nodist_flatpak_portal_SOURCES)
 MAINTAINERCLEANFILES = $(NULL)
-DISTCLEANFILES = $(NULL) $(nodist_flatpakinclude_HEADERS) \
-	$(nodist_libflatpak_la_SOURCES) $(NULL) $(am__append_21) \
+DISTCLEANFILES = $(NULL) $(am__append_21) \
 	tests/services/org.freedesktop.Flatpak.service \
 	tests/services/org.freedesktop.Flatpak.SystemHelper.service \
 	tests/package_version.txt $(NULL) flatpak.sh flatpak.env \
 	flatpak.conf
 BUILT_SOURCES = $(NULL) $(nodist_libflatpak_common_la_SOURCES) \
-	$(nodist_flatpakinclude_HEADERS) \
-	$(nodist_libflatpak_la_SOURCES) $(NULL) \
 	$(nodist_flatpak_portal_SOURCES)
 EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	$(all_dist_test_scripts) $(all_dist_test_data) \
 	$(service_in_files) libglnx/README.md libglnx/COPYING \
 	libglnx/libglnx.m4 $(NULL) \
+	common/flatpak-enum-types.c.template \
+	common/flatpak-enum-types.h.template \
 	data/org.freedesktop.portal.Documents.xml \
 	data/org.freedesktop.systemd1.xml \
 	data/org.freedesktop.Flatpak.xml \
 	data/org.freedesktop.portal.Flatpak.xml $(NULL) \
-	app/parse-datetime.y lib/flatpak-enum-types.c.template \
-	lib/flatpak-enum-types.h.template \
+	app/parse-datetime.y \
 	system-helper/org.freedesktop.Flatpak.policy.in \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.conf \
 	system-helper/org.freedesktop.Flatpak.rules.in \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
 	system-helper/flatpak-system-helper.service.in \
-	tests/flatpak.supp tests/glib.supp $(completion_DATA) \
-	profile/flatpak.sh.in $(NULL) env.d/flatpak.env.in \
-	dbus.service.d/flatpak.conf.in flatpak.pc.in \
-	scripts/flatpak-bisect README.md
+	tests/flatpak.supp tests/glib.supp $(bashcompletion_DATA) \
+	$(zshcompletion_DATA) profile/flatpak.sh.in $(NULL) \
+	env.d/flatpak.env.in dbus.service.d/flatpak.conf.in \
+	flatpak.pc.in scripts/flatpak-bisect README.md
 TESTS_ENVIRONMENT = \
 	G_TEST_SRCDIR="$(abs_srcdir)/tests"	\
 	G_TEST_BUILDDIR="$(abs_builddir)/tests"	\
@@ -1163,9 +1166,8 @@ AM_CPPFLAGS = -DFLATPAK_BINDIR=\"$(FLATPAK_BINDIR)\" \
 	-DSYSTEM_FONT_CACHE_DIRS=\"$(SYSTEM_FONT_CACHE_DIRS)\" \
 	-DDBUSPROXY=\"$(libexecdir)/flatpak-dbus-proxy\" \
 	-DG_LOG_DOMAIN=\"flatpak\" -I$(srcdir)/libglnx \
-	-I$(srcdir)/common -I$(builddir)/common -I$(srcdir)/lib \
-	-I$(builddir)/lib -include "config.h" $(NULL) $(am__append_15) \
-	$(am__append_16)
+	-I$(srcdir)/common -I$(builddir)/common -include "config.h" \
+	$(NULL) $(am__append_15) $(am__append_16)
 AM_CFLAGS = $(WARN_CFLAGS)
 triggersdir = $(pkgdatadir)/triggers
 dist_triggers_SCRIPTS = \
@@ -1235,43 +1237,82 @@ test_libglnx_macros_LDADD = $(libglnx_libs) libglnx.la
 test_libglnx_shutil_SOURCES = libglnx/tests/test-libglnx-shutil.c
 test_libglnx_shutil_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
 test_libglnx_shutil_LDADD = $(libglnx_libs) libglnx.la
-dbus_built_sources = common/flatpak-dbus.c common/flatpak-dbus.h common/flatpak-document-dbus.c common/flatpak-document-dbus.h
-systemd_dbus_built_sources = common/flatpak-systemd-dbus.c common/flatpak-systemd-dbus.h
+flatpakincludedir = $(includedir)/flatpak
+flatpakinclude_HEADERS = \
+	common/flatpak.h \
+	common/flatpak-ref.h \
+	common/flatpak-error.h \
+	common/flatpak-installed-ref.h \
+	common/flatpak-remote-ref.h \
+	common/flatpak-related-ref.h \
+	common/flatpak-bundle-ref.h \
+	common/flatpak-installation.h \
+	common/flatpak-remote.h \
+	common/flatpak-version-macros.h \
+	common/flatpak-portal-error.h \
+	common/flatpak-transaction.h \
+	$(NULL)
+
+nodist_flatpakinclude_HEADERS = \
+	common/flatpak-enum-types.h \
+	$(NULL)
+
+dbus_built_sources = common/flatpak-dbus-generated.c common/flatpak-dbus-generated.h common/flatpak-document-dbus-generated.c common/flatpak-document-dbus-generated.h
+systemd_dbus_built_sources = common/flatpak-systemd-dbus-generated.c common/flatpak-systemd-dbus-generated.h
 nodist_libflatpak_common_la_SOURCES = \
+	$(nodist_flatpakinclude_HEADERS)    \
 	$(dbus_built_sources)		\
 	$(systemd_dbus_built_sources)	\
 	$(xdp_dbus_built_sources) \
+	common/flatpak-enum-types.c \
 	$(NULL)
 
 libflatpak_common_la_SOURCES = \
-	common/flatpak-common-types.h \
+	$(flatpakinclude_HEADERS) \
+	common/flatpak-common-types-private.h \
 	common/flatpak-bwrap.c \
-	common/flatpak-bwrap.h \
+	common/flatpak-bwrap-private.h \
 	common/flatpak-dir.c \
-	common/flatpak-dir.h \
+	common/flatpak-dir-private.h \
 	common/flatpak-run.c \
-	common/flatpak-run.h \
+	common/flatpak-run-private.h \
 	common/flatpak-context.c \
-	common/flatpak-context.h \
+	common/flatpak-context-private.h \
 	common/flatpak-exports.c \
-	common/flatpak-exports.h \
+	common/flatpak-exports-private.h \
+	common/flatpak-transaction-private.h \
+	common/flatpak-transaction.h \
+	common/flatpak-transaction.c \
 	common/flatpak-utils.c \
-	common/flatpak-utils.h \
-	common/flatpak-table-printer.c \
-	common/flatpak-table-printer.h \
+	common/flatpak-utils-private.h \
 	common/flatpak-chain-input-stream.c \
-	common/flatpak-chain-input-stream.h \
+	common/flatpak-chain-input-stream-private.h \
 	common/flatpak-portal-error.c \
 	common/flatpak-portal-error.h \
 	common/flatpak-json.c \
-	common/flatpak-json.h \
+	common/flatpak-json-private.h \
 	common/flatpak-json-oci.c \
-	common/flatpak-json-oci.h \
+	common/flatpak-json-oci-private.h \
 	common/flatpak-oci-registry.c \
-	common/flatpak-oci-registry.h \
+	common/flatpak-oci-registry-private.h \
+	common/flatpak-ref.c \
+	common/flatpak-installed-ref.c \
+	common/flatpak-installed-ref-private.h \
+	common/flatpak-remote-ref.c \
+	common/flatpak-remote-ref-private.h \
+	common/flatpak-bundle-ref.c \
+	common/flatpak-related-ref.c \
+	common/flatpak-related-ref-private.h \
+	common/flatpak-remote-private.h \
+	common/flatpak-remote.c \
+	common/flatpak-error.c \
+	common/flatpak-installation-private.h \
+	common/flatpak-installation.c \
+	common/valgrind-private.h \
 	$(NULL)
 
 libflatpak_common_la_CFLAGS = \
+	-DFLATPAK_COMPILATION \
 	$(AM_CFLAGS) \
 	$(BASE_CFLAGS) \
 	$(HIDDEN_VISIBILITY_CFLAGS) \
@@ -1285,6 +1326,78 @@ libflatpak_common_la_CFLAGS = \
 	$(NULL)
 
 libflatpak_common_la_LIBADD = $(AM_LIBADD) libglnx.la $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(XAUTH_LIBS) $(LIBSECCOMP_LIBS) $(INTERNAL_GPGME_LIBS)
+libflatpak_la_SOURCES = \
+	common/flatpak.c \
+	$(NULL)
+
+libflatpak_la_CFLAGS = \
+	$(HIDDEN_VISIBILITY_CFLAGS) \
+	-DFLATPAK_COMPILATION \
+	-I$(top_srcdir)/common \
+	-I$(top_builddir)/common \
+	$(AM_CFLAGS) \
+	$(BASE_CFLAGS) \
+	$(OSTREE_CFLAGS) \
+	$(SOUP_CFLAGS) \
+	$(JSON_CFLAGS) \
+	$(NULL)
+
+libflatpak_la_LDFLAGS = \
+	$(AM_LDFLAGS) \
+	-version-info $(LT_VERSION_INFO)	\
+	-export-dynamic				\
+	-rpath $(libdir)			\
+	$(NULL)
+
+libflatpak_la_LIBADD = \
+	$(AM_LIBADD) \
+	libflatpak-common.la \
+	$(BASE_LIBS)	\
+	$(OSTREE_LIBS)	\
+	$(SOUP_LIBS)	\
+	$(JSON_LIBS)    \
+	$(NULL)
+
+test_libflatpak_SOURCES = \
+	common/test-lib.c      \
+	$(NULL)
+
+test_libflatpak_CFLAGS = \
+	$(AM_CFLAGS) \
+	$(BASE_CFLAGS) \
+	-I$(top_srcdir)/common \
+	-I$(top_builddir)/common \
+	$(NULL)
+
+test_libflatpak_LDADD = \
+	$(AM_LDADD) \
+	$(BASE_LIBS)	\
+	libflatpak.la \
+	$(NULL)
+
+sources = $(libflatpak_common_la_SOURCES) $(libflatpak_la_SOURCES)
+INTROSPECTION_GIRS = $(am__append_17)
+@HAVE_INTROSPECTION_TRUE@introspected_headers = \
+@HAVE_INTROSPECTION_TRUE@	$(flatpakinclude_HEADERS) \
+@HAVE_INTROSPECTION_TRUE@	$(nodist_flatpakinclude_HEADERS) \
+@HAVE_INTROSPECTION_TRUE@	$(NULL)
+
+@HAVE_INTROSPECTION_TRUE@introspected_sources = $(filter-out %-private.h,$(sources))
+@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_NAMESPACE = Flatpak
+@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_VERSION = 1.0
+@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_LIBS = libflatpak.la
+@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_FILES = $(introspected_headers) $(introspected_sources)
+@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_CFLAGS = $(libflatpak_la_CFLAGS)
+@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_INCLUDES = GObject-2.0 Gio-2.0
+@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_SCANNERFLAGS = \
+@HAVE_INTROSPECTION_TRUE@	--warn-all \
+@HAVE_INTROSPECTION_TRUE@	--c-include='flatpak.h' \
+@HAVE_INTROSPECTION_TRUE@	--pkg-export=flatpak
+
+@HAVE_INTROSPECTION_TRUE@girdir = $(datadir)/gir-1.0
+@HAVE_INTROSPECTION_TRUE@nodist_gir_DATA = $(INTROSPECTION_GIRS)
+@HAVE_INTROSPECTION_TRUE@typelibdir = $(libdir)/girepository-1.0
+@HAVE_INTROSPECTION_TRUE@nodist_typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 introspectiondir = $(datadir)/dbus-1/interfaces
 introspection_DATA = \
 	data/org.freedesktop.Flatpak.xml \
@@ -1296,8 +1409,6 @@ flatpak_SOURCES = \
 	app/flatpak-builtins.h \
 	app/flatpak-builtins-utils.h \
 	app/flatpak-builtins-utils.c \
-	app/flatpak-transaction.h \
-	app/flatpak-transaction.c \
 	app/flatpak-builtins-add-remote.c \
 	app/flatpak-builtins-delete-remote.c \
 	app/flatpak-builtins-list-remotes.c \
@@ -1328,6 +1439,13 @@ flatpak_SOURCES = \
 	app/flatpak-builtins-document-info.c \
 	app/flatpak-builtins-document-list.c \
 	app/flatpak-builtins-search.c \
+	app/flatpak-builtins-repair.c \
+	app/flatpak-table-printer.c \
+	app/flatpak-table-printer.h \
+	app/flatpak-complete.c \
+	app/flatpak-complete.h \
+	app/flatpak-cli-transaction.c \
+	app/flatpak-cli-transaction.h \
 	app/parse-datetime.h \
 	$(NULL)
 
@@ -1339,119 +1457,10 @@ flatpak_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS
 	libglnx.la libflatpak-common.la
 
 flatpak_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
+	-DFLATPAK_COMPILATION \
         -I$(srcdir)/app \
         -DLOCALEDIR=\"$(localedir)\"
 
-flatpakincludedir = $(includedir)/flatpak
-flatpakinclude_HEADERS = \
-	lib/flatpak.h \
-	lib/flatpak-ref.h \
-	lib/flatpak-error.h \
-	lib/flatpak-installed-ref.h \
-	lib/flatpak-remote-ref.h \
-	lib/flatpak-related-ref.h \
-	lib/flatpak-bundle-ref.h \
-	lib/flatpak-installation.h \
-	lib/flatpak-remote.h \
-	lib/flatpak-version-macros.h \
-	$(NULL)
-
-nodist_flatpakinclude_HEADERS = \
-	lib/flatpak-enum-types.h \
-	$(NULL)
-
-libflatpak_la_SOURCES = \
-	lib/flatpak.c \
-	lib/flatpak-ref.c \
-	lib/flatpak-installed-ref.c \
-	lib/flatpak-installed-ref-private.h \
-	lib/flatpak-remote-ref.c \
-	lib/flatpak-remote-ref-private.h \
-	lib/flatpak-bundle-ref.c \
-	lib/flatpak-related-ref.c \
-	lib/flatpak-related-ref-private.h \
-	lib/flatpak-remote-private.h \
-	lib/flatpak-remote.c \
-	lib/flatpak-error.c \
-	lib/flatpak-installation.c \
-	$(NULL)
-
-nodist_libflatpak_la_SOURCES = \
-	lib/flatpak-enum-types.c \
-	$(NULL)
-
-sources = \
-	$(libflatpak_la_SOURCES) \
-	$(nodist_libflatpak_la_SOURCES) \
-	$(NULL)
-
-libflatpak_la_CFLAGS = \
-	$(HIDDEN_VISIBILITY_CFLAGS) \
-	-DFLATPAK_COMPILATION \
-	-I$(top_srcdir)/lib \
-	-I$(top_builddir)/lib \
-	$(AM_CFLAGS) \
-	$(BASE_CFLAGS) \
-	$(OSTREE_CFLAGS) \
-	$(SOUP_CFLAGS) \
-	$(JSON_CFLAGS) \
-	$(NULL)
-
-libflatpak_la_LDFLAGS = \
-	$(AM_LDFLAGS) \
-	-version-info $(LT_VERSION_INFO)	\
-	-export-dynamic				\
-	-rpath $(libdir)			\
-	$(NULL)
-
-libflatpak_la_LIBADD = \
-	$(AM_LIBADD) \
-        libflatpak-common.la \
-	$(BASE_LIBS)	\
-	$(OSTREE_LIBS)	\
-	$(SOUP_LIBS)	\
-	$(JSON_LIBS)    \
-	$(NULL)
-
-test_libflatpak_SOURCES = \
-        lib/test-lib.c      \
-	$(NULL)
-
-test_libflatpak_CFLAGS = \
-	$(AM_CFLAGS) \
-	$(BASE_CFLAGS) \
-	-I$(top_srcdir)/lib \
-	-I$(top_builddir)/lib \
-	$(NULL)
-
-test_libflatpak_LDADD = \
-	$(AM_LDADD) \
-	$(BASE_LIBS)	\
-        libflatpak.la \
-	$(NULL)
-
-INTROSPECTION_GIRS = $(am__append_17)
-@HAVE_INTROSPECTION_TRUE@introspected_headers = \
-@HAVE_INTROSPECTION_TRUE@	$(flatpakinclude_HEADERS) \
-@HAVE_INTROSPECTION_TRUE@	$(nodist_flatpakinclude_HEADERS) \
-@HAVE_INTROSPECTION_TRUE@	$(NULL)
-
-@HAVE_INTROSPECTION_TRUE@introspected_sources = $(filter-out %-private.h,$(sources))
-@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_NAMESPACE = Flatpak
-@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_VERSION = 1.0
-@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_LIBS = libflatpak.la
-@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_FILES = $(introspected_headers) $(introspected_sources)
-@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_CFLAGS = $(libflatpak_la_CFLAGS)
-@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_INCLUDES = GObject-2.0 Gio-2.0
-@HAVE_INTROSPECTION_TRUE@Flatpak_1_0_gir_SCANNERFLAGS = \
-@HAVE_INTROSPECTION_TRUE@        --warn-all \
-@HAVE_INTROSPECTION_TRUE@        --c-include='flatpak.h' \
-@HAVE_INTROSPECTION_TRUE@        --pkg-export=flatpak
-
-@HAVE_INTROSPECTION_TRUE@girdir = $(datadir)/gir-1.0
-@HAVE_INTROSPECTION_TRUE@nodist_gir_DATA = $(INTROSPECTION_GIRS)
-@HAVE_INTROSPECTION_TRUE@typelibdir = $(libdir)/girepository-1.0
-@HAVE_INTROSPECTION_TRUE@nodist_typelib_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 flatpak_session_helper_SOURCES = \
 	session-helper/flatpak-session-helper.c	\
 	$(NULL)
@@ -1469,7 +1478,7 @@ flatpak_portal_SOURCES = \
 	$(NULL)
 
 flatpak_portal_LDADD = $(AM_LDADD) $(BASE_LIBS)
-flatpak_portal_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
+flatpak_portal_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) -DFLATPAK_COMPILATION
 flatpak_portal_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/portal
 @BUILD_SYSTEM_HELPER_TRUE@dbussystemservicedir = $(datadir)/dbus-1/system-services
 @BUILD_SYSTEM_HELPER_TRUE@dbussystemservice_DATA = system-helper/org.freedesktop.Flatpak.SystemHelper.service
@@ -1478,11 +1487,10 @@ flatpak_portal_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/portal
 @BUILD_SYSTEM_HELPER_TRUE@systemdsystemunit_DATA = system-helper/flatpak-system-helper.service
 @BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_SOURCES = \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/flatpak-system-helper.c	\
-@BUILD_SYSTEM_HELPER_TRUE@	lib/flatpak-error.c	\
 @BUILD_SYSTEM_HELPER_TRUE@	$(NULL)
 
 @BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(JSON_LIBS) $(POLKIT_LIBS) libflatpak-common.la
-@BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(POLKIT_CFLAGS)
+@BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(POLKIT_CFLAGS) -DFLATPAK_COMPILATION
 @BUILD_SYSTEM_HELPER_TRUE@polkit_rulesdir = $(datadir)/polkit-1/rules.d
 @BUILD_SYSTEM_HELPER_TRUE@polkit_rules_DATA = \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/org.freedesktop.Flatpak.rules
@@ -1508,7 +1516,7 @@ AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 FLATPAK_TRIGGERSDIR=$$(cd \
 	pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} PATH=$$(cd \
 	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_22) \
 	$(am__append_23)
-testlibrary_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS)
+testlibrary_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) -DFLATPAK_COMPILATION
 testlibrary_LDADD = \
              $(AM_LDADD) \
              $(BASE_LIBS) \
@@ -1541,6 +1549,7 @@ installed_test_keyring2dir = $(installed_testdir)/test-keyring2
 
 dist_test_scripts = \
 	tests/test-basic.sh \
+	tests/test-build-update-repo.sh \
 	tests/test-run.sh \
 	tests/test-run-system.sh \
 	tests/test-run-deltas.sh \
@@ -1575,8 +1584,10 @@ VALGRIND_SUPPRESSIONS_FILES = tests/flatpak.supp tests/glib.supp
 
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_CFLAGS = $(AM_CFLAGS)
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_LDADD = $(SELINUX_LIBS)
-completiondir = $(datadir)/bash-completion/completions
-completion_DATA = completion/flatpak
+bashcompletiondir = $(datadir)/bash-completion/completions
+bashcompletion_DATA = completion/flatpak
+zshcompletiondir = $(datadir)/zsh/site-functions
+zshcompletion_DATA = completion/_flatpak
 profiledir = $(PROFILE_DIR)
 profile_DATA = flatpak.sh
 envdir = $(datadir)/gdm/env.d
@@ -1599,7 +1610,7 @@ all: $(BUILT_SOURCES) config.h
 .SUFFIXES: .c .lo .log .o .obj .test .test$(EXEEXT) .trs
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/lib/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/dbus-proxy/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/dbus-proxy/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1621,7 +1632,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe);; \
 	esac;
-$(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/lib/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/dbus-proxy/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__empty):
+$(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/dbus-proxy/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -1648,7 +1659,7 @@ distclean-hdr:
 	-rm -f config.h stamp-h1
 flatpak.pc: $(top_builddir)/config.status $(srcdir)/flatpak.pc.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
-lib/flatpak-version-macros.h: $(top_builddir)/config.status $(top_srcdir)/lib/flatpak-version-macros.h.in
+common/flatpak-version-macros.h: $(top_builddir)/config.status $(top_srcdir)/common/flatpak-version-macros.h.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 
 clean-checkLTLIBRARIES:
@@ -1758,10 +1769,10 @@ common/libflatpak_common_la-flatpak-context.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-exports.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-transaction.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-utils.lo: common/$(am__dirstamp) \
 	common/$(DEPDIR)/$(am__dirstamp)
-common/libflatpak_common_la-flatpak-table-printer.lo:  \
-	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-chain-input-stream.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-portal-error.lo:  \
@@ -1772,41 +1783,35 @@ common/libflatpak_common_la-flatpak-json-oci.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-oci-registry.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
-common/libflatpak_common_la-flatpak-dbus.lo: common/$(am__dirstamp) \
+common/libflatpak_common_la-flatpak-ref.lo: common/$(am__dirstamp) \
 	common/$(DEPDIR)/$(am__dirstamp)
-common/libflatpak_common_la-flatpak-document-dbus.lo:  \
+common/libflatpak_common_la-flatpak-installed-ref.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
-common/libflatpak_common_la-flatpak-systemd-dbus.lo:  \
+common/libflatpak_common_la-flatpak-remote-ref.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-bundle-ref.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-related-ref.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-remote.lo: common/$(am__dirstamp) \
+	common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-error.lo: common/$(am__dirstamp) \
+	common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-installation.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-dbus-generated.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-document-dbus-generated.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-enum-types.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 
 libflatpak-common.la: $(libflatpak_common_la_OBJECTS) $(libflatpak_common_la_DEPENDENCIES) $(EXTRA_libflatpak_common_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libflatpak_common_la_LINK)  $(libflatpak_common_la_OBJECTS) $(libflatpak_common_la_LIBADD) $(LIBS)
-lib/$(am__dirstamp):
-	@$(MKDIR_P) lib
-	@: > lib/$(am__dirstamp)
-lib/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) lib/$(DEPDIR)
-	@: > lib/$(DEPDIR)/$(am__dirstamp)
-lib/libflatpak_la-flatpak.lo: lib/$(am__dirstamp) \
-	lib/$(DEPDIR)/$(am__dirstamp)
-lib/libflatpak_la-flatpak-ref.lo: lib/$(am__dirstamp) \
-	lib/$(DEPDIR)/$(am__dirstamp)
-lib/libflatpak_la-flatpak-installed-ref.lo: lib/$(am__dirstamp) \
-	lib/$(DEPDIR)/$(am__dirstamp)
-lib/libflatpak_la-flatpak-remote-ref.lo: lib/$(am__dirstamp) \
-	lib/$(DEPDIR)/$(am__dirstamp)
-lib/libflatpak_la-flatpak-bundle-ref.lo: lib/$(am__dirstamp) \
-	lib/$(DEPDIR)/$(am__dirstamp)
-lib/libflatpak_la-flatpak-related-ref.lo: lib/$(am__dirstamp) \
-	lib/$(DEPDIR)/$(am__dirstamp)
-lib/libflatpak_la-flatpak-remote.lo: lib/$(am__dirstamp) \
-	lib/$(DEPDIR)/$(am__dirstamp)
-lib/libflatpak_la-flatpak-error.lo: lib/$(am__dirstamp) \
-	lib/$(DEPDIR)/$(am__dirstamp)
-lib/libflatpak_la-flatpak-installation.lo: lib/$(am__dirstamp) \
-	lib/$(DEPDIR)/$(am__dirstamp)
-lib/libflatpak_la-flatpak-enum-types.lo: lib/$(am__dirstamp) \
-	lib/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_la-flatpak.lo: common/$(am__dirstamp) \
+	common/$(DEPDIR)/$(am__dirstamp)
 
 libflatpak.la: $(libflatpak_la_OBJECTS) $(libflatpak_la_DEPENDENCIES) $(EXTRA_libflatpak_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libflatpak_la_LINK) -rpath $(libdir) $(libflatpak_la_OBJECTS) $(libflatpak_la_LIBADD) $(LIBS)
@@ -2061,8 +2066,6 @@ app/flatpak-flatpak-main.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-utils.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
-app/flatpak-flatpak-transaction.$(OBJEXT): app/$(am__dirstamp) \
-	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-add-remote.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-delete-remote.$(OBJEXT):  \
@@ -2122,6 +2125,14 @@ app/flatpak-flatpak-builtins-document-info.$(OBJEXT):  \
 app/flatpak-flatpak-builtins-document-list.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-search.$(OBJEXT): app/$(am__dirstamp) \
+	app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-repair.$(OBJEXT): app/$(am__dirstamp) \
+	app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-table-printer.$(OBJEXT): app/$(am__dirstamp) \
+	app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-complete.$(OBJEXT): app/$(am__dirstamp) \
+	app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-cli-transaction.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-parse-datetime.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
@@ -2206,14 +2217,12 @@ system-helper/$(DEPDIR)/$(am__dirstamp):
 system-helper/flatpak_system_helper-flatpak-system-helper.$(OBJEXT):  \
 	system-helper/$(am__dirstamp) \
 	system-helper/$(DEPDIR)/$(am__dirstamp)
-lib/flatpak_system_helper-flatpak-error.$(OBJEXT):  \
-	lib/$(am__dirstamp) lib/$(DEPDIR)/$(am__dirstamp)
 
 flatpak-system-helper$(EXEEXT): $(flatpak_system_helper_OBJECTS) $(flatpak_system_helper_DEPENDENCIES) $(EXTRA_flatpak_system_helper_DEPENDENCIES) 
 	@rm -f flatpak-system-helper$(EXEEXT)
 	$(AM_V_CCLD)$(flatpak_system_helper_LINK) $(flatpak_system_helper_OBJECTS) $(flatpak_system_helper_LDADD) $(LIBS)
-lib/test_libflatpak-test-lib.$(OBJEXT): lib/$(am__dirstamp) \
-	lib/$(DEPDIR)/$(am__dirstamp)
+common/test_libflatpak-test-lib.$(OBJEXT): common/$(am__dirstamp) \
+	common/$(DEPDIR)/$(am__dirstamp)
 
 test-libflatpak$(EXEEXT): $(test_libflatpak_OBJECTS) $(test_libflatpak_DEPENDENCIES) $(EXTRA_test_libflatpak_DEPENDENCIES) 
 	@rm -f test-libflatpak$(EXEEXT)
@@ -2384,8 +2393,6 @@ mostlyclean-compile:
 	-rm -f common/*.$(OBJEXT)
 	-rm -f common/*.lo
 	-rm -f dbus-proxy/*.$(OBJEXT)
-	-rm -f lib/*.$(OBJEXT)
-	-rm -f lib/*.lo
 	-rm -f libglnx/*.$(OBJEXT)
 	-rm -f libglnx/*.lo
 	-rm -f libglnx/tests/*.$(OBJEXT)
@@ -2421,6 +2428,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-ls-remote.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-make-current.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-override.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-repair.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-repo-update.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-repo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-run.Po@am__quote@
@@ -2428,43 +2436,44 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-uninstall.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-update.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-cli-transaction.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-complete.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-transaction.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-table-printer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-parse-datetime.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-bind-mount.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-bubblewrap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-network.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/flatpak_portal-flatpak-portal-error.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-bundle-ref.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-bwrap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-chain-input-stream.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-context.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-dbus.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-dbus-generated.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-dir.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-document-dbus.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-document-dbus-generated.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-enum-types.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-error.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-exports.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-installation.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-installed-ref.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-json-oci.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-json.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-remote-ref.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-remote.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-run.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-systemd-dbus.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-table-printer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-systemd-dbus-generated.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-transaction.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-utils.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_la-flatpak.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/test_libflatpak-test-lib.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/flatpak_system_helper-flatpak-error.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libflatpak_la-flatpak-bundle-ref.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libflatpak_la-flatpak-enum-types.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libflatpak_la-flatpak-error.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libflatpak_la-flatpak-installation.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libflatpak_la-flatpak-installed-ref.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libflatpak_la-flatpak-ref.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libflatpak_la-flatpak-related-ref.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libflatpak_la-flatpak-remote-ref.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libflatpak_la-flatpak-remote.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/libflatpak_la-flatpak.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@lib/$(DEPDIR)/test_libflatpak-test-lib.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo@am__quote@
@@ -2545,19 +2554,19 @@ common/libflatpak_common_la-flatpak-exports.lo: common/flatpak-exports.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-exports.lo `test -f 'common/flatpak-exports.c' || echo '$(srcdir)/'`common/flatpak-exports.c
 
+common/libflatpak_common_la-flatpak-transaction.lo: common/flatpak-transaction.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-transaction.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-transaction.Tpo -c -o common/libflatpak_common_la-flatpak-transaction.lo `test -f 'common/flatpak-transaction.c' || echo '$(srcdir)/'`common/flatpak-transaction.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-transaction.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-transaction.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-transaction.c' object='common/libflatpak_common_la-flatpak-transaction.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-transaction.lo `test -f 'common/flatpak-transaction.c' || echo '$(srcdir)/'`common/flatpak-transaction.c
+
 common/libflatpak_common_la-flatpak-utils.lo: common/flatpak-utils.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-utils.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-utils.Tpo -c -o common/libflatpak_common_la-flatpak-utils.lo `test -f 'common/flatpak-utils.c' || echo '$(srcdir)/'`common/flatpak-utils.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-utils.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-utils.Plo
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-utils.c' object='common/libflatpak_common_la-flatpak-utils.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-utils.lo `test -f 'common/flatpak-utils.c' || echo '$(srcdir)/'`common/flatpak-utils.c
-
-common/libflatpak_common_la-flatpak-table-printer.lo: common/flatpak-table-printer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-table-printer.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-table-printer.Tpo -c -o common/libflatpak_common_la-flatpak-table-printer.lo `test -f 'common/flatpak-table-printer.c' || echo '$(srcdir)/'`common/flatpak-table-printer.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-table-printer.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-table-printer.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-table-printer.c' object='common/libflatpak_common_la-flatpak-table-printer.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-table-printer.lo `test -f 'common/flatpak-table-printer.c' || echo '$(srcdir)/'`common/flatpak-table-printer.c
 
 common/libflatpak_common_la-flatpak-chain-input-stream.lo: common/flatpak-chain-input-stream.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-chain-input-stream.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-chain-input-stream.Tpo -c -o common/libflatpak_common_la-flatpak-chain-input-stream.lo `test -f 'common/flatpak-chain-input-stream.c' || echo '$(srcdir)/'`common/flatpak-chain-input-stream.c
@@ -2594,96 +2603,96 @@ common/libflatpak_common_la-flatpak-oci-registry.lo: common/flatpak-oci-registry
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-oci-registry.lo `test -f 'common/flatpak-oci-registry.c' || echo '$(srcdir)/'`common/flatpak-oci-registry.c
 
-common/libflatpak_common_la-flatpak-dbus.lo: common/flatpak-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-dbus.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-dbus.Tpo -c -o common/libflatpak_common_la-flatpak-dbus.lo `test -f 'common/flatpak-dbus.c' || echo '$(srcdir)/'`common/flatpak-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-dbus.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-dbus.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-dbus.c' object='common/libflatpak_common_la-flatpak-dbus.lo' libtool=yes @AMDEPBACKSLASH@
+common/libflatpak_common_la-flatpak-ref.lo: common/flatpak-ref.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-ref.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Tpo -c -o common/libflatpak_common_la-flatpak-ref.lo `test -f 'common/flatpak-ref.c' || echo '$(srcdir)/'`common/flatpak-ref.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-ref.c' object='common/libflatpak_common_la-flatpak-ref.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-dbus.lo `test -f 'common/flatpak-dbus.c' || echo '$(srcdir)/'`common/flatpak-dbus.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-ref.lo `test -f 'common/flatpak-ref.c' || echo '$(srcdir)/'`common/flatpak-ref.c
 
-common/libflatpak_common_la-flatpak-document-dbus.lo: common/flatpak-document-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-document-dbus.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-document-dbus.Tpo -c -o common/libflatpak_common_la-flatpak-document-dbus.lo `test -f 'common/flatpak-document-dbus.c' || echo '$(srcdir)/'`common/flatpak-document-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-document-dbus.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-document-dbus.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-document-dbus.c' object='common/libflatpak_common_la-flatpak-document-dbus.lo' libtool=yes @AMDEPBACKSLASH@
+common/libflatpak_common_la-flatpak-installed-ref.lo: common/flatpak-installed-ref.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-installed-ref.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-installed-ref.Tpo -c -o common/libflatpak_common_la-flatpak-installed-ref.lo `test -f 'common/flatpak-installed-ref.c' || echo '$(srcdir)/'`common/flatpak-installed-ref.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-installed-ref.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-installed-ref.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-installed-ref.c' object='common/libflatpak_common_la-flatpak-installed-ref.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-document-dbus.lo `test -f 'common/flatpak-document-dbus.c' || echo '$(srcdir)/'`common/flatpak-document-dbus.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-installed-ref.lo `test -f 'common/flatpak-installed-ref.c' || echo '$(srcdir)/'`common/flatpak-installed-ref.c
 
-common/libflatpak_common_la-flatpak-systemd-dbus.lo: common/flatpak-systemd-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-systemd-dbus.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-systemd-dbus.Tpo -c -o common/libflatpak_common_la-flatpak-systemd-dbus.lo `test -f 'common/flatpak-systemd-dbus.c' || echo '$(srcdir)/'`common/flatpak-systemd-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-systemd-dbus.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-systemd-dbus.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-systemd-dbus.c' object='common/libflatpak_common_la-flatpak-systemd-dbus.lo' libtool=yes @AMDEPBACKSLASH@
+common/libflatpak_common_la-flatpak-remote-ref.lo: common/flatpak-remote-ref.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-remote-ref.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-remote-ref.Tpo -c -o common/libflatpak_common_la-flatpak-remote-ref.lo `test -f 'common/flatpak-remote-ref.c' || echo '$(srcdir)/'`common/flatpak-remote-ref.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-remote-ref.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-remote-ref.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-remote-ref.c' object='common/libflatpak_common_la-flatpak-remote-ref.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-systemd-dbus.lo `test -f 'common/flatpak-systemd-dbus.c' || echo '$(srcdir)/'`common/flatpak-systemd-dbus.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-remote-ref.lo `test -f 'common/flatpak-remote-ref.c' || echo '$(srcdir)/'`common/flatpak-remote-ref.c
 
-lib/libflatpak_la-flatpak.lo: lib/flatpak.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak.Tpo -c -o lib/libflatpak_la-flatpak.lo `test -f 'lib/flatpak.c' || echo '$(srcdir)/'`lib/flatpak.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libflatpak_la-flatpak.Tpo lib/$(DEPDIR)/libflatpak_la-flatpak.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak.c' object='lib/libflatpak_la-flatpak.lo' libtool=yes @AMDEPBACKSLASH@
+common/libflatpak_common_la-flatpak-bundle-ref.lo: common/flatpak-bundle-ref.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-bundle-ref.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-bundle-ref.Tpo -c -o common/libflatpak_common_la-flatpak-bundle-ref.lo `test -f 'common/flatpak-bundle-ref.c' || echo '$(srcdir)/'`common/flatpak-bundle-ref.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-bundle-ref.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-bundle-ref.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-bundle-ref.c' object='common/libflatpak_common_la-flatpak-bundle-ref.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak.lo `test -f 'lib/flatpak.c' || echo '$(srcdir)/'`lib/flatpak.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-bundle-ref.lo `test -f 'common/flatpak-bundle-ref.c' || echo '$(srcdir)/'`common/flatpak-bundle-ref.c
 
-lib/libflatpak_la-flatpak-ref.lo: lib/flatpak-ref.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak-ref.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak-ref.Tpo -c -o lib/libflatpak_la-flatpak-ref.lo `test -f 'lib/flatpak-ref.c' || echo '$(srcdir)/'`lib/flatpak-ref.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libflatpak_la-flatpak-ref.Tpo lib/$(DEPDIR)/libflatpak_la-flatpak-ref.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-ref.c' object='lib/libflatpak_la-flatpak-ref.lo' libtool=yes @AMDEPBACKSLASH@
+common/libflatpak_common_la-flatpak-related-ref.lo: common/flatpak-related-ref.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-related-ref.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Tpo -c -o common/libflatpak_common_la-flatpak-related-ref.lo `test -f 'common/flatpak-related-ref.c' || echo '$(srcdir)/'`common/flatpak-related-ref.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-related-ref.c' object='common/libflatpak_common_la-flatpak-related-ref.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak-ref.lo `test -f 'lib/flatpak-ref.c' || echo '$(srcdir)/'`lib/flatpak-ref.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-related-ref.lo `test -f 'common/flatpak-related-ref.c' || echo '$(srcdir)/'`common/flatpak-related-ref.c
 
-lib/libflatpak_la-flatpak-installed-ref.lo: lib/flatpak-installed-ref.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak-installed-ref.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak-installed-ref.Tpo -c -o lib/libflatpak_la-flatpak-installed-ref.lo `test -f 'lib/flatpak-installed-ref.c' || echo '$(srcdir)/'`lib/flatpak-installed-ref.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libflatpak_la-flatpak-installed-ref.Tpo lib/$(DEPDIR)/libflatpak_la-flatpak-installed-ref.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-installed-ref.c' object='lib/libflatpak_la-flatpak-installed-ref.lo' libtool=yes @AMDEPBACKSLASH@
+common/libflatpak_common_la-flatpak-remote.lo: common/flatpak-remote.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-remote.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-remote.Tpo -c -o common/libflatpak_common_la-flatpak-remote.lo `test -f 'common/flatpak-remote.c' || echo '$(srcdir)/'`common/flatpak-remote.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-remote.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-remote.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-remote.c' object='common/libflatpak_common_la-flatpak-remote.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak-installed-ref.lo `test -f 'lib/flatpak-installed-ref.c' || echo '$(srcdir)/'`lib/flatpak-installed-ref.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-remote.lo `test -f 'common/flatpak-remote.c' || echo '$(srcdir)/'`common/flatpak-remote.c
 
-lib/libflatpak_la-flatpak-remote-ref.lo: lib/flatpak-remote-ref.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak-remote-ref.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak-remote-ref.Tpo -c -o lib/libflatpak_la-flatpak-remote-ref.lo `test -f 'lib/flatpak-remote-ref.c' || echo '$(srcdir)/'`lib/flatpak-remote-ref.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libflatpak_la-flatpak-remote-ref.Tpo lib/$(DEPDIR)/libflatpak_la-flatpak-remote-ref.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-remote-ref.c' object='lib/libflatpak_la-flatpak-remote-ref.lo' libtool=yes @AMDEPBACKSLASH@
+common/libflatpak_common_la-flatpak-error.lo: common/flatpak-error.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-error.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-error.Tpo -c -o common/libflatpak_common_la-flatpak-error.lo `test -f 'common/flatpak-error.c' || echo '$(srcdir)/'`common/flatpak-error.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-error.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-error.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-error.c' object='common/libflatpak_common_la-flatpak-error.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak-remote-ref.lo `test -f 'lib/flatpak-remote-ref.c' || echo '$(srcdir)/'`lib/flatpak-remote-ref.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-error.lo `test -f 'common/flatpak-error.c' || echo '$(srcdir)/'`common/flatpak-error.c
 
-lib/libflatpak_la-flatpak-bundle-ref.lo: lib/flatpak-bundle-ref.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak-bundle-ref.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak-bundle-ref.Tpo -c -o lib/libflatpak_la-flatpak-bundle-ref.lo `test -f 'lib/flatpak-bundle-ref.c' || echo '$(srcdir)/'`lib/flatpak-bundle-ref.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libflatpak_la-flatpak-bundle-ref.Tpo lib/$(DEPDIR)/libflatpak_la-flatpak-bundle-ref.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-bundle-ref.c' object='lib/libflatpak_la-flatpak-bundle-ref.lo' libtool=yes @AMDEPBACKSLASH@
+common/libflatpak_common_la-flatpak-installation.lo: common/flatpak-installation.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-installation.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-installation.Tpo -c -o common/libflatpak_common_la-flatpak-installation.lo `test -f 'common/flatpak-installation.c' || echo '$(srcdir)/'`common/flatpak-installation.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-installation.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-installation.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-installation.c' object='common/libflatpak_common_la-flatpak-installation.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak-bundle-ref.lo `test -f 'lib/flatpak-bundle-ref.c' || echo '$(srcdir)/'`lib/flatpak-bundle-ref.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-installation.lo `test -f 'common/flatpak-installation.c' || echo '$(srcdir)/'`common/flatpak-installation.c
 
-lib/libflatpak_la-flatpak-related-ref.lo: lib/flatpak-related-ref.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak-related-ref.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak-related-ref.Tpo -c -o lib/libflatpak_la-flatpak-related-ref.lo `test -f 'lib/flatpak-related-ref.c' || echo '$(srcdir)/'`lib/flatpak-related-ref.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libflatpak_la-flatpak-related-ref.Tpo lib/$(DEPDIR)/libflatpak_la-flatpak-related-ref.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-related-ref.c' object='lib/libflatpak_la-flatpak-related-ref.lo' libtool=yes @AMDEPBACKSLASH@
+common/libflatpak_common_la-flatpak-dbus-generated.lo: common/flatpak-dbus-generated.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-dbus-generated.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-dbus-generated.Tpo -c -o common/libflatpak_common_la-flatpak-dbus-generated.lo `test -f 'common/flatpak-dbus-generated.c' || echo '$(srcdir)/'`common/flatpak-dbus-generated.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-dbus-generated.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-dbus-generated.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-dbus-generated.c' object='common/libflatpak_common_la-flatpak-dbus-generated.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak-related-ref.lo `test -f 'lib/flatpak-related-ref.c' || echo '$(srcdir)/'`lib/flatpak-related-ref.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-dbus-generated.lo `test -f 'common/flatpak-dbus-generated.c' || echo '$(srcdir)/'`common/flatpak-dbus-generated.c
 
-lib/libflatpak_la-flatpak-remote.lo: lib/flatpak-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak-remote.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak-remote.Tpo -c -o lib/libflatpak_la-flatpak-remote.lo `test -f 'lib/flatpak-remote.c' || echo '$(srcdir)/'`lib/flatpak-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libflatpak_la-flatpak-remote.Tpo lib/$(DEPDIR)/libflatpak_la-flatpak-remote.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-remote.c' object='lib/libflatpak_la-flatpak-remote.lo' libtool=yes @AMDEPBACKSLASH@
+common/libflatpak_common_la-flatpak-document-dbus-generated.lo: common/flatpak-document-dbus-generated.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-document-dbus-generated.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-document-dbus-generated.Tpo -c -o common/libflatpak_common_la-flatpak-document-dbus-generated.lo `test -f 'common/flatpak-document-dbus-generated.c' || echo '$(srcdir)/'`common/flatpak-document-dbus-generated.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-document-dbus-generated.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-document-dbus-generated.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-document-dbus-generated.c' object='common/libflatpak_common_la-flatpak-document-dbus-generated.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak-remote.lo `test -f 'lib/flatpak-remote.c' || echo '$(srcdir)/'`lib/flatpak-remote.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-document-dbus-generated.lo `test -f 'common/flatpak-document-dbus-generated.c' || echo '$(srcdir)/'`common/flatpak-document-dbus-generated.c
 
-lib/libflatpak_la-flatpak-error.lo: lib/flatpak-error.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak-error.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak-error.Tpo -c -o lib/libflatpak_la-flatpak-error.lo `test -f 'lib/flatpak-error.c' || echo '$(srcdir)/'`lib/flatpak-error.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libflatpak_la-flatpak-error.Tpo lib/$(DEPDIR)/libflatpak_la-flatpak-error.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-error.c' object='lib/libflatpak_la-flatpak-error.lo' libtool=yes @AMDEPBACKSLASH@
+common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo: common/flatpak-systemd-dbus-generated.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-systemd-dbus-generated.Tpo -c -o common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo `test -f 'common/flatpak-systemd-dbus-generated.c' || echo '$(srcdir)/'`common/flatpak-systemd-dbus-generated.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-systemd-dbus-generated.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-systemd-dbus-generated.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-systemd-dbus-generated.c' object='common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak-error.lo `test -f 'lib/flatpak-error.c' || echo '$(srcdir)/'`lib/flatpak-error.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo `test -f 'common/flatpak-systemd-dbus-generated.c' || echo '$(srcdir)/'`common/flatpak-systemd-dbus-generated.c
 
-lib/libflatpak_la-flatpak-installation.lo: lib/flatpak-installation.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak-installation.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak-installation.Tpo -c -o lib/libflatpak_la-flatpak-installation.lo `test -f 'lib/flatpak-installation.c' || echo '$(srcdir)/'`lib/flatpak-installation.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libflatpak_la-flatpak-installation.Tpo lib/$(DEPDIR)/libflatpak_la-flatpak-installation.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-installation.c' object='lib/libflatpak_la-flatpak-installation.lo' libtool=yes @AMDEPBACKSLASH@
+common/libflatpak_common_la-flatpak-enum-types.lo: common/flatpak-enum-types.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-enum-types.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-enum-types.Tpo -c -o common/libflatpak_common_la-flatpak-enum-types.lo `test -f 'common/flatpak-enum-types.c' || echo '$(srcdir)/'`common/flatpak-enum-types.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-enum-types.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-enum-types.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-enum-types.c' object='common/libflatpak_common_la-flatpak-enum-types.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak-installation.lo `test -f 'lib/flatpak-installation.c' || echo '$(srcdir)/'`lib/flatpak-installation.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-enum-types.lo `test -f 'common/flatpak-enum-types.c' || echo '$(srcdir)/'`common/flatpak-enum-types.c
 
-lib/libflatpak_la-flatpak-enum-types.lo: lib/flatpak-enum-types.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT lib/libflatpak_la-flatpak-enum-types.lo -MD -MP -MF lib/$(DEPDIR)/libflatpak_la-flatpak-enum-types.Tpo -c -o lib/libflatpak_la-flatpak-enum-types.lo `test -f 'lib/flatpak-enum-types.c' || echo '$(srcdir)/'`lib/flatpak-enum-types.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/libflatpak_la-flatpak-enum-types.Tpo lib/$(DEPDIR)/libflatpak_la-flatpak-enum-types.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-enum-types.c' object='lib/libflatpak_la-flatpak-enum-types.lo' libtool=yes @AMDEPBACKSLASH@
+common/libflatpak_la-flatpak.lo: common/flatpak.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_la-flatpak.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_la-flatpak.Tpo -c -o common/libflatpak_la-flatpak.lo `test -f 'common/flatpak.c' || echo '$(srcdir)/'`common/flatpak.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_la-flatpak.Tpo common/$(DEPDIR)/libflatpak_la-flatpak.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak.c' object='common/libflatpak_la-flatpak.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o lib/libflatpak_la-flatpak-enum-types.lo `test -f 'lib/flatpak-enum-types.c' || echo '$(srcdir)/'`lib/flatpak-enum-types.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_la-flatpak.lo `test -f 'common/flatpak.c' || echo '$(srcdir)/'`common/flatpak.c
 
 libglnx/libglnx_la-glnx-backports.lo: libglnx/glnx-backports.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT libglnx/libglnx_la-glnx-backports.lo -MD -MP -MF libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Tpo -c -o libglnx/libglnx_la-glnx-backports.lo `test -f 'libglnx/glnx-backports.c' || echo '$(srcdir)/'`libglnx/glnx-backports.c
@@ -2775,20 +2784,6 @@ app/flatpak-flatpak-builtins-utils.obj: app/flatpak-builtins-utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-utils.c' object='app/flatpak-flatpak-builtins-utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-utils.obj `if test -f 'app/flatpak-builtins-utils.c'; then $(CYGPATH_W) 'app/flatpak-builtins-utils.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-utils.c'; fi`
-
-app/flatpak-flatpak-transaction.o: app/flatpak-transaction.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-transaction.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-transaction.Tpo -c -o app/flatpak-flatpak-transaction.o `test -f 'app/flatpak-transaction.c' || echo '$(srcdir)/'`app/flatpak-transaction.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-transaction.Tpo app/$(DEPDIR)/flatpak-flatpak-transaction.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-transaction.c' object='app/flatpak-flatpak-transaction.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-transaction.o `test -f 'app/flatpak-transaction.c' || echo '$(srcdir)/'`app/flatpak-transaction.c
-
-app/flatpak-flatpak-transaction.obj: app/flatpak-transaction.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-transaction.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-transaction.Tpo -c -o app/flatpak-flatpak-transaction.obj `if test -f 'app/flatpak-transaction.c'; then $(CYGPATH_W) 'app/flatpak-transaction.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-transaction.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-transaction.Tpo app/$(DEPDIR)/flatpak-flatpak-transaction.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-transaction.c' object='app/flatpak-flatpak-transaction.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-transaction.obj `if test -f 'app/flatpak-transaction.c'; then $(CYGPATH_W) 'app/flatpak-transaction.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-transaction.c'; fi`
 
 app/flatpak-flatpak-builtins-add-remote.o: app/flatpak-builtins-add-remote.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-add-remote.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-add-remote.Tpo -c -o app/flatpak-flatpak-builtins-add-remote.o `test -f 'app/flatpak-builtins-add-remote.c' || echo '$(srcdir)/'`app/flatpak-builtins-add-remote.c
@@ -3210,6 +3205,62 @@ app/flatpak-flatpak-builtins-search.obj: app/flatpak-builtins-search.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-search.obj `if test -f 'app/flatpak-builtins-search.c'; then $(CYGPATH_W) 'app/flatpak-builtins-search.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-search.c'; fi`
 
+app/flatpak-flatpak-builtins-repair.o: app/flatpak-builtins-repair.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-repair.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-repair.Tpo -c -o app/flatpak-flatpak-builtins-repair.o `test -f 'app/flatpak-builtins-repair.c' || echo '$(srcdir)/'`app/flatpak-builtins-repair.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-repair.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-repair.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-repair.c' object='app/flatpak-flatpak-builtins-repair.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-repair.o `test -f 'app/flatpak-builtins-repair.c' || echo '$(srcdir)/'`app/flatpak-builtins-repair.c
+
+app/flatpak-flatpak-builtins-repair.obj: app/flatpak-builtins-repair.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-repair.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-repair.Tpo -c -o app/flatpak-flatpak-builtins-repair.obj `if test -f 'app/flatpak-builtins-repair.c'; then $(CYGPATH_W) 'app/flatpak-builtins-repair.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-repair.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-repair.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-repair.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-repair.c' object='app/flatpak-flatpak-builtins-repair.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-repair.obj `if test -f 'app/flatpak-builtins-repair.c'; then $(CYGPATH_W) 'app/flatpak-builtins-repair.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-repair.c'; fi`
+
+app/flatpak-flatpak-table-printer.o: app/flatpak-table-printer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-table-printer.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-table-printer.Tpo -c -o app/flatpak-flatpak-table-printer.o `test -f 'app/flatpak-table-printer.c' || echo '$(srcdir)/'`app/flatpak-table-printer.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-table-printer.Tpo app/$(DEPDIR)/flatpak-flatpak-table-printer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-table-printer.c' object='app/flatpak-flatpak-table-printer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-table-printer.o `test -f 'app/flatpak-table-printer.c' || echo '$(srcdir)/'`app/flatpak-table-printer.c
+
+app/flatpak-flatpak-table-printer.obj: app/flatpak-table-printer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-table-printer.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-table-printer.Tpo -c -o app/flatpak-flatpak-table-printer.obj `if test -f 'app/flatpak-table-printer.c'; then $(CYGPATH_W) 'app/flatpak-table-printer.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-table-printer.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-table-printer.Tpo app/$(DEPDIR)/flatpak-flatpak-table-printer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-table-printer.c' object='app/flatpak-flatpak-table-printer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-table-printer.obj `if test -f 'app/flatpak-table-printer.c'; then $(CYGPATH_W) 'app/flatpak-table-printer.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-table-printer.c'; fi`
+
+app/flatpak-flatpak-complete.o: app/flatpak-complete.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-complete.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-complete.Tpo -c -o app/flatpak-flatpak-complete.o `test -f 'app/flatpak-complete.c' || echo '$(srcdir)/'`app/flatpak-complete.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-complete.Tpo app/$(DEPDIR)/flatpak-flatpak-complete.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-complete.c' object='app/flatpak-flatpak-complete.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-complete.o `test -f 'app/flatpak-complete.c' || echo '$(srcdir)/'`app/flatpak-complete.c
+
+app/flatpak-flatpak-complete.obj: app/flatpak-complete.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-complete.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-complete.Tpo -c -o app/flatpak-flatpak-complete.obj `if test -f 'app/flatpak-complete.c'; then $(CYGPATH_W) 'app/flatpak-complete.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-complete.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-complete.Tpo app/$(DEPDIR)/flatpak-flatpak-complete.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-complete.c' object='app/flatpak-flatpak-complete.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-complete.obj `if test -f 'app/flatpak-complete.c'; then $(CYGPATH_W) 'app/flatpak-complete.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-complete.c'; fi`
+
+app/flatpak-flatpak-cli-transaction.o: app/flatpak-cli-transaction.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-cli-transaction.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-cli-transaction.Tpo -c -o app/flatpak-flatpak-cli-transaction.o `test -f 'app/flatpak-cli-transaction.c' || echo '$(srcdir)/'`app/flatpak-cli-transaction.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-cli-transaction.Tpo app/$(DEPDIR)/flatpak-flatpak-cli-transaction.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-cli-transaction.c' object='app/flatpak-flatpak-cli-transaction.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-cli-transaction.o `test -f 'app/flatpak-cli-transaction.c' || echo '$(srcdir)/'`app/flatpak-cli-transaction.c
+
+app/flatpak-flatpak-cli-transaction.obj: app/flatpak-cli-transaction.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-cli-transaction.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-cli-transaction.Tpo -c -o app/flatpak-flatpak-cli-transaction.obj `if test -f 'app/flatpak-cli-transaction.c'; then $(CYGPATH_W) 'app/flatpak-cli-transaction.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-cli-transaction.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-cli-transaction.Tpo app/$(DEPDIR)/flatpak-flatpak-cli-transaction.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-cli-transaction.c' object='app/flatpak-flatpak-cli-transaction.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-cli-transaction.obj `if test -f 'app/flatpak-cli-transaction.c'; then $(CYGPATH_W) 'app/flatpak-cli-transaction.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-cli-transaction.c'; fi`
+
 app/flatpak-parse-datetime.o: app/parse-datetime.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-parse-datetime.o -MD -MP -MF app/$(DEPDIR)/flatpak-parse-datetime.Tpo -c -o app/flatpak-parse-datetime.o `test -f 'app/parse-datetime.c' || echo '$(srcdir)/'`app/parse-datetime.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-parse-datetime.Tpo app/$(DEPDIR)/flatpak-parse-datetime.Po
@@ -3392,33 +3443,19 @@ system-helper/flatpak_system_helper-flatpak-system-helper.obj: system-helper/fla
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_system_helper_CFLAGS) $(CFLAGS) -c -o system-helper/flatpak_system_helper-flatpak-system-helper.obj `if test -f 'system-helper/flatpak-system-helper.c'; then $(CYGPATH_W) 'system-helper/flatpak-system-helper.c'; else $(CYGPATH_W) '$(srcdir)/system-helper/flatpak-system-helper.c'; fi`
 
-lib/flatpak_system_helper-flatpak-error.o: lib/flatpak-error.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_system_helper_CFLAGS) $(CFLAGS) -MT lib/flatpak_system_helper-flatpak-error.o -MD -MP -MF lib/$(DEPDIR)/flatpak_system_helper-flatpak-error.Tpo -c -o lib/flatpak_system_helper-flatpak-error.o `test -f 'lib/flatpak-error.c' || echo '$(srcdir)/'`lib/flatpak-error.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/flatpak_system_helper-flatpak-error.Tpo lib/$(DEPDIR)/flatpak_system_helper-flatpak-error.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-error.c' object='lib/flatpak_system_helper-flatpak-error.o' libtool=no @AMDEPBACKSLASH@
+common/test_libflatpak-test-lib.o: common/test-lib.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libflatpak_CFLAGS) $(CFLAGS) -MT common/test_libflatpak-test-lib.o -MD -MP -MF common/$(DEPDIR)/test_libflatpak-test-lib.Tpo -c -o common/test_libflatpak-test-lib.o `test -f 'common/test-lib.c' || echo '$(srcdir)/'`common/test-lib.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/test_libflatpak-test-lib.Tpo common/$(DEPDIR)/test_libflatpak-test-lib.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/test-lib.c' object='common/test_libflatpak-test-lib.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_system_helper_CFLAGS) $(CFLAGS) -c -o lib/flatpak_system_helper-flatpak-error.o `test -f 'lib/flatpak-error.c' || echo '$(srcdir)/'`lib/flatpak-error.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libflatpak_CFLAGS) $(CFLAGS) -c -o common/test_libflatpak-test-lib.o `test -f 'common/test-lib.c' || echo '$(srcdir)/'`common/test-lib.c
 
-lib/flatpak_system_helper-flatpak-error.obj: lib/flatpak-error.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_system_helper_CFLAGS) $(CFLAGS) -MT lib/flatpak_system_helper-flatpak-error.obj -MD -MP -MF lib/$(DEPDIR)/flatpak_system_helper-flatpak-error.Tpo -c -o lib/flatpak_system_helper-flatpak-error.obj `if test -f 'lib/flatpak-error.c'; then $(CYGPATH_W) 'lib/flatpak-error.c'; else $(CYGPATH_W) '$(srcdir)/lib/flatpak-error.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/flatpak_system_helper-flatpak-error.Tpo lib/$(DEPDIR)/flatpak_system_helper-flatpak-error.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/flatpak-error.c' object='lib/flatpak_system_helper-flatpak-error.obj' libtool=no @AMDEPBACKSLASH@
+common/test_libflatpak-test-lib.obj: common/test-lib.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libflatpak_CFLAGS) $(CFLAGS) -MT common/test_libflatpak-test-lib.obj -MD -MP -MF common/$(DEPDIR)/test_libflatpak-test-lib.Tpo -c -o common/test_libflatpak-test-lib.obj `if test -f 'common/test-lib.c'; then $(CYGPATH_W) 'common/test-lib.c'; else $(CYGPATH_W) '$(srcdir)/common/test-lib.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/test_libflatpak-test-lib.Tpo common/$(DEPDIR)/test_libflatpak-test-lib.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/test-lib.c' object='common/test_libflatpak-test-lib.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_system_helper_CFLAGS) $(CFLAGS) -c -o lib/flatpak_system_helper-flatpak-error.obj `if test -f 'lib/flatpak-error.c'; then $(CYGPATH_W) 'lib/flatpak-error.c'; else $(CYGPATH_W) '$(srcdir)/lib/flatpak-error.c'; fi`
-
-lib/test_libflatpak-test-lib.o: lib/test-lib.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libflatpak_CFLAGS) $(CFLAGS) -MT lib/test_libflatpak-test-lib.o -MD -MP -MF lib/$(DEPDIR)/test_libflatpak-test-lib.Tpo -c -o lib/test_libflatpak-test-lib.o `test -f 'lib/test-lib.c' || echo '$(srcdir)/'`lib/test-lib.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/test_libflatpak-test-lib.Tpo lib/$(DEPDIR)/test_libflatpak-test-lib.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/test-lib.c' object='lib/test_libflatpak-test-lib.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libflatpak_CFLAGS) $(CFLAGS) -c -o lib/test_libflatpak-test-lib.o `test -f 'lib/test-lib.c' || echo '$(srcdir)/'`lib/test-lib.c
-
-lib/test_libflatpak-test-lib.obj: lib/test-lib.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libflatpak_CFLAGS) $(CFLAGS) -MT lib/test_libflatpak-test-lib.obj -MD -MP -MF lib/$(DEPDIR)/test_libflatpak-test-lib.Tpo -c -o lib/test_libflatpak-test-lib.obj `if test -f 'lib/test-lib.c'; then $(CYGPATH_W) 'lib/test-lib.c'; else $(CYGPATH_W) '$(srcdir)/lib/test-lib.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) lib/$(DEPDIR)/test_libflatpak-test-lib.Tpo lib/$(DEPDIR)/test_libflatpak-test-lib.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='lib/test-lib.c' object='lib/test_libflatpak-test-lib.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libflatpak_CFLAGS) $(CFLAGS) -c -o lib/test_libflatpak-test-lib.obj `if test -f 'lib/test-lib.c'; then $(CYGPATH_W) 'lib/test-lib.c'; else $(CYGPATH_W) '$(srcdir)/lib/test-lib.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libflatpak_CFLAGS) $(CFLAGS) -c -o common/test_libflatpak-test-lib.obj `if test -f 'common/test-lib.c'; then $(CYGPATH_W) 'common/test-lib.c'; else $(CYGPATH_W) '$(srcdir)/common/test-lib.c'; fi`
 
 libglnx/tests/test_libglnx_errors-test-libglnx-errors.o: libglnx/tests/test-libglnx-errors.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_errors_CFLAGS) $(CFLAGS) -MT libglnx/tests/test_libglnx_errors-test-libglnx-errors.o -MD -MP -MF libglnx/tests/$(DEPDIR)/test_libglnx_errors-test-libglnx-errors.Tpo -c -o libglnx/tests/test_libglnx_errors-test-libglnx-errors.o `test -f 'libglnx/tests/test-libglnx-errors.c' || echo '$(srcdir)/'`libglnx/tests/test-libglnx-errors.c
@@ -3510,32 +3547,31 @@ mostlyclean-libtool:
 clean-libtool:
 	-rm -rf .libs _libs
 	-rm -rf common/.libs common/_libs
-	-rm -rf lib/.libs lib/_libs
 	-rm -rf libglnx/.libs libglnx/_libs
 
 distclean-libtool:
 	-rm -f libtool config.lt
-install-completionDATA: $(completion_DATA)
+install-bashcompletionDATA: $(bashcompletion_DATA)
 	@$(NORMAL_INSTALL)
-	@list='$(completion_DATA)'; test -n "$(completiondir)" || list=; \
+	@list='$(bashcompletion_DATA)'; test -n "$(bashcompletiondir)" || list=; \
 	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(completiondir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(completiondir)" || exit 1; \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(bashcompletiondir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(bashcompletiondir)" || exit 1; \
 	fi; \
 	for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  echo "$$d$$p"; \
 	done | $(am__base_list) | \
 	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(completiondir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(completiondir)" || exit $$?; \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(bashcompletiondir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(bashcompletiondir)" || exit $$?; \
 	done
 
-uninstall-completionDATA:
+uninstall-bashcompletionDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(completion_DATA)'; test -n "$(completiondir)" || list=; \
+	@list='$(bashcompletion_DATA)'; test -n "$(bashcompletiondir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(completiondir)'; $(am__uninstall_files_from_dir)
+	dir='$(DESTDIR)$(bashcompletiondir)'; $(am__uninstall_files_from_dir)
 install-dbus_serviceDATA: $(dbus_service_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(dbus_service_DATA)'; test -n "$(dbus_servicedir)" || list=; \
@@ -3938,6 +3974,27 @@ uninstall-systemduserunitDATA:
 	@list='$(systemduserunit_DATA)'; test -n "$(systemduserunitdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(systemduserunitdir)'; $(am__uninstall_files_from_dir)
+install-zshcompletionDATA: $(zshcompletion_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(zshcompletion_DATA)'; test -n "$(zshcompletiondir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(zshcompletiondir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(zshcompletiondir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(zshcompletiondir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(zshcompletiondir)" || exit $$?; \
+	done
+
+uninstall-zshcompletionDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(zshcompletion_DATA)'; test -n "$(zshcompletiondir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(zshcompletiondir)'; $(am__uninstall_files_from_dir)
 install-flatpakincludeHEADERS: $(flatpakinclude_HEADERS)
 	@$(NORMAL_INSTALL)
 	@list='$(flatpakinclude_HEADERS)'; test -n "$(flatpakincludedir)" || list=; \
@@ -4238,6 +4295,13 @@ testlibrary.log: testlibrary$(EXEEXT)
 tests/test-basic.sh.log: tests/test-basic.sh
 	@p='tests/test-basic.sh'; \
 	b='tests/test-basic.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-build-update-repo.sh.log: tests/test-build-update-repo.sh
+	@p='tests/test-build-update-repo.sh'; \
+	b='tests/test-build-update-repo.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -4589,7 +4653,7 @@ install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(completiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussnippetdir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
+	for dir in "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussnippetdir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(zshcompletiondir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -4631,8 +4695,6 @@ distclean-generic:
 	-rm -f common/$(am__dirstamp)
 	-rm -f dbus-proxy/$(DEPDIR)/$(am__dirstamp)
 	-rm -f dbus-proxy/$(am__dirstamp)
-	-rm -f lib/$(DEPDIR)/$(am__dirstamp)
-	-rm -f lib/$(am__dirstamp)
 	-rm -f libglnx/$(DEPDIR)/$(am__dirstamp)
 	-rm -f libglnx/$(am__dirstamp)
 	-rm -f libglnx/tests/$(DEPDIR)/$(am__dirstamp)
@@ -4662,7 +4724,7 @@ clean-am: clean-binPROGRAMS clean-bwrapPROGRAMS clean-checkLTLIBRARIES \
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf app/$(DEPDIR) bubblewrap/$(DEPDIR) common/$(DEPDIR) dbus-proxy/$(DEPDIR) lib/$(DEPDIR) libglnx/$(DEPDIR) libglnx/tests/$(DEPDIR) portal/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf app/$(DEPDIR) bubblewrap/$(DEPDIR) common/$(DEPDIR) dbus-proxy/$(DEPDIR) libglnx/$(DEPDIR) libglnx/tests/$(DEPDIR) portal/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -4679,7 +4741,7 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-bwrapPROGRAMS install-completionDATA \
+install-data-am: install-bashcompletionDATA install-bwrapPROGRAMS \
 	install-dbus_serviceDATA install-dbussnippetDATA \
 	install-dbussystemserviceDATA install-dist_dbusconfDATA \
 	install-dist_installed_test_keyring2DATA \
@@ -4694,7 +4756,8 @@ install-data-am: install-bwrapPROGRAMS install-completionDATA \
 	install-nodist_typelibDATA install-pkgconfigDATA \
 	install-polkit_policyDATA install-polkit_rulesDATA \
 	install-profileDATA install-scriptsSCRIPTS \
-	install-systemdsystemunitDATA install-systemduserunitDATA
+	install-systemdsystemunitDATA install-systemduserunitDATA \
+	install-zshcompletionDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 install-dvi: install-dvi-recursive
@@ -4727,7 +4790,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf app/$(DEPDIR) bubblewrap/$(DEPDIR) common/$(DEPDIR) dbus-proxy/$(DEPDIR) lib/$(DEPDIR) libglnx/$(DEPDIR) libglnx/tests/$(DEPDIR) portal/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
+	-rm -rf app/$(DEPDIR) bubblewrap/$(DEPDIR) common/$(DEPDIR) dbus-proxy/$(DEPDIR) libglnx/$(DEPDIR) libglnx/tests/$(DEPDIR) portal/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -4744,8 +4807,8 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
-	uninstall-completionDATA uninstall-dbus_serviceDATA \
+uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
+	uninstall-bwrapPROGRAMS uninstall-dbus_serviceDATA \
 	uninstall-dbussnippetDATA uninstall-dbussystemserviceDATA \
 	uninstall-dist_dbusconfDATA \
 	uninstall-dist_installed_test_keyring2DATA \
@@ -4763,7 +4826,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-pkgconfigDATA uninstall-polkit_policyDATA \
 	uninstall-polkit_rulesDATA uninstall-profileDATA \
 	uninstall-scriptsSCRIPTS uninstall-systemdsystemunitDATA \
-	uninstall-systemduserunitDATA
+	uninstall-systemduserunitDATA uninstall-zshcompletionDATA
 
 .MAKE: $(am__recursive_targets) all check check-am install install-am \
 	install-data-am install-strip
@@ -4780,8 +4843,8 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	distclean-generic distclean-hdr distclean-libtool \
 	distclean-tags distcleancheck distdir distuninstallcheck dvi \
 	dvi-am html html-am info info-am install install-am \
-	install-binPROGRAMS install-bwrapPROGRAMS \
-	install-completionDATA install-data install-data-am \
+	install-bashcompletionDATA install-binPROGRAMS \
+	install-bwrapPROGRAMS install-data install-data-am \
 	install-data-hook install-dbus_serviceDATA \
 	install-dbussnippetDATA install-dbussystemserviceDATA \
 	install-dist_dbusconfDATA \
@@ -4802,12 +4865,13 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	install-polkit_rulesDATA install-profileDATA install-ps \
 	install-ps-am install-scriptsSCRIPTS install-strip \
 	install-systemdsystemunitDATA install-systemduserunitDATA \
-	installcheck installcheck-am installdirs installdirs-am \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am recheck tags tags-am uninstall \
-	uninstall-am uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
-	uninstall-completionDATA uninstall-dbus_serviceDATA \
+	install-zshcompletionDATA installcheck installcheck-am \
+	installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	recheck tags tags-am uninstall uninstall-am \
+	uninstall-bashcompletionDATA uninstall-binPROGRAMS \
+	uninstall-bwrapPROGRAMS uninstall-dbus_serviceDATA \
 	uninstall-dbussnippetDATA uninstall-dbussystemserviceDATA \
 	uninstall-dist_dbusconfDATA \
 	uninstall-dist_installed_test_keyring2DATA \
@@ -4825,7 +4889,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 	uninstall-pkgconfigDATA uninstall-polkit_policyDATA \
 	uninstall-polkit_rulesDATA uninstall-profileDATA \
 	uninstall-scriptsSCRIPTS uninstall-systemdsystemunitDATA \
-	uninstall-systemduserunitDATA
+	uninstall-systemduserunitDATA uninstall-zshcompletionDATA
 
 .PRECIOUS: Makefile
 
@@ -4842,51 +4906,51 @@ uninstall-am: uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
 		-e "s|\@localstatedir\@|$(localstatedir)|" \
 		-e "s|\@extraargs\@||" $< > $@
 
-common/flatpak-dbus.c: data/org.freedesktop.Flatpak.xml Makefile
+common/flatpak-enum-types.h: $(flatpakinclude_HEADERS) common/flatpak-enum-types.h.template
+	$(AM_V_GEN) $(GLIB_MKENUMS) --template $(filter %.template,$^) $(filter-out %.template,$^) > \
+	    common/flatpak-enum-types.h.tmp && mv common/flatpak-enum-types.h.tmp common/flatpak-enum-types.h
+
+common/flatpak-enum-types.c: $(flatpakinclude_HEADERS) common/flatpak-enum-types.c.template
+	$(AM_V_GEN) $(GLIB_MKENUMS) --template $(filter %.template,$^) $(filter-out %.template,$^) > \
+	    common/flatpak-enum-types.c.tmp && mv common/flatpak-enum-types.c.tmp common/flatpak-enum-types.c
+
+common/flatpak-dbus-generated.c: data/org.freedesktop.Flatpak.xml Makefile
 	mkdir -p $(builddir)/common
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.Flatpak.	\
 		--c-namespace Flatpak				\
-		--generate-c-code $(builddir)/common/flatpak-dbus	\
+		--generate-c-code $(builddir)/common/flatpak-dbus-generated	\
 		$(srcdir)/data/org.freedesktop.Flatpak.xml  \
 		$(NULL)
 
-common/flatpak-document-dbus.c: data/org.freedesktop.portal.Documents.xml Makefile
+common/flatpak-document-dbus-generated.c: data/org.freedesktop.portal.Documents.xml Makefile
 	mkdir -p $(builddir)/common
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.portal.	\
 		--c-namespace XdpDbus				\
-		--generate-c-code $(builddir)/common/flatpak-document-dbus	\
+		--generate-c-code $(builddir)/common/flatpak-document-dbus-generated	\
 		$(srcdir)/data/org.freedesktop.portal.Documents.xml  \
 		$(NULL)
 
-common/flatpak-systemd-dbus.c: data/org.freedesktop.systemd1.xml Makefile
+common/flatpak-systemd-dbus-generated.c: data/org.freedesktop.systemd1.xml Makefile
 	mkdir -p $(builddir)/common
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.systemd1.	\
 		--c-namespace Systemd				\
-		--generate-c-code $(builddir)/common/flatpak-systemd-dbus	\
+		--generate-c-code $(builddir)/common/flatpak-systemd-dbus-generated	\
 		$(srcdir)/data/org.freedesktop.systemd1.xml	\
 		$(NULL)
 
-common/%-dbus.h: common/%-dbus.c
+common/%-dbus-generated.h: common/%-dbus-generated.c
 	@true # Built as a side-effect of the rules for the .c
-
-app/parse-datetime.c: app/parse-datetime.y Makefile
-	$(AM_V_GEN) $(YACC) $< -o $@
-
-lib/flatpak-enum-types.h: $(flatpakinclude_HEADERS) lib/flatpak-enum-types.h.template
-	$(AM_V_GEN) $(GLIB_MKENUMS) --template $(filter %.template,$^) $(filter-out %.template,$^) > \
-	    lib/flatpak-enum-types.h.tmp && mv lib/flatpak-enum-types.h.tmp lib/flatpak-enum-types.h
-
-lib/flatpak-enum-types.c: $(flatpakinclude_HEADERS) lib/flatpak-enum-types.c.template
-	$(AM_V_GEN) $(GLIB_MKENUMS) --template $(filter %.template,$^) $(filter-out %.template,$^) > \
-	    lib/flatpak-enum-types.c.tmp && mv lib/flatpak-enum-types.c.tmp lib/flatpak-enum-types.c
 
 # gobject-introspection rules
 -include $(INTROSPECTION_MAKEFILE)
 
 @HAVE_INTROSPECTION_TRUE@Flatpak-1.0.gir: libflatpak.la Makefile
+
+app/parse-datetime.c: app/parse-datetime.y Makefile
+	$(AM_V_GEN) $(YACC) $< -o $@
 
 portal/flatpak-portal-dbus.c: data/org.freedesktop.portal.Flatpak.xml Makefile
 	mkdir -p $(builddir)/portal

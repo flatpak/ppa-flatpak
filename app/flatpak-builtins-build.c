@@ -31,8 +31,8 @@
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
-#include "flatpak-utils.h"
-#include "flatpak-run.h"
+#include "flatpak-utils-private.h"
+#include "flatpak-run-private.h"
 
 static gboolean opt_runtime;
 static char *opt_build_dir;
@@ -421,6 +421,8 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   if (custom_usr)
     run_flags |= FLATPAK_RUN_FLAG_WRITABLE_ETC;
 
+  run_flags |= flatpak_context_get_run_flags (app_context);
+
   /* Unless manually specified, we disable dbus proxy */
   if (!flatpak_context_get_needs_session_bus_proxy (arg_context))
     run_flags |= FLATPAK_RUN_FLAG_NO_SESSION_BUS_PROXY;
@@ -555,6 +557,9 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
                               "--chdir", opt_build_dir,
                               NULL);
     }
+
+  if (!flatpak_bwrap_bundle_args (bwrap, 1, -1, FALSE, error))
+    return FALSE;
 
   flatpak_bwrap_add_args (bwrap, command, NULL);
   flatpak_bwrap_append_argsv (bwrap,

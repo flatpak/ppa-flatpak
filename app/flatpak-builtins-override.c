@@ -32,8 +32,8 @@
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
-#include "flatpak-utils.h"
-#include "flatpak-run.h"
+#include "flatpak-utils-private.h"
+#include "flatpak-run-private.h"
 
 static GOptionEntry options[] = {
   { NULL }
@@ -125,7 +125,7 @@ flatpak_complete_override (FlatpakCompletion *completion)
     case 1: /* NAME */
       flatpak_complete_options (completion, global_entries);
       flatpak_complete_options (completion, options);
-      flatpak_context_complete (arg_context, completion);
+      flatpak_complete_context (completion);
 
       for (i = 0; i < dirs->len; i++)
         {
