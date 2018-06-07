@@ -9,7 +9,7 @@ Build-Depends:
  attr <!nocheck>,
  automake (>= 1.14.1),
  bison,
- bubblewrap (>= 0.1.8),
+ bubblewrap (>= 0.2.1),
  ca-certificates <!nocheck>,
  dbus,
  debhelper (>= 10~),
@@ -32,7 +32,7 @@ Build-Depends:
  libglib2.0-dev (>= 2.44),
  libgpgme-dev (>= 1.1.8),
  libjson-glib-dev,
- libostree-dev (>= 2017.14),
+ libostree-dev (>= 2017.15),
  libpolkit-gobject-1-dev,
  libseccomp-dev,
  libsoup2.4-dev,
@@ -56,7 +56,7 @@ Rules-Requires-Root: no
 Package: flatpak
 Architecture: linux-any
 Depends:
- bubblewrap (>= 0.1.8),
+ bubblewrap (>= 0.2.1),
  xdg-desktop-portal (>= 0.10),
  ${misc:Depends},
  ${shlibs:Depends},
@@ -101,7 +101,7 @@ Depends:
  gnupg,
  gtk-update-icon-cache,
  hicolor-icon-theme,
- ostree (>= 2017.14),
+ ostree (>= 2017.15),
  shared-mime-info,
  ${misc:Depends},
  ${shlibs:Depends},
@@ -135,7 +135,7 @@ Depends:
  gir1.2-flatpak-1.0 (= ${binary:Version}),
  libflatpak0 (= ${binary:Version}),
  libglib2.0-dev,
- libostree-dev (>= 2017.14),
+ libostree-dev (>= 2017.15),
  libxml2-dev (>= 2.4),
  pkg-config,
  ${misc:Depends},
@@ -165,7 +165,7 @@ Package: libflatpak0
 Architecture: linux-any
 Section: libs
 Depends:
- bubblewrap (>= 0.1.8),
+ bubblewrap (>= 0.2.1),
  ${misc:Depends},
  ${shlibs:Depends},
 Pre-Depends:
