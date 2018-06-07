@@ -41,6 +41,7 @@ Build-Depends:
  libxml2-utils,
  ostree <!nocheck>,
  procps,
+ python3 <!nocheck>,
  shared-mime-info <!nocheck>,
  xmlto <!nodoc>,
  xsltproc <!nodoc>,
