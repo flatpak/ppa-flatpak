@@ -56,6 +56,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_remove_remote@Base 0.5.2+git20160516
  flatpak_installation_set_config_sync@Base 0.10.0
  flatpak_installation_uninstall@Base 0.5.2
+ flatpak_installation_uninstall_full@Base 0.11.8
  flatpak_installation_update@Base 0.5.2
  flatpak_installation_update_appstream_full_sync@Base 0.9.4
  flatpak_installation_update_appstream_sync@Base 0.5.2
@@ -72,6 +73,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installed_ref_get_type@Base 0.5.2
  flatpak_installed_ref_load_metadata@Base 0.5.2
  flatpak_oci_error_quark@Base 0.9.1
+ flatpak_portal_error_get_type@Base 0.11.8
  flatpak_portal_error_quark@Base 0.5.2+git20160516
  flatpak_ref_format_ref@Base 0.5.2
  flatpak_ref_get_arch@Base 0.5.2
@@ -85,6 +87,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_ref_parse@Base 0.5.2
  flatpak_related_ref_get_subpaths@Base 0.6.7
  flatpak_related_ref_get_type@Base 0.6.7
+ flatpak_related_ref_should_autoprune@Base 0.11.8
  flatpak_related_ref_should_delete@Base 0.6.7
  flatpak_related_ref_should_download@Base 0.6.7
  flatpak_remote_get_appstream_dir@Base 0.5.2
@@ -121,4 +124,29 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_remote_set_url@Base 0.5.2+git20160516
  flatpak_remote_type_get_type@Base 0.9.8
  flatpak_storage_type_get_type@Base 0.8.0
+ flatpak_transaction_add_install@Base 0.11.8
+ flatpak_transaction_add_install_bundle@Base 0.11.8
+ flatpak_transaction_add_uninstall@Base 0.11.8
+ flatpak_transaction_add_update@Base 0.11.8
+ flatpak_transaction_error_details_get_type@Base 0.11.8
+ flatpak_transaction_get_type@Base 0.11.8
+ flatpak_transaction_is_empty@Base 0.11.8
+ flatpak_transaction_new_for_installation@Base 0.11.8
+ flatpak_transaction_operation_type_get_type@Base 0.11.8
+ flatpak_transaction_progress_get_is_estimating@Base 0.11.8
+ flatpak_transaction_progress_get_progress@Base 0.11.8
+ flatpak_transaction_progress_get_status@Base 0.11.8
+ flatpak_transaction_progress_get_type@Base 0.11.8
+ flatpak_transaction_progress_set_update_frequency@Base 0.11.8
+ flatpak_transaction_result_get_type@Base 0.11.8
+ flatpak_transaction_run@Base 0.11.8
+ flatpak_transaction_set_disable_dependencies@Base 0.11.8
+ flatpak_transaction_set_disable_prune@Base 0.11.8
+ flatpak_transaction_set_disable_related@Base 0.11.8
+ flatpak_transaction_set_disable_static_deltas@Base 0.11.8
+ flatpak_transaction_set_force_uninstall@Base 0.11.8
+ flatpak_transaction_set_no_deploy@Base 0.11.8
+ flatpak_transaction_set_no_pull@Base 0.11.8
+ flatpak_transaction_set_reinstall@Base 0.11.8
+ flatpak_uninstall_flags_get_type@Base 0.11.8
  flatpak_update_flags_get_type@Base 0.5.2
