@@ -1,9 +1,9 @@
-flatpak (0.11.8.1-1) UNRELEASED; urgency=medium
+flatpak (0.11.8.1-1) unstable; urgency=medium
 
   * New upstream release, fixing a regression in D-Bus filtering
   * Remove --disable-document-portal, no longer necessary since 0.11.0
 
- -- Simon McVittie <smcv@debian.org>  Fri, 08 Jun 2018 17:05:12 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Jun 2018 18:14:02 +0100
 
 flatpak (0.11.8-1) unstable; urgency=medium
 
