@@ -69,6 +69,8 @@ Recommends:
  policykit-1,
  shared-mime-info,
  xdg-desktop-portal-gtk | xdg-desktop-portal-backend,
+Suggests:
+ avahi-daemon,
 Conflicts:
  xdg-app,
 Replaces:

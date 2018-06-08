@@ -3,6 +3,7 @@ flatpak (0.11.8-1+exp1) UNRELEASED; urgency=medium
   * Switch to experimental branch
   * Bump ostree dependencies to 2018.5+42+gecdebeb2 to enable
     peer-to-peer app sharing
+  * flatpak Suggests avahi-daemon for peer-to-peer app sharing
 
  -- Simon McVittie <smcv@debian.org>  Fri, 08 Jun 2018 10:02:49 +0100
 
