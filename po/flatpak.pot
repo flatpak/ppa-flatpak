@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: flatpak 0.11.8\n"
+"Project-Id-Version: flatpak 0.11.8.2\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2018-06-07 16:42+0200\n"
+"POT-Creation-Date: 2018-06-11 12:22+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1893,16 +1893,20 @@ msgstr ""
 msgid "Must not specify REFs when using --unused"
 msgstr ""
 
-#: app/flatpak-builtins-uninstall.c:286
+#: app/flatpak-builtins-uninstall.c:288
 #, c-format
 msgid "Uninstalling from %s:\n"
 msgstr ""
 
-#: app/flatpak-builtins-uninstall.c:294
+#: app/flatpak-builtins-uninstall.c:298
+msgid "Nothing unused to uninstall\n"
+msgstr ""
+
+#: app/flatpak-builtins-uninstall.c:303
 msgid "Is this ok?"
 msgstr ""
 
-#: app/flatpak-builtins-uninstall.c:369
+#: app/flatpak-builtins-uninstall.c:378
 #, c-format
 msgid "Ref ‘%s’ found in multiple installations: %s. You must specify one."
 msgstr ""

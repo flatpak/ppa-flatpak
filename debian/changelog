@@ -1,12 +1,25 @@
-flatpak (0.11.8-1+exp1) UNRELEASED; urgency=medium
+flatpak (0.11.8.2-1+exp1) UNRELEASED; urgency=medium
 
   * Switch to experimental branch
   * Bump ostree dependencies to 2018.5+42+gecdebeb2 to enable
     peer-to-peer app sharing
   * flatpak Suggests avahi-daemon for peer-to-peer app sharing
-  * Remove --disable-document-portal, no longer necesary since 0.11.0
 
  -- Simon McVittie <smcv@debian.org>  Fri, 08 Jun 2018 10:02:49 +0100
+
+flatpak (0.11.8.2-1) unstable; urgency=medium
+
+  * New upstream release
+  * Drop the patches added in 0.11.8-1, which were merged upstream
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 11 Jun 2018 14:07:13 +0100
+
+flatpak (0.11.8.1-1) unstable; urgency=medium
+
+  * New upstream release, fixing a regression in D-Bus filtering
+  * Remove --disable-document-portal, no longer necessary since 0.11.0
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Jun 2018 18:14:02 +0100
 
 flatpak (0.11.8-1) unstable; urgency=medium
 
