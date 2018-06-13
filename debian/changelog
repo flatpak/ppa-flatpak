@@ -1,8 +1,8 @@
-flatpak (0.11.8.3-1) UNRELEASED; urgency=medium
+flatpak (0.11.8.3-1) unstable; urgency=medium
 
   * New upstream release
 
- -- Simon McVittie <smcv@debian.org>  Wed, 13 Jun 2018 13:01:56 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 13 Jun 2018 13:04:12 +0100
 
 flatpak (0.11.8.2-1) unstable; urgency=medium
 
