@@ -26,7 +26,6 @@ set -euo pipefail
 
 skip_without_bwrap
 [ x${USE_SYSTEMDIR-} != xyes ] || skip_without_user_xattrs
-skip_without_p2p
 
 echo "1..3"
 
@@ -42,7 +41,7 @@ ${FLATPAK} build-finish ${DIR} --socket=x11 --share=network --command=true
 ${FLATPAK} build-export ${FL_GPGARGS} --update-appstream repos/test ${DIR} master
 update_repo
 
-${FLATPAK} ${U} install test-repo org.test.App master
+${FLATPAK} ${U} install -y test-repo org.test.App master
 
 assert_file_has_content ${FL_DIR}/repo/config '^gpg-verify-summary=true$'
 assert_not_file_has_content ${FL_DIR}/repo/config '^gpg-verify-summary=false$'
@@ -57,7 +56,7 @@ echo -e "[core]\ncollection-id=org.test.Collection" >> repos/test/config
 ${FLATPAK} build-export ${FL_GPGARGS} --update-appstream repos/test --collection-id org.test.Collection ${DIR} master
 UPDATE_REPO_ARGS="--collection-id=org.test.Collection" update_repo
 
-${FLATPAK} ${U} update org.test.App master
+${FLATPAK} ${U} update -y org.test.App master
 
 assert_file_has_content ${FL_DIR}/repo/config '^gpg-verify-summary=true$'
 assert_not_file_has_content ${FL_DIR}/repo/config '^gpg-verify-summary=false$'
@@ -70,7 +69,7 @@ echo "ok 1 update repo config without deploying collection ID"
 # Now mark the collection ID as to be deployed. The client configuration should
 # be updated.
 UPDATE_REPO_ARGS="--collection-id=org.test.Collection --deploy-collection-id" update_repo
-${FLATPAK} ${U} update org.test.App master
+${FLATPAK} ${U} update -y org.test.App master
 
 assert_file_has_content ${FL_DIR}/repo/config '^gpg-verify-summary=false$'
 assert_not_file_has_content ${FL_DIR}/repo/config '^gpg-verify-summary=true$'

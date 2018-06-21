@@ -954,8 +954,6 @@ OSTREE_2018_5_CFLAGS = @OSTREE_2018_5_CFLAGS@
 OSTREE_2018_5_LIBS = @OSTREE_2018_5_LIBS@
 OSTREE_CFLAGS = @OSTREE_CFLAGS@
 OSTREE_LIBS = @OSTREE_LIBS@
-OSTREE_P2P_REQ_CFLAGS = @OSTREE_P2P_REQ_CFLAGS@
-OSTREE_P2P_REQ_LIBS = @OSTREE_P2P_REQ_LIBS@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -1097,7 +1095,8 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	tests/flatpak.supp tests/glib.supp $(bashcompletion_DATA) \
 	$(zshcompletion_DATA) profile/flatpak.sh.in $(NULL) \
 	env.d/flatpak.env.in dbus.service.d/flatpak.conf.in \
-	flatpak.pc.in scripts/flatpak-bisect README.md
+	flatpak.pc.in scripts/flatpak-bisect \
+	scripts/flatpak-coredumpctl README.md
 TESTS_ENVIRONMENT = \
 	G_TEST_SRCDIR="$(abs_srcdir)/tests"	\
 	G_TEST_BUILDDIR="$(abs_builddir)/tests"	\
@@ -1597,7 +1596,7 @@ dbussnippet_DATA = flatpak.conf
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = flatpak.pc
 scriptsdir = $(bindir)
-scripts_SCRIPTS = scripts/flatpak-bisect
+scripts_SCRIPTS = scripts/flatpak-bisect scripts/flatpak-coredumpctl
 AM_DISTCHECK_CONFIGURE_FLAGS = \
 	--enable-documentation		\
 	--disable-maintainer-mode	\

@@ -26,7 +26,6 @@ set -euo pipefail
 
 skip_without_bwrap
 [ x${USE_SYSTEMDIR-} != xyes ] || skip_without_user_xattrs
-skip_without_p2p
 
 echo "1..7"
 
@@ -78,8 +77,8 @@ assert_file_has_content metadata "'ostree.ref-binding': <\['ostree-metadata'\]>"
 echo "ok 2 create app with collections"
 
 # Try installing the app.
-${FLATPAK} ${U} install test-repo org.test.App master
-${FLATPAK} ${U} uninstall org.test.App
+${FLATPAK} ${U} install -y test-repo org.test.App master
+${FLATPAK} ${U} uninstall -y org.test.App
 
 echo "ok 3 install app with collections"
 
@@ -90,8 +89,8 @@ ostree --repo=repos/test summary --view > summary
 assert_file_has_content summary '^Collection ID (ostree.summary.collection-id): org.test.Collection$'
 assert_not_file_has_content summary '^xa.cache: '
 
-${FLATPAK} ${U} install test-repo org.test.App master
-${FLATPAK} ${U} uninstall org.test.App
+${FLATPAK} ${U} install -y test-repo org.test.App master
+${FLATPAK} ${U} uninstall -y org.test.App
 
 echo "ok 4 install app with collections from unsigned summary"
 
@@ -109,8 +108,8 @@ GPGKey=${FL_GPG_BASE64}
 CollectionID=org.test.Collection
 EOF
 
-${FLATPAK} ${U} install --from ./org.test.App.flatpakref
-${FLATPAK} ${U} uninstall org.test.App
+${FLATPAK} ${U} install -y --from ./org.test.App.flatpakref
+${FLATPAK} ${U} uninstall -y org.test.App
 
 echo "ok 5 install app with collections from flatpakref"
 
@@ -131,7 +130,7 @@ echo "ok 6 update repo metadata"
 
 # Try to install the app again, which should pull the updated repository
 # metadata as a side effect.
-${FLATPAK} ${U} install test-repo org.test.App master
+${FLATPAK} ${U} install -y test-repo org.test.App master
 assert_file_has_content ${FL_DIR}/repo/config '^xa.title=New title$'
 
 echo "ok 7 pull updated repo metadata"

@@ -30,6 +30,7 @@
 
 #define FLATPAK_TYPE_TRANSACTION flatpak_transaction_get_type ()
 #define FLATPAK_TYPE_TRANSACTION_PROGRESS flatpak_transaction_progress_get_type ()
+#define FLATPAK_TYPE_TRANSACTION_OPERATION flatpak_transaction_operation_get_type ()
 
 /**
  * FlatpakTransactionOperationType
@@ -37,6 +38,7 @@
  * @FLATPAK_TRANSACTION_OPERATION_UPDATE: Update an installed ref
  * @FLATPAK_TRANSACTION_OPERATION_INSTALL_BUNDLE: Install a bundle from a file
  * @FLATPAK_TRANSACTION_OPERATION_UNINSTALL: Uninstall a ref
+ * @FLATPAK_TRANSACTION_OPERATION_LAST_TYPE: The (currently) last operation type
  *
  * The type of a transaction, used in FlatpakTransaction::new-operation
  */
@@ -44,7 +46,8 @@ typedef enum {
   FLATPAK_TRANSACTION_OPERATION_INSTALL,
   FLATPAK_TRANSACTION_OPERATION_UPDATE,
   FLATPAK_TRANSACTION_OPERATION_INSTALL_BUNDLE,
-  FLATPAK_TRANSACTION_OPERATION_UNINSTALL
+  FLATPAK_TRANSACTION_OPERATION_UNINSTALL,
+  FLATPAK_TRANSACTION_OPERATION_LAST_TYPE
 } FlatpakTransactionOperationType;
 
 /**
@@ -69,6 +72,9 @@ FLATPAK_EXTERN
 G_DECLARE_FINAL_TYPE (FlatpakTransactionProgress, flatpak_transaction_progress, FLATPAK, TRANSACTION_PROGRESS, GObject)
 
 FLATPAK_EXTERN
+G_DECLARE_FINAL_TYPE (FlatpakTransactionOperation, flatpak_transaction_operation, FLATPAK, TRANSACTION_OPERATION, GObject)
+
+FLATPAK_EXTERN
 G_DECLARE_DERIVABLE_TYPE (FlatpakTransaction, flatpak_transaction, FLATPAK, TRANSACTION, GObject)
 
 struct _FlatpakTransactionClass
@@ -76,21 +82,13 @@ struct _FlatpakTransactionClass
   GObjectClass parent_class;
 
   void (*new_operation)        (FlatpakTransaction *transaction,
-                                const char *ref,
-                                const char *remote,
-                                const char *bundle_path,
-                                FlatpakTransactionOperationType operation_type,
+                                FlatpakTransactionOperation *operation,
                                 FlatpakTransactionProgress *progress);
   void (*operation_done)       (FlatpakTransaction *transaction,
-                                const char *ref,
-                                const char *remote,
-                                FlatpakTransactionOperationType operation_type,
-                                const char *commit,
+                                FlatpakTransactionOperation *operation,
                                 FlatpakTransactionResult details);
   gboolean (*operation_error)  (FlatpakTransaction *transaction,
-                                const char *ref,
-                                const char *remote,
-                                FlatpakTransactionOperationType operation_type,
+                                FlatpakTransactionOperation *operation,
                                 GError *error,
                                 FlatpakTransactionErrorDetails detail);
   int (*choose_remote_for_ref) (FlatpakTransaction *transaction,
@@ -101,8 +99,9 @@ struct _FlatpakTransactionClass
                                 const char *ref,
                                 const char *reason,
                                 const char *rebase);
+  gboolean (*ready)            (FlatpakTransaction *transaction);
 
-  gpointer padding[12];
+  gpointer padding[11];
 };
 
 FLATPAK_EXTERN
@@ -119,6 +118,22 @@ FLATPAK_EXTERN
 gboolean    flatpak_transaction_progress_get_is_estimating    (FlatpakTransactionProgress  *self);
 FLATPAK_EXTERN
 int         flatpak_transaction_progress_get_progress         (FlatpakTransactionProgress  *self);
+
+
+FLATPAK_EXTERN
+FlatpakTransactionOperationType flatpak_transaction_operation_get_operation_type (FlatpakTransactionOperation  *self);
+FLATPAK_EXTERN
+const char *                    flatpak_transaction_operation_get_ref            (FlatpakTransactionOperation  *self);
+FLATPAK_EXTERN
+const char *                    flatpak_transaction_operation_get_remote         (FlatpakTransactionOperation  *self);
+FLATPAK_EXTERN
+GFile *                         flatpak_transaction_operation_get_bundle_path    (FlatpakTransactionOperation  *self);
+FLATPAK_EXTERN
+const char *                    flatpak_transaction_operation_get_commit         (FlatpakTransactionOperation  *self);
+FLATPAK_EXTERN
+GKeyFile *                      flatpak_transaction_operation_get_metadata       (FlatpakTransactionOperation  *self);
+FLATPAK_EXTERN
+GKeyFile *                      flatpak_transaction_operation_get_old_metadata   (FlatpakTransactionOperation  *self);
 
 FLATPAK_EXTERN
 void                flatpak_transaction_set_no_pull               (FlatpakTransaction  *self,
@@ -145,9 +160,19 @@ FLATPAK_EXTERN
 void                flatpak_transaction_set_force_uninstall       (FlatpakTransaction  *self,
                                                                    gboolean             force_uninstall);
 FLATPAK_EXTERN
+void                flatpak_transaction_add_dependency_source     (FlatpakTransaction  *self,
+                                                                   FlatpakInstallation *installation);
+FLATPAK_EXTERN
+void                flatpak_transaction_add_default_dependency_sources (FlatpakTransaction  *self);
+FLATPAK_EXTERN
 gboolean            flatpak_transaction_run                       (FlatpakTransaction  *self,
                                                                    GCancellable        *cancellable,
                                                                    GError             **error);
+FLATPAK_EXTERN
+FlatpakTransactionOperation *flatpak_transaction_get_current_operation (FlatpakTransaction  *self);
+FLATPAK_EXTERN
+GList *flatpak_transaction_get_operations (FlatpakTransaction  *self);
+
 FLATPAK_EXTERN
 gboolean            flatpak_transaction_add_install               (FlatpakTransaction  *self,
                                                                    const char          *remote,

@@ -287,19 +287,19 @@ setup_python2_repo () {
 
 install_repo () {
     REPONAME=${1:-test}
-    ${FLATPAK} ${U} install ${REPONAME}-repo org.test.Platform master
-    ${FLATPAK} ${U} install ${REPONAME}-repo org.test.Hello master
+    ${FLATPAK} ${U} install -y ${REPONAME}-repo org.test.Platform master
+    ${FLATPAK} ${U} install -y ${REPONAME}-repo org.test.Hello master
 }
 
 install_sdk_repo () {
     REPONAME=${1:-test}
-    ${FLATPAK} ${U} install ${REPONAME}-repo org.test.Sdk master
+    ${FLATPAK} ${U} install -y ${REPONAME}-repo org.test.Sdk master
 }
 
 install_python2_repo () {
     REPONAME=${1:-test}
-    ${FLATPAK} ${U} install ${REPONAME}-repo org.test.PythonPlatform master
-    ${FLATPAK} ${U} install ${REPONAME}-repo org.test.PythonSdk master
+    ${FLATPAK} ${U} install -y ${REPONAME}-repo org.test.PythonPlatform master
+    ${FLATPAK} ${U} install -y ${REPONAME}-repo org.test.PythonSdk master
 }
 
 run () {
@@ -337,14 +337,6 @@ skip_without_python2 () {
         exit 0
     fi
 }
-
-skip_without_p2p () {
-    if ! ${FLATPAK} remote-add --help | grep -q -e '--collection-id'; then
-        echo "1..0 # SKIP this test requires peer to peer support (--enable-p2p)"
-        exit 0
-    fi
-}
-
 
 sed s#@testdir@#${test_builddir}# ${test_srcdir}/session.conf.in > session.conf
 dbus-daemon --fork --config-file=session.conf --print-address=3 --print-pid=4 \
