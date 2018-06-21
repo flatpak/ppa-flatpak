@@ -1,5 +1,6 @@
-flatpak (0.11.8.3-2) UNRELEASED; urgency=medium
+flatpak (0.99.1-1) UNRELEASED; urgency=medium
 
+  * New upstream release
   * Bump ostree dependencies to 2018.6 for peer-to-peer app sharing
   * flatpak Suggests avahi-daemon for peer-to-peer app sharing
 
