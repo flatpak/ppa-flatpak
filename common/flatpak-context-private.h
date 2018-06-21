@@ -40,6 +40,7 @@ typedef enum {
   FLATPAK_CONTEXT_SOCKET_SESSION_BUS = 1 << 3,
   FLATPAK_CONTEXT_SOCKET_SYSTEM_BUS  = 1 << 4,
   FLATPAK_CONTEXT_SOCKET_FALLBACK_X11 = 1 << 5, /* For backwards compat, also set SOCKET_X11 */
+  FLATPAK_CONTEXT_SOCKET_SSH_AUTH    = 1 << 6,
 } FlatpakContextSockets;
 
 typedef enum {
@@ -108,6 +109,7 @@ void           flatpak_context_add_bus_filters (FlatpakContext *context,
 gboolean       flatpak_context_get_needs_session_bus_proxy (FlatpakContext *context);
 gboolean       flatpak_context_get_needs_system_bus_proxy (FlatpakContext *context);
 
+void           flatpak_context_reset_permissions (FlatpakContext *context);
 void           flatpak_context_make_sandboxed (FlatpakContext *context);
 
 gboolean       flatpak_context_allows_features (FlatpakContext *context,

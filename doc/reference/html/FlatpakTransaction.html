@@ -147,6 +147,14 @@
 <a class="link" href="FlatpakTransaction.html#flatpak-transaction-set-reinstall" title="flatpak_transaction_set_reinstall ()">flatpak_transaction_set_reinstall</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakTransaction.html#flatpak-transaction-set-force-uninstall" title="flatpak_transaction_set_force_uninstall ()">flatpak_transaction_set_force_uninstall</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
 </tbody>
 </table></div>
 </div>
@@ -198,6 +206,11 @@
 <tr>
 <td class="signal_type"><span class="returnvalue">gboolean</span></td>
 <td class="signal_name"><a class="link" href="FlatpakTransaction.html#FlatpakTransaction-operation-error" title="The “operation-error” signal">operation-error</a></td>
+<td class="signal_flags">Run Last</td>
+</tr>
+<tr>
+<td class="signal_type"><span class="returnvalue">gboolean</span></td>
+<td class="signal_name"><a class="link" href="FlatpakTransaction.html#FlatpakTransaction-ready" title="The “ready” signal">ready</a></td>
 <td class="signal_flags">Run Last</td>
 </tr>
 </tbody>
@@ -397,6 +410,14 @@ flatpak_transaction_set_no_pull (<em class="parameter"><code><a class="link" hre
 flatpak_transaction_set_reinstall (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
                                    <em class="parameter"><code><span class="type">gboolean</span> reinstall</code></em>);</pre>
 </div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-transaction-set-force-uninstall"></a><h3>flatpak_transaction_set_force_uninstall ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+flatpak_transaction_set_force_uninstall
+                               (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
+                                <em class="parameter"><code><span class="type">gboolean</span> force_uninstall</code></em>);</pre>
+</div>
 </div>
 <div class="refsect1">
 <a name="FlatpakTransaction.other_details"></a><h2>Types and Values</h2>
@@ -442,6 +463,13 @@ flatpak_transaction_set_reinstall (<em class="parameter"><code><a class="link" h
 <td class="enum_member_name"><p><a name="FLATPAK-TRANSACTION-OPERATION-UNINSTALL:CAPS"></a>FLATPAK_TRANSACTION_OPERATION_UNINSTALL</p></td>
 <td class="enum_member_description">
 <p>Uninstall a ref</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-TRANSACTION-OPERATION-LAST-TYPE:CAPS"></a>FLATPAK_TRANSACTION_OPERATION_LAST_TYPE</p></td>
+<td class="enum_member_description">
+<p>The (currently) last operation type</p>
 </td>
 <td class="enum_member_annotations"> </td>
 </tr>
@@ -607,13 +635,10 @@ user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTran
 <div class="refsect2">
 <a name="FlatpakTransaction-new-operation"></a><h3>The <code class="literal">“new-operation”</code> signal</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
-user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a>         *object,
-               <span class="type">gchar</span>                      *ref,
-               <span class="type">gchar</span>                      *remote,
-               <span class="type">gchar</span>                      *bundle,
-               <span class="type">gint</span>                        operation_type,
-               <a class="link" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress"><span class="type">FlatpakTransactionProgress</span></a> *progress,
-               <span class="type">gpointer</span>                    user_data)</pre>
+user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a>          *object,
+               <span class="type">FlatpakTransactionOperation</span> *ref,
+               <a class="link" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress"><span class="type">FlatpakTransactionProgress</span></a>  *remote,
+               <span class="type">gpointer</span>                     user_data)</pre>
 <div class="refsect3">
 <a name="FlatpakTransaction-new-operation.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -667,12 +692,10 @@ user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTran
 <div class="refsect2">
 <a name="FlatpakTransaction-operation-done"></a><h3>The <code class="literal">“operation-done”</code> signal</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
-user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
-               <span class="type">gchar</span>              *ref,
-               <span class="type">gchar</span>              *remote,
-               <span class="type">gint</span>                operation_type,
-               <span class="type">gchar</span>              *commit,
-               <span class="type">gpointer</span>            user_data)</pre>
+user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a>          *object,
+               <span class="type">FlatpakTransactionOperation</span> *ref,
+               <span class="type">gint</span>                         remote,
+               <span class="type">gpointer</span>                     user_data)</pre>
 <div class="refsect3">
 <a name="FlatpakTransaction-operation-done.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -726,13 +749,11 @@ user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTran
 <div class="refsect2">
 <a name="FlatpakTransaction-operation-error"></a><h3>The <code class="literal">“operation-error”</code> signal</h3>
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
-user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
-               <span class="type">gchar</span>              *ref,
-               <span class="type">gchar</span>              *remote,
-               <span class="type">gint</span>                operation_type,
-               <span class="type">GError</span>             *error,
-               <span class="type">gint</span>                details,
-               <span class="type">gpointer</span>            user_data)</pre>
+user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a>          *object,
+               <span class="type">FlatpakTransactionOperation</span> *ref,
+               <span class="type">GError</span>                      *remote,
+               <span class="type">gint</span>                         operation_type,
+               <span class="type">gpointer</span>                     user_data)</pre>
 <div class="refsect3">
 <a name="FlatpakTransaction-operation-error.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -783,6 +804,40 @@ user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTran
 <div class="refsect3">
 <a name="FlatpakTransaction-operation-error.returns"></a><h4>Returns</h4>
 <p> the <code class="literal">TRUE</code> to contine transaction, <code class="literal">FALSE</code> to stop</p>
+</div>
+<p>Flags: Run Last</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakTransaction-ready"></a><h3>The <code class="literal">“ready”</code> signal</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>
+user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
+               <span class="type">gpointer</span>            user_data)</pre>
+<p>This is is emitted when all the refs involved in the operation have been
+resolved to commits. At this point <code class="function">flatpak_transaction_get_operations()</code>
+will return all the operations that will be executed as part of the
+transaction. If this returns FALSE, the operation is aborted.</p>
+<div class="refsect3">
+<a name="FlatpakTransaction-ready.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>object</p></td>
+<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>user_data</p></td>
+<td class="parameter_description"><p>user data set when the signal handler was connected.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
 </div>
 <p>Flags: Run Last</p>
 </div>

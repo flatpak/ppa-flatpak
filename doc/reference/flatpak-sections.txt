@@ -111,6 +111,7 @@ flatpak_related_ref_new
 flatpak_related_ref_get_subpaths
 flatpak_related_ref_should_download
 flatpak_related_ref_should_delete
+flatpak_related_ref_should_autoprune
 <SUBSECTION Standard>
 FLATPAK_IS_RELATED_REF
 FLATPAK_RELATED_REF
@@ -194,6 +195,26 @@ flatpak_transaction_progress_get_type
 </SECTION>
 
 <SECTION>
+<FILE>flatpak-transaction-operation</FILE>
+<TITLE>FlatpakTransactionOperation</TITLE>
+<SUBSECTION Standard>
+flatpak_transaction_add_default_dependency_sources
+flatpak_transaction_add_dependency_source
+flatpak_transaction_add_uninstall
+flatpak_transaction_get_current_operation
+flatpak_transaction_get_operations
+flatpak_transaction_operation_get_bundle_path
+flatpak_transaction_operation_get_commit
+flatpak_transaction_operation_get_operation_type
+flatpak_transaction_operation_get_ref
+flatpak_transaction_operation_get_remote
+flatpak_transaction_operation_get_metadata
+flatpak_transaction_operation_get_old_metadata
+FLATPAK_TYPE_TRANSACTION_OPERATION
+FlatpakTransactionOperation
+</SECTION>
+
+<SECTION>
 <FILE>flatpak-transaction</FILE>
 <TITLE>FlatpakTransaction</TITLE>
 FlatpakTransaction
@@ -214,6 +235,7 @@ flatpak_transaction_set_disable_static_deltas
 flatpak_transaction_set_no_deploy
 flatpak_transaction_set_no_pull
 flatpak_transaction_set_reinstall
+flatpak_transaction_set_force_uninstall
 <SUBSECTION Standard>
 FlatpakTransactionClass
 FLATPAK_IS_TRANSACTION

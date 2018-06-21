@@ -121,6 +121,7 @@
     <keyword type="function" name="flatpak_transaction_set_no_deploy ()" link="FlatpakTransaction.html#flatpak-transaction-set-no-deploy"/>
     <keyword type="function" name="flatpak_transaction_set_no_pull ()" link="FlatpakTransaction.html#flatpak-transaction-set-no-pull"/>
     <keyword type="function" name="flatpak_transaction_set_reinstall ()" link="FlatpakTransaction.html#flatpak-transaction-set-reinstall"/>
+    <keyword type="function" name="flatpak_transaction_set_force_uninstall ()" link="FlatpakTransaction.html#flatpak-transaction-set-force-uninstall"/>
     <keyword type="struct" name="FlatpakTransaction" link="FlatpakTransaction.html#FlatpakTransaction-struct"/>
     <keyword type="enum" name="enum FlatpakTransactionOperationType" link="FlatpakTransaction.html#FlatpakTransactionOperationType"/>
     <keyword type="enum" name="enum FlatpakTransactionErrorDetails" link="FlatpakTransaction.html#FlatpakTransactionErrorDetails"/>
@@ -131,6 +132,7 @@
     <keyword type="signal" name="The “new-operation” signal" link="FlatpakTransaction.html#FlatpakTransaction-new-operation"/>
     <keyword type="signal" name="The “operation-done” signal" link="FlatpakTransaction.html#FlatpakTransaction-operation-done"/>
     <keyword type="signal" name="The “operation-error” signal" link="FlatpakTransaction.html#FlatpakTransaction-operation-error"/>
+    <keyword type="signal" name="The “ready” signal" link="FlatpakTransaction.html#FlatpakTransaction-ready"/>
     <keyword type="function" name="flatpak_ref_format_ref ()" link="FlatpakRef.html#flatpak-ref-format-ref"/>
     <keyword type="function" name="flatpak_ref_get_arch ()" link="FlatpakRef.html#flatpak-ref-get-arch"/>
     <keyword type="function" name="flatpak_ref_get_branch ()" link="FlatpakRef.html#flatpak-ref-get-branch"/>
@@ -169,6 +171,7 @@
     <keyword type="function" name="flatpak_related_ref_get_subpaths ()" link="FlatpakRelatedRef.html#flatpak-related-ref-get-subpaths" since="0.6.7"/>
     <keyword type="function" name="flatpak_related_ref_should_download ()" link="FlatpakRelatedRef.html#flatpak-related-ref-should-download"/>
     <keyword type="function" name="flatpak_related_ref_should_delete ()" link="FlatpakRelatedRef.html#flatpak-related-ref-should-delete" since="0.6.7"/>
+    <keyword type="function" name="flatpak_related_ref_should_autoprune ()" link="FlatpakRelatedRef.html#flatpak-related-ref-should-autoprune" since="0.11.8"/>
     <keyword type="struct" name="struct FlatpakRelatedRef" link="FlatpakRelatedRef.html#FlatpakRelatedRef-struct"/>
     <keyword type="property" name="The “should-autoprune” property" link="FlatpakRelatedRef.html#FlatpakRelatedRef--should-autoprune"/>
     <keyword type="property" name="The “should-delete” property" link="FlatpakRelatedRef.html#FlatpakRelatedRef--should-delete"/>
@@ -231,6 +234,7 @@
     <keyword type="constant" name="FLATPAK_TRANSACTION_OPERATION_UPDATE" link="FlatpakTransaction.html#FLATPAK-TRANSACTION-OPERATION-UPDATE:CAPS"/>
     <keyword type="constant" name="FLATPAK_TRANSACTION_OPERATION_INSTALL_BUNDLE" link="FlatpakTransaction.html#FLATPAK-TRANSACTION-OPERATION-INSTALL-BUNDLE:CAPS"/>
     <keyword type="constant" name="FLATPAK_TRANSACTION_OPERATION_UNINSTALL" link="FlatpakTransaction.html#FLATPAK-TRANSACTION-OPERATION-UNINSTALL:CAPS"/>
+    <keyword type="constant" name="FLATPAK_TRANSACTION_OPERATION_LAST_TYPE" link="FlatpakTransaction.html#FLATPAK-TRANSACTION-OPERATION-LAST-TYPE:CAPS"/>
     <keyword type="constant" name="FLATPAK_TRANSACTION_ERROR_DETAILS_NON_FATAL" link="FlatpakTransaction.html#FLATPAK-TRANSACTION-ERROR-DETAILS-NON-FATAL:CAPS"/>
     <keyword type="constant" name="FLATPAK_TRANSACTION_RESULT_NO_CHANGE" link="FlatpakTransaction.html#FLATPAK-TRANSACTION-RESULT-NO-CHANGE:CAPS"/>
     <keyword type="constant" name="FLATPAK_REF_KIND_APP" link="FlatpakRef.html#FLATPAK-REF-KIND-APP:CAPS"/>

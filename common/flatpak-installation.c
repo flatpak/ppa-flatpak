@@ -22,10 +22,8 @@
 
 #include <string.h>
 
-#ifdef FLATPAK_ENABLE_P2P
 #include <ostree.h>
 #include <ostree-repo-finder-avahi.h>
-#endif  /* FLATPAK_ENABLE_P2P */
 
 #include "flatpak-installation-private.h"
 #include "flatpak-utils-private.h"
@@ -383,6 +381,20 @@ static FlatpakDir *
 flatpak_installation_get_dir_maybe_no_repo (FlatpakInstallation *self)
 {
   return _flatpak_installation_get_dir (self, FALSE, NULL);
+}
+
+FlatpakDir *
+flatpak_installation_clone_dir_noensure (FlatpakInstallation *self)
+{
+  g_autoptr(FlatpakDir) dir_clone = NULL;
+  g_autoptr(FlatpakDir) dir = NULL;
+
+  dir = flatpak_installation_get_dir_maybe_no_repo (self);
+
+  /* Pull, prune, etc are not threadsafe, so we work on a copy */
+  dir_clone = flatpak_dir_clone (dir);
+
+  return g_steal_pointer (&dir_clone);
 }
 
 FlatpakDir *
@@ -871,7 +883,6 @@ flatpak_installation_list_installed_refs_by_kind (FlatpakInstallation *self,
   return g_steal_pointer (&refs);
 }
 
-#ifdef FLATPAK_ENABLE_P2P
 static void
 async_result_cb (GObject      *obj,
                  GAsyncResult *result,
@@ -880,7 +891,6 @@ async_result_cb (GObject      *obj,
   GAsyncResult **result_out = user_data;
   *result_out = g_object_ref (result);
 }
-#endif  /* FLATPAK_ENABLE_P2P */
 
 /**
  * flatpak_installation_list_installed_refs_for_update:
@@ -906,12 +916,10 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
   g_autoptr(GPtrArray) remotes = NULL; /* (element-type FlatpakRemote) */
   g_autoptr(GHashTable) remote_commits = NULL; /* (element-type utf8 utf8) */
   int i, j;
-#ifdef FLATPAK_ENABLE_P2P
   g_autoptr(FlatpakDir) dir = NULL;
   g_auto(OstreeRepoFinderResultv) results = NULL;
   g_autoptr(GAsyncResult) result = NULL;
   g_autoptr(GPtrArray) collection_refs = NULL; /* (element-type OstreeCollectionRef) */
-#endif  /* FLATPAK_ENABLE_P2P */
 
   remote_commits = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 
@@ -979,7 +987,6 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
         g_ptr_array_add (updates, g_object_ref (installed_ref));
     }
 
-#ifdef FLATPAK_ENABLE_P2P
   dir = flatpak_installation_get_dir (self, error);
   if (dir == NULL)
     return NULL;
@@ -1089,7 +1096,6 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
           break;
         }
     }
-#endif  /* FLATPAK_ENABLE_P2P */
 
   return g_steal_pointer (&updates);
 }
@@ -1109,7 +1115,6 @@ list_remotes_for_configured_remote (FlatpakInstallation  *self,
                                     GCancellable         *cancellable,
                                     GError              **error)
 {
-#ifdef FLATPAK_ENABLE_P2P
   g_autofree gchar *collection_id = NULL;
   OstreeCollectionRef ref;
   const OstreeCollectionRef *refs[2] = { NULL, };
@@ -1191,7 +1196,6 @@ list_remotes_for_configured_remote (FlatpakInstallation  *self,
                                                        results[i]->finder,
                                                        dir));
     }
-#endif  /* FLATPAK_ENABLE_P2P */
 
   return TRUE;
 }
@@ -1582,7 +1586,7 @@ flatpak_installation_install_bundle (FlatpakInstallation    *self,
   if (dir == NULL)
     return NULL;
 
-  remote = flatpak_dir_ensure_bundle_remote (dir, file, NULL, &ref, NULL, NULL, cancellable, error);
+  remote = flatpak_dir_ensure_bundle_remote (dir, file, NULL, &ref, NULL, NULL, NULL, cancellable, error);
   if (remote == NULL)
     return NULL;
 
@@ -1743,7 +1747,7 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_DEPLOY) != 0,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_STATIC_DELTAS) != 0,
                             FALSE, state,
-                            ref, (const char **)subpaths,
+                            ref, NULL, (const char **)subpaths,
                             ostree_progress, cancellable, error))
     goto out;
 
@@ -2270,12 +2274,10 @@ flatpak_installation_fetch_remote_ref_sync (FlatpakInstallation *self,
     return NULL;
 
   /* FIXME: Rework to accept the collection ID as an input argument instead */
-#ifdef FLATPAK_ENABLE_P2P
   if (!ostree_repo_get_remote_option (flatpak_dir_get_repo (dir),
                                       remote_name, "collection-id",
                                       NULL, &collection_id, error))
     return FALSE;
-#endif /* FLATPAK_ENABLE_P2P */
 
   if (kind == FLATPAK_REF_KIND_APP)
     ref = flatpak_build_app_ref (name,
@@ -2289,7 +2291,6 @@ flatpak_installation_fetch_remote_ref_sync (FlatpakInstallation *self,
   coll_ref = flatpak_collection_ref_new (collection_id, ref);
   checksum = g_hash_table_lookup (ht, coll_ref);
 
-#ifdef FLATPAK_ENABLE_P2P
   /* If there was not a match, it may be because the collection ID is
    * not set in the local configuration, or it is wrong, so we resort to
    * trying to match just the ref name */
@@ -2309,7 +2310,6 @@ flatpak_installation_fetch_remote_ref_sync (FlatpakInstallation *self,
             }
         }
     }
-#endif /* FLATPAK_ENABLE_P2P */
 
   if (checksum != NULL)
     return flatpak_remote_ref_new (coll_ref, checksum, remote_name, state);
