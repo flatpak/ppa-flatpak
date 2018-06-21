@@ -2,7 +2,7 @@ flatpak (0.99.1-1) UNRELEASED; urgency=medium
 
   * New upstream release
   * Install new flatpak-coredumpctl script as an example
-  * Bump ostree dependencies to 2018.6 for peer-to-peer app sharing
+  * Bump ostree dependencies to 2018.6
   * flatpak Suggests avahi-daemon for peer-to-peer app sharing
 
  -- Simon McVittie <smcv@debian.org>  Thu, 21 Jun 2018 19:24:41 +0100
