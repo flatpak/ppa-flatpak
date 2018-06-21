@@ -32,7 +32,7 @@ Build-Depends:
  libglib2.0-dev (>= 2.44),
  libgpgme-dev (>= 1.1.8),
  libjson-glib-dev,
- libostree-dev (>= 2017.15),
+ libostree-dev (>= 2018.5+42+gecdebeb2),
  libpolkit-gobject-1-dev,
  libseccomp-dev,
  libsoup2.4-dev,
@@ -69,6 +69,8 @@ Recommends:
  policykit-1,
  shared-mime-info,
  xdg-desktop-portal-gtk | xdg-desktop-portal-backend,
+Suggests:
+ avahi-daemon,
 Conflicts:
  xdg-app,
 Replaces:
@@ -102,7 +104,7 @@ Depends:
  gnupg,
  gtk-update-icon-cache,
  hicolor-icon-theme,
- ostree (>= 2017.15),
+ ostree (>= 2018.5+42+gecdebeb2),
  shared-mime-info,
  ${misc:Depends},
  ${shlibs:Depends},
@@ -136,7 +138,7 @@ Depends:
  gir1.2-flatpak-1.0 (= ${binary:Version}),
  libflatpak0 (= ${binary:Version}),
  libglib2.0-dev,
- libostree-dev (>= 2017.15),
+ libostree-dev (>= 2018.5+42+gecdebeb2),
  libxml2-dev (>= 2.4),
  pkg-config,
  ${misc:Depends},
