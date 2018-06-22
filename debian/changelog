@@ -1,6 +1,7 @@
 flatpak (0.99.1-1) UNRELEASED; urgency=medium
 
   * New upstream release
+    - Update symbols file for new ABI
   * Install new flatpak-coredumpctl script as an example
   * Bump ostree dependencies to 2018.6
   * flatpak Suggests avahi-daemon for peer-to-peer app sharing

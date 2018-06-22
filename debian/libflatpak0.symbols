@@ -124,14 +124,26 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_remote_set_url@Base 0.5.2+git20160516
  flatpak_remote_type_get_type@Base 0.9.8
  flatpak_storage_type_get_type@Base 0.8.0
+ flatpak_transaction_add_default_dependency_sources@Base 0.99.1
+ flatpak_transaction_add_dependency_source@Base 0.99.1
  flatpak_transaction_add_install@Base 0.11.8
  flatpak_transaction_add_install_bundle@Base 0.11.8
  flatpak_transaction_add_uninstall@Base 0.11.8
  flatpak_transaction_add_update@Base 0.11.8
  flatpak_transaction_error_details_get_type@Base 0.11.8
+ flatpak_transaction_get_current_operation@Base 0.99.1
+ flatpak_transaction_get_operations@Base 0.99.1
  flatpak_transaction_get_type@Base 0.11.8
  flatpak_transaction_is_empty@Base 0.11.8
  flatpak_transaction_new_for_installation@Base 0.11.8
+ flatpak_transaction_operation_get_bundle_path@Base 0.99.1
+ flatpak_transaction_operation_get_commit@Base 0.99.1
+ flatpak_transaction_operation_get_metadata@Base 0.99.1
+ flatpak_transaction_operation_get_old_metadata@Base 0.99.1
+ flatpak_transaction_operation_get_operation_type@Base 0.99.1
+ flatpak_transaction_operation_get_ref@Base 0.99.1
+ flatpak_transaction_operation_get_remote@Base 0.99.1
+ flatpak_transaction_operation_get_type@Base 0.99.1
  flatpak_transaction_operation_type_get_type@Base 0.11.8
  flatpak_transaction_progress_get_is_estimating@Base 0.11.8
  flatpak_transaction_progress_get_progress@Base 0.11.8
