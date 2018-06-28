@@ -47,7 +47,7 @@
             options to change this.
         </para>
         <para>
-            By default this lists both installed apps and runtime, but you can
+            By default this lists both installed apps and runtimes, but you can
             change this by using the --app or --runtime option.
         </para>
 
@@ -151,14 +151,6 @@
 
                 <listitem><para>
                     Print OSTree debug information during command processing.
-                </para></listitem>
-            </varlistentry>
-
-            <varlistentry>
-                <term><option>--version</option></term>
-
-                <listitem><para>
-                    Print version information and exit.
                 </para></listitem>
             </varlistentry>
         </variablelist>

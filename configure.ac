@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [0])
 m4_define([flatpak_minor_version], [99])
-m4_define([flatpak_micro_version], [1])
+m4_define([flatpak_micro_version], [2])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -231,9 +231,6 @@ if test "x$enable_sandboxed_triggers" = "xno"; then
 fi
 
 PKG_CHECK_MODULES(OSTREE, [ostree-1 >= $OSTREE_REQS])
-
-# FIXME: Remove this check and the use of it when the ostree requirement is at least 2018.5
-PKG_CHECK_MODULES(OSTREE_2018_5, [ostree-1 >= 2018.5], AC_DEFINE([OSTREE_VERSION_2018_5], [1], [Define if ostree is at least version 2018.5]), :)
 
 PKG_CHECK_MODULES(JSON, [json-glib-1.0])
 
