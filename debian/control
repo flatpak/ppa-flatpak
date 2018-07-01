@@ -39,7 +39,7 @@ Build-Depends:
  libxau-dev,
  libxml2-dev (>= 2.4),
  libxml2-utils,
- ostree <!nocheck>,
+ ostree (>= 2018.6) <!nocheck>,
  procps,
  python3 <!nocheck>,
  shared-mime-info <!nocheck>,
