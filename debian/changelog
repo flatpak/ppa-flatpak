@@ -1,3 +1,11 @@
+flatpak (0.99.2-2) unstable; urgency=medium
+
+  * Version the ostree command-line tool dependency for the tests.
+    For the stretch backport, the ostree in stretch is not enough: we need
+    the one from stretch-backports.
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 01 Jul 2018 22:34:02 +0100
+
 flatpak (0.99.2-1) unstable; urgency=medium
 
   * New upstream release
