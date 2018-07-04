@@ -37,7 +37,7 @@ override_dh_auto_configure:
 	rm -f app/parse-datetime.c
 	dh_auto_configure -- \
 		--enable-installed-tests \
-		--libexecdir=/usr/lib/flatpak \
+		--libexecdir=/usr/libexec \
 		--with-priv-mode=none \
 		--with-privileged-group=sudo \
 		--with-system-bubblewrap=bwrap \
