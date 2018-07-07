@@ -2,6 +2,8 @@ flatpak (0.99.2-3) UNRELEASED; urgency=medium
 
   * Standards-Version: 4.1.5 (no changes required)
   * Put helper binaries in /usr/libexec as allowed by FHS 3.0
+  * d/p/Fix-error-handling-while-deploying-AppStream.patch:
+    Add a patch fixing error handling in system helper
 
  -- Simon McVittie <smcv@debian.org>  Wed, 04 Jul 2018 13:39:56 +0100
 

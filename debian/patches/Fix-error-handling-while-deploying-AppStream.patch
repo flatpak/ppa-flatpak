@@ -1,0 +1,28 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Sat, 7 Jul 2018 12:35:10 +0100
+Subject: Fix error handling while deploying AppStream
+
+Setting an error with second_error->message is going to work poorly
+when second_error has never been set non-NULL.
+
+Related to #1845, although not necessarily the full solution.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/1867
+---
+ system-helper/flatpak-system-helper.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/system-helper/flatpak-system-helper.c b/system-helper/flatpak-system-helper.c
+index 55d8fdc..c8dbdc6 100644
+--- a/system-helper/flatpak-system-helper.c
++++ b/system-helper/flatpak-system-helper.c
+@@ -589,7 +589,7 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
+         {
+           if (!flatpak_dir_pull (system, state, old_branch, NULL, NULL, NULL, NULL,
+                                  FLATPAK_PULL_FLAGS_NONE, OSTREE_REPO_PULL_FLAGS_UNTRUSTED, ostree_progress,
+-                                 NULL, NULL))
++                                 NULL, &second_error))
+             {
+               g_prefix_error (&first_error, "Error updating appstream2: ");
+               g_prefix_error (&second_error, "%s; Error updating appstream: ", first_error->message);
