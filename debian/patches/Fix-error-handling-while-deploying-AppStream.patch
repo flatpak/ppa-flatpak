@@ -9,6 +9,7 @@ Related to #1845, although not necessarily the full solution.
 
 Signed-off-by: Simon McVittie <smcv@collabora.com>
 Forwarded: https://github.com/flatpak/flatpak/pull/1867
+Applied-upstream: 0.99.3, commit:https://github.com/flatpak/flatpak/commit/7179c12e22f56c0eee41a0d1ac84e3292580dada
 ---
  system-helper/flatpak-system-helper.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
