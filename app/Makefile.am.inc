@@ -4,7 +4,22 @@ bin_PROGRAMS += \
 
 EXTRA_DIST += app/parse-datetime.y
 
+flatpak_dbus_built_sources = app/flatpak-permission-dbus-generated.c app/flatpak-permission-dbus-generated.h
+
+app/flatpak-permission-dbus-generated.c: data/org.freedesktop.impl.portal.PermissionStore.xml Makefile
+	mkdir -p $(builddir)/common
+	$(AM_V_GEN) $(GDBUS_CODEGEN)                            \
+		--interface-prefix org.freedesktop.impl.portal  \
+		--c-namespace XdpDbus                           \
+		--generate-c-code $(builddir)/app/flatpak-permission-dbus-generated  \
+		$(srcdir)/data/org.freedesktop.impl.portal.PermissionStore.xml  \
+		$(NULL)
+
+app/%-dbus-generated.h: app/%-dbus-generated.c
+	@true # Built as a side-effect of the rules for the .c
+
 flatpak_SOURCES = \
+	$(flatpak_dbus_built_sources) \
 	app/flatpak-main.c \
 	app/flatpak-builtins.h \
 	app/flatpak-builtins-utils.h \
@@ -38,8 +53,13 @@ flatpak_SOURCES = \
 	app/flatpak-builtins-document-unexport.c \
 	app/flatpak-builtins-document-info.c \
 	app/flatpak-builtins-document-list.c \
+	app/flatpak-builtins-permission-remove.c \
+	app/flatpak-builtins-permission-list.c \
+	app/flatpak-builtins-permission-show.c \
+	app/flatpak-builtins-permission-reset.c \
 	app/flatpak-builtins-search.c \
 	app/flatpak-builtins-repair.c \
+	app/flatpak-builtins-create-usb.c \
 	app/flatpak-table-printer.c \
 	app/flatpak-table-printer.h \
 	app/flatpak-complete.c \
@@ -56,11 +76,13 @@ nodist_flatpak_SOURCES = \
 app/parse-datetime.c: app/parse-datetime.y Makefile
 	$(AM_V_GEN) $(YACC) $< -o $@
 
-CLEANFILES += app/parse-datetime.c
+BUILT_SOURCES += $(flatpak_dbus_built_sources)
+CLEANFILES += app/parse-datetime.c $(flatpak_dbus_built_sources)
 
 flatpak_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) \
 	libglnx.la libflatpak-common.la
 flatpak_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
 	-DFLATPAK_COMPILATION \
         -I$(srcdir)/app \
+        -I$(builddir)/app \
         -DLOCALEDIR=\"$(localedir)\"

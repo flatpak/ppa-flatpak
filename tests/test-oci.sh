@@ -24,7 +24,6 @@ set -euo pipefail
 export FLATPAK_ENABLE_EXPERIMENTAL_OCI=1
 
 skip_without_bwrap
-[ x${USE_SYSTEMDIR-} != xyes ] || skip_without_user_xattrs
 
 echo "1..2"
 
@@ -43,6 +42,13 @@ for i in oci/registry/blobs/sha256/*; do
      echo $(basename $i) $i >> sums
 done
 sha256sum -c sums
+
+digest=$(grep sha256: oci/registry/index.json | sed s'@.*sha256:\([a-fA-F0-9]\+\).*@\1@')
+manifest=oci/registry/blobs/sha256/$digest
+
+assert_has_file $manifest
+assert_file_has_content $manifest "org.freedesktop.appstream.appdata.*<summary>Print a greeting</summary>"
+assert_file_has_content $manifest "org.freedesktop.appstream.icon-64"
 
 echo "ok export oci"
 

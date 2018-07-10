@@ -56,7 +56,7 @@ gboolean usage_error (GOptionContext *context,
 
 #define BUILTINPROTO(name) \
   gboolean flatpak_builtin_ ## name (int argc, char **argv, GCancellable * cancellable, GError * *error); \
-  gboolean flatpak_complete_ ## name (FlatpakCompletion *completion);
+  gboolean flatpak_complete_ ## name (FlatpakCompletion * completion);
 
 
 BUILTINPROTO (add_remote)
@@ -87,11 +87,16 @@ BUILTINPROTO (document_export)
 BUILTINPROTO (document_unexport)
 BUILTINPROTO (document_info)
 BUILTINPROTO (document_list)
+BUILTINPROTO (permission_remove)
+BUILTINPROTO (permission_list)
+BUILTINPROTO (permission_show)
+BUILTINPROTO (permission_reset)
 BUILTINPROTO (override)
 BUILTINPROTO (repo)
 BUILTINPROTO (config)
 BUILTINPROTO (search)
 BUILTINPROTO (repair)
+BUILTINPROTO (create_usb)
 
 #undef BUILTINPROTO
 
