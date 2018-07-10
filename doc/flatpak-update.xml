@@ -51,7 +51,7 @@
             is updated, as well as appstream info for all remotes.
         </para>
         <para>
-            Each <arg choice="plain">REF</arg> arguments is a full or partial indentifier in the
+            Each <arg choice="plain">REF</arg> argument is a full or partial indentifier in the
             flatpak ref format, which looks like "(app|runtime)/ID/ARCH/BRANCH". All elements
             except ID are optional and can be left out, including the slashes,
             so most of the time you need only specify ID. Any part left out will be matched
@@ -67,6 +67,13 @@
             Normally, this command updates the application to the tip
             of its branch. But it is possible to check out another commit,
             with the --commit option.
+        </para>
+        <para>
+            If the configured remote for a ref being updated has a collection ID configured on it,
+            flatpak will search mounted filesystems such as USB drives as well as Avahi services
+            advertised on the local network for the needed refs, in order to support
+            offline updates. See <citerefentry><refentrytitle>ostree-find-remotes</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+            for more information.
         </para>
         <para>
             Note that updating a runtime is different from installing

@@ -122,11 +122,14 @@
     <keyword type="function" name="flatpak_transaction_set_no_pull ()" link="FlatpakTransaction.html#flatpak-transaction-set-no-pull"/>
     <keyword type="function" name="flatpak_transaction_set_reinstall ()" link="FlatpakTransaction.html#flatpak-transaction-set-reinstall"/>
     <keyword type="function" name="flatpak_transaction_set_force_uninstall ()" link="FlatpakTransaction.html#flatpak-transaction-set-force-uninstall"/>
+    <keyword type="function" name="flatpak_transaction_set_default_arch ()" link="FlatpakTransaction.html#flatpak-transaction-set-default-arch"/>
+    <keyword type="function" name="flatpak_transaction_add_install_flatpakref ()" link="FlatpakTransaction.html#flatpak-transaction-add-install-flatpakref"/>
     <keyword type="struct" name="FlatpakTransaction" link="FlatpakTransaction.html#FlatpakTransaction-struct"/>
     <keyword type="enum" name="enum FlatpakTransactionOperationType" link="FlatpakTransaction.html#FlatpakTransactionOperationType"/>
     <keyword type="enum" name="enum FlatpakTransactionErrorDetails" link="FlatpakTransaction.html#FlatpakTransactionErrorDetails"/>
     <keyword type="enum" name="enum FlatpakTransactionResult" link="FlatpakTransaction.html#FlatpakTransactionResult"/>
     <keyword type="property" name="The “installation” property" link="FlatpakTransaction.html#FlatpakTransaction--installation"/>
+    <keyword type="signal" name="The “add-new-remote” signal" link="FlatpakTransaction.html#FlatpakTransaction-add-new-remote"/>
     <keyword type="signal" name="The “choose-remote-for-ref” signal" link="FlatpakTransaction.html#FlatpakTransaction-choose-remote-for-ref"/>
     <keyword type="signal" name="The “end-of-lifed” signal" link="FlatpakTransaction.html#FlatpakTransaction-end-of-lifed"/>
     <keyword type="signal" name="The “new-operation” signal" link="FlatpakTransaction.html#FlatpakTransaction-new-operation"/>
@@ -246,6 +249,8 @@
     <keyword type="constant" name="FLATPAK_ERROR_ABORTED" link="flatpak-Error-codes.html#FLATPAK-ERROR-ABORTED:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_SKIPPED" link="flatpak-Error-codes.html#FLATPAK-ERROR-SKIPPED:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_NEED_NEW_FLATPAK" link="flatpak-Error-codes.html#FLATPAK-ERROR-NEED-NEW-FLATPAK:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_REMOTE_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-ERROR-REMOTE-NOT-FOUND:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_RUNTIME_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-ERROR-RUNTIME-NOT-FOUND:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_FAILED" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-FAILED:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-INVALID-ARGUMENT:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-NOT-FOUND:CAPS"/>

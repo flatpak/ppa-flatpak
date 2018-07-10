@@ -327,7 +327,10 @@ am__EXEEXT_5 = test-libglnx-xattrs$(EXEEXT) test-libglnx-fdio$(EXEEXT) \
 PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(installed_test_PROGRAMS) $(libexec_PROGRAMS) \
 	$(noinst_PROGRAMS)
-am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
+am__objects_5 =  \
+	app/flatpak-flatpak-permission-dbus-generated.$(OBJEXT)
+am_flatpak_OBJECTS = $(am__objects_5) \
+	app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-utils.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-add-remote.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-delete-remote.$(OBJEXT) \
@@ -358,8 +361,13 @@ am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-unexport.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-info.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-list.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-permission-remove.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-permission-list.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-permission-show.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-permission-reset.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-search.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-repair.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-create-usb.$(OBJEXT) \
 	app/flatpak-flatpak-table-printer.$(OBJEXT) \
 	app/flatpak-flatpak-complete.$(OBJEXT) \
 	app/flatpak-flatpak-cli-transaction.$(OBJEXT) $(am__objects_1)
@@ -376,12 +384,12 @@ am__flatpak_bwrap_SOURCES_DIST = bubblewrap/bubblewrap.c \
 	bubblewrap/bind-mount.h bubblewrap/bind-mount.c \
 	bubblewrap/network.h bubblewrap/network.c bubblewrap/utils.h \
 	bubblewrap/utils.c
-@WITH_SYSTEM_BWRAP_FALSE@am__objects_5 = bubblewrap/flatpak_bwrap-bubblewrap.$(OBJEXT) \
+@WITH_SYSTEM_BWRAP_FALSE@am__objects_6 = bubblewrap/flatpak_bwrap-bubblewrap.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-bind-mount.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-network.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-utils.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	$(am__objects_1)
-@WITH_SYSTEM_BWRAP_FALSE@am_flatpak_bwrap_OBJECTS = $(am__objects_5)
+@WITH_SYSTEM_BWRAP_FALSE@am_flatpak_bwrap_OBJECTS = $(am__objects_6)
 flatpak_bwrap_OBJECTS = $(am_flatpak_bwrap_OBJECTS)
 @WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_DEPENDENCIES =  \
 @WITH_SYSTEM_BWRAP_FALSE@	$(am__DEPENDENCIES_1) \
@@ -1065,7 +1073,7 @@ noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
 	$(systemduserunit_DATA) $(nodist_libflatpak_common_la_SOURCES) \
 	$(am__append_18) app/parse-datetime.c \
-	$(nodist_flatpak_portal_SOURCES)
+	$(flatpak_dbus_built_sources) $(nodist_flatpak_portal_SOURCES)
 MAINTAINERCLEANFILES = $(NULL)
 DISTCLEANFILES = $(NULL) $(am__append_21) \
 	tests/services/org.freedesktop.Flatpak.service \
@@ -1073,7 +1081,7 @@ DISTCLEANFILES = $(NULL) $(am__append_21) \
 	tests/package_version.txt $(NULL) flatpak.sh flatpak.env \
 	flatpak.conf
 BUILT_SOURCES = $(NULL) $(nodist_libflatpak_common_la_SOURCES) \
-	$(nodist_flatpak_portal_SOURCES)
+	$(flatpak_dbus_built_sources) $(nodist_flatpak_portal_SOURCES)
 EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	$(all_dist_test_scripts) $(all_dist_test_data) \
 	$(service_in_files) libglnx/README.md libglnx/COPYING \
@@ -1081,6 +1089,7 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	common/flatpak-enum-types.c.template \
 	common/flatpak-enum-types.h.template \
 	data/org.freedesktop.portal.Documents.xml \
+	data/org.freedesktop.impl.portal.PermissionStore.xml \
 	data/org.freedesktop.systemd1.xml \
 	data/org.freedesktop.Flatpak.xml \
 	data/org.freedesktop.portal.Flatpak.xml $(NULL) \
@@ -1401,7 +1410,9 @@ introspection_DATA = \
 	data/org.freedesktop.portal.Flatpak.xml \
 	$(NULL)
 
+flatpak_dbus_built_sources = app/flatpak-permission-dbus-generated.c app/flatpak-permission-dbus-generated.h
 flatpak_SOURCES = \
+	$(flatpak_dbus_built_sources) \
 	app/flatpak-main.c \
 	app/flatpak-builtins.h \
 	app/flatpak-builtins-utils.h \
@@ -1435,8 +1446,13 @@ flatpak_SOURCES = \
 	app/flatpak-builtins-document-unexport.c \
 	app/flatpak-builtins-document-info.c \
 	app/flatpak-builtins-document-list.c \
+	app/flatpak-builtins-permission-remove.c \
+	app/flatpak-builtins-permission-list.c \
+	app/flatpak-builtins-permission-show.c \
+	app/flatpak-builtins-permission-reset.c \
 	app/flatpak-builtins-search.c \
 	app/flatpak-builtins-repair.c \
+	app/flatpak-builtins-create-usb.c \
 	app/flatpak-table-printer.c \
 	app/flatpak-table-printer.h \
 	app/flatpak-complete.c \
@@ -1456,6 +1472,7 @@ flatpak_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS
 flatpak_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
 	-DFLATPAK_COMPILATION \
         -I$(srcdir)/app \
+        -I$(builddir)/app \
         -DLOCALEDIR=\"$(localedir)\"
 
 flatpak_session_helper_SOURCES = \
@@ -1463,7 +1480,7 @@ flatpak_session_helper_SOURCES = \
 	$(NULL)
 
 flatpak_session_helper_LDADD = $(AM_LDADD) $(BASE_LIBS) libflatpak-common.la
-flatpak_session_helper_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(SOUP_CFLAGS) $(OSTREE_CFLAGS) $(GSYSTEM_CFLAGS) $(JSON_CFLAGS)
+flatpak_session_helper_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(SOUP_CFLAGS) $(OSTREE_CFLAGS) $(GSYSTEM_CFLAGS) $(JSON_CFLAGS) -DFLATPAK_COMPILATION
 nodist_flatpak_portal_SOURCES = portal/flatpak-portal-dbus.c portal/flatpak-portal-dbus.h
 flatpak_portal_SOURCES = \
 	portal/flatpak-portal.c		\
@@ -2059,6 +2076,8 @@ app/$(am__dirstamp):
 app/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) app/$(DEPDIR)
 	@: > app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-permission-dbus-generated.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-main.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-utils.$(OBJEXT): app/$(am__dirstamp) \
@@ -2121,10 +2140,20 @@ app/flatpak-flatpak-builtins-document-info.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-document-list.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-permission-remove.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-permission-list.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-permission-show.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-permission-reset.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-search.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-repair.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-create-usb.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-table-printer.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-complete.$(OBJEXT): app/$(am__dirstamp) \
@@ -2411,6 +2440,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build-sign.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-config.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-create-usb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-delete-remote.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-document-export.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-document-info.Po@am__quote@
@@ -2425,6 +2455,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-ls-remote.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-make-current.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-override.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-remove.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-reset.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-show.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-repair.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-repo-update.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-repo.Po@am__quote@
@@ -2436,6 +2470,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-cli-transaction.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-complete.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-table-printer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-parse-datetime.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-bind-mount.Po@am__quote@
@@ -2753,6 +2788,20 @@ libglnx/libglnx_la-glnx-shutil.lo: libglnx/glnx-shutil.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libglnx/glnx-shutil.c' object='libglnx/libglnx_la-glnx-shutil.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o libglnx/libglnx_la-glnx-shutil.lo `test -f 'libglnx/glnx-shutil.c' || echo '$(srcdir)/'`libglnx/glnx-shutil.c
+
+app/flatpak-flatpak-permission-dbus-generated.o: app/flatpak-permission-dbus-generated.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-permission-dbus-generated.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Tpo -c -o app/flatpak-flatpak-permission-dbus-generated.o `test -f 'app/flatpak-permission-dbus-generated.c' || echo '$(srcdir)/'`app/flatpak-permission-dbus-generated.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Tpo app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-permission-dbus-generated.c' object='app/flatpak-flatpak-permission-dbus-generated.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-permission-dbus-generated.o `test -f 'app/flatpak-permission-dbus-generated.c' || echo '$(srcdir)/'`app/flatpak-permission-dbus-generated.c
+
+app/flatpak-flatpak-permission-dbus-generated.obj: app/flatpak-permission-dbus-generated.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-permission-dbus-generated.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Tpo -c -o app/flatpak-flatpak-permission-dbus-generated.obj `if test -f 'app/flatpak-permission-dbus-generated.c'; then $(CYGPATH_W) 'app/flatpak-permission-dbus-generated.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-permission-dbus-generated.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Tpo app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-permission-dbus-generated.c' object='app/flatpak-flatpak-permission-dbus-generated.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-permission-dbus-generated.obj `if test -f 'app/flatpak-permission-dbus-generated.c'; then $(CYGPATH_W) 'app/flatpak-permission-dbus-generated.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-permission-dbus-generated.c'; fi`
 
 app/flatpak-flatpak-main.o: app/flatpak-main.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-main.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-main.Tpo -c -o app/flatpak-flatpak-main.o `test -f 'app/flatpak-main.c' || echo '$(srcdir)/'`app/flatpak-main.c
@@ -3188,6 +3237,62 @@ app/flatpak-flatpak-builtins-document-list.obj: app/flatpak-builtins-document-li
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-document-list.obj `if test -f 'app/flatpak-builtins-document-list.c'; then $(CYGPATH_W) 'app/flatpak-builtins-document-list.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-document-list.c'; fi`
 
+app/flatpak-flatpak-builtins-permission-remove.o: app/flatpak-builtins-permission-remove.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-permission-remove.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-permission-remove.Tpo -c -o app/flatpak-flatpak-builtins-permission-remove.o `test -f 'app/flatpak-builtins-permission-remove.c' || echo '$(srcdir)/'`app/flatpak-builtins-permission-remove.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-permission-remove.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-permission-remove.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-permission-remove.c' object='app/flatpak-flatpak-builtins-permission-remove.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-permission-remove.o `test -f 'app/flatpak-builtins-permission-remove.c' || echo '$(srcdir)/'`app/flatpak-builtins-permission-remove.c
+
+app/flatpak-flatpak-builtins-permission-remove.obj: app/flatpak-builtins-permission-remove.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-permission-remove.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-permission-remove.Tpo -c -o app/flatpak-flatpak-builtins-permission-remove.obj `if test -f 'app/flatpak-builtins-permission-remove.c'; then $(CYGPATH_W) 'app/flatpak-builtins-permission-remove.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-permission-remove.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-permission-remove.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-permission-remove.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-permission-remove.c' object='app/flatpak-flatpak-builtins-permission-remove.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-permission-remove.obj `if test -f 'app/flatpak-builtins-permission-remove.c'; then $(CYGPATH_W) 'app/flatpak-builtins-permission-remove.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-permission-remove.c'; fi`
+
+app/flatpak-flatpak-builtins-permission-list.o: app/flatpak-builtins-permission-list.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-permission-list.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Tpo -c -o app/flatpak-flatpak-builtins-permission-list.o `test -f 'app/flatpak-builtins-permission-list.c' || echo '$(srcdir)/'`app/flatpak-builtins-permission-list.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-permission-list.c' object='app/flatpak-flatpak-builtins-permission-list.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-permission-list.o `test -f 'app/flatpak-builtins-permission-list.c' || echo '$(srcdir)/'`app/flatpak-builtins-permission-list.c
+
+app/flatpak-flatpak-builtins-permission-list.obj: app/flatpak-builtins-permission-list.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-permission-list.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Tpo -c -o app/flatpak-flatpak-builtins-permission-list.obj `if test -f 'app/flatpak-builtins-permission-list.c'; then $(CYGPATH_W) 'app/flatpak-builtins-permission-list.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-permission-list.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-permission-list.c' object='app/flatpak-flatpak-builtins-permission-list.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-permission-list.obj `if test -f 'app/flatpak-builtins-permission-list.c'; then $(CYGPATH_W) 'app/flatpak-builtins-permission-list.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-permission-list.c'; fi`
+
+app/flatpak-flatpak-builtins-permission-show.o: app/flatpak-builtins-permission-show.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-permission-show.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-permission-show.Tpo -c -o app/flatpak-flatpak-builtins-permission-show.o `test -f 'app/flatpak-builtins-permission-show.c' || echo '$(srcdir)/'`app/flatpak-builtins-permission-show.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-permission-show.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-permission-show.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-permission-show.c' object='app/flatpak-flatpak-builtins-permission-show.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-permission-show.o `test -f 'app/flatpak-builtins-permission-show.c' || echo '$(srcdir)/'`app/flatpak-builtins-permission-show.c
+
+app/flatpak-flatpak-builtins-permission-show.obj: app/flatpak-builtins-permission-show.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-permission-show.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-permission-show.Tpo -c -o app/flatpak-flatpak-builtins-permission-show.obj `if test -f 'app/flatpak-builtins-permission-show.c'; then $(CYGPATH_W) 'app/flatpak-builtins-permission-show.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-permission-show.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-permission-show.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-permission-show.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-permission-show.c' object='app/flatpak-flatpak-builtins-permission-show.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-permission-show.obj `if test -f 'app/flatpak-builtins-permission-show.c'; then $(CYGPATH_W) 'app/flatpak-builtins-permission-show.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-permission-show.c'; fi`
+
+app/flatpak-flatpak-builtins-permission-reset.o: app/flatpak-builtins-permission-reset.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-permission-reset.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-permission-reset.Tpo -c -o app/flatpak-flatpak-builtins-permission-reset.o `test -f 'app/flatpak-builtins-permission-reset.c' || echo '$(srcdir)/'`app/flatpak-builtins-permission-reset.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-permission-reset.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-permission-reset.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-permission-reset.c' object='app/flatpak-flatpak-builtins-permission-reset.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-permission-reset.o `test -f 'app/flatpak-builtins-permission-reset.c' || echo '$(srcdir)/'`app/flatpak-builtins-permission-reset.c
+
+app/flatpak-flatpak-builtins-permission-reset.obj: app/flatpak-builtins-permission-reset.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-permission-reset.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-permission-reset.Tpo -c -o app/flatpak-flatpak-builtins-permission-reset.obj `if test -f 'app/flatpak-builtins-permission-reset.c'; then $(CYGPATH_W) 'app/flatpak-builtins-permission-reset.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-permission-reset.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-permission-reset.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-permission-reset.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-permission-reset.c' object='app/flatpak-flatpak-builtins-permission-reset.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-permission-reset.obj `if test -f 'app/flatpak-builtins-permission-reset.c'; then $(CYGPATH_W) 'app/flatpak-builtins-permission-reset.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-permission-reset.c'; fi`
+
 app/flatpak-flatpak-builtins-search.o: app/flatpak-builtins-search.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-search.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-search.Tpo -c -o app/flatpak-flatpak-builtins-search.o `test -f 'app/flatpak-builtins-search.c' || echo '$(srcdir)/'`app/flatpak-builtins-search.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-search.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-search.Po
@@ -3215,6 +3320,20 @@ app/flatpak-flatpak-builtins-repair.obj: app/flatpak-builtins-repair.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-repair.c' object='app/flatpak-flatpak-builtins-repair.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-repair.obj `if test -f 'app/flatpak-builtins-repair.c'; then $(CYGPATH_W) 'app/flatpak-builtins-repair.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-repair.c'; fi`
+
+app/flatpak-flatpak-builtins-create-usb.o: app/flatpak-builtins-create-usb.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-create-usb.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-create-usb.Tpo -c -o app/flatpak-flatpak-builtins-create-usb.o `test -f 'app/flatpak-builtins-create-usb.c' || echo '$(srcdir)/'`app/flatpak-builtins-create-usb.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-create-usb.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-create-usb.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-create-usb.c' object='app/flatpak-flatpak-builtins-create-usb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-create-usb.o `test -f 'app/flatpak-builtins-create-usb.c' || echo '$(srcdir)/'`app/flatpak-builtins-create-usb.c
+
+app/flatpak-flatpak-builtins-create-usb.obj: app/flatpak-builtins-create-usb.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-create-usb.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-create-usb.Tpo -c -o app/flatpak-flatpak-builtins-create-usb.obj `if test -f 'app/flatpak-builtins-create-usb.c'; then $(CYGPATH_W) 'app/flatpak-builtins-create-usb.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-create-usb.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-create-usb.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-create-usb.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-create-usb.c' object='app/flatpak-flatpak-builtins-create-usb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-create-usb.obj `if test -f 'app/flatpak-builtins-create-usb.c'; then $(CYGPATH_W) 'app/flatpak-builtins-create-usb.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-create-usb.c'; fi`
 
 app/flatpak-flatpak-table-printer.o: app/flatpak-table-printer.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-table-printer.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-table-printer.Tpo -c -o app/flatpak-flatpak-table-printer.o `test -f 'app/flatpak-table-printer.c' || echo '$(srcdir)/'`app/flatpak-table-printer.c
@@ -4945,6 +5064,18 @@ common/%-dbus-generated.h: common/%-dbus-generated.c
 -include $(INTROSPECTION_MAKEFILE)
 
 @HAVE_INTROSPECTION_TRUE@Flatpak-1.0.gir: libflatpak.la Makefile
+
+app/flatpak-permission-dbus-generated.c: data/org.freedesktop.impl.portal.PermissionStore.xml Makefile
+	mkdir -p $(builddir)/common
+	$(AM_V_GEN) $(GDBUS_CODEGEN)                            \
+		--interface-prefix org.freedesktop.impl.portal  \
+		--c-namespace XdpDbus                           \
+		--generate-c-code $(builddir)/app/flatpak-permission-dbus-generated  \
+		$(srcdir)/data/org.freedesktop.impl.portal.PermissionStore.xml  \
+		$(NULL)
+
+app/%-dbus-generated.h: app/%-dbus-generated.c
+	@true # Built as a side-effect of the rules for the .c
 
 app/parse-datetime.c: app/parse-datetime.y Makefile
 	$(AM_V_GEN) $(YACC) $< -o $@

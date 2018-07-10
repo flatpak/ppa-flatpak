@@ -80,15 +80,22 @@
             will be created for the lifetime of the <arg choice="plain">REF</arg>.
         </para>
         <para>
+            If the specified <arg choice="plain">REMOTE</arg> has a collection ID configured on it,
+            flatpak will search mounted filesystems such as USB drives as well as Avahi services
+            advertised on the local network for the needed refs, in order to support
+            offline updates. See <citerefentry><refentrytitle>ostree-find-remotes</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+            for more information.
+        </para>
+        <para>
             The alternative form of the command (<arg>--from</arg> or
             <arg>--bundle</arg> allows you to
             install directly from a source such as a .flatpak
             single-file bundle, a .flatpakref app description. The options are optional if the first
-            argument have the right extension.
+            argument has the right extension.
         </para>
         <para>
             Note that flatpak allows one to have multiple branches of an application and runtimes
-            installed and used at the same time. However, only version of an application one can be current,
+            installed and used at the same time. However, only one version of an application can be current,
             meaning its exported files (for instance desktop files and icons) are
             visible to the host. The last installed version is made current by
             default, but you can manually change with make-current.
