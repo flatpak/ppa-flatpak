@@ -1,3 +1,10 @@
+flatpak (0.99.3-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    - Drop patch from previous version, applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 10 Jul 2018 21:32:09 +0100
+
 flatpak (0.99.2-3) unstable; urgency=medium
 
   * Standards-Version: 4.1.5 (no changes required)

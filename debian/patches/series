@@ -1,2 +1,1 @@
-Fix-error-handling-while-deploying-AppStream.patch
 debian/Use-Python-3-for-test-web-server.patch
