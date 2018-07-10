@@ -1,10 +1,10 @@
-flatpak (0.99.3-1) UNRELEASED; urgency=medium
+flatpak (0.99.3-1) unstable; urgency=medium
 
   * New upstream release
     - Drop patch from previous version, applied upstream
     - Update symbols file
 
- -- Simon McVittie <smcv@debian.org>  Tue, 10 Jul 2018 21:32:09 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 10 Jul 2018 21:37:09 +0100
 
 flatpak (0.99.2-3) unstable; urgency=medium
 
