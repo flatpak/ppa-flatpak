@@ -128,10 +128,12 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_transaction_add_dependency_source@Base 0.99.1
  flatpak_transaction_add_install@Base 0.11.8
  flatpak_transaction_add_install_bundle@Base 0.11.8
+ flatpak_transaction_add_install_flatpakref@Base 0.99.3
  flatpak_transaction_add_uninstall@Base 0.11.8
  flatpak_transaction_add_update@Base 0.11.8
  flatpak_transaction_error_details_get_type@Base 0.11.8
  flatpak_transaction_get_current_operation@Base 0.99.1
+ flatpak_transaction_get_installation@Base 0.99.3
  flatpak_transaction_get_operations@Base 0.99.1
  flatpak_transaction_get_type@Base 0.11.8
  flatpak_transaction_is_empty@Base 0.11.8
@@ -145,13 +147,16 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_transaction_operation_get_remote@Base 0.99.1
  flatpak_transaction_operation_get_type@Base 0.99.1
  flatpak_transaction_operation_type_get_type@Base 0.11.8
+ flatpak_transaction_operation_type_to_string@Base 0.99.3
  flatpak_transaction_progress_get_is_estimating@Base 0.11.8
  flatpak_transaction_progress_get_progress@Base 0.11.8
  flatpak_transaction_progress_get_status@Base 0.11.8
  flatpak_transaction_progress_get_type@Base 0.11.8
  flatpak_transaction_progress_set_update_frequency@Base 0.11.8
+ flatpak_transaction_remote_reason_get_type@Base 0.99.3
  flatpak_transaction_result_get_type@Base 0.11.8
  flatpak_transaction_run@Base 0.11.8
+ flatpak_transaction_set_default_arch@Base 0.99.3
  flatpak_transaction_set_disable_dependencies@Base 0.11.8
  flatpak_transaction_set_disable_prune@Base 0.11.8
  flatpak_transaction_set_disable_related@Base 0.11.8
