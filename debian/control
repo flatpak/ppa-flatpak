@@ -66,6 +66,7 @@ Recommends:
  hicolor-icon-theme,
  gtk-update-icon-cache,
  libpam-systemd,
+ p11-kit,
  policykit-1,
  shared-mime-info,
  xdg-desktop-portal-gtk | xdg-desktop-portal-backend,
