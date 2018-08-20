@@ -1,4 +1,4 @@
-flatpak (1.0.0-1) UNRELEASED; urgency=medium
+flatpak (1.0.0-1) unstable; urgency=medium
 
   * New upstream stable release
   * (Build-)Depend on ostree 2018.7
@@ -16,7 +16,7 @@ flatpak (1.0.0-1) UNRELEASED; urgency=medium
     Expand to cover more test code
   * Standards-Version: 4.2.0
 
- -- Simon McVittie <smcv@debian.org>  Mon, 20 Aug 2018 14:34:53 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 20 Aug 2018 21:29:02 +0100
 
 flatpak (0.99.3-1) unstable; urgency=medium
 
