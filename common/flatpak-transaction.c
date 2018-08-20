@@ -785,7 +785,7 @@ flatpak_transaction_init (FlatpakTransaction *self)
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
 
   priv->last_op_for_ref = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
-  priv->remote_states = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) flatpak_remote_state_free);
+  priv->remote_states = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) flatpak_remote_state_unref);
   priv->added_origin_remotes = g_ptr_array_new_with_free_func (g_free);
   priv->extra_dependency_dirs = g_ptr_array_new_with_free_func (g_object_unref);
 }
@@ -1003,12 +1003,12 @@ flatpak_transaction_ensure_remote_state (FlatpakTransaction             *self,
 
   state = g_hash_table_lookup (priv->remote_states, remote);
   if (state)
-    return state;
+    return flatpak_remote_state_ref (state);
 
   state = flatpak_dir_get_remote_state_optional (priv->dir, remote, NULL, error);
 
   if (state)
-    g_hash_table_insert (priv->remote_states, state->remote_name, state);
+    g_hash_table_insert (priv->remote_states, state->remote_name, flatpak_remote_state_ref (state));
 
   return state;
 }
@@ -1090,8 +1090,7 @@ add_related (FlatpakTransaction          *self,
              GError                     **error)
 {
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
-  FlatpakRemoteState *state = NULL;
-
+  g_autoptr(FlatpakRemoteState) state = NULL;
   g_autoptr(GPtrArray) related = NULL;
   g_autoptr(GError) local_error = NULL;
   int i;
@@ -1153,8 +1152,8 @@ add_related (FlatpakTransaction          *self,
                                                    (const char **) rel->subpaths,
                                                    NULL, NULL,
                                                    FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE);
-          op->non_fatal = TRUE;
-          op->fail_if_op_fails = op;
+          related_op->non_fatal = TRUE;
+          related_op->fail_if_op_fails = op;
           run_operation_before (op, related_op, 1);
         }
     }
@@ -1303,6 +1302,7 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
   g_autofree char *origin = NULL;
   const char *pref;
   g_autofree char *origin_remote = NULL;
+  g_autoptr(FlatpakRemoteState) state = NULL;
   FlatpakTransactionOperation *op;
 
   if (remote_name_is_file (remote))
@@ -1376,10 +1376,11 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
       remote = origin;
     }
 
-  /* This should have been passed int or found out above */
+  /* This should have been passed in or found out above */
   g_assert (remote != NULL);
 
-  if (flatpak_transaction_ensure_remote_state (self, kind, remote, error) == NULL)
+  state = flatpak_transaction_ensure_remote_state (self, kind, remote, error);
+  if (state == NULL)
     return FALSE;
 
   op = flatpak_transaction_add_op (self, remote, ref, subpaths, commit, bundle, kind);
@@ -1658,7 +1659,7 @@ resolve_ops (FlatpakTransaction *self,
   for (l = priv->ops; l != NULL; l = l->next)
     {
       FlatpakTransactionOperation *op = l->data;
-      FlatpakRemoteState *state = NULL;
+      g_autoptr(FlatpakRemoteState) state = NULL;
       g_autofree char *checksum = NULL;
       g_autoptr(GVariant) commit_data = NULL;
       g_autoptr(GVariant) commit_metadata = NULL;
@@ -1701,7 +1702,7 @@ resolve_ops (FlatpakTransaction *self,
           commit_metadata = g_variant_get_child_value (commit_data, 0);
           g_variant_lookup (commit_metadata, "xa.metadata", "&s", &xa_metadata);
           if (xa_metadata == NULL)
-            g_message ("Warning: No xa.metadata in local commit");
+            g_message ("Warning: No xa.metadata in local commit %s ref %s", checksum, op->ref);
           else
             metadata_bytes = g_bytes_new (xa_metadata, strlen (xa_metadata) + 1);
 
@@ -1716,8 +1717,22 @@ resolve_ops (FlatpakTransaction *self,
           if (op->commit != NULL)
             checksum = g_strdup (op->commit);
           else if (!flatpak_dir_find_latest_rev (priv->dir, state, op->ref, op->commit, &checksum,
-                                                 NULL, cancellable, error))
-            return FALSE;
+                                                 NULL, cancellable, &local_error))
+            {
+              /* An unavailable remote summary shouldn't be fatal if we already have the ref */
+              commit_data = flatpak_dir_read_latest_commit (priv->dir, op->remote, op->ref, &checksum, NULL, NULL);
+              if (commit_data == NULL)
+                {
+                  g_propagate_error (error, g_steal_pointer (&local_error));
+                  return FALSE;
+                }
+              else
+                {
+                  g_message (_("Warning: Treating remote fetch error as non-fatal since %s is already installed: %s"),
+                             op->ref, local_error->message);
+                  g_clear_error (&local_error);
+                }
+            }
 
           /* TODO: This only gets the metadata for the latest only, we need to handle the case
              where the user specified a commit, or p2p doesn't have the latest commit available */
@@ -2163,9 +2178,10 @@ handle_runtime_repo_deps_from_bundle (FlatpakTransaction *self,
   if (priv->disable_deps)
     return TRUE;
 
-  metadata = flatpak_bundle_load (file, NULL,
+  metadata = flatpak_bundle_load (file,
                                   NULL,
                                   &ref,
+                                  NULL,
                                   &dep_url,
                                   NULL,
                                   NULL,
@@ -2330,7 +2346,7 @@ flatpak_transaction_run (FlatpakTransaction *self,
       gboolean res = TRUE;
       const char *pref;
       FlatpakTransactionOperationType kind;
-      FlatpakRemoteState *state;
+      g_autoptr(FlatpakRemoteState) state = NULL;
 
       if (op->skip)
         continue;
@@ -2362,7 +2378,7 @@ flatpak_transaction_run (FlatpakTransaction *self,
 
           g_assert (op->resolved_commit != NULL); /* We resolved this before */
 
-          if (op->resolved_metakey && !flatpak_check_required_version (op->ref, op->resolved_metakey, error))
+          if (op->resolved_metakey && !flatpak_check_required_version (op->ref, op->resolved_metakey, &local_error))
             res = FALSE;
           else
             res = flatpak_dir_install (priv->dir,
@@ -2401,7 +2417,7 @@ flatpak_transaction_run (FlatpakTransaction *self,
 
               emit_new_op (self, op, progress);
 
-              if (op->resolved_metakey && !flatpak_check_required_version (op->ref, op->resolved_metakey, error))
+              if (op->resolved_metakey && !flatpak_check_required_version (op->ref, op->resolved_metakey, &local_error))
                 res = FALSE;
               else
                 res = flatpak_dir_update (priv->dir,
@@ -2443,7 +2459,7 @@ flatpak_transaction_run (FlatpakTransaction *self,
         {
           g_autoptr(FlatpakTransactionProgress) progress = flatpak_transaction_progress_new ();
           emit_new_op (self, op, progress);
-          if (op->resolved_metakey && !flatpak_check_required_version (op->ref, op->resolved_metakey, error))
+          if (op->resolved_metakey && !flatpak_check_required_version (op->ref, op->resolved_metakey, &local_error))
             res = FALSE;
           else
             res = flatpak_dir_install_bundle (priv->dir, op->bundle,

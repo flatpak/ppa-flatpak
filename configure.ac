@@ -13,9 +13,9 @@ AC_PREREQ([2.63])
 # on the stable branch, interface age == micro
 # on the unstable (ie master), interface age = 0
 
-m4_define([flatpak_major_version], [0])
-m4_define([flatpak_minor_version], [99])
-m4_define([flatpak_micro_version], [3])
+m4_define([flatpak_major_version], [1])
+m4_define([flatpak_minor_version], [0])
+m4_define([flatpak_micro_version], [0])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -31,7 +31,7 @@ AC_INIT([Flatpak],
 
 GLIB_REQS=2.44
 SYSTEM_BWRAP_REQS=0.2.1
-OSTREE_REQS=2018.6
+OSTREE_REQS=2018.7
 
 AC_USE_SYSTEM_EXTENSIONS
 AC_SYS_LARGEFILE

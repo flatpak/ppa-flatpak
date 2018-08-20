@@ -113,7 +113,7 @@ build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = $(am__EXEEXT_1) flatpak$(EXEEXT) $(am__EXEEXT_1)
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_8) \
-	test-libflatpak$(EXEEXT)
+	test-libflatpak$(EXEEXT) httpcache$(EXEEXT)
 libexec_PROGRAMS = $(am__EXEEXT_1) flatpak-session-helper$(EXEEXT) \
 	$(am__EXEEXT_1) flatpak-portal$(EXEEXT) $(am__EXEEXT_1) \
 	$(am__EXEEXT_7) flatpak-dbus-proxy$(EXEEXT) $(am__EXEEXT_1)
@@ -255,6 +255,7 @@ am_libflatpak_common_la_OBJECTS = $(am__objects_2) \
 	common/libflatpak_common_la-flatpak-exports.lo \
 	common/libflatpak_common_la-flatpak-transaction.lo \
 	common/libflatpak_common_la-flatpak-utils.lo \
+	common/libflatpak_common_la-flatpak-utils-http.lo \
 	common/libflatpak_common_la-flatpak-chain-input-stream.lo \
 	common/libflatpak_common_la-flatpak-portal-error.lo \
 	common/libflatpak_common_la-flatpak-json.lo \
@@ -327,10 +328,7 @@ am__EXEEXT_5 = test-libglnx-xattrs$(EXEEXT) test-libglnx-fdio$(EXEEXT) \
 PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(installed_test_PROGRAMS) $(libexec_PROGRAMS) \
 	$(noinst_PROGRAMS)
-am__objects_5 =  \
-	app/flatpak-flatpak-permission-dbus-generated.$(OBJEXT)
-am_flatpak_OBJECTS = $(am__objects_5) \
-	app/flatpak-flatpak-main.$(OBJEXT) \
+am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-utils.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-add-remote.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-delete-remote.$(OBJEXT) \
@@ -371,8 +369,10 @@ am_flatpak_OBJECTS = $(am__objects_5) \
 	app/flatpak-flatpak-table-printer.$(OBJEXT) \
 	app/flatpak-flatpak-complete.$(OBJEXT) \
 	app/flatpak-flatpak-cli-transaction.$(OBJEXT) $(am__objects_1)
-nodist_flatpak_OBJECTS = app/flatpak-parse-datetime.$(OBJEXT) \
-	$(am__objects_1)
+am__objects_5 =  \
+	app/flatpak-flatpak-permission-dbus-generated.$(OBJEXT)
+nodist_flatpak_OBJECTS = $(am__objects_5) \
+	app/flatpak-parse-datetime.$(OBJEXT) $(am__objects_1)
 flatpak_OBJECTS = $(am_flatpak_OBJECTS) $(nodist_flatpak_OBJECTS)
 flatpak_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -445,6 +445,14 @@ flatpak_system_helper_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_system_helper_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_httpcache_OBJECTS = tests/httpcache-httpcache.$(OBJEXT)
+httpcache_OBJECTS = $(am_httpcache_OBJECTS)
+httpcache_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) libglnx.la libflatpak-common.la
+httpcache_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(httpcache_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_test_libflatpak_OBJECTS =  \
 	common/test_libflatpak-test-lib.$(OBJEXT) $(am__objects_1)
 test_libflatpak_OBJECTS = $(am_test_libflatpak_OBJECTS)
@@ -540,16 +548,17 @@ SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(flatpak_bwrap_SOURCES) $(flatpak_dbus_proxy_SOURCES) \
 	$(flatpak_portal_SOURCES) $(nodist_flatpak_portal_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
-	$(flatpak_system_helper_SOURCES) $(test_libflatpak_SOURCES) \
-	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
-	$(test_libglnx_macros_SOURCES) $(test_libglnx_shutil_SOURCES) \
-	$(test_libglnx_xattrs_SOURCES) $(testlibrary_SOURCES)
+	$(flatpak_system_helper_SOURCES) $(httpcache_SOURCES) \
+	$(test_libflatpak_SOURCES) $(test_libglnx_errors_SOURCES) \
+	$(test_libglnx_fdio_SOURCES) $(test_libglnx_macros_SOURCES) \
+	$(test_libglnx_shutil_SOURCES) $(test_libglnx_xattrs_SOURCES) \
+	$(testlibrary_SOURCES)
 DIST_SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(libflatpak_la_SOURCES) $(libglnx_la_SOURCES) \
 	$(flatpak_SOURCES) $(am__flatpak_bwrap_SOURCES_DIST) \
 	$(flatpak_dbus_proxy_SOURCES) $(flatpak_portal_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
-	$(am__flatpak_system_helper_SOURCES_DIST) \
+	$(am__flatpak_system_helper_SOURCES_DIST) $(httpcache_SOURCES) \
 	$(test_libflatpak_SOURCES) $(test_libglnx_errors_SOURCES) \
 	$(test_libglnx_fdio_SOURCES) $(test_libglnx_macros_SOURCES) \
 	$(test_libglnx_shutil_SOURCES) $(test_libglnx_xattrs_SOURCES) \
@@ -771,13 +780,16 @@ am__set_TESTS_bases = \
   bases=`echo $$bases`
 RECHECK_LOGS = $(TEST_LOGS)
 am__EXEEXT_9 = tests/test-basic.sh tests/test-build-update-repo.sh \
-	tests/test-run.sh tests/test-run-system.sh \
-	tests/test-run-deltas.sh tests/test-run-system-deltas.sh \
-	tests/test-repo.sh tests/test-repo-collections.sh \
+	tests/test-http-utils.sh tests/test-run.sh \
+	tests/test-run-system.sh tests/test-run-deltas.sh \
+	tests/test-run-system-deltas.sh tests/test-repo.sh \
+	tests/test-repo-collections.sh \
 	tests/test-repo-collections-server-only.sh \
 	tests/test-repo-system.sh tests/test-extensions.sh \
 	tests/test-bundle.sh tests/test-bundle-system.sh \
-	tests/test-oci.sh tests/test-unsigned-summaries.sh \
+	tests/test-oci.sh tests/test-oci-registry.sh \
+	tests/test-oci-registry-system.sh \
+	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh $(am__EXEEXT_1)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
@@ -1065,6 +1077,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 NULL = 
 dist_installed_test_extra_scripts = $(NULL) buildutil/tap-driver.sh \
+	tests/http-utils-test-server.py tests/oci-registry-server.py \
+	tests/oci-registry-client.py \
 	tests/make-multi-collection-id-repo.sh tests/make-test-app.sh \
 	tests/make-test-runtime.sh tests/make-test-bundles.sh \
 	tests/test-webserver.sh $(NULL)
@@ -1290,6 +1304,8 @@ libflatpak_common_la_SOURCES = \
 	common/flatpak-transaction.h \
 	common/flatpak-transaction.c \
 	common/flatpak-utils.c \
+	common/flatpak-utils-http.c \
+	common/flatpak-utils-http-private.h \
 	common/flatpak-utils-private.h \
 	common/flatpak-chain-input-stream.c \
 	common/flatpak-chain-input-stream-private.h \
@@ -1412,7 +1428,6 @@ introspection_DATA = \
 
 flatpak_dbus_built_sources = app/flatpak-permission-dbus-generated.c app/flatpak-permission-dbus-generated.h
 flatpak_SOURCES = \
-	$(flatpak_dbus_built_sources) \
 	app/flatpak-main.c \
 	app/flatpak-builtins.h \
 	app/flatpak-builtins-utils.h \
@@ -1463,6 +1478,7 @@ flatpak_SOURCES = \
 	$(NULL)
 
 nodist_flatpak_SOURCES = \
+	$(flatpak_dbus_built_sources) \
 	app/parse-datetime.c \
 	$(NULL)
 
@@ -1540,6 +1556,14 @@ testlibrary_LDADD = \
              $(NULL)
 
 testlibrary_SOURCES = tests/testlibrary.c
+httpcache_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
+	-DFLATPAK_COMPILATION \
+        -DLOCALEDIR=\"$(localedir)\"
+
+httpcache_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) \
+	libglnx.la libflatpak-common.la
+
+httpcache_SOURCES = tests/httpcache.c
 dist_installed_test_data = \
 	tests/libtest.sh \
 	tests/org.test.Hello.png \
@@ -1564,6 +1588,7 @@ installed_test_keyring2dir = $(installed_testdir)/test-keyring2
 dist_test_scripts = \
 	tests/test-basic.sh \
 	tests/test-build-update-repo.sh \
+	tests/test-http-utils.sh \
 	tests/test-run.sh \
 	tests/test-run-system.sh \
 	tests/test-run-deltas.sh \
@@ -1576,6 +1601,8 @@ dist_test_scripts = \
 	tests/test-bundle.sh \
 	tests/test-bundle-system.sh \
 	tests/test-oci.sh \
+	tests/test-oci-registry.sh \
+	tests/test-oci-registry-system.sh \
 	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	$(NULL)
@@ -1787,6 +1814,8 @@ common/libflatpak_common_la-flatpak-transaction.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-utils.lo: common/$(am__dirstamp) \
 	common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-utils-http.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-chain-input-stream.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-portal-error.lo:  \
@@ -2076,8 +2105,6 @@ app/$(am__dirstamp):
 app/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) app/$(DEPDIR)
 	@: > app/$(DEPDIR)/$(am__dirstamp)
-app/flatpak-flatpak-permission-dbus-generated.$(OBJEXT):  \
-	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-main.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-utils.$(OBJEXT): app/$(am__dirstamp) \
@@ -2160,6 +2187,8 @@ app/flatpak-flatpak-complete.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-cli-transaction.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-permission-dbus-generated.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-parse-datetime.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 
@@ -2247,6 +2276,18 @@ system-helper/flatpak_system_helper-flatpak-system-helper.$(OBJEXT):  \
 flatpak-system-helper$(EXEEXT): $(flatpak_system_helper_OBJECTS) $(flatpak_system_helper_DEPENDENCIES) $(EXTRA_flatpak_system_helper_DEPENDENCIES) 
 	@rm -f flatpak-system-helper$(EXEEXT)
 	$(AM_V_CCLD)$(flatpak_system_helper_LINK) $(flatpak_system_helper_OBJECTS) $(flatpak_system_helper_LDADD) $(LIBS)
+tests/$(am__dirstamp):
+	@$(MKDIR_P) tests
+	@: > tests/$(am__dirstamp)
+tests/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) tests/$(DEPDIR)
+	@: > tests/$(DEPDIR)/$(am__dirstamp)
+tests/httpcache-httpcache.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+httpcache$(EXEEXT): $(httpcache_OBJECTS) $(httpcache_DEPENDENCIES) $(EXTRA_httpcache_DEPENDENCIES) 
+	@rm -f httpcache$(EXEEXT)
+	$(AM_V_CCLD)$(httpcache_LINK) $(httpcache_OBJECTS) $(httpcache_LDADD) $(LIBS)
 common/test_libflatpak-test-lib.$(OBJEXT): common/$(am__dirstamp) \
 	common/$(DEPDIR)/$(am__dirstamp)
 
@@ -2294,12 +2335,6 @@ libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.$(OBJEXT):  \
 test-libglnx-xattrs$(EXEEXT): $(test_libglnx_xattrs_OBJECTS) $(test_libglnx_xattrs_DEPENDENCIES) $(EXTRA_test_libglnx_xattrs_DEPENDENCIES) 
 	@rm -f test-libglnx-xattrs$(EXEEXT)
 	$(AM_V_CCLD)$(test_libglnx_xattrs_LINK) $(test_libglnx_xattrs_OBJECTS) $(test_libglnx_xattrs_LDADD) $(LIBS)
-tests/$(am__dirstamp):
-	@$(MKDIR_P) tests
-	@: > tests/$(am__dirstamp)
-tests/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) tests/$(DEPDIR)
-	@: > tests/$(DEPDIR)/$(am__dirstamp)
 tests/testlibrary-testlibrary.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -2501,6 +2536,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-run.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-systemd-dbus-generated.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-transaction.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-utils-http.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-utils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_la-flatpak.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/test_libflatpak-test-lib.Po@am__quote@
@@ -2525,6 +2561,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@portal/$(DEPDIR)/flatpak_portal-flatpak-portal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/httpcache-httpcache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/testlibrary-testlibrary.Po@am__quote@
 
 .c.o:
@@ -2599,6 +2636,13 @@ common/libflatpak_common_la-flatpak-utils.lo: common/flatpak-utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-utils.c' object='common/libflatpak_common_la-flatpak-utils.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-utils.lo `test -f 'common/flatpak-utils.c' || echo '$(srcdir)/'`common/flatpak-utils.c
+
+common/libflatpak_common_la-flatpak-utils-http.lo: common/flatpak-utils-http.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-utils-http.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-utils-http.Tpo -c -o common/libflatpak_common_la-flatpak-utils-http.lo `test -f 'common/flatpak-utils-http.c' || echo '$(srcdir)/'`common/flatpak-utils-http.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-utils-http.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-utils-http.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-utils-http.c' object='common/libflatpak_common_la-flatpak-utils-http.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-utils-http.lo `test -f 'common/flatpak-utils-http.c' || echo '$(srcdir)/'`common/flatpak-utils-http.c
 
 common/libflatpak_common_la-flatpak-chain-input-stream.lo: common/flatpak-chain-input-stream.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-chain-input-stream.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-chain-input-stream.Tpo -c -o common/libflatpak_common_la-flatpak-chain-input-stream.lo `test -f 'common/flatpak-chain-input-stream.c' || echo '$(srcdir)/'`common/flatpak-chain-input-stream.c
@@ -2788,20 +2832,6 @@ libglnx/libglnx_la-glnx-shutil.lo: libglnx/glnx-shutil.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='libglnx/glnx-shutil.c' object='libglnx/libglnx_la-glnx-shutil.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o libglnx/libglnx_la-glnx-shutil.lo `test -f 'libglnx/glnx-shutil.c' || echo '$(srcdir)/'`libglnx/glnx-shutil.c
-
-app/flatpak-flatpak-permission-dbus-generated.o: app/flatpak-permission-dbus-generated.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-permission-dbus-generated.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Tpo -c -o app/flatpak-flatpak-permission-dbus-generated.o `test -f 'app/flatpak-permission-dbus-generated.c' || echo '$(srcdir)/'`app/flatpak-permission-dbus-generated.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Tpo app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-permission-dbus-generated.c' object='app/flatpak-flatpak-permission-dbus-generated.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-permission-dbus-generated.o `test -f 'app/flatpak-permission-dbus-generated.c' || echo '$(srcdir)/'`app/flatpak-permission-dbus-generated.c
-
-app/flatpak-flatpak-permission-dbus-generated.obj: app/flatpak-permission-dbus-generated.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-permission-dbus-generated.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Tpo -c -o app/flatpak-flatpak-permission-dbus-generated.obj `if test -f 'app/flatpak-permission-dbus-generated.c'; then $(CYGPATH_W) 'app/flatpak-permission-dbus-generated.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-permission-dbus-generated.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Tpo app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-permission-dbus-generated.c' object='app/flatpak-flatpak-permission-dbus-generated.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-permission-dbus-generated.obj `if test -f 'app/flatpak-permission-dbus-generated.c'; then $(CYGPATH_W) 'app/flatpak-permission-dbus-generated.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-permission-dbus-generated.c'; fi`
 
 app/flatpak-flatpak-main.o: app/flatpak-main.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-main.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-main.Tpo -c -o app/flatpak-flatpak-main.o `test -f 'app/flatpak-main.c' || echo '$(srcdir)/'`app/flatpak-main.c
@@ -3377,6 +3407,20 @@ app/flatpak-flatpak-cli-transaction.obj: app/flatpak-cli-transaction.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-cli-transaction.obj `if test -f 'app/flatpak-cli-transaction.c'; then $(CYGPATH_W) 'app/flatpak-cli-transaction.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-cli-transaction.c'; fi`
 
+app/flatpak-flatpak-permission-dbus-generated.o: app/flatpak-permission-dbus-generated.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-permission-dbus-generated.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Tpo -c -o app/flatpak-flatpak-permission-dbus-generated.o `test -f 'app/flatpak-permission-dbus-generated.c' || echo '$(srcdir)/'`app/flatpak-permission-dbus-generated.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Tpo app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-permission-dbus-generated.c' object='app/flatpak-flatpak-permission-dbus-generated.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-permission-dbus-generated.o `test -f 'app/flatpak-permission-dbus-generated.c' || echo '$(srcdir)/'`app/flatpak-permission-dbus-generated.c
+
+app/flatpak-flatpak-permission-dbus-generated.obj: app/flatpak-permission-dbus-generated.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-permission-dbus-generated.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Tpo -c -o app/flatpak-flatpak-permission-dbus-generated.obj `if test -f 'app/flatpak-permission-dbus-generated.c'; then $(CYGPATH_W) 'app/flatpak-permission-dbus-generated.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-permission-dbus-generated.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Tpo app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-permission-dbus-generated.c' object='app/flatpak-flatpak-permission-dbus-generated.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-permission-dbus-generated.obj `if test -f 'app/flatpak-permission-dbus-generated.c'; then $(CYGPATH_W) 'app/flatpak-permission-dbus-generated.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-permission-dbus-generated.c'; fi`
+
 app/flatpak-parse-datetime.o: app/parse-datetime.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-parse-datetime.o -MD -MP -MF app/$(DEPDIR)/flatpak-parse-datetime.Tpo -c -o app/flatpak-parse-datetime.o `test -f 'app/parse-datetime.c' || echo '$(srcdir)/'`app/parse-datetime.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-parse-datetime.Tpo app/$(DEPDIR)/flatpak-parse-datetime.Po
@@ -3558,6 +3602,20 @@ system-helper/flatpak_system_helper-flatpak-system-helper.obj: system-helper/fla
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='system-helper/flatpak-system-helper.c' object='system-helper/flatpak_system_helper-flatpak-system-helper.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_system_helper_CFLAGS) $(CFLAGS) -c -o system-helper/flatpak_system_helper-flatpak-system-helper.obj `if test -f 'system-helper/flatpak-system-helper.c'; then $(CYGPATH_W) 'system-helper/flatpak-system-helper.c'; else $(CYGPATH_W) '$(srcdir)/system-helper/flatpak-system-helper.c'; fi`
+
+tests/httpcache-httpcache.o: tests/httpcache.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(httpcache_CFLAGS) $(CFLAGS) -MT tests/httpcache-httpcache.o -MD -MP -MF tests/$(DEPDIR)/httpcache-httpcache.Tpo -c -o tests/httpcache-httpcache.o `test -f 'tests/httpcache.c' || echo '$(srcdir)/'`tests/httpcache.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/httpcache-httpcache.Tpo tests/$(DEPDIR)/httpcache-httpcache.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/httpcache.c' object='tests/httpcache-httpcache.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(httpcache_CFLAGS) $(CFLAGS) -c -o tests/httpcache-httpcache.o `test -f 'tests/httpcache.c' || echo '$(srcdir)/'`tests/httpcache.c
+
+tests/httpcache-httpcache.obj: tests/httpcache.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(httpcache_CFLAGS) $(CFLAGS) -MT tests/httpcache-httpcache.obj -MD -MP -MF tests/$(DEPDIR)/httpcache-httpcache.Tpo -c -o tests/httpcache-httpcache.obj `if test -f 'tests/httpcache.c'; then $(CYGPATH_W) 'tests/httpcache.c'; else $(CYGPATH_W) '$(srcdir)/tests/httpcache.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/httpcache-httpcache.Tpo tests/$(DEPDIR)/httpcache-httpcache.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/httpcache.c' object='tests/httpcache-httpcache.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(httpcache_CFLAGS) $(CFLAGS) -c -o tests/httpcache-httpcache.obj `if test -f 'tests/httpcache.c'; then $(CYGPATH_W) 'tests/httpcache.c'; else $(CYGPATH_W) '$(srcdir)/tests/httpcache.c'; fi`
 
 common/test_libflatpak-test-lib.o: common/test-lib.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libflatpak_CFLAGS) $(CFLAGS) -MT common/test_libflatpak-test-lib.o -MD -MP -MF common/$(DEPDIR)/test_libflatpak-test-lib.Tpo -c -o common/test_libflatpak-test-lib.o `test -f 'common/test-lib.c' || echo '$(srcdir)/'`common/test-lib.c
@@ -4422,6 +4480,13 @@ tests/test-build-update-repo.sh.log: tests/test-build-update-repo.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-http-utils.sh.log: tests/test-http-utils.sh
+	@p='tests/test-http-utils.sh'; \
+	b='tests/test-http-utils.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 tests/test-run.sh.log: tests/test-run.sh
 	@p='tests/test-run.sh'; \
 	b='tests/test-run.sh'; \
@@ -4502,6 +4567,20 @@ tests/test-bundle-system.sh.log: tests/test-bundle-system.sh
 tests/test-oci.sh.log: tests/test-oci.sh
 	@p='tests/test-oci.sh'; \
 	b='tests/test-oci.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-oci-registry.sh.log: tests/test-oci-registry.sh
+	@p='tests/test-oci-registry.sh'; \
+	b='tests/test-oci-registry.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-oci-registry-system.sh.log: tests/test-oci-registry-system.sh
+	@p='tests/test-oci-registry-system.sh'; \
+	b='tests/test-oci-registry-system.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

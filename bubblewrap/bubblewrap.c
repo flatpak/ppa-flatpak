@@ -182,7 +182,7 @@ lock_file_new (const char *path)
 static void
 usage (int ecode, FILE *out)
 {
-  fprintf (out, "usage: %s [OPTIONS...] COMMAND [ARGS...]\n\n", argv0);
+  fprintf (out, "usage: %s [OPTIONS...] [--] COMMAND [ARGS...]\n\n", argv0);
 
   fprintf (out,
            "    --help                       Print this help\n"
@@ -316,7 +316,7 @@ propagate_exit_status (int status)
  * the exit status via a eventfd. We also track the exit of the sandbox
  * pid 1 via a signalfd for SIGCHLD, and exit with an error in this case.
  * This is to catch e.g. problems during setup. */
-static void
+static int
 monitor_child (int event_fd, pid_t child_pid)
 {
   int res;
@@ -368,7 +368,7 @@ monitor_child (int event_fd, pid_t child_pid)
           if (s == -1 && errno != EINTR && errno != EAGAIN)
             die_with_error ("read eventfd");
           else if (s == 8)
-            exit ((int) val - 1);
+            return ((int) val - 1);
         }
 
       /* We need to read the signal_fd, or it will keep polling as read,
@@ -385,9 +385,13 @@ monitor_child (int event_fd, pid_t child_pid)
           /* We may be getting sigchild from other children too. For instance if
              someone created a child process, and then exec:ed bubblewrap. Ignore them */
           if (died_pid == child_pid)
-            exit (propagate_exit_status (died_status));
+            return propagate_exit_status (died_status);
         }
     }
+
+  die ("Should not be reached");
+
+  return 0;
 }
 
 /* This is pid 1 in the app sandbox. It is needed because we're using
@@ -1025,9 +1029,15 @@ setup_newroot (bool unshare_pid,
           for (i = 0; i < N_ELEMENTS (cover_proc_dirs); i++)
             {
               cleanup_free char *subdir = strconcat3 (dest, "/", cover_proc_dirs[i]);
-              /* Some of these may not exist */
-              if (get_file_mode (subdir) == -1)
-                continue;
+              if (access (subdir, W_OK) < 0)
+                {
+                  /* The file is already read-only or doesn't exist.  */
+                  if (errno == EACCES || errno == ENOENT)
+                    continue;
+
+                  die_with_error ("Can't access %s", subdir);
+                }
+
               privileged_op (privileged_op_socket,
                              PRIV_SEP_OP_BIND_MOUNT, BIND_READONLY,
                              subdir, subdir);
@@ -1885,6 +1895,12 @@ parse_args_recurse (int          *argcp,
           argv += 1;
           argc -= 1;
         }
+      else if (strcmp (arg, "--") == 0)
+        {
+          argv += 1;
+          argc -= 1;
+          break;
+        }
       else if (*arg == '-')
         {
           die ("Unknown option %s", arg);
@@ -2197,8 +2213,7 @@ main (int    argc,
       /* Ignore res, if e.g. the child died and closed child_wait_fd we don't want to error out here */
       close (child_wait_fd);
 
-      monitor_child (event_fd, pid);
-      exit (0); /* Should not be reached, but better safe... */
+      return monitor_child (event_fd, pid);
     }
 
   /* Child, in sandbox, privileged in the parent or in the user namespace (if --unshare-user).
@@ -2283,6 +2298,9 @@ main (int    argc,
   if (mkdir ("newroot", 0755))
     die_with_error ("Creating newroot failed");
 
+  if (mount ("newroot", "newroot", NULL, MS_MGC_VAL | MS_BIND | MS_REC, NULL) < 0)
+    die_with_error ("setting up newroot bind");
+
   if (mkdir ("oldroot", 0755))
     die_with_error ("Creating oldroot failed");
 
@@ -2351,6 +2369,37 @@ main (int    argc,
   if (umount2 ("oldroot", MNT_DETACH))
     die_with_error ("unmount old root");
 
+  /* This is our second pivot. It's like we're a Silicon Valley startup flush
+   * with cash but short on ideas!
+   *
+   * We're aiming to make /newroot the real root, and get rid of /oldroot. To do
+   * that we need a temporary place to store it before we can unmount it.
+   */
+  { cleanup_fd int oldrootfd = open ("/", O_DIRECTORY | O_RDONLY);
+    if (oldrootfd < 0)
+      die_with_error ("can't open /");
+    if (chdir ("/newroot") != 0)
+      die_with_error ("chdir /newroot");
+    /* While the documentation claims that put_old must be underneath
+     * new_root, it is perfectly fine to use the same directory as the
+     * kernel checks only if old_root is accessible from new_root.
+     *
+     * Both runc and LXC are using this "alternative" method for
+     * setting up the root of the container:
+     *
+     * https://github.com/opencontainers/runc/blob/master/libcontainer/rootfs_linux.go#L671
+     * https://github.com/lxc/lxc/blob/master/src/lxc/conf.c#L1121
+     */
+    if (pivot_root (".", ".") != 0)
+      die_with_error ("pivot_root(/newroot)");
+    if (fchdir (oldrootfd) < 0)
+      die_with_error ("fchdir to oldroot");
+    if (umount2 (".", MNT_DETACH) < 0)
+      die_with_error ("umount old root");
+    if (chdir ("/") != 0)
+      die_with_error ("chdir /");
+  }
+
   if (opt_unshare_user &&
       (ns_uid != opt_sandbox_uid || ns_gid != opt_sandbox_gid) &&
       opt_userns_block_fd == -1)
@@ -2366,14 +2415,6 @@ main (int    argc,
                          opt_sandbox_gid, ns_gid,
                          -1, FALSE, FALSE);
     }
-
-  /* Now make /newroot the real root */
-  if (chdir ("/newroot") != 0)
-    die_with_error ("chdir newroot");
-  if (chroot ("/newroot") != 0)
-    die_with_error ("chroot /newroot");
-  if (chdir ("/") != 0)
-    die_with_error ("chdir /");
 
   /* All privileged ops are done now, so drop caps we don't need */
   drop_privs (!is_privileged);

@@ -71,6 +71,24 @@ commit_and_subpaths_new (const char *commit, const char * const *subpaths)
   return c_s;
 }
 
+static char **
+get_flatpak_subpaths_from_deploy_subpaths (const char * const *subpaths)
+{
+  g_autoptr(GPtrArray) resolved_subpaths = NULL;
+  gsize i;
+
+  if (subpaths == NULL || subpaths[0] == NULL)
+    return NULL;
+
+  resolved_subpaths = g_ptr_array_new_with_free_func (g_free);
+  g_ptr_array_add (resolved_subpaths, g_strdup ("/metadata"));
+  for (i = 0; subpaths[i] != NULL; i++)
+    g_ptr_array_add (resolved_subpaths, g_build_filename ("/files", subpaths[i], NULL));
+  g_ptr_array_add (resolved_subpaths, NULL);
+
+  return (char **)g_ptr_array_free (g_steal_pointer (&resolved_subpaths), FALSE);
+}
+
 /* Add related refs specified in the metadata of @ref to @all_refs, also
  * updating @all_collection_ids with any new collection IDs. A warning will be
  * printed for related refs that are not installed, and they won't be added to
@@ -118,6 +136,7 @@ add_related (GHashTable   *all_refs,
       g_autoptr(OstreeCollectionRef) ext_collection_ref = NULL;
       g_autofree char *ext_collection_id = NULL;
       g_autofree const char **ext_subpaths = NULL;
+      g_auto(GStrv) resolved_ext_subpaths = NULL;
       const char *ext_remote;
       const char *ext_commit = NULL;
       CommitAndSubpaths *c_s;
@@ -148,12 +167,15 @@ add_related (GHashTable   *all_refs,
 
       ext_commit = flatpak_deploy_data_get_commit (ext_deploy_data);
       ext_subpaths = flatpak_deploy_data_get_subpaths (ext_deploy_data);
-      c_s = commit_and_subpaths_new (ext_commit, ext_subpaths[0] == NULL ? NULL : ext_subpaths);
+      resolved_ext_subpaths = get_flatpak_subpaths_from_deploy_subpaths (ext_subpaths);
+      c_s = commit_and_subpaths_new (ext_commit, (const char * const *)resolved_ext_subpaths);
 
       g_hash_table_insert (all_collection_ids, g_strdup (ext_collection_id), g_strdup (ext_remote));
       ext_collection_ref = ostree_collection_ref_new (ext_collection_id, ext->ref);
       g_hash_table_insert (all_refs, g_steal_pointer (&ext_collection_ref), c_s);
     }
+
+  g_list_free_full (extensions, (GDestroyNotify) flatpak_extension_free);
 
   return TRUE;
 }
@@ -178,6 +200,7 @@ add_runtime (GHashTable   *all_refs,
   g_autofree char *runtime_remote = NULL;
   g_autofree char *runtime_collection_id = NULL;
   g_autofree const char **runtime_subpaths = NULL;
+  g_auto(GStrv) resolved_runtime_subpaths = NULL;
   const char *commit = NULL;
   const char *runtime_commit = NULL;
   CommitAndSubpaths *c_s;
@@ -214,7 +237,8 @@ add_runtime (GHashTable   *all_refs,
 
   runtime_commit = flatpak_deploy_data_get_commit (runtime_deploy_data);
   runtime_subpaths = flatpak_deploy_data_get_subpaths (runtime_deploy_data);
-  c_s = commit_and_subpaths_new (runtime_commit, runtime_subpaths[0] == NULL ? NULL : runtime_subpaths);
+  resolved_runtime_subpaths = get_flatpak_subpaths_from_deploy_subpaths (runtime_subpaths);
+  c_s = commit_and_subpaths_new (runtime_commit, (const char * const *)resolved_runtime_subpaths);
 
   g_hash_table_insert (all_collection_ids, g_strdup (runtime_collection_id), g_strdup (runtime_remote));
   runtime_collection_ref = ostree_collection_ref_new (runtime_collection_id, runtime_ref);
@@ -466,6 +490,11 @@ flatpak_builtin_create_usb (int argc, char **argv, GCancellable *cancellable, GE
   /* This maps from each remote name to a set of architectures */
   remote_arch_map = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify) g_strfreev);
 
+  /* This is a mapping from collection IDs to remote names. It is possible
+   * for multiple remotes to have the same collection ID, but in that case
+   * they should be mirrors of each other. */
+  all_collection_ids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+
   for (i = 0; i < n_prefs; i++)
     {
       const char *pref = NULL;
@@ -475,7 +504,7 @@ flatpak_builtin_create_usb (int argc, char **argv, GCancellable *cancellable, GE
       g_autofree char *branch = NULL;
       g_autoptr(GError) local_error = NULL;
       g_autoptr(GError) first_error = NULL;
-      g_autofree char *first_ref = NULL;
+      g_autofree char *installed_ref = NULL;
       g_autoptr(GPtrArray) dirs_with_ref = NULL;
       FlatpakDir *this_ref_dir = NULL;
       g_autofree char *remote = NULL;
@@ -484,6 +513,7 @@ flatpak_builtin_create_usb (int argc, char **argv, GCancellable *cancellable, GE
       g_auto(GStrv) parts = NULL;
       unsigned int j = 0;
       const char **arches;
+      FlatpakKinds installed_ref_kind = 0;
 
       pref = prefs[i];
 
@@ -496,9 +526,10 @@ flatpak_builtin_create_usb (int argc, char **argv, GCancellable *cancellable, GE
         {
           FlatpakDir *dir = g_ptr_array_index (dirs, j);
           g_autofree char *ref = NULL;
+          FlatpakKinds kind;
 
           ref = flatpak_dir_find_installed_ref (dir, id, branch, arch,
-                                                kinds, NULL, &local_error);
+                                                kinds, &kind, &local_error);
           if (ref == NULL)
             {
               if (g_error_matches (local_error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED))
@@ -516,8 +547,11 @@ flatpak_builtin_create_usb (int argc, char **argv, GCancellable *cancellable, GE
           else
             {
               g_ptr_array_add (dirs_with_ref, dir);
-              if (first_ref == NULL)
-                first_ref = g_strdup (ref);
+              if (installed_ref == NULL)
+                {
+                  installed_ref = g_strdup (ref);
+                  installed_ref_kind = kind;
+                }
             }
         }
 
@@ -559,14 +593,14 @@ flatpak_builtin_create_usb (int argc, char **argv, GCancellable *cancellable, GE
                                dir_name, this_ref_dir_name);
         }
 
-      g_assert (first_ref);
-      parts = g_strsplit (first_ref, "/", 0);
+      g_assert (installed_ref);
+      parts = g_strsplit (installed_ref, "/", 0);
       if (arch == NULL)
         arch = g_strdup (parts[2]);
       if (branch == NULL)
         branch = g_strdup (parts[3]);
 
-      remote = flatpak_dir_get_origin (dir, first_ref, cancellable, error);
+      remote = flatpak_dir_get_origin (dir, installed_ref, cancellable, error);
       if (remote == NULL)
         return FALSE;
 
@@ -574,7 +608,7 @@ flatpak_builtin_create_usb (int argc, char **argv, GCancellable *cancellable, GE
       if (ref_collection_id == NULL)
         return flatpak_fail (error,
                              _("Remote ‘%s’ does not have a collection ID set, which is required for P2P distribution of ‘%s’."),
-                             remote, first_ref);
+                             remote, installed_ref);
 
       arches = g_hash_table_lookup (remote_arch_map, remote);
       if (arches == NULL)
@@ -594,32 +628,28 @@ flatpak_builtin_create_usb (int argc, char **argv, GCancellable *cancellable, GE
           g_hash_table_replace (remote_arch_map, g_strdup (remote), g_ptr_array_free (arches_array, FALSE));
         }
 
-      /* This is a mapping from collection IDs to remote names. It is possible
-       * for multiple remotes to have the same collection ID, but in that case
-       * they should be mirrors of each other. */
-      all_collection_ids = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
-
       /* Add the main ref */
       {
         g_autoptr(GVariant) deploy_data = NULL;
         const char *commit;
         CommitAndSubpaths *c_s;
 
-        deploy_data = flatpak_dir_get_deploy_data (dir, first_ref, cancellable, error);
+        deploy_data = flatpak_dir_get_deploy_data (dir, installed_ref, cancellable, error);
         if (deploy_data == NULL)
           return FALSE;
         commit = flatpak_deploy_data_get_commit (deploy_data);
         c_s = commit_and_subpaths_new (commit, NULL);
 
         g_hash_table_insert (all_collection_ids, g_strdup (ref_collection_id), g_strdup (remote));
-        collection_ref = ostree_collection_ref_new (ref_collection_id, first_ref);
+        collection_ref = ostree_collection_ref_new (ref_collection_id, installed_ref);
         g_hash_table_insert (all_refs, g_steal_pointer (&collection_ref), c_s);
       }
 
       /* Add dependencies and related refs */
-      if (!add_runtime (all_refs, all_collection_ids, first_ref, dir, cancellable, error))
+      if (!(installed_ref_kind & FLATPAK_KINDS_RUNTIME) &&
+          !add_runtime (all_refs, all_collection_ids, installed_ref, dir, cancellable, error))
         return FALSE;
-      if (!add_related (all_refs, all_collection_ids, first_ref, dir, cancellable, error))
+      if (!add_related (all_refs, all_collection_ids, installed_ref, dir, cancellable, error))
         return FALSE;
 
     }
@@ -633,23 +663,21 @@ flatpak_builtin_create_usb (int argc, char **argv, GCancellable *cancellable, GE
     g_autoptr(OstreeCollectionRef) metadata_collection_ref = NULL;
     g_autoptr(OstreeCollectionRef) appstream_collection_ref = NULL;
     g_autoptr(OstreeCollectionRef) appstream2_collection_ref = NULL;
+    g_autoptr(FlatpakRemoteState) state = NULL;
     g_autoptr(GError) local_error = NULL;
     g_autofree char *appstream_ref = NULL;
     g_autofree char *appstream2_ref = NULL;
     const char **remote_arches;
 
-    /* FIXME: Uncomment this to try to update the repo metadata after fixing
-     * https://github.com/ostreedev/ostree/issues/1664 so the summary doesn't
-     * get out of date. This is done by creating a FlatpakRemoteState, but
-     * don't fail on error because we want this to work offline.
-    g_autoptr(FlatpakRemoteState) state = NULL;
+    /* Try to update the repo metadata by creating a FlatpakRemoteState object,
+     * but don't fail on error because we want this to work offline. */
     state = flatpak_dir_get_remote_state_optional (dir, remote_name, cancellable, &local_error);
     if (state == NULL)
       {
         g_printerr (_("Warning: Couldn't update repo metadata for remote ‘%s’: %s\n"),
                     remote_name, local_error->message);
         g_clear_error (&local_error);
-      } */
+      }
 
     /* Add the ostree-metadata ref to the list */
     metadata_collection_ref = ostree_collection_ref_new (collection_id, OSTREE_REPO_METADATA_REF);
@@ -661,11 +689,10 @@ flatpak_builtin_create_usb (int argc, char **argv, GCancellable *cancellable, GE
     for (const char **iter = remote_arches; iter != NULL && *iter != NULL; ++iter)
       {
         const char *current_arch = *iter;
-
-        /* FIXME: Uncomment this to try to update the appstream data after
-         * fixing https://github.com/ostreedev/ostree/issues/1664 so the
-         * summary doesn't become incorrect
         g_autoptr(GPtrArray) dirs = NULL;
+
+        /* Try to update the appstream data, but don't fail on error because we
+         * want this to work offline. */
         dirs = g_ptr_array_new ();
         g_ptr_array_add (dirs, dir);
         if (!update_appstream (dirs, remote_name, current_arch, 0, TRUE, cancellable, &local_error))
@@ -673,7 +700,7 @@ flatpak_builtin_create_usb (int argc, char **argv, GCancellable *cancellable, GE
             g_printerr (_("Warning: Couldn't update appstream data for remote ‘%s’ arch ‘%s’: %s\n"),
                         remote_name, current_arch, local_error->message);
             g_clear_error (&local_error);
-          } */
+          }
 
         /* Copy the appstream data if it exists. It's optional because without it
          * the USB will still be useful to the flatpak CLI even if GNOME Software
@@ -713,6 +740,10 @@ flatpak_builtin_create_usb (int argc, char **argv, GCancellable *cancellable, GE
           }
       }
   }
+
+  /* Update the summary in the repo; otherwise ostree_create_usb() will fail */
+  if (!flatpak_dir_update_summary (dir, cancellable, error))
+    return FALSE;
 
   /* Now use code copied from `ostree create-usb` to do the actual copying. We
    * can't just call out to `ostree` because (a) flatpak doesn't have a

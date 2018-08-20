@@ -371,6 +371,27 @@ flatpak_json_from_bytes (GBytes  *bytes,
   return flatpak_json_from_node (root, type, error);
 }
 
+FlatpakJson *
+flatpak_json_from_stream (GInputStream *stream,
+                          GType         type,
+                          GCancellable *cancellable,
+                          GError      **error)
+{
+  g_autoptr(JsonParser) parser = NULL;
+  JsonNode *root = NULL;
+
+  parser = json_parser_new ();
+  if (!json_parser_load_from_stream (parser,
+                                     stream,
+                                     cancellable,
+                                     error))
+    return NULL;
+
+  root = json_parser_get_root (parser);
+
+  return flatpak_json_from_node (root, type, error);
+}
+
 static JsonNode *
 marshal (JsonObject          *parent,
          const char          *name,
@@ -454,11 +475,15 @@ marshal (JsonObject          *parent,
             json_object_set_member (obj, struct_props[i].name, val);
           }
 
-        if (type != FLATPAK_JSON_PROP_TYPE_PARENT &&
-            (!empty || (flags & FLATPAK_JSON_PROP_FLAGS_OPTIONAL) == 0))
+        if (type != FLATPAK_JSON_PROP_TYPE_PARENT)
           {
-            retval = json_node_new (JSON_NODE_OBJECT);
-            json_node_take_object (retval, obj);
+            if (!empty || (flags & FLATPAK_JSON_PROP_FLAGS_OPTIONAL) == 0)
+              {
+                retval = json_node_new (JSON_NODE_OBJECT);
+                json_node_take_object (retval, obj);
+              }
+            else
+              json_object_unref (obj);
           }
         break;
       }
