@@ -10,6 +10,9 @@ flatpak (1.0.0-1) UNRELEASED; urgency=medium
     Add patches to fix installed-tests
   * d/p/Make-test-scripts-bilingual-Python-2-Python-3.patch:
     Add patch to make test scripts equally valid in Python 3
+  * d/p/tests-Remove-vestigial-support-for-putting-Python-2-in-a-.patch:
+    Remove support for including Python 2 in a runtime, which is only
+    used in flatpak-builder
   * Standards-Version: 4.2.0
 
  -- Simon McVittie <smcv@debian.org>  Mon, 20 Aug 2018 14:34:53 +0100

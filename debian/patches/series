@@ -1,4 +1,5 @@
 build-Install-httpcache-if-installed-tests-are-enabled.patch
 tests-Look-for-httpcache-in-test_builddir-not-PATH.patch
 Make-test-scripts-bilingual-Python-2-Python-3.patch
+tests-Remove-vestigial-support-for-putting-Python-2-in-a-.patch
 debian/Use-Python-3-for-test-web-server.patch
