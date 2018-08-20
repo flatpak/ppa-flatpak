@@ -5,6 +5,9 @@ flatpak (1.0.0-1) UNRELEASED; urgency=medium
   * flatpak Recommends p11-kit, for p11-kit-server
   * Temporarily (Build-)Depend on python for python2
   * d/p/debian/Use-Python-3-for-test-web-server.patch: Rebase
+  * d/p/build-Install-httpcache-if-installed-tests-are-enabled.patch,
+    d/p/tests-Look-for-httpcache-in-test_builddir-not-PATH.patch:
+    Add patches to fix installed-tests
   * d/p/Make-test-scripts-bilingual-Python-2-Python-3.patch:
     Add patch to make test scripts equally valid in Python 3
   * Standards-Version: 4.2.0

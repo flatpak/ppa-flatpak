@@ -1,0 +1,55 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Mon, 20 Aug 2018 15:22:46 +0100
+Subject: tests: Look for httpcache in ${test_builddir}, not PATH
+
+For installed-tests, the installed test directory is not on the PATH.
+To make this easier, put the uninstalled binary in tests/, so that
+in both build-time and installed tests, it is in ${test_builddir}.
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ tests/Makefile.am.inc    | 7 +++----
+ tests/test-http-utils.sh | 2 +-
+ 2 files changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/tests/Makefile.am.inc b/tests/Makefile.am.inc
+index b902a79..56fb5db 100644
+--- a/tests/Makefile.am.inc
++++ b/tests/Makefile.am.inc
+@@ -22,12 +22,11 @@ testlibrary_LDADD = \
+              $(NULL)
+ testlibrary_SOURCES = tests/testlibrary.c
+ 
+-httpcache_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
++tests_httpcache_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
+ 	-DFLATPAK_COMPILATION \
+         -DLOCALEDIR=\"$(localedir)\"
+-httpcache_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) \
++tests_httpcache_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) \
+ 	libglnx.la libflatpak-common.la
+-httpcache_SOURCES = tests/httpcache.c
+ 
+ tests/services/org.freedesktop.Flatpak.service: session-helper/org.freedesktop.Flatpak.service.in
+ 	mkdir -p tests/services
+@@ -109,7 +108,7 @@ dist_test_scripts = \
+ 	$(NULL)
+ 
+ test_programs = testlibrary
+-test_extra_programs = httpcache
++test_extra_programs = tests/httpcache
+ 
+ @VALGRIND_CHECK_RULES@
+ VALGRIND_SUPPRESSIONS_FILES=tests/flatpak.supp tests/glib.supp
+diff --git a/tests/test-http-utils.sh b/tests/test-http-utils.sh
+index ad7599d..1f46cee 100755
+--- a/tests/test-http-utils.sh
++++ b/tests/test-http-utils.sh
+@@ -36,7 +36,7 @@ assert_result() {
+     remote=$2
+     local=$3
+ 
+-    out=`httpcache $compressed "http://localhost:$port$remote" $local || :`
++    out=`${test_builddir}/httpcache $compressed "http://localhost:$port$remote" $local || :`
+ 
+     case "$out" in
+ 	$test_string*)
