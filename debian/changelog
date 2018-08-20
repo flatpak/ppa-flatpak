@@ -1,6 +1,7 @@
 flatpak (1.0.0-1) UNRELEASED; urgency=medium
 
   * New upstream stable release
+  * (Build-)Depend on ostree 2018.7
 
  -- Simon McVittie <smcv@debian.org>  Mon, 20 Aug 2018 14:34:53 +0100
 
