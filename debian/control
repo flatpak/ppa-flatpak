@@ -41,6 +41,7 @@ Build-Depends:
  libxml2-utils,
  ostree (>= 2018.7) <!nocheck>,
  procps,
+ python <!nocheck>,
  python3 <!nocheck>,
  shared-mime-info <!nocheck>,
  xmlto <!nodoc>,
@@ -110,6 +111,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
+ python,
  python3,
 Description: Application deployment framework for desktop apps (tests)
  Flatpak installs, manages and runs sandboxed desktop application bundles.
