@@ -251,6 +251,7 @@
     <keyword type="constant" name="FLATPAK_ERROR_NEED_NEW_FLATPAK" link="flatpak-Error-codes.html#FLATPAK-ERROR-NEED-NEW-FLATPAK:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_REMOTE_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-ERROR-REMOTE-NOT-FOUND:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_RUNTIME_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-ERROR-RUNTIME-NOT-FOUND:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_DOWNGRADE" link="flatpak-Error-codes.html#FLATPAK-ERROR-DOWNGRADE:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_FAILED" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-FAILED:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-INVALID-ARGUMENT:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-NOT-FOUND:CAPS"/>

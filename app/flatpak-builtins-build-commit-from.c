@@ -40,6 +40,7 @@ static char *opt_body;
 static gboolean opt_update_appstream;
 static gboolean opt_no_update_summary;
 static gboolean opt_untrusted;
+static gboolean opt_disable_fsync;
 static gboolean opt_force;
 static char **opt_gpg_key_ids;
 static char *opt_gpg_homedir;
@@ -59,6 +60,7 @@ static GOptionEntry options[] = {
   { "gpg-homedir", 0, 0, G_OPTION_ARG_STRING, &opt_gpg_homedir, N_("GPG Homedir to use when looking for keyrings"), N_("HOMEDIR") },
   { "end-of-life", 0, 0, G_OPTION_ARG_STRING, &opt_endoflife, N_("Mark build as end-of-life"), N_("REASON") },
   { "timestamp", 0, 0, G_OPTION_ARG_STRING, &opt_timestamp, N_("Override the timestamp of the commit (NOW for current time)"), N_("TIMESTAMP") },
+  { "disable-fsync", 0, 0, G_OPTION_ARG_NONE, &opt_disable_fsync, "Do not invoke fsync()", NULL },
   { NULL }
 };
 
@@ -271,6 +273,9 @@ flatpak_builtin_build_commit_from (int argc, char **argv, GCancellable *cancella
   if (!ostree_repo_open (dst_repo, cancellable, error))
     return FALSE;
 
+  if (opt_disable_fsync)
+    ostree_repo_set_disable_fsync (dst_repo, TRUE);
+
   if (opt_src_repo)
     {
       src_repofile = g_file_new_for_commandline_arg (opt_src_repo);
@@ -341,6 +346,7 @@ flatpak_builtin_build_commit_from (int argc, char **argv, GCancellable *cancella
       GVariantBuilder builder;
       g_autoptr(OstreeAsyncProgress) progress = NULL;
       g_auto(GLnxConsoleRef) console = { 0, };
+      g_autoptr(GVariant) options = NULL;
       gboolean res;
 
       if (opt_untrusted)
@@ -359,8 +365,9 @@ flatpak_builtin_build_commit_from (int argc, char **argv, GCancellable *cancella
       g_variant_builder_add (&builder, "{s@v}", "depth",
                              g_variant_new_variant (g_variant_new_int32 (0)));
 
+      options = g_variant_ref_sink (g_variant_builder_end (&builder));
       res = ostree_repo_pull_with_options (dst_repo, src_repo_uri,
-                                           g_variant_builder_end (&builder),
+                                           options,
                                            progress,
                                            cancellable, error);
 
@@ -393,6 +400,7 @@ flatpak_builtin_build_commit_from (int argc, char **argv, GCancellable *cancella
       g_autoptr(OstreeMutableTree) mtree = NULL;
       g_autoptr(GFile) dst_root = NULL;
       g_autoptr(GVariant) commitv_metadata = NULL;
+      g_autoptr(GVariant) metadata = NULL;
       const char *subject;
       const char *body;
       g_autofree char *commit_checksum = NULL;
@@ -433,10 +441,10 @@ flatpak_builtin_build_commit_from (int argc, char **argv, GCancellable *cancella
 
       commitv_metadata = g_variant_get_child_value (src_commitv, 0);
 
-      g_variant_get_child (src_commitv, 3, "s", &subject);
+      g_variant_get_child (src_commitv, 3, "&s", &subject);
       if (opt_subject)
         subject = (const char *) opt_subject;
-      g_variant_get_child (src_commitv, 4, "s", &body);
+      g_variant_get_child (src_commitv, 4, "&s", &body);
       if (opt_body)
         body = (const char *) opt_body;
 
@@ -485,7 +493,8 @@ flatpak_builtin_build_commit_from (int argc, char **argv, GCancellable *cancella
       if (opt_timestamp)
         timestamp = ts.tv_sec;
 
-      if (!ostree_repo_write_commit_with_time (dst_repo, dst_parent, subject, body, g_variant_builder_end (&metadata_builder),
+      metadata = g_variant_ref_sink (g_variant_builder_end (&metadata_builder));
+      if (!ostree_repo_write_commit_with_time (dst_repo, dst_parent, subject, body, metadata,
                                                OSTREE_REPO_FILE (dst_root),
                                                timestamp,
                                                &commit_checksum, cancellable, error))

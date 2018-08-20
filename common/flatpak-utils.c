@@ -45,7 +45,6 @@
 
 #include <glib.h>
 #include "libglnx/libglnx.h"
-#include <libsoup/soup.h>
 #include <gio/gunixoutputstream.h>
 #include <gio/gunixinputstream.h>
 
@@ -53,6 +52,14 @@
 static const GDBusErrorEntry flatpak_error_entries[] = {
   {FLATPAK_ERROR_ALREADY_INSTALLED,     "org.freedesktop.Flatpak.Error.AlreadyInstalled"},
   {FLATPAK_ERROR_NOT_INSTALLED,         "org.freedesktop.Flatpak.Error.NotInstalled"},
+  {FLATPAK_ERROR_ONLY_PULLED,           "org.freedesktop.Flatpak.Error.OnlyPulled"}, /* Since: 1.0 */
+  {FLATPAK_ERROR_DIFFERENT_REMOTE,      "org.freedesktop.Flatpak.Error.DifferentRemote"}, /* Since: 1.0 */
+  {FLATPAK_ERROR_ABORTED,               "org.freedesktop.Flatpak.Error.Aborted"}, /* Since: 1.0 */
+  {FLATPAK_ERROR_SKIPPED,               "org.freedesktop.Flatpak.Error.Skipped"}, /* Since: 1.0 */
+  {FLATPAK_ERROR_NEED_NEW_FLATPAK,      "org.freedesktop.Flatpak.Error.NeedNewFlatpak"}, /* Since: 1.0 */
+  {FLATPAK_ERROR_REMOTE_NOT_FOUND,      "org.freedesktop.Flatpak.Error.RemoteNotFound"}, /* Since: 1.0 */
+  {FLATPAK_ERROR_RUNTIME_NOT_FOUND,     "org.freedesktop.Flatpak.Error.RuntimeNotFound"}, /* Since: 1.0 */
+  {FLATPAK_ERROR_DOWNGRADE,             "org.freedesktop.Flatpak.Error.Downgrade"}, /* Since: 1.0 */
 };
 
 typedef struct archive FlatpakAutoArchiveRead;
@@ -1822,7 +1829,7 @@ flatpak_build_file_va (GFile  *base,
 
   while ((arg = va_arg (args, const gchar *)))
     {
-      GFile *child = g_file_resolve_relative_path (res, arg);
+      g_autoptr(GFile) child = g_file_resolve_relative_path (res, arg);
       g_set_object (&res, child);
     }
 
@@ -3739,9 +3746,7 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
     g_autoptr(FlatpakTempDir) tmpdir_file = NULL;
     g_autoptr(GFile) appstream_file = NULL;
     g_autoptr(GFile) appstream_gz_file = NULL;
-    g_autofree char *commit_checksum = NULL;
     OstreeRepoTransactionStats stats;
-    g_autoptr(OstreeRepoCommitModifier) modifier = NULL;
     g_autoptr(FlatpakXml) appstream_root = NULL;
     g_autoptr(GBytes) xml_data = NULL;
     g_autoptr(GBytes) xml_gz_data = NULL;
@@ -3860,6 +3865,8 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
         g_autoptr(GFile) root = NULL;
         g_autofree char *branch = NULL;
         g_autofree char *parent = NULL;
+        g_autoptr(OstreeRepoCommitModifier) modifier = NULL;
+        g_autofree char *commit_checksum = NULL;
 
         branch = g_strdup_printf ("%s/%s", branch_prefix, arch);
         if (!ostree_repo_resolve_rev (repo, branch, TRUE, &parent, error))
@@ -3879,7 +3886,7 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
         /* No need to commit if nothing changed */
         if (parent)
           {
-            g_autoptr(GFile) parent_root;
+            g_autoptr(GFile) parent_root = NULL;
 
             if (!ostree_repo_read_commit (repo, parent, &parent_root, NULL, cancellable, error))
               return FALSE;
@@ -4890,7 +4897,7 @@ flatpak_mirror_image_from_oci (FlatpakOciRegistry    *dst_registry,
     }
 
 
-  index = flatpak_oci_registry_load_index (dst_registry, NULL, NULL, NULL, NULL);
+  index = flatpak_oci_registry_load_index (dst_registry, NULL, NULL);
   if (index == NULL)
     index = flatpak_oci_index_new ();
 
@@ -5207,7 +5214,7 @@ flatpak_yes_no_prompt (const char *prompt, ...)
 {
   char buf[512];
   va_list var_args;
-  gchar *s;
+  g_autofree char *s = NULL;
 
 
 #pragma GCC diagnostic push
@@ -5291,292 +5298,6 @@ flatpak_number_prompt (int min, int max, const char *prompt, ...)
             return res;
         }
     }
-}
-
-
-typedef struct
-{
-  GMainLoop             *loop;
-  GError                *error;
-  GOutputStream         *out;
-  guint64                downloaded_bytes;
-  GString               *content;
-  char                   buffer[16 * 1024];
-  FlatpakLoadUriProgress progress;
-  GCancellable          *cancellable;
-  gpointer               user_data;
-  guint64                last_progress_time;
-  char                  *etag;
-} LoadUriData;
-
-static void
-stream_closed (GObject *source, GAsyncResult *res, gpointer user_data)
-{
-  LoadUriData *data = user_data;
-  GInputStream *stream = G_INPUT_STREAM (source);
-
-  g_autoptr(GError) error = NULL;
-
-  if (!g_input_stream_close_finish (stream, res, &error))
-    g_warning ("Error closing http stream: %s", error->message);
-
-  g_main_loop_quit (data->loop);
-}
-
-static void
-load_uri_read_cb (GObject *source, GAsyncResult *res, gpointer user_data)
-{
-  LoadUriData *data = user_data;
-  GInputStream *stream = G_INPUT_STREAM (source);
-  gsize nread;
-
-  nread = g_input_stream_read_finish (stream, res, &data->error);
-  if (nread == -1 || nread == 0)
-    {
-      if (data->progress)
-        data->progress (data->downloaded_bytes, data->user_data);
-      g_input_stream_close_async (stream,
-                                  G_PRIORITY_DEFAULT, NULL,
-                                  stream_closed, data);
-      return;
-    }
-
-  if (data->out != NULL)
-    {
-      gsize n_written;
-
-      if (!g_output_stream_write_all (data->out, data->buffer, nread, &n_written,
-                                      NULL, &data->error))
-        {
-          data->downloaded_bytes += n_written;
-          g_input_stream_close_async (stream,
-                                      G_PRIORITY_DEFAULT, NULL,
-                                      stream_closed, data);
-          return;
-        }
-
-      data->downloaded_bytes += n_written;
-    }
-  else
-    {
-      data->downloaded_bytes += nread;
-      g_string_append_len (data->content, data->buffer, nread);
-    }
-
-  if (g_get_monotonic_time () - data->last_progress_time > 1 * G_USEC_PER_SEC)
-    {
-      if (data->progress)
-        data->progress (data->downloaded_bytes, data->user_data);
-      data->last_progress_time = g_get_monotonic_time ();
-    }
-
-  g_input_stream_read_async (stream, data->buffer, sizeof (data->buffer),
-                             G_PRIORITY_DEFAULT, data->cancellable,
-                             load_uri_read_cb, data);
-}
-
-static void
-load_uri_callback (GObject      *source_object,
-                   GAsyncResult *res,
-                   gpointer      user_data)
-{
-  SoupRequestHTTP *request = SOUP_REQUEST_HTTP (source_object);
-
-  g_autoptr(GInputStream) in = NULL;
-  LoadUriData *data = user_data;
-
-  in = soup_request_send_finish (SOUP_REQUEST (request), res, &data->error);
-  if (in == NULL)
-    {
-      g_main_loop_quit (data->loop);
-      return;
-    }
-
-  g_autoptr(SoupMessage) msg = soup_request_http_get_message ((SoupRequestHTTP *) request);
-  if (!SOUP_STATUS_IS_SUCCESSFUL (msg->status_code))
-    {
-      int code;
-      GQuark domain = G_IO_ERROR;
-
-      switch (msg->status_code)
-        {
-        case 304:
-          domain = FLATPAK_OCI_ERROR;
-          code = FLATPAK_OCI_ERROR_NOT_CHANGED;
-          break;
-
-        case 404:
-        case 410:
-          code = G_IO_ERROR_NOT_FOUND;
-          break;
-
-        default:
-          code = G_IO_ERROR_FAILED;
-        }
-
-      data->error = g_error_new (domain, code,
-                                 "Server returned status %u: %s",
-                                 msg->status_code,
-                                 soup_status_get_phrase (msg->status_code));
-      g_main_loop_quit (data->loop);
-      return;
-    }
-
-  data->etag = g_strdup (soup_message_headers_get_one (msg->response_headers, "ETag"));
-
-  g_input_stream_read_async (in, data->buffer, sizeof (data->buffer),
-                             G_PRIORITY_DEFAULT, data->cancellable,
-                             load_uri_read_cb, data);
-}
-
-SoupSession *
-flatpak_create_soup_session (const char *user_agent)
-{
-  SoupSession *soup_session;
-  const char *http_proxy;
-
-  soup_session = soup_session_new_with_options (SOUP_SESSION_USER_AGENT, user_agent,
-                                                SOUP_SESSION_SSL_USE_SYSTEM_CA_FILE, TRUE,
-                                                SOUP_SESSION_USE_THREAD_CONTEXT, TRUE,
-                                                SOUP_SESSION_TIMEOUT, 60,
-                                                SOUP_SESSION_IDLE_TIMEOUT, 60,
-                                                NULL);
-  soup_session_remove_feature_by_type (soup_session, SOUP_TYPE_CONTENT_DECODER);
-  http_proxy = g_getenv ("http_proxy");
-  if (http_proxy)
-    {
-      g_autoptr(SoupURI) proxy_uri = soup_uri_new (http_proxy);
-      if (!proxy_uri)
-        g_warning ("Invalid proxy URI '%s'", http_proxy);
-      else
-        g_object_set (soup_session, SOUP_SESSION_PROXY_URI, proxy_uri, NULL);
-    }
-
-  return soup_session;
-}
-
-GBytes *
-flatpak_load_http_uri (SoupSession           *soup_session,
-                       const char            *uri,
-                       FlatpakHTTPFlags       flags,
-                       const char            *etag,
-                       char                 **out_etag,
-                       FlatpakLoadUriProgress progress,
-                       gpointer               user_data,
-                       GCancellable          *cancellable,
-                       GError               **error)
-{
-  GBytes *bytes = NULL;
-
-  g_autoptr(GMainContext) context = NULL;
-  g_autoptr(SoupRequestHTTP) request = NULL;
-  g_autoptr(GMainLoop) loop = NULL;
-  g_autoptr(GString) content = g_string_new ("");
-  LoadUriData data = { NULL };
-  SoupMessage *m;
-
-  g_debug ("Loading %s using libsoup", uri);
-
-  context = g_main_context_ref_thread_default ();
-
-  loop = g_main_loop_new (context, TRUE);
-  data.loop = loop;
-  data.content = content;
-  data.progress = progress;
-  data.cancellable = cancellable;
-  data.user_data = user_data;
-  data.last_progress_time = g_get_monotonic_time ();
-
-  request = soup_session_request_http (soup_session, "GET",
-                                       uri, error);
-  if (request == NULL)
-    return NULL;
-
-  m = soup_request_http_get_message (request);
-  if (etag)
-    soup_message_headers_replace (m->request_headers, "If-None-Match", etag);
-
-  if (flags & FLATPAK_HTTP_FLAGS_ACCEPT_OCI)
-    soup_message_headers_replace (m->request_headers, "Accept",
-                                  "application/vnd.oci.image.manifest.v1+json");
-
-  soup_request_send_async (SOUP_REQUEST (request),
-                           cancellable,
-                           load_uri_callback, &data);
-
-  g_main_loop_run (loop);
-
-  if (data.error)
-    {
-      g_propagate_error (error, data.error);
-      g_free (data.etag);
-      return NULL;
-    }
-
-  bytes = g_string_free_to_bytes (g_steal_pointer (&content));
-  g_debug ("Received %" G_GUINT64_FORMAT " bytes", data.downloaded_bytes);
-
-  if (out_etag)
-    *out_etag = g_steal_pointer (&data.etag);
-
-  g_free (data.etag);
-
-  return bytes;
-}
-
-gboolean
-flatpak_download_http_uri (SoupSession           *soup_session,
-                           const char            *uri,
-                           FlatpakHTTPFlags       flags,
-                           GOutputStream         *out,
-                           FlatpakLoadUriProgress progress,
-                           gpointer               user_data,
-                           GCancellable          *cancellable,
-                           GError               **error)
-{
-  g_autoptr(SoupRequestHTTP) request = NULL;
-  g_autoptr(GMainLoop) loop = NULL;
-  g_autoptr(GMainContext) context = NULL;
-  LoadUriData data = { NULL };
-  SoupMessage *m;
-
-  g_debug ("Loading %s using libsoup", uri);
-
-  context = g_main_context_ref_thread_default ();
-
-  loop = g_main_loop_new (context, TRUE);
-  data.loop = loop;
-  data.out = out;
-  data.progress = progress;
-  data.cancellable = cancellable;
-  data.user_data = user_data;
-  data.last_progress_time = g_get_monotonic_time ();
-
-  request = soup_session_request_http (soup_session, "GET",
-                                       uri, error);
-  if (request == NULL)
-    return FALSE;
-
-  m = soup_request_http_get_message (request);
-  if (flags & FLATPAK_HTTP_FLAGS_ACCEPT_OCI)
-    soup_message_headers_replace (m->request_headers, "Accept",
-                                  "application/vnd.oci.image.manifest.v1+json");
-
-  soup_request_send_async (SOUP_REQUEST (request),
-                           cancellable,
-                           load_uri_callback, &data);
-
-  g_main_loop_run (loop);
-
-  if (data.error)
-    {
-      g_propagate_error (error, data.error);
-      return FALSE;
-    }
-
-  g_debug ("Received %" G_GUINT64_FORMAT " bytes", data.downloaded_bytes);
-
-  return TRUE;
 }
 
 /* In this NULL means don't care about these paths, while
@@ -5716,10 +5437,12 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
   guint requested;
   guint64 total_transferred;
   g_autofree gchar *formatted_bytes_total_transferred = NULL;
+  g_autoptr(GVariant) outstanding_fetchesv = NULL;
 
   /* We get some extra calls before we've really started due to the initialization of the
      extra data, so ignore those */
-  if (ostree_async_progress_get_variant (progress, "outstanding-fetches") == NULL)
+  outstanding_fetchesv = ostree_async_progress_get_variant (progress, "outstanding-fetches");
+  if (outstanding_fetchesv == NULL)
     return;
 
   buf = g_string_new ("");
@@ -5962,5 +5685,90 @@ flatpak_check_required_version (const char *ref,
         }
     }
 
+  return TRUE;
+}
+
+static gboolean
+str_has_sign (const gchar *str)
+{
+  return str[0] == '-' || str[0] == '+';
+}
+
+static gboolean
+str_has_hex_prefix (const gchar *str)
+{
+  return str[0] == '0' && g_ascii_tolower (str[1]) == 'x';
+}
+
+/* Copied from glib-2.54.0 to avoid the Glib's version bump.
+ * Function name in glib: g_ascii_string_to_unsigned
+ * If this is being dropped(migration to g_ascii_string_to_unsigned)
+ * make sure to remove str_has_hex_prefix and str_has_sign helpers too.
+ */
+gboolean
+flatpak_utils_ascii_string_to_unsigned (const gchar  *str,
+                                        guint         base,
+                                        guint64       min,
+                                        guint64       max,
+                                        guint64      *out_num,
+                                        GError      **error)
+{
+  guint64 number;
+  const gchar *end_ptr = NULL;
+  gint saved_errno = 0;
+
+  g_return_val_if_fail (str != NULL, FALSE);
+  g_return_val_if_fail (base >= 2 && base <= 36, FALSE);
+  g_return_val_if_fail (min <= max, FALSE);
+  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
+
+  if (str[0] == '\0')
+    {
+      g_set_error_literal (error,
+                           G_NUMBER_PARSER_ERROR, G_NUMBER_PARSER_ERROR_INVALID,
+                           _("Empty string is not a number"));
+      return FALSE;
+    }
+
+  errno = 0;
+  number = g_ascii_strtoull (str, (gchar **)&end_ptr, base);
+  saved_errno = errno;
+
+  if (/* We do not allow leading whitespace, but g_ascii_strtoull
+       * accepts it and just skips it, so we need to check for it
+       * ourselves.
+       */
+      g_ascii_isspace (str[0]) ||
+      /* Unsigned number should have no sign.
+       */
+      str_has_sign (str) ||
+      /* We don't support hexadecimal numbers prefixed with 0x or
+       * 0X.
+       */
+      (base == 16 && str_has_hex_prefix (str)) ||
+      (saved_errno != 0 && saved_errno != ERANGE) ||
+      end_ptr == NULL ||
+      *end_ptr != '\0')
+    {
+      g_set_error (error,
+                   G_NUMBER_PARSER_ERROR, G_NUMBER_PARSER_ERROR_INVALID,
+                   _("“%s” is not an unsigned number"), str);
+      return FALSE;
+    }
+  if (saved_errno == ERANGE || number < min || number > max)
+    {
+      gchar *min_str = g_strdup_printf ("%" G_GUINT64_FORMAT, min);
+      gchar *max_str = g_strdup_printf ("%" G_GUINT64_FORMAT, max);
+
+      g_set_error (error,
+                   G_NUMBER_PARSER_ERROR, G_NUMBER_PARSER_ERROR_OUT_OF_BOUNDS,
+                   _("Number “%s” is out of bounds [%s, %s]"),
+                   str, min_str, max_str);
+      g_free (min_str);
+      g_free (max_str);
+      return FALSE;
+    }
+  if (out_num != NULL)
+    *out_num = number;
   return TRUE;
 }
