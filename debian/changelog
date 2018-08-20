@@ -6,7 +6,8 @@ flatpak (1.0.0-1) UNRELEASED; urgency=medium
   * d/p/build-Install-httpcache-if-installed-tests-are-enabled.patch,
     d/p/tests-Look-for-httpcache-in-test_builddir-not-PATH.patch:
     Add patches to fix installed-tests
-  * d/p/Make-test-scripts-bilingual-Python-2-Python-3.patch:
+  * d/p/Make-test-scripts-bilingual-Python-2-Python-3.patch,
+    d/p/test-webserver-Be-more-verbose-about-what-we-re-doing.patch:
     Add patch to make test scripts equally valid in Python 3
   * d/p/tests-Remove-vestigial-support-for-putting-Python-2-in-a-.patch:
     Remove support for including Python 2 in a runtime, which is only

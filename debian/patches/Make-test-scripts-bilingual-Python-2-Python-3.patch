@@ -5,15 +5,15 @@ Subject: Make test scripts bilingual Python 2/Python 3
 Signed-off-by: Simon McVittie <smcv@debian.org>
 Forwarded: https://github.com/flatpak/flatpak/pull/1990
 ---
- tests/http-utils-test-server.py | 33 +++++++++++++++++++++++----------
+ tests/http-utils-test-server.py | 36 ++++++++++++++++++++++++++----------
  tests/oci-registry-client.py    | 29 ++++++++++++++++++-----------
- tests/oci-registry-server.py    | 27 +++++++++++++++++++--------
+ tests/oci-registry-server.py    | 30 ++++++++++++++++++++++--------
  tests/test-http-utils.sh        |  2 +-
  tests/test-oci-registry.sh      |  4 ++--
- 5 files changed, 63 insertions(+), 32 deletions(-)
+ 5 files changed, 69 insertions(+), 32 deletions(-)
 
 diff --git a/tests/http-utils-test-server.py b/tests/http-utils-test-server.py
-index 9451e6c..3a21b2c 100644
+index 9451e6c..ec3826d 100644
 --- a/tests/http-utils-test-server.py
 +++ b/tests/http-utils-test-server.py
 @@ -1,14 +1,21 @@
@@ -51,7 +51,7 @@ index 9451e6c..3a21b2c 100644
      def do_GET(self):
          parts = self.path.split('?', 1)
          path = parts[0]
-@@ -69,19 +76,25 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+@@ -69,19 +76,28 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
              if accept_encoding and accept_encoding == 'gzip':
                  self.send_header("Content-Encoding", "gzip")
  
@@ -78,7 +78,10 @@ index 9451e6c..3a21b2c 100644
  
  def test():
 -    BaseHTTPServer.test(RequestHandler)
-+    http_server.test(RequestHandler)
++    if sys.version_info[0] >= 3:
++        http_server.test(RequestHandler, port=0)
++    else:
++        http_server.test(RequestHandler)
  
  if __name__ == '__main__':
      test()
@@ -144,7 +147,7 @@ index 033b54d..2312a99 100644
      sys.exit(1)
  
 diff --git a/tests/oci-registry-server.py b/tests/oci-registry-server.py
-index f31eecd..6eab5b2 100644
+index f31eecd..aa3045e 100644
 --- a/tests/oci-registry-server.py
 +++ b/tests/oci-registry-server.py
 @@ -1,14 +1,21 @@
@@ -206,12 +209,15 @@ index f31eecd..6eab5b2 100644
  
      def do_POST(self):
          if self.check_route('/testing/@repo_name/@tag'):
-@@ -227,7 +238,7 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+@@ -227,7 +238,10 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
              return
  
  def test():
 -    BaseHTTPServer.test(RequestHandler)
-+    http_server.test(RequestHandler)
++    if sys.version_info[0] >= 3:
++        http_server.test(RequestHandler, port=0)
++    else:
++        http_server.test(RequestHandler)
  
  if __name__ == '__main__':
      test()

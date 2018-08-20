@@ -13,7 +13,7 @@ Forwarded: not-needed
  6 files changed, 8 insertions(+), 8 deletions(-)
 
 diff --git a/tests/http-utils-test-server.py b/tests/http-utils-test-server.py
-index 3a21b2c..1e4dbf2 100644
+index ec3826d..03f0ac3 100644
 --- a/tests/http-utils-test-server.py
 +++ b/tests/http-utils-test-server.py
 @@ -1,4 +1,4 @@
@@ -33,7 +33,7 @@ index 2312a99..06db4cc 100644
  from __future__ import print_function
  
 diff --git a/tests/oci-registry-server.py b/tests/oci-registry-server.py
-index 6eab5b2..16d1b85 100644
+index aa3045e..fa46358 100644
 --- a/tests/oci-registry-server.py
 +++ b/tests/oci-registry-server.py
 @@ -1,4 +1,4 @@
@@ -74,7 +74,7 @@ index d32f7e6..623e55d 100755
  setup_repo_no_add oci
  
 diff --git a/tests/test-webserver.sh b/tests/test-webserver.sh
-index 7accd0b..2e7884d 100755
+index 4508537..31ec832 100755
 --- a/tests/test-webserver.sh
 +++ b/tests/test-webserver.sh
 @@ -3,7 +3,7 @@
@@ -86,7 +86,7 @@ index 7accd0b..2e7884d 100755
  test_tmpdir=$(pwd)
  
  [ "$dir" != "" ] && cd ${dir}
-@@ -19,7 +19,7 @@ for x in $(seq 300); do
+@@ -20,7 +20,7 @@ for x in $(seq 300); do
      echo >&2
      # If it's non-empty, see whether it matches our regexp
      if test -s ${test_tmpdir}/httpd-output.tmp; then
