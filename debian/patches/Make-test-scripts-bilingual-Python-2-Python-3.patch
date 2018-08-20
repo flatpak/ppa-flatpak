@@ -3,16 +3,17 @@ Date: Mon, 20 Aug 2018 15:00:21 +0100
 Subject: Make test scripts bilingual Python 2/Python 3
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/flatpak/flatpak/pull/1990
 ---
- tests/http-utils-test-server.py | 19 +++++++++++++------
+ tests/http-utils-test-server.py | 33 +++++++++++++++++++++++----------
  tests/oci-registry-client.py    | 29 ++++++++++++++++++-----------
- tests/oci-registry-server.py    | 19 +++++++++++++------
+ tests/oci-registry-server.py    | 27 +++++++++++++++++++--------
  tests/test-http-utils.sh        |  2 +-
  tests/test-oci-registry.sh      |  4 ++--
- 5 files changed, 47 insertions(+), 26 deletions(-)
+ 5 files changed, 63 insertions(+), 32 deletions(-)
 
 diff --git a/tests/http-utils-test-server.py b/tests/http-utils-test-server.py
-index 9451e6c..f499296 100644
+index 9451e6c..3a21b2c 100644
 --- a/tests/http-utils-test-server.py
 +++ b/tests/http-utils-test-server.py
 @@ -1,14 +1,21 @@
@@ -33,11 +34,11 @@ index 9451e6c..f499296 100644
 +if sys.version_info[0] >= 3:
 +    from urllib.parse import parse_qs
 +    import http.server as http_server
-+    from io import StringIO
++    from io import BytesIO
 +else:
 +    from urlparse import parse_qs
 +    import BaseHTTPServer as http_server
-+    from StringIO import StringIO
++    from StringIO import StringIO as BytesIO
  
  server_start_time = int(time.time())
  
@@ -50,8 +51,30 @@ index 9451e6c..f499296 100644
      def do_GET(self):
          parts = self.path.split('?', 1)
          path = parts[0]
-@@ -81,7 +88,7 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-             self.wfile.write(contents)
+@@ -69,19 +76,25 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+             if accept_encoding and accept_encoding == 'gzip':
+                 self.send_header("Content-Encoding", "gzip")
+ 
+-                buf = StringIO()
+-                gzfile = gzip.GzipFile(mode='w', fileobj=buf)
+-                gzfile.write(contents)
++                buf = BytesIO()
++                gzfile = gzip.GzipFile(mode='wb', fileobj=buf)
++                if isinstance(contents, bytes):
++                    gzfile.write(contents)
++                else:
++                    gzfile.write(contents.encode('utf-8'))
+                 gzfile.close()
+                 contents = buf.getvalue()
+ 
+         self.end_headers()
+ 
+         if response == 200:
+-            self.wfile.write(contents)
++            if isinstance(contents, bytes):
++                self.wfile.write(contents)
++            else:
++                self.wfile.write(contents.encode('utf-8'))
  
  def test():
 -    BaseHTTPServer.test(RequestHandler)
@@ -121,7 +144,7 @@ index 033b54d..2312a99 100644
      sys.exit(1)
  
 diff --git a/tests/oci-registry-server.py b/tests/oci-registry-server.py
-index f31eecd..0c026fb 100644
+index f31eecd..6eab5b2 100644
 --- a/tests/oci-registry-server.py
 +++ b/tests/oci-registry-server.py
 @@ -1,14 +1,21 @@
@@ -167,7 +190,23 @@ index f31eecd..0c026fb 100644
          if len(route_path) != len(path):
              return False
  
-@@ -227,7 +234,7 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+@@ -126,9 +133,13 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+ 
+         if response == 200:
+             if response_file:
+-                with open(response_file) as f:
++                with open(response_file, 'rb') as f:
+                     response_string = f.read()
+-            self.wfile.write(response_string)
++
++            if isinstance(response_string, bytes):
++                self.wfile.write(response_string)
++            else:
++                self.wfile.write(response_string.encode('utf-8'))
+ 
+     def do_POST(self):
+         if self.check_route('/testing/@repo_name/@tag'):
+@@ -227,7 +238,7 @@ class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
              return
  
  def test():

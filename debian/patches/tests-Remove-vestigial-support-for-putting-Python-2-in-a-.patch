@@ -6,6 +6,7 @@ This is only used in the flatpak-builder tests now, not the main
 flatpak tests.
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/flatpak/flatpak/pull/1990
 ---
  tests/libtest.sh           | 26 --------------------------
  tests/make-test-runtime.sh | 25 -------------------------

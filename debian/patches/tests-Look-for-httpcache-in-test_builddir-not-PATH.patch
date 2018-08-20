@@ -7,6 +7,7 @@ To make this easier, put the uninstalled binary in tests/, so that
 in both build-time and installed tests, it is in ${test_builddir}.
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/flatpak/flatpak/pull/1989
 ---
  tests/Makefile.am.inc    | 7 +++----
  tests/test-http-utils.sh | 2 +-

@@ -13,7 +13,7 @@ Forwarded: not-needed
  6 files changed, 8 insertions(+), 8 deletions(-)
 
 diff --git a/tests/http-utils-test-server.py b/tests/http-utils-test-server.py
-index f499296..8eff8f5 100644
+index 3a21b2c..1e4dbf2 100644
 --- a/tests/http-utils-test-server.py
 +++ b/tests/http-utils-test-server.py
 @@ -1,4 +1,4 @@
@@ -33,7 +33,7 @@ index 2312a99..06db4cc 100644
  from __future__ import print_function
  
 diff --git a/tests/oci-registry-server.py b/tests/oci-registry-server.py
-index 0c026fb..23db114 100644
+index 6eab5b2..16d1b85 100644
 --- a/tests/oci-registry-server.py
 +++ b/tests/oci-registry-server.py
 @@ -1,4 +1,4 @@
