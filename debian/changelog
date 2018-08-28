@@ -17,6 +17,7 @@ flatpak (1.0.0-2) UNRELEASED; urgency=medium
     where the login name is "user" and the hostname is "host"
   * d/tests: Mark OCI tests as flaky for now, since hangs do not appear
     to have been completely addressed
+  * Standards-Version: 4.2.1
 
  -- Simon McVittie <smcv@debian.org>  Tue, 28 Aug 2018 10:09:57 +0100
 
