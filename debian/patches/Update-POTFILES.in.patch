@@ -1,0 +1,24 @@
+From: =?utf-8?q?Piotr_Dr=C4=85g?= <piotrdrag@gmail.com>
+Date: Mon, 27 Aug 2018 20:09:34 +0200
+Subject: Update POTFILES.in
+
+Closes: #2028
+Approved by: mwleeds
+
+(cherry picked from commit 30f7ac92184ecbf78eb292f65cca9dbef46700db)
+---
+ po/POTFILES.in | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/po/POTFILES.in b/po/POTFILES.in
+index e270318..cdb42e7 100644
+--- a/po/POTFILES.in
++++ b/po/POTFILES.in
+@@ -29,6 +29,7 @@ app/flatpak-builtins-permission-list.c
+ app/flatpak-builtins-permission-remove.c
+ app/flatpak-builtins-permission-reset.c
+ app/flatpak-builtins-permission-show.c
++app/flatpak-builtins-ps.c
+ app/flatpak-builtins-repair.c
+ app/flatpak-builtins-repo.c
+ app/flatpak-builtins-repo-update.c

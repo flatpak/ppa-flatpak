@@ -1,0 +1,50 @@
+From: Will Thompson <wjt@endlessm.com>
+Date: Tue, 21 Aug 2018 15:12:18 +0100
+Subject: transaction: validate refs
+
+Without this, it's not safe to use 'pref': if there are no slashes in
+'ref', 'pref == 0x1', and any attempt to dereference it later in the
+function will crash.
+
+Closes: #1995
+Approved by: alexlarsson
+
+(cherry picked from commit a710f36e319582aa64426aa98b3d501f60254cd6)
+---
+ common/flatpak-transaction.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/common/flatpak-transaction.c b/common/flatpak-transaction.c
+index 1032bcb..3e9d902 100644
+--- a/common/flatpak-transaction.c
++++ b/common/flatpak-transaction.c
+@@ -1300,16 +1300,18 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
+ {
+   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+   g_autofree char *origin = NULL;
++  g_auto(GStrv) parts = NULL;
+   const char *pref;
+   g_autofree char *origin_remote = NULL;
+   g_autoptr(FlatpakRemoteState) state = NULL;
+   FlatpakTransactionOperation *op;
+ 
++  parts = flatpak_decompose_ref (ref, error);
++  if (parts == NULL)
++    return FALSE;
++
+   if (remote_name_is_file (remote))
+     {
+-      g_auto(GStrv) parts = NULL;
+-      parts = g_strsplit (ref, "/", -1);
+-
+       origin_remote = flatpak_dir_create_origin_remote (priv->dir,
+                                                         remote, /* uri */
+                                                         parts[1],
+@@ -1326,6 +1328,7 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
+       remote = origin_remote;
+     }
+ 
++  /* safe because flatpak_decompose_ref() has validated ref */
+   pref = strchr (ref, '/') + 1;
+ 
+   /* install or update */

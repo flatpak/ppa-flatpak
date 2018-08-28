@@ -6,6 +6,13 @@ flatpak (1.0.0-2) UNRELEASED; urgency=medium
     d/p/test-webserver-Be-more-verbose-about-what-we-re-doing.patch,
     d/p/tests-Remove-vestigial-support-for-putting-Python-2-in-a-.patch:
     Mark as applied upstream
+  * d/patches: Update to upstream commit 1.0.0-38-ge9d9f54a
+    - Fix OCI summary generation on 32-bit architectures
+    - Fix a hang that can occur while testing OCI
+    - Documentation and GObject-Introspection fixes
+    - Translation updates
+    - Add `flatpak ps`
+    - Be more backportable
 
  -- Simon McVittie <smcv@debian.org>  Tue, 28 Aug 2018 10:09:57 +0100
 

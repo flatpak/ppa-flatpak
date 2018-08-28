@@ -1,0 +1,29 @@
+From: Will Thompson <wjt@endlessm.com>
+Date: Tue, 21 Aug 2018 14:57:35 +0100
+Subject: transaction: don't critical in finalize if initable_init() failed
+
+If no installation path is specified at construct time, or if it doesn't
+exist, priv->dir will be NULL even after initable_init() has been
+called.
+
+Closes: #1995
+Approved by: alexlarsson
+
+(cherry picked from commit 61107c56ceaa0e93cd03c20b2a432136af3f1112)
+---
+ common/flatpak-transaction.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/flatpak-transaction.c b/common/flatpak-transaction.c
+index b93b884..793e176 100644
+--- a/common/flatpak-transaction.c
++++ b/common/flatpak-transaction.c
+@@ -548,7 +548,7 @@ flatpak_transaction_finalize (GObject *object)
+   g_hash_table_unref (priv->last_op_for_ref);
+   g_hash_table_unref (priv->remote_states);
+   g_list_free_full (priv->ops, (GDestroyNotify) g_object_unref);
+-  g_object_unref (priv->dir);
++  g_clear_object (&priv->dir);
+ 
+   g_ptr_array_unref (priv->added_origin_remotes);
+ 

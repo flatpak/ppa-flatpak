@@ -1,0 +1,42 @@
+From: Matthias Clasen <mclasen@redhat.com>
+Date: Sun, 26 Aug 2018 22:24:32 -0400
+Subject: Export flatpak_run_gc_ids()
+
+Currently, we only remove stale instance directories
+when a new instance ID is allocated. A future 'flatpak ps'
+command will want to remove stale instances before
+enumerating them, so make this function available.
+
+Closes: #2023
+Approved by: alexlarsson
+
+(cherry picked from commit 2d26cc07c26ab43bb5960798cb4afb6d3f03e060)
+---
+ common/flatpak-run-private.h | 1 +
+ common/flatpak-run.c         | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/common/flatpak-run-private.h b/common/flatpak-run-private.h
+index 217f1a5..4fd762e 100644
+--- a/common/flatpak-run-private.h
++++ b/common/flatpak-run-private.h
+@@ -173,5 +173,6 @@ gboolean flatpak_run_app (const char     *app_ref,
+                           GCancellable   *cancellable,
+                           GError        **error);
+ 
++void flatpak_run_gc_ids (void);
+ 
+ #endif /* __FLATPAK_RUN_H__ */
+diff --git a/common/flatpak-run.c b/common/flatpak-run.c
+index eb685fd..9e41c11 100644
+--- a/common/flatpak-run.c
++++ b/common/flatpak-run.c
+@@ -1571,7 +1571,7 @@ flatpak_app_compute_permissions (GKeyFile *app_metadata,
+   return g_steal_pointer (&app_context);
+ }
+ 
+-static void
++void
+ flatpak_run_gc_ids (void)
+ {
+   g_autofree char *base_dir = g_build_filename (g_get_user_runtime_dir (), ".flatpak", NULL);

@@ -1,0 +1,36 @@
+From: Matthias Clasen <mclasen@redhat.com>
+Date: Mon, 27 Aug 2018 22:14:35 -0400
+Subject: Don't throw an error if there's nothing to show
+
+When the .flatpak directory doesn't exist,
+there are no running instances.
+
+Closes: #2027
+Approved by: alexlarsson
+
+(cherry picked from commit 9e0f5dd79ee28e5953e70bbfcd87d9e8e811e8de)
+---
+ app/flatpak-builtins-ps.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/app/flatpak-builtins-ps.c b/app/flatpak-builtins-ps.c
+index a98cccf..0d6cced 100644
+--- a/app/flatpak-builtins-ps.c
++++ b/app/flatpak-builtins-ps.c
+@@ -234,7 +234,15 @@ enumerate_instances (const char *columns,
+   file = g_file_new_for_path (base_dir);
+   enumerator = g_file_enumerate_children (file, "standard::name", G_FILE_QUERY_INFO_NONE, NULL, error);
+   if (enumerator == NULL)
+-    return FALSE;
++    {
++      if (g_error_matches (*error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
++        {
++          /* nothing to show */
++          g_clear_error (error);
++          return TRUE;
++        }
++      return FALSE;
++    }
+ 
+   while ((dir_info = g_file_enumerator_next_file (enumerator, NULL, error)) != NULL)
+     {

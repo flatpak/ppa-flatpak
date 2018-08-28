@@ -1,0 +1,34 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Fri, 24 Aug 2018 15:58:06 +0200
+Subject: Fix hang in system-herlpe::DeplayAppstream for OCI
+
+When deploying the appstream for an OCI remote we actually pull the
+http remote. This triggers some libsoup code that recurses the default
+mainloop. As this happens of the main thread we can get the response
+back on the wrong thread leading causing us to never send the reply
+back, hanging the call.
+
+Closes: #2010
+Approved by: alexlarsson
+
+(cherry picked from commit 0307afd5f29b6a90fab52a26bf0f90d45cb3886a)
+---
+ system-helper/flatpak-system-helper.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/system-helper/flatpak-system-helper.c b/system-helper/flatpak-system-helper.c
+index 85ae7ec..ce647b6 100644
+--- a/system-helper/flatpak-system-helper.c
++++ b/system-helper/flatpak-system-helper.c
+@@ -501,6 +501,11 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
+ 
+   if (is_oci)
+     {
++      g_autoptr(GMainContextPopDefault) context =  NULL;
++
++      /* This does soup http requests spinning the current mainloop, so we need one
++         for this thread. */
++      context = flatpak_main_context_new_default ();
+       /* In the OCI case, we just do the full update, including network i/o, in the
+        * system helper, see comment in flatpak_dir_update_appstream()
+        */

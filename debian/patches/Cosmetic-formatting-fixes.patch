@@ -1,0 +1,39 @@
+From: Matthias Clasen <mclasen@redhat.com>
+Date: Mon, 27 Aug 2018 22:15:31 -0400
+Subject: Cosmetic formatting fixes
+
+Closes: #2027
+Approved by: alexlarsson
+
+(cherry picked from commit 3548932c92f966e2bb5a7d3ff3d306bf57ab6fd6)
+---
+ app/flatpak-builtins-ps.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/app/flatpak-builtins-ps.c b/app/flatpak-builtins-ps.c
+index 0d6cced..023423e 100644
+--- a/app/flatpak-builtins-ps.c
++++ b/app/flatpak-builtins-ps.c
+@@ -71,7 +71,7 @@ find_column (const char *name,
+   int candidate;
+ 
+   candidate = -1;
+-  for (i = 0; i < G_N_ELEMENTS(all_columns); i++)
++  for (i = 0; i < G_N_ELEMENTS (all_columns); i++)
+     {
+       if (g_str_equal (all_columns[i].name, name))
+         {
+@@ -108,11 +108,11 @@ column_help (void)
+   g_string_append (s, _("Available columns:\n"));
+   
+   len = 0;
+-  for (i = 0; i < G_N_ELEMENTS(all_columns); i++)
++  for (i = 0; i < G_N_ELEMENTS (all_columns); i++)
+     len = MAX (len, strlen (all_columns[i].name));
+ 
+   len += 4;
+-  for (i = 0; i < G_N_ELEMENTS(all_columns); i++)
++  for (i = 0; i < G_N_ELEMENTS (all_columns); i++)
+     g_string_append_printf (s, "  %-*s %s\n", len, all_columns[i].name, all_columns[i].desc);
+ 
+   g_string_append_printf (s, "  %-*s %s\n", len, "all", _("Show all columns"));
