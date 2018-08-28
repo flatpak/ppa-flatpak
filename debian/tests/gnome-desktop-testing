@@ -13,8 +13,8 @@ unset no_proxy
 
 # Don't pollute the home directory unless this looks like a dedicated
 # autopkgtest environment
-case "$(id -nu)" in
-	(adt|debci)
+case "$(id -nu)@$(hostname)" in
+	(adt@*|debci@*|user@host)
 		install -d ~/.flatpak-tests/
 		;;
 esac
