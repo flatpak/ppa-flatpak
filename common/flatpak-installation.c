@@ -1115,8 +1115,10 @@ list_remotes_for_configured_remote (FlatpakInstallation *self,
 {
   g_autofree gchar *collection_id = NULL;
   OstreeCollectionRef ref;
-  const OstreeCollectionRef *refs[2] = { NULL, };
+  OstreeCollectionRef ref2;
+  const OstreeCollectionRef *refs[3] = { NULL, };
   g_autofree gchar *appstream_ref = NULL;
+  g_autofree gchar *appstream2_ref = NULL;
 
   g_auto(OstreeRepoFinderResultv) results = NULL;
   g_autoptr(GAsyncResult) result = NULL;
@@ -1144,6 +1146,10 @@ list_remotes_for_configured_remote (FlatpakInstallation *self,
   ref.collection_id = collection_id;
   ref.ref_name = appstream_ref;
   refs[0] = &ref;
+  appstream2_ref = g_strdup_printf ("appstream2/%s", flatpak_get_arch ());
+  ref2.collection_id = collection_id;
+  ref2.ref_name = appstream2_ref;
+  refs[1] = &ref2;
 
   if (types_filter[FLATPAK_REMOTE_TYPE_USB])
     {
@@ -1984,8 +1990,10 @@ flatpak_installation_update (FlatpakInstallation    *self,
  * @self: a #FlatpakInstallation
  * @kind: what this ref contains (an #FlatpakRefKind)
  * @name: name of the app or runtime to uninstall
- * @arch: architecture of the app or runtime to uninstall
- * @branch: name of the branch of the app or runtime to uninstall
+ * @arch: (nullable): architecture of the app or runtime to uninstall; if
+ *  %NULL, flatpak_get_default_arch() is assumed
+ * @branch: (nullable): name of the branch of the app or runtime to uninstall;
+ *  if %NULL, `master` is assumed
  * @progress: (scope call) (nullable): the callback
  * @progress_data: (closure progress) (nullable): user data passed to @progress
  * @cancellable: (nullable): a #GCancellable
@@ -2018,8 +2026,10 @@ flatpak_installation_uninstall (FlatpakInstallation    *self,
  * @flags: set of #FlatpakUninstallFlags flags
  * @kind: what this ref contains (an #FlatpakRefKind)
  * @name: name of the app or runtime to uninstall
- * @arch: architecture of the app or runtime to uninstall
- * @branch: name of the branch of the app or runtime to uninstall
+ * @arch: (nullable): architecture of the app or runtime to uninstall; if
+ *  %NULL, flatpak_get_default_arch() is assumed
+ * @branch: (nullable): name of the branch of the app or runtime to uninstall;
+ *  if %NULL, `master` is assumed
  * @progress: (scope call) (nullable): the callback
  * @progress_data: (closure progress) (nullable): user data passed to @progress
  * @cancellable: (nullable): a #GCancellable

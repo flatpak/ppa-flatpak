@@ -112,14 +112,14 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = $(am__EXEEXT_1) flatpak$(EXEEXT) $(am__EXEEXT_1)
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_8) \
-	test-libflatpak$(EXEEXT) httpcache$(EXEEXT)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_9) \
+	test-libflatpak$(EXEEXT)
 libexec_PROGRAMS = $(am__EXEEXT_1) flatpak-session-helper$(EXEEXT) \
 	$(am__EXEEXT_1) flatpak-portal$(EXEEXT) $(am__EXEEXT_1) \
-	$(am__EXEEXT_7) flatpak-dbus-proxy$(EXEEXT) $(am__EXEEXT_1)
-TESTS = $(am__EXEEXT_2) $(am__EXEEXT_9) $(am__EXEEXT_5)
-installed_test_PROGRAMS = $(am__EXEEXT_6)
-check_PROGRAMS = $(am__EXEEXT_4) $(am__EXEEXT_5)
+	$(am__EXEEXT_8) flatpak-dbus-proxy$(EXEEXT) $(am__EXEEXT_1)
+TESTS = $(am__EXEEXT_2) $(am__EXEEXT_10) $(am__EXEEXT_6)
+installed_test_PROGRAMS = $(am__EXEEXT_7)
+check_PROGRAMS = $(am__EXEEXT_5) $(am__EXEEXT_6)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_1 = $(all_test_ltlibs)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_2 = $(all_test_programs)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_3 = $(all_test_scripts)
@@ -315,16 +315,18 @@ libglnx_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(CFLAGS) $(libglnx_la_LDFLAGS) $(LDFLAGS) -o $@
 am__EXEEXT_1 =
 am__EXEEXT_2 = testlibrary$(EXEEXT)
-am__EXEEXT_3 = $(am__EXEEXT_2)
-@ENABLE_ALWAYS_BUILD_TESTS_FALSE@am__EXEEXT_4 = $(am__EXEEXT_3)
-am__EXEEXT_5 = test-libglnx-xattrs$(EXEEXT) test-libglnx-fdio$(EXEEXT) \
+am__EXEEXT_3 = tests/httpcache$(EXEEXT)
+am__EXEEXT_4 = $(am__EXEEXT_2) $(am__EXEEXT_3)
+@ENABLE_ALWAYS_BUILD_TESTS_FALSE@am__EXEEXT_5 = $(am__EXEEXT_4)
+am__EXEEXT_6 = test-libglnx-xattrs$(EXEEXT) test-libglnx-fdio$(EXEEXT) \
 	test-libglnx-errors$(EXEEXT) test-libglnx-macros$(EXEEXT) \
 	test-libglnx-shutil$(EXEEXT)
-@ENABLE_INSTALLED_TESTS_TRUE@am__EXEEXT_6 = $(am__EXEEXT_2)
-@BUILD_SYSTEM_HELPER_TRUE@am__EXEEXT_7 =  \
+@ENABLE_INSTALLED_TESTS_TRUE@am__EXEEXT_7 = $(am__EXEEXT_2) \
+@ENABLE_INSTALLED_TESTS_TRUE@	$(am__EXEEXT_3)
+@BUILD_SYSTEM_HELPER_TRUE@am__EXEEXT_8 =  \
 @BUILD_SYSTEM_HELPER_TRUE@	flatpak-system-helper$(EXEEXT) \
 @BUILD_SYSTEM_HELPER_TRUE@	$(am__EXEEXT_1)
-@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__EXEEXT_8 = $(am__EXEEXT_3)
+@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__EXEEXT_9 = $(am__EXEEXT_4)
 PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(installed_test_PROGRAMS) $(libexec_PROGRAMS) \
 	$(noinst_PROGRAMS)
@@ -345,6 +347,7 @@ am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-config.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-run.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-enter.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-ps.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-build-init.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-build.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-build-finish.$(OBJEXT) \
@@ -445,14 +448,6 @@ flatpak_system_helper_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_system_helper_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_httpcache_OBJECTS = tests/httpcache-httpcache.$(OBJEXT)
-httpcache_OBJECTS = $(am_httpcache_OBJECTS)
-httpcache_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) libglnx.la libflatpak-common.la
-httpcache_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(httpcache_CFLAGS) \
-	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_test_libflatpak_OBJECTS =  \
 	common/test_libflatpak-test-lib.$(OBJEXT) $(am__objects_1)
 test_libflatpak_OBJECTS = $(am_test_libflatpak_OBJECTS)
@@ -505,6 +500,16 @@ testlibrary_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 testlibrary_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(testlibrary_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+tests_httpcache_SOURCES = tests/httpcache.c
+tests_httpcache_OBJECTS = tests/tests_httpcache-httpcache.$(OBJEXT)
+tests_httpcache_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libglnx.la \
+	libflatpak-common.la
+tests_httpcache_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(tests_httpcache_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
 SCRIPTS = $(dist_triggers_SCRIPTS) $(installed_test_SCRIPTS) \
 	$(noinst_SCRIPTS) $(scripts_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -548,21 +553,21 @@ SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(flatpak_bwrap_SOURCES) $(flatpak_dbus_proxy_SOURCES) \
 	$(flatpak_portal_SOURCES) $(nodist_flatpak_portal_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
-	$(flatpak_system_helper_SOURCES) $(httpcache_SOURCES) \
-	$(test_libflatpak_SOURCES) $(test_libglnx_errors_SOURCES) \
-	$(test_libglnx_fdio_SOURCES) $(test_libglnx_macros_SOURCES) \
-	$(test_libglnx_shutil_SOURCES) $(test_libglnx_xattrs_SOURCES) \
-	$(testlibrary_SOURCES)
+	$(flatpak_system_helper_SOURCES) $(test_libflatpak_SOURCES) \
+	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
+	$(test_libglnx_macros_SOURCES) $(test_libglnx_shutil_SOURCES) \
+	$(test_libglnx_xattrs_SOURCES) $(testlibrary_SOURCES) \
+	tests/httpcache.c
 DIST_SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(libflatpak_la_SOURCES) $(libglnx_la_SOURCES) \
 	$(flatpak_SOURCES) $(am__flatpak_bwrap_SOURCES_DIST) \
 	$(flatpak_dbus_proxy_SOURCES) $(flatpak_portal_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
-	$(am__flatpak_system_helper_SOURCES_DIST) $(httpcache_SOURCES) \
+	$(am__flatpak_system_helper_SOURCES_DIST) \
 	$(test_libflatpak_SOURCES) $(test_libglnx_errors_SOURCES) \
 	$(test_libglnx_fdio_SOURCES) $(test_libglnx_macros_SOURCES) \
 	$(test_libglnx_shutil_SOURCES) $(test_libglnx_xattrs_SOURCES) \
-	$(testlibrary_SOURCES)
+	$(testlibrary_SOURCES) tests/httpcache.c
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -779,7 +784,7 @@ am__set_TESTS_bases = \
   bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
   bases=`echo $$bases`
 RECHECK_LOGS = $(TEST_LOGS)
-am__EXEEXT_9 = tests/test-basic.sh tests/test-build-update-repo.sh \
+am__EXEEXT_10 = tests/test-basic.sh tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh tests/test-run.sh \
 	tests/test-run-system.sh tests/test-run-deltas.sh \
 	tests/test-run-system-deltas.sh tests/test-repo.sh \
@@ -1447,6 +1452,7 @@ flatpak_SOURCES = \
 	app/flatpak-builtins-config.c \
 	app/flatpak-builtins-run.c \
 	app/flatpak-builtins-enter.c \
+	app/flatpak-builtins-ps.c \
 	app/flatpak-builtins-build-init.c \
 	app/flatpak-builtins-build.c \
 	app/flatpak-builtins-build-finish.c \
@@ -1556,14 +1562,13 @@ testlibrary_LDADD = \
              $(NULL)
 
 testlibrary_SOURCES = tests/testlibrary.c
-httpcache_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
+tests_httpcache_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
 	-DFLATPAK_COMPILATION \
         -DLOCALEDIR=\"$(localedir)\"
 
-httpcache_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) \
+tests_httpcache_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) \
 	libglnx.la libflatpak-common.la
 
-httpcache_SOURCES = tests/httpcache.c
 dist_installed_test_data = \
 	tests/libtest.sh \
 	tests/org.test.Hello.png \
@@ -1608,6 +1613,7 @@ dist_test_scripts = \
 	$(NULL)
 
 test_programs = testlibrary
+test_extra_programs = tests/httpcache
 VALGRIND_SUPPRESSIONS_FILES = tests/flatpak.supp tests/glib.supp
 @WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_SOURCES = $(bwrap_SOURCES)
 @WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_CFLAGS = $(AM_CFLAGS) $(bwrap_CFLAGS)
@@ -2139,6 +2145,8 @@ app/flatpak-flatpak-builtins-run.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-enter.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-ps.$(OBJEXT): app/$(am__dirstamp) \
+	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-build-init.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-build.$(OBJEXT): app/$(am__dirstamp) \
@@ -2276,18 +2284,6 @@ system-helper/flatpak_system_helper-flatpak-system-helper.$(OBJEXT):  \
 flatpak-system-helper$(EXEEXT): $(flatpak_system_helper_OBJECTS) $(flatpak_system_helper_DEPENDENCIES) $(EXTRA_flatpak_system_helper_DEPENDENCIES) 
 	@rm -f flatpak-system-helper$(EXEEXT)
 	$(AM_V_CCLD)$(flatpak_system_helper_LINK) $(flatpak_system_helper_OBJECTS) $(flatpak_system_helper_LDADD) $(LIBS)
-tests/$(am__dirstamp):
-	@$(MKDIR_P) tests
-	@: > tests/$(am__dirstamp)
-tests/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) tests/$(DEPDIR)
-	@: > tests/$(DEPDIR)/$(am__dirstamp)
-tests/httpcache-httpcache.$(OBJEXT): tests/$(am__dirstamp) \
-	tests/$(DEPDIR)/$(am__dirstamp)
-
-httpcache$(EXEEXT): $(httpcache_OBJECTS) $(httpcache_DEPENDENCIES) $(EXTRA_httpcache_DEPENDENCIES) 
-	@rm -f httpcache$(EXEEXT)
-	$(AM_V_CCLD)$(httpcache_LINK) $(httpcache_OBJECTS) $(httpcache_LDADD) $(LIBS)
 common/test_libflatpak-test-lib.$(OBJEXT): common/$(am__dirstamp) \
 	common/$(DEPDIR)/$(am__dirstamp)
 
@@ -2335,12 +2331,24 @@ libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.$(OBJEXT):  \
 test-libglnx-xattrs$(EXEEXT): $(test_libglnx_xattrs_OBJECTS) $(test_libglnx_xattrs_DEPENDENCIES) $(EXTRA_test_libglnx_xattrs_DEPENDENCIES) 
 	@rm -f test-libglnx-xattrs$(EXEEXT)
 	$(AM_V_CCLD)$(test_libglnx_xattrs_LINK) $(test_libglnx_xattrs_OBJECTS) $(test_libglnx_xattrs_LDADD) $(LIBS)
+tests/$(am__dirstamp):
+	@$(MKDIR_P) tests
+	@: > tests/$(am__dirstamp)
+tests/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) tests/$(DEPDIR)
+	@: > tests/$(DEPDIR)/$(am__dirstamp)
 tests/testlibrary-testlibrary.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
 testlibrary$(EXEEXT): $(testlibrary_OBJECTS) $(testlibrary_DEPENDENCIES) $(EXTRA_testlibrary_DEPENDENCIES) 
 	@rm -f testlibrary$(EXEEXT)
 	$(AM_V_CCLD)$(testlibrary_LINK) $(testlibrary_OBJECTS) $(testlibrary_LDADD) $(LIBS)
+tests/tests_httpcache-httpcache.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+tests/httpcache$(EXEEXT): $(tests_httpcache_OBJECTS) $(tests_httpcache_DEPENDENCIES) $(EXTRA_tests_httpcache_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/httpcache$(EXEEXT)
+	$(AM_V_CCLD)$(tests_httpcache_LINK) $(tests_httpcache_OBJECTS) $(tests_httpcache_LDADD) $(LIBS)
 install-dist_triggersSCRIPTS: $(dist_triggers_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	@list='$(dist_triggers_SCRIPTS)'; test -n "$(triggersdir)" || list=; \
@@ -2494,6 +2502,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-remove.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-reset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-show.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-ps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-repair.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-repo-update.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-repo.Po@am__quote@
@@ -2561,8 +2570,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@portal/$(DEPDIR)/flatpak_portal-flatpak-portal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/httpcache-httpcache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/testlibrary-testlibrary.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/tests_httpcache-httpcache.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -3070,6 +3079,20 @@ app/flatpak-flatpak-builtins-enter.obj: app/flatpak-builtins-enter.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-enter.c' object='app/flatpak-flatpak-builtins-enter.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-enter.obj `if test -f 'app/flatpak-builtins-enter.c'; then $(CYGPATH_W) 'app/flatpak-builtins-enter.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-enter.c'; fi`
+
+app/flatpak-flatpak-builtins-ps.o: app/flatpak-builtins-ps.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-ps.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-ps.Tpo -c -o app/flatpak-flatpak-builtins-ps.o `test -f 'app/flatpak-builtins-ps.c' || echo '$(srcdir)/'`app/flatpak-builtins-ps.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-ps.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-ps.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-ps.c' object='app/flatpak-flatpak-builtins-ps.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-ps.o `test -f 'app/flatpak-builtins-ps.c' || echo '$(srcdir)/'`app/flatpak-builtins-ps.c
+
+app/flatpak-flatpak-builtins-ps.obj: app/flatpak-builtins-ps.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-ps.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-ps.Tpo -c -o app/flatpak-flatpak-builtins-ps.obj `if test -f 'app/flatpak-builtins-ps.c'; then $(CYGPATH_W) 'app/flatpak-builtins-ps.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-ps.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-ps.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-ps.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-ps.c' object='app/flatpak-flatpak-builtins-ps.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-ps.obj `if test -f 'app/flatpak-builtins-ps.c'; then $(CYGPATH_W) 'app/flatpak-builtins-ps.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-ps.c'; fi`
 
 app/flatpak-flatpak-builtins-build-init.o: app/flatpak-builtins-build-init.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-build-init.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-build-init.Tpo -c -o app/flatpak-flatpak-builtins-build-init.o `test -f 'app/flatpak-builtins-build-init.c' || echo '$(srcdir)/'`app/flatpak-builtins-build-init.c
@@ -3603,20 +3626,6 @@ system-helper/flatpak_system_helper-flatpak-system-helper.obj: system-helper/fla
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_system_helper_CFLAGS) $(CFLAGS) -c -o system-helper/flatpak_system_helper-flatpak-system-helper.obj `if test -f 'system-helper/flatpak-system-helper.c'; then $(CYGPATH_W) 'system-helper/flatpak-system-helper.c'; else $(CYGPATH_W) '$(srcdir)/system-helper/flatpak-system-helper.c'; fi`
 
-tests/httpcache-httpcache.o: tests/httpcache.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(httpcache_CFLAGS) $(CFLAGS) -MT tests/httpcache-httpcache.o -MD -MP -MF tests/$(DEPDIR)/httpcache-httpcache.Tpo -c -o tests/httpcache-httpcache.o `test -f 'tests/httpcache.c' || echo '$(srcdir)/'`tests/httpcache.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/httpcache-httpcache.Tpo tests/$(DEPDIR)/httpcache-httpcache.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/httpcache.c' object='tests/httpcache-httpcache.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(httpcache_CFLAGS) $(CFLAGS) -c -o tests/httpcache-httpcache.o `test -f 'tests/httpcache.c' || echo '$(srcdir)/'`tests/httpcache.c
-
-tests/httpcache-httpcache.obj: tests/httpcache.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(httpcache_CFLAGS) $(CFLAGS) -MT tests/httpcache-httpcache.obj -MD -MP -MF tests/$(DEPDIR)/httpcache-httpcache.Tpo -c -o tests/httpcache-httpcache.obj `if test -f 'tests/httpcache.c'; then $(CYGPATH_W) 'tests/httpcache.c'; else $(CYGPATH_W) '$(srcdir)/tests/httpcache.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/httpcache-httpcache.Tpo tests/$(DEPDIR)/httpcache-httpcache.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/httpcache.c' object='tests/httpcache-httpcache.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(httpcache_CFLAGS) $(CFLAGS) -c -o tests/httpcache-httpcache.obj `if test -f 'tests/httpcache.c'; then $(CYGPATH_W) 'tests/httpcache.c'; else $(CYGPATH_W) '$(srcdir)/tests/httpcache.c'; fi`
-
 common/test_libflatpak-test-lib.o: common/test-lib.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libflatpak_CFLAGS) $(CFLAGS) -MT common/test_libflatpak-test-lib.o -MD -MP -MF common/$(DEPDIR)/test_libflatpak-test-lib.Tpo -c -o common/test_libflatpak-test-lib.o `test -f 'common/test-lib.c' || echo '$(srcdir)/'`common/test-lib.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/test_libflatpak-test-lib.Tpo common/$(DEPDIR)/test_libflatpak-test-lib.Po
@@ -3715,6 +3724,20 @@ tests/testlibrary-testlibrary.obj: tests/testlibrary.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testlibrary_CFLAGS) $(CFLAGS) -c -o tests/testlibrary-testlibrary.obj `if test -f 'tests/testlibrary.c'; then $(CYGPATH_W) 'tests/testlibrary.c'; else $(CYGPATH_W) '$(srcdir)/tests/testlibrary.c'; fi`
 
+tests/tests_httpcache-httpcache.o: tests/httpcache.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_httpcache_CFLAGS) $(CFLAGS) -MT tests/tests_httpcache-httpcache.o -MD -MP -MF tests/$(DEPDIR)/tests_httpcache-httpcache.Tpo -c -o tests/tests_httpcache-httpcache.o `test -f 'tests/httpcache.c' || echo '$(srcdir)/'`tests/httpcache.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/tests_httpcache-httpcache.Tpo tests/$(DEPDIR)/tests_httpcache-httpcache.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/httpcache.c' object='tests/tests_httpcache-httpcache.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_httpcache_CFLAGS) $(CFLAGS) -c -o tests/tests_httpcache-httpcache.o `test -f 'tests/httpcache.c' || echo '$(srcdir)/'`tests/httpcache.c
+
+tests/tests_httpcache-httpcache.obj: tests/httpcache.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_httpcache_CFLAGS) $(CFLAGS) -MT tests/tests_httpcache-httpcache.obj -MD -MP -MF tests/$(DEPDIR)/tests_httpcache-httpcache.Tpo -c -o tests/tests_httpcache-httpcache.obj `if test -f 'tests/httpcache.c'; then $(CYGPATH_W) 'tests/httpcache.c'; else $(CYGPATH_W) '$(srcdir)/tests/httpcache.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/tests_httpcache-httpcache.Tpo tests/$(DEPDIR)/tests_httpcache-httpcache.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/httpcache.c' object='tests/tests_httpcache-httpcache.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_httpcache_CFLAGS) $(CFLAGS) -c -o tests/tests_httpcache-httpcache.obj `if test -f 'tests/httpcache.c'; then $(CYGPATH_W) 'tests/httpcache.c'; else $(CYGPATH_W) '$(srcdir)/tests/httpcache.c'; fi`
+
 mostlyclean-libtool:
 	-rm -f *.lo
 
@@ -3722,6 +3745,7 @@ clean-libtool:
 	-rm -rf .libs _libs
 	-rm -rf common/.libs common/_libs
 	-rm -rf libglnx/.libs libglnx/_libs
+	-rm -rf tests/.libs tests/_libs
 
 distclean-libtool:
 	-rm -f libtool config.lt
