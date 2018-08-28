@@ -4,6 +4,7 @@ Subject: build: Install httpcache if installed-tests are enabled
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
 Forwarded: https://github.com/flatpak/flatpak/pull/1989
+Applied-upstream: 1.0.1, commit:ae0d7943a562683fafbf7e051bfc6ce8a10bdc78
 ---
  tests/Makefile.am.inc | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

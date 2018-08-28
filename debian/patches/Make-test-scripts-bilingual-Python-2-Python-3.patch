@@ -4,6 +4,7 @@ Subject: Make test scripts bilingual Python 2/Python 3
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
 Forwarded: https://github.com/flatpak/flatpak/pull/1990
+Applied-upstream: 1.0.1, commit:3224e26b0a80adc66724529f648a6506ab2e6643
 ---
  tests/http-utils-test-server.py | 36 ++++++++++++++++++++++++++----------
  tests/oci-registry-client.py    | 29 ++++++++++++++++++-----------

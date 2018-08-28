@@ -3,6 +3,7 @@ Date: Mon, 20 Aug 2018 19:24:02 +0100
 Subject: test-webserver: Be more verbose about what we're doing
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Applied-upstream: 1.0.1, commit:155d9116deeca3d90f676c0b280c6632f8732efd
 ---
  tests/test-webserver.sh | 2 ++
  1 file changed, 2 insertions(+)

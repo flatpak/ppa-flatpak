@@ -7,6 +7,7 @@ flatpak tests.
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
 Forwarded: https://github.com/flatpak/flatpak/pull/1990
+Applied-upstream: 1.0.1, commit:bf31305618f6f50383e515536d9a1d88896092a5
 ---
  tests/libtest.sh           | 26 --------------------------
  tests/make-test-runtime.sh | 25 -------------------------

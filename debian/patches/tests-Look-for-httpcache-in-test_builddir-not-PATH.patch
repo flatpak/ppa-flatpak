@@ -8,6 +8,7 @@ in both build-time and installed tests, it is in ${test_builddir}.
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
 Forwarded: https://github.com/flatpak/flatpak/pull/1989
+Applied-upstream: 1.0.1, commit:13fee9a9ee70d30e04479ff37a7b181da952bca6
 ---
  tests/Makefile.am.inc    | 7 +++----
  tests/test-http-utils.sh | 2 +-
