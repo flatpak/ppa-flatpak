@@ -1,4 +1,4 @@
-flatpak (1.0.0-2) UNRELEASED; urgency=medium
+flatpak (1.0.0-2) unstable; urgency=medium
 
   * d/p/build-Install-httpcache-if-installed-tests-are-enabled.patch,
     d/p/tests-Look-for-httpcache-in-test_builddir-not-PATH.patch,
@@ -19,7 +19,7 @@ flatpak (1.0.0-2) UNRELEASED; urgency=medium
     to have been completely addressed
   * Standards-Version: 4.2.1
 
- -- Simon McVittie <smcv@debian.org>  Tue, 28 Aug 2018 10:09:57 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 28 Aug 2018 11:50:22 +0100
 
 flatpak (1.0.0-1) unstable; urgency=medium
 
