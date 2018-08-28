@@ -1164,13 +1164,15 @@ flatpak_installation_uninstall (<em class="parameter"><code><a class="link" href
 </tr>
 <tr>
 <td class="parameter_name"><p>arch</p></td>
-<td class="parameter_description"><p>architecture of the app or runtime to uninstall</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p>architecture of the app or runtime to uninstall; if
+<code class="literal">NULL</code>, <a class="link" href="FlatpakInstallation.html#flatpak-get-default-arch" title="flatpak_get_default_arch ()"><code class="function">flatpak_get_default_arch()</code></a> is assumed. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>branch</p></td>
-<td class="parameter_description"><p>name of the branch of the app or runtime to uninstall</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p>name of the branch of the app or runtime to uninstall;
+if <code class="literal">NULL</code>, <code class="literal">master</code> is assumed. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>progress</p></td>
@@ -1247,13 +1249,15 @@ flatpak_installation_uninstall_full (<em class="parameter"><code><a class="link"
 </tr>
 <tr>
 <td class="parameter_name"><p>arch</p></td>
-<td class="parameter_description"><p>architecture of the app or runtime to uninstall</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p>architecture of the app or runtime to uninstall; if
+<code class="literal">NULL</code>, <a class="link" href="FlatpakInstallation.html#flatpak-get-default-arch" title="flatpak_get_default_arch ()"><code class="function">flatpak_get_default_arch()</code></a> is assumed. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>branch</p></td>
-<td class="parameter_description"><p>name of the branch of the app or runtime to uninstall</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p>name of the branch of the app or runtime to uninstall;
+if <code class="literal">NULL</code>, <code class="literal">master</code> is assumed. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>progress</p></td>
