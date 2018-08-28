@@ -1,11 +1,11 @@
-flatpak (1.0.1-1) UNRELEASED; urgency=medium
+flatpak (1.0.1-1) unstable; urgency=medium
 
   * New upstream release
     - Drop most patches, applied upstream
   * d/p/test-webserver-Fix-race-condition.patch:
     Fix a race condition in test setup
 
- -- Simon McVittie <smcv@debian.org>  Tue, 28 Aug 2018 16:20:33 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 28 Aug 2018 16:28:09 +0100
 
 flatpak (1.0.0-2) unstable; urgency=medium
 
