@@ -19,14 +19,4 @@ case "$(id -nu)@$(hostname)" in
 		;;
 esac
 
-exec gnome-desktop-testing-runner $(
-	gnome-desktop-testing-runner -l Flatpak | while read -r t d; do
-		case "$t" in
-			(Flatpak/test-oci*)
-				;;
-			(*)
-				echo "$t"
-				;;
-		esac
-	done
-)
+exec gnome-desktop-testing-runner Flatpak/test-oci
