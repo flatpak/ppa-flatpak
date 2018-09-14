@@ -66,10 +66,6 @@
 <td class="define_keyword">#define</td>
 <td class="function_name"><a class="link" href="flatpak-Version-information.html#FLATPAK-MICRO-VERSION:CAPS" title="FLATPAK_MICRO_VERSION">FLATPAK_MICRO_VERSION</a></td>
 </tr>
-<tr>
-<td class="define_keyword">#define</td>
-<td class="function_name"><a class="link" href="flatpak-Version-information.html#FLATPAK-EXTERN:CAPS" title="FLATPAK_EXTERN">FLATPAK_EXTERN</a></td>
-</tr>
 </tbody>
 </table></div>
 </div>
@@ -81,6 +77,37 @@
 <div class="refsect2">
 <a name="FLATPAK-CHECK-VERSION:CAPS"></a><h3>FLATPAK_CHECK_VERSION()</h3>
 <pre class="programlisting">#define             FLATPAK_CHECK_VERSION(major,minor,micro)</pre>
+<p>Check that the current version is at least <em class="parameter"><code>major</code></em>
+.<em class="parameter"><code>minor</code></em>
+.<em class="parameter"><code>micro</code></em>
+.</p>
+<div class="refsect3">
+<a name="FLATPAK-CHECK-VERSION.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>major</p></td>
+<td class="parameter_description"><p>major version to compare against</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>minor</p></td>
+<td class="parameter_description"><p>minor version to compare against</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>micro</p></td>
+<td class="parameter_description"><p>micro version to compare against</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
 </div>
 </div>
 <div class="refsect1">
@@ -89,24 +116,21 @@
 <a name="FLATPAK-MAJOR-VERSION:CAPS"></a><h3>FLATPAK_MAJOR_VERSION</h3>
 <pre class="programlisting">#define FLATPAK_MAJOR_VERSION (1)
 </pre>
+<p>The major version.</p>
 </div>
 <hr>
 <div class="refsect2">
 <a name="FLATPAK-MINOR-VERSION:CAPS"></a><h3>FLATPAK_MINOR_VERSION</h3>
 <pre class="programlisting">#define FLATPAK_MINOR_VERSION (0)
 </pre>
+<p>The minor version.</p>
 </div>
 <hr>
 <div class="refsect2">
 <a name="FLATPAK-MICRO-VERSION:CAPS"></a><h3>FLATPAK_MICRO_VERSION</h3>
-<pre class="programlisting">#define FLATPAK_MICRO_VERSION (1)
+<pre class="programlisting">#define FLATPAK_MICRO_VERSION (2)
 </pre>
-</div>
-<hr>
-<div class="refsect2">
-<a name="FLATPAK-EXTERN:CAPS"></a><h3>FLATPAK_EXTERN</h3>
-<pre class="programlisting">#define FLATPAK_EXTERN extern
-</pre>
+<p>The micro version.</p>
 </div>
 </div>
 </div>

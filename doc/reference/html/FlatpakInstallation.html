@@ -486,6 +486,8 @@ system-wide (in $prefix/var/lib/flatpak) or per-user (in ~/.local/share/flatpak)
 <p>FlatpakInstallation can list configured remotes as well as installed application
 and runtime references (in short: refs). It can also run, install, update and
 uninstall applications and runtimes, using <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a>.</p>
+<p>To get a list of all configured installations, use <a class="link" href="FlatpakInstallation.html#flatpak-get-system-installations" title="flatpak_get_system_installations ()"><code class="function">flatpak_get_system_installations()</code></a>,
+together with <a class="link" href="FlatpakInstallation.html#flatpak-installation-new-user" title="flatpak_installation_new_user ()"><code class="function">flatpak_installation_new_user()</code></a>.</p>
 </div>
 <div class="refsect1">
 <a name="FlatpakInstallation.functions_details"></a><h2>Functions</h2>
@@ -2733,7 +2735,7 @@ flatpak_installation_get_config (<em class="parameter"><code><a class="link" hre
                                  <em class="parameter"><code>const <span class="type">char</span> *key</code></em>,
                                  <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
                                  <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
-<p>Get a global configuration option for the remote, see
+<p>Get a global configuration option for the installation, see
 <a class="link" href="FlatpakInstallation.html#flatpak-installation-set-config-sync" title="flatpak_installation_set_config_sync ()"><code class="function">flatpak_installation_set_config_sync()</code></a> for supported keys.</p>
 <div class="refsect3">
 <a name="flatpak-installation-get-config.parameters"></a><h4>Parameters</h4>

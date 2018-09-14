@@ -29,7 +29,7 @@
 <div class="refnamediv"><table width="100%"><tr>
 <td valign="top">
 <h2><span class="refentrytitle"><a name="FlatpakBundleRef.top_of_page"></a>FlatpakBundleRef</span></h2>
-<p>FlatpakBundleRef</p>
+<p>FlatpakBundleRef — Application bundle reference</p>
 </td>
 <td class="gallery_image" valign="top" align="right"></td>
 </tr></table></div>
@@ -146,6 +146,8 @@
 </div>
 <div class="refsect1">
 <a name="FlatpakBundleRef.description"></a><h2>Description</h2>
+<p>A FlatpakBundleRef refers to a single-file bundle containing an
+application or runtime.</p>
 </div>
 <div class="refsect1">
 <a name="FlatpakBundleRef.functions_details"></a><h2>Functions</h2>
@@ -352,6 +354,27 @@ flatpak_bundle_ref_get_installed_size (<em class="parameter"><code><a class="lin
 <pre class="programlisting"><span class="returnvalue">char</span> *
 flatpak_bundle_ref_get_runtime_repo_url
                                (<em class="parameter"><code><a class="link" href="FlatpakBundleRef.html" title="FlatpakBundleRef"><span class="type">FlatpakBundleRef</span></a> *self</code></em>);</pre>
+<p>Get the runtime flatpakrepo url stored in the bundle (if any)</p>
+<div class="refsect3">
+<a name="flatpak-bundle-ref-get-runtime-repo-url.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakBundleRef.html" title="FlatpakBundleRef"><span class="type">FlatpakBundleRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-bundle-ref-get-runtime-repo-url.returns"></a><h4>Returns</h4>
+<p> (transfer full) : an url string, or <code class="literal">NULL</code></p>
+</div>
+<p class="since">Since: 0.8.0</p>
 </div>
 </div>
 <div class="refsect1">
@@ -366,6 +389,7 @@ flatpak_bundle_ref_get_runtime_repo_url
 <div class="refsect2">
 <a name="FlatpakBundleRef--file"></a><h3>The <code class="literal">“file”</code> property</h3>
 <pre class="programlisting">  “file”                     <span class="type">GFile</span> *</pre>
+<p>The bundle file that this ref refers to.</p>
 <p>Flags: Read / Write / Construct Only</p>
 </div>
 </div>

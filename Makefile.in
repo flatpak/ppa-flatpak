@@ -112,12 +112,12 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = $(am__EXEEXT_1) flatpak$(EXEEXT) $(am__EXEEXT_1)
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_9) \
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_10) \
 	test-libflatpak$(EXEEXT)
 libexec_PROGRAMS = $(am__EXEEXT_1) flatpak-session-helper$(EXEEXT) \
 	$(am__EXEEXT_1) flatpak-portal$(EXEEXT) $(am__EXEEXT_1) \
-	$(am__EXEEXT_8) flatpak-dbus-proxy$(EXEEXT) $(am__EXEEXT_1)
-TESTS = $(am__EXEEXT_2) $(am__EXEEXT_10) $(am__EXEEXT_6)
+	$(am__EXEEXT_8) $(am__EXEEXT_9)
+TESTS = $(am__EXEEXT_2) $(am__EXEEXT_11) $(am__EXEEXT_6)
 installed_test_PROGRAMS = $(am__EXEEXT_7)
 check_PROGRAMS = $(am__EXEEXT_5) $(am__EXEEXT_6)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_1 = $(all_test_ltlibs)
@@ -148,18 +148,21 @@ check_PROGRAMS = $(am__EXEEXT_5) $(am__EXEEXT_6)
 @BUILD_DOCUMENTATION_TRUE@am__append_14 = . doc
 @WITH_SYSTEM_BWRAP_TRUE@am__append_15 = -DHELPER=\"$(BWRAP)\"
 @WITH_SYSTEM_BWRAP_FALSE@am__append_16 = -DHELPER=\"$(libexecdir)/flatpak-bwrap\"
-@HAVE_INTROSPECTION_TRUE@am__append_17 = Flatpak-1.0.gir
-@HAVE_INTROSPECTION_TRUE@am__append_18 = $(nodist_gir_DATA) \
+@WITH_SYSTEM_DBUS_PROXY_TRUE@am__append_17 = -DDBUSPROXY=\"$(DBUS_PROXY)\"
+@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_18 = -DDBUSPROXY=\"$(libexecdir)/flatpak-dbus-proxy\"
+@HAVE_INTROSPECTION_TRUE@am__append_19 = Flatpak-1.0.gir
+@HAVE_INTROSPECTION_TRUE@am__append_20 = $(nodist_gir_DATA) \
 @HAVE_INTROSPECTION_TRUE@	$(nodist_typelib_DATA)
-@BUILD_SYSTEM_HELPER_TRUE@am__append_19 = \
+@BUILD_SYSTEM_HELPER_TRUE@am__append_21 = \
 @BUILD_SYSTEM_HELPER_TRUE@	flatpak-system-helper \
 @BUILD_SYSTEM_HELPER_TRUE@	$(NULL)
 
-@BUILD_SYSTEM_HELPER_TRUE@am__append_20 = system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
+@BUILD_SYSTEM_HELPER_TRUE@am__append_22 = system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/flatpak-system-helper.service.in
-@BUILD_SYSTEM_HELPER_TRUE@am__append_21 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service
-@WITH_SYSTEM_BWRAP_TRUE@am__append_22 = FLATPAK_BWRAP=$(BWRAP)
-@WITH_SYSTEM_BWRAP_FALSE@am__append_23 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
+@BUILD_SYSTEM_HELPER_TRUE@am__append_23 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service
+@WITH_SYSTEM_BWRAP_TRUE@am__append_24 = FLATPAK_BWRAP=$(BWRAP)
+@WITH_SYSTEM_BWRAP_FALSE@am__append_25 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
+@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_26 = flatpak-dbus-proxy
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_PROGRAMS = flatpak-bwrap$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -269,6 +272,7 @@ am_libflatpak_common_la_OBJECTS = $(am__objects_2) \
 	common/libflatpak_common_la-flatpak-remote.lo \
 	common/libflatpak_common_la-flatpak-error.lo \
 	common/libflatpak_common_la-flatpak-installation.lo \
+	common/libflatpak_common_la-flatpak-instance.lo \
 	$(am__objects_1)
 am__objects_3 = common/libflatpak_common_la-flatpak-dbus-generated.lo \
 	common/libflatpak_common_la-flatpak-document-dbus-generated.lo
@@ -326,7 +330,9 @@ am__EXEEXT_6 = test-libglnx-xattrs$(EXEEXT) test-libglnx-fdio$(EXEEXT) \
 @BUILD_SYSTEM_HELPER_TRUE@am__EXEEXT_8 =  \
 @BUILD_SYSTEM_HELPER_TRUE@	flatpak-system-helper$(EXEEXT) \
 @BUILD_SYSTEM_HELPER_TRUE@	$(am__EXEEXT_1)
-@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__EXEEXT_9 = $(am__EXEEXT_4)
+@WITH_SYSTEM_DBUS_PROXY_FALSE@am__EXEEXT_9 =  \
+@WITH_SYSTEM_DBUS_PROXY_FALSE@	flatpak-dbus-proxy$(EXEEXT)
+@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__EXEEXT_10 = $(am__EXEEXT_4)
 PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(installed_test_PROGRAMS) $(libexec_PROGRAMS) \
 	$(noinst_PROGRAMS)
@@ -400,12 +406,15 @@ flatpak_bwrap_OBJECTS = $(am_flatpak_bwrap_OBJECTS)
 flatpak_bwrap_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(flatpak_bwrap_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_flatpak_dbus_proxy_OBJECTS =  \
-	dbus-proxy/flatpak_dbus_proxy-flatpak-proxy.$(OBJEXT) \
-	dbus-proxy/flatpak_dbus_proxy-dbus-proxy.$(OBJEXT) \
-	$(am__objects_1)
+am__flatpak_dbus_proxy_SOURCES_DIST = dbus-proxy/flatpak-proxy.c \
+	dbus-proxy/flatpak-proxy.h dbus-proxy/dbus-proxy.c \
+	dbus-proxy/backport-autoptr.h
+@WITH_SYSTEM_DBUS_PROXY_FALSE@am_flatpak_dbus_proxy_OBJECTS = dbus-proxy/flatpak_dbus_proxy-flatpak-proxy.$(OBJEXT) \
+@WITH_SYSTEM_DBUS_PROXY_FALSE@	dbus-proxy/flatpak_dbus_proxy-dbus-proxy.$(OBJEXT) \
+@WITH_SYSTEM_DBUS_PROXY_FALSE@	$(am__objects_1)
 flatpak_dbus_proxy_OBJECTS = $(am_flatpak_dbus_proxy_OBJECTS)
-flatpak_dbus_proxy_DEPENDENCIES = $(am__DEPENDENCIES_1) libglnx.la
+@WITH_SYSTEM_DBUS_PROXY_FALSE@flatpak_dbus_proxy_DEPENDENCIES =  \
+@WITH_SYSTEM_DBUS_PROXY_FALSE@	$(am__DEPENDENCIES_1)
 flatpak_dbus_proxy_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_dbus_proxy_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
@@ -561,8 +570,8 @@ SOURCES = $(libflatpak_common_la_SOURCES) \
 DIST_SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(libflatpak_la_SOURCES) $(libglnx_la_SOURCES) \
 	$(flatpak_SOURCES) $(am__flatpak_bwrap_SOURCES_DIST) \
-	$(flatpak_dbus_proxy_SOURCES) $(flatpak_portal_SOURCES) \
-	$(flatpak_session_helper_SOURCES) \
+	$(am__flatpak_dbus_proxy_SOURCES_DIST) \
+	$(flatpak_portal_SOURCES) $(flatpak_session_helper_SOURCES) \
 	$(am__flatpak_system_helper_SOURCES_DIST) \
 	$(test_libflatpak_SOURCES) $(test_libglnx_errors_SOURCES) \
 	$(test_libglnx_fdio_SOURCES) $(test_libglnx_macros_SOURCES) \
@@ -784,7 +793,7 @@ am__set_TESTS_bases = \
   bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
   bases=`echo $$bases`
 RECHECK_LOGS = $(TEST_LOGS)
-am__EXEEXT_10 = tests/test-basic.sh tests/test-build-update-repo.sh \
+am__EXEEXT_11 = tests/test-basic.sh tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh tests/test-run.sh \
 	tests/test-run-system.sh tests/test-run-deltas.sh \
 	tests/test-run-system-deltas.sh tests/test-repo.sh \
@@ -819,8 +828,7 @@ DIST_SUBDIRS = . doc po
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/app/Makefile.am.inc \
 	$(srcdir)/bubblewrap/Makefile-bwrap.am.inc \
 	$(srcdir)/common/Makefile.am.inc $(srcdir)/config.h.in \
-	$(srcdir)/data/Makefile.am.inc \
-	$(srcdir)/dbus-proxy/Makefile.am.inc $(srcdir)/flatpak.pc.in \
+	$(srcdir)/data/Makefile.am.inc $(srcdir)/flatpak.pc.in \
 	$(srcdir)/libglnx/Makefile-libglnx.am.inc \
 	$(srcdir)/portal/Makefile.am.inc \
 	$(srcdir)/session-helper/Makefile.am.inc \
@@ -893,6 +901,7 @@ CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
 DBUS_CONFIG_DIR = @DBUS_CONFIG_DIR@
+DBUS_PROXY = @DBUS_PROXY@
 DBUS_SERVICE_DIR = @DBUS_SERVICE_DIR@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -1091,10 +1100,10 @@ noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
 	$(systemduserunit_DATA) $(nodist_libflatpak_common_la_SOURCES) \
-	$(am__append_18) app/parse-datetime.c \
+	$(am__append_20) app/parse-datetime.c \
 	$(flatpak_dbus_built_sources) $(nodist_flatpak_portal_SOURCES)
 MAINTAINERCLEANFILES = $(NULL)
-DISTCLEANFILES = $(NULL) $(am__append_21) \
+DISTCLEANFILES = $(NULL) $(am__append_23) \
 	tests/services/org.freedesktop.Flatpak.service \
 	tests/services/org.freedesktop.Flatpak.SystemHelper.service \
 	tests/package_version.txt $(NULL) flatpak.sh flatpak.env \
@@ -1173,7 +1182,7 @@ service_in_files = $(NULL) \
 	session-helper/org.freedesktop.Flatpak.service.in \
 	portal/flatpak-portal.service.in \
 	portal/org.freedesktop.portal.Flatpak.service.in \
-	$(am__append_20)
+	$(am__append_22)
 dbus_service_DATA = $(NULL) \
 	session-helper/org.freedesktop.Flatpak.service \
 	portal/org.freedesktop.portal.Flatpak.service
@@ -1189,10 +1198,10 @@ AM_CPPFLAGS = -DFLATPAK_BINDIR=\"$(FLATPAK_BINDIR)\" \
 	-DFLATPAK_TRIGGERDIR=\"$(pkgdatadir)/triggers\" \
 	-DSYSTEM_FONTS_DIR=\"$(SYSTEM_FONTS_DIR)\" \
 	-DSYSTEM_FONT_CACHE_DIRS=\"$(SYSTEM_FONT_CACHE_DIRS)\" \
-	-DDBUSPROXY=\"$(libexecdir)/flatpak-dbus-proxy\" \
 	-DG_LOG_DOMAIN=\"flatpak\" -I$(srcdir)/libglnx \
 	-I$(srcdir)/common -I$(builddir)/common -include "config.h" \
-	$(NULL) $(am__append_15) $(am__append_16)
+	$(NULL) $(am__append_15) $(am__append_16) $(am__append_17) \
+	$(am__append_18)
 AM_CFLAGS = $(WARN_CFLAGS)
 triggersdir = $(pkgdatadir)/triggers
 dist_triggers_SCRIPTS = \
@@ -1335,6 +1344,8 @@ libflatpak_common_la_SOURCES = \
 	common/flatpak-error.c \
 	common/flatpak-installation-private.h \
 	common/flatpak-installation.c \
+	common/flatpak-instance-private.h \
+	common/flatpak-instance.c \
 	common/valgrind-private.h \
 	$(NULL)
 
@@ -1403,7 +1414,7 @@ test_libflatpak_LDADD = \
 	$(NULL)
 
 sources = $(libflatpak_common_la_SOURCES) $(libflatpak_la_SOURCES)
-INTROSPECTION_GIRS = $(am__append_17)
+INTROSPECTION_GIRS = $(am__append_19)
 @HAVE_INTROSPECTION_TRUE@introspected_headers = \
 @HAVE_INTROSPECTION_TRUE@	$(flatpakinclude_HEADERS) \
 @HAVE_INTROSPECTION_TRUE@	$(nodist_flatpakinclude_HEADERS) \
@@ -1535,14 +1546,6 @@ flatpak_portal_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/portal
 @BUILD_SYSTEM_HELPER_TRUE@polkit_policy_DATA = \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/org.freedesktop.Flatpak.policy
 
-flatpak_dbus_proxy_SOURCES = \
-	dbus-proxy/flatpak-proxy.c	\
-	dbus-proxy/flatpak-proxy.h	\
-	dbus-proxy/dbus-proxy.c		\
-	$(NULL)
-
-flatpak_dbus_proxy_LDADD = $(AM_LDADD) $(BASE_LIBS) libglnx.la
-flatpak_dbus_proxy_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) -I$(srcdir)/dbus-proxy
 AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 FLATPAK_TRIGGERSDIR=$$(cd \
 	$(top_srcdir) && pwd)/triggers FLATPAK_DBUSPROXY=$$(cd \
 	$(top_builddir) && pwd)/flatpak-dbus-proxy \
@@ -1550,8 +1553,8 @@ AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 FLATPAK_TRIGGERSDIR=$$(cd \
 	pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
 	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && \
 	pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} PATH=$$(cd \
-	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_22) \
-	$(am__append_23)
+	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_24) \
+	$(am__append_25)
 testlibrary_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) -DFLATPAK_COMPILATION
 testlibrary_LDADD = \
              $(AM_LDADD) \
@@ -1615,6 +1618,15 @@ dist_test_scripts = \
 test_programs = testlibrary
 test_extra_programs = tests/httpcache
 VALGRIND_SUPPRESSIONS_FILES = tests/flatpak.supp tests/glib.supp
+@WITH_SYSTEM_DBUS_PROXY_FALSE@flatpak_dbus_proxy_SOURCES = \
+@WITH_SYSTEM_DBUS_PROXY_FALSE@	dbus-proxy/flatpak-proxy.c	\
+@WITH_SYSTEM_DBUS_PROXY_FALSE@	dbus-proxy/flatpak-proxy.h	\
+@WITH_SYSTEM_DBUS_PROXY_FALSE@	dbus-proxy/dbus-proxy.c		\
+@WITH_SYSTEM_DBUS_PROXY_FALSE@	dbus-proxy/backport-autoptr.h	\
+@WITH_SYSTEM_DBUS_PROXY_FALSE@	$(NULL)
+
+@WITH_SYSTEM_DBUS_PROXY_FALSE@flatpak_dbus_proxy_LDADD = $(AM_LDADD) $(BASE_LIBS)
+@WITH_SYSTEM_DBUS_PROXY_FALSE@flatpak_dbus_proxy_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
 @WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_SOURCES = $(bwrap_SOURCES)
 @WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_CFLAGS = $(AM_CFLAGS) $(bwrap_CFLAGS)
 @WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_LDADD = $(AM_LDADD) $(bwrap_LDADD) $(CAP_LIB)
@@ -1657,7 +1669,7 @@ all: $(BUILT_SOURCES) config.h
 .SUFFIXES: .c .lo .log .o .obj .test .test$(EXEEXT) .trs
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/dbus-proxy/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1679,7 +1691,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe);; \
 	esac;
-$(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/dbus-proxy/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__empty):
+$(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -1847,6 +1859,8 @@ common/libflatpak_common_la-flatpak-remote.lo: common/$(am__dirstamp) \
 common/libflatpak_common_la-flatpak-error.lo: common/$(am__dirstamp) \
 	common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-installation.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-instance.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-dbus-generated.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
@@ -2534,6 +2548,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-exports.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-installation.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-installed-ref.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-instance.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-json-oci.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-json.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo@am__quote@
@@ -2743,6 +2758,13 @@ common/libflatpak_common_la-flatpak-installation.lo: common/flatpak-installation
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-installation.c' object='common/libflatpak_common_la-flatpak-installation.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-installation.lo `test -f 'common/flatpak-installation.c' || echo '$(srcdir)/'`common/flatpak-installation.c
+
+common/libflatpak_common_la-flatpak-instance.lo: common/flatpak-instance.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-instance.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-instance.Tpo -c -o common/libflatpak_common_la-flatpak-instance.lo `test -f 'common/flatpak-instance.c' || echo '$(srcdir)/'`common/flatpak-instance.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-instance.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-instance.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-instance.c' object='common/libflatpak_common_la-flatpak-instance.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-instance.lo `test -f 'common/flatpak-instance.c' || echo '$(srcdir)/'`common/flatpak-instance.c
 
 common/libflatpak_common_la-flatpak-dbus-generated.lo: common/flatpak-dbus-generated.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-dbus-generated.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-dbus-generated.Tpo -c -o common/libflatpak_common_la-flatpak-dbus-generated.lo `test -f 'common/flatpak-dbus-generated.c' || echo '$(srcdir)/'`common/flatpak-dbus-generated.c

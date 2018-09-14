@@ -205,29 +205,6 @@ flatpak_option_context_new_with_commands (FlatpakCommand *commands)
   return context;
 }
 
-static int
-flatpak_usage (FlatpakCommand *commands,
-               gboolean        is_error)
-{
-  GOptionContext *context;
-  g_autofree char *help = NULL;
-
-  context = flatpak_option_context_new_with_commands (commands);
-
-  g_option_context_add_main_entries (context, global_entries, NULL);
-
-  help = g_option_context_get_help (context, FALSE, NULL);
-
-  if (is_error)
-    g_printerr ("%s", help);
-  else
-    g_print ("%s", help);
-
-  g_option_context_free (context);
-
-  return is_error ? 1 : 0;
-}
-
 gboolean
 flatpak_option_context_parse (GOptionContext     *context,
                               const GOptionEntry *main_entries,
@@ -325,11 +302,13 @@ flatpak_option_context_parse (GOptionContext     *context,
            * FLATPAK_BUILTIN_FLAG_STANDARD_DIRS or FLATPAK_BUILTIN_FLAG_ALL_DIRS
            * must be set.
            */
-          if (opt_user || (!opt_system && opt_installations == NULL))
-            g_ptr_array_add (dirs, flatpak_dir_get_user ());
 
+          /* If nothing is set, then we put the system dir first, which can be used as the default */
           if (opt_system || (!opt_user && opt_installations == NULL))
             g_ptr_array_add (dirs, flatpak_dir_get_system_default ());
+
+          if (opt_user || (!opt_system && opt_installations == NULL))
+            g_ptr_array_add (dirs, flatpak_dir_get_user ());
 
           if (opt_installations != NULL)
             {
@@ -615,8 +594,6 @@ main (int    argc,
   flatpak_migrate_from_xdg_app ();
 
   ret = flatpak_run (argc, argv, &error);
-  if (g_error_matches (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED))
-    flatpak_usage (commands, TRUE);
 
   if (error != NULL)
     {
@@ -627,6 +604,7 @@ main (int    argc,
           prefix = FLATPAK_ANSI_RED FLATPAK_ANSI_BOLD_ON;
           suffix = FLATPAK_ANSI_BOLD_OFF FLATPAK_ANSI_COLOR_RESET;
         }
+      g_dbus_error_strip_remote_error (error);
       g_printerr ("%s%s %s%s\n", prefix, _("error:"), suffix, error->message);
       g_error_free (error);
     }
