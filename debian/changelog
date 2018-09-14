@@ -3,6 +3,7 @@ flatpak (1.0.2-1) UNRELEASED; urgency=medium
   * New upstream release
   * d/p/debian/patches/test-webserver-Fix-race-condition.patch:
     Mark as forwarded
+  * d/libflatpak0.symbols: Update
 
  -- Simon McVittie <smcv@debian.org>  Fri, 14 Sep 2018 17:39:55 +0100
 

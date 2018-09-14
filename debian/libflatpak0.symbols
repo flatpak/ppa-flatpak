@@ -72,6 +72,19 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installed_ref_get_subpaths@Base 0.5.2+git20160516
  flatpak_installed_ref_get_type@Base 0.5.2
  flatpak_installed_ref_load_metadata@Base 0.5.2
+ flatpak_instance_get_all@Base 1.0.2
+ flatpak_instance_get_app@Base 1.0.2
+ flatpak_instance_get_arch@Base 1.0.2
+ flatpak_instance_get_branch@Base 1.0.2
+ flatpak_instance_get_child_pid@Base 1.0.2
+ flatpak_instance_get_commit@Base 1.0.2
+ flatpak_instance_get_id@Base 1.0.2
+ flatpak_instance_get_info@Base 1.0.2
+ flatpak_instance_get_pid@Base 1.0.2
+ flatpak_instance_get_runtime@Base 1.0.2
+ flatpak_instance_get_runtime_commit@Base 1.0.2
+ flatpak_instance_get_type@Base 1.0.2
+ flatpak_instance_is_running@Base 1.0.2
  flatpak_oci_error_quark@Base 0.9.1
  flatpak_portal_error_get_type@Base 0.11.8
  flatpak_portal_error_quark@Base 0.5.2+git20160516
