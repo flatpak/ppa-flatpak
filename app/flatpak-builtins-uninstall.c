@@ -221,6 +221,7 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
               g_autoptr(FlatpakDeploy) deploy = NULL;
               g_autofree char *origin = NULL;
               g_autofree char *runtime = NULL;
+              g_autofree char *sdk = NULL;
               g_autoptr(GKeyFile) metakey = NULL;
               g_auto(GStrv) parts = g_strsplit (ref, "/", -1);
 
@@ -241,6 +242,10 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
               runtime = g_key_file_get_string (metakey, "Application", "runtime", NULL);
               if (runtime)
                 g_hash_table_add (used_runtimes, g_steal_pointer (&runtime));
+
+              sdk = g_key_file_get_string (metakey, "Application", "sdk", NULL);
+              if (sdk)
+                g_hash_table_add (used_runtimes, g_steal_pointer (&sdk));
             }
 
           GLNX_HASH_TABLE_FOREACH (used_runtimes, const char *, runtime)
@@ -286,13 +291,7 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
             }
 
           if (udir->refs->len > 0)
-            {
-              g_print (_("Uninstalling from %s:\n"), flatpak_dir_get_name (dir));
-              g_ptr_array_sort (udir->refs, flatpak_strcmp0_ptr);
-              for (i = 0; i < udir->refs->len; i++)
-                g_print (" %s\n", (char *) udir->refs->pdata[i]);
-              found_something_to_uninstall = TRUE;
-            }
+            found_something_to_uninstall = TRUE;
         }
 
       if (!found_something_to_uninstall)
@@ -300,10 +299,6 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
           g_print (_("Nothing unused to uninstall\n"));
           return TRUE;
         }
-
-      if (!opt_yes &&
-          !flatpak_yes_no_prompt (_("Is this ok?")))
-        return TRUE;
     }
   else
     {
@@ -399,6 +394,7 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
 
     flatpak_transaction_set_disable_prune (transaction, opt_keep_ref);
     flatpak_transaction_set_force_uninstall (transaction, opt_force_remove);
+    flatpak_transaction_set_disable_related (transaction, opt_no_related);
 
     /* This disables the remote metadata update, since uninstall is a local-only op */
     flatpak_transaction_set_no_pull (transaction, TRUE);

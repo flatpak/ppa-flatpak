@@ -1121,6 +1121,8 @@ flatpak_dir_system_helper_call (FlatpakDir   *self,
                                 GCancellable *cancellable,
                                 GError      **error)
 {
+  GVariant *res;
+
   if (g_once_init_enter (&self->system_helper_bus))
     {
       const char *on_session = g_getenv ("FLATPAK_SYSTEM_HELPER_ON_SESSION");
@@ -1141,15 +1143,19 @@ flatpak_dir_system_helper_call (FlatpakDir   *self,
     }
 
   g_debug ("Calling system helper: %s", method_name);
-  return g_dbus_connection_call_sync (self->system_helper_bus,
-                                      "org.freedesktop.Flatpak.SystemHelper",
-                                      "/org/freedesktop/Flatpak/SystemHelper",
-                                      "org.freedesktop.Flatpak.SystemHelper",
-                                      method_name,
-                                      parameters,
-                                      NULL, G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
-                                      cancellable,
-                                      error);
+  res = g_dbus_connection_call_sync (self->system_helper_bus,
+                                     "org.freedesktop.Flatpak.SystemHelper",
+                                     "/org/freedesktop/Flatpak/SystemHelper",
+                                     "org.freedesktop.Flatpak.SystemHelper",
+                                     method_name,
+                                     parameters,
+                                     NULL, G_DBUS_CALL_FLAGS_NONE, G_MAXINT,
+                                     cancellable,
+                                     error);
+  if (res == NULL && error)
+    g_dbus_error_strip_remote_error (*error);
+
+  return res;
 }
 
 static gboolean
@@ -1684,6 +1690,38 @@ flatpak_save_override_keyfile (GKeyFile   *metakey,
   return g_key_file_save_to_file (metakey, filename, error);
 }
 
+gboolean
+flatpak_remove_override_keyfile (const char *app_id,
+                                 gboolean    user,
+                                 GError    **error)
+{
+  g_autoptr(GFile) base_dir = NULL;
+  g_autoptr(GFile) override_dir = NULL;
+  g_autoptr(GFile) file = NULL;
+  g_autoptr(GError) local_error = NULL;
+
+  if (user)
+    base_dir = flatpak_get_user_base_dir_location ();
+  else
+    base_dir = flatpak_get_system_default_base_dir_location ();
+
+  override_dir = g_file_get_child (base_dir, "overrides");
+
+  if (app_id)
+    file = g_file_get_child (override_dir, app_id);
+  else
+    file = g_file_get_child (override_dir, "global");
+
+  if (!g_file_delete (file, NULL, &local_error) &&
+      !g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+    {
+      g_propagate_error (error, g_steal_pointer (&local_error));
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
 /* Note: passing a checksum only works here for non-sub-set deploys, not
    e.g. a partial locale install, because it will not find the real
    deploy directory. This is ok for now, because checksum is only
@@ -1935,7 +1973,7 @@ flatpak_deploy_data_get_runtime (GVariant *deploy_data)
   return runtime;
 }
 
-/**
+/*<private>
  * flatpak_deploy_data_get_subpaths:
  *
  * Returns: (array length=length zero-terminated=1) (transfer container): an array of constant strings
@@ -10760,6 +10798,9 @@ parse_ref_file (GKeyFile *keyfile,
 
   collection_id = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP,
                                          FLATPAK_REF_COLLECTION_ID_KEY, NULL);
+  if (collection_id != NULL && *collection_id == '\0')
+    collection_id = NULL;
+
   if (collection_id != NULL && gpg_data == NULL)
     return flatpak_fail (error, "Collection ID requires GPG key to be provided");
 

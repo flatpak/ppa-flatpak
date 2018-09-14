@@ -1571,7 +1571,7 @@ flatpak_app_compute_permissions (GKeyFile *app_metadata,
   return g_steal_pointer (&app_context);
 }
 
-void
+static void
 flatpak_run_gc_ids (void)
 {
   g_autofree char *base_dir = g_build_filename (g_get_user_runtime_dir (), ".flatpak", NULL);
@@ -1689,7 +1689,8 @@ flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
                                GError        **error)
 {
   g_autofree char *info_path = NULL;
-  int fd, fd2;
+  g_autofree char *bwrapinfo_path = NULL;
+  int fd, fd2, fd3;
 
   g_autoptr(GKeyFile) keyfile = NULL;
   g_autofree char *runtime_path = NULL;
@@ -1843,7 +1844,21 @@ flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
                           "--symlink", "../../../.flatpak-info", old_dest,
                           NULL);
 
-  if (app_info_path_out != NULL)
+  bwrapinfo_path = g_build_filename (instance_id_host_dir, "bwrapinfo.json", NULL);
+  fd3 = open (bwrapinfo_path, O_RDWR | O_CREAT, 0644);
+  if (fd3 == -1)
+    {
+      close (fd);
+      close (fd2);
+      int errsv = errno;
+      g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+                   _("Failed to open brwapinfo.json file: %s"), g_strerror (errsv));
+      return FALSE;
+    }
+
+  flatpak_bwrap_add_args_data_fd (bwrap, "--info-fd", fd3, NULL);
+
+ if (app_info_path_out != NULL)
     *app_info_path_out = g_strdup_printf ("/proc/self/fd/%d", fd);
 
   if (instance_id_host_dir_out != NULL)
@@ -2496,7 +2511,11 @@ forward_file (XdpDbusDocuments *documents,
                                          NULL,
                                          NULL,
                                          error))
-    return FALSE;
+    {
+      if (error)
+        g_dbus_error_strip_remote_error (*error);
+      return FALSE;
+    }
 
   if (!xdp_dbus_documents_call_grant_permissions_sync (documents,
                                                        doc_id,
@@ -2504,7 +2523,11 @@ forward_file (XdpDbusDocuments *documents,
                                                        perms,
                                                        NULL,
                                                        error))
-    return FALSE;
+    {
+      if (error)
+        g_dbus_error_strip_remote_error (*error);
+      return FALSE;
+    }
 
   *out_doc_id = g_steal_pointer (&doc_id);
 
@@ -3114,7 +3137,7 @@ flatpak_run_app (const char     *app_ref,
                           error))
         return FALSE;
 
-      g_snprintf (pid_str, sizeof (pid_str), "%" G_PID_FORMAT, child_pid);
+      g_snprintf (pid_str, sizeof (pid_str), "%d", child_pid);
       pid_path = g_build_filename (instance_id_host_dir, "pid", NULL);
       g_file_set_contents (pid_path, pid_str, -1, NULL);
     }
@@ -3123,7 +3146,7 @@ flatpak_run_app (const char     *app_ref,
       char pid_str[64];
       g_autofree char *pid_path = NULL;
 
-      g_snprintf (pid_str, sizeof (pid_str), "%" G_PID_FORMAT, getpid ());
+      g_snprintf (pid_str, sizeof (pid_str), "%d", getpid ());
       pid_path = g_build_filename (instance_id_host_dir, "pid", NULL);
       g_file_set_contents (pid_path, pid_str, -1, NULL);
 

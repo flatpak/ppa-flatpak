@@ -46,7 +46,6 @@ AM_CPPFLAGS =							\
 	-DFLATPAK_TRIGGERDIR=\"$(pkgdatadir)/triggers\"		\
 	-DSYSTEM_FONTS_DIR=\"$(SYSTEM_FONTS_DIR)\"		\
 	-DSYSTEM_FONT_CACHE_DIRS=\"$(SYSTEM_FONT_CACHE_DIRS)\"		\
-	-DDBUSPROXY=\"$(libexecdir)/flatpak-dbus-proxy\"	\
 	-DG_LOG_DOMAIN=\"flatpak\"				\
 	-I$(srcdir)/libglnx					\
 	-I$(srcdir)/common					\
@@ -60,6 +59,12 @@ if WITH_SYSTEM_BWRAP
 AM_CPPFLAGS += -DHELPER=\"$(BWRAP)\"
 else
 AM_CPPFLAGS += -DHELPER=\"$(libexecdir)/flatpak-bwrap\"
+endif
+
+if WITH_SYSTEM_DBUS_PROXY
+AM_CPPFLAGS += -DDBUSPROXY=\"$(DBUS_PROXY)\"
+else
+AM_CPPFLAGS += -DDBUSPROXY=\"$(libexecdir)/flatpak-dbus-proxy\"
 endif
 
 triggersdir = $(pkgdatadir)/triggers
@@ -91,8 +96,19 @@ include app/Makefile.am.inc
 include session-helper/Makefile.am.inc
 include portal/Makefile.am.inc
 include system-helper/Makefile.am.inc
-include dbus-proxy/Makefile.am.inc
 include tests/Makefile.am.inc
+
+if !WITH_SYSTEM_DBUS_PROXY
+libexec_PROGRAMS+=flatpak-dbus-proxy
+flatpak_dbus_proxy_SOURCES =		\
+	dbus-proxy/flatpak-proxy.c	\
+	dbus-proxy/flatpak-proxy.h	\
+	dbus-proxy/dbus-proxy.c		\
+	dbus-proxy/backport-autoptr.h	\
+	$(NULL)
+flatpak_dbus_proxy_LDADD = $(AM_LDADD) $(BASE_LIBS)
+flatpak_dbus_proxy_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
+endif
 
 if !WITH_SYSTEM_BWRAP
 

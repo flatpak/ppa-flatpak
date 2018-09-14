@@ -29,7 +29,7 @@
 <div class="refnamediv"><table width="100%"><tr>
 <td valign="top">
 <h2><span class="refentrytitle"><a name="FlatpakTransactionProgress.top_of_page"></a>FlatpakTransactionProgress</span></h2>
-<p>FlatpakTransactionProgress</p>
+<p>FlatpakTransactionProgress — Progress of an operation</p>
 </td>
 <td class="gallery_image" valign="top" align="right"></td>
 </tr></table></div>
@@ -112,6 +112,9 @@
 </div>
 <div class="refsect1">
 <a name="FlatpakTransactionProgress.description"></a><h2>Description</h2>
+<p>FlatpakTransactionProgress is an object that represents the progress
+of a single operation in a transaction. You obtain a FlatpakTransactionProgress
+with the <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-new-operation" title="The “new-operation” signal"><span class="type">“new-operation”</span></a> signal.</p>
 </div>
 <div class="refsect1">
 <a name="FlatpakTransactionProgress.functions_details"></a><h2>Functions</h2>
@@ -120,6 +123,26 @@
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
 flatpak_transaction_progress_get_is_estimating
                                (<em class="parameter"><code><a class="link" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress"><span class="type">FlatpakTransactionProgress</span></a> *self</code></em>);</pre>
+<p>Gets whether the progress is currently estimating</p>
+<div class="refsect3">
+<a name="flatpak-transaction-progress-get-is-estimating.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress"><span class="type">FlatpakTransactionProgress</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-progress-get-is-estimating.returns"></a><h4>Returns</h4>
+<p> whether we're estimating</p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -127,6 +150,26 @@ flatpak_transaction_progress_get_is_estimating
 <pre class="programlisting"><span class="returnvalue">int</span>
 flatpak_transaction_progress_get_progress
                                (<em class="parameter"><code><a class="link" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress"><span class="type">FlatpakTransactionProgress</span></a> *self</code></em>);</pre>
+<p>Gets the current progress.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-progress-get-progress.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress"><span class="type">FlatpakTransactionProgress</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-progress-get-progress.returns"></a><h4>Returns</h4>
+<p> the current progress, as an integer between 0 and 100</p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -134,6 +177,27 @@ flatpak_transaction_progress_get_progress
 <pre class="programlisting"><span class="returnvalue">char</span> *
 flatpak_transaction_progress_get_status
                                (<em class="parameter"><code><a class="link" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress"><span class="type">FlatpakTransactionProgress</span></a> *self</code></em>);</pre>
+<p>Gets the current status string</p>
+<div class="refsect3">
+<a name="flatpak-transaction-progress-get-status.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress"><span class="type">FlatpakTransactionProgress</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-progress-get-status.returns"></a><h4>Returns</h4>
+<p>the current status. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -142,6 +206,29 @@ flatpak_transaction_progress_get_status
 flatpak_transaction_progress_set_update_frequency
                                (<em class="parameter"><code><a class="link" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress"><span class="type">FlatpakTransactionProgress</span></a> *self</code></em>,
                                 <em class="parameter"><code><span class="type">guint</span> update_frequency</code></em>);</pre>
+<p>Sets how often progress should be updated.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-progress-set-update-frequency.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress"><span class="type">FlatpakTransactionProgress</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>update_frequency</p></td>
+<td class="parameter_description"><p>the update frequency, in milliseconds</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
 </div>
 </div>
 <div class="refsect1">

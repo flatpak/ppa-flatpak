@@ -498,6 +498,39 @@ flatpak_transaction_add_install_flatpakref
                                (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
                                 <em class="parameter"><code><span class="type">GBytes</span> *flatpakref_data</code></em>,
                                 <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>Adds installing the given flatpakref to this transaction.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-add-install-flatpakref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>flatpakref_data</p></td>
+<td class="parameter_description"><p>data from a flatpakref file</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <span class="type">GError</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-add-install-flatpakref.returns"></a><h4>Returns</h4>
+<p> <code class="literal">TRUE</code> on success; <code class="literal">FALSE</code> with <em class="parameter"><code>error</code></em>
+set on failure.</p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -661,6 +694,47 @@ the transaction works on).</p>
 flatpak_transaction_run (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
                          <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
                          <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>Executes the transaction.</p>
+<p>During the cause of the execution, various signal will get emitted.
+The FlatpakTransaction::choose-remote-for-ref  and
+<a class="link" href="FlatpakTransaction.html#FlatpakTransaction-add-new-remote" title="The “add-new-remote” signal"><span class="type">“add-new-remote”</span></a> signals may get emitted while
+resolving operations. <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-ready" title="The “ready” signal"><span class="type">“ready”</span></a> is emitted when
+the transaction has been fully resolved, and <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-new-operation" title="The “new-operation” signal"><span class="type">“new-operation”</span></a>
+and <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-operation-done" title="The “operation-done” signal"><span class="type">“operation-done”</span></a> are emitted while the operations
+are carried out. If an error occurs at any point during the execution,
+<a class="link" href="FlatpakTransaction.html#FlatpakTransaction-operation-error" title="The “operation-error” signal"><span class="type">“operation-error”</span></a> is emitted.</p>
+<p>Note that this call blocks until the transaction is done.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-run.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for an error</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-run.returns"></a><h4>Returns</h4>
+<p> <code class="literal">TRUE</code> on success, <code class="literal">FALSE</code> if an error occurred</p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -749,6 +823,26 @@ flatpak_transaction_get_operations (<em class="parameter"><code><a class="link" 
 <a name="flatpak-transaction-is-empty"></a><h3>flatpak_transaction_is_empty ()</h3>
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
 flatpak_transaction_is_empty (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>);</pre>
+<p>Returns whether the transaction contains any operations.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-is-empty.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-is-empty.returns"></a><h4>Returns</h4>
+<p> <code class="literal">TRUE</code> if the transaction is empty</p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -757,6 +851,30 @@ flatpak_transaction_is_empty (<em class="parameter"><code><a class="link" href="
 flatpak_transaction_set_disable_dependencies
                                (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
                                 <em class="parameter"><code><span class="type">gboolean</span> disable_dependencies</code></em>);</pre>
+<p>Sets whether the transaction should ignore runtime dependencies
+when resolving operations for applications.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-set-disable-dependencies.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>disable_dependencies</p></td>
+<td class="parameter_description"><p>whether to disable runtime dependencies</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -764,6 +882,30 @@ flatpak_transaction_set_disable_dependencies
 <pre class="programlisting"><span class="returnvalue">void</span>
 flatpak_transaction_set_disable_prune (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
                                        <em class="parameter"><code><span class="type">gboolean</span> disable_prune</code></em>);</pre>
+<p>Sets whether the transaction should avoid pruning the local OSTree
+repository after updating.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-set-disable-prune.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>disable_prune</p></td>
+<td class="parameter_description"><p>whether to avoid pruning</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -772,6 +914,31 @@ flatpak_transaction_set_disable_prune (<em class="parameter"><code><a class="lin
 flatpak_transaction_set_disable_related
                                (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
                                 <em class="parameter"><code><span class="type">gboolean</span> disable_related</code></em>);</pre>
+<p>Sets whether the transaction should avoid adding related refs
+when resolving operations. Related refs are extensions that are
+suggested by apps, such as locales.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-set-disable-related.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>disable_related</p></td>
+<td class="parameter_description"><p>whether to avoid adding related refs</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -780,6 +947,30 @@ flatpak_transaction_set_disable_related
 flatpak_transaction_set_disable_static_deltas
                                (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
                                 <em class="parameter"><code><span class="type">gboolean</span> disable_static_deltas</code></em>);</pre>
+<p>Sets whether the transaction should avoid using static
+deltas when pulling.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-set-disable-static-deltas.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>disable_static_deltas</p></td>
+<td class="parameter_description"><p>whether to avoid static deltas</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -787,6 +978,30 @@ flatpak_transaction_set_disable_static_deltas
 <pre class="programlisting"><span class="returnvalue">void</span>
 flatpak_transaction_set_no_deploy (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
                                    <em class="parameter"><code><span class="type">gboolean</span> no_deploy</code></em>);</pre>
+<p>Sets whether the transaction should download updates, but
+not deploy them.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-set-no-deploy.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>no_deploy</p></td>
+<td class="parameter_description"><p>whether to avoid deploying</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -794,6 +1009,30 @@ flatpak_transaction_set_no_deploy (<em class="parameter"><code><a class="link" h
 <pre class="programlisting"><span class="returnvalue">void</span>
 flatpak_transaction_set_no_pull (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
                                  <em class="parameter"><code><span class="type">gboolean</span> no_pull</code></em>);</pre>
+<p>Sets whether the transaction should operate only on locally
+available data.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-set-no-pull.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>no_pull</p></td>
+<td class="parameter_description"><p>whether to avoid pulls</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -801,6 +1040,30 @@ flatpak_transaction_set_no_pull (<em class="parameter"><code><a class="link" hre
 <pre class="programlisting"><span class="returnvalue">void</span>
 flatpak_transaction_set_reinstall (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
                                    <em class="parameter"><code><span class="type">gboolean</span> reinstall</code></em>);</pre>
+<p>Sets whether the transaction should uninstall first if a
+ref is already installed.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-set-reinstall.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>reinstall</p></td>
+<td class="parameter_description"><p>whether to reinstall refs</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -809,6 +1072,30 @@ flatpak_transaction_set_reinstall (<em class="parameter"><code><a class="link" h
 flatpak_transaction_set_force_uninstall
                                (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
                                 <em class="parameter"><code><span class="type">gboolean</span> force_uninstall</code></em>);</pre>
+<p>Sets whether the transaction should uninstall files even
+if they're used by a running application.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-set-force-uninstall.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>force_uninstall</p></td>
+<td class="parameter_description"><p>whether to force-uninstall refs</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -816,6 +1103,29 @@ flatpak_transaction_set_force_uninstall
 <pre class="programlisting"><span class="returnvalue">void</span>
 flatpak_transaction_set_default_arch (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
                                       <em class="parameter"><code>const <span class="type">char</span> *arch</code></em>);</pre>
+<p>Sets the architecture to default to where it is unspecified.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-set-default-arch.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>arch</p></td>
+<td class="parameter_description"><p>the arch to make default</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
 </div>
 </div>
 <div class="refsect1">
@@ -957,7 +1267,7 @@ flatpak_transaction_set_default_arch (<em class="parameter"><code><a class="link
 <div class="refsect2">
 <a name="FlatpakTransaction--installation"></a><h3>The <code class="literal">“installation”</code> property</h3>
 <pre class="programlisting">  “installation”             <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *</pre>
-<p>The installation instance.</p>
+<p>The installation that the transaction operates on.</p>
 <p>Flags: Read / Write / Construct Only</p>
 </div>
 </div>
@@ -972,10 +1282,10 @@ user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTran
                <span class="type">gchar</span>              *suggested_remote_name,
                <span class="type">gchar</span>              *url,
                <span class="type">gpointer</span>            user_data)</pre>
-<p>As part of the transaction, it is required or recommended
-that a new remote is added, for the reason described in <em class="parameter"><code>reason</code></em>
-.
-Return <code class="literal">TRUE</code> to add it.</p>
+<p>The ::add-new-remote signal gets emitted if, as part of the transaction,
+it is required or recommended that a new remote is added, for the reason
+described in <em class="parameter"><code>reason</code></em>
+.</p>
 <div class="refsect3">
 <a name="FlatpakTransaction-add-new-remote.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1018,6 +1328,10 @@ Return <code class="literal">TRUE</code> to add it.</p>
 </tbody>
 </table></div>
 </div>
+<div class="refsect3">
+<a name="FlatpakTransaction-add-new-remote.returns"></a><h4>Returns</h4>
+<p> <code class="literal">TRUE</code> to add the remote</p>
+</div>
 <p>Flags: Run Last</p>
 </div>
 <hr>
@@ -1029,6 +1343,8 @@ user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTran
                <span class="type">gchar</span>              *runtime_ref,
                <span class="type">GStrv</span>               remotes,
                <span class="type">gpointer</span>            user_data)</pre>
+<p>The ::choose-remote-for-ref signal gets emitted when a
+remote needs to be selected during the execution of the transaction.</p>
 <div class="refsect3">
 <a name="FlatpakTransaction-choose-remote-for-ref.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1081,6 +1397,8 @@ user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTran
                <span class="type">gchar</span>              *reason,
                <span class="type">gchar</span>              *rebase,
                <span class="type">gpointer</span>            user_data)</pre>
+<p>The ::end-of-lifed signal gets emitted when a ref is found to
+be marked as end-of-life during the execution of the transaction.</p>
 <div class="refsect3">
 <a name="FlatpakTransaction-end-of-lifed.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1128,6 +1446,8 @@ user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTran
                <a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> *operation,
                <a class="link" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress"><span class="type">FlatpakTransactionProgress</span></a>  *progress,
                <span class="type">gpointer</span>                     user_data)</pre>
+<p>The ::new-operation signal gets emitted during the execution of
+the transaction when a new operation is beginning.</p>
 <div class="refsect3">
 <a name="FlatpakTransaction-new-operation.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1171,6 +1491,8 @@ user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTran
                <a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> *operation,
                <span class="type">gint</span>                         result,
                <span class="type">gpointer</span>                     user_data)</pre>
+<p>The ::operation-done signal gets emitted during the execution of
+the transaction when an operation is finished.</p>
 <div class="refsect3">
 <a name="FlatpakTransaction-operation-done.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1214,6 +1536,8 @@ user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTran
                <span class="type">GError</span>                      *error,
                <span class="type">gint</span>                         details,
                <span class="type">gpointer</span>                     user_data)</pre>
+<p>The ::operation-error signal gets emitted when an error occurs during the
+execution of the transaction.</p>
 <div class="refsect3">
 <a name="FlatpakTransaction-operation-error.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1263,10 +1587,10 @@ user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTran
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
 user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
                <span class="type">gpointer</span>            user_data)</pre>
-<p>This is is emitted when all the refs involved in the operation have been
-resolved to commits. At this point <a class="link" href="FlatpakTransaction.html#flatpak-transaction-get-operations" title="flatpak_transaction_get_operations ()"><code class="function">flatpak_transaction_get_operations()</code></a>
+<p>The ::ready signal is emitted when all the refs involved in the operation
+have been resolved to commits. At this point <a class="link" href="FlatpakTransaction.html#flatpak-transaction-get-operations" title="flatpak_transaction_get_operations ()"><code class="function">flatpak_transaction_get_operations()</code></a>
 will return all the operations that will be executed as part of the
-transaction. If this returns FALSE, the operation is aborted.</p>
+transaction.</p>
 <div class="refsect3">
 <a name="FlatpakTransaction-ready.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1288,6 +1612,10 @@ transaction. If this returns FALSE, the operation is aborted.</p>
 </tr>
 </tbody>
 </table></div>
+</div>
+<div class="refsect3">
+<a name="FlatpakTransaction-ready.returns"></a><h4>Returns</h4>
+<p> <code class="literal">TRUE</code> to carry on with the transaction, <code class="literal">FALSE</code> to abort</p>
 </div>
 <p>Flags: Run Last</p>
 </div>

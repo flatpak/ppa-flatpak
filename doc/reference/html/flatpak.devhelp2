@@ -189,7 +189,7 @@
     <keyword type="property" name="The “subpaths” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--subpaths"/>
     <keyword type="function" name="flatpak_related_ref_new ()" link="FlatpakRelatedRef.html#flatpak-related-ref-new"/>
     <keyword type="function" name="flatpak_related_ref_get_subpaths ()" link="FlatpakRelatedRef.html#flatpak-related-ref-get-subpaths" since="0.6.7"/>
-    <keyword type="function" name="flatpak_related_ref_should_download ()" link="FlatpakRelatedRef.html#flatpak-related-ref-should-download"/>
+    <keyword type="function" name="flatpak_related_ref_should_download ()" link="FlatpakRelatedRef.html#flatpak-related-ref-should-download" since="0.6.7"/>
     <keyword type="function" name="flatpak_related_ref_should_delete ()" link="FlatpakRelatedRef.html#flatpak-related-ref-should-delete" since="0.6.7"/>
     <keyword type="function" name="flatpak_related_ref_should_autoprune ()" link="FlatpakRelatedRef.html#flatpak-related-ref-should-autoprune" since="0.11.8"/>
     <keyword type="struct" name="struct FlatpakRelatedRef" link="FlatpakRelatedRef.html#FlatpakRelatedRef-struct"/>
@@ -217,11 +217,9 @@
     <keyword type="function" name="flatpak_bundle_ref_get_icon ()" link="FlatpakBundleRef.html#flatpak-bundle-ref-get-icon"/>
     <keyword type="function" name="flatpak_bundle_ref_get_origin ()" link="FlatpakBundleRef.html#flatpak-bundle-ref-get-origin"/>
     <keyword type="function" name="flatpak_bundle_ref_get_installed_size ()" link="FlatpakBundleRef.html#flatpak-bundle-ref-get-installed-size"/>
-    <keyword type="function" name="flatpak_bundle_ref_get_runtime_repo_url ()" link="FlatpakBundleRef.html#flatpak-bundle-ref-get-runtime-repo-url"/>
+    <keyword type="function" name="flatpak_bundle_ref_get_runtime_repo_url ()" link="FlatpakBundleRef.html#flatpak-bundle-ref-get-runtime-repo-url" since="0.8.0"/>
     <keyword type="struct" name="struct FlatpakBundleRef" link="FlatpakBundleRef.html#FlatpakBundleRef-struct"/>
     <keyword type="property" name="The “file” property" link="FlatpakBundleRef.html#FlatpakBundleRef--file"/>
-    <keyword type="function" name="flatpak_error_quark ()" link="flatpak-Error-codes.html#flatpak-error-quark"/>
-    <keyword type="function" name="flatpak_portal_error_quark ()" link="flatpak-Error-codes.html#flatpak-portal-error-quark"/>
     <keyword type="macro" name="FLATPAK_ERROR" link="flatpak-Error-codes.html#FLATPAK-ERROR:CAPS"/>
     <keyword type="enum" name="enum FlatpakError" link="flatpak-Error-codes.html#FlatpakError"/>
     <keyword type="macro" name="FLATPAK_PORTAL_ERROR" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR:CAPS"/>
@@ -230,7 +228,6 @@
     <keyword type="macro" name="FLATPAK_MAJOR_VERSION" link="flatpak-Version-information.html#FLATPAK-MAJOR-VERSION:CAPS"/>
     <keyword type="macro" name="FLATPAK_MINOR_VERSION" link="flatpak-Version-information.html#FLATPAK-MINOR-VERSION:CAPS"/>
     <keyword type="macro" name="FLATPAK_MICRO_VERSION" link="flatpak-Version-information.html#FLATPAK-MICRO-VERSION:CAPS"/>
-    <keyword type="macro" name="FLATPAK_EXTERN" link="flatpak-Version-information.html#FLATPAK-EXTERN:CAPS"/>
     <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NONE" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NONE:CAPS"/>
     <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NO_DEPLOY" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NO-DEPLOY:CAPS"/>
     <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NO_PULL" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NO-PULL:CAPS"/>

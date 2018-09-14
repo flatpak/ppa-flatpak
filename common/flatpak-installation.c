@@ -53,6 +53,9 @@
  * FlatpakInstallation can list configured remotes as well as installed application
  * and runtime references (in short: refs). It can also run, install, update and
  * uninstall applications and runtimes, using #FlatpakTransaction.
+ *
+ * To get a list of all configured installations, use flatpak_get_system_installations(),
+ * together with flatpak_installation_new_user().
  */
 
 typedef struct _FlatpakInstallationPrivate FlatpakInstallationPrivate;
@@ -1420,7 +1423,7 @@ flatpak_installation_set_config_sync (FlatpakInstallation *self,
  * @cancellable: (nullable): a #GCancellable
  * @error: return location for a #GError
  *
- * Get a global configuration option for the remote, see
+ * Get a global configuration option for the installation, see
  * flatpak_installation_set_config_sync() for supported keys.
  *
  * Returns: The (newly allocated) value, or %NULL on error (%G_KEY_FILE_ERROR_KEY_NOT_FOUND error if key is not set)

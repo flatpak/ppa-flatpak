@@ -28,7 +28,7 @@
 <div class="refnamediv"><table width="100%"><tr>
 <td valign="top">
 <h2><span class="refentrytitle"><a name="FlatpakTransactionOperation.top_of_page"></a>FlatpakTransactionOperation</span></h2>
-<p>FlatpakTransactionOperation</p>
+<p>FlatpakTransactionOperation — Operation in a transaction</p>
 </td>
 <td class="gallery_image" valign="top" align="right"></td>
 </tr></table></div>
@@ -124,6 +124,9 @@
 </div>
 <div class="refsect1">
 <a name="FlatpakTransactionOperation.description"></a><h2>Description</h2>
+<p>FlatpakTransactionOperation is an object that represents a single operation
+in a transaction. You receive a FlatpakTransactionOperation object with the
+<a class="link" href="FlatpakTransaction.html#FlatpakTransaction-new-operation" title="The “new-operation” signal"><span class="type">“new-operation”</span></a> signal.</p>
 </div>
 <div class="refsect1">
 <a name="FlatpakTransactionOperation.functions_details"></a><h2>Functions</h2>
@@ -160,6 +163,29 @@ flatpak_transaction_operation_get_bundle_path
 <pre class="programlisting">const <span class="returnvalue">char</span> *
 flatpak_transaction_operation_get_commit
                                (<em class="parameter"><code><a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> *self</code></em>);</pre>
+<p>Gets the commit ID for the operation.</p>
+<p>This information is available when the transaction is resolved,
+i.e. when <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-ready" title="The “ready” signal"><span class="type">“ready”</span></a> is emitted.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-commit.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-commit.returns"></a><h4>Returns</h4>
+<p>the commit ID. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -167,12 +193,53 @@ flatpak_transaction_operation_get_commit
 <pre class="programlisting"><a class="link" href="FlatpakTransaction.html#FlatpakTransactionOperationType" title="enum FlatpakTransactionOperationType"><span class="returnvalue">FlatpakTransactionOperationType</span></a>
 flatpak_transaction_operation_get_operation_type
                                (<em class="parameter"><code><a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> *self</code></em>);</pre>
+<p>Gets the type of the operation.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-operation-type.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-operation-type.returns"></a><h4>Returns</h4>
+<p> the type of operation, as <a class="link" href="FlatpakTransaction.html#FlatpakTransactionOperationType" title="enum FlatpakTransactionOperationType"><span class="type">FlatpakTransactionOperationType</span></a></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="flatpak-transaction-operation-get-ref"></a><h3>flatpak_transaction_operation_get_ref ()</h3>
 <pre class="programlisting">const <span class="returnvalue">char</span> *
 flatpak_transaction_operation_get_ref (<em class="parameter"><code><a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> *self</code></em>);</pre>
+<p>Gets the ref that the operation applies to.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-ref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-ref.returns"></a><h4>Returns</h4>
+<p>the ref. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -180,6 +247,27 @@ flatpak_transaction_operation_get_ref (<em class="parameter"><code><a class="lin
 <pre class="programlisting">const <span class="returnvalue">char</span> *
 flatpak_transaction_operation_get_remote
                                (<em class="parameter"><code><a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> *self</code></em>);</pre>
+<p>Gets the remote that the operation applies to.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-remote.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-remote.returns"></a><h4>Returns</h4>
+<p>the remote. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -187,6 +275,33 @@ flatpak_transaction_operation_get_remote
 <pre class="programlisting"><span class="returnvalue">GKeyFile</span> *
 flatpak_transaction_operation_get_metadata
                                (<em class="parameter"><code><a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> *self</code></em>);</pre>
+<p>Gets the metadata that will be applicable when the
+operation is done.</p>
+<p>This can be compared to the current metadata returned
+by <a class="link" href="FlatpakTransactionOperation.html#flatpak-transaction-operation-get-old-metadata" title="flatpak_transaction_operation_get_old_metadata ()"><code class="function">flatpak_transaction_operation_get_old_metadata()</code></a>
+to find new required permissions and similar changes.</p>
+<p>This information is available when the transaction is resolved,
+i.e. when <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-ready" title="The “ready” signal"><span class="type">“ready”</span></a> is emitted.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-metadata.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-metadata.returns"></a><h4>Returns</h4>
+<p>the metadata <span class="type">GKeyFile</span>. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -194,6 +309,31 @@ flatpak_transaction_operation_get_metadata
 <pre class="programlisting"><span class="returnvalue">GKeyFile</span> *
 flatpak_transaction_operation_get_old_metadata
                                (<em class="parameter"><code><a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> *self</code></em>);</pre>
+<p>Gets the metadata current metadata for the ref that <em class="parameter"><code>self</code></em>
+ works on.
+Also see <a class="link" href="FlatpakTransactionOperation.html#flatpak-transaction-operation-get-metadata" title="flatpak_transaction_operation_get_metadata ()"><code class="function">flatpak_transaction_operation_get_metadata()</code></a>.</p>
+<p>This information is available when the transaction is resolved,
+i.e. when <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-ready" title="The “ready” signal"><span class="type">“ready”</span></a> is emitted.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-old-metadata.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-old-metadata.returns"></a><h4>Returns</h4>
+<p>the old metadata <span class="type">GKeyFile</span>. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -201,6 +341,28 @@ flatpak_transaction_operation_get_old_metadata
 <pre class="programlisting">const <span class="returnvalue">char</span> *
 flatpak_transaction_operation_type_to_string
                                (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html#FlatpakTransactionOperationType" title="enum FlatpakTransactionOperationType"><span class="type">FlatpakTransactionOperationType</span></a> kind</code></em>);</pre>
+<p>Converts the operation type to a string.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-type-to-string.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>kind</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html#FlatpakTransactionOperationType" title="enum FlatpakTransactionOperationType"><span class="type">FlatpakTransactionOperationType</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-type-to-string.returns"></a><h4>Returns</h4>
+<p>a string representing <em class="parameter"><code>kind</code></em>
+. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
 </div>
 </div>
 <div class="refsect1">
