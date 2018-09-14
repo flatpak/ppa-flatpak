@@ -13,6 +13,7 @@ happened on Debian's arm64 autobuilder, which failed with:
     cp: cannot stat '/var/tmp/tap-test.p1cxRN/httpd-output': No such file or directory
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/flatpak/flatpak/pull/2098
 ---
  tests/test-webserver.sh | 1 +
  1 file changed, 1 insertion(+)
