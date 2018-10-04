@@ -1,4 +1,4 @@
-flatpak (1.0.3-1) UNRELEASED; urgency=medium
+flatpak (1.0.3-1) unstable; urgency=medium
 
   [ Ondřej Nový ]
   * d/tests: Use AUTOPKGTEST_TMP instead of ADTTMP
@@ -12,7 +12,7 @@ flatpak (1.0.3-1) UNRELEASED; urgency=medium
   * d/flatpak-tests.lintian-overrides: Silence some
     package-contains-documentation-outside-usr-share-doc false positives
 
- -- Ondřej Nový <onovy@debian.org>  Mon, 01 Oct 2018 10:34:58 +0200
+ -- Simon McVittie <smcv@debian.org>  Thu, 04 Oct 2018 15:40:00 +0100
 
 flatpak (1.0.2-1) unstable; urgency=medium
 
