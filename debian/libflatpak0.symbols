@@ -54,6 +54,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_prune_local_repo@Base 0.9.99
  flatpak_installation_remove_local_ref_sync@Base 0.9.99
  flatpak_installation_remove_remote@Base 0.5.2+git20160516
+ flatpak_installation_run_triggers@Base 1.0.3
  flatpak_installation_set_config_sync@Base 0.10.0
  flatpak_installation_uninstall@Base 0.5.2
  flatpak_installation_uninstall_full@Base 0.11.8
