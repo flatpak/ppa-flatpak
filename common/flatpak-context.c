@@ -32,7 +32,7 @@
 #include <unistd.h>
 #include <gio/gunixfdlist.h>
 
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include <gio/gio.h>
 #include "libglnx/libglnx.h"
@@ -74,6 +74,7 @@ const char *flatpak_context_features[] = {
   "devel",
   "multiarch",
   "bluetooth",
+  "canbus",
   NULL
 };
 
@@ -1111,14 +1112,26 @@ option_add_generic_policy_cb (const gchar *option_name,
 
   t = strchr (value, '=');
   if (t == NULL)
-    return flatpak_fail (error, "--policy arguments must be in the form SUBSYSTEM.KEY=[!]VALUE");
+    {
+      g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+                   _("--policy arguments must be in the form SUBSYSTEM.KEY=[!]VALUE"));
+      return FALSE;
+    }
   policy_value = t + 1;
   key = g_strndup (value, t - value);
   if (strchr (key, '.') == NULL)
-    return flatpak_fail (error, "--policy arguments must be in the form SUBSYSTEM.KEY=[!]VALUE");
+    {
+      g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+                   _("--policy arguments must be in the form SUBSYSTEM.KEY=[!]VALUE"));
+      return FALSE;
+    }
 
   if (policy_value[0] == '!')
-    return flatpak_fail (error, "--policy values can't start with \"!\"");
+    {
+      g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+                   _("--policy values can't start with \"!\""));
+      return FALSE;
+    }
 
   flatpak_context_apply_generic_policy (context, key, policy_value);
 
@@ -1139,14 +1152,26 @@ option_remove_generic_policy_cb (const gchar *option_name,
 
   t = strchr (value, '=');
   if (t == NULL)
-    return flatpak_fail (error, "--policy arguments must be in the form SUBSYSTEM.KEY=[!]VALUE");
+    {
+      g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+                   _("--policy arguments must be in the form SUBSYSTEM.KEY=[!]VALUE"));
+      return FALSE;
+    }
   policy_value = t + 1;
   key = g_strndup (value, t - value);
   if (strchr (key, '.') == NULL)
-    return flatpak_fail (error, "--policy arguments must be in the form SUBSYSTEM.KEY=[!]VALUE");
+    {
+      g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+                   _("--policy arguments must be in the form SUBSYSTEM.KEY=[!]VALUE"));
+      return FALSE;
+    }
 
   if (policy_value[0] == '!')
-    return flatpak_fail (error, "--policy values can't start with \"!\"");
+    {
+      g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+                   _("--policy values can't start with \"!\""));
+      return FALSE;
+    }
 
   extended_value = g_strconcat ("!", policy_value, NULL);
 
@@ -2009,6 +2034,9 @@ flatpak_context_get_run_flags (FlatpakContext *context)
 
   if (flatpak_context_allows_features (context, FLATPAK_CONTEXT_FEATURE_BLUETOOTH))
     flags |= FLATPAK_RUN_FLAG_BLUETOOTH;
+
+  if (flatpak_context_allows_features (context, FLATPAK_CONTEXT_FEATURE_CANBUS))
+    flags |= FLATPAK_RUN_FLAG_CANBUS;
 
   return flags;
 }

@@ -62,10 +62,11 @@
     <keyword type="function" name="flatpak_installation_update_remote_sync ()" link="FlatpakInstallation.html#flatpak-installation-update-remote-sync" since="0.6.13"/>
     <keyword type="function" name="flatpak_installation_cleanup_local_refs_sync ()" link="FlatpakInstallation.html#flatpak-installation-cleanup-local-refs-sync" since="0.10.0"/>
     <keyword type="function" name="flatpak_installation_get_config ()" link="FlatpakInstallation.html#flatpak-installation-get-config"/>
-    <keyword type="function" name="flatpak_installation_prune_local_repo ()" link="FlatpakInstallation.html#flatpak-installation-prune-local-repo"/>
-    <keyword type="function" name="flatpak_installation_remove_local_ref_sync ()" link="FlatpakInstallation.html#flatpak-installation-remove-local-ref-sync"/>
+    <keyword type="function" name="flatpak_installation_prune_local_repo ()" link="FlatpakInstallation.html#flatpak-installation-prune-local-repo" since="0.10.0"/>
+    <keyword type="function" name="flatpak_installation_remove_local_ref_sync ()" link="FlatpakInstallation.html#flatpak-installation-remove-local-ref-sync" since="0.10.0"/>
     <keyword type="function" name="flatpak_installation_set_config_sync ()" link="FlatpakInstallation.html#flatpak-installation-set-config-sync"/>
     <keyword type="function" name="flatpak_installation_update_appstream_full_sync ()" link="FlatpakInstallation.html#flatpak-installation-update-appstream-full-sync"/>
+    <keyword type="function" name="flatpak_installation_run_triggers ()" link="FlatpakInstallation.html#flatpak-installation-run-triggers" since="1.0.3"/>
     <keyword type="function" name="flatpak_get_default_arch ()" link="FlatpakInstallation.html#flatpak-get-default-arch"/>
     <keyword type="function" name="flatpak_get_supported_arches ()" link="FlatpakInstallation.html#flatpak-get-supported-arches"/>
     <keyword type="function" name="flatpak_get_system_installations ()" link="FlatpakInstallation.html#flatpak-get-system-installations" since="0.8"/>
@@ -233,12 +234,15 @@
     <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NO_PULL" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NO-PULL:CAPS"/>
     <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NO_STATIC_DELTAS" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NO-STATIC-DELTAS:CAPS"/>
     <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NO_PRUNE" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NO-PRUNE:CAPS"/>
+    <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NO_TRIGGERS" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NO-TRIGGERS:CAPS"/>
     <keyword type="constant" name="FLATPAK_INSTALL_FLAGS_NONE" link="FlatpakInstallation.html#FLATPAK-INSTALL-FLAGS-NONE:CAPS"/>
     <keyword type="constant" name="FLATPAK_INSTALL_FLAGS_NO_STATIC_DELTAS" link="FlatpakInstallation.html#FLATPAK-INSTALL-FLAGS-NO-STATIC-DELTAS:CAPS"/>
     <keyword type="constant" name="FLATPAK_INSTALL_FLAGS_NO_DEPLOY" link="FlatpakInstallation.html#FLATPAK-INSTALL-FLAGS-NO-DEPLOY:CAPS"/>
     <keyword type="constant" name="FLATPAK_INSTALL_FLAGS_NO_PULL" link="FlatpakInstallation.html#FLATPAK-INSTALL-FLAGS-NO-PULL:CAPS"/>
+    <keyword type="constant" name="FLATPAK_INSTALL_FLAGS_NO_TRIGGERS" link="FlatpakInstallation.html#FLATPAK-INSTALL-FLAGS-NO-TRIGGERS:CAPS"/>
     <keyword type="constant" name="FLATPAK_UNINSTALL_FLAGS_NONE" link="FlatpakInstallation.html#FLATPAK-UNINSTALL-FLAGS-NONE:CAPS"/>
     <keyword type="constant" name="FLATPAK_UNINSTALL_FLAGS_NO_PRUNE" link="FlatpakInstallation.html#FLATPAK-UNINSTALL-FLAGS-NO-PRUNE:CAPS"/>
+    <keyword type="constant" name="FLATPAK_UNINSTALL_FLAGS_NO_TRIGGERS" link="FlatpakInstallation.html#FLATPAK-UNINSTALL-FLAGS-NO-TRIGGERS:CAPS"/>
     <keyword type="constant" name="FLATPAK_STORAGE_TYPE_DEFAULT" link="FlatpakInstallation.html#FLATPAK-STORAGE-TYPE-DEFAULT:CAPS"/>
     <keyword type="constant" name="FLATPAK_STORAGE_TYPE_HARD_DISK" link="FlatpakInstallation.html#FLATPAK-STORAGE-TYPE-HARD-DISK:CAPS"/>
     <keyword type="constant" name="FLATPAK_STORAGE_TYPE_SDCARD" link="FlatpakInstallation.html#FLATPAK-STORAGE-TYPE-SDCARD:CAPS"/>
@@ -268,6 +272,14 @@
     <keyword type="constant" name="FLATPAK_ERROR_REMOTE_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-ERROR-REMOTE-NOT-FOUND:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_RUNTIME_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-ERROR-RUNTIME-NOT-FOUND:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_DOWNGRADE" link="flatpak-Error-codes.html#FLATPAK-ERROR-DOWNGRADE:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_INVALID_REF" link="flatpak-Error-codes.html#FLATPAK-ERROR-INVALID-REF:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_INVALID_DATA" link="flatpak-Error-codes.html#FLATPAK-ERROR-INVALID-DATA:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_UNTRUSTED" link="flatpak-Error-codes.html#FLATPAK-ERROR-UNTRUSTED:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_SETUP_FAILED" link="flatpak-Error-codes.html#FLATPAK-ERROR-SETUP-FAILED:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_EXPORT_FAILED" link="flatpak-Error-codes.html#FLATPAK-ERROR-EXPORT-FAILED:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_REMOTE_USED" link="flatpak-Error-codes.html#FLATPAK-ERROR-REMOTE-USED:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_RUNTIME_USED" link="flatpak-Error-codes.html#FLATPAK-ERROR-RUNTIME-USED:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_INVALID_NAME" link="flatpak-Error-codes.html#FLATPAK-ERROR-INVALID-NAME:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_FAILED" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-FAILED:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-INVALID-ARGUMENT:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-NOT-FOUND:CAPS"/>

@@ -41,7 +41,7 @@
 #include <X11/Xauth.h>
 #endif
 
-#include <glib/gi18n.h>
+#include <glib/gi18n-lib.h>
 
 #include <gio/gio.h>
 #include "libglnx/libglnx.h"
@@ -682,7 +682,8 @@ add_bwrap_wrapper (FlatpakBwrap *bwrap,
 
   g_auto(GLnxDirFdIterator) dir_iter = { 0 };
   struct dirent *dent;
-  g_autofree char *proxy_socket_dir = g_build_filename (g_get_user_runtime_dir (), ".dbus-proxy/", NULL);
+  g_autofree char *user_runtime_dir = realpath (g_get_user_runtime_dir (), NULL);
+  g_autofree char *proxy_socket_dir = g_build_filename (user_runtime_dir, ".dbus-proxy/", NULL);
 
   app_info_fd = open (app_info_path, O_RDONLY | O_CLOEXEC);
   if (app_info_fd == -1)
@@ -859,7 +860,7 @@ flatpak_run_add_extension_args (FlatpakBwrap *bwrap,
 
   parts = g_strsplit (full_ref, "/", 0);
   if (g_strv_length (parts) != 4)
-    return flatpak_fail (error, "Failed to determine parts from ref: %s", full_ref);
+    return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_REF, _("Failed to determine parts from ref: %s"), full_ref);
 
   is_app = strcmp (parts[0], "app") == 0;
 
@@ -1035,6 +1036,23 @@ flatpak_run_add_environment_args (FlatpakBwrap    *bwrap,
       flatpak_bwrap_add_args (bwrap,
                               "--dev-bind", "/dev", "/dev",
                               NULL);
+      /* Don't expose the host /dev/shm, just the device nodes */
+      if (g_file_test ("/dev/shm", G_FILE_TEST_IS_DIR))
+        flatpak_bwrap_add_args (bwrap,
+                                "--tmpfs", "/dev/shm",
+                                NULL);
+      else if (g_file_test ("/dev/shm", G_FILE_TEST_IS_SYMLINK))
+        {
+          g_autofree char *link = flatpak_readlink ("/dev/shm", NULL);
+          /* On debian (with sysv init) the host /dev/shm is a symlink to /run/shm, so we can't
+             mount on top of it. */
+          if (g_strcmp0 (link, "/run/shm") == 0)
+            flatpak_bwrap_add_args (bwrap,
+                                    "--dir", "/run/shm",
+                                    NULL);
+          else
+            g_warning ("Unexpected /dev/shm symlink %s", link);
+        }
     }
   else
     {
@@ -1394,8 +1412,8 @@ flatpak_run_in_transient_unit (const char *appid, GError **error)
   path = g_strdup_printf ("/run/user/%d/systemd/private", getuid ());
 
   if (!g_file_test (path, G_FILE_TEST_EXISTS))
-    return flatpak_fail (error,
-                         "No systemd user session available, cgroups not available");
+    return flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED,
+                               _("No systemd user session available, cgroups not available"));
 
   main_context = flatpak_main_context_new_default ();
   main_loop = g_main_loop_new (main_context, FALSE);
@@ -1705,7 +1723,7 @@ flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
 
   instance_id = flatpak_run_allocate_id (&lock_fd);
   if (instance_id == NULL)
-    return flatpak_fail (error, "Unable to allocate instance id");
+    return flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Unable to allocate instance id"));
 
   instance_id_host_dir = g_build_filename (g_get_user_runtime_dir (), ".flatpak", instance_id, NULL);
   instance_id_sandbox_dir = g_strdup_printf ("/run/user/%d/.flatpak/%s", getuid (), instance_id);
@@ -1852,7 +1870,7 @@ flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
       close (fd2);
       int errsv = errno;
       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
-                   _("Failed to open brwapinfo.json file: %s"), g_strerror (errsv));
+                   _("Failed to open bwrapinfo.json file: %s"), g_strerror (errsv));
       return FALSE;
     }
 
@@ -2150,6 +2168,7 @@ setup_seccomp (FlatpakBwrap   *bwrap,
     { AF_INET, 0 },
     { AF_INET6, 0 },
     { AF_NETLINK, 0 },
+    { AF_CAN, FLATPAK_RUN_FLAG_CANBUS },
     { AF_BLUETOOTH, FLATPAK_RUN_FLAG_BLUETOOTH },
   };
   int last_allowed_family;
@@ -2158,7 +2177,7 @@ setup_seccomp (FlatpakBwrap   *bwrap,
 
   seccomp = seccomp_init (SCMP_ACT_ALLOW);
   if (!seccomp)
-    return flatpak_fail (error, "Initialize seccomp failed");
+    return flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Initialize seccomp failed"));
 
   if (arch != NULL)
     {
@@ -2197,7 +2216,7 @@ setup_seccomp (FlatpakBwrap   *bwrap,
              couldn't continue running. */
           r = seccomp_arch_add (seccomp, arch_id);
           if (r < 0 && r != -EEXIST)
-            return flatpak_fail (error, "Failed to add architecture to seccomp filter");
+            return flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Failed to add architecture to seccomp filter"));
 
           if (multiarch && extra_arches != NULL)
             {
@@ -2206,7 +2225,7 @@ setup_seccomp (FlatpakBwrap   *bwrap,
                 {
                   r = seccomp_arch_add (seccomp, extra_arches[i]);
                   if (r < 0 && r != -EEXIST)
-                    return flatpak_fail (error, "Failed to add multiarch architecture to seccomp filter");
+                    return flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Failed to add multiarch architecture to seccomp filter"));
                 }
             }
         }
@@ -2225,7 +2244,7 @@ setup_seccomp (FlatpakBwrap   *bwrap,
       else
         r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO (EPERM), scall, 0);
       if (r < 0 && r == -EFAULT /* unknown syscall */)
-        return flatpak_fail (error, "Failed to block syscall %d", scall);
+        return flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Failed to block syscall %d"), scall);
     }
 
   if (!devel)
@@ -2239,7 +2258,7 @@ setup_seccomp (FlatpakBwrap   *bwrap,
             r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO (EPERM), scall, 0);
 
           if (r < 0 && r == -EFAULT /* unknown syscall */)
-            return flatpak_fail (error, "Failed to block syscall %d", scall);
+            return flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Failed to block syscall %d"), scall);
         }
     }
 
@@ -2270,7 +2289,7 @@ setup_seccomp (FlatpakBwrap   *bwrap,
     return FALSE;
 
   if (seccomp_export_bpf (seccomp, seccomp_tmpf.fd) != 0)
-    return flatpak_fail (error, "Failed to export bpf");
+    return flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Failed to export bpf"));
 
   lseek (seccomp_tmpf.fd, 0, SEEK_SET);
 
@@ -2325,8 +2344,8 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
   g_autoptr(GFile) etc = NULL;
 
   g = getgrgid (gid);
-  if(g == NULL)
-    return flatpak_fail (error, "Invalid gid: %d", gid);
+  if (g == NULL)
+    return flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Invalid group: %d"), gid);
 
   run_dir = g_strdup_printf ("/run/user/%d", getuid ());
 
@@ -2791,15 +2810,15 @@ regenerate_ld_cache (GPtrArray    *base_argv_array,
 
   if (!WIFEXITED (exit_status) || WEXITSTATUS (exit_status) != 0)
     {
-      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-                   _("ldconfig failed, exit status %d"), exit_status);
+      flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, 
+                          _("ldconfig failed, exit status %d"), exit_status);
       return -1;
     }
 
   ld_so_fd = open (flatpak_file_get_path_cached (ld_so_cache), O_RDONLY);
   if (ld_so_fd < 0)
     {
-      flatpak_fail (error, "Can't open generated ld.so.cache");
+      flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Can't open generated ld.so.cache"));
       return -1;
     }
 
@@ -2911,7 +2930,7 @@ flatpak_run_app (const char     *app_ref,
 
   runtime_parts = g_strsplit (default_runtime, "/", 0);
   if (g_strv_length (runtime_parts) != 3)
-    return flatpak_fail (error, "Wrong number of components in runtime %s", default_runtime);
+    return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_REF, _("Wrong number of components in runtime %s"), default_runtime);
 
   if (custom_runtime)
     {
