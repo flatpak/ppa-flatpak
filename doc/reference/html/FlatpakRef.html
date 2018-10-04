@@ -181,7 +181,7 @@
 </div>
 <div class="refsect1">
 <a name="FlatpakRef.description"></a><h2>Description</h2>
-<p>Currently flatpak manages two types of binary artifacts: applications, and
+<p>Currently Flatpak manages two types of binary artifacts: applications, and
 runtimes. Applications contain a program that desktop users can run, while
 runtimes contain only libraries and data. An FlatpakRef object (or short: ref)
 can refer to either of these.</p>
@@ -189,6 +189,7 @@ can refer to either of these.</p>
 name, arch and branch, e.g. app/org.gnome.evince/x86_64/master. The functions
 <a class="link" href="FlatpakRef.html#flatpak-ref-parse" title="flatpak_ref_parse ()"><code class="function">flatpak_ref_parse()</code></a> and <a class="link" href="FlatpakRef.html#flatpak-ref-format-ref" title="flatpak_ref_format_ref ()"><code class="function">flatpak_ref_format_ref()</code></a> can be used to convert
 FlatpakRef objects into this string representation and back.</p>
+<p>FlatpakRef objects are immutable and can be passed freely between threads.</p>
 <p>To uniquely identify a particular version of an application or runtime, you
 need a commit.</p>
 <p>The subclasses <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> and <a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="type">FlatpakRemoteRef</span></a> provide more information

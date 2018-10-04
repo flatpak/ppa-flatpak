@@ -339,6 +339,12 @@ of dependencies and report progress and status while downloading and installing 
 This means you should either handle the signals directly (say, by doing blocking console
 interaction, or by just returning without interaction), or run the operation in a separate
 thread and do your own forwarding to the GUI thread.</p>
+<p>Despite the name, a FlatpakTransaction is more like a batch operation than a transaction
+in the database sense. Individual operations are carried out sequentially, and are atomic.
+They become visible to the system as they are completed. When an error occurs, already
+completed operations are not rolled back.</p>
+<p>The FlatpakTransaction API is threadsafe in the sense that it is safe to run two
+transactions at the same time, in different threads (or processes).</p>
 </div>
 <div class="refsect1">
 <a name="FlatpakTransaction.functions_details"></a><h2>Functions</h2>

@@ -117,7 +117,8 @@ noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_10) \
 libexec_PROGRAMS = $(am__EXEEXT_1) flatpak-session-helper$(EXEEXT) \
 	$(am__EXEEXT_1) flatpak-portal$(EXEEXT) $(am__EXEEXT_1) \
 	$(am__EXEEXT_8) $(am__EXEEXT_9)
-TESTS = $(am__EXEEXT_2) $(am__EXEEXT_11) $(am__EXEEXT_6)
+TESTS = $(am__EXEEXT_2) $(am__EXEEXT_12) $(am__EXEEXT_14) \
+	$(am__EXEEXT_6)
 installed_test_PROGRAMS = $(am__EXEEXT_7)
 check_PROGRAMS = $(am__EXEEXT_5) $(am__EXEEXT_6)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_1 = $(all_test_ltlibs)
@@ -338,11 +339,12 @@ PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(noinst_PROGRAMS)
 am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-utils.$(OBJEXT) \
-	app/flatpak-flatpak-builtins-add-remote.$(OBJEXT) \
-	app/flatpak-flatpak-builtins-delete-remote.$(OBJEXT) \
-	app/flatpak-flatpak-builtins-list-remotes.$(OBJEXT) \
-	app/flatpak-flatpak-builtins-ls-remote.$(OBJEXT) \
-	app/flatpak-flatpak-builtins-info-remote.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-remote-add.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-remote-modify.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-remote-delete.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-remote-list.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-remote-ls.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-remote-info.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-install.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-override.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-make-current.$(OBJEXT) \
@@ -362,7 +364,7 @@ am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-build-import-bundle.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-build-commit-from.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-build-sign.$(OBJEXT) \
-	app/flatpak-flatpak-builtins-repo-update.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-build-update-repo.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-repo.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-export.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-unexport.$(OBJEXT) \
@@ -793,18 +795,21 @@ am__set_TESTS_bases = \
   bases=`for i in $$bases; do echo $$i; done | sed 's/\.log$$//'`; \
   bases=`echo $$bases`
 RECHECK_LOGS = $(TEST_LOGS)
-am__EXEEXT_11 = tests/test-basic.sh tests/test-build-update-repo.sh \
-	tests/test-http-utils.sh tests/test-run.sh \
-	tests/test-run-system.sh tests/test-run-deltas.sh \
-	tests/test-run-system-deltas.sh tests/test-repo.sh \
-	tests/test-repo-collections.sh \
-	tests/test-repo-collections-server-only.sh \
-	tests/test-repo-system.sh tests/test-extensions.sh \
-	tests/test-bundle.sh tests/test-bundle-system.sh \
-	tests/test-oci.sh tests/test-oci-registry.sh \
-	tests/test-oci-registry-system.sh \
-	tests/test-unsigned-summaries.sh \
+am__EXEEXT_11 = tests/test-run@user,nodeltas.wrap \
+	tests/test-run@user,deltas.wrap \
+	tests/test-run@system,nodeltas.wrap \
+	tests/test-run@system,deltas.wrap tests/test-repo@user.wrap \
+	tests/test-repo@system.wrap tests/test-repo@collections.wrap \
+	tests/test-repo@collections-server-only.wrap \
+	tests/test-bundle@user.wrap tests/test-bundle@system.wrap \
+	tests/test-oci-registry@user.wrap \
+	tests/test-oci-registry@system.wrap $(am__EXEEXT_1)
+am__EXEEXT_12 = $(am__EXEEXT_11)
+am__EXEEXT_13 = tests/test-basic.sh tests/test-build-update-repo.sh \
+	tests/test-http-utils.sh tests/test-extensions.sh \
+	tests/test-oci.sh tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh $(am__EXEEXT_1)
+am__EXEEXT_14 = $(am__EXEEXT_13)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
 LOG_COMPILE = $(LOG_COMPILER) $(AM_LOG_FLAGS) $(LOG_FLAGS)
@@ -833,6 +838,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/app/Makefile.am.inc \
 	$(srcdir)/portal/Makefile.am.inc \
 	$(srcdir)/session-helper/Makefile.am.inc \
 	$(srcdir)/system-helper/Makefile.am.inc \
+	$(srcdir)/tests/Makefile-test-matrix.am.inc \
 	$(srcdir)/tests/Makefile.am.inc \
 	$(top_srcdir)/buildutil/glib-tap.mk \
 	$(top_srcdir)/common/flatpak-version-macros.h.in ABOUT-NLS \
@@ -1095,7 +1101,8 @@ dist_installed_test_extra_scripts = $(NULL) buildutil/tap-driver.sh \
 	tests/oci-registry-client.py \
 	tests/make-multi-collection-id-repo.sh tests/make-test-app.sh \
 	tests/make-test-runtime.sh tests/make-test-bundles.sh \
-	tests/test-webserver.sh $(NULL)
+	tests/test-webserver.sh tests/test-wrapper.sh $(NULL) \
+	${TEST_MATRIX_EXTRA_DIST}
 noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
@@ -1127,7 +1134,9 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	system-helper/org.freedesktop.Flatpak.rules.in \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
 	system-helper/flatpak-system-helper.service.in \
-	tests/flatpak.supp tests/glib.supp $(bashcompletion_DATA) \
+	tests/flatpak.supp tests/glib.supp \
+	tests/Makefile-test-matrix.am.inc tests/expand-test-matrix.sh \
+	tests/test-wrapper.sh $(bashcompletion_DATA) \
 	$(zshcompletion_DATA) profile/flatpak.sh.in $(NULL) \
 	env.d/flatpak.env.in dbus.service.d/flatpak.conf.in \
 	flatpak.pc.in scripts/flatpak-bisect \
@@ -1448,11 +1457,12 @@ flatpak_SOURCES = \
 	app/flatpak-builtins.h \
 	app/flatpak-builtins-utils.h \
 	app/flatpak-builtins-utils.c \
-	app/flatpak-builtins-add-remote.c \
-	app/flatpak-builtins-delete-remote.c \
-	app/flatpak-builtins-list-remotes.c \
-	app/flatpak-builtins-ls-remote.c \
-	app/flatpak-builtins-info-remote.c \
+	app/flatpak-builtins-remote-add.c \
+	app/flatpak-builtins-remote-modify.c \
+	app/flatpak-builtins-remote-delete.c \
+	app/flatpak-builtins-remote-list.c \
+	app/flatpak-builtins-remote-ls.c \
+	app/flatpak-builtins-remote-info.c \
 	app/flatpak-builtins-install.c \
 	app/flatpak-builtins-override.c \
 	app/flatpak-builtins-make-current.c \
@@ -1472,7 +1482,7 @@ flatpak_SOURCES = \
 	app/flatpak-builtins-build-import-bundle.c \
 	app/flatpak-builtins-build-commit-from.c \
 	app/flatpak-builtins-build-sign.c \
-	app/flatpak-builtins-repo-update.c \
+	app/flatpak-builtins-build-update-repo.c \
 	app/flatpak-builtins-repo.c \
 	app/flatpak-builtins-document-export.c \
 	app/flatpak-builtins-document-unexport.c \
@@ -1593,28 +1603,58 @@ installed_test_keyring2dir = $(installed_testdir)/test-keyring2
 @ENABLE_INSTALLED_TESTS_TRUE@	tests/test-keyring2/secring.gpg \
 @ENABLE_INSTALLED_TESTS_TRUE@	$(NULL)
 
-dist_test_scripts = \
+
+# Run make update-test-matrix after changing this
+TEST_MATRIX_SOURCE = \
 	tests/test-basic.sh \
 	tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh \
-	tests/test-run.sh \
-	tests/test-run-system.sh \
-	tests/test-run-deltas.sh \
-	tests/test-run-system-deltas.sh \
-	tests/test-repo.sh \
-	tests/test-repo-collections.sh \
-	tests/test-repo-collections-server-only.sh \
-	tests/test-repo-system.sh \
+	tests/test-run.sh{{user+system},{nodeltas+deltas}} \
+	tests/test-repo.sh{user+system+collections+collections-server-only} \
 	tests/test-extensions.sh \
-	tests/test-bundle.sh \
-	tests/test-bundle-system.sh \
+	tests/test-bundle.sh{user+system} \
 	tests/test-oci.sh \
-	tests/test-oci-registry.sh \
-	tests/test-oci-registry-system.sh \
+	tests/test-oci-registry.sh{user+system} \
 	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	$(NULL)
 
+
+# This file is autogenerated by make update-test-matrix, don't edit
+TEST_MATRIX = \
+	tests/test-run@user,nodeltas.wrap \
+	tests/test-run@user,deltas.wrap \
+	tests/test-run@system,nodeltas.wrap \
+	tests/test-run@system,deltas.wrap \
+	tests/test-repo@user.wrap \
+	tests/test-repo@system.wrap \
+	tests/test-repo@collections.wrap \
+	tests/test-repo@collections-server-only.wrap \
+	tests/test-bundle@user.wrap \
+	tests/test-bundle@system.wrap \
+	tests/test-oci-registry@user.wrap \
+	tests/test-oci-registry@system.wrap \
+	$(NULL)
+
+TEST_MATRIX_DIST = \
+	tests/test-basic.sh \
+	tests/test-build-update-repo.sh \
+	tests/test-http-utils.sh \
+	tests/test-extensions.sh \
+	tests/test-oci.sh \
+	tests/test-unsigned-summaries.sh \
+	tests/test-update-remote-configuration.sh \
+	$(NULL)
+
+TEST_MATRIX_EXTRA_DIST = \
+	tests/test-run.sh \
+	tests/test-repo.sh \
+	tests/test-bundle.sh \
+	tests/test-oci-registry.sh \
+	$(NULL)
+
+test_scripts = ${TEST_MATRIX}
+dist_test_scripts = ${TEST_MATRIX_DIST}
 test_programs = testlibrary
 test_extra_programs = tests/httpcache
 VALGRIND_SUPPRESSIONS_FILES = tests/flatpak.supp tests/glib.supp
@@ -1669,7 +1709,7 @@ all: $(BUILT_SOURCES) config.h
 .SUFFIXES: .c .lo .log .o .obj .test .test$(EXEEXT) .trs
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/tests/Makefile-test-matrix.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1691,7 +1731,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe);; \
 	esac;
-$(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__empty):
+$(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/tests/Makefile-test-matrix.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -2129,15 +2169,17 @@ app/flatpak-flatpak-main.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-utils.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
-app/flatpak-flatpak-builtins-add-remote.$(OBJEXT):  \
+app/flatpak-flatpak-builtins-remote-add.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
-app/flatpak-flatpak-builtins-delete-remote.$(OBJEXT):  \
+app/flatpak-flatpak-builtins-remote-modify.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
-app/flatpak-flatpak-builtins-list-remotes.$(OBJEXT):  \
+app/flatpak-flatpak-builtins-remote-delete.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
-app/flatpak-flatpak-builtins-ls-remote.$(OBJEXT): app/$(am__dirstamp) \
+app/flatpak-flatpak-builtins-remote-list.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-remote-ls.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
-app/flatpak-flatpak-builtins-info-remote.$(OBJEXT):  \
+app/flatpak-flatpak-builtins-remote-info.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-install.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
@@ -2177,7 +2219,7 @@ app/flatpak-flatpak-builtins-build-commit-from.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-build-sign.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
-app/flatpak-flatpak-builtins-repo-update.$(OBJEXT):  \
+app/flatpak-flatpak-builtins-build-update-repo.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-repo.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
@@ -2487,7 +2529,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-add-remote.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build-bundle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build-commit-from.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build-export.Po@am__quote@
@@ -2495,21 +2536,18 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build-import-bundle.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build-init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build-sign.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build-update-repo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-build.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-config.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-create-usb.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-delete-remote.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-document-export.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-document-info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-document-list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-document-unexport.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-enter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-info-remote.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-install.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-list-remotes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-list.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-ls-remote.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-make-current.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-override.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Po@am__quote@
@@ -2517,8 +2555,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-reset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-show.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-ps.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-remote-add.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-remote-delete.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-remote-info.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-remote-list.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-remote-ls.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-remote-modify.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-repair.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-repo-update.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-repo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-run.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-search.Po@am__quote@
@@ -2892,75 +2935,89 @@ app/flatpak-flatpak-builtins-utils.obj: app/flatpak-builtins-utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-utils.obj `if test -f 'app/flatpak-builtins-utils.c'; then $(CYGPATH_W) 'app/flatpak-builtins-utils.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-utils.c'; fi`
 
-app/flatpak-flatpak-builtins-add-remote.o: app/flatpak-builtins-add-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-add-remote.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-add-remote.Tpo -c -o app/flatpak-flatpak-builtins-add-remote.o `test -f 'app/flatpak-builtins-add-remote.c' || echo '$(srcdir)/'`app/flatpak-builtins-add-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-add-remote.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-add-remote.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-add-remote.c' object='app/flatpak-flatpak-builtins-add-remote.o' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-remote-add.o: app/flatpak-builtins-remote-add.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-remote-add.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-remote-add.Tpo -c -o app/flatpak-flatpak-builtins-remote-add.o `test -f 'app/flatpak-builtins-remote-add.c' || echo '$(srcdir)/'`app/flatpak-builtins-remote-add.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-remote-add.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-remote-add.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-remote-add.c' object='app/flatpak-flatpak-builtins-remote-add.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-add-remote.o `test -f 'app/flatpak-builtins-add-remote.c' || echo '$(srcdir)/'`app/flatpak-builtins-add-remote.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-remote-add.o `test -f 'app/flatpak-builtins-remote-add.c' || echo '$(srcdir)/'`app/flatpak-builtins-remote-add.c
 
-app/flatpak-flatpak-builtins-add-remote.obj: app/flatpak-builtins-add-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-add-remote.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-add-remote.Tpo -c -o app/flatpak-flatpak-builtins-add-remote.obj `if test -f 'app/flatpak-builtins-add-remote.c'; then $(CYGPATH_W) 'app/flatpak-builtins-add-remote.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-add-remote.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-add-remote.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-add-remote.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-add-remote.c' object='app/flatpak-flatpak-builtins-add-remote.obj' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-remote-add.obj: app/flatpak-builtins-remote-add.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-remote-add.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-remote-add.Tpo -c -o app/flatpak-flatpak-builtins-remote-add.obj `if test -f 'app/flatpak-builtins-remote-add.c'; then $(CYGPATH_W) 'app/flatpak-builtins-remote-add.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-remote-add.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-remote-add.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-remote-add.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-remote-add.c' object='app/flatpak-flatpak-builtins-remote-add.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-add-remote.obj `if test -f 'app/flatpak-builtins-add-remote.c'; then $(CYGPATH_W) 'app/flatpak-builtins-add-remote.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-add-remote.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-remote-add.obj `if test -f 'app/flatpak-builtins-remote-add.c'; then $(CYGPATH_W) 'app/flatpak-builtins-remote-add.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-remote-add.c'; fi`
 
-app/flatpak-flatpak-builtins-delete-remote.o: app/flatpak-builtins-delete-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-delete-remote.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-delete-remote.Tpo -c -o app/flatpak-flatpak-builtins-delete-remote.o `test -f 'app/flatpak-builtins-delete-remote.c' || echo '$(srcdir)/'`app/flatpak-builtins-delete-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-delete-remote.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-delete-remote.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-delete-remote.c' object='app/flatpak-flatpak-builtins-delete-remote.o' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-remote-modify.o: app/flatpak-builtins-remote-modify.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-remote-modify.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-remote-modify.Tpo -c -o app/flatpak-flatpak-builtins-remote-modify.o `test -f 'app/flatpak-builtins-remote-modify.c' || echo '$(srcdir)/'`app/flatpak-builtins-remote-modify.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-remote-modify.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-remote-modify.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-remote-modify.c' object='app/flatpak-flatpak-builtins-remote-modify.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-delete-remote.o `test -f 'app/flatpak-builtins-delete-remote.c' || echo '$(srcdir)/'`app/flatpak-builtins-delete-remote.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-remote-modify.o `test -f 'app/flatpak-builtins-remote-modify.c' || echo '$(srcdir)/'`app/flatpak-builtins-remote-modify.c
 
-app/flatpak-flatpak-builtins-delete-remote.obj: app/flatpak-builtins-delete-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-delete-remote.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-delete-remote.Tpo -c -o app/flatpak-flatpak-builtins-delete-remote.obj `if test -f 'app/flatpak-builtins-delete-remote.c'; then $(CYGPATH_W) 'app/flatpak-builtins-delete-remote.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-delete-remote.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-delete-remote.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-delete-remote.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-delete-remote.c' object='app/flatpak-flatpak-builtins-delete-remote.obj' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-remote-modify.obj: app/flatpak-builtins-remote-modify.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-remote-modify.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-remote-modify.Tpo -c -o app/flatpak-flatpak-builtins-remote-modify.obj `if test -f 'app/flatpak-builtins-remote-modify.c'; then $(CYGPATH_W) 'app/flatpak-builtins-remote-modify.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-remote-modify.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-remote-modify.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-remote-modify.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-remote-modify.c' object='app/flatpak-flatpak-builtins-remote-modify.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-delete-remote.obj `if test -f 'app/flatpak-builtins-delete-remote.c'; then $(CYGPATH_W) 'app/flatpak-builtins-delete-remote.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-delete-remote.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-remote-modify.obj `if test -f 'app/flatpak-builtins-remote-modify.c'; then $(CYGPATH_W) 'app/flatpak-builtins-remote-modify.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-remote-modify.c'; fi`
 
-app/flatpak-flatpak-builtins-list-remotes.o: app/flatpak-builtins-list-remotes.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-list-remotes.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-list-remotes.Tpo -c -o app/flatpak-flatpak-builtins-list-remotes.o `test -f 'app/flatpak-builtins-list-remotes.c' || echo '$(srcdir)/'`app/flatpak-builtins-list-remotes.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-list-remotes.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-list-remotes.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-list-remotes.c' object='app/flatpak-flatpak-builtins-list-remotes.o' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-remote-delete.o: app/flatpak-builtins-remote-delete.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-remote-delete.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-remote-delete.Tpo -c -o app/flatpak-flatpak-builtins-remote-delete.o `test -f 'app/flatpak-builtins-remote-delete.c' || echo '$(srcdir)/'`app/flatpak-builtins-remote-delete.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-remote-delete.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-remote-delete.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-remote-delete.c' object='app/flatpak-flatpak-builtins-remote-delete.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-list-remotes.o `test -f 'app/flatpak-builtins-list-remotes.c' || echo '$(srcdir)/'`app/flatpak-builtins-list-remotes.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-remote-delete.o `test -f 'app/flatpak-builtins-remote-delete.c' || echo '$(srcdir)/'`app/flatpak-builtins-remote-delete.c
 
-app/flatpak-flatpak-builtins-list-remotes.obj: app/flatpak-builtins-list-remotes.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-list-remotes.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-list-remotes.Tpo -c -o app/flatpak-flatpak-builtins-list-remotes.obj `if test -f 'app/flatpak-builtins-list-remotes.c'; then $(CYGPATH_W) 'app/flatpak-builtins-list-remotes.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-list-remotes.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-list-remotes.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-list-remotes.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-list-remotes.c' object='app/flatpak-flatpak-builtins-list-remotes.obj' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-remote-delete.obj: app/flatpak-builtins-remote-delete.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-remote-delete.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-remote-delete.Tpo -c -o app/flatpak-flatpak-builtins-remote-delete.obj `if test -f 'app/flatpak-builtins-remote-delete.c'; then $(CYGPATH_W) 'app/flatpak-builtins-remote-delete.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-remote-delete.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-remote-delete.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-remote-delete.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-remote-delete.c' object='app/flatpak-flatpak-builtins-remote-delete.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-list-remotes.obj `if test -f 'app/flatpak-builtins-list-remotes.c'; then $(CYGPATH_W) 'app/flatpak-builtins-list-remotes.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-list-remotes.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-remote-delete.obj `if test -f 'app/flatpak-builtins-remote-delete.c'; then $(CYGPATH_W) 'app/flatpak-builtins-remote-delete.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-remote-delete.c'; fi`
 
-app/flatpak-flatpak-builtins-ls-remote.o: app/flatpak-builtins-ls-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-ls-remote.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-ls-remote.Tpo -c -o app/flatpak-flatpak-builtins-ls-remote.o `test -f 'app/flatpak-builtins-ls-remote.c' || echo '$(srcdir)/'`app/flatpak-builtins-ls-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-ls-remote.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-ls-remote.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-ls-remote.c' object='app/flatpak-flatpak-builtins-ls-remote.o' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-remote-list.o: app/flatpak-builtins-remote-list.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-remote-list.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-remote-list.Tpo -c -o app/flatpak-flatpak-builtins-remote-list.o `test -f 'app/flatpak-builtins-remote-list.c' || echo '$(srcdir)/'`app/flatpak-builtins-remote-list.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-remote-list.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-remote-list.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-remote-list.c' object='app/flatpak-flatpak-builtins-remote-list.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-ls-remote.o `test -f 'app/flatpak-builtins-ls-remote.c' || echo '$(srcdir)/'`app/flatpak-builtins-ls-remote.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-remote-list.o `test -f 'app/flatpak-builtins-remote-list.c' || echo '$(srcdir)/'`app/flatpak-builtins-remote-list.c
 
-app/flatpak-flatpak-builtins-ls-remote.obj: app/flatpak-builtins-ls-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-ls-remote.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-ls-remote.Tpo -c -o app/flatpak-flatpak-builtins-ls-remote.obj `if test -f 'app/flatpak-builtins-ls-remote.c'; then $(CYGPATH_W) 'app/flatpak-builtins-ls-remote.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-ls-remote.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-ls-remote.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-ls-remote.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-ls-remote.c' object='app/flatpak-flatpak-builtins-ls-remote.obj' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-remote-list.obj: app/flatpak-builtins-remote-list.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-remote-list.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-remote-list.Tpo -c -o app/flatpak-flatpak-builtins-remote-list.obj `if test -f 'app/flatpak-builtins-remote-list.c'; then $(CYGPATH_W) 'app/flatpak-builtins-remote-list.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-remote-list.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-remote-list.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-remote-list.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-remote-list.c' object='app/flatpak-flatpak-builtins-remote-list.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-ls-remote.obj `if test -f 'app/flatpak-builtins-ls-remote.c'; then $(CYGPATH_W) 'app/flatpak-builtins-ls-remote.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-ls-remote.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-remote-list.obj `if test -f 'app/flatpak-builtins-remote-list.c'; then $(CYGPATH_W) 'app/flatpak-builtins-remote-list.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-remote-list.c'; fi`
 
-app/flatpak-flatpak-builtins-info-remote.o: app/flatpak-builtins-info-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-info-remote.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-info-remote.Tpo -c -o app/flatpak-flatpak-builtins-info-remote.o `test -f 'app/flatpak-builtins-info-remote.c' || echo '$(srcdir)/'`app/flatpak-builtins-info-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-info-remote.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-info-remote.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-info-remote.c' object='app/flatpak-flatpak-builtins-info-remote.o' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-remote-ls.o: app/flatpak-builtins-remote-ls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-remote-ls.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-remote-ls.Tpo -c -o app/flatpak-flatpak-builtins-remote-ls.o `test -f 'app/flatpak-builtins-remote-ls.c' || echo '$(srcdir)/'`app/flatpak-builtins-remote-ls.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-remote-ls.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-remote-ls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-remote-ls.c' object='app/flatpak-flatpak-builtins-remote-ls.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-info-remote.o `test -f 'app/flatpak-builtins-info-remote.c' || echo '$(srcdir)/'`app/flatpak-builtins-info-remote.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-remote-ls.o `test -f 'app/flatpak-builtins-remote-ls.c' || echo '$(srcdir)/'`app/flatpak-builtins-remote-ls.c
 
-app/flatpak-flatpak-builtins-info-remote.obj: app/flatpak-builtins-info-remote.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-info-remote.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-info-remote.Tpo -c -o app/flatpak-flatpak-builtins-info-remote.obj `if test -f 'app/flatpak-builtins-info-remote.c'; then $(CYGPATH_W) 'app/flatpak-builtins-info-remote.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-info-remote.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-info-remote.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-info-remote.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-info-remote.c' object='app/flatpak-flatpak-builtins-info-remote.obj' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-remote-ls.obj: app/flatpak-builtins-remote-ls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-remote-ls.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-remote-ls.Tpo -c -o app/flatpak-flatpak-builtins-remote-ls.obj `if test -f 'app/flatpak-builtins-remote-ls.c'; then $(CYGPATH_W) 'app/flatpak-builtins-remote-ls.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-remote-ls.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-remote-ls.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-remote-ls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-remote-ls.c' object='app/flatpak-flatpak-builtins-remote-ls.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-info-remote.obj `if test -f 'app/flatpak-builtins-info-remote.c'; then $(CYGPATH_W) 'app/flatpak-builtins-info-remote.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-info-remote.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-remote-ls.obj `if test -f 'app/flatpak-builtins-remote-ls.c'; then $(CYGPATH_W) 'app/flatpak-builtins-remote-ls.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-remote-ls.c'; fi`
+
+app/flatpak-flatpak-builtins-remote-info.o: app/flatpak-builtins-remote-info.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-remote-info.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-remote-info.Tpo -c -o app/flatpak-flatpak-builtins-remote-info.o `test -f 'app/flatpak-builtins-remote-info.c' || echo '$(srcdir)/'`app/flatpak-builtins-remote-info.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-remote-info.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-remote-info.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-remote-info.c' object='app/flatpak-flatpak-builtins-remote-info.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-remote-info.o `test -f 'app/flatpak-builtins-remote-info.c' || echo '$(srcdir)/'`app/flatpak-builtins-remote-info.c
+
+app/flatpak-flatpak-builtins-remote-info.obj: app/flatpak-builtins-remote-info.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-remote-info.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-remote-info.Tpo -c -o app/flatpak-flatpak-builtins-remote-info.obj `if test -f 'app/flatpak-builtins-remote-info.c'; then $(CYGPATH_W) 'app/flatpak-builtins-remote-info.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-remote-info.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-remote-info.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-remote-info.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-remote-info.c' object='app/flatpak-flatpak-builtins-remote-info.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-remote-info.obj `if test -f 'app/flatpak-builtins-remote-info.c'; then $(CYGPATH_W) 'app/flatpak-builtins-remote-info.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-remote-info.c'; fi`
 
 app/flatpak-flatpak-builtins-install.o: app/flatpak-builtins-install.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-install.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-install.Tpo -c -o app/flatpak-flatpak-builtins-install.o `test -f 'app/flatpak-builtins-install.c' || echo '$(srcdir)/'`app/flatpak-builtins-install.c
@@ -3228,19 +3285,19 @@ app/flatpak-flatpak-builtins-build-sign.obj: app/flatpak-builtins-build-sign.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-build-sign.obj `if test -f 'app/flatpak-builtins-build-sign.c'; then $(CYGPATH_W) 'app/flatpak-builtins-build-sign.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-build-sign.c'; fi`
 
-app/flatpak-flatpak-builtins-repo-update.o: app/flatpak-builtins-repo-update.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-repo-update.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-repo-update.Tpo -c -o app/flatpak-flatpak-builtins-repo-update.o `test -f 'app/flatpak-builtins-repo-update.c' || echo '$(srcdir)/'`app/flatpak-builtins-repo-update.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-repo-update.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-repo-update.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-repo-update.c' object='app/flatpak-flatpak-builtins-repo-update.o' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-build-update-repo.o: app/flatpak-builtins-build-update-repo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-build-update-repo.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-build-update-repo.Tpo -c -o app/flatpak-flatpak-builtins-build-update-repo.o `test -f 'app/flatpak-builtins-build-update-repo.c' || echo '$(srcdir)/'`app/flatpak-builtins-build-update-repo.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-build-update-repo.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-build-update-repo.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-build-update-repo.c' object='app/flatpak-flatpak-builtins-build-update-repo.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-repo-update.o `test -f 'app/flatpak-builtins-repo-update.c' || echo '$(srcdir)/'`app/flatpak-builtins-repo-update.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-build-update-repo.o `test -f 'app/flatpak-builtins-build-update-repo.c' || echo '$(srcdir)/'`app/flatpak-builtins-build-update-repo.c
 
-app/flatpak-flatpak-builtins-repo-update.obj: app/flatpak-builtins-repo-update.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-repo-update.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-repo-update.Tpo -c -o app/flatpak-flatpak-builtins-repo-update.obj `if test -f 'app/flatpak-builtins-repo-update.c'; then $(CYGPATH_W) 'app/flatpak-builtins-repo-update.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-repo-update.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-repo-update.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-repo-update.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-repo-update.c' object='app/flatpak-flatpak-builtins-repo-update.obj' libtool=no @AMDEPBACKSLASH@
+app/flatpak-flatpak-builtins-build-update-repo.obj: app/flatpak-builtins-build-update-repo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-build-update-repo.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-build-update-repo.Tpo -c -o app/flatpak-flatpak-builtins-build-update-repo.obj `if test -f 'app/flatpak-builtins-build-update-repo.c'; then $(CYGPATH_W) 'app/flatpak-builtins-build-update-repo.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-build-update-repo.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-build-update-repo.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-build-update-repo.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-build-update-repo.c' object='app/flatpak-flatpak-builtins-build-update-repo.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-repo-update.obj `if test -f 'app/flatpak-builtins-repo-update.c'; then $(CYGPATH_W) 'app/flatpak-builtins-repo-update.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-repo-update.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-build-update-repo.obj `if test -f 'app/flatpak-builtins-build-update-repo.c'; then $(CYGPATH_W) 'app/flatpak-builtins-build-update-repo.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-build-update-repo.c'; fi`
 
 app/flatpak-flatpak-builtins-repo.o: app/flatpak-builtins-repo.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-repo.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-repo.Tpo -c -o app/flatpak-flatpak-builtins-repo.o `test -f 'app/flatpak-builtins-repo.c' || echo '$(srcdir)/'`app/flatpak-builtins-repo.c
@@ -4512,6 +4569,90 @@ testlibrary.log: testlibrary$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-run@user,nodeltas.wrap.log: tests/test-run@user,nodeltas.wrap
+	@p='tests/test-run@user,nodeltas.wrap'; \
+	b='tests/test-run@user,nodeltas.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-run@user,deltas.wrap.log: tests/test-run@user,deltas.wrap
+	@p='tests/test-run@user,deltas.wrap'; \
+	b='tests/test-run@user,deltas.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-run@system,nodeltas.wrap.log: tests/test-run@system,nodeltas.wrap
+	@p='tests/test-run@system,nodeltas.wrap'; \
+	b='tests/test-run@system,nodeltas.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-run@system,deltas.wrap.log: tests/test-run@system,deltas.wrap
+	@p='tests/test-run@system,deltas.wrap'; \
+	b='tests/test-run@system,deltas.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-repo@user.wrap.log: tests/test-repo@user.wrap
+	@p='tests/test-repo@user.wrap'; \
+	b='tests/test-repo@user.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-repo@system.wrap.log: tests/test-repo@system.wrap
+	@p='tests/test-repo@system.wrap'; \
+	b='tests/test-repo@system.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-repo@collections.wrap.log: tests/test-repo@collections.wrap
+	@p='tests/test-repo@collections.wrap'; \
+	b='tests/test-repo@collections.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-repo@collections-server-only.wrap.log: tests/test-repo@collections-server-only.wrap
+	@p='tests/test-repo@collections-server-only.wrap'; \
+	b='tests/test-repo@collections-server-only.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-bundle@user.wrap.log: tests/test-bundle@user.wrap
+	@p='tests/test-bundle@user.wrap'; \
+	b='tests/test-bundle@user.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-bundle@system.wrap.log: tests/test-bundle@system.wrap
+	@p='tests/test-bundle@system.wrap'; \
+	b='tests/test-bundle@system.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-oci-registry@user.wrap.log: tests/test-oci-registry@user.wrap
+	@p='tests/test-oci-registry@user.wrap'; \
+	b='tests/test-oci-registry@user.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-oci-registry@system.wrap.log: tests/test-oci-registry@system.wrap
+	@p='tests/test-oci-registry@system.wrap'; \
+	b='tests/test-oci-registry@system.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 tests/test-basic.sh.log: tests/test-basic.sh
 	@p='tests/test-basic.sh'; \
 	b='tests/test-basic.sh'; \
@@ -4533,62 +4674,6 @@ tests/test-http-utils.sh.log: tests/test-http-utils.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-run.sh.log: tests/test-run.sh
-	@p='tests/test-run.sh'; \
-	b='tests/test-run.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-run-system.sh.log: tests/test-run-system.sh
-	@p='tests/test-run-system.sh'; \
-	b='tests/test-run-system.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-run-deltas.sh.log: tests/test-run-deltas.sh
-	@p='tests/test-run-deltas.sh'; \
-	b='tests/test-run-deltas.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-run-system-deltas.sh.log: tests/test-run-system-deltas.sh
-	@p='tests/test-run-system-deltas.sh'; \
-	b='tests/test-run-system-deltas.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-repo.sh.log: tests/test-repo.sh
-	@p='tests/test-repo.sh'; \
-	b='tests/test-repo.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-repo-collections.sh.log: tests/test-repo-collections.sh
-	@p='tests/test-repo-collections.sh'; \
-	b='tests/test-repo-collections.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-repo-collections-server-only.sh.log: tests/test-repo-collections-server-only.sh
-	@p='tests/test-repo-collections-server-only.sh'; \
-	b='tests/test-repo-collections-server-only.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-repo-system.sh.log: tests/test-repo-system.sh
-	@p='tests/test-repo-system.sh'; \
-	b='tests/test-repo-system.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 tests/test-extensions.sh.log: tests/test-extensions.sh
 	@p='tests/test-extensions.sh'; \
 	b='tests/test-extensions.sh'; \
@@ -4596,37 +4681,9 @@ tests/test-extensions.sh.log: tests/test-extensions.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-bundle.sh.log: tests/test-bundle.sh
-	@p='tests/test-bundle.sh'; \
-	b='tests/test-bundle.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-bundle-system.sh.log: tests/test-bundle-system.sh
-	@p='tests/test-bundle-system.sh'; \
-	b='tests/test-bundle-system.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 tests/test-oci.sh.log: tests/test-oci.sh
 	@p='tests/test-oci.sh'; \
 	b='tests/test-oci.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-oci-registry.sh.log: tests/test-oci-registry.sh
-	@p='tests/test-oci-registry.sh'; \
-	b='tests/test-oci-registry.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-oci-registry-system.sh.log: tests/test-oci-registry-system.sh
-	@p='tests/test-oci-registry-system.sh'; \
-	b='tests/test-oci-registry-system.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5138,7 +5195,10 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 @ENABLE_INSTALLED_TESTS_TRUE@%.test: %$(EXEEXT) Makefile
 @ENABLE_INSTALLED_TESTS_TRUE@	$(AM_V_GEN) (echo '[Test]' > $@.tmp; \
 @ENABLE_INSTALLED_TESTS_TRUE@	echo 'Type=session' >> $@.tmp; \
-@ENABLE_INSTALLED_TESTS_TRUE@	echo 'Exec=env G_TEST_SRCDIR=$(installed_testdir) G_TEST_BUILDDIR=$(installed_testdir)  $(installed_testdir)/$(notdir $<) --tap' >> $@.tmp; \
+@ENABLE_INSTALLED_TESTS_TRUE@	if [[ $(notdir $<) == *.wrap ]]; then \
+@ENABLE_INSTALLED_TESTS_TRUE@	    wrapper=$(installed_testdir)/test-wrapper.sh; \
+@ENABLE_INSTALLED_TESTS_TRUE@	fi; \
+@ENABLE_INSTALLED_TESTS_TRUE@	echo "Exec=env G_TEST_SRCDIR=$(installed_testdir) G_TEST_BUILDDIR=$(installed_testdir) $$wrapper $(installed_testdir)/$(notdir $<) --tap" >> $@.tmp; \
 @ENABLE_INSTALLED_TESTS_TRUE@	echo 'Output=TAP' >> $@.tmp; \
 @ENABLE_INSTALLED_TESTS_TRUE@	mv $@.tmp $@)
 
@@ -5242,6 +5302,12 @@ tests/package_version.txt: Makefile
 	echo $(PACKAGE_VERSION) > tests/package_version.txt
 
 tests/test-basic.sh: tests/package_version.txt
+
+update-test-matrix:
+	$(srcdir)/tests/expand-test-matrix.sh "$(TEST_MATRIX_SOURCE)" > tests/Makefile-test-matrix.am.inc
+
+tests/test-%.wrap:
+	@true
 
 @VALGRIND_CHECK_RULES@
 

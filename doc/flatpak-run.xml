@@ -50,6 +50,11 @@
             runtime. This is useful for development and testing.
         </para>
         <para>
+            By default, flatpak will look for the application or runtime in all per-user
+            and system installations. This can be overridden with the <option>--user</option>,
+            <option>--system</option> and <option>--installation</option> options.
+        </para>
+        <para>
             flatpak creates a sandboxed environment for the application to run in
             by mounting the right runtime at <filename>/usr</filename> and a writable
             directory at <filename>/var</filename>, whose content is preserved between
@@ -57,15 +62,34 @@
         </para>
         <para>
             The details of the sandboxed environment are controlled by the application
-            metadata and various options like --share and --socket that are passed to the run
-            command: Access is allowed if it was requested either in the application
-            metadata file or with an option and the user hasn't overridden it.
+            metadata and various options like <option>--share</option> and <option>--socket</option>
+            that are passed to the run command: Access is allowed if it was requested either
+            in the application metadata file or with an option and the user hasn't overridden it.
         </para>
         <para>
             The remaining arguments are passed to the command that gets run in the sandboxed
-            environment. See the <option>--file-forwarding</option> for handling of file arguments.
+            environment. See the <option>--file-forwarding</option> option for handling of file
+            arguments.
         </para>
-
+        <para>
+            Environment variables are generally passed on to the sandboxed application, with
+            certain exceptions. The application metadata can override environment variables,
+            as well as the <option>--env</option> option. Apart from that, Flatpak always
+            unsets or overrides the following variables, since their session values
+            are likely to interfere with the functioning of the sandbox:
+        </para>
+        <simplelist>
+            <member>PATH</member>
+            <member>LD_LIBRARY_PATH</member>
+            <member>XDG_CONFIG_DIRS</member>
+            <member>XDG_DATA_DIRS</member>
+            <member>SHELL</member>
+            <member>TMPDIR</member>
+            <member>PYTHONPATH</member>
+            <member>PERLLIB</member>
+            <member>PERL5LIB</member>
+            <member>XCURSOR_PATH</member>
+        </simplelist>
     </refsect1>
 
     <refsect1>
@@ -80,6 +104,34 @@
 
                 <listitem><para>
                     Show help options and exit.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--user</option></term>
+
+                <listitem><para>
+                    Look for the application and runtime in per-user installations.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--system</option></term>
+
+                <listitem><para>
+                    Look for the application and runtime in the default system-wide installations.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--installation=NAME</option></term>
+
+                <listitem><para>
+                    Look for the application and runtime in the system-wide installation specified
+                    by <arg choice="plain">NAME</arg>
+                    among those defined in <filename>/etc/flatpak/installations.d/</filename>.
+                    Using <arg choice="plain">--installation=default</arg> is equivalent to using
+                    <arg choice="plain">--system</arg>.
                 </para></listitem>
             </varlistentry>
 
