@@ -43,7 +43,7 @@ index aa3045e..fa46358 100644
  from __future__ import print_function
  
 diff --git a/tests/test-http-utils.sh b/tests/test-http-utils.sh
-index 45c2c9d..1bf36a6 100755
+index c4107ea..2247d2b 100755
 --- a/tests/test-http-utils.sh
 +++ b/tests/test-http-utils.sh
 @@ -21,7 +21,7 @@ set -euo pipefail

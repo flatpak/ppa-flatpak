@@ -1,6 +1,12 @@
-flatpak (1.0.2-2) UNRELEASED; urgency=medium
+flatpak (1.0.3-1) UNRELEASED; urgency=medium
 
+  [ Ondřej Nový ]
   * d/tests: Use AUTOPKGTEST_TMP instead of ADTTMP
+
+  [ Simon McVittie ]
+  * New upstream release
+  * d/p/debian/patches/test-webserver-Fix-race-condition.patch:
+    Drop patch, applied upstream
 
  -- Ondřej Nový <onovy@debian.org>  Mon, 01 Oct 2018 10:34:58 +0200
 
