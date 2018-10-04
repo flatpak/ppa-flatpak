@@ -7,6 +7,7 @@ flatpak (1.0.3-1) UNRELEASED; urgency=medium
   * New upstream release
   * d/p/debian/patches/test-webserver-Fix-race-condition.patch:
     Drop patch, applied upstream
+  * Install upstream NEWS and README.md into flatpak and libflatpak-doc
 
  -- Ondřej Nový <onovy@debian.org>  Mon, 01 Oct 2018 10:34:58 +0200
 
