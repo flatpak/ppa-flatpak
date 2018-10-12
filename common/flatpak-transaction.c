@@ -836,6 +836,7 @@ flatpak_transaction_class_init (FlatpakTransactionClass *klass)
    * FlatpakTransaction::operation-done:
    * @object: A #FlatpakTransaction
    * @operation: The #FlatpakTransactionOperation which finished
+   * @commit: The commit
    * @result: A #FlatpakTransactionResult giving details about the result
    *
    * The ::operation-done signal gets emitted during the execution of
@@ -848,7 +849,7 @@ flatpak_transaction_class_init (FlatpakTransactionClass *klass)
                   G_STRUCT_OFFSET (FlatpakTransactionClass, operation_done),
                   NULL, NULL,
                   NULL,
-                  G_TYPE_NONE, 2, FLATPAK_TYPE_TRANSACTION_OPERATION, G_TYPE_INT);
+                  G_TYPE_NONE, 3, FLATPAK_TYPE_TRANSACTION_OPERATION, G_TYPE_STRING, G_TYPE_INT);
 
   /**
    * FlatpakTransaction::choose-remote-for-ref:
@@ -1788,6 +1789,9 @@ flatpak_transaction_update_metadata (FlatpakTransaction *self,
 
   flatpak_installation_drop_caches (priv->installation, NULL, NULL);
 
+  /* These are potentially out of date now */
+  g_hash_table_remove_all (priv->remote_states);
+
   return TRUE;
 }
 
@@ -2331,7 +2335,7 @@ handle_runtime_repo_deps (FlatpakTransaction *self, const char *id, const char *
   if (!g_key_file_load_from_data (dep_keyfile,
                                   g_bytes_get_data (dep_data, NULL),
                                   g_bytes_get_size (dep_data),
-                                  0, error))
+                                  0, &local_error))
     return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Invalid .flatpakrepo: %s"), local_error->message);
 
   uri = soup_uri_new (dep_url);
