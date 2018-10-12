@@ -1140,7 +1140,7 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	$(zshcompletion_DATA) profile/flatpak.sh.in $(NULL) \
 	env.d/flatpak.env.in dbus.service.d/flatpak.conf.in \
 	flatpak.pc.in scripts/flatpak-bisect \
-	scripts/flatpak-coredumpctl README.md
+	scripts/flatpak-coredumpctl README.md flatpak.png
 TESTS_ENVIRONMENT = \
 	G_TEST_SRCDIR="$(abs_srcdir)/tests"	\
 	G_TEST_BUILDDIR="$(abs_builddir)/tests"	\

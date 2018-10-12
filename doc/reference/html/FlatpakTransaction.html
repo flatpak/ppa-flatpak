@@ -1495,6 +1495,7 @@ the transaction when a new operation is beginning.</p>
 <pre class="programlisting"><span class="returnvalue">void</span>
 user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a>          *object,
                <a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> *operation,
+               <span class="type">gchar</span>                       *commit,
                <span class="type">gint</span>                         result,
                <span class="type">gpointer</span>                     user_data)</pre>
 <p>The ::operation-done signal gets emitted during the execution of
@@ -1516,6 +1517,11 @@ the transaction when an operation is finished.</p>
 <tr>
 <td class="parameter_name"><p>operation</p></td>
 <td class="parameter_description"><p>The <a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> which finished</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>commit</p></td>
+<td class="parameter_description"><p>The commit</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>

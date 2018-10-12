@@ -1804,7 +1804,10 @@ flatpak_context_add_bus_filters (FlatpakContext *context,
 
   flatpak_bwrap_add_arg (bwrap, "--filter");
   if (app_id && session_bus)
-    flatpak_bwrap_add_arg_printf (bwrap, "--own=%s.*", app_id);
+    {
+      flatpak_bwrap_add_arg_printf (bwrap, "--own=%s.*", app_id);
+      flatpak_bwrap_add_arg_printf (bwrap, "--own=org.mpris.MediaPlayer2.%s.*", app_id);
+    }
 
   if (session_bus)
     ht = context->session_bus_policy;
@@ -1821,6 +1824,12 @@ flatpak_context_add_bus_filters (FlatpakContext *context,
                                       flatpak_policy_to_string (policy),
                                       (char *) key);
     }
+}
+
+void
+flatpak_context_reset_non_permissions (FlatpakContext *context)
+{
+  g_hash_table_remove_all (context->env_vars);
 }
 
 void
