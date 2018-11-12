@@ -1,9 +1,9 @@
-flatpak (1.0.5-1) UNRELEASED; urgency=medium
+flatpak (1.0.5-1) unstable; urgency=medium
 
   * New upstream release
   * d/tests/control: Mark build test as superficial (see #904979)
 
- -- Simon McVittie <smcv@debian.org>  Wed, 17 Oct 2018 08:32:49 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 12 Nov 2018 15:44:45 +0000
 
 flatpak (1.0.4-1) unstable; urgency=medium
 
