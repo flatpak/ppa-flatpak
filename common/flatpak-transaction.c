@@ -164,7 +164,7 @@ bundle_data_new (GFile  *file,
 
   data->file = g_object_ref (file);
   if (gpg_data)
-    data->gpg_data = g_object_ref (gpg_data);
+    data->gpg_data = g_bytes_ref (gpg_data);
 
   return data;
 }
@@ -1620,6 +1620,10 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
  * @error: return location for a #GError
  *
  * Adds installing the given ref to this transaction.
+ *
+ * The @remote can either be a configured remote of the installation,
+ * or a file:// uri pointing at a local repository to install from,
+ * in which case an origin remote is created.
  *
  * Returns: %TRUE on success; %FALSE with @error set on failure.
  */
