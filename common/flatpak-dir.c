@@ -6502,6 +6502,8 @@ apply_extra_data (FlatpakDir   *self,
                           "--ro-bind", flatpak_file_get_path_cached (app_files), "/app",
                           "--bind", flatpak_file_get_path_cached (extra_files), "/app/extra",
                           "--chdir", "/app/extra",
+                          /* We run as root in the system-helper case, so drop all caps */
+                          "--cap-drop", "ALL",
                           NULL);
 
   if (!flatpak_run_setup_base_argv (bwrap, runtime_files, NULL, runtime_ref_parts[2],
@@ -6525,6 +6527,17 @@ apply_extra_data (FlatpakDir   *self,
 
   g_debug ("Running /app/bin/apply_extra ");
 
+  /* We run the sandbox without caps, but it can still create files owned by itself with
+   * arbitrary permissions, including setuid myself. This is extra risky in the case where
+   * this runs as root in the system helper case. We canonicalize the permissions at the
+   * end, but do avoid non-canonical permissions leaking out before then we make the
+   * toplevel dir only accessible to the user */
+  if (chmod (flatpak_file_get_path_cached (extra_files), 0700) != 0)
+    {
+      glnx_set_error_from_errno (error);
+      return FALSE;
+    }
+
   if (!g_spawn_sync (NULL,
                      (char **) bwrap->argv->pdata,
                      bwrap->envp,
@@ -6533,6 +6546,9 @@ apply_extra_data (FlatpakDir   *self,
                      NULL, NULL,
                      &exit_status,
                      error))
+    return FALSE;
+
+  if (!flatpak_canonicalize_permissions (AT_FDCWD, flatpak_file_get_path_cached (extra_files), error))
     return FALSE;
 
   if (exit_status != 0)
@@ -10697,7 +10713,10 @@ flatpak_dir_parse_repofile (FlatpakDir   *self,
     }
 
   collection_id = g_key_file_get_string (keyfile, source_group,
-                                         FLATPAK_REPO_COLLECTION_ID_KEY, NULL);
+                                         FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY, NULL);
+  if (collection_id == NULL || *collection_id == '\0')
+    collection_id = g_key_file_get_string (keyfile, source_group,
+                                           FLATPAK_REPO_COLLECTION_ID_KEY, NULL);
   if (collection_id != NULL)
     {
       if (gpg_key == NULL)
@@ -10793,7 +10812,14 @@ parse_ref_file (GKeyFile *keyfile,
     }
 
   collection_id = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP,
-                                         FLATPAK_REF_COLLECTION_ID_KEY, NULL);
+                                         FLATPAK_REF_DEPLOY_COLLECTION_ID_KEY, NULL);
+
+  if (collection_id == NULL || *collection_id == '\0')
+    {
+      collection_id = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP,
+                                             FLATPAK_REF_COLLECTION_ID_KEY, NULL);
+    }
+
   if (collection_id != NULL && *collection_id == '\0')
     collection_id = NULL;
 
@@ -10867,6 +10893,21 @@ flatpak_dir_create_remote_for_ref_file (FlatpakDir *self,
   return TRUE;
 }
 
+/* This tries to find a pre-configured remote for the specified uri
+ * and (optionally) collection id. This is a bit more complex than it
+ * sounds, because a local remote could be configured in different
+ * ways for a remote repo (i.e. it could be not using collection ids,
+ * even though the remote specifies it, or the flatpakrepo might lack
+ * the collection id details). So, we use these rules:
+ *
+ *  If the url is the same, it is a match even if one part lacks
+ *  collection ids. However, if both collection ids are specified and
+ *  differ there is no match.
+ *
+ *  If the collection id is the same (and specified), its going to be
+ *  the same remote, even if the url is different (because it could be
+ *  some other mirror of the same repo).
+ */
 char *
 flatpak_dir_find_remote_by_uri (FlatpakDir *self,
                                 const char *uri,
@@ -10896,8 +10937,18 @@ flatpak_dir_find_remote_by_uri (FlatpakDir *self,
           if (!repo_get_remote_collection_id (self->repo, remote, &remote_collection_id, NULL))
             continue;
 
+          /* Exact collection ids always match, independent of the uris used */
+          if (collection_id != NULL &&
+              remote_collection_id != NULL &&
+              strcmp (collection_id, remote_collection_id) == 0)
+            return g_strdup (remote);
+
+          /* Same repo if uris matches, unless both have collection-id
+             specified but different */
           if (strcmp (uri, remote_uri) == 0 &&
-              g_strcmp0 (collection_id, remote_collection_id) == 0)
+              !(collection_id != NULL &&
+                remote_collection_id != NULL &&
+                strcmp (collection_id, remote_collection_id) != 0))
             return g_strdup (remote);
         }
     }
