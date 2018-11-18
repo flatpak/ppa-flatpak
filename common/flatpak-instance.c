@@ -22,9 +22,31 @@
 
 #include "flatpak-utils-private.h"
 #include "flatpak-run-private.h"
+#include "flatpak-instance.h"
 #include "flatpak-instance-private.h"
 #include "flatpak-enum-types.h"
 
+/**
+ * SECTION:flatpak-instance
+ * @Title: FlatpakInstance
+ * @Short_description: Information about a running sandbox
+ *
+ * A FlatpakInstance refers to a running sandbox, and contains
+ * some basic information about the sandbox setup, such as the
+ * application and runtime used inside the sandbox.
+ *
+ * Importantly, it also gives access to the PID of the main
+ * processes in the sandbox.
+ *
+ * One way to obtain FlatpakInstances is to use flatpak_instance_get_all().
+ * Another way is to use flatpak_installation_launch_full().
+ *
+ * Note that process lifecycle tracking is fundamentally racy.
+ * You have to be prepared for the sandbox and the processes
+ * represented by a FlatpakInstance to not be around anymore.
+ *
+ * The FlatpakInstance api was added in Flatpak 1.1.
+ */
 
 typedef struct _FlatpakInstancePrivate FlatpakInstancePrivate;
 
@@ -81,6 +103,17 @@ flatpak_instance_init (FlatpakInstance *self)
 {
 }
 
+/**
+ * flatpak_instance_get_id:
+ * @self: a #FlatpakInstance
+ *
+ * Gets the instance ID. The ID is used by Flatpak for bookkeeping
+ * purposes and has no further relevance.
+ *
+ * Returns: the instance ID
+ *
+ * Since: 1.1
+ */
 const char *
 flatpak_instance_get_id (FlatpakInstance *self)
 {
@@ -89,6 +122,16 @@ flatpak_instance_get_id (FlatpakInstance *self)
   return priv->id;
 }
 
+/**
+ * flatpak_instance_get_app:
+ * @self: a #FlatpakInstance
+ *
+ * Gets the application ID of the application running in the instance.
+ *
+ * Returns: the application ID
+ *
+ * Since: 1.1
+ */
 const char *
 flatpak_instance_get_app (FlatpakInstance *self)
 {
@@ -97,6 +140,16 @@ flatpak_instance_get_app (FlatpakInstance *self)
   return priv->app;
 }
 
+/**
+ * flatpak_instance_get_arch:
+ * @self: a #FlatpakInstance
+ *
+ * Gets the architecture of the application running in the instance.
+ *
+ * Returns: the architecture
+ *
+ * Since: 1.1
+ */
 const char *
 flatpak_instance_get_arch (FlatpakInstance *self)
 {
@@ -105,6 +158,16 @@ flatpak_instance_get_arch (FlatpakInstance *self)
   return priv->arch;
 }
 
+/**
+ * flatpak_instance_get_branch:
+ * @self: a #FlatpakInstance
+ *
+ * Gets the branch of the application running in the instance.
+ *
+ * Returns: the architecture
+ *
+ * Since: 1.1
+ */
 const char *
 flatpak_instance_get_branch (FlatpakInstance *self)
 {
@@ -113,6 +176,16 @@ flatpak_instance_get_branch (FlatpakInstance *self)
   return priv->branch;
 }
 
+/**
+ * flatpak_instance_get_commit:
+ * @self: a #FlatpakInstance
+ *
+ * Gets the commit of the application running in the instance.
+ *
+ * Returns: the commit
+ *
+ * Since: 1.1
+ */
 const char *
 flatpak_instance_get_commit (FlatpakInstance *self)
 {
@@ -121,6 +194,16 @@ flatpak_instance_get_commit (FlatpakInstance *self)
   return priv->commit;
 }
 
+/**
+ * flatpak_instance_get_runtime:
+ * @self: a #FlatpakInstance
+ *
+ * Gets the ref of the runtime used in the instance.
+ *
+ * Returns: the runtime ref
+ *
+ * Since: 1.1
+ */
 const char *
 flatpak_instance_get_runtime (FlatpakInstance *self)
 {
@@ -129,6 +212,16 @@ flatpak_instance_get_runtime (FlatpakInstance *self)
   return priv->runtime;
 }
 
+/**
+ * flatpak_instance_get_runtime_commit:
+ * @self: a #FlatpakInstance
+ *
+ * Gets the commit of the runtime used in the instance.
+ *
+ * Returns: the runtime commit
+ *
+ * Since: 1.1
+ */
 const char *
 flatpak_instance_get_runtime_commit (FlatpakInstance *self)
 {
@@ -137,6 +230,19 @@ flatpak_instance_get_runtime_commit (FlatpakInstance *self)
   return priv->runtime_commit;
 }
 
+/**
+ * flatpak_instance_get_pid:
+ * @self: a #FlatpakInstance
+ *
+ * Gets the PID of the outermost process in the sandbox. This is not the
+ * application process itself, but a bubblewrap 'babysitter' process.
+ *
+ * See flatpak_instance_get_child_pid().
+ *
+ * Returns: the outermost process PID
+ *
+ * Since: 1.1
+ */
 int
 flatpak_instance_get_pid (FlatpakInstance *self)
 {
@@ -145,14 +251,49 @@ flatpak_instance_get_pid (FlatpakInstance *self)
   return priv->pid;
 }
 
+static int get_child_pid (const char *dir);
+
+/**
+ * flatpak_instance_get_child_pid:
+ * @self: a #FlatpakInstance
+ *
+ * Gets the PID of the application process in the sandbox.
+ *
+ * See flatpak_instance_get_pid().
+ * 
+ * Note that this function may return 0 immediately after launching
+ * a sandbox, for a short amount of time.
+ *
+ * Returns: the application process PID
+ *
+ * Since: 1.1
+ */
 int
 flatpak_instance_get_child_pid (FlatpakInstance *self)
 {
   FlatpakInstancePrivate *priv = flatpak_instance_get_instance_private (self);
 
+  if (priv->child_pid == 0)
+    priv->child_pid = get_child_pid (priv->dir);
+
   return priv->child_pid;
 }
 
+/**
+ * flatpak_instance_get_info:
+ * @self: a #FlatpakInstance
+ *
+ * Gets a keyfile that holds information about the running sandbox.
+ *
+ * This file is available as /.flatpak-info inside the sandbox as well.
+ *
+ * The most important data in the keyfile is available with separate getters,
+ * but there may be more information in the keyfile.
+ *
+ * Returns: the flatpak-info keyfile
+ *
+ * Since: 1.1
+ */
 GKeyFile *
 flatpak_instance_get_info (FlatpakInstance *self)
 {
@@ -207,6 +348,12 @@ get_child_pid (const char *dir)
     }
 
   node = json_parser_get_root (parser);
+  if (!node)
+    {
+      g_debug ("Failed to parse bwrapinfo.json file '%s': %s", file, "empty");
+      return 0;
+    }
+
   obj = json_node_get_object (node);
 
   return json_object_get_int_member (obj, "child-pid");
@@ -230,15 +377,14 @@ get_pid (const char *dir)
   return (int) g_ascii_strtoll (contents, NULL, 10);
 }
 
-static FlatpakInstance *
-flatpak_instance_new (const char *id)
+FlatpakInstance *
+flatpak_instance_new (const char *dir)
 {
   FlatpakInstance *self = g_object_new (flatpak_instance_get_type (), NULL);
   FlatpakInstancePrivate *priv = flatpak_instance_get_instance_private (self);
 
-  priv->id = g_strdup (id);
-
-  priv->dir = g_build_filename (g_get_user_runtime_dir (), ".flatpak", id, NULL);
+  priv->dir = g_strdup (dir);
+  priv->id = g_path_get_basename (dir);
 
   priv->pid = get_pid (priv->dir);
   priv->child_pid = get_child_pid (priv->dir);
@@ -264,6 +410,25 @@ flatpak_instance_new (const char *id)
   return self;
 }
 
+static FlatpakInstance *
+flatpak_instance_new_for_id (const char *id)
+{
+  g_autofree char *dir = NULL;
+
+  dir = g_build_filename (g_get_user_runtime_dir (), ".flatpak", id, NULL);
+  return flatpak_instance_new (dir);
+}
+
+/**
+ * flatpak_instance_get_all:
+ *
+ * Gets FlatpakInstance objects for all running sandboxes in the current session.
+ *
+ * Returns: (transfer full) (element-type FlatpakInstance): a #GPtrArray of
+ *   #FlatpakInstance objects
+ *
+ * Since: 1.1
+ */
 GPtrArray *
 flatpak_instance_get_all (void)
 {
@@ -310,44 +475,29 @@ flatpak_instance_get_all (void)
               continue;
             }
 
-          g_ptr_array_add (instances, flatpak_instance_new (dent->d_name));
+          g_ptr_array_add (instances, flatpak_instance_new_for_id (dent->d_name));
         }
     }
 
   return g_steal_pointer (&instances);
 }
 
+/**
+ * flatpak_instance_is_running:
+ * @self: a #FlatpakInstance
+ *
+ * Finds out if the sandbox represented by @self is still running.
+ *
+ * Returns: %TRUE if the sandbox is still running
+ */
 gboolean
 flatpak_instance_is_running (FlatpakInstance *self)
 {
   FlatpakInstancePrivate *priv = flatpak_instance_get_instance_private (self);
 
-  if (priv->dir)
-    {
-      g_autofree char *ref_file = g_strconcat (priv->dir, "/.ref", NULL);
-      struct stat statbuf;
-      struct flock l = {
-        .l_type = F_WRLCK,
-        .l_whence = SEEK_SET,
-        .l_start = 0,
-        .l_len = 0
-      };
-      glnx_autofd int lock_fd = open (ref_file, O_RDWR | O_CLOEXEC);
-      if (lock_fd != -1 &&
-          fstat (lock_fd, &statbuf) == 0 &&
-          /* Only gc if created at least 3 secs ago, to work around race mentioned in flatpak_run_allocate_id() */
-          statbuf.st_mtime + 3 < time (NULL) &&
-          fcntl (lock_fd, F_GETLK, &l) == 0 &&
-          l.l_type == F_UNLCK)
-        {
-          /* The instance is not used, remove it */
-          g_debug ("Cleaning up unused container id %s", priv->id);
-          glnx_shutil_rm_rf_at (-1, priv->dir, NULL, NULL);
+  if (kill (priv->pid, 0) == 0)
+    return TRUE;
 
-          g_clear_pointer (&priv->dir, g_free);
-        }
-    }
-
-  return priv->dir != NULL;
+  return FALSE;
 }
 

@@ -335,6 +335,15 @@ transaction. You create an object like this using <a class="link" href="FlatpakT
 and then you add all the operations (installs, updates, etc) you wish to do. Then
 you start the transaction with <a class="link" href="FlatpakTransaction.html#flatpak-transaction-run" title="flatpak_transaction_run ()"><code class="function">flatpak_transaction_run()</code></a> which will resolve all kinds
 of dependencies and report progress and status while downloading and installing these.</p>
+<p>The dependency resolution that is the first step of executing a transaction can
+be influenced by <a class="link" href="FlatpakTransaction.html#flatpak-transaction-set-disable-dependencies" title="flatpak_transaction_set_disable_dependencies ()"><code class="function">flatpak_transaction_set_disable_dependencies()</code></a>,
+<a class="link" href="FlatpakTransaction.html#flatpak-transaction-set-disable-related" title="flatpak_transaction_set_disable_related ()"><code class="function">flatpak_transaction_set_disable_related()</code></a>, <a class="link" href="FlatpakTransaction.html#flatpak-transaction-add-dependency-source" title="flatpak_transaction_add_dependency_source ()"><code class="function">flatpak_transaction_add_dependency_source()</code></a>
+and <a class="link" href="FlatpakTransaction.html#flatpak-transaction-add-default-dependency-sources" title="flatpak_transaction_add_default_dependency_sources ()"><code class="function">flatpak_transaction_add_default_dependency_sources()</code></a>.</p>
+<p>The underlying operations that get orchestrated by a FlatpakTransaction are: pulling
+new data from remote repositories, deploying newer applications or runtimes and pruning
+old deployments. Which of these operations are carried out can be controlled with
+<a class="link" href="FlatpakTransaction.html#flatpak-transaction-set-no-pull" title="flatpak_transaction_set_no_pull ()"><code class="function">flatpak_transaction_set_no_pull()</code></a>, <a class="link" href="FlatpakTransaction.html#flatpak-transaction-set-no-deploy" title="flatpak_transaction_set_no_deploy ()"><code class="function">flatpak_transaction_set_no_deploy()</code></a> and
+<a class="link" href="FlatpakTransaction.html#flatpak-transaction-set-disable-prune" title="flatpak_transaction_set_disable_prune ()"><code class="function">flatpak_transaction_set_disable_prune()</code></a>.</p>
 <p>A transaction is a blocking operation, and all signals are emitted in the same thread.
 This means you should either handle the signals directly (say, by doing blocking console
 interaction, or by just returning without interaction), or run the operation in a separate
@@ -674,6 +683,7 @@ This means that applications can be installed in this transaction relying
 on runtimes from this additional installation (wheres it would normally
 install required runtimes that are not installed in the installation
 the transaction works on).</p>
+<p>Also see <a class="link" href="FlatpakTransaction.html#flatpak-transaction-add-default-dependency-sources" title="flatpak_transaction_add_default_dependency_sources ()"><code class="function">flatpak_transaction_add_default_dependency_sources()</code></a>.</p>
 <div class="refsect3">
 <a name="flatpak-transaction-add-dependency-source.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">

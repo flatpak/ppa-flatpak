@@ -247,7 +247,8 @@ am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 libflatpak_common_la_DEPENDENCIES = libglnx.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
 am__objects_1 =
 am__objects_2 = $(am__objects_1)
 am__dirstamp = $(am__leading_dot)dirstamp
@@ -377,6 +378,8 @@ am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-search.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-repair.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-create-usb.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-kill.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-history.$(OBJEXT) \
 	app/flatpak-flatpak-table-printer.$(OBJEXT) \
 	app/flatpak-flatpak-complete.$(OBJEXT) \
 	app/flatpak-flatpak-cli-transaction.$(OBJEXT) $(am__objects_1)
@@ -387,7 +390,8 @@ nodist_flatpak_OBJECTS = $(am__objects_5) \
 flatpak_OBJECTS = $(am_flatpak_OBJECTS) $(nodist_flatpak_OBJECTS)
 flatpak_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) libglnx.la libflatpak-common.la
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libglnx.la \
+	libflatpak-common.la
 flatpak_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(flatpak_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
@@ -798,7 +802,8 @@ RECHECK_LOGS = $(TEST_LOGS)
 am__EXEEXT_11 = tests/test-run@user,nodeltas.wrap \
 	tests/test-run@user,deltas.wrap \
 	tests/test-run@system,nodeltas.wrap \
-	tests/test-run@system,deltas.wrap tests/test-repo@user.wrap \
+	tests/test-run@system,deltas.wrap tests/test-info@user.wrap \
+	tests/test-info@system.wrap tests/test-repo@user.wrap \
 	tests/test-repo@system.wrap tests/test-repo@collections.wrap \
 	tests/test-repo@collections-server-only.wrap \
 	tests/test-bundle@user.wrap tests/test-bundle@system.wrap \
@@ -808,7 +813,8 @@ am__EXEEXT_12 = $(am__EXEEXT_11)
 am__EXEEXT_13 = tests/test-basic.sh tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh tests/test-extensions.sh \
 	tests/test-oci.sh tests/test-unsigned-summaries.sh \
-	tests/test-update-remote-configuration.sh $(am__EXEEXT_1)
+	tests/test-update-remote-configuration.sh \
+	tests/test-override.sh $(am__EXEEXT_1)
 am__EXEEXT_14 = $(am__EXEEXT_13)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
@@ -928,6 +934,7 @@ FLATPAK_MICRO_VERSION = @FLATPAK_MICRO_VERSION@
 FLATPAK_MINOR_VERSION = @FLATPAK_MINOR_VERSION@
 FLATPAK_VERSION = @FLATPAK_VERSION@
 GDBUS_CODEGEN = @GDBUS_CODEGEN@
+GENHTML = @GENHTML@
 GETTEXT_MACRO_VERSION = @GETTEXT_MACRO_VERSION@
 GLIB_COMPILE_RESOURCES = @GLIB_COMPILE_RESOURCES@
 GLIB_MKENUMS = @GLIB_MKENUMS@
@@ -962,6 +969,7 @@ INTROSPECTION_SCANNER = @INTROSPECTION_SCANNER@
 INTROSPECTION_TYPELIBDIR = @INTROSPECTION_TYPELIBDIR@
 JSON_CFLAGS = @JSON_CFLAGS@
 JSON_LIBS = @JSON_LIBS@
+LCOV = @LCOV@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBICONV = @LIBICONV@
@@ -1018,6 +1026,8 @@ SOUP_CFLAGS = @SOUP_CFLAGS@
 SOUP_LIBS = @SOUP_LIBS@
 STRIP = @STRIP@
 SUDO_BIN = @SUDO_BIN@
+SYSTEMD_CFLAGS = @SYSTEMD_CFLAGS@
+SYSTEMD_LIBS = @SYSTEMD_LIBS@
 SYSTEM_FONTS_DIR = @SYSTEM_FONTS_DIR@
 SYSTEM_FONT_CACHE_DIRS = @SYSTEM_FONT_CACHE_DIRS@
 SYSTEM_INSTALL_DIR = @SYSTEM_INSTALL_DIR@
@@ -1159,7 +1169,7 @@ noinst_SCRIPTS = $(am__append_3)
 noinst_DATA = $(am__append_4)
 check_LTLIBRARIES = $(am__append_5)
 check_SCRIPTS = $(am__append_7)
-check_DATA = $(am__append_8)
+check_DATA = $(am__append_8) tests/runtime-repo
 
 # Note: build even the installed-only targets during 'make check' to ensure that they still work.
 # We need to do a bit of trickery here and manage dist-ing via EXTRA_DIST instead of using dist_ prefixes to
@@ -1294,6 +1304,7 @@ flatpakinclude_HEADERS = \
 	common/flatpak-version-macros.h \
 	common/flatpak-portal-error.h \
 	common/flatpak-transaction.h \
+	common/flatpak-instance.h \
 	$(NULL)
 
 nodist_flatpakinclude_HEADERS = \
@@ -1343,6 +1354,7 @@ libflatpak_common_la_SOURCES = \
 	common/flatpak-ref.c \
 	common/flatpak-installed-ref.c \
 	common/flatpak-installed-ref-private.h \
+	common/flatpak-instance-private.h \
 	common/flatpak-remote-ref.c \
 	common/flatpak-remote-ref-private.h \
 	common/flatpak-bundle-ref.c \
@@ -1353,7 +1365,6 @@ libflatpak_common_la_SOURCES = \
 	common/flatpak-error.c \
 	common/flatpak-installation-private.h \
 	common/flatpak-installation.c \
-	common/flatpak-instance-private.h \
 	common/flatpak-instance.c \
 	common/valgrind-private.h \
 	$(NULL)
@@ -1361,6 +1372,7 @@ libflatpak_common_la_SOURCES = \
 libflatpak_common_la_CFLAGS = \
 	-DFLATPAK_COMPILATION \
 	$(AM_CFLAGS) \
+	$(APPSTREAM_GLIB_CFLAGS) \
 	$(BASE_CFLAGS) \
 	$(HIDDEN_VISIBILITY_CFLAGS) \
 	$(OSTREE_CFLAGS) \
@@ -1369,10 +1381,11 @@ libflatpak_common_la_CFLAGS = \
 	$(XAUTH_CFLAGS) \
 	$(LIBSECCOMP_CFLAGS) \
 	$(INTERNAL_GPGME_CFLAGS) \
+	$(SYSTEMD_CFLAGS) \
 	-I$(srcdir)/dbus-proxy \
 	$(NULL)
 
-libflatpak_common_la_LIBADD = $(AM_LIBADD) libglnx.la $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(XAUTH_LIBS) $(LIBSECCOMP_LIBS) $(INTERNAL_GPGME_LIBS)
+libflatpak_common_la_LIBADD = $(AM_LIBADD) libglnx.la $(APPSTREAM_GLIB_LIBS) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(XAUTH_LIBS) $(LIBSECCOMP_LIBS) $(INTERNAL_GPGME_LIBS) $(SYSTEMD_LIBS)
 libflatpak_la_SOURCES = \
 	common/flatpak.c \
 	$(NULL)
@@ -1495,6 +1508,8 @@ flatpak_SOURCES = \
 	app/flatpak-builtins-search.c \
 	app/flatpak-builtins-repair.c \
 	app/flatpak-builtins-create-usb.c \
+	app/flatpak-builtins-kill.c \
+	app/flatpak-builtins-history.c \
 	app/flatpak-table-printer.c \
 	app/flatpak-table-printer.h \
 	app/flatpak-complete.c \
@@ -1509,10 +1524,10 @@ nodist_flatpak_SOURCES = \
 	app/parse-datetime.c \
 	$(NULL)
 
-flatpak_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) \
+flatpak_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) $(SYSTEMD_LIBS) \
 	libglnx.la libflatpak-common.la
 
-flatpak_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
+flatpak_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) $(SYSTEMD_CFLAGS) \
 	-DFLATPAK_COMPILATION \
         -I$(srcdir)/app \
         -I$(builddir)/app \
@@ -1547,7 +1562,7 @@ flatpak_portal_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/portal
 @BUILD_SYSTEM_HELPER_TRUE@	$(NULL)
 
 @BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(JSON_LIBS) $(POLKIT_LIBS) libflatpak-common.la
-@BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(POLKIT_CFLAGS) -DFLATPAK_COMPILATION
+@BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(POLKIT_CFLAGS) -DFLATPAK_COMPILATION
 @BUILD_SYSTEM_HELPER_TRUE@polkit_rulesdir = $(datadir)/polkit-1/rules.d
 @BUILD_SYSTEM_HELPER_TRUE@polkit_rules_DATA = \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/org.freedesktop.Flatpak.rules
@@ -1610,6 +1625,7 @@ TEST_MATRIX_SOURCE = \
 	tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh \
 	tests/test-run.sh{{user+system},{nodeltas+deltas}} \
+	tests/test-info.sh{user+system} \
 	tests/test-repo.sh{user+system+collections+collections-server-only} \
 	tests/test-extensions.sh \
 	tests/test-bundle.sh{user+system} \
@@ -1617,6 +1633,7 @@ TEST_MATRIX_SOURCE = \
 	tests/test-oci-registry.sh{user+system} \
 	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
+	tests/test-override.sh \
 	$(NULL)
 
 
@@ -1626,6 +1643,8 @@ TEST_MATRIX = \
 	tests/test-run@user,deltas.wrap \
 	tests/test-run@system,nodeltas.wrap \
 	tests/test-run@system,deltas.wrap \
+	tests/test-info@user.wrap \
+	tests/test-info@system.wrap \
 	tests/test-repo@user.wrap \
 	tests/test-repo@system.wrap \
 	tests/test-repo@collections.wrap \
@@ -1644,10 +1663,12 @@ TEST_MATRIX_DIST = \
 	tests/test-oci.sh \
 	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
+	tests/test-override.sh \
 	$(NULL)
 
 TEST_MATRIX_EXTRA_DIST = \
 	tests/test-run.sh \
+	tests/test-info.sh \
 	tests/test-repo.sh \
 	tests/test-bundle.sh \
 	tests/test-oci-registry.sh \
@@ -2245,6 +2266,10 @@ app/flatpak-flatpak-builtins-repair.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-create-usb.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-kill.$(OBJEXT): app/$(am__dirstamp) \
+	app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-history.$(OBJEXT): app/$(am__dirstamp) \
+	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-table-printer.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-complete.$(OBJEXT): app/$(am__dirstamp) \
@@ -2545,8 +2570,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-document-list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-document-unexport.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-enter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-history.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-install.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-kill.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-make-current.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-override.Po@am__quote@
@@ -3466,6 +3493,34 @@ app/flatpak-flatpak-builtins-create-usb.obj: app/flatpak-builtins-create-usb.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-create-usb.c' object='app/flatpak-flatpak-builtins-create-usb.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-create-usb.obj `if test -f 'app/flatpak-builtins-create-usb.c'; then $(CYGPATH_W) 'app/flatpak-builtins-create-usb.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-create-usb.c'; fi`
+
+app/flatpak-flatpak-builtins-kill.o: app/flatpak-builtins-kill.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-kill.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-kill.Tpo -c -o app/flatpak-flatpak-builtins-kill.o `test -f 'app/flatpak-builtins-kill.c' || echo '$(srcdir)/'`app/flatpak-builtins-kill.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-kill.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-kill.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-kill.c' object='app/flatpak-flatpak-builtins-kill.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-kill.o `test -f 'app/flatpak-builtins-kill.c' || echo '$(srcdir)/'`app/flatpak-builtins-kill.c
+
+app/flatpak-flatpak-builtins-kill.obj: app/flatpak-builtins-kill.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-kill.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-kill.Tpo -c -o app/flatpak-flatpak-builtins-kill.obj `if test -f 'app/flatpak-builtins-kill.c'; then $(CYGPATH_W) 'app/flatpak-builtins-kill.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-kill.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-kill.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-kill.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-kill.c' object='app/flatpak-flatpak-builtins-kill.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-kill.obj `if test -f 'app/flatpak-builtins-kill.c'; then $(CYGPATH_W) 'app/flatpak-builtins-kill.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-kill.c'; fi`
+
+app/flatpak-flatpak-builtins-history.o: app/flatpak-builtins-history.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-history.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-history.Tpo -c -o app/flatpak-flatpak-builtins-history.o `test -f 'app/flatpak-builtins-history.c' || echo '$(srcdir)/'`app/flatpak-builtins-history.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-history.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-history.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-history.c' object='app/flatpak-flatpak-builtins-history.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-history.o `test -f 'app/flatpak-builtins-history.c' || echo '$(srcdir)/'`app/flatpak-builtins-history.c
+
+app/flatpak-flatpak-builtins-history.obj: app/flatpak-builtins-history.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-history.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-history.Tpo -c -o app/flatpak-flatpak-builtins-history.obj `if test -f 'app/flatpak-builtins-history.c'; then $(CYGPATH_W) 'app/flatpak-builtins-history.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-history.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-history.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-history.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-history.c' object='app/flatpak-flatpak-builtins-history.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-history.obj `if test -f 'app/flatpak-builtins-history.c'; then $(CYGPATH_W) 'app/flatpak-builtins-history.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-history.c'; fi`
 
 app/flatpak-flatpak-table-printer.o: app/flatpak-table-printer.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-table-printer.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-table-printer.Tpo -c -o app/flatpak-flatpak-table-printer.o `test -f 'app/flatpak-table-printer.c' || echo '$(srcdir)/'`app/flatpak-table-printer.c
@@ -4597,6 +4652,20 @@ tests/test-run@system,deltas.wrap.log: tests/test-run@system,deltas.wrap
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-info@user.wrap.log: tests/test-info@user.wrap
+	@p='tests/test-info@user.wrap'; \
+	b='tests/test-info@user.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-info@system.wrap.log: tests/test-info@system.wrap
+	@p='tests/test-info@system.wrap'; \
+	b='tests/test-info@system.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 tests/test-repo@user.wrap.log: tests/test-repo@user.wrap
 	@p='tests/test-repo@user.wrap'; \
 	b='tests/test-repo@user.wrap'; \
@@ -4698,6 +4767,13 @@ tests/test-unsigned-summaries.sh.log: tests/test-unsigned-summaries.sh
 tests/test-update-remote-configuration.sh.log: tests/test-update-remote-configuration.sh
 	@p='tests/test-update-remote-configuration.sh'; \
 	b='tests/test-update-remote-configuration.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-override.sh.log: tests/test-override.sh
+	@p='tests/test-override.sh'; \
+	b='tests/test-override.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5025,7 +5101,7 @@ distclean: distclean-recursive
 	-rm -rf app/$(DEPDIR) bubblewrap/$(DEPDIR) common/$(DEPDIR) dbus-proxy/$(DEPDIR) libglnx/$(DEPDIR) libglnx/tests/$(DEPDIR) portal/$(DEPDIR) session-helper/$(DEPDIR) system-helper/$(DEPDIR) tests/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-hdr distclean-libtool distclean-tags
+	distclean-hdr distclean-libtool distclean-local distclean-tags
 
 dvi: dvi-recursive
 
@@ -5139,11 +5215,11 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	dist-all dist-bzip2 dist-gzip dist-lzip dist-shar dist-tarZ \
 	dist-xz dist-zip distcheck distclean distclean-compile \
 	distclean-generic distclean-hdr distclean-libtool \
-	distclean-tags distcleancheck distdir distuninstallcheck dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-bashcompletionDATA install-binPROGRAMS \
-	install-bwrapPROGRAMS install-data install-data-am \
-	install-data-hook install-dbus_serviceDATA \
+	distclean-local distclean-tags distcleancheck distdir \
+	distuninstallcheck dvi dvi-am html html-am info info-am \
+	install install-am install-bashcompletionDATA \
+	install-binPROGRAMS install-bwrapPROGRAMS install-data \
+	install-data-am install-data-hook install-dbus_serviceDATA \
 	install-dbussnippetDATA install-dbussystemserviceDATA \
 	install-dist_dbusconfDATA \
 	install-dist_installed_test_keyring2DATA \
@@ -5309,6 +5385,13 @@ update-test-matrix:
 tests/test-%.wrap:
 	@true
 
+tests/runtime-repo: tests/make-test-runtime.sh flatpak
+	rm -rf tests/runtime-repo
+	PATH=$(abs_top_builddir):$${PATH} $(top_srcdir)/tests/make-test-runtime.sh tests/runtime-repo org.test.Platform ""
+
+distclean-local:
+	rm -rf tests/runtime-repo
+
 @VALGRIND_CHECK_RULES@
 
 # NOTE: bwrap is install-bwrapPROGS which is run from install-data, not install-exec, this data-hook is used
@@ -5328,6 +5411,21 @@ flatpak.env: env.d/flatpak.env.in
 flatpak.conf: dbus.service.d/flatpak.conf.in
 	$(AM_V_GEN) $(SED) -e "s|\@localstatedir\@|$(localstatedir)|" \
 		-e "s|\@sysconfdir\@|$(sysconfdir)|" $< > $@
+
+.PHONY: coverage lcov-clean genlcov
+
+coverage:
+	$(AM_V_GEN) $(MAKE) $(AM_MAKEFLAGS) lcov-clean
+	$(AM_V_GEN) $(MAKE) check
+	$(AM_V_GEN) $(MAKE) $(AM_MAKEFLAGS) genlcov
+
+lcov-clean:
+	$(AM_V_GEN) $(LCOV) --directory $(top_builddir) --zerocounters
+
+genlcov:
+	$(AM_V_GEN) $(LCOV) --directory $(top_builddir) --capture --output-file coverage.info
+	$(AM_V_GEN) $(GENHTML) --prefix $(top_builddir) --output-directory coverage coverage.info
+	$(AM_V_GEN)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

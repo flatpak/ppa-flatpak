@@ -7,7 +7,7 @@ set +x
 
 DIR=`mktemp -d`
 
-REPONAME=$1
+REPO=$1
 shift
 ID=$1
 shift
@@ -58,7 +58,7 @@ add_bin() {
     fi
 }
 
-for i in $@; do
+for i in $@ bash ls cat echo readlink; do
     I=`which $i`
     add_bin $I
 done
@@ -85,5 +85,5 @@ else
 fi
 
 mkdir -p repos
-flatpak build-export ${collection_args} --runtime ${GPGARGS-} repos/${REPONAME} ${DIR}
+flatpak build-export ${collection_args} --runtime ${GPGARGS-} ${REPO} ${DIR}
 rm -rf ${DIR}

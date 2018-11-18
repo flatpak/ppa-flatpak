@@ -123,24 +123,6 @@ flatpak_debug2 (const char *format, ...)
 
 }
 
-GFile *
-flatpak_file_new_tmp_in (GFile      *dir,
-                         const char *template,
-                         GError    **error)
-{
-  glnx_autofd int tmp_fd = -1;
-  g_autofree char *tmpl = g_build_filename (flatpak_file_get_path_cached (dir), template, NULL);
-
-  tmp_fd = g_mkstemp_full (tmpl, O_RDWR, 0644);
-  if (tmp_fd == -1)
-    {
-      glnx_set_error_from_errno (error);
-      return NULL;
-    }
-
-  return g_file_new_for_path (tmpl);
-}
-
 gboolean
 flatpak_write_update_checksum (GOutputStream *out,
                                gconstpointer  data,
@@ -621,29 +603,6 @@ flatpak_get_bwrap (void)
   if (e != NULL)
     return e;
   return HELPER;
-}
-
-/* We only migrate the user dir, because thats what most people used with xdg-app,
- * and its where all per-user state/config are stored.
- */
-void
-flatpak_migrate_from_xdg_app (void)
-{
-  g_autofree char *source = g_build_filename (g_get_user_data_dir (), "xdg-app", NULL);
-  g_autofree char *dest = g_build_filename (g_get_user_data_dir (), "flatpak", NULL);
-
-  if (!g_file_test (dest, G_FILE_TEST_EXISTS) &&
-      g_file_test (source, G_FILE_TEST_EXISTS))
-    {
-      g_print (_("Migrating %s to %s\n"), source, dest);
-      if (rename (source, dest) != 0)
-        {
-          if (errno != ENOENT &&
-              errno != ENOTEMPTY &&
-              errno != EEXIST)
-            g_print (_("Error during migration: %s\n"), g_strerror (errno));
-        }
-    }
 }
 
 char *
@@ -1752,72 +1711,6 @@ flatpak_switch_symlink_and_remove (const char *symlink_path,
   return flatpak_fail (error, "flatpak_switch_symlink_and_remove looped too many times");
 }
 
-
-/* Based on g_mkstemp from glib */
-
-gint
-flatpak_mkstempat (int    dir_fd,
-                   gchar *tmpl,
-                   int    flags,
-                   int    mode)
-{
-  char *XXXXXX;
-  int count, fd;
-  static const char letters[] =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  static const int NLETTERS = sizeof (letters) - 1;
-  glong value;
-  GTimeVal tv;
-  static int counter = 0;
-
-  g_return_val_if_fail (tmpl != NULL, -1);
-
-  /* find the last occurrence of "XXXXXX" */
-  XXXXXX = g_strrstr (tmpl, "XXXXXX");
-
-  if (!XXXXXX || strncmp (XXXXXX, "XXXXXX", 6))
-    {
-      errno = EINVAL;
-      return -1;
-    }
-
-  /* Get some more or less random data.  */
-  g_get_current_time (&tv);
-  value = (tv.tv_usec ^ tv.tv_sec) + counter++;
-
-  for (count = 0; count < 100; value += 7777, ++count)
-    {
-      glong v = value;
-
-      /* Fill in the random bits.  */
-      XXXXXX[0] = letters[v % NLETTERS];
-      v /= NLETTERS;
-      XXXXXX[1] = letters[v % NLETTERS];
-      v /= NLETTERS;
-      XXXXXX[2] = letters[v % NLETTERS];
-      v /= NLETTERS;
-      XXXXXX[3] = letters[v % NLETTERS];
-      v /= NLETTERS;
-      XXXXXX[4] = letters[v % NLETTERS];
-      v /= NLETTERS;
-      XXXXXX[5] = letters[v % NLETTERS];
-
-      fd = openat (dir_fd, tmpl, flags | O_CREAT | O_EXCL, mode);
-
-      if (fd >= 0)
-        return fd;
-      else if (errno != EEXIST)
-        /* Any other error will apply also to other names we might
-         *  try, and there are 2^32 or so of them, so give up now.
-         */
-        return -1;
-    }
-
-  /* We got out of the loop because we ran out of combinations to try.  */
-  errno = EEXIST;
-  return -1;
-}
-
 static gboolean
 needs_quoting (const char *arg)
 {
@@ -2373,14 +2266,6 @@ flatpak_open_in_tmpdir_at (int             tmpdir_fd,
   return TRUE;
 }
 
-GVariant *
-flatpak_gvariant_new_empty_string_dict (void)
-{
-  g_auto(GVariantBuilder) builder = FLATPAK_VARIANT_BUILDER_INITIALIZER;
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
-  return g_variant_builder_end (&builder);
-}
-
 gboolean
 flatpak_variant_save (GFile        *dest,
                       GVariant     *variant,
@@ -2408,24 +2293,6 @@ flatpak_variant_save (GFile        *dest,
     return FALSE;
 
   return TRUE;
-}
-
-void
-flatpak_variant_builder_init_from_variant (GVariantBuilder *builder,
-                                           const char      *type,
-                                           GVariant        *variant)
-{
-  gint i, n;
-
-  g_variant_builder_init (builder, G_VARIANT_TYPE (type));
-
-  n = g_variant_n_children (variant);
-  for (i = 0; i < n; i++)
-    {
-      GVariant *child = g_variant_get_child_value (variant, i);
-      g_variant_builder_add_value (builder, child);
-      g_variant_unref (child);
-    }
 }
 
 gboolean
@@ -5316,7 +5183,7 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
 }
 
 gboolean
-flatpak_yes_no_prompt (const char *prompt, ...)
+flatpak_yes_no_prompt (gboolean default_yes, const char *prompt, ...)
 {
   char buf[512];
   va_list var_args;
@@ -5332,7 +5199,7 @@ flatpak_yes_no_prompt (const char *prompt, ...)
 
   while (TRUE)
     {
-      g_print ("%s %s: ", s, "[y/n]");
+      g_print ("%s %s: ", s, default_yes ? "[Y/n]" : "[y/n]");
 
       if (!isatty (STDIN_FILENO) || !isatty (STDOUT_FILENO))
         {
@@ -5344,6 +5211,10 @@ flatpak_yes_no_prompt (const char *prompt, ...)
         return FALSE;
 
       g_strstrip (buf);
+
+      if (default_yes && strlen (buf) == 0)
+        return TRUE;
+
       if (g_ascii_strcasecmp (buf, "y") == 0 ||
           g_ascii_strcasecmp (buf, "yes") == 0)
         return TRUE;
@@ -5371,7 +5242,7 @@ is_number (const char *s)
 }
 
 long
-flatpak_number_prompt (int min, int max, const char *prompt, ...)
+flatpak_number_prompt (gboolean default_yes, int min, int max, const char *prompt, ...)
 {
   char buf[512];
   va_list var_args;
@@ -5395,6 +5266,10 @@ flatpak_number_prompt (int min, int max, const char *prompt, ...)
         return 0;
 
       g_strstrip (buf);
+
+      if (default_yes && strlen (buf) == 0 &&
+          max - min == 1 && min == 0)
+        return 1;
 
       if (is_number (buf))
         {
@@ -5877,4 +5752,52 @@ flatpak_utils_ascii_string_to_unsigned (const gchar  *str,
   if (out_num != NULL)
     *out_num = number;
   return TRUE;
+}
+
+static int
+dist (const char *s, int ls, const char *t, int lt, int i, int j, int *d)
+{
+  int x, y;
+
+  if (d[i * (lt + 1) + j] >= 0)
+    return d[i * (lt + 1) + j];
+
+  if (i == ls)
+    x = lt - j;
+  else if (j == lt)
+    x = ls - i;
+  else if (s[i] == t[j])
+    x = dist(s, ls, t, lt, i + 1, j + 1, d);
+  else
+    {
+      x = dist (s, ls, t, lt, i + 1, j + 1, d);
+      y = dist (s, ls, t, lt, i, j + 1, d);
+      if (y < x)
+        x = y;
+      y = dist (s, ls, t, lt, i + 1, j, d);
+      if (y < x)
+        x = y;
+      x++;
+    }
+
+  d[i * (lt + 1) + j] = x;
+
+  return x;
+}
+
+int
+flatpak_levenshtein_distance (const char *s, const char *t)
+{
+  int ls = strlen (s);
+  int lt = strlen (t);
+  int i, j;
+  int *d;
+
+  d = alloca (sizeof (int) * (ls + 1) * (lt + 1));
+
+  for (i = 0; i <= ls; i++)
+    for (j = 0; j <= lt; j++)
+      d[i * (lt + 1) + j] = -1;
+
+  return dist (s, ls, t, lt, 0, 0, d);
 }

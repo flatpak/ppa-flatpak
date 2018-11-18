@@ -38,6 +38,7 @@
 #include "flatpak-enum-types.h"
 #include "flatpak-dir-private.h"
 #include "flatpak-run-private.h"
+#include "flatpak-instance-private.h"
 #include "flatpak-error.h"
 
 /**
@@ -102,42 +103,10 @@ flatpak_installation_finalize (GObject *object)
 }
 
 static void
-flatpak_installation_set_property (GObject      *object,
-                                   guint         prop_id,
-                                   const GValue *value,
-                                   GParamSpec   *pspec)
-{
-
-  switch (prop_id)
-    {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-      break;
-    }
-}
-
-static void
-flatpak_installation_get_property (GObject    *object,
-                                   guint       prop_id,
-                                   GValue     *value,
-                                   GParamSpec *pspec)
-{
-
-  switch (prop_id)
-    {
-    default:
-      G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-      break;
-    }
-}
-
-static void
 flatpak_installation_class_init (FlatpakInstallationClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-  object_class->get_property = flatpak_installation_get_property;
-  object_class->set_property = flatpak_installation_set_property;
   object_class->finalize = flatpak_installation_finalize;
 
   /* Avoid weird recursive type initialization deadlocks from libsoup */
@@ -272,7 +241,7 @@ out:
  * @cancellable: (nullable): a #GCancellable
  * @error: return location for a #GError
  *
- * Creates a new #FlatpakInstallation for the system-wide installation.
+ * Creates a new #FlatpakInstallation for the default system-wide installation.
  *
  * Returns: (transfer full): a new #FlatpakInstallation
  */
@@ -334,8 +303,6 @@ FlatpakInstallation *
 flatpak_installation_new_user (GCancellable *cancellable,
                                GError      **error)
 {
-  flatpak_migrate_from_xdg_app ();
-
   return flatpak_installation_new_steal_dir (flatpak_dir_get_user (), cancellable, error);
 }
 
@@ -355,8 +322,6 @@ flatpak_installation_new_for_path (GFile *path, gboolean user,
                                    GCancellable *cancellable,
                                    GError **error)
 {
-  flatpak_migrate_from_xdg_app ();
-
   return flatpak_installation_new_steal_dir (flatpak_dir_new (path, user), cancellable, error);
 }
 
@@ -503,7 +468,7 @@ flatpak_installation_get_path (FlatpakInstallation *self)
  * flatpak_installation_get_id:
  * @self: a #FlatpakInstallation
  *
- * Returns the ID of the system installation for @self.
+ * Returns the ID of the installation for @self.
  *
  * Returns: (transfer none): a string with the installation's ID
  *
@@ -521,7 +486,7 @@ flatpak_installation_get_id (FlatpakInstallation *self)
  * flatpak_installation_get_display_name:
  * @self: a #FlatpakInstallation
  *
- * Returns the display name of the system installation for @self.
+ * Returns the display name of the installation for @self.
  *
  * Returns: (transfer none): a string with the installation's display name
  *
@@ -539,7 +504,7 @@ flatpak_installation_get_display_name (FlatpakInstallation *self)
  * flatpak_installation_get_priority:
  * @self: a #FlatpakInstallation
  *
- * Returns the numeric priority of the system installation for @self.
+ * Returns the numeric priority of the installation for @self.
  *
  * Returns: an integer with the configured priority value
  *
@@ -557,7 +522,7 @@ flatpak_installation_get_priority (FlatpakInstallation *self)
  * flatpak_installation_get_storage_type:
  * @self: a #FlatpakInstallation
  *
- * Returns the type of storage of the system installation for @self.
+ * Returns the type of storage of the installation for @self.
  *
  * Returns: a #FlatpakStorageType
  *
@@ -615,9 +580,56 @@ flatpak_installation_launch (FlatpakInstallation *self,
                              GCancellable        *cancellable,
                              GError             **error)
 {
+  return flatpak_installation_launch_full (self,
+                                           FLATPAK_LAUNCH_FLAGS_NONE,
+                                           name, arch, branch, commit,
+                                           NULL,
+                                           cancellable, error);
+}
+
+/**
+ * flatpak_installation_launch_full:
+ * @self: a #FlatpakInstallation
+ * @flags: set of #FlatpakLaunchFlags
+ * @name: name of the app to launch
+ * @arch: (nullable): which architecture to launch (default: current architecture)
+ * @branch: (nullable): which branch of the application (default: "master")
+ * @commit: (nullable): the commit of @branch to launch
+ * @instance_out: (nullable): return location for a #FlatpakInstance
+ * @cancellable: (nullable): a #GCancellable
+ * @error: return location for a #GError
+ *
+ * Launch an installed application.
+ *
+ * You can use flatpak_installation_get_installed_ref() or
+ * flatpak_installation_get_current_installed_app() to find out what builds
+ * are available, in order to get a value for @commit.
+ *
+ * Compared to flatpak_installation_launch(), this function returns a #FlatpakInstance
+ * that can be used to get information about the running instance. You can also use
+ * it to wait for the instance to be done with g_child_watch_add() if you pass the
+ * #FLATPAK_LAUNCH_FLAGS_DO_NOT_REAP flag.
+ *
+ * Returns: %TRUE, unless an error occurred
+ *
+ * Since: 1.1
+ */
+gboolean
+flatpak_installation_launch_full (FlatpakInstallation *self,
+                                  FlatpakLaunchFlags   flags,
+                                  const char          *name,
+                                  const char          *arch,
+                                  const char          *branch,
+                                  const char          *commit,
+                                  FlatpakInstance    **instance_out,
+                                  GCancellable        *cancellable,
+                                  GError             **error)
+{
   g_autoptr(FlatpakDir) dir = NULL;
   g_autoptr(FlatpakDeploy) app_deploy = NULL;
   g_autofree char *app_ref = NULL;
+  g_autofree char *instance_dir = NULL;
+  FlatpakRunFlags run_flags;
 
   dir = flatpak_installation_get_dir (self, error);
   if (dir == NULL)
@@ -633,14 +645,25 @@ flatpak_installation_launch (FlatpakInstallation *self,
   if (app_deploy == NULL)
     return FALSE;
 
-  return flatpak_run_app (app_ref,
-                          app_deploy,
-                          NULL, NULL,
-                          NULL, NULL,
-                          FLATPAK_RUN_FLAG_BACKGROUND,
-                          NULL,
-                          NULL, 0,
-                          cancellable, error);
+  run_flags = FLATPAK_RUN_FLAG_BACKGROUND;
+  if (flags & FLATPAK_LAUNCH_FLAGS_DO_NOT_REAP)
+    run_flags |= FLATPAK_RUN_FLAG_DO_NOT_REAP;
+
+  if (!flatpak_run_app (app_ref,
+                        app_deploy,
+                        NULL, NULL,
+                        NULL, NULL,
+                        run_flags,
+                        NULL,
+                        NULL, 0,
+                        &instance_dir,
+                        cancellable, error))
+    return FALSE;
+
+  if (instance_out)
+    *instance_out = flatpak_instance_new (instance_dir);
+
+  return TRUE;
 }
 
 
@@ -1246,6 +1269,9 @@ flatpak_installation_list_remotes_by_type (FlatpakInstallation     *self,
   const guint NUM_FLATPAK_REMOTE_TYPES = 3;
   gboolean types_filter[NUM_FLATPAK_REMOTE_TYPES];
   gsize i;
+#if OSTREE_CHECK_VERSION (2018, 9)
+  const char * const *default_repo_finders = NULL;
+#endif
 
   remote_names = flatpak_dir_list_remotes (dir, cancellable, error);
   if (remote_names == NULL)
@@ -1257,11 +1283,50 @@ flatpak_installation_list_remotes_by_type (FlatpakInstallation     *self,
   if (!flatpak_dir_maybe_ensure_repo (dir_clone, cancellable, error))
     return NULL;
 
+#if OSTREE_CHECK_VERSION (2018, 9)
+  OstreeRepo *repo = flatpak_dir_get_repo (dir_clone);
+  if (repo != NULL)
+    default_repo_finders = ostree_repo_get_default_repo_finders (repo);
+#endif
+
+  /* If NULL or an empty array of types is passed then we use the default set
+   * provided by ostree, or fall back to using all */
   for (i = 0; i < NUM_FLATPAK_REMOTE_TYPES; ++i)
     {
-      /* If NULL or an empty array of types is passed then we include all types */
-      types_filter[i] = (num_types == 0) ? TRUE : FALSE;
+      if (num_types != 0)
+        types_filter[i] = FALSE;
+#if OSTREE_CHECK_VERSION (2018, 9)
+      else if (default_repo_finders == NULL)
+        types_filter[i] = TRUE;
+#else
+      else
+        types_filter[i] = TRUE;
+#endif
     }
+
+#if OSTREE_CHECK_VERSION (2018, 9)
+  if (default_repo_finders != NULL && num_types == 0)
+    {
+      g_autofree char *default_repo_finders_str = g_strjoinv (" ", (gchar **)default_repo_finders);
+      g_debug ("Using default repo finder list: %s", default_repo_finders_str);
+
+      for (const char * const *iter = default_repo_finders; iter && *iter; iter++)
+        {
+          const char *default_repo_finder = *iter;
+
+          if (strcmp (default_repo_finder, "config") == 0)
+            types_filter[FLATPAK_REMOTE_TYPE_STATIC] = TRUE;
+          else if (strcmp (default_repo_finder, "lan") == 0)
+            types_filter[FLATPAK_REMOTE_TYPE_LAN] = TRUE;
+          else if (strcmp (default_repo_finder, "mount") == 0)
+            types_filter[FLATPAK_REMOTE_TYPE_USB] = TRUE;
+          else
+            g_debug ("Unknown value in list returned by "
+                     "ostree_repo_get_default_repo_finders(): %s",
+                     default_repo_finder);
+        }
+    }
+#endif
 
   for (i = 0; i < num_types; ++i)
     {
@@ -1452,6 +1517,42 @@ flatpak_installation_get_config (FlatpakInstallation *self,
     return NULL;
 
   return flatpak_dir_get_config (dir, key, error);
+}
+
+/**
+ * flatpak_installation_get_min_free_space_bytes:
+ * @self: a #FlatpakInstallation
+ * @out_bytes: (out): Location to store the result
+ * @error: Return location for a #GError
+ *
+ * Returns the min-free-space config value from the OSTree repository of this installation.
+ *
+ * Applications can use this value, together with information about the available
+ * disk space and the size of pending updates or installs, to estimate whether a
+ * pull operation will fail due to running out of disk space.
+ *
+ * Returns: %TRUE on success, or %FALSE on error.
+ * Since: 1.1
+ */
+gboolean
+flatpak_installation_get_min_free_space_bytes (FlatpakInstallation *self,
+                                               guint64             *out_bytes,
+                                               GError             **error)
+{
+  g_autoptr(FlatpakDir) dir = NULL;
+  g_autoptr(FlatpakDir) dir_clone = NULL;
+
+  dir = flatpak_installation_get_dir (self, NULL);
+  if (dir == NULL)
+    return FALSE;
+
+  /* We clone the dir here to make sure we re-read the latest ostree repo config, in case
+     it has local changes */
+  dir_clone = flatpak_dir_clone (dir);
+  if (!flatpak_dir_ensure_repo (dir_clone, NULL, error))
+    return FALSE;
+
+  return ostree_repo_get_min_free_space_bytes (flatpak_dir_get_repo (dir_clone), out_bytes, error);
 }
 
 /**

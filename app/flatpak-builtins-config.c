@@ -45,12 +45,44 @@ static GOptionEntry options[] = {
   { NULL }
 };
 
-static char *
-parse_lang (const char *value)
+static gboolean
+looks_like_a_language (const char *s)
 {
+  int len = strlen (s);
+  int i;
+
+  if (len < 2 || len > 3)
+    return FALSE;
+
+  for (i = 0; i < len; i++)
+    {
+      if (!g_ascii_isalpha (s[i]) || !g_ascii_islower (s[i]))
+        return FALSE;
+    }
+
+  return TRUE;
+}
+
+static char *
+parse_lang (const char *value, GError **error)
+{
+  g_auto(GStrv) strs = NULL;
+  int i;
+
   if (strcmp (value, "*") == 0 ||
       strcmp (value, "*all*") == 0)
     return g_strdup ("");
+
+  strs = g_strsplit (value, ";", 0);
+  for (i = 0; strs[i]; i++)
+    {
+      if (!looks_like_a_language (strs[i]))
+        {
+          flatpak_fail (error, _("'%s' does not look like a language code"), strs[i]);
+          return NULL;
+        }
+    }
+
   return g_strdup (value);
 }
 
@@ -73,7 +105,7 @@ get_lang_default (FlatpakDir *dir)
 typedef struct
 {
   const char *name;
-  char *(*parse)(const char *value);
+  char *(*parse)(const char *value, GError **error);
   char *(*print)(const char *value);
   char *(*get_default)(FlatpakDir * dir);
 } ConfigKey;
@@ -110,9 +142,12 @@ print_config (FlatpakDir *dir, ConfigKey *key)
 }
 
 static gboolean
-list_config (int argc, char **argv, FlatpakDir *dir, GCancellable *cancellable, GError **error)
+list_config (GOptionContext *context, int argc, char **argv, FlatpakDir *dir, GCancellable *cancellable, GError **error)
 {
   int i;
+
+  if (argc != 1)
+    return usage_error (context, _("Too many arguments for --list"), error);
 
   for (i = 0; i < G_N_ELEMENTS (keys); i++)
     {
@@ -136,13 +171,15 @@ list_config (int argc, char **argv, FlatpakDir *dir, GCancellable *cancellable, 
 }
 
 static gboolean
-get_config (int argc, char **argv, FlatpakDir *dir, GCancellable *cancellable, GError **error)
+get_config (GOptionContext *context, int argc, char **argv, FlatpakDir *dir, GCancellable *cancellable, GError **error)
 {
   ConfigKey *key;
   g_autofree char *value = NULL;
 
-  if (argc != 2)
-    return flatpak_fail (error, _("You must specify key"));
+  if (argc < 2)
+    return usage_error (context, _("You must specify KEY"), error);
+  else if (argc > 2)
+    return usage_error (context, _("Too many arguments for --get"), error);
 
   key = get_config_key (argv[1], error);
   if (key == NULL)
@@ -158,19 +195,24 @@ get_config (int argc, char **argv, FlatpakDir *dir, GCancellable *cancellable, G
 }
 
 static gboolean
-set_config (int argc, char **argv, FlatpakDir *dir, GCancellable *cancellable, GError **error)
+set_config (GOptionContext *context, int argc, char **argv, FlatpakDir *dir, GCancellable *cancellable, GError **error)
 {
   ConfigKey *key;
   g_autofree char *parsed = NULL;
 
-  if (argc != 3)
-    return flatpak_fail (error, _("You must specify both key and value"));
+  if (argc < 3)
+    return usage_error (context, _("You must specify KEY and VALUE"), error);
+  else if (argc > 3)
+    return usage_error (context, _("Too many arguments for --get"), error);
 
   key = get_config_key (argv[1], error);
   if (key == NULL)
     return FALSE;
 
-  parsed = key->parse (argv[2]);
+  parsed = key->parse (argv[2], error);
+  if (!parsed)
+    return FALSE;
+
   if (!flatpak_dir_set_config (dir, key->name, parsed, error))
     return FALSE;
 
@@ -178,12 +220,14 @@ set_config (int argc, char **argv, FlatpakDir *dir, GCancellable *cancellable, G
 }
 
 static gboolean
-unset_config (int argc, char **argv, FlatpakDir *dir, GCancellable *cancellable, GError **error)
+unset_config (GOptionContext *context, int argc, char **argv, FlatpakDir *dir, GCancellable *cancellable, GError **error)
 {
   ConfigKey *key;
 
-  if (argc != 2)
-    return flatpak_fail (error, _("You must specify key"));
+  if (argc < 2)
+    return usage_error (context, _("You must specify KEY"), error);
+  else if (argc > 2)
+    return usage_error (context, _("Too many arguments for --unset"), error);
 
   key = get_config_key (argv[1], error);
   if (key == NULL)
@@ -212,16 +256,22 @@ flatpak_builtin_config (int argc, char **argv, GCancellable *cancellable, GError
 
   dir = g_ptr_array_index (dirs, 0);
 
+  if (opt_get + opt_set + opt_unset + opt_list > 1)
+    return usage_error (context, _("Can only use one of --list, --get, --set or --unset"), error);
+
+  if (!opt_get && !opt_set && !opt_unset && !opt_list)
+    opt_list = TRUE;
+
   if (opt_get)
-    return get_config (argc, argv, dir, cancellable, error);
+    return get_config (context, argc, argv, dir, cancellable, error);
   else if (opt_set)
-    return set_config (argc, argv, dir, cancellable, error);
+    return set_config (context, argc, argv, dir, cancellable, error);
   else if (opt_unset)
-    return unset_config (argc, argv, dir, cancellable, error);
+    return unset_config (context, argc, argv, dir, cancellable, error);
   else if (opt_list)
-    return list_config (argc, argv, dir, cancellable, error);
+    return list_config (context, argc, argv, dir, cancellable, error);
   else
-    return flatpak_fail (error, _("Must specify one of --list, --get, --set or --unset"));
+    return usage_error (context, _("Must specify one of --list, --get, --set or --unset"), error);
 
   return TRUE;
 }

@@ -12,6 +12,7 @@
       <sub name="FlatpakRelatedRef" link="FlatpakRelatedRef.html"/>
       <sub name="FlatpakRemoteRef" link="FlatpakRemoteRef.html"/>
       <sub name="FlatpakBundleRef" link="FlatpakBundleRef.html"/>
+      <sub name="FlatpakInstance" link="FlatpakInstance.html"/>
       <sub name="Error codes" link="flatpak-Error-codes.html"/>
       <sub name="Version information" link="flatpak-Version-information.html"/>
     </sub>
@@ -34,10 +35,12 @@
     <keyword type="function" name="flatpak_installation_uninstall ()" link="FlatpakInstallation.html#flatpak-installation-uninstall"/>
     <keyword type="function" name="flatpak_installation_uninstall_full ()" link="FlatpakInstallation.html#flatpak-installation-uninstall-full" since="0.11.8"/>
     <keyword type="function" name="flatpak_installation_launch ()" link="FlatpakInstallation.html#flatpak-installation-launch"/>
+    <keyword type="function" name="flatpak_installation_launch_full ()" link="FlatpakInstallation.html#flatpak-installation-launch-full" since="1.1"/>
     <keyword type="function" name="flatpak_installation_get_current_installed_app ()" link="FlatpakInstallation.html#flatpak-installation-get-current-installed-app"/>
     <keyword type="function" name="flatpak_installation_get_display_name ()" link="FlatpakInstallation.html#flatpak-installation-get-display-name" since="0.8"/>
     <keyword type="function" name="flatpak_installation_get_id ()" link="FlatpakInstallation.html#flatpak-installation-get-id" since="0.8"/>
     <keyword type="function" name="flatpak_installation_get_installed_ref ()" link="FlatpakInstallation.html#flatpak-installation-get-installed-ref"/>
+    <keyword type="function" name="flatpak_installation_get_min_free_space_bytes ()" link="FlatpakInstallation.html#flatpak-installation-get-min-free-space-bytes" since="1.1"/>
     <keyword type="function" name="flatpak_installation_get_priority ()" link="FlatpakInstallation.html#flatpak-installation-get-priority" since="0.8"/>
     <keyword type="function" name="flatpak_installation_get_storage_type ()" link="FlatpakInstallation.html#flatpak-installation-get-storage-type" since="0.8"/>
     <keyword type="function" name="flatpak_installation_list_installed_refs ()" link="FlatpakInstallation.html#flatpak-installation-list-installed-refs"/>
@@ -75,6 +78,7 @@
     <keyword type="enum" name="enum FlatpakUpdateFlags" link="FlatpakInstallation.html#FlatpakUpdateFlags"/>
     <keyword type="enum" name="enum FlatpakInstallFlags" link="FlatpakInstallation.html#FlatpakInstallFlags"/>
     <keyword type="enum" name="enum FlatpakUninstallFlags" link="FlatpakInstallation.html#FlatpakUninstallFlags" since="0.11.8"/>
+    <keyword type="enum" name="enum FlatpakLaunchFlags" link="FlatpakInstallation.html#FlatpakLaunchFlags"/>
     <keyword type="enum" name="enum FlatpakStorageType" link="FlatpakInstallation.html#FlatpakStorageType" since="0.6.15"/>
     <keyword type="function" name="flatpak_remote_new ()" link="FlatpakRemote.html#flatpak-remote-new"/>
     <keyword type="function" name="flatpak_remote_get_name ()" link="FlatpakRemote.html#flatpak-remote-get-name"/>
@@ -221,6 +225,19 @@
     <keyword type="function" name="flatpak_bundle_ref_get_runtime_repo_url ()" link="FlatpakBundleRef.html#flatpak-bundle-ref-get-runtime-repo-url" since="0.8.0"/>
     <keyword type="struct" name="struct FlatpakBundleRef" link="FlatpakBundleRef.html#FlatpakBundleRef-struct"/>
     <keyword type="property" name="The “file” property" link="FlatpakBundleRef.html#FlatpakBundleRef--file"/>
+    <keyword type="function" name="flatpak_instance_get_all ()" link="FlatpakInstance.html#flatpak-instance-get-all" since="1.1"/>
+    <keyword type="function" name="flatpak_instance_get_id ()" link="FlatpakInstance.html#flatpak-instance-get-id" since="1.1"/>
+    <keyword type="function" name="flatpak_instance_get_app ()" link="FlatpakInstance.html#flatpak-instance-get-app" since="1.1"/>
+    <keyword type="function" name="flatpak_instance_get_arch ()" link="FlatpakInstance.html#flatpak-instance-get-arch" since="1.1"/>
+    <keyword type="function" name="flatpak_instance_get_branch ()" link="FlatpakInstance.html#flatpak-instance-get-branch" since="1.1"/>
+    <keyword type="function" name="flatpak_instance_get_commit ()" link="FlatpakInstance.html#flatpak-instance-get-commit" since="1.1"/>
+    <keyword type="function" name="flatpak_instance_get_runtime ()" link="FlatpakInstance.html#flatpak-instance-get-runtime" since="1.1"/>
+    <keyword type="function" name="flatpak_instance_get_runtime_commit ()" link="FlatpakInstance.html#flatpak-instance-get-runtime-commit" since="1.1"/>
+    <keyword type="function" name="flatpak_instance_get_pid ()" link="FlatpakInstance.html#flatpak-instance-get-pid" since="1.1"/>
+    <keyword type="function" name="flatpak_instance_get_child_pid ()" link="FlatpakInstance.html#flatpak-instance-get-child-pid" since="1.1"/>
+    <keyword type="function" name="flatpak_instance_get_info ()" link="FlatpakInstance.html#flatpak-instance-get-info" since="1.1"/>
+    <keyword type="function" name="flatpak_instance_is_running ()" link="FlatpakInstance.html#flatpak-instance-is-running"/>
+    <keyword type="struct" name="struct FlatpakInstance" link="FlatpakInstance.html#FlatpakInstance-struct"/>
     <keyword type="macro" name="FLATPAK_ERROR" link="flatpak-Error-codes.html#FLATPAK-ERROR:CAPS"/>
     <keyword type="enum" name="enum FlatpakError" link="flatpak-Error-codes.html#FlatpakError"/>
     <keyword type="macro" name="FLATPAK_PORTAL_ERROR" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR:CAPS"/>
@@ -243,6 +260,8 @@
     <keyword type="constant" name="FLATPAK_UNINSTALL_FLAGS_NONE" link="FlatpakInstallation.html#FLATPAK-UNINSTALL-FLAGS-NONE:CAPS"/>
     <keyword type="constant" name="FLATPAK_UNINSTALL_FLAGS_NO_PRUNE" link="FlatpakInstallation.html#FLATPAK-UNINSTALL-FLAGS-NO-PRUNE:CAPS"/>
     <keyword type="constant" name="FLATPAK_UNINSTALL_FLAGS_NO_TRIGGERS" link="FlatpakInstallation.html#FLATPAK-UNINSTALL-FLAGS-NO-TRIGGERS:CAPS"/>
+    <keyword type="constant" name="FLATPAK_LAUNCH_FLAGS_NONE" link="FlatpakInstallation.html#FLATPAK-LAUNCH-FLAGS-NONE:CAPS"/>
+    <keyword type="constant" name="FLATPAK_LAUNCH_FLAGS_DO_NOT_REAP" link="FlatpakInstallation.html#FLATPAK-LAUNCH-FLAGS-DO-NOT-REAP:CAPS"/>
     <keyword type="constant" name="FLATPAK_STORAGE_TYPE_DEFAULT" link="FlatpakInstallation.html#FLATPAK-STORAGE-TYPE-DEFAULT:CAPS"/>
     <keyword type="constant" name="FLATPAK_STORAGE_TYPE_HARD_DISK" link="FlatpakInstallation.html#FLATPAK-STORAGE-TYPE-HARD-DISK:CAPS"/>
     <keyword type="constant" name="FLATPAK_STORAGE_TYPE_SDCARD" link="FlatpakInstallation.html#FLATPAK-STORAGE-TYPE-SDCARD:CAPS"/>

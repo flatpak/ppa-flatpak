@@ -37,14 +37,14 @@
  *
  * The minor version.
  */
-#define FLATPAK_MINOR_VERSION (0)
+#define FLATPAK_MINOR_VERSION (1)
 
 /**
  * FLATPAK_MICRO_VERSION:
  *
  * The micro version.
  */
-#define FLATPAK_MICRO_VERSION (6)
+#define FLATPAK_MICRO_VERSION (0)
 
 /**
  * FLATPAK_CHECK_VERSION:

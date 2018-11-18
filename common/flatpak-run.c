@@ -234,6 +234,7 @@ flatpak_run_add_wayland_args (FlatpakBwrap *bwrap)
   g_autofree char *wayland_socket = NULL;
   g_autofree char *sandbox_wayland_socket = NULL;
   gboolean res = FALSE;
+  struct stat statbuf;
 
   wayland_display = g_getenv ("WAYLAND_DISPLAY");
   if (!wayland_display)
@@ -242,7 +243,8 @@ flatpak_run_add_wayland_args (FlatpakBwrap *bwrap)
   wayland_socket = g_build_filename (g_get_user_runtime_dir (), wayland_display, NULL);
   sandbox_wayland_socket = g_strdup_printf ("/run/user/%d/%s", getuid (), wayland_display);
 
-  if (g_file_test (wayland_socket, G_FILE_TEST_EXISTS))
+  if (stat (wayland_socket, &statbuf) == 0 &&
+      (statbuf.st_mode & S_IFMT) == S_IFSOCK)
     {
       res = TRUE;
       flatpak_bwrap_add_args (bwrap,
@@ -2104,7 +2106,7 @@ setup_seccomp (FlatpakBwrap   *bwrap,
    *
    *  https://github.com/sandstorm-io/sandstorm
    *    in src/sandstorm/supervisor.c++
-   *  http://cgit.freedesktop.org/xdg-app/xdg-app/
+   *  https://github.com/flatpak/flatpak.git
    *    in common/flatpak-run.c
    *  https://git.gnome.org/browse/linux-user-chroot
    *    in src/setup-seccomp.c
@@ -2676,25 +2678,6 @@ flatpak_context_load_for_deploy (FlatpakDeploy *deploy,
   return g_steal_pointer (&context);
 }
 
-FlatpakContext *
-flatpak_context_load_for_app (const char *app_id,
-                              GError    **error)
-{
-  g_autofree char *app_ref = NULL;
-
-  g_autoptr(FlatpakDeploy) app_deploy = NULL;
-
-  app_ref = flatpak_find_current_ref (app_id, NULL, error);
-  if (app_ref == NULL)
-    return NULL;
-
-  app_deploy = flatpak_find_deploy_for_ref (app_ref, NULL, NULL, error);
-  if (app_deploy == NULL)
-    return NULL;
-
-  return flatpak_context_load_for_deploy (app_deploy, error);
-}
-
 static char *
 calculate_ld_cache_checksum (GVariant   *app_deploy_data,
                              GVariant   *runtime_deploy_data,
@@ -2862,6 +2845,7 @@ flatpak_run_app (const char     *app_ref,
                  const char     *custom_command,
                  char           *args[],
                  int             n_args,
+                 char          **instance_dir_out,
                  GCancellable   *cancellable,
                  GError        **error)
 {
@@ -3156,11 +3140,16 @@ flatpak_run_app (const char     *app_ref,
       GPid child_pid;
       char pid_str[64];
       g_autofree char *pid_path = NULL;
+      GSpawnFlags spawn_flags;
+
+      spawn_flags = G_SPAWN_SEARCH_PATH;
+      if (flags & FLATPAK_RUN_FLAG_DO_NOT_REAP)
+        spawn_flags |= G_SPAWN_DO_NOT_REAP_CHILD;
 
       if (!g_spawn_async (NULL,
                           (char **) bwrap->argv->pdata,
                           bwrap->envp,
-                          G_SPAWN_SEARCH_PATH,
+                          spawn_flags,
                           flatpak_bwrap_child_setup_cb, bwrap->fds,
                           &child_pid,
                           error))
@@ -3189,6 +3178,9 @@ flatpak_run_app (const char     *app_ref,
         }
       /* Not actually reached... */
     }
+
+  if (instance_dir_out)
+    *instance_dir_out = g_steal_pointer (&instance_id_host_dir);
 
   return TRUE;
 }

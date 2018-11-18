@@ -43,7 +43,7 @@
         </para>
         <para>
             By default, both per-user and system-wide installations
-            are shown. Use the --user, --system or --installation
+            are shown. Use the <option>--user</option>, <option>--system</option> or <option>--installation</option>
             options to change this.
         </para>
 
@@ -86,8 +86,8 @@
                 <listitem><para>
                     Show a system-wide installation by <arg choice="plain">NAME</arg> among
                     those defined in <filename>/etc/flatpak/installations.d/</filename>.
-                    Using <arg choice="plain">--installation=default</arg> is equivalent to using
-                    <arg choice="plain">--system</arg>.
+                    Using <option>--installation=default</option> is equivalent to using
+                    <option>--system</option>.
                 </para></listitem>
             </varlistentry>
 
@@ -97,6 +97,7 @@
 
                 <listitem><para>
                     Show more information for each repository in addition to the name.
+                    Equivalent to <option>--columns=all</option>.
                 </para></listitem>
             </varlistentry>
 
@@ -124,7 +125,94 @@
                     Print OSTree debug information during command processing.
                 </para></listitem>
             </varlistentry>
+
+            <varlistentry>
+                <term><option>--columns=FIELD,…</option></term>
+
+                <listitem><para>
+                    Specify what information to show about each ref. You can
+                    list multiple fields, or use this option multiple times.
+                </para></listitem>
+            </varlistentry>
+
         </variablelist>
+    </refsect1>
+
+   <refsect1>
+        <title>Fields</title>
+
+        <para>The following fields are understood by the <option>--columns</option> option:</para>
+
+        <variablelist>
+            <varlistentry>
+                <term>name</term>
+
+                <listitem><para>
+                    Show the name of the remote
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>title</term>
+
+                <listitem><para>
+                    Show the title of the remote
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>url</term>
+
+                <listitem><para>
+                    Show the URL of the remote
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>collection</term>
+
+                <listitem><para>
+                    Show the collection ID of the remote
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>priority</term>
+
+                <listitem><para>
+                    Show the priority of the remote
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>options</term>
+
+                <listitem><para>
+                    Show options
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>all</term>
+
+                <listitem><para>
+                    Show all columns
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>help</term>
+
+                <listitem><para>
+                    Show the list of available columns
+                </para></listitem>
+            </varlistentry>
+        </variablelist>
+
+        <para>
+          Note that field names can be abbreviated to a unique prefix.
+        </para>
+
     </refsect1>
 
     <refsect1>

@@ -30,6 +30,7 @@
 #include "libglnx/libglnx.h"
 
 #include "flatpak-builtins.h"
+#include "flatpak-builtins-utils.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-table-printer.h"
 
@@ -38,6 +39,8 @@ static gboolean opt_runtime;
 static gboolean opt_app;
 static gboolean opt_all;
 static char *opt_arch;
+static char *opt_app_runtime;
+static const char **opt_cols;
 
 static GOptionEntry options[] = {
   { "show-details", 'd', 0, G_OPTION_ARG_NONE, &opt_show_details, N_("Show extra information"), NULL },
@@ -45,6 +48,21 @@ static GOptionEntry options[] = {
   { "app", 0, 0, G_OPTION_ARG_NONE, &opt_app, N_("List installed applications"), NULL },
   { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to show"), N_("ARCH") },
   { "all", 'a', 0, G_OPTION_ARG_NONE, &opt_all, N_("List all refs (including locale/debug)"), NULL },
+  { "app-runtime", 'a', 0, G_OPTION_ARG_STRING, &opt_app_runtime, N_("List all applications using RUNTIME"), N_("RUNTIME") },
+  { "columns", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_cols, N_("What information to show"), N_("FIELD,…")  },
+  { NULL }
+};
+
+static Column all_columns[] = {
+  { "application",  N_("Application"),    N_("Show the application ID"), 0, 0 },
+  { "arch",         N_("Architecture"),   N_("Show the architecture"),   0, 0 },
+  { "branch",       N_("Branch"),         N_("Show the branch"),         0, 0 },
+  { "ref",          N_("Ref"),            N_("Show the ref"),            1, 1 },
+  { "origin",       N_("Origin"),         N_("Show the origin remote"),  1, 0 },
+  { "active",       N_("Active commit"),  N_("Show the active commit"),  1, 0 },
+  { "latest",       N_("Latest commit"),  N_("Show the latest commit"),  1, 0 },
+  { "size",         N_("Installed size"), N_("Show the installed size"), 1, 0 },
+  { "options",      N_("Options"),        N_("Show options"),            1, 1 },
   { NULL }
 };
 
@@ -103,7 +121,11 @@ join_strv (char **a, char **b)
 }
 
 static gboolean
-find_refs_for_dir (FlatpakDir *dir, GStrv *apps, GStrv *runtimes, GCancellable *cancellable, GError **error)
+find_refs_for_dir (FlatpakDir *dir,
+                   GStrv *apps,
+                   GStrv *runtimes,
+                   GCancellable *cancellable,
+                   GError **error)
 {
   if (flatpak_dir_ensure_repo (dir, cancellable, NULL))
     {
@@ -117,21 +139,33 @@ find_refs_for_dir (FlatpakDir *dir, GStrv *apps, GStrv *runtimes, GCancellable *
 }
 
 static gboolean
-print_table_for_refs (gboolean print_apps, GPtrArray * refs_array, const char *arch, GCancellable *cancellable, GError **error)
+print_table_for_refs (gboolean print_apps,
+                      GPtrArray * refs_array,
+                      const char *arch,
+                      const char *app_runtime,
+                      Column *columns,
+                      GCancellable *cancellable,
+                      GError **error)
 {
-  FlatpakTablePrinter *printer = flatpak_table_printer_new ();
+  FlatpakTablePrinter *printer;
   int i;
+  FlatpakKinds match_kinds;
+  g_autofree char *match_id = NULL;
+  g_autofree char *match_arch = NULL;
+  g_autofree char *match_branch = NULL;
 
-  i = 0;
-  flatpak_table_printer_set_column_title (printer, i++, _("Ref"));
-  if (opt_show_details)
+  if (columns[0].name == NULL)
+    return TRUE;
+
+  printer = flatpak_table_printer_new ();
+  flatpak_table_printer_set_column_titles (printer, columns);
+
+  if (app_runtime)
     {
-      flatpak_table_printer_set_column_title (printer, i++, _("Origin"));
-      flatpak_table_printer_set_column_title (printer, i++, _("Active commit"));
-      flatpak_table_printer_set_column_title (printer, i++, _("Latest commit"));
-      flatpak_table_printer_set_column_title (printer, i++, _("Installed size"));
+      if (!flatpak_split_partial_ref_arg (app_runtime, FLATPAK_KINDS_RUNTIME, NULL, NULL,
+                                          &match_kinds, &match_id, &match_arch, &match_branch, error))
+        return FALSE;                                
     }
-  flatpak_table_printer_set_column_title (printer, i++, _("Options"));
 
   for (i = 0; i < refs_array->len; i++)
     {
@@ -163,9 +197,8 @@ print_table_for_refs (gboolean print_apps, GPtrArray * refs_array, const char *a
           const char *eol;
           const char *eol_rebase;
           g_autofree char *latest = NULL;
-          g_autofree char *size_s = NULL;
-          guint64 size = 0;
           g_autofree const char **subpaths = NULL;
+          int k;
 
           ref = dir_refs[j];
 
@@ -178,6 +211,19 @@ print_table_for_refs (gboolean print_apps, GPtrArray * refs_array, const char *a
           deploy_data = flatpak_dir_get_deploy_data (dir, ref, cancellable, NULL);
           if (deploy_data == NULL)
             continue;
+
+          if (app_runtime)
+            {
+              const char *runtime = flatpak_deploy_data_get_runtime (deploy_data);
+              if (runtime)
+                {
+                  g_auto(GStrv) pref = g_strsplit (runtime, "/", 3);
+                  if ((match_id && pref[0] && strcmp (pref[0], match_id) != 0) ||
+                      (match_arch && pref[1] && strcmp (pref[1], match_arch) != 0) ||
+                      (match_branch && pref[2] && strcmp (pref[2], match_branch) != 0))
+                    continue;
+                }
+            }
 
           if (!opt_all && strcmp (parts[0], "runtime") == 0 &&
               flatpak_id_has_subref_suffix (parts[1]))
@@ -219,56 +265,71 @@ print_table_for_refs (gboolean print_apps, GPtrArray * refs_array, const char *a
               latest = g_strdup ("?");
             }
 
-          flatpak_table_printer_add_column (printer, partial_ref);
-
-          if (opt_show_details)
+	  for (k = 0; columns[k].name; k++)
             {
-              flatpak_table_printer_add_column (printer, repo);
+              if (strcmp (columns[k].name, "ref") == 0)
+                flatpak_table_printer_add_column (printer, partial_ref);
+              else if (strcmp (columns[k].name, "application") == 0)
+                flatpak_table_printer_add_column (printer, parts[1]);
+              else if (strcmp (columns[k].name, "arch") == 0)
+                flatpak_table_printer_add_column (printer, parts[2]);
+              else if (strcmp (columns[k].name, "branch") == 0)
+                flatpak_table_printer_add_column (printer, parts[3]);
+              else if (strcmp (columns[k].name, "origin") == 0)
+                flatpak_table_printer_add_column (printer, repo);
+              else if (strcmp (columns[k].name, "active") == 0)
+                flatpak_table_printer_add_column_len (printer, active, 12);
+              else if (strcmp (columns[k].name, "latest") == 0)
+                flatpak_table_printer_add_column_len (printer, latest, 12);
+              else if (strcmp (columns[k].name, "size") == 0)
+                {
+                  g_autofree char *size_s = NULL;
+                  guint64 size = 0;
 
-              flatpak_table_printer_add_column_len (printer, active, 12);
-              flatpak_table_printer_add_column_len (printer, latest, 12);
+                  size = flatpak_deploy_data_get_installed_size (deploy_data);
+                  size_s = g_format_size (size);
+                  flatpak_table_printer_add_decimal_column (printer, size_s);
+                }
+              else if (strcmp (columns[k].name, "options") == 0)
+                {
+                  flatpak_table_printer_add_column (printer, ""); /* Options */
 
-              size = flatpak_deploy_data_get_installed_size (deploy_data);
-              size_s = g_format_size (size);
-              flatpak_table_printer_add_decimal_column (printer, size_s);
+                  if (refs_array->len > 1)
+                    {
+                      g_autofree char *source = flatpak_dir_get_name (dir);
+                      flatpak_table_printer_append_with_comma (printer, source);
+                    }
+
+                  if (alt_id)
+                    flatpak_table_printer_append_with_comma_printf (printer, "alt-id=%.12s", alt_id);
+
+                  if (strcmp (parts[0], "app") == 0)
+                    {
+                      g_autofree char *current = flatpak_dir_current_ref (dir, parts[1], cancellable);
+                      if (current && strcmp (ref, current) == 0)
+                        flatpak_table_printer_append_with_comma (printer, "current");
+                    }
+                  else
+                    {
+                      if (print_apps)
+                        flatpak_table_printer_append_with_comma (printer, "runtime");
+                    }
+
+                  subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
+                  if (subpaths[0] != NULL)
+                    {
+                      g_autofree char *paths = g_strjoinv (" ", (char **)subpaths);
+                      g_autofree char *value = g_strconcat ("partial (", paths, ")", NULL);
+                      flatpak_table_printer_append_with_comma (printer, value);
+                    }
+
+                  if (eol)
+                    flatpak_table_printer_append_with_comma_printf (printer, "eol=%s", eol);
+                  if (eol_rebase)
+                    flatpak_table_printer_append_with_comma_printf (printer, "eol-rebase=%s", eol_rebase);
+                }
             }
-
-          flatpak_table_printer_add_column (printer, ""); /* Options */
-
-          if (refs_array->len > 1)
-            {
-              g_autofree char *source = flatpak_dir_get_name (dir);
-              flatpak_table_printer_append_with_comma (printer, source);
-            }
-
-          if (alt_id)
-            flatpak_table_printer_append_with_comma_printf (printer, "alt-id=%.12s", alt_id);
-
-          if (strcmp (parts[0], "app") == 0)
-            {
-              g_autofree char *current = NULL;
-
-              current = flatpak_dir_current_ref (dir, parts[1], cancellable);
-              if (current && strcmp (ref, current) == 0)
-                flatpak_table_printer_append_with_comma (printer, "current");
-            }
-          else
-            {
-              if (print_apps)
-                flatpak_table_printer_append_with_comma (printer, "runtime");
-            }
-
-          subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
-          if (subpaths[0] != NULL)
-            {
-              flatpak_table_printer_append_with_comma (printer, "partial");
-            }
-
-          if (eol)
-            flatpak_table_printer_append_with_comma_printf (printer, "eol=%s", eol);
-          if (eol_rebase)
-            flatpak_table_printer_append_with_comma_printf (printer, "eol-rebase=%s", eol_rebase);
-
+ 
           flatpak_table_printer_finish_row (printer);
         }
     }
@@ -280,7 +341,14 @@ print_table_for_refs (gboolean print_apps, GPtrArray * refs_array, const char *a
 }
 
 static gboolean
-print_installed_refs (gboolean app, gboolean runtime, GPtrArray *dirs, const char *arch, GCancellable *cancellable, GError **error)
+print_installed_refs (gboolean app,
+                      gboolean runtime,
+                      GPtrArray *dirs,
+                      const char *arch,
+                      const char *app_runtime,
+                      Column *cols,
+                      GCancellable *cancellable,
+                      GError **error)
 {
   g_autoptr(GPtrArray) refs_array = NULL;
   int i;
@@ -298,7 +366,7 @@ print_installed_refs (gboolean app, gboolean runtime, GPtrArray *dirs, const cha
       g_ptr_array_add (refs_array, refs_data_new (dir, apps, runtimes));
     }
 
-  if (!print_table_for_refs (app, refs_array, arch, cancellable, error))
+  if (!print_table_for_refs (app, refs_array, arch, app_runtime, cols, cancellable, error))
     return FALSE;
 
   return TRUE;
@@ -309,9 +377,13 @@ flatpak_builtin_list (int argc, char **argv, GCancellable *cancellable, GError *
 {
   g_autoptr(GOptionContext) context = NULL;
   g_autoptr(GPtrArray) dirs = NULL;
+  g_autofree char *col_help = NULL;
+  g_autofree Column *columns = NULL;
 
   context = g_option_context_new (_(" - List installed apps and/or runtimes"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
+  col_help = column_help (all_columns);
+  g_option_context_set_description (context, col_help);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv,
                                      FLATPAK_BUILTIN_FLAG_ALL_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
@@ -327,13 +399,16 @@ flatpak_builtin_list (int argc, char **argv, GCancellable *cancellable, GError *
       opt_runtime = TRUE;
     }
 
-  if (!print_installed_refs (opt_app, opt_runtime,
-                             dirs,
-                             opt_arch,
-                             cancellable, error))
+  columns = handle_column_args (all_columns, opt_show_details, opt_cols, error);
+  if (columns == NULL)
     return FALSE;
 
-  return TRUE;
+  return print_installed_refs (opt_app, opt_runtime,
+                               dirs,
+                               opt_arch,
+                               opt_app_runtime,
+                               columns,
+                               cancellable, error);
 }
 
 gboolean

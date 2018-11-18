@@ -92,6 +92,7 @@ TEST_MATRIX_SOURCE = \
 	tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh \
 	tests/test-run.sh{{user+system},{nodeltas+deltas}} \
+	tests/test-info.sh{user+system} \
 	tests/test-repo.sh{user+system+collections+collections-server-only} \
 	tests/test-extensions.sh \
 	tests/test-bundle.sh{user+system} \
@@ -99,6 +100,7 @@ TEST_MATRIX_SOURCE = \
 	tests/test-oci-registry.sh{user+system} \
 	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
+	tests/test-override.sh \
 	$(NULL)
 
 update-test-matrix:
@@ -106,6 +108,15 @@ update-test-matrix:
 
 tests/test-%.wrap:
 	@true
+
+tests/runtime-repo: tests/make-test-runtime.sh flatpak
+	rm -rf tests/runtime-repo
+	PATH=$(abs_top_builddir):$${PATH} $(top_srcdir)/tests/make-test-runtime.sh tests/runtime-repo org.test.Platform ""
+
+check_DATA += tests/runtime-repo
+
+distclean-local:
+	rm -rf tests/runtime-repo
 
 include tests/Makefile-test-matrix.am.inc
 
