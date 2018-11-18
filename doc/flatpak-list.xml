@@ -39,16 +39,21 @@
         <title>Description</title>
 
         <para>
-            Lists the names of the installed applications and/or runtimes.
+            Lists the names of the installed applications and runtimes.
         </para>
         <para>
-            By default, both per-user and system-wide installations
-            are shown. Use the --user, --installation or --system
-            options to change this.
+            By default, both apps and runtimes are shown, but you can
+            change this by using the <option>--app</option> or
+            <option>--runtime</option> options.
         </para>
         <para>
-            By default this lists both installed apps and runtimes, but you can
-            change this by using the --app or --runtime option.
+            By default, both per-user and system-wide installations are shown.
+            Use the <option>--user</option>, <option>--installation</option> or
+            <option>--system</option> options to change this.
+        </para>
+        <para>
+            The list command can also be used to find installed apps that
+            use a certain runtime, with the <option>--app-runtime</option> option.
         </para>
 
     </refsect1>
@@ -90,8 +95,8 @@
                 <listitem><para>
                     List a system-wide installation specified by <arg choice="plain">NAME</arg>
                     among those defined in <filename>/etc/flatpak/installations.d/</filename>.
-                    Using <arg choice="plain">--installation=default</arg> is equivalent to using
-                    <arg choice="plain">--system</arg>.
+                    Using <option>--installation=default</option> is equivalent to using
+                    <option>--system</option>.
                 </para></listitem>
             </varlistentry>
 
@@ -109,6 +114,7 @@
 
                 <listitem><para>
                     Show origin, sizes and other extra information.
+                    Equivalent to <option>--columns=all</option>.
                 </para></listitem>
             </varlistentry>
 
@@ -138,6 +144,14 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--app-runtime=RUNTIME</option></term>
+
+                <listitem><para>
+                    List applications that use the given runtime.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>-v</option></term>
                 <term><option>--verbose</option></term>
 
@@ -153,7 +167,118 @@
                     Print OSTree debug information during command processing.
                 </para></listitem>
             </varlistentry>
+
+            <varlistentry>
+                <term><option>--columns=FIELD,…</option></term>
+
+                <listitem><para>
+                    Specify what information to show about each ref. You can
+                    list multiple fields, or use this option multiple times.
+                </para></listitem>
+            </varlistentry>
+
         </variablelist>
+    </refsect1>
+
+   <refsect1>
+        <title>Fields</title>
+
+        <para>The following fields are understood by the <option>--columns</option> option:</para>
+
+        <variablelist>
+            <varlistentry>
+                <term>ref</term>
+
+                <listitem><para>
+                    Show the ref
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>application</term>
+
+                <listitem><para>
+                    Show the application or runtime ID
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>arch</term>
+
+                <listitem><para>
+                    Show the architecture
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>branch</term>
+
+                <listitem><para>
+                    Show the branch
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>origin</term>
+
+                <listitem><para>
+                    Show the origin remote
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>active</term>
+
+                <listitem><para>
+                    Show the active commit
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>latest</term>
+
+                <listitem><para>
+                    Show the latest commit
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>size</term>
+
+                <listitem><para>
+                    Show the installed size
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>options</term>
+
+                <listitem><para>
+                    Show options
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>all</term>
+
+                <listitem><para>
+                    Show all columns
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>help</term>
+
+                <listitem><para>
+                    Show the list of available columns
+                </para></listitem>
+            </varlistentry>
+        </variablelist>
+
+        <para>
+          Note that field names can be abbreviated to a unique prefix.
+        </para>
+
     </refsect1>
 
     <refsect1>

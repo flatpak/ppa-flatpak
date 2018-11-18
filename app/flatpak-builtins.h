@@ -98,6 +98,8 @@ BUILTINPROTO (config)
 BUILTINPROTO (search)
 BUILTINPROTO (repair)
 BUILTINPROTO (create_usb)
+BUILTINPROTO (kill)
+BUILTINPROTO (history)
 
 #undef BUILTINPROTO
 

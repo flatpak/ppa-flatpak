@@ -40,6 +40,17 @@
  * you start the transaction with flatpak_transaction_run() which will resolve all kinds
  * of dependencies and report progress and status while downloading and installing these.
  *
+ * The dependency resolution that is the first step of executing a transaction can
+ * be influenced by flatpak_transaction_set_disable_dependencies(),
+ * flatpak_transaction_set_disable_related(), flatpak_transaction_add_dependency_source()
+ * and flatpak_transaction_add_default_dependency_sources().
+ *
+ * The underlying operations that get orchestrated by a FlatpakTransaction are: pulling
+ * new data from remote repositories, deploying newer applications or runtimes and pruning
+ * old deployments. Which of these operations are carried out can be controlled with
+ * flatpak_transaction_set_no_pull(), flatpak_transaction_set_no_deploy() and
+ * flatpak_transaction_set_disable_prune().
+ *
  * A transaction is a blocking operation, and all signals are emitted in the same thread.
  * This means you should either handle the signals directly (say, by doing blocking console
  * interaction, or by just returning without interaction), or run the operation in a separate
@@ -120,6 +131,7 @@ struct _FlatpakTransactionPrivate
   gboolean                     disable_related;
   gboolean                     reinstall;
   gboolean                     force_uninstall;
+  gboolean                     can_run;
   char                        *default_arch;
 };
 
@@ -353,6 +365,8 @@ remote_name_is_file (const char *remote_name)
  * on runtimes from this additional installation (wheres it would normally
  * install required runtimes that are not installed in the installation
  * the transaction works on).
+ *
+ * Also see flatpak_transaction_add_default_dependency_sources().
  */
 void
 flatpak_transaction_add_dependency_source (FlatpakTransaction  *self,
@@ -944,6 +958,7 @@ flatpak_transaction_init (FlatpakTransaction *self)
   priv->remote_states = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) flatpak_remote_state_unref);
   priv->added_origin_remotes = g_ptr_array_new_with_free_func (g_free);
   priv->extra_dependency_dirs = g_ptr_array_new_with_free_func (g_object_unref);
+  priv->can_run = TRUE;
 }
 
 
@@ -1419,7 +1434,7 @@ find_runtime_remote (FlatpakTransaction             *self,
       return NULL;
     }
 
-  /* In the no-puil case, if only one local ref is available, assume that is the one because
+  /* In the no-pull case, if only one local ref is available, assume that is the one because
      the user chose it interactively when pulling */
   if (priv->no_pull && g_strv_length (remotes) == 1)
     res = 0;
@@ -1508,6 +1523,11 @@ add_deps (FlatpakTransaction          *self,
   /* Install/Update the runtime before the app */
   if (runtime_op)
     {
+      if (runtime_op->kind == FLATPAK_TRANSACTION_OPERATION_UNINSTALL)
+        return flatpak_fail_error (error, FLATPAK_ERROR_RUNTIME_USED,
+                                   _("Can't uninstall %s which is needed by %s"),
+                                   runtime_op->ref, op->ref);
+
       op->fail_if_op_fails = runtime_op;
       run_operation_before (runtime_op, op, 2);
     }
@@ -1590,8 +1610,8 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
   else if (kind == FLATPAK_TRANSACTION_OPERATION_UNINSTALL)
     {
       if (!dir_ref_is_installed (priv->dir, ref, &origin, NULL))
-        flatpak_fail_error (error, FLATPAK_ERROR_NOT_INSTALLED,
-                            _("%s not installed"), pref);
+        return flatpak_fail_error (error, FLATPAK_ERROR_NOT_INSTALLED,
+                                   _("%s not installed"), pref);
 
       remote = origin;
     }
@@ -2174,7 +2194,10 @@ flatpak_transaction_get_current_operation (FlatpakTransaction *self)
 {
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
 
-  return g_object_ref (priv->current_op);
+  if (priv->current_op)
+    return g_object_ref (priv->current_op);
+
+  return NULL;
 }
 
 /**
@@ -2571,6 +2594,11 @@ flatpak_transaction_run (FlatpakTransaction *self,
   gboolean ready_res = FALSE;
   int i;
 
+  if (!priv->can_run)
+    return flatpak_fail (error, _("Transaction already executed"));
+
+  priv->can_run = FALSE;
+  
   priv->current_op = NULL;
 
   if (!priv->no_pull &&

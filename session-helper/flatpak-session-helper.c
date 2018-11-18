@@ -659,13 +659,13 @@ start_p11_kit_server (const char *flatpak_dir)
                      &p11_kit_stdout, NULL,
                      &exit_status, &local_error))
     {
-      g_warning ("Unable to start p11-kit server: %s\n", local_error->message);
+      g_warning ("Unable to start p11-kit server: %s", local_error->message);
       return;
     }
 
-  if (exit_status != 0)
+  if (!g_spawn_check_exit_status (exit_status, &local_error))
     {
-      g_warning ("Unable to start p11-kit server, exited with status %d\n", exit_status);
+      g_warning ("Unable to start p11-kit server: %s", local_error->message);
       return;
     }
 
@@ -766,8 +766,6 @@ main (int    argc,
 
   if (verbose)
     g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, message_handler, NULL);
-
-  flatpak_migrate_from_xdg_app ();
 
   client_pid_data_hash = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) pid_data_free);
 

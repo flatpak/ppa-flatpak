@@ -1,3 +1,38 @@
+Changes in 1.1
+==============
+
+This is the first release in the new unstable 1.1.x series, leading up to 1.2
+which is expected around the end of the year.
+
+Changes in this version:
+ * New command flatpak kill to kill running flatpak instances.
+ * The remote argument is now optional in the flatpak install in
+   interactive installs. Instead you are prompted for which
+   remote to install from.
+ * All commands printing tables now support --columns option to specify
+   exactly what to output.
+ * flatpak uninstall now supports --delete-data to delete the application
+   data directory in your homedirectory. If no application is specified
+   it will remove data from all uninstalled apps.
+ * flatpak list now supports filtering by runtime with:
+   --app-runtime=org.gnome.Platform//3.24
+ * flatpak remote-ls can now show the runtime used for each app.
+ * flatpak repo now supports --info to show information
+   about a repository, and it is the default operation
+   for the flatpak repo.
+ * flatpak repo now supports --commits to list commits in branch.
+ * flatpak now logs transactions to the systemd journal if built
+   against libsystemd.
+ * libflatpak now exposed FlatpakInstance for a running instance.
+ * Better error output if a flatpak command is misspelled
+ * Drop support for migration from xdg-app (previous name for flatpak).
+ * New library function flatpak_installation_get_min_free_space_bytes.
+ * In interactive mode "yes" is now the default in most prompts.
+ * Bumped ostree requirement to 2018.9
+ * Cleanups and improvements to the test suite.
+ * Improvements to documentation.
+ * buildsystem support for coverage generation.
+
 Changes in 1.0.6
 ================
 

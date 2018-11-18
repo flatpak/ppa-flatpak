@@ -99,12 +99,6 @@ char **flatpak_subpaths_merge (char **subpaths1,
 char *flatpak_get_lang_from_locale (const char *locale);
 char **flatpak_get_current_locale_langs (void);
 
-void flatpak_migrate_from_xdg_app (void);
-
-GFile *flatpak_file_new_tmp_in (GFile      *dir,
-                                const char *templatename,
-                                GError    **error);
-
 gboolean flatpak_write_update_checksum (GOutputStream *out,
                                         gconstpointer  data,
                                         gsize          len,
@@ -130,10 +124,6 @@ gboolean flatpak_variant_save (GFile        *dest,
                                GVariant     *variant,
                                GCancellable *cancellable,
                                GError      **error);
-GVariant * flatpak_gvariant_new_empty_string_dict (void);
-void    flatpak_variant_builder_init_from_variant (GVariantBuilder *builder,
-                                                   const char      *type,
-                                                   GVariant        *variant);
 gboolean flatpak_variant_bsearch_str (GVariant   *array,
                                       const char *str,
                                       int        *out_pos);
@@ -326,10 +316,6 @@ flatpak_auto_lock_helper (GMutex *mutex)
 gboolean flatpak_switch_symlink_and_remove (const char *symlink_path,
                                             const char *target,
                                             GError    **error);
-gint flatpak_mkstempat (int    dir_fd,
-                        gchar *tmpl,
-                        int    flags,
-                        int    mode);
 
 gboolean flatpak_repo_set_title (OstreeRepo *repo,
                                  const char *title,
@@ -481,11 +467,6 @@ gboolean   flatpak_cp_a (GFile         *src,
                          GCancellable  *cancellable,
                          GError       **error);
 
-gboolean flatpak_zero_mtime (int           parent_dfd,
-                             const char   *rel_path,
-                             GCancellable *cancellable,
-                             GError      **error);
-
 gboolean flatpak_mkdir_p (GFile        *dir,
                           GCancellable *cancellable,
                           GError      **error);
@@ -586,23 +567,6 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakRepoTransaction, flatpak_repo_transaction_
 
 #define AUTOLOCK(name) G_GNUC_UNUSED __attribute__((cleanup (flatpak_auto_unlock_helper))) GMutex * G_PASTE (auto_unlock, __LINE__) = flatpak_auto_lock_helper (&G_LOCK_NAME (name))
 
-/* OSTREE_CHECK_VERSION was added immediately after the 2017.3 release */
-#ifndef OSTREE_CHECK_VERSION
-#define OSTREE_CHECK_VERSION(year, minor) (0)
-#endif
-/* Cleanups are always exported in 2017.4, and some git releases between 2017.3 and 2017.4.
-   We actually check against 2017.3 so that we work on the git releases *after* 2017.3
-   which is safe, because the real OSTREE_CHECK_VERSION macro was added after 2017.3
-   too. */
-#if !OSTREE_CHECK_VERSION (2017, 3)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeRepo, g_object_unref)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeMutableTree, g_object_unref)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeAsyncProgress, g_object_unref)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeGpgVerifyResult, g_object_unref)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeRepoCommitModifier, ostree_repo_commit_modifier_unref)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeRepoDevInoCache, ostree_repo_devino_cache_unref)
-#endif
-
 #if !defined(SOUP_AUTOCLEANUPS_H) && !defined(__SOUP_AUTOCLEANUPS_H__)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (SoupSession, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (SoupMessage, g_object_unref)
@@ -695,12 +659,14 @@ gboolean flatpak_allocate_tmpdir (int           tmpdir_dfd,
                                   GError      **error);
 
 
-gboolean flatpak_yes_no_prompt (const char *prompt,
-                                ...) G_GNUC_PRINTF (1, 2);
-long flatpak_number_prompt (int         min,
+gboolean flatpak_yes_no_prompt (gboolean default_yes,
+                                const char *prompt,
+                                ...) G_GNUC_PRINTF (2, 3);
+long flatpak_number_prompt (gboolean    default_yes,
+                            int         min,
                             int         max,
                             const char *prompt,
-                            ...) G_GNUC_PRINTF (3, 4);
+                            ...) G_GNUC_PRINTF (4, 5);
 
 typedef void (*FlatpakProgressCallback)(const char *status,
                                         guint       progress,
@@ -715,5 +681,9 @@ void flatpak_log_dir_access (FlatpakDir *dir);
 gboolean flatpak_check_required_version (const char *ref,
                                          GKeyFile   *metakey,
                                          GError    **error);
+
+int flatpak_levenshtein_distance (const char *s, const char *t);
+
+#define FLATPAK_MESSAGE_ID "c7b39b1e006b464599465e105b361485" 
 
 #endif /* __FLATPAK_UTILS_H__ */

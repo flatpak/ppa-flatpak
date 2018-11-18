@@ -30,6 +30,24 @@
 #include "flatpak-utils-private.h"
 
 
+void
+remote_dir_pair_free (RemoteDirPair *pair)
+{
+  g_free (pair->remote_name);
+  g_object_unref (pair->dir);
+  g_free (pair);
+}
+
+RemoteDirPair *
+remote_dir_pair_new (const char *remote_name, FlatpakDir *dir)
+{
+  RemoteDirPair *pair = g_new (RemoteDirPair, 1);
+
+  pair->remote_name = g_strdup (remote_name);
+  pair->dir = g_object_ref (dir);
+  return pair;
+}
+
 gboolean
 looks_like_branch (const char *branch)
 {
@@ -371,7 +389,7 @@ flatpak_resolve_duplicate_remotes (GPtrArray    *dirs,
           g_autofree char *dir_name = flatpak_dir_get_name (dir);
           g_print ("%d) %s\n", i + 1, dir_name);
         }
-      chosen = flatpak_number_prompt (0, dirs_with_remote->len, _("Which do you want to use (0 to abort)?"));
+      chosen = flatpak_number_prompt (TRUE, 0, dirs_with_remote->len, _("Which do you want to use (0 to abort)?"));
       if (chosen == 0)
         return flatpak_fail (error, _("No remote chosen to resolve ‘%s’ which exists in multiple installations"), remote_name);
     }
@@ -384,6 +402,90 @@ flatpak_resolve_duplicate_remotes (GPtrArray    *dirs,
       else
         *out_dir = g_object_ref (g_ptr_array_index (dirs_with_remote, chosen - 1));
     }
+
+  return TRUE;
+}
+
+gboolean
+flatpak_resolve_matching_refs (const char   *remote_name,
+                               FlatpakDir   *dir,
+                               gboolean      disable_interaction,
+                               char        **refs,
+                               const char   *opt_search_ref,
+                               char        **out_ref,
+                               GError      **error)
+{
+  guint chosen = 0;
+  guint refs_len;
+  guint i;
+
+  refs_len = g_strv_length (refs);
+  g_assert (refs_len > 0);
+
+  /* When there's only one match, we only choose it without user interaction if
+   * either the --assume-yes option was used or it's an exact match
+   */
+  if (refs_len == 1)
+    {
+      if (disable_interaction)
+        chosen = 1;
+      else
+        {
+          g_auto(GStrv) parts = NULL;
+          parts = flatpak_decompose_ref (refs[0], NULL);
+          g_assert (parts != NULL);
+          if (opt_search_ref != NULL && strcmp (parts[1], opt_search_ref) == 0)
+            chosen = 1;
+        }
+    }
+
+  if (chosen == 0)
+    {
+      g_print (_("Similar refs found for ‘%s’ in remote ‘%s’ (%s):\n"),
+               opt_search_ref, remote_name, flatpak_dir_get_name (dir));
+      for (i = 0; i < refs_len; i++)
+        g_print ("%d) %s\n", i + 1, refs[i]);
+      chosen = flatpak_number_prompt (TRUE, 0, refs_len, _("Which do you want to use (0 to abort)?"));
+      if (chosen == 0)
+        return flatpak_fail (error, _("No ref chosen to resolve matches for ‘%s’"), opt_search_ref);
+    }
+
+  if (out_ref)
+    *out_ref = g_strdup (refs[chosen - 1]);
+
+  return TRUE;
+}
+
+gboolean
+flatpak_resolve_matching_remotes (gboolean        disable_interaction,
+                                  GPtrArray      *remote_dir_pairs,
+                                  const char     *opt_search_ref,
+                                  RemoteDirPair **out_pair,
+                                  GError        **error)
+{
+  guint chosen = 0; /* 1 indexed */
+  guint i;
+
+  g_assert (remote_dir_pairs->len > 0);
+
+  if (disable_interaction && remote_dir_pairs->len == 1)
+    chosen = 1;
+
+  if (chosen == 0)
+    {
+      g_print (_("Multiple remotes found with refs similar to ‘%s’:\n"), opt_search_ref);
+      for (i = 0; i < remote_dir_pairs->len; i++)
+        {
+          RemoteDirPair *pair = g_ptr_array_index (remote_dir_pairs, i);
+          g_print ("%d) %s (%s)\n", i + 1, pair->remote_name, flatpak_dir_get_name (pair->dir));
+        }
+      chosen = flatpak_number_prompt (TRUE, 0, remote_dir_pairs->len, _("Which do you want to use (0 to abort)?"));
+      if (chosen == 0)
+        return flatpak_fail (error, _("No remote chosen to resolve matches for ‘%s’"), opt_search_ref);
+    }
+
+  if (out_pair)
+    *out_pair = g_ptr_array_index (remote_dir_pairs, chosen - 1);
 
   return TRUE;
 }
@@ -580,4 +682,163 @@ get_permission_tables (XdpDbusPermissionStore *store)
   g_ptr_array_add (tables, NULL);
 
   return (char **) g_ptr_array_free (tables, FALSE);
+}
+
+/*** column handling ***/
+
+static int
+find_column (Column *columns,
+             const char *name,
+             GError **error)
+{
+  int i;
+  int candidate;
+
+  candidate = -1;
+  for (i = 0; columns[i].name; i++)
+    {
+      if (g_str_equal (columns[i].name, name))
+        {
+          return i;
+        }
+      else if (g_str_has_prefix (columns[i].name, name))
+        {
+          if (candidate == -1)
+            {
+              candidate = i;
+            }
+          else
+            {
+              flatpak_fail (error, _("Ambiguous column: %s"), name);
+              return -1;
+            }
+        }
+    }
+
+  if (candidate >= 0)
+    return candidate;
+
+  flatpak_fail (error, _("Unknown column: %s"), name);
+  return -1;
+}
+
+static Column *
+column_filter (Column *columns,
+               const char *col_arg,
+               GError **error)
+{
+  g_auto(GStrv) cols = g_strsplit (col_arg, ",", 0);
+  int n_cols = g_strv_length (cols);
+  Column *result = g_new0 (Column, n_cols + 1);
+  int i;
+
+  for (i = 0; i < n_cols; i++)
+    {
+      int idx = find_column (columns, cols[i], error);
+      if (idx == -1)
+        return FALSE;
+      result[i] = columns[idx];
+    }
+
+  return result;
+}
+
+static gboolean
+list_has (const char *list,
+          const char *term)
+{
+  const char *p;
+  int len;
+
+  p = list;
+  while (p)
+    {
+      p = strstr (p, term);
+      len = strlen (term);
+      if (p &&
+          (p == list || p[-1] == ',') &&
+          (p[len] == '\0' || p[len] == ','))
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
+/* Returns column help suitable for passing to
+ * g_option_context_set_description()
+ */
+char *
+column_help (Column *columns)
+{
+  GString *s = g_string_new ("");
+  int len;
+  int i;
+
+  g_string_append (s, _("Available columns:\n"));
+
+  len = 0;
+  for (i = 0; columns[i].name; i++)
+    len = MAX (len, strlen (columns[i].name));
+
+  len += 4;
+  for (i = 0; columns[i].name; i++)
+    g_string_append_printf (s, "  %-*s %s\n", len, columns[i].name, _(columns[i].desc));
+
+  g_string_append_printf (s, "  %-*s %s\n", len, "all", _("Show all columns"));
+  g_string_append_printf (s, "  %-*s %s\n", len, "help", _("Show available columns"));
+
+  return g_string_free (s, FALSE);
+}
+
+/* Returns a filtered list of columns, free with g_free.
+ * opt_show_all should correspond to --show-details or be FALSE
+ * opt_cols should correspond to --columns
+ */
+Column *
+handle_column_args (Column *all_columns,
+                    gboolean opt_show_all,
+                    const char **opt_cols,
+                    GError **error)
+{
+  g_autofree char *cols = NULL;
+  gboolean show_help = FALSE;
+  gboolean show_all = opt_show_all;
+
+  if (opt_cols)
+    {
+      int i;
+
+      for (i = 0; opt_cols[i]; i++)
+        {
+          if (list_has (opt_cols[i], "help"))
+            show_help = TRUE;
+          else if (list_has (opt_cols[i], "all"))
+            show_all = TRUE;
+        }
+    }
+
+  if (show_help)
+    {
+      g_autofree char *col_help = column_help (all_columns);
+      g_print ("%s", col_help);
+      return g_new0 (Column, 1); 
+    }
+
+  if (opt_cols && !show_all)
+    cols = g_strjoinv (",", (char**)opt_cols);
+  else
+    {
+      GString *s;
+      int i;
+
+      s = g_string_new ("");
+      for (i = 0; all_columns[i].name; i++)
+        {
+          if ((show_all && all_columns[i].all) || all_columns[i].def)
+            g_string_append_printf (s, "%s%s", s->len > 0 ? "," : "", all_columns[i].name);
+        }
+      cols = g_string_free (s, FALSE);
+    }
+    
+  return column_filter (all_columns, cols, error);
 }

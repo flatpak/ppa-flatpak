@@ -17,6 +17,7 @@ flatpakinclude_HEADERS = \
 	common/flatpak-version-macros.h \
 	common/flatpak-portal-error.h \
 	common/flatpak-transaction.h \
+	common/flatpak-instance.h \
 	$(NULL)
 
 nodist_flatpakinclude_HEADERS = \
@@ -110,6 +111,7 @@ libflatpak_common_la_SOURCES = \
 	common/flatpak-ref.c \
 	common/flatpak-installed-ref.c \
 	common/flatpak-installed-ref-private.h \
+	common/flatpak-instance-private.h \
 	common/flatpak-remote-ref.c \
 	common/flatpak-remote-ref-private.h \
 	common/flatpak-bundle-ref.c \
@@ -120,7 +122,6 @@ libflatpak_common_la_SOURCES = \
 	common/flatpak-error.c \
 	common/flatpak-installation-private.h \
 	common/flatpak-installation.c \
-	common/flatpak-instance-private.h \
 	common/flatpak-instance.c \
 	common/valgrind-private.h \
 	$(NULL)
@@ -128,6 +129,7 @@ libflatpak_common_la_SOURCES = \
 libflatpak_common_la_CFLAGS = \
 	-DFLATPAK_COMPILATION \
 	$(AM_CFLAGS) \
+	$(APPSTREAM_GLIB_CFLAGS) \
 	$(BASE_CFLAGS) \
 	$(HIDDEN_VISIBILITY_CFLAGS) \
 	$(OSTREE_CFLAGS) \
@@ -136,9 +138,10 @@ libflatpak_common_la_CFLAGS = \
 	$(XAUTH_CFLAGS) \
 	$(LIBSECCOMP_CFLAGS) \
 	$(INTERNAL_GPGME_CFLAGS) \
+	$(SYSTEMD_CFLAGS) \
 	-I$(srcdir)/dbus-proxy \
 	$(NULL)
-libflatpak_common_la_LIBADD = $(AM_LIBADD) libglnx.la $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(XAUTH_LIBS) $(LIBSECCOMP_LIBS) $(INTERNAL_GPGME_LIBS)
+libflatpak_common_la_LIBADD = $(AM_LIBADD) libglnx.la $(APPSTREAM_GLIB_LIBS) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(XAUTH_LIBS) $(LIBSECCOMP_LIBS) $(INTERNAL_GPGME_LIBS) $(SYSTEMD_LIBS)
 
 
 libflatpak_la_SOURCES = \

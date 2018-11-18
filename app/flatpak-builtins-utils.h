@@ -30,6 +30,16 @@
 /* Appstream data expires after a day */
 #define FLATPAK_APPSTREAM_TTL 86400
 
+typedef struct RemoteDirPair
+{
+  gchar              *remote_name;
+  FlatpakDir         *dir;
+} RemoteDirPair;
+
+void            remote_dir_pair_free (RemoteDirPair *pair);
+RemoteDirPair * remote_dir_pair_new (const char *remote_name,
+                                     FlatpakDir *dir);
+
 gboolean    looks_like_branch (const char *branch);
 GBytes *    download_uri (const char *url,
                           GError    **error);
@@ -56,6 +66,20 @@ gboolean flatpak_resolve_duplicate_remotes (GPtrArray    *dirs,
                                             GCancellable *cancellable,
                                             GError      **error);
 
+gboolean flatpak_resolve_matching_refs (const char *remote_name,
+                                        FlatpakDir *dir,
+                                        gboolean    disable_interaction,
+                                        char      **refs,
+                                        const char *opt_search_ref,
+                                        char      **out_ref,
+                                        GError    **error);
+
+gboolean flatpak_resolve_matching_remotes (gboolean        disable_interaction,
+                                           GPtrArray      *remote_dir_pairs,
+                                           const char     *opt_search_ref,
+                                           RemoteDirPair **out_pair,
+                                           GError        **error);
+
 gboolean update_appstream (GPtrArray    *dirs,
                            const char   *remote,
                            const char   *arch,
@@ -65,6 +89,24 @@ gboolean update_appstream (GPtrArray    *dirs,
                            GError      **error);
 
 char ** get_permission_tables (XdpDbusPermissionStore *store);
+gboolean reset_permissions_for_app (const char *app_id,
+                                    GError **error);
 
+
+/* --columns handling */
+
+typedef struct {
+  const char *name;
+  const char *title; /* use N_() */
+  const char *desc;  /* use N_() */
+  gboolean all;
+  gboolean def;
+} Column;
+
+char   *column_help        (Column *columns);
+Column *handle_column_args (Column *all_columns,
+                            gboolean opt_show_all,
+                            const char **opt_cols,
+                            GError **error);
 
 #endif /* __FLATPAK_BUILTINS_UTILS_H__ */

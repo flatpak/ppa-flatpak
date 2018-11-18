@@ -23,6 +23,7 @@
 
 #include <ostree.h>
 
+#include <appstream-glib.h>
 #include "libglnx/libglnx.h"
 #include <flatpak-common-types-private.h>
 #include <flatpak-context-private.h>
@@ -197,6 +198,12 @@ typedef enum {
   FLATPAK_DIR_STORAGE_TYPE_NETWORK,
 } FlatpakDirStorageType;
 
+typedef enum {
+  FIND_MATCHING_REFS_FLAGS_NONE = 0,
+  FIND_MATCHING_REFS_FLAGS_KEEP_REMOTE = (1 << 0),
+  FIND_MATCHING_REFS_FLAGS_FUZZY = (1 << 1),
+} FindMatchingRefsFlags;
+
 GQuark       flatpak_dir_error_quark (void);
 
 /**
@@ -287,10 +294,6 @@ char *      flatpak_dir_get_origin (FlatpakDir   *self,
                                     const char   *ref,
                                     GCancellable *cancellable,
                                     GError      **error);
-char **     flatpak_dir_get_subpaths (FlatpakDir   *self,
-                                      const char   *ref,
-                                      GCancellable *cancellable,
-                                      GError      **error);
 GFile *     flatpak_dir_get_exports_dir (FlatpakDir *self);
 GFile *     flatpak_dir_get_removed_dir (FlatpakDir *self);
 GFile *     flatpak_dir_get_if_deployed (FlatpakDir   *self,
@@ -321,24 +324,28 @@ char *      flatpak_dir_find_remote_ref (FlatpakDir   *self,
                                          FlatpakKinds *out_kind,
                                          GCancellable *cancellable,
                                          GError      **error);
-char **     flatpak_dir_find_remote_refs (FlatpakDir   *self,
-                                          const char   *remote,
-                                          const char   *name,
-                                          const char   *opt_branch,
-                                          const char   *opt_arch,
-                                          FlatpakKinds  kinds,
-                                          GCancellable *cancellable,
-                                          GError      **error);
-char *      flatpak_dir_find_local_ref (FlatpakDir   *self,
-                                        const char   *remote,
-                                        const char   *name,
-                                        const char   *opt_branch,
-                                        const char   *opt_default_branch,
-                                        const char   *opt_arch,
-                                        FlatpakKinds  kinds,
-                                        FlatpakKinds *out_kind,
-                                        GCancellable *cancellable,
-                                        GError      **error);
+char **     flatpak_dir_find_remote_refs (FlatpakDir            *self,
+                                          const char            *remote,
+                                          const char            *name,
+                                          const char            *opt_branch,
+                                          const char            *opt_default_branch,
+                                          const char            *opt_arch,
+                                          const char            *opt_default_arch,
+                                          FlatpakKinds           kinds,
+                                          FindMatchingRefsFlags  flags,
+                                          GCancellable          *cancellable,
+                                          GError               **error);
+char **     flatpak_dir_find_local_refs (FlatpakDir           *self,
+                                         const char           *remote,
+                                         const char           *name,
+                                         const char           *opt_branch,
+                                         const char           *opt_default_branch,
+                                         const char           *opt_arch,
+                                         const char           *opt_default_arch,
+                                         FlatpakKinds          kinds,
+                                         FindMatchingRefsFlags flags,
+                                         GCancellable          *cancellable,
+                                         GError               **error);
 char *      flatpak_dir_find_installed_ref (FlatpakDir   *self,
                                             const char   *opt_name,
                                             const char   *opt_branch,
@@ -403,6 +410,12 @@ gboolean    flatpak_dir_update_appstream (FlatpakDir          *self,
                                           OstreeAsyncProgress *progress,
                                           GCancellable        *cancellable,
                                           GError             **error);
+gboolean    flatpak_dir_load_appstream_store (FlatpakDir    *self,
+                                              const gchar   *remote_name,
+                                              const gchar   *arch,
+                                              AsStore       *store,
+                                              GCancellable  *cancellable,
+                                              GError       **error);
 gboolean    flatpak_dir_pull (FlatpakDir                           *self,
                               FlatpakRemoteState                   *state,
                               const char                           *ref,
@@ -669,8 +682,6 @@ char      *flatpak_dir_get_remote_title (FlatpakDir *self,
                                          const char *remote_name);
 char      *flatpak_dir_get_remote_collection_id (FlatpakDir *self,
                                                  const char *remote_name);
-char      *flatpak_dir_get_remote_main_ref (FlatpakDir *self,
-                                            const char *remote_name);
 gboolean   flatpak_dir_get_remote_oci (FlatpakDir *self,
                                        const char *remote_name);
 char      *flatpak_dir_get_remote_default_branch (FlatpakDir *self,
@@ -785,5 +796,9 @@ gboolean           flatpak_dir_resolve_p2p_refs (FlatpakDir         *self,
 char ** flatpak_dir_get_default_locale_languages (FlatpakDir *self);
 char ** flatpak_dir_get_locale_languages (FlatpakDir *self);
 char ** flatpak_dir_get_locale_subpaths (FlatpakDir *self);
+
+void flatpak_dir_set_source_pid (FlatpakDir *self,
+                                  pid_t      pid);
+pid_t flatpak_dir_get_source_pid (FlatpakDir *self);
 
 #endif /* __FLATPAK_DIR_H__ */
