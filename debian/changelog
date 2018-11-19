@@ -1,3 +1,10 @@
+flatpak (1.1.0-1) UNRELEASED; urgency=medium
+
+  * Revert 'd/watch: Only watch for stable-branch versions'
+  * New upstream release
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 19 Nov 2018 13:17:17 +0000
+
 flatpak (1.0.6-1) unstable; urgency=medium
 
   * d/watch: Only watch for stable-branch versions
