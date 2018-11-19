@@ -18,8 +18,7 @@ This is done entirely for the Qt GNOME Platform so it can do this:
 
 Closes: #1436
 Approved by: matthiasclasen
-
-(cherry picked from commit 182b2674aa6dc00d0c0780baf2d794bf765a925b)
+Origin: upstream, 1.1.1, commit:182b2674aa6dc00d0c0780baf2d794bf765a925b
 ---
  common/flatpak-utils.c | 61 ++++++++++++++++++++++++++++++++++++--------------
  1 file changed, 44 insertions(+), 17 deletions(-)

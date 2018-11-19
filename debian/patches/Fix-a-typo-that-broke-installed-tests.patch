@@ -3,6 +3,7 @@ Date: Mon, 19 Nov 2018 14:05:16 +0000
 Subject: Fix a typo that broke installed-tests
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/flatpak/flatpak/pull/2338
 ---
  tests/libtest.sh | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

@@ -4,8 +4,7 @@ Subject: dir: Emit better errors for invalid flatpakrepo files
 
 Closes: #2327
 Approved by: matthiasclasen
-
-(cherry picked from commit 3f13babb5ab9a69947aa5a41b26161585e1d1dab)
+Origin: upstream, 1.1.1, commit:3f13babb5ab9a69947aa5a41b26161585e1d1dab
 ---
  common/flatpak-dir.c | 6 ++++--
  1 file changed, 4 insertions(+), 2 deletions(-)

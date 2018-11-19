@@ -7,7 +7,7 @@ This is similar case as with x11_socket, https://github.com/flatpak/flatpak/comm
 Closes: #2333
 Approved by: matthiasclasen
 
-(cherry picked from commit ad9599d3e31050d07d782267038cc2f316af0235)
+Origin: upstream, 1.1.1, commit:ad9599d3e31050d07d782267038cc2f316af0235
 ---
  common/flatpak-run.c | 16 ++++++++--------
  1 file changed, 8 insertions(+), 8 deletions(-)

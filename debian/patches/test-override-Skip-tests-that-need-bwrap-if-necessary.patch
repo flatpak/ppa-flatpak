@@ -3,6 +3,7 @@ Date: Mon, 19 Nov 2018 13:43:42 +0000
 Subject: test-override: Skip tests that need bwrap if necessary
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/flatpak/flatpak/pull/2339
 ---
  tests/libtest.sh       | 30 +++++++++++++++++++++++++-----
  tests/test-override.sh | 50 ++++++++++++++++++++++++++++++--------------------

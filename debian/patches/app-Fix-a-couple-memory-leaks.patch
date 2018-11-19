@@ -4,8 +4,7 @@ Subject: app: Fix a couple memory leaks
 
 Closes: #2330
 Approved by: matthiasclasen
-
-(cherry picked from commit 7d35de18e46f1629c89d0f74d2ea0ef723814009)
+Origin: upstream, 1.1.1, commit:7d35de18e46f1629c89d0f74d2ea0ef723814009
 ---
  app/flatpak-builtins-utils.c | 6 ++++--
  common/flatpak-dir-private.h | 1 +
