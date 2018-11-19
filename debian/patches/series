@@ -3,4 +3,5 @@ Mount-common-sockets-as-read-only.patch
 app-Fix-a-couple-memory-leaks.patch
 Add-condition-for-XDG_CURRENT_DESKTOP-checks.patch
 test-override-Skip-tests-that-need-bwrap-if-necessary.patch
+Fix-a-typo-that-broke-installed-tests.patch
 debian/Use-Python-3-for-test-web-server.patch

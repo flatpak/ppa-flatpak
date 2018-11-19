@@ -7,6 +7,7 @@ flatpak (1.1.0-1) UNRELEASED; urgency=medium
       (having systemd or the Journal continues to be optional at runtime)
   * d/patches: Add some cherry-picks from upstream
   * d/patches: test-override: Skip tests that need bwrap if necessary
+  * d/patches: Fix a typo that broke installed-tests
   * d/gbp.conf: Use debian/experimental branch
 
  -- Simon McVittie <smcv@debian.org>  Mon, 19 Nov 2018 14:05:43 +0000
