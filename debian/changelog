@@ -1,12 +1,15 @@
 flatpak (1.1.0-1) UNRELEASED; urgency=medium
 
   * Revert 'd/watch: Only watch for stable-branch versions'
-  * New upstream release
+  * New upstream development release
     - Update ostree dependency version
     - Build-depend on libsystemd, for Journal logging of Flatpak operations
       (having systemd or the Journal continues to be optional at runtime)
+  * d/patches: Add some cherry-picks from upstream
+  * d/patches: test-override: Skip tests that need bwrap if necessary
+  * d/gbp.conf: Use debian/experimental branch
 
- -- Simon McVittie <smcv@debian.org>  Mon, 19 Nov 2018 13:17:17 +0000
+ -- Simon McVittie <smcv@debian.org>  Mon, 19 Nov 2018 14:05:43 +0000
 
 flatpak (1.0.6-1) unstable; urgency=medium
 
