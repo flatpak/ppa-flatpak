@@ -1,1 +1,5 @@
+dir-Emit-better-errors-for-invalid-flatpakrepo-files.patch
+Mount-common-sockets-as-read-only.patch
+app-Fix-a-couple-memory-leaks.patch
+Add-condition-for-XDG_CURRENT_DESKTOP-checks.patch
 debian/Use-Python-3-for-test-web-server.patch
