@@ -5,6 +5,7 @@ flatpak (1.1.0-1) UNRELEASED; urgency=medium
     - Update ostree dependency version
     - Build-depend on libsystemd, for Journal logging of Flatpak operations
       (having systemd or the Journal continues to be optional at runtime)
+    - d/libflatpak0.symbols: Update
   * d/patches: Add some cherry-picks from upstream
   * d/patches: test-override: Skip tests that need bwrap if necessary
   * d/patches: Fix a typo that broke installed-tests
