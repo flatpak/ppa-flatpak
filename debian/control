@@ -36,6 +36,7 @@ Build-Depends:
  libpolkit-gobject-1-dev,
  libseccomp-dev,
  libsoup2.4-dev,
+ libsystemd-dev,
  libxau-dev,
  libxml2-dev (>= 2.4),
  libxml2-utils,
