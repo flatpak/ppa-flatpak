@@ -2,6 +2,27 @@ From: Simon McVittie <smcv@debian.org>
 Date: Mon, 19 Nov 2018 13:43:42 +0000
 Subject: test-override: Skip tests that need bwrap if necessary
 
+This requires some new mechanisms: now we're skipping individual tests,
+not just whole test scripts.
+
+There are two main reasons why autobuilder environments might not be
+able to run these tests successfully, both of which apply in Debian.
+
+Tests that rely on bwrap typically can't pass in builds that take place
+in a chroot, because bwrap's use of pivot_root() assumes that the root
+directory is a mount point, but a chroot will typically have an unpacked
+directory somewhere below the mount point as its root.
+
+Some autobuilder environments are also sufficiently restricted that they
+can't create new user namespaces at all, as a way to harden the
+autobuilder host.
+
+As a result, Debian autobuilders can't run the majority of the Flatpak
+tests. We would like to be able to continue to run the subset that don't
+need bwrap, to have the best test coverage we can. For the rest we have
+to rely on installed-tests (which I've wired up to Debian's autopkgtest)
+rather than using build-time tests.
+
 Signed-off-by: Simon McVittie <smcv@debian.org>
 Forwarded: https://github.com/flatpak/flatpak/pull/2339
 ---
@@ -10,7 +31,7 @@ Forwarded: https://github.com/flatpak/flatpak/pull/2339
  2 files changed, 55 insertions(+), 25 deletions(-)
 
 diff --git a/tests/libtest.sh b/tests/libtest.sh
-index 09387ae..2ccd695 100644
+index 3aa78c2..4a5e699 100644
 --- a/tests/libtest.sh
 +++ b/tests/libtest.sh
 @@ -321,18 +321,38 @@ run_sh () {

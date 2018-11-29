@@ -4,12 +4,13 @@ Subject: Fix a typo that broke installed-tests
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
 Forwarded: https://github.com/flatpak/flatpak/pull/2338
+Applied-upstream: 1.1.1, commit:8a2a32363f77791c9dd9077115c59c333d6d525e
 ---
  tests/libtest.sh | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/tests/libtest.sh b/tests/libtest.sh
-index 2ccd695..4a5e699 100644
+index 09387ae..3aa78c2 100644
 --- a/tests/libtest.sh
 +++ b/tests/libtest.sh
 @@ -209,7 +209,7 @@ make_runtime () {

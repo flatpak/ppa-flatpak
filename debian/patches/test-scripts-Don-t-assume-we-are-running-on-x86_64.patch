@@ -1,0 +1,83 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Thu, 29 Nov 2018 11:21:00 +0000
+Subject: test scripts: Don't assume we are running on x86_64
+
+These tests failed on other architectures.
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=914988
+Forwarded: https://github.com/flatpak/flatpak/pull/2353
+---
+ tests/test-info.sh                        | 10 +++++-----
+ tests/test-run.sh                         |  2 +-
+ tests/test-update-remote-configuration.sh |  2 +-
+ 3 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/tests/test-info.sh b/tests/test-info.sh
+index 81f7a8e..d6ea738 100644
+--- a/tests/test-info.sh
++++ b/tests/test-info.sh
+@@ -13,7 +13,7 @@ COMMIT=`${FLATPAK} ${U} info --show-commit org.test.Hello`
+ 
+ ${FLATPAK} info -rcos  org.test.Hello > info
+ 
+-assert_file_has_content info "^app/org.test.Hello/x86_64/master test-repo ${COMMIT}"
++assert_file_has_content info "^app/org.test.Hello/$(flatpak --default-arch)/master test-repo ${COMMIT}"
+ 
+ echo "ok info -rcos"
+ 
+@@ -25,25 +25,25 @@ echo "ok info --show-permissions"
+ 
+ ${FLATPAK} info --show-location  org.test.Hello > info
+ 
+-assert_file_has_content info "app/org.test.Hello/x86_64/master/${COMMIT}"
++assert_file_has_content info "app/org.test.Hello/$(flatpak --default-arch)/master/${COMMIT}"
+ 
+ echo "ok info --show-location"
+ 
+ ${FLATPAK} info --show-runtime  org.test.Hello > info
+ 
+-assert_file_has_content info "^org.test.Platform/x86_64/master$"
++assert_file_has_content info "^org.test.Platform/$(flatpak --default-arch)/master$"
+ 
+ echo "ok info --show-runtime"
+ 
+ ${FLATPAK} info --show-sdk  org.test.Hello > info
+ 
+-assert_file_has_content info "^org.test.Platform/x86_64/master$"
++assert_file_has_content info "^org.test.Platform/$(flatpak --default-arch)/master$"
+ 
+ echo "ok info --show-sdk"
+ 
+ ${FLATPAK} info --show-extensions org.test.Hello > info
+ 
+-assert_file_has_content info "^Extension: runtime/org.test.Hello.Locale/x86_64/master$"
++assert_file_has_content info "^Extension: runtime/org.test.Hello.Locale/$(flatpak --default-arch)/master$"
+ 
+ echo "ok info --show-extensions"
+ 
+diff --git a/tests/test-run.sh b/tests/test-run.sh
+index 5339b7e..f7f739c 100755
+--- a/tests/test-run.sh
++++ b/tests/test-run.sh
+@@ -404,6 +404,6 @@ update_repo
+ ${FLATPAK} ${U} install -y test-repo org.test.App
+ ${FLATPAK} ${U} info -m org.test.App > out
+ 
+-assert_file_has_content out ^sdk=org.test.Sdk/x86_64/master$
++assert_file_has_content out "^sdk=org.test.Sdk/$(flatpak --default-arch)/master$"
+ 
+ echo "ok --sdk option"
+diff --git a/tests/test-update-remote-configuration.sh b/tests/test-update-remote-configuration.sh
+index be21f56..3ee9e03 100755
+--- a/tests/test-update-remote-configuration.sh
++++ b/tests/test-update-remote-configuration.sh
+@@ -83,7 +83,7 @@ echo "ok 2 update repo config to deploy collection ID"
+ # We have to manually add refs under the old collection ID so the client can pull
+ # using its old collection ID.
+ #UPDATE_REPO_ARGS="--collection-id=net.malicious.NewCollection --deploy-collection-id" update_repo
+-#for ref in app/org.test.App/x86_64/master app/org.test.Hello/x86_64/master appstream/x86_64 ostree-metadata runtime/org.test.Platform/x86_64/master; do
++#for ref in app/org.test.App/$(flatpak --default-arch)/master app/org.test.Hello/$(flatpak --default-arch)/master appstream/$(flatpak --default-arch) ostree-metadata runtime/org.test.Platform/$(flatpak --default-arch)/master; do
+ #  ostree --repo=repos/test refs --collections --create=org.test.Collection:$ref $ref
+ #done
+ ostree --repo=repos/test summary --update --add-metadata="ostree.deploy-collection-id='net.malicious.NewCollection'"
