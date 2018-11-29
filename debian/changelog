@@ -1,3 +1,9 @@
+flatpak (1.1.0-2) experimental; urgency=medium
+
+  * Add proposed patches to make tests pass on x86_64 (Closes: #914988)
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 29 Nov 2018 12:19:56 +0000
+
 flatpak (1.1.0-1) experimental; urgency=medium
 
   * Revert 'd/watch: Only watch for stable-branch versions'
