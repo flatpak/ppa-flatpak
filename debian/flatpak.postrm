@@ -4,7 +4,7 @@ set -e
 
 #DEBHELPER#
 
-if [ "$1" = "purge" ] ; then
+if [ "$1" = "purge" ] && [ -e /var/lib/flatpak ]; then
     rm -fr /var/lib/flatpak/repo
     rm -f /var/lib/flatpak/.changed
     rmdir --ignore-fail-on-non-empty /var/lib/flatpak

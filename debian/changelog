@@ -18,6 +18,7 @@ flatpak (1.1.1-1) UNRELEASED; urgency=medium
     (supported by Debian's dbus-daemon since stretch), not in
     /etc/dbus-1/system.d
     - d/flatpak.maintscript: Remove obsolete conffile if unmodified
+  * d/flatpak.postrm: Only remove /var/lib/flatpak if it exists
 
  -- Simon McVittie <smcv@debian.org>  Tue, 11 Dec 2018 13:38:19 +0000
 
