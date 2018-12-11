@@ -11,6 +11,10 @@ flatpak (1.1.1-1) UNRELEASED; urgency=medium
     - Build-depend on debhelper-compat (= 11) virtual package instead of
       using d/compat
   * Don't start system helper on installation, only on-demand
+  * Install dbus-daemon policy defaults in /usr/share/dbus-1/system.d
+    (supported by Debian's dbus-daemon since stretch), not in
+    /etc/dbus-1/system.d
+    - d/flatpak.maintscript: Remove obsolete conffile if unmodified
 
  -- Simon McVittie <smcv@debian.org>  Tue, 11 Dec 2018 13:38:19 +0000
 
