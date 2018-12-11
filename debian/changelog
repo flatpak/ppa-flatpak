@@ -1,12 +1,14 @@
 flatpak (1.1.1-1) UNRELEASED; urgency=medium
 
   * New upstream release
+  * Fix a typo in previous changelog entry: the patches were to make
+    tests pass on *non*-x86_64 machines
 
  -- Simon McVittie <smcv@debian.org>  Tue, 11 Dec 2018 13:38:19 +0000
 
 flatpak (1.1.0-2) experimental; urgency=medium
 
-  * Add proposed patches to make tests pass on x86_64 (Closes: #914988)
+  * Add proposed patches to make tests pass on non-x86_64 (Closes: #914988)
 
  -- Simon McVittie <smcv@debian.org>  Thu, 29 Nov 2018 12:19:56 +0000
 
