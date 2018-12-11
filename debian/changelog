@@ -7,6 +7,9 @@ flatpak (1.1.1-1) UNRELEASED; urgency=medium
   * Add post-release bug fixes from upstream
   * Fix a typo in previous changelog entry: the patches were to make
     tests pass on *non*-x86_64 machines
+  * Move to debhelper compat level 11
+    - Build-depend on debhelper-compat (= 11) virtual package instead of
+      using d/compat
 
  -- Simon McVittie <smcv@debian.org>  Tue, 11 Dec 2018 13:38:19 +0000
 
