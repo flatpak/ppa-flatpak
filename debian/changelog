@@ -10,6 +10,7 @@ flatpak (1.1.1-1) UNRELEASED; urgency=medium
   * Move to debhelper compat level 11
     - Build-depend on debhelper-compat (= 11) virtual package instead of
       using d/compat
+  * Don't start system helper on installation, only on-demand
 
  -- Simon McVittie <smcv@debian.org>  Tue, 11 Dec 2018 13:38:19 +0000
 
