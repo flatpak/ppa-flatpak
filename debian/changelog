@@ -4,6 +4,7 @@ flatpak (1.1.1-1) UNRELEASED; urgency=medium
     - Drop most patches, applied upstream
     - d/control: Build-depend on libpolkit-agent-1-dev
     - d/copyright: Update
+  * Add post-release bug fixes from upstream
   * Fix a typo in previous changelog entry: the patches were to make
     tests pass on *non*-x86_64 machines
 

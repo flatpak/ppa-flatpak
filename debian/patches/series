@@ -1,1 +1,3 @@
+system-helper-Fix-an-outdated-comment.patch
+app-Avoid-a-critical-libpolkit-error.patch
 debian/Use-Python-3-for-test-web-server.patch

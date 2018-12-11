@@ -1,0 +1,22 @@
+From: Matthew Leeds <matthew.leeds@endlessm.com>
+Date: Mon, 10 Dec 2018 22:04:37 -0800
+Subject: system-helper: Fix an outdated comment
+
+Origin: upstream, 1.1.2, commit:6e42104020b0e977a5f07f9619252b65c4cce7ad
+---
+ system-helper/flatpak-system-helper.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/system-helper/flatpak-system-helper.c b/system-helper/flatpak-system-helper.c
+index 7f9d62b..ccf43b1 100644
+--- a/system-helper/flatpak-system-helper.c
++++ b/system-helper/flatpak-system-helper.c
+@@ -1298,7 +1298,7 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
+       g_variant_get_child (parameters, 3, "&s", &origin);
+       g_variant_get_child (parameters, 5, "&s", &installation);
+ 
+-      /* For metadata updates, redirect to the modify-repo action since they
++      /* For metadata updates, redirect to the metadata-update action which
+        * should basically always be allowed */
+       if (ref != NULL && g_strcmp0 (ref, OSTREE_REPO_METADATA_REF) == 0)
+         {
