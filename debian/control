@@ -33,6 +33,7 @@ Build-Depends:
  libgpgme-dev (>= 1.1.8),
  libjson-glib-dev,
  libostree-dev (>= 2018.9),
+ libpolkit-agent-1-dev,
  libpolkit-gobject-1-dev,
  libseccomp-dev,
  libsoup2.4-dev,
