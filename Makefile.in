@@ -338,6 +338,47 @@ am__EXEEXT_6 = test-libglnx-xattrs$(EXEEXT) test-libglnx-fdio$(EXEEXT) \
 PROGRAMS = $(bin_PROGRAMS) $(bwrap_PROGRAMS) \
 	$(installed_test_PROGRAMS) $(libexec_PROGRAMS) \
 	$(noinst_PROGRAMS)
+am__flatpak_SOURCES_DIST = app/flatpak-main.c app/flatpak-builtins.h \
+	app/flatpak-builtins-utils.h app/flatpak-builtins-utils.c \
+	app/flatpak-builtins-remote-add.c \
+	app/flatpak-builtins-remote-modify.c \
+	app/flatpak-builtins-remote-delete.c \
+	app/flatpak-builtins-remote-list.c \
+	app/flatpak-builtins-remote-ls.c \
+	app/flatpak-builtins-remote-info.c \
+	app/flatpak-builtins-install.c app/flatpak-builtins-override.c \
+	app/flatpak-builtins-make-current.c \
+	app/flatpak-builtins-update.c app/flatpak-builtins-uninstall.c \
+	app/flatpak-builtins-list.c app/flatpak-builtins-info.c \
+	app/flatpak-builtins-config.c app/flatpak-builtins-run.c \
+	app/flatpak-builtins-enter.c app/flatpak-builtins-ps.c \
+	app/flatpak-builtins-build-init.c app/flatpak-builtins-build.c \
+	app/flatpak-builtins-build-finish.c \
+	app/flatpak-builtins-build-export.c \
+	app/flatpak-builtins-build-bundle.c \
+	app/flatpak-builtins-build-import-bundle.c \
+	app/flatpak-builtins-build-commit-from.c \
+	app/flatpak-builtins-build-sign.c \
+	app/flatpak-builtins-build-update-repo.c \
+	app/flatpak-builtins-repo.c \
+	app/flatpak-builtins-document-export.c \
+	app/flatpak-builtins-document-unexport.c \
+	app/flatpak-builtins-document-info.c \
+	app/flatpak-builtins-document-list.c \
+	app/flatpak-builtins-permission-remove.c \
+	app/flatpak-builtins-permission-list.c \
+	app/flatpak-builtins-permission-show.c \
+	app/flatpak-builtins-permission-reset.c \
+	app/flatpak-builtins-search.c app/flatpak-builtins-repair.c \
+	app/flatpak-builtins-create-usb.c app/flatpak-builtins-kill.c \
+	app/flatpak-builtins-history.c app/flatpak-table-printer.c \
+	app/flatpak-table-printer.h app/flatpak-complete.c \
+	app/flatpak-complete.h app/flatpak-cli-transaction.c \
+	app/flatpak-cli-transaction.h app/parse-datetime.h \
+	app/flatpak-polkit-agent-text-listener.h \
+	app/flatpak-polkit-agent-text-listener.c
+@BUILD_SYSTEM_HELPER_TRUE@am__objects_5 = app/flatpak-flatpak-polkit-agent-text-listener.$(OBJEXT) \
+@BUILD_SYSTEM_HELPER_TRUE@	$(am__objects_1)
 am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-utils.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-remote-add.$(OBJEXT) \
@@ -382,16 +423,17 @@ am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-history.$(OBJEXT) \
 	app/flatpak-flatpak-table-printer.$(OBJEXT) \
 	app/flatpak-flatpak-complete.$(OBJEXT) \
-	app/flatpak-flatpak-cli-transaction.$(OBJEXT) $(am__objects_1)
-am__objects_5 =  \
+	app/flatpak-flatpak-cli-transaction.$(OBJEXT) $(am__objects_5) \
+	$(am__objects_1)
+am__objects_6 =  \
 	app/flatpak-flatpak-permission-dbus-generated.$(OBJEXT)
-nodist_flatpak_OBJECTS = $(am__objects_5) \
+nodist_flatpak_OBJECTS = $(am__objects_6) \
 	app/flatpak-parse-datetime.$(OBJEXT) $(am__objects_1)
 flatpak_OBJECTS = $(am_flatpak_OBJECTS) $(nodist_flatpak_OBJECTS)
 flatpak_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) libglnx.la \
-	libflatpak-common.la
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) libglnx.la libflatpak-common.la
 flatpak_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(flatpak_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
@@ -399,12 +441,12 @@ am__flatpak_bwrap_SOURCES_DIST = bubblewrap/bubblewrap.c \
 	bubblewrap/bind-mount.h bubblewrap/bind-mount.c \
 	bubblewrap/network.h bubblewrap/network.c bubblewrap/utils.h \
 	bubblewrap/utils.c
-@WITH_SYSTEM_BWRAP_FALSE@am__objects_6 = bubblewrap/flatpak_bwrap-bubblewrap.$(OBJEXT) \
+@WITH_SYSTEM_BWRAP_FALSE@am__objects_7 = bubblewrap/flatpak_bwrap-bubblewrap.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-bind-mount.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-network.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-utils.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	$(am__objects_1)
-@WITH_SYSTEM_BWRAP_FALSE@am_flatpak_bwrap_OBJECTS = $(am__objects_6)
+@WITH_SYSTEM_BWRAP_FALSE@am_flatpak_bwrap_OBJECTS = $(am__objects_7)
 flatpak_bwrap_OBJECTS = $(am_flatpak_bwrap_OBJECTS)
 @WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_DEPENDENCIES =  \
 @WITH_SYSTEM_BWRAP_FALSE@	$(am__DEPENDENCIES_1) \
@@ -575,7 +617,7 @@ SOURCES = $(libflatpak_common_la_SOURCES) \
 	tests/httpcache.c
 DIST_SOURCES = $(libflatpak_common_la_SOURCES) \
 	$(libflatpak_la_SOURCES) $(libglnx_la_SOURCES) \
-	$(flatpak_SOURCES) $(am__flatpak_bwrap_SOURCES_DIST) \
+	$(am__flatpak_SOURCES_DIST) $(am__flatpak_bwrap_SOURCES_DIST) \
 	$(am__flatpak_dbus_proxy_SOURCES_DIST) \
 	$(flatpak_portal_SOURCES) $(flatpak_session_helper_SOURCES) \
 	$(am__flatpak_system_helper_SOURCES_DIST) \
@@ -1465,6 +1507,11 @@ introspection_DATA = \
 	$(NULL)
 
 flatpak_dbus_built_sources = app/flatpak-permission-dbus-generated.c app/flatpak-permission-dbus-generated.h
+@BUILD_SYSTEM_HELPER_TRUE@polkit_sources = \
+@BUILD_SYSTEM_HELPER_TRUE@	app/flatpak-polkit-agent-text-listener.h \
+@BUILD_SYSTEM_HELPER_TRUE@	app/flatpak-polkit-agent-text-listener.c \
+@BUILD_SYSTEM_HELPER_TRUE@	$(NULL)
+
 flatpak_SOURCES = \
 	app/flatpak-main.c \
 	app/flatpak-builtins.h \
@@ -1517,6 +1564,7 @@ flatpak_SOURCES = \
 	app/flatpak-cli-transaction.c \
 	app/flatpak-cli-transaction.h \
 	app/parse-datetime.h \
+	$(polkit_sources) \
 	$(NULL)
 
 nodist_flatpak_SOURCES = \
@@ -1524,10 +1572,10 @@ nodist_flatpak_SOURCES = \
 	app/parse-datetime.c \
 	$(NULL)
 
-flatpak_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) $(SYSTEMD_LIBS) \
+flatpak_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) $(SYSTEMD_LIBS) $(POLKIT_LIBS) \
 	libglnx.la libflatpak-common.la
 
-flatpak_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) $(SYSTEMD_CFLAGS) \
+flatpak_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) $(SYSTEMD_CFLAGS) $(POLKIT_CFLAGS) \
 	-DFLATPAK_COMPILATION \
         -I$(srcdir)/app \
         -I$(builddir)/app \
@@ -2276,6 +2324,8 @@ app/flatpak-flatpak-complete.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-cli-transaction.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-polkit-agent-text-listener.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-permission-dbus-generated.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-parse-datetime.$(OBJEXT): app/$(am__dirstamp) \
@@ -2599,6 +2649,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-complete.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-polkit-agent-text-listener.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-table-printer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-parse-datetime.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@bubblewrap/$(DEPDIR)/flatpak_bwrap-bind-mount.Po@am__quote@
@@ -3563,6 +3614,20 @@ app/flatpak-flatpak-cli-transaction.obj: app/flatpak-cli-transaction.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-cli-transaction.c' object='app/flatpak-flatpak-cli-transaction.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-cli-transaction.obj `if test -f 'app/flatpak-cli-transaction.c'; then $(CYGPATH_W) 'app/flatpak-cli-transaction.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-cli-transaction.c'; fi`
+
+app/flatpak-flatpak-polkit-agent-text-listener.o: app/flatpak-polkit-agent-text-listener.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-polkit-agent-text-listener.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-polkit-agent-text-listener.Tpo -c -o app/flatpak-flatpak-polkit-agent-text-listener.o `test -f 'app/flatpak-polkit-agent-text-listener.c' || echo '$(srcdir)/'`app/flatpak-polkit-agent-text-listener.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-polkit-agent-text-listener.Tpo app/$(DEPDIR)/flatpak-flatpak-polkit-agent-text-listener.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-polkit-agent-text-listener.c' object='app/flatpak-flatpak-polkit-agent-text-listener.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-polkit-agent-text-listener.o `test -f 'app/flatpak-polkit-agent-text-listener.c' || echo '$(srcdir)/'`app/flatpak-polkit-agent-text-listener.c
+
+app/flatpak-flatpak-polkit-agent-text-listener.obj: app/flatpak-polkit-agent-text-listener.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-polkit-agent-text-listener.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-polkit-agent-text-listener.Tpo -c -o app/flatpak-flatpak-polkit-agent-text-listener.obj `if test -f 'app/flatpak-polkit-agent-text-listener.c'; then $(CYGPATH_W) 'app/flatpak-polkit-agent-text-listener.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-polkit-agent-text-listener.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-polkit-agent-text-listener.Tpo app/$(DEPDIR)/flatpak-flatpak-polkit-agent-text-listener.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-polkit-agent-text-listener.c' object='app/flatpak-flatpak-polkit-agent-text-listener.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-polkit-agent-text-listener.obj `if test -f 'app/flatpak-polkit-agent-text-listener.c'; then $(CYGPATH_W) 'app/flatpak-polkit-agent-text-listener.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-polkit-agent-text-listener.c'; fi`
 
 app/flatpak-flatpak-permission-dbus-generated.o: app/flatpak-permission-dbus-generated.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-permission-dbus-generated.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-permission-dbus-generated.Tpo -c -o app/flatpak-flatpak-permission-dbus-generated.o `test -f 'app/flatpak-permission-dbus-generated.c' || echo '$(srcdir)/'`app/flatpak-permission-dbus-generated.c

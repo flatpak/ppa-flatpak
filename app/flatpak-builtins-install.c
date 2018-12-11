@@ -312,6 +312,7 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
       if (!auto_remote)
         {
           remote = g_strdup (argv[1]);
+          g_clear_object (&dir);
           dir = g_object_ref (dir_with_remote);
         }
       else
@@ -347,7 +348,8 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
                   g_auto(GStrv) refs = NULL;
                   g_autoptr(GError) local_error = NULL;
 
-                  if (flatpak_dir_get_remote_disabled (this_dir, this_remote))
+                  if (flatpak_dir_get_remote_disabled (this_dir, this_remote) ||
+                      flatpak_dir_get_remote_noenumerate (this_dir, this_remote))
                     continue;
 
                   this_default_branch = flatpak_dir_get_remote_default_branch (this_dir, this_remote);
@@ -389,6 +391,7 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
               return FALSE;
 
             remote = g_strdup (chosen_pair->remote_name);
+            g_clear_object (&dir);
             dir = g_object_ref (chosen_pair->dir);
         }
     }
@@ -405,7 +408,7 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
     }
 
   /* Backwards compat for old "REMOTE NAME [BRANCH]" argument version */
-  if (argc == 4 && looks_like_branch (argv[3]))
+  if (argc == 4 && flatpak_is_valid_name (argv[2], NULL) && looks_like_branch (argv[3]))
     {
       target_branch = g_strdup (argv[3]);
       n_prefs = 1;

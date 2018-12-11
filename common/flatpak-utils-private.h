@@ -39,9 +39,11 @@
 
 typedef enum {
   FLATPAK_HOST_COMMAND_FLAGS_CLEAR_ENV = 1 << 0,
+  FLATPAK_HOST_COMMAND_FLAGS_WATCH_BUS = 1 << 1,
 } FlatpakHostCommandFlags;
 
-
+#define FLATPAK_ANSI_ALT_SCREEN_ON "\x1B[?1049h"
+#define FLATPAK_ANSI_ALT_SCREEN_OFF "\x1B[?1049l"
 #define FLATPAK_ANSI_BOLD_ON "\x1b[1m"
 #define FLATPAK_ANSI_BOLD_OFF "\x1b[22m"
 #define FLATPAK_ANSI_RED "\x1b[31m"
@@ -477,6 +479,8 @@ gboolean flatpak_rm_rf (GFile        *dir,
 
 gboolean flatpak_canonicalize_permissions (int           parent_dfd,
                                            const char   *rel_path,
+                                           int           uid,
+                                           int           gid,
                                            GError      **error);
 
 char * flatpak_readlink (const char *path,

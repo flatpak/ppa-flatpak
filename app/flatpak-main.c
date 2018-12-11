@@ -30,6 +30,11 @@
 #include <gio/gio.h>
 #include "libglnx/libglnx.h"
 
+#ifdef USE_SYSTEM_HELPER
+#include <polkit/polkit.h>
+#include "flatpak-polkit-agent-text-listener.h"
+#endif
+
 #include "flatpak-builtins.h"
 #include "flatpak-builtins-utils.h"
 #include "flatpak-utils-private.h"
@@ -45,6 +50,10 @@ static gboolean opt_system;
 static char **opt_installations;
 
 static gboolean is_in_complete;
+
+/* Work with polkit before and after autoptr support was added */
+typedef PolkitSubject             AutoPolkitSubject;
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (AutoPolkitSubject, g_object_unref)
 
 typedef struct
 {
@@ -88,15 +97,17 @@ static FlatpakCommand commands[] = {
 
   /* translators: please keep the leading newline and space */
   { N_("\n Manage file access") },
+  { "documents", N_("List exported files"), flatpak_builtin_document_list, flatpak_complete_document_list },
   { "document-export", N_("Grant an application access to a specific file"), flatpak_builtin_document_export, flatpak_complete_document_export },
   { "document-unexport", N_("Revoke access to a specific file"), flatpak_builtin_document_unexport, flatpak_complete_document_unexport },
   { "document-info", N_("Show information about a specific file"), flatpak_builtin_document_info, flatpak_complete_document_info },
-  { "document-list", N_("List exported files"), flatpak_builtin_document_list, flatpak_complete_document_list },
+  { "document-list", NULL, flatpak_builtin_document_list, flatpak_complete_document_list, TRUE },
 
   /* translators: please keep the leading newline and space */
   { N_("\n Manage dynamic permissions") },
+  { "permissions", N_("List permissions"), flatpak_builtin_permission_list, flatpak_complete_permission_list },
   { "permission-remove", N_("Remove item from permission store"), flatpak_builtin_permission_remove, flatpak_complete_permission_remove },
-  { "permission-list", N_("List permissions"), flatpak_builtin_permission_list, flatpak_complete_permission_list },
+  { "permission-list", NULL, flatpak_builtin_permission_list, flatpak_complete_permission_list, TRUE },
   { "permission-show", N_("Show app permissions"), flatpak_builtin_permission_show, flatpak_complete_permission_show },
   { "permission-reset", N_("Reset app permissions"), flatpak_builtin_permission_reset, flatpak_complete_permission_reset },
 
@@ -337,6 +348,8 @@ flatpak_option_context_parse (GOptionContext     *context,
               g_autoptr(GPtrArray) system_dirs = NULL;
 
               g_ptr_array_set_size (dirs, 0);
+              /* The first dir should be the default */
+              g_ptr_array_add (dirs, flatpak_dir_get_system_default ());
               g_ptr_array_add (dirs, flatpak_dir_get_user ());
 
               system_dirs = flatpak_dir_get_system_list (cancellable, error);
@@ -346,7 +359,9 @@ flatpak_option_context_parse (GOptionContext     *context,
               for (i = 0; i < system_dirs->len; i++)
                 {
                   FlatpakDir *dir = g_ptr_array_index (system_dirs, i);
-                  g_ptr_array_add (dirs, g_object_ref (dir));
+                  const char *id = flatpak_dir_get_id (dir);
+                  if (g_strcmp0 (id, "default") != 0)
+                    g_ptr_array_add (dirs, g_object_ref (dir));
                 }
             }
         }
@@ -599,6 +614,10 @@ main (int    argc,
   GError *error = NULL;
   g_autofree const char *old_env = NULL;
   int ret;
+#ifdef USE_SYSTEM_HELPER
+  PolkitAgentListener *listener = NULL;
+  gpointer agent = NULL;
+#endif
 
   setlocale (LC_ALL, "");
   bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
@@ -624,7 +643,49 @@ main (int    argc,
   if (argc >= 4 && strcmp (argv[1], "complete") == 0)
     return complete (argc, argv);
 
+#ifdef USE_SYSTEM_HELPER
+  /* Install a polkit agent as fallback, in case we're running on a console */
+  listener = flatpak_polkit_agent_text_listener_new (NULL, &error);
+  if (listener == NULL)
+    {
+      g_debug ("Failed to create polkit agent listener: %s", error->message);
+      g_clear_error (&error);
+    }
+  else
+    {
+      g_autoptr(AutoPolkitSubject) subject = NULL;
+      GVariantBuilder opt_builder;
+      g_autoptr(GVariant) options = NULL;
+
+      subject = polkit_unix_process_new_for_owner (getpid (), 0, -1);
+
+      g_variant_builder_init (&opt_builder, G_VARIANT_TYPE_VARDICT);
+      if (g_strcmp0 (g_getenv ("FLATPAK_FORCE_TEXT_AUTH"), "1") != 0)
+        g_variant_builder_add (&opt_builder, "{sv}", "fallback", g_variant_new_boolean (TRUE));
+      options = g_variant_ref_sink (g_variant_builder_end (&opt_builder));
+
+      agent = polkit_agent_listener_register_with_options (listener,
+                                                           POLKIT_AGENT_REGISTER_FLAGS_RUN_IN_THREAD,
+                                                           subject,
+                                                           NULL,
+                                                           options,
+                                                           NULL,
+                                                           &error);
+      if (agent == NULL)
+        {
+          g_debug ("Failed to register polkit agent listener: %s", error->message);
+          g_clear_error (&error);
+        }
+      g_object_unref (listener);
+    }
+#endif
+
   ret = flatpak_run (argc, argv, &error);
+
+#ifdef USE_SYSTEM_HELPER
+  if (agent)
+    polkit_agent_listener_unregister (agent);
+#endif
 
   if (error != NULL)
     {
