@@ -4,6 +4,7 @@ flatpak (1.1.1-1) UNRELEASED; urgency=medium
     - Drop most patches, applied upstream
     - d/control: Build-depend on libpolkit-agent-1-dev
     - d/copyright: Update
+    - d/libflatpak0.symbols: Update
   * Add post-release bug fixes from upstream
   * d/p/session-helper-Don-t-crash-on-NameOwnerChanged.patch:
     Add proposed patch to fix a session helper crash

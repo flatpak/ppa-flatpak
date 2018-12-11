@@ -28,6 +28,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_get_installed_ref@Base 0.5.2
  flatpak_installation_get_is_user@Base 0.5.2
  flatpak_installation_get_min_free_space_bytes@Base 1.1.0
+ flatpak_installation_get_no_interaction@Base 1.1.1
  flatpak_installation_get_path@Base 0.5.2
  flatpak_installation_get_priority@Base 0.8.0
  flatpak_installation_get_remote_by_name@Base 0.5.2
@@ -58,6 +59,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_remove_remote@Base 0.5.2+git20160516
  flatpak_installation_run_triggers@Base 1.0.3
  flatpak_installation_set_config_sync@Base 0.10.0
+ flatpak_installation_set_no_interaction@Base 1.1.1
  flatpak_installation_uninstall@Base 0.5.2
  flatpak_installation_uninstall_full@Base 0.11.8
  flatpak_installation_update@Base 0.5.2
@@ -113,6 +115,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_remote_get_default_branch@Base 0.6.12
  flatpak_remote_get_disabled@Base 0.5.2+git20160516
  flatpak_remote_get_gpg_verify@Base 0.5.2
+ flatpak_remote_get_main_ref@Base 1.1.1
  flatpak_remote_get_name@Base 0.5.2
  flatpak_remote_get_nodeps@Base 0.6.13
  flatpak_remote_get_noenumerate@Base 0.5.2
@@ -134,6 +137,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_remote_set_disabled@Base 0.5.2+git20160516
  flatpak_remote_set_gpg_key@Base 0.5.2+git20160516
  flatpak_remote_set_gpg_verify@Base 0.5.2+git20160516
+ flatpak_remote_set_main_ref@Base 1.1.1
  flatpak_remote_set_nodeps@Base 0.6.13
  flatpak_remote_set_noenumerate@Base 0.5.2+git20160516
  flatpak_remote_set_prio@Base 0.5.2+git20160516
