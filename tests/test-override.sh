@@ -79,7 +79,11 @@ ${FLATPAK} override --user --nofilesystem=xdg-documents org.test.Hello
 ${FLATPAK} override --user --show org.test.Hello > override
 
 assert_file_has_content override "^\[Context\]$"
-assert_file_has_content override "^filesystems=/media;home;!xdg-documents;xdg-desktop/foo:create;xdg-config:ro;$"
+assert_file_has_content override "^filesystems=.*/media;.*$"
+assert_file_has_content override "^filesystems=.*home;.*$"
+assert_file_has_content override "^filesystems=.*xdg-documents;.*$"
+assert_file_has_content override "^filesystems=.*xdg-desktop/foo:create;.*$"
+assert_file_has_content override "^filesystems=.*xdg-config:ro;.*$"
 
 echo "ok override --filesystem"
 
@@ -109,7 +113,9 @@ echo "ok override system bus names"
 
 reset_overrides
 
-if [ -S "${XDG_RUNTIME_DIR}/wayland-0" ]; then
+if skip_one_without_bwrap "sandbox wayland socket"; then
+  :
+elif [ -S "${XDG_RUNTIME_DIR}/wayland-0" ]; then
   ${FLATPAK} override --user --socket=wayland org.test.Hello
   ${FLATPAK} run --command=ls org.test.Hello -- /run/user/1000 > out
   assert_file_has_content out "wayland-0"
@@ -125,7 +131,9 @@ fi
 
 reset_overrides
 
-if [ -d "/dev/dri" ]; then
+if skip_one_without_bwrap "sandbox dri device"; then
+  :
+elif [ -d "/dev/dri" ]; then
   ${FLATPAK} override --user --device=dri org.test.Hello
   ${FLATPAK} run --command=ls org.test.Hello -- /dev > out
   assert_file_has_content out "dri"
@@ -141,35 +149,41 @@ fi
 
 reset_overrides
 
-${FLATPAK} override --user --env=FOO=BAR org.test.Hello
+if ! skip_one_without_bwrap "sandbox dri device"; then
+  ${FLATPAK} override --user --env=FOO=BAR org.test.Hello
 
-${FLATPAK} run --command=sh org.test.Hello -c 'echo $FOO' > out
-assert_file_has_content out "BAR"
-FOO=bar ${FLATPAK} run --command=sh org.test.Hello -c 'echo $FOO' > out
-assert_file_has_content out "BAR"
+  ${FLATPAK} run --command=sh org.test.Hello -c 'echo $FOO' > out
+  assert_file_has_content out "BAR"
+  FOO=bar ${FLATPAK} run --command=sh org.test.Hello -c 'echo $FOO' > out
+  assert_file_has_content out "BAR"
 
-echo "ok sandbox env"
-
-reset_overrides
-
-echo "hello" > $HOME/example
-
-${FLATPAK} override --user --filesystem=home:ro org.test.Hello
-
-${FLATPAK} run --command=ls org.test.Hello $HOME > out
-assert_file_has_content out example
-
-${FLATPAK} run --command=sh org.test.Hello -c "echo goodbye > $HOME/example" || true
-assert_file_has_content $HOME/example hello
-
-rm $HOME/example
-
-echo "ok sandbox filesystem"
+  echo "ok sandbox env"
+fi
 
 reset_overrides
 
-${FLATPAK} override --user --persist=example org.test.Hello
-${FLATPAK} run --command=sh org.test.Hello -c "echo goodbye > $HOME/example/bye"
-assert_file_has_content $HOME/.var/app/org.test.Hello/example/bye goodbye
+if ! skip_one_without_bwrap "sandbox filesystem"; then
+  echo "hello" > $HOME/example
 
-echo "ok persist"
+  ${FLATPAK} override --user --filesystem=home:ro org.test.Hello
+
+  ${FLATPAK} run --command=ls org.test.Hello $HOME > out
+  assert_file_has_content out example
+
+  ${FLATPAK} run --command=sh org.test.Hello -c "echo goodbye > $HOME/example" || true
+  assert_file_has_content $HOME/example hello
+
+  rm $HOME/example
+
+  echo "ok sandbox filesystem"
+fi
+
+reset_overrides
+
+if ! skip_one_without_bwrap "persist"; then
+  ${FLATPAK} override --user --persist=example org.test.Hello
+  ${FLATPAK} run --command=sh org.test.Hello -c "echo goodbye > $HOME/example/bye"
+  assert_file_has_content $HOME/.var/app/org.test.Hello/example/bye goodbye
+
+  echo "ok persist"
+fi

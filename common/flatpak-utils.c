@@ -592,6 +592,9 @@ flatpak_get_gtk_theme (void)
 gboolean
 flatpak_fancy_output (void)
 {
+  if (g_strcmp0 (g_getenv ("FLATPAK_FANCY_OUTPUT"), "0") == 0)
+    return FALSE;
+
   return isatty (STDOUT_FILENO);
 }
 
@@ -1990,6 +1993,8 @@ static gboolean
 _flatpak_canonicalize_permissions (int           parent_dfd,
                                    const char   *rel_path,
                                    gboolean      toplevel,
+                                   int           uid,
+                                   int           gid,
                                    GError      **error)
 {
   struct stat stbuf;
@@ -2003,6 +2008,22 @@ _flatpak_canonicalize_permissions (int           parent_dfd,
     {
       glnx_set_error_from_errno (error);
       return FALSE;
+    }
+
+  if ((uid != -1 && uid != stbuf.st_uid) || (gid != -1 && gid != stbuf.st_gid))
+    {
+      if (TEMP_FAILURE_RETRY (fchownat (parent_dfd, rel_path, uid, gid, AT_SYMLINK_NOFOLLOW)) != 0)
+        {
+          glnx_set_error_from_errno (error);
+          return FALSE;
+        }
+
+      /* Re-read st_mode for new owner */
+      if (TEMP_FAILURE_RETRY (fstatat (parent_dfd, rel_path, &stbuf, AT_SYMLINK_NOFOLLOW)) != 0)
+        {
+          glnx_set_error_from_errno (error);
+          return FALSE;
+        }
     }
 
   if (S_ISDIR (stbuf.st_mode))
@@ -2028,7 +2049,7 @@ _flatpak_canonicalize_permissions (int           parent_dfd,
               if (!glnx_dirfd_iterator_next_dent (&dfd_iter, &dent, NULL, NULL) || dent == NULL)
                 break;
 
-              if (!_flatpak_canonicalize_permissions (dfd_iter.fd, dent->d_name, FALSE, error))
+              if (!_flatpak_canonicalize_permissions (dfd_iter.fd, dent->d_name, FALSE, uid, gid, error))
                 {
                   error = NULL;
                   res = FALSE;
@@ -2083,9 +2104,11 @@ _flatpak_canonicalize_permissions (int           parent_dfd,
 gboolean
 flatpak_canonicalize_permissions (int           parent_dfd,
                                   const char   *rel_path,
+                                  int           uid,
+                                  int           gid,
                                   GError      **error)
 {
-  return _flatpak_canonicalize_permissions (parent_dfd, rel_path, TRUE, error);
+  return _flatpak_canonicalize_permissions (parent_dfd, rel_path, TRUE, uid, gid, error);
 }
 
 /* Make a directory, and its parent. Don't error if it already exists.
@@ -4017,6 +4040,8 @@ flatpak_extension_matches_reason (const char *extension_id,
                                   gboolean    default_value)
 {
   const char *extension_basename;
+  g_auto(GStrv) reason_list = NULL;
+  size_t i;
 
   if (reason == NULL || *reason == 0)
     return default_value;
@@ -4026,29 +4051,54 @@ flatpak_extension_matches_reason (const char *extension_id,
     return FALSE;
   extension_basename += 1;
 
-  if (strcmp (reason, "active-gl-driver") == 0)
-    {
-      /* handled below */
-      const char **gl_drivers = flatpak_get_gl_drivers ();
-      int i;
+  reason_list = g_strsplit (reason, ";", -1);
 
-      for (i = 0; gl_drivers[i] != NULL; i++)
+  for (i = 0; reason_list[i]; ++i)
+    {
+      const char *reason = reason_list[i];
+
+      if (strcmp (reason, "active-gl-driver") == 0)
         {
-          if (strcmp (gl_drivers[i], extension_basename) == 0)
+          /* handled below */
+          const char **gl_drivers = flatpak_get_gl_drivers ();
+          size_t j;
+
+          for (j = 0; gl_drivers[j]; j++)
+            {
+              if (strcmp (gl_drivers[j], extension_basename) == 0)
+                return TRUE;
+            }
+        }
+      else if (strcmp (reason, "active-gtk-theme") == 0)
+        {
+          const char *gtk_theme = flatpak_get_gtk_theme ();
+          if (strcmp (gtk_theme, extension_basename) == 0)
             return TRUE;
         }
+      else if (strcmp (reason, "have-intel-gpu") == 0)
+        {
+          /* Used for Intel VAAPI driver extension */
+          if (flatpak_get_have_intel_gpu ())
+            return TRUE;
+        }
+      else if (g_str_has_prefix (reason, "on-xdg-desktop-"))
+        {
+          const char *desktop_name = reason + strlen ("on-xdg-desktop-");
+          const char *current_desktop_var = g_getenv ("XDG_CURRENT_DESKTOP");
+          g_auto(GStrv) current_desktop_names = NULL;
+          size_t j;
 
-      return FALSE;
-    }
-  else if (strcmp (reason, "active-gtk-theme") == 0)
-    {
-      const char *gtk_theme = flatpak_get_gtk_theme ();
-      return strcmp (gtk_theme, extension_basename) == 0;
-    }
-  else if (strcmp (reason, "have-intel-gpu") == 0)
-    {
-      /* Used for Intel VAAPI driver extension */
-      return flatpak_get_have_intel_gpu ();
+          if (!current_desktop_var)
+            continue;
+
+          current_desktop_names = g_strsplit (current_desktop_var, ":", -1);
+
+          for (j = 0; current_desktop_names[j]; ++j)
+            {
+              if (g_ascii_strcasecmp (desktop_name, current_desktop_names[j]) == 0)
+                return TRUE;
+            }
+        }
     }
 
   return FALSE;
@@ -5367,9 +5417,9 @@ flatpak_get_current_locale_langs (void)
 
   for (i = 0; locales[i] != NULL; i++)
     {
-      char *lang = flatpak_get_lang_from_locale (locales[i]);
+      g_autofree char *lang = flatpak_get_lang_from_locale (locales[i]);
       if (lang != NULL && !flatpak_g_ptr_array_contains_string (langs, lang))
-        g_ptr_array_add (langs, lang);
+        g_ptr_array_add (langs, g_steal_pointer (&lang));
     }
 
   g_ptr_array_sort (langs, flatpak_strcmp0_ptr);
