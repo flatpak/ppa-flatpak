@@ -1,10 +1,1 @@
-dir-Emit-better-errors-for-invalid-flatpakrepo-files.patch
-Mount-common-sockets-as-read-only.patch
-app-Fix-a-couple-memory-leaks.patch
-Add-condition-for-XDG_CURRENT_DESKTOP-checks.patch
-Fix-a-typo-that-broke-installed-tests.patch
-test-override-Skip-tests-that-need-bwrap-if-necessary.patch
-testlibrary-Use-an-unusual-architecture-to-test-ref-synta.patch
-test-scripts-Don-t-assume-we-are-running-on-x86_64.patch
-testlibrary-Don-t-assume-native-architecture-is-x86_64.patch
 debian/Use-Python-3-for-test-web-server.patch

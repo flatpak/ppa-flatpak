@@ -1,6 +1,7 @@
 flatpak (1.1.1-1) UNRELEASED; urgency=medium
 
   * New upstream release
+    - Drop most patches, applied upstream
   * Fix a typo in previous changelog entry: the patches were to make
     tests pass on *non*-x86_64 machines
 
