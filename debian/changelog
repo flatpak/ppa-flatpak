@@ -1,4 +1,4 @@
-flatpak (1.1.1-1) UNRELEASED; urgency=medium
+flatpak (1.1.1-1) experimental; urgency=medium
 
   * New upstream release
     - Drop most patches, applied upstream
@@ -20,7 +20,7 @@ flatpak (1.1.1-1) UNRELEASED; urgency=medium
     - d/flatpak.maintscript: Remove obsolete conffile if unmodified
   * d/flatpak.postrm: Only remove /var/lib/flatpak if it exists
 
- -- Simon McVittie <smcv@debian.org>  Tue, 11 Dec 2018 13:38:19 +0000
+ -- Simon McVittie <smcv@debian.org>  Wed, 12 Dec 2018 18:15:08 +0000
 
 flatpak (1.1.0-2) experimental; urgency=medium
 
