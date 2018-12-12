@@ -6,8 +6,6 @@ flatpak (1.1.1-1) UNRELEASED; urgency=medium
     - d/copyright: Update
     - d/libflatpak0.symbols: Update
   * Add post-release bug fixes from upstream
-  * d/p/session-helper-Don-t-crash-on-NameOwnerChanged.patch:
-    Add proposed patch to fix a session helper crash
   * Fix a typo in previous changelog entry: the patches were to make
     tests pass on *non*-x86_64 machines
   * Move to debhelper compat level 11
