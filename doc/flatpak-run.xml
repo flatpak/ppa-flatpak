@@ -90,6 +90,28 @@
             <member>PERL5LIB</member>
             <member>XCURSOR_PATH</member>
         </simplelist>
+        <para>
+            Flatpak also overrides the XDG environment variables to point sandboxed applications
+            at their writable filesystem locations below <filename>~/.var/app/$APPID/</filename>:
+        </para>
+        <simplelist>
+            <member>XDG_DATA_HOME</member>
+            <member>XDG_CONFIG_HOME</member>
+            <member>XDG_CACHE_HOME</member>
+        </simplelist>
+        <para>
+            The host values of these variables are made available inside the sandbox via these
+            HOST_-prefixed variables:
+        </para>
+        <simplelist>
+            <member>HOST_XDG_DATA_HOME</member>
+            <member>HOST_XDG_CONFIG_HOME</member>
+            <member>HOST_XDG_CACHE_HOME</member>
+        </simplelist>
+        <para>
+            Flatpak sets the environment variable <envar>FLATPAK_ID</envar> to the application
+            ID of the running app.
+        </para>
     </refsect1>
 
     <refsect1>
@@ -165,6 +187,15 @@
 
                 <listitem><para>
                     The command to run instead of the one listed in the application metadata.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--cwd=DIR</option></term>
+
+                <listitem><para>
+                    The directory to run the command in. Note that this must be a directory
+                    inside the sandbox.
                 </para></listitem>
             </varlistentry>
 

@@ -42,12 +42,22 @@ typedef enum {
   FLATPAK_HOST_COMMAND_FLAGS_WATCH_BUS = 1 << 1,
 } FlatpakHostCommandFlags;
 
-#define FLATPAK_ANSI_ALT_SCREEN_ON "\x1B[?1049h"
-#define FLATPAK_ANSI_ALT_SCREEN_OFF "\x1B[?1049l"
+#define FLATPAK_ANSI_ALT_SCREEN_ON "\x1b[?1049h"
+#define FLATPAK_ANSI_ALT_SCREEN_OFF "\x1b[?1049l"
+#define FLATPAK_ANSI_HIDE_CURSOR "\x1b[?25l"
+#define FLATPAK_ANSI_SHOW_CURSOR "\x1b[?25h"
 #define FLATPAK_ANSI_BOLD_ON "\x1b[1m"
 #define FLATPAK_ANSI_BOLD_OFF "\x1b[22m"
+#define FLATPAK_ANSI_FAINT_ON "\x1b[2m"
+#define FLATPAK_ANSI_FAINT_OFF "\x1b[22m"
 #define FLATPAK_ANSI_RED "\x1b[31m"
 #define FLATPAK_ANSI_COLOR_RESET "\x1b[0m"
+
+#define FLATPAK_ANSI_ROW_N "\x1b[%d;1H"
+#define FLATPAK_ANSI_CLEAR "\x1b[0J"
+
+void flatpak_get_window_size (int *rows, int *cols);
+gboolean flatpak_get_cursor_pos  (int *row, int *col);
 
 /* https://bugzilla.gnome.org/show_bug.cgi?id=766370 */
 #if !GLIB_CHECK_VERSION (2, 49, 3)
@@ -80,6 +90,7 @@ gboolean  flatpak_has_path_prefix (const char *str,
 const char * flatpak_path_match_prefix (const char *pattern,
                                         const char *path);
 
+void     flatpak_disable_fancy_output (void);
 gboolean flatpak_fancy_output (void);
 
 const char * flatpak_get_arch (void);
@@ -182,6 +193,8 @@ gboolean flatpak_split_partial_ref_arg_novalidate (const char   *partial_ref,
                                                    char        **out_id,
                                                    char        **out_arch,
                                                    char        **out_branch);
+
+int flatpak_compare_ref (const char *ref1, const char *ref2);
 
 char * flatpak_compose_ref (gboolean    app,
                             const char *name,
@@ -666,11 +679,16 @@ gboolean flatpak_allocate_tmpdir (int           tmpdir_dfd,
 gboolean flatpak_yes_no_prompt (gboolean default_yes,
                                 const char *prompt,
                                 ...) G_GNUC_PRINTF (2, 3);
+                            
 long flatpak_number_prompt (gboolean    default_yes,
                             int         min,
                             int         max,
                             const char *prompt,
                             ...) G_GNUC_PRINTF (4, 5);
+
+void flatpak_format_choices (const char **choices,
+                             const char *prompt,
+                             ...) G_GNUC_PRINTF (2, 3);
 
 typedef void (*FlatpakProgressCallback)(const char *status,
                                         guint       progress,

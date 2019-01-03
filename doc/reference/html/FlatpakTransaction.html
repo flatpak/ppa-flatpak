@@ -8,7 +8,7 @@
 <link rel="up" href="ch01.html" title="Flatpak">
 <link rel="prev" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress">
 <link rel="next" href="FlatpakRef.html" title="FlatpakRef">
-<meta name="generator" content="GTK-Doc V1.28 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.28.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -352,6 +352,9 @@ thread and do your own forwarding to the GUI thread.</p>
 in the database sense. Individual operations are carried out sequentially, and are atomic.
 They become visible to the system as they are completed. When an error occurs, already
 completed operations are not rolled back.</p>
+<p>For each operation that is executed during a transaction, you first get a
+<a class="link" href="FlatpakTransaction.html#FlatpakTransaction-new-operation" title="The “new-operation” signal"><span class="type">“new-operation”</span></a> signal, followed by either a
+<a class="link" href="FlatpakTransaction.html#FlatpakTransaction-operation-done" title="The “operation-done” signal"><span class="type">“operation-done”</span></a> or <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-operation-error" title="The “operation-error” signal"><span class="type">“operation-error”</span></a>.</p>
 <p>The FlatpakTransaction API is threadsafe in the sense that it is safe to run two
 transactions at the same time, in different threads (or processes).</p>
 </div>
@@ -398,7 +401,7 @@ refs you want to install/update, then start the transaction with
 </div>
 <div class="refsect3">
 <a name="flatpak-transaction-new-for-installation.returns"></a><h4>Returns</h4>
-<p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a>, or <a href="/usr/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> on failure. </p>
+<p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a>, or <code class="literal">NULL</code> on failure. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -443,7 +446,7 @@ in which case an origin remote is created.</p>
 <tr>
 <td class="parameter_name"><p>subpaths</p></td>
 <td class="parameter_description"><p>subpaths to install, or the
-empty list or <a href="/usr/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> to pull all subpaths. </p></td>
+empty list or <code class="literal">NULL</code> to pull all subpaths. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1]</span></td>
 </tr>
 <tr>
@@ -492,7 +495,7 @@ flatpak_transaction_add_install_bundle
 <tr>
 <td class="parameter_name"><p>gpg_data</p></td>
 <td class="parameter_description"><p>GPG key with which to check bundle signatures, or
-<a href="/usr/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> to use the key embedded in the bundle (if any). </p></td>
+<code class="literal">NULL</code> to use the key embedded in the bundle (if any). </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -582,13 +585,13 @@ flatpak_transaction_add_update (<em class="parameter"><code><a class="link" href
 </tr>
 <tr>
 <td class="parameter_name"><p>subpaths</p></td>
-<td class="parameter_description"><p>subpaths to install; <a href="/usr/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a>
+<td class="parameter_description"><p>subpaths to install; <code class="literal">NULL</code>
 to use the current set, or <code class="literal">{ "", NULL }</code> to pull all subpaths. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>commit</p></td>
-<td class="parameter_description"><p>the commit to update to, or <a href="/usr/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a> to use the latest. </p></td>
+<td class="parameter_description"><p>the commit to update to, or <code class="literal">NULL</code> to use the latest. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
@@ -1440,12 +1443,12 @@ be marked as end-of-life during the execution of the transaction.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>reason</p></td>
-<td class="parameter_description"><p>The eol reason, or <a href="/usr/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
+<td class="parameter_description"><p>The eol reason, or <code class="literal">NULL</code></p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
 <td class="parameter_name"><p>rebase</p></td>
-<td class="parameter_description"><p>The new name, if rebased, or <a href="/usr/share/gtk-doc/html/liboil/liboil-liboiljunk.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
+<td class="parameter_description"><p>The new name, if rebased, or <code class="literal">NULL</code></p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -1648,6 +1651,6 @@ transaction.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.28</div>
+<hr>Generated by GTK-Doc V1.28.1</div>
 </body>
 </html>

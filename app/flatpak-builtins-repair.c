@@ -246,7 +246,7 @@ transaction_add_local_ref (FlatpakDir         *dir,
   const char *origin;
   const char **subpaths;
 
-  deploy_data = flatpak_dir_get_deploy_data (dir, ref, NULL, &local_error);
+  deploy_data = flatpak_dir_get_deploy_data (dir, ref, FLATPAK_DEPLOY_VERSION_ANY, NULL, &local_error);
   if (deploy_data == NULL)
     {
       if (!g_error_matches (local_error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED))
@@ -340,13 +340,13 @@ flatpak_builtin_repair (int argc, char **argv, GCancellable *cancellable, GError
         /* If so, is it deployed, and from this remote? */
         if (remote == NULL || g_strcmp0 (origin, remote) != 0)
           {
-            g_print (_("Removing non-deployed ref %s...\n"), refspec);
+            g_print (_("Removing non-deployed ref %s…\n"), refspec);
             (void) ostree_repo_set_ref_immediate (repo, remote, ref_name, NULL, cancellable, NULL);
             continue;
           }
       }
 
-    g_print (_("Verifying %s...\n"), refspec);
+    g_print (_("Verifying %s…\n"), refspec);
 
     status = fsck_commit (repo, checksum, object_status_cache);
     if (status != FSCK_STATUS_OK)

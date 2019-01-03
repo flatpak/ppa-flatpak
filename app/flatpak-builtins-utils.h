@@ -119,10 +119,32 @@ typedef struct {
   gboolean def;
 } Column;
 
+int find_column (Column *columns,
+                 const char *name,
+                 GError **error);
 char   *column_help        (Column *columns);
 Column *handle_column_args (Column *all_columns,
                             gboolean opt_show_all,
                             const char **opt_cols,
                             GError **error);
+
+char *  format_timestamp (guint64 timestamp);
+
+
+typedef enum {
+              FLATPAK_ELLIPSIZE_MODE_NONE,
+              FLATPAK_ELLIPSIZE_MODE_START,
+              FLATPAK_ELLIPSIZE_MODE_MIDDLE,
+              FLATPAK_ELLIPSIZE_MODE_END,
+} FlatpakEllipsizeMode;
+
+char *  ellipsize_string (const char *text, int len);
+char *  ellipsize_string_full (const char *text, int len, FlatpakEllipsizeMode mode);
+
+AsApp *as_store_find_app (AsStore *store,
+                          const char *ref);
+const char *as_app_get_localized_name (AsApp *app);
+const char *as_app_get_localized_comment (AsApp *app);
+const char *as_app_get_version (AsApp *app);
 
 #endif /* __FLATPAK_BUILTINS_UTILS_H__ */

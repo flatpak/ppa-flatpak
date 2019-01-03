@@ -26,8 +26,10 @@
 #include <gio/gunixinputstream.h>
 #include "flatpak-chain-input-stream-private.h"
 
+#include "flatpak-ref.h"
 #include "flatpak-builtins-utils.h"
 #include "flatpak-utils-private.h"
+#include "flatpak-run-private.h"
 
 
 void
@@ -400,13 +402,14 @@ flatpak_resolve_duplicate_remotes (GPtrArray    *dirs,
     chosen = 1;
   else if (dirs_with_remote->len > 1)
     {
-      g_print (_("Remote ‘%s’ found in multiple installations:\n"), remote_name);
+      g_auto(GStrv) names = g_new0 (char *, dirs_with_remote->len + 1);
       for (i = 0; i < dirs_with_remote->len; i++)
         {
           FlatpakDir *dir = g_ptr_array_index (dirs_with_remote, i);
-          g_autofree char *dir_name = flatpak_dir_get_name (dir);
-          g_print ("%d) %s\n", i + 1, dir_name);
+          names[i] = flatpak_dir_get_name (dir);
         }
+      flatpak_format_choices ((const char **)names,
+                              _("Remote ‘%s’ found in multiple installations:"), remote_name);
       chosen = flatpak_number_prompt (TRUE, 0, dirs_with_remote->len, _("Which do you want to use (0 to abort)?"));
       if (chosen == 0)
         return flatpak_fail (error, _("No remote chosen to resolve ‘%s’ which exists in multiple installations"), remote_name);
@@ -435,7 +438,6 @@ flatpak_resolve_matching_refs (const char   *remote_name,
 {
   guint chosen = 0;
   guint refs_len;
-  guint i;
 
   refs_len = g_strv_length (refs);
   g_assert (refs_len > 0);
@@ -460,13 +462,24 @@ flatpak_resolve_matching_refs (const char   *remote_name,
   if (chosen == 0)
     {
       const char *dir_name = flatpak_dir_get_name_cached (dir);
-      g_print (_("Similar refs found for ‘%s’ in remote ‘%s’ (%s):\n"),
-               opt_search_ref, remote_name, dir_name);
-      for (i = 0; i < refs_len; i++)
-        g_print ("%d) %s\n", i + 1, refs[i]);
-      chosen = flatpak_number_prompt (TRUE, 0, refs_len, _("Which do you want to use (0 to abort)?"));
-      if (chosen == 0)
-        return flatpak_fail (error, _("No ref chosen to resolve matches for ‘%s’"), opt_search_ref);
+      if (refs_len == 1)
+        {
+          if (flatpak_yes_no_prompt (TRUE, /* default to yes on Enter */
+                                     _("Found ref ‘%s’ in remote ‘%s’ (%s).\nUse this ref?"),
+                                     refs[0], remote_name, dir_name))
+            chosen = 1;
+          else
+            return flatpak_fail (error, _("No ref chosen to resolve matches for ‘%s’"), opt_search_ref);
+        }
+      else
+        {
+          flatpak_format_choices ((const char **)refs,
+                                  _("Similar refs found for ‘%s’ in remote ‘%s’ (%s):"),
+                                  opt_search_ref, remote_name, dir_name);
+          chosen = flatpak_number_prompt (TRUE, 0, refs_len, _("Which do you want to use (0 to abort)?"));
+          if (chosen == 0)
+            return flatpak_fail (error, _("No ref chosen to resolve matches for ‘%s’"), opt_search_ref);
+        }
     }
 
   if (out_ref)
@@ -507,17 +520,30 @@ flatpak_resolve_matching_installed_refs (gboolean     disable_interaction,
 
   if (chosen == 0)
     {
-      g_print (_("Similar installed refs found for ‘%s’:\n"),
-               opt_search_ref);
-      for (i = 0; i < ref_dir_pairs->len; i++)
+      if (ref_dir_pairs->len == 1)
         {
-          RefDirPair *pair = g_ptr_array_index (ref_dir_pairs, i);
+          RefDirPair *pair = g_ptr_array_index (ref_dir_pairs, 0);
           const char *dir_name = flatpak_dir_get_name_cached (pair->dir);
-          g_print ("%d) %s (%s)\n", i + 1, pair->ref, dir_name);
+          if (flatpak_yes_no_prompt (TRUE, /* default to yes on Enter */
+                                     _("Found installed ref ‘%s’ (%s). Is this correct?"),
+                                     pair->ref, dir_name))
+            chosen = 1;
+          else
+            return flatpak_fail (error, _("No ref chosen to resolve matches for ‘%s’"), opt_search_ref);
         }
-      chosen = flatpak_number_prompt (TRUE, 0, ref_dir_pairs->len, _("Which do you want to use (0 to abort)?"));
-      if (chosen == 0)
-        return flatpak_fail (error, _("No ref chosen to resolve matches for ‘%s’"), opt_search_ref);
+      else
+        {
+          g_auto(GStrv) names = g_new0 (char *, ref_dir_pairs->len + 1);
+          for (i = 0; i < ref_dir_pairs->len; i++)
+            {
+              RefDirPair *pair = g_ptr_array_index (ref_dir_pairs, i);
+              names[i] = flatpak_dir_get_name (pair->dir);
+            }
+          flatpak_format_choices ((const char **)names, _("Similar installed refs found for ‘%s’:"), opt_search_ref);
+          chosen = flatpak_number_prompt (TRUE, 0, ref_dir_pairs->len, _("Which do you want to use (0 to abort)?"));
+          if (chosen == 0)
+            return flatpak_fail (error, _("No ref chosen to resolve matches for ‘%s’"), opt_search_ref);
+        }
     }
 
   if (out_pair)
@@ -543,16 +569,30 @@ flatpak_resolve_matching_remotes (gboolean        disable_interaction,
 
   if (chosen == 0)
     {
-      g_print (_("Multiple remotes found with refs similar to ‘%s’:\n"), opt_search_ref);
-      for (i = 0; i < remote_dir_pairs->len; i++)
+      if (remote_dir_pairs->len == 1)
         {
-          RemoteDirPair *pair = g_ptr_array_index (remote_dir_pairs, i);
+          RemoteDirPair *pair = g_ptr_array_index (remote_dir_pairs, 0);
           const char *dir_name = flatpak_dir_get_name_cached (pair->dir);
-          g_print ("%d) %s (%s)\n", i + 1, pair->remote_name, dir_name);
+          if (flatpak_yes_no_prompt (TRUE, /* default to yes on Enter */
+                                     _("Found similar ref(s) for ‘%s’ in remote ‘%s’ (%s).\nUse this remote?"),
+                                     opt_search_ref, pair->remote_name, dir_name))
+            chosen = 1;
+          else
+            return flatpak_fail (error, _("No remote chosen to resolve matches for ‘%s’"), opt_search_ref);
         }
-      chosen = flatpak_number_prompt (TRUE, 0, remote_dir_pairs->len, _("Which do you want to use (0 to abort)?"));
-      if (chosen == 0)
-        return flatpak_fail (error, _("No remote chosen to resolve matches for ‘%s’"), opt_search_ref);
+      else
+        {
+          g_auto(GStrv) names = g_new0 (char *, remote_dir_pairs->len + 1);
+          for (i = 0; i < remote_dir_pairs->len; i++)
+            {
+              RemoteDirPair *pair = g_ptr_array_index (remote_dir_pairs, i);
+              names[i] = g_strdup_printf ("‘%s’ (%s)", pair->remote_name, flatpak_dir_get_name_cached (pair->dir));
+            }
+          flatpak_format_choices ((const char **)names, _("Remotes found with refs similar to ‘%s’:"), opt_search_ref);
+          chosen = flatpak_number_prompt (TRUE, 0, remote_dir_pairs->len, _("Which do you want to use (0 to abort)?"));
+          if (chosen == 0)
+            return flatpak_fail (error, _("No remote chosen to resolve matches for ‘%s’"), opt_search_ref);
+        }
     }
 
   if (out_pair)
@@ -757,7 +797,7 @@ get_permission_tables (XdpDbusPermissionStore *store)
 
 /*** column handling ***/
 
-static int
+int
 find_column (Column *columns,
              const char *name,
              GError **error)
@@ -806,7 +846,7 @@ column_filter (Column *columns,
   for (i = 0; i < n_cols; i++)
     {
       int idx = find_column (columns, cols[i], error);
-      if (idx == -1)
+      if (idx < 0)
         return FALSE;
       result[i] = columns[idx];
     }
@@ -912,4 +952,137 @@ handle_column_args (Column *all_columns,
     }
     
   return column_filter (all_columns, cols, error);
+}
+
+char *
+format_timestamp (guint64 timestamp)
+{
+  GDateTime *dt;
+  char *str;
+
+  dt = g_date_time_new_from_unix_utc (timestamp);
+  if (dt == NULL)
+    return g_strdup ("?");
+
+  str = g_date_time_format (dt, "%Y-%m-%d %H:%M:%S +0000");
+  g_date_time_unref (dt);
+
+  return str;
+}
+
+char *
+ellipsize_string (const char *text, int len)
+{
+  return ellipsize_string_full (text, len, FLATPAK_ELLIPSIZE_MODE_END);
+}
+
+char *
+ellipsize_string_full (const char *text, int len, FlatpakEllipsizeMode mode)
+{
+  g_autofree char *ret = g_strdup (text);
+
+  if (mode != FLATPAK_ELLIPSIZE_MODE_NONE && g_utf8_strlen (ret, -1) > len)
+    {
+      char *p;
+      char *q;
+      int i;
+      int l1, l2;
+
+      if (mode == FLATPAK_ELLIPSIZE_MODE_START)
+        l1 = 0;
+      else if (mode == FLATPAK_ELLIPSIZE_MODE_MIDDLE)
+        l1 = len / 2;
+      else
+        l1 = len - 1;
+
+      l2 = len - 1 - l1;
+
+      p = ret;
+      q = ret + strlen (ret);
+
+      for (i = 0; i < l1; i++)
+        p = g_utf8_next_char (p);
+      p[0] = '\0';
+
+      for (i = 0; i < l2; i++)
+        q = g_utf8_prev_char (q);
+
+      return g_strconcat (ret, "…", q, NULL);
+    }
+
+  return g_steal_pointer (&ret);
+}
+
+const char *
+as_app_get_localized_name (AsApp *app)
+{
+  const char * const * languages = g_get_language_names ();
+  gsize i;
+
+  for (i = 0; languages[i]; ++i)
+    {
+      const char *name = as_app_get_name (app, languages[i]);
+      if (name != NULL)
+        return name;
+    }
+
+  return NULL;
+}
+
+const char *
+as_app_get_localized_comment (AsApp *app)
+{
+  const char * const * languages = g_get_language_names ();
+  gsize i;
+
+  for (i = 0; languages[i]; ++i)
+    {
+      const char *comment = as_app_get_comment (app, languages[i]);
+      if (comment != NULL)
+        return comment;
+    }
+  return NULL;
+}
+
+const char *
+as_app_get_version (AsApp *app)
+{
+  AsRelease *release = as_app_get_release_default (app);
+
+  if (release)
+    return as_release_get_version (release);
+
+  return NULL;
+}
+
+AsApp *
+as_store_find_app (AsStore *store,
+                   const char *ref)
+{
+  g_autoptr(FlatpakRef) rref = flatpak_ref_parse (ref, NULL);
+  const char *appid = flatpak_ref_get_name (rref);
+  g_autofree char *desktopid = g_strconcat (appid, ".desktop", NULL);
+  int j;
+
+  g_debug ("Looking for AsApp for '%s'", ref);
+
+  for (j = 0; j < 2; j++)
+    {
+      const char *id = j == 0 ? appid : desktopid;
+      g_autoptr(GPtrArray) apps = as_store_get_apps_by_id (store, id);
+      int i;
+
+      g_debug ("sifting through %d apps for %s", apps->len, id);
+      for (i = 0; i < apps->len; i++)
+        {
+          AsApp *app = g_ptr_array_index (apps, i);
+          AsBundle *bundle = as_app_get_bundle_default (app);
+          if (bundle &&
+              as_bundle_get_kind (bundle) == AS_BUNDLE_KIND_FLATPAK &&
+              g_str_equal (as_bundle_get_id (bundle), ref))
+            return app;
+        }
+    }
+
+  return NULL;
 }

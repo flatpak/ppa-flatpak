@@ -28,6 +28,15 @@
 #include <flatpak-common-types-private.h>
 #include <flatpak-context-private.h>
 
+
+/* Version history:
+ * The version field was added in flatpak 1.2, anything before is 0.
+ *
+ * Version 1 added appdata-name/summary/version
+ */
+#define FLATPAK_DEPLOY_VERSION_CURRENT 1
+#define FLATPAK_DEPLOY_VERSION_ANY 0
+
 #define FLATPAK_TYPE_DIR flatpak_dir_get_type ()
 #define FLATPAK_DIR(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), FLATPAK_TYPE_DIR, FlatpakDir))
 #define FLATPAK_IS_DIR(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), FLATPAK_TYPE_DIR))
@@ -310,6 +319,7 @@ gboolean       flatpak_remove_override_keyfile (const char  *app_id,
                                                 gboolean     user,
                                                 GError     **error);
 
+int                 flatpak_deploy_data_get_version (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_origin (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_commit (GVariant *deploy_data);
 const char **       flatpak_deploy_data_get_subpaths (GVariant *deploy_data);
@@ -318,12 +328,18 @@ const char *        flatpak_deploy_data_get_alt_id (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_eol (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_eol_rebase (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_runtime (GVariant *deploy_data);
+const char *        flatpak_deploy_data_get_appdata_name (GVariant *deploy_data);
+const char *        flatpak_deploy_data_get_appdata_summary (GVariant *deploy_data);
+const char *        flatpak_deploy_data_get_appdata_version (GVariant *deploy_data);
 
 GFile *        flatpak_deploy_get_dir (FlatpakDeploy *deploy);
 GVariant *     flatpak_load_deploy_data (GFile        *deploy_dir,
+                                         const char   *ref,
+                                         int           required_version,
                                          GCancellable *cancellable,
                                          GError      **error);
 GVariant *     flatpak_deploy_get_deploy_data (FlatpakDeploy *deploy,
+                                               int            required_version,
                                                GCancellable  *cancellable,
                                                GError       **error);
 GFile *        flatpak_deploy_get_files (FlatpakDeploy *deploy);
@@ -365,6 +381,7 @@ GFile *     flatpak_dir_get_unmaintained_extension_dir (FlatpakDir *self,
                                                         const char *branch);
 GVariant *  flatpak_dir_get_deploy_data (FlatpakDir   *dir,
                                          const char   *ref,
+                                         int           required_version,
                                          GCancellable *cancellable,
                                          GError      **error);
 char *      flatpak_dir_get_origin (FlatpakDir   *self,
@@ -869,6 +886,8 @@ typedef struct
   /* out */
   char   *resolved_commit;
   GBytes *resolved_metadata;
+  guint64 download_size;
+  guint64 installed_size;
 } FlatpakDirResolve;
 
 FlatpakDirResolve *flatpak_dir_resolve_new (const char *remote,

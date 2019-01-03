@@ -79,22 +79,6 @@ maybe_print_space (gboolean *first)
     g_print (" ");
 }
 
-static gchar *
-format_timestamp (guint64 timestamp)
-{
-  GDateTime *dt;
-  gchar *str;
-
-  dt = g_date_time_new_from_unix_utc (timestamp);
-  if (dt == NULL)
-    return g_strdup ("?");
-
-  str = g_date_time_format (dt, "%Y-%m-%d %H:%M:%S +0000");
-  g_date_time_unref (dt);
-
-  return str;
-}
-
 gboolean
 flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError **error)
 {
@@ -109,6 +93,9 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
   const char *alt_id = NULL;
   const char *eol;
   const char *eol_rebase;
+  const char *appdata_name;
+  const char *appdata_summary;
+  const char *appdata_version;
   const char *pref = NULL;
   const char *default_branch = NULL;
   const char *origin = NULL;
@@ -119,7 +106,7 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
   const char *on = "";
   const char *off = "";
   g_auto(GStrv) parts = NULL;
-  g_autofree char *path = NULL;
+  const char *path;
   g_autofree char *formatted = NULL;
   gboolean friendly = TRUE;
   g_autofree const char **subpaths = NULL;
@@ -151,7 +138,7 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
   if (dir == NULL)
     return FALSE;
 
-  deploy_data = flatpak_dir_get_deploy_data (dir, ref, cancellable, error);
+  deploy_data = flatpak_dir_get_deploy_data (dir, ref, FLATPAK_DEPLOY_VERSION_CURRENT, cancellable, error);
   if (deploy_data == NULL)
     return FALSE;
 
@@ -173,10 +160,13 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
   size = flatpak_deploy_data_get_installed_size (deploy_data);
   formatted = g_format_size (size);
   deploy_dir = flatpak_deploy_get_dir (deploy);
-  path = g_file_get_path (deploy_dir);
+  path = flatpak_file_get_path_cached (deploy_dir);
   subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
   eol = flatpak_deploy_data_get_eol (deploy_data);
   eol_rebase = flatpak_deploy_data_get_eol_rebase (deploy_data);
+  appdata_name = flatpak_deploy_data_get_appdata_name (deploy_data);
+  appdata_summary = flatpak_deploy_data_get_appdata_summary (deploy_data);
+  appdata_version = flatpak_deploy_data_get_appdata_version (deploy_data);
 
   metakey = flatpak_deploy_get_metadata (deploy);
 
@@ -196,6 +186,17 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
       g_autofree char *latest = NULL;
       const char *xa_metadata = NULL;
       const char *collection_id = NULL;
+      int len;
+      int rows, cols;
+      int width;
+
+      if (appdata_name)
+        {
+          if (appdata_summary)
+            g_print ("\n%s - %s\n\n", appdata_name, appdata_summary);
+          else
+            g_print ("\n%s\n\n", appdata_name);
+        }
 
       latest = flatpak_dir_read_latest (dir, origin, ref, NULL, NULL, NULL);
       if (latest == NULL)
@@ -217,51 +218,108 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
           g_variant_lookup (commit_metadata, "ostree.collection-binding", "&s", &collection_id);
         }
 
-      g_print ("%s%s%s %s\n", on, _("Ref:"), off, ref);
-      g_print ("%s%s%s %s\n", on, _("ID:"), off, parts[1]);
-      g_print ("%s%s%s %s\n", on, _("Arch:"), off, parts[2]);
-      g_print ("%s%s%s %s\n", on, _("Branch:"), off, parts[3]);
-      g_print ("%s%s%s %s\n", on, _("Origin:"), off, origin ? origin : "-");
-      if (collection_id)
-        g_print ("%s%s%s %s\n", on, _("Collection ID:"), off, collection_id);
+      len = 0;
+      len = MAX (len, strlen (_("ID:")));
+      len = MAX (len, strlen (_("Ref:")));
+      len = MAX (len, strlen (_("Arch:")));
+      len = MAX (len, strlen (_("Branch:")));
+      len = MAX (len, strlen (_("Version:")));
+      if (collection_id != NULL)
+        len = MAX (len, strlen (_("Collection:")));
+      len = MAX (len, strlen (_("Installation:")));
+      len = MAX (len, strlen (_("Installed:")));
+      if (strcmp (parts[0], "app") == 0)
+        len = MAX (len, strlen (_("Runtime:")));
       if (formatted_timestamp)
-        g_print ("%s%s%s %s\n", on, _("Date:"), off, formatted_timestamp);
+        len = MAX (len, strlen (_("Date:")));
       if (subject)
-        g_print ("%s%s%s %s\n", on, _("Subject:"), off, subject);
-
+        len = MAX (len, strlen (_("Subject:")));
       if (strcmp (commit, latest) != 0)
         {
-          g_print ("%s%s%s %s\n", on, _("Active commit:"), off, commit);
-          g_print ("%s%s%s %s\n", on, _("Latest commit:"), off, latest);
+          len = MAX (len, strlen (_("Active commit:")));
+          len = MAX (len, strlen (_("Latest commit:")));
         }
       else
-        g_print ("%s%s%s %s\n", on, _("Commit:"), off, commit);
+        len = MAX (len, strlen (_("Commit:")));
+      if (parent)
+        len = MAX (len, strlen (_("Parent:")));
       if (alt_id)
-        g_print ("%s%s%s %s\n", on, _("alt-id:"), off, alt_id);
-      g_print ("%s%s%s %s\n", on, _("Parent:"), off, parent ? parent : "-");
-      g_print ("%s%s%s %s\n", on, _("Location:"), off, path);
-      g_print ("%s%s%s %s\n", on, _("Installed size:"), off, formatted);
+        len = MAX (len, strlen (_("alt-id:")));
+      len = MAX (len, strlen (_("Parent:")));
       if (eol)
-        g_print ("%s%s%s %s\n", on, _("end-of-life:"), off, eol);
+        len = MAX (len, strlen (_("end-of-life:")));
       if (eol_rebase)
-        g_print ("%s%s%s %s\n", on, _("end-of-life-rebase:"), off, eol_rebase);
+        len = MAX (len, strlen (_("end-of-life-rebase:")));
+      if (strcmp (parts[0], "app") == 0)
+        len = MAX (len, strlen (_("Sdk:")));
+      if (subpaths[0] != NULL)
+        len = MAX (len, strlen (_("Subdirectories:")));
+
+      flatpak_get_window_size (&rows, &cols);
+      width = cols - (len + 1);
+
+      g_print ("%s%*s%s %s\n", on, len, _("ID:"), off, parts[1]);
+      g_print ("%s%*s%s %s\n", on, len, _("Ref:"), off, ref);
+      g_print ("%s%*s%s %s\n", on, len, _("Arch:"), off, parts[2]);
+      g_print ("%s%*s%s %s\n", on, len, _("Branch:"), off, parts[3]);
+      if (appdata_version)
+        g_print ("%s%*s%s %s\n", on, len, _("Version:"), off, appdata_version);
+      g_print ("%s%*s%s %s\n", on, len, _("Origin:"), off, origin ? origin : "-");
+      if (collection_id)
+        g_print ("%s%*s%s %s\n", on, len, _("Collection:"), off, collection_id);
+      g_print ("%s%*s%s %s\n", on, len, _("Installation:"), off, flatpak_dir_get_name_cached (dir));
+      g_print ("%s%*s%s %s\n", on, len, _("Installed:"), off, formatted);
       if (strcmp (parts[0], "app") == 0)
         {
           g_autofree char *runtime = NULL;
-          g_autofree char *sdk = NULL;
           runtime = g_key_file_get_string (metakey, "Application", "runtime", error);
-          g_print ("%s%s%s %s\n", on, _("Runtime:"), off, runtime ? runtime : "-");
-          sdk = g_key_file_get_string (metakey, "Application", "sdk", error);
-          g_print ("%s%s%s %s\n", on, _("Sdk:"), off, sdk ? sdk : "-");
+          g_print ("%s%*s%s %s\n", on, len, _("Runtime:"), off, runtime ? runtime : "-");
         }
+      if (strcmp (parts[0], "app") == 0)
+        {
+          g_autofree char *sdk = NULL;
+          sdk = g_key_file_get_string (metakey, "Application", "sdk", error);
+          g_print ("%s%*s%s %s\n", on, len, _("Sdk:"), off, sdk ? sdk : "-");
+        }
+      g_print ("\n");
+
+      if (strcmp (commit, latest) != 0)
+        {
+          g_autofree char *formatted_commit = ellipsize_string (commit, width);
+          g_print ("%s%*s%s %s\n", on, len, _("Active commit:"), off, formatted_commit);
+          g_free (formatted_commit);
+          formatted_commit = ellipsize_string (latest, width);
+          g_print ("%s%*s%s %s\n", on, len, _("Latest commit:"), off, latest);
+        }
+      else
+        {
+          g_autofree char *formatted_commit = ellipsize_string (commit, width);
+          g_print ("%s%*s%s %s\n", on, len, _("Commit:"), off, formatted_commit);
+        }
+      if (parent)
+        {
+          g_autofree char *formatted_commit = ellipsize_string (parent, width);
+          g_print ("%s%*s%s %s\n", on, len, _("Parent:"), off, formatted_commit);
+        }
+      if (subject)
+        g_print ("%s%*s%s %s\n", on, len, _("Subject:"), off, subject);
+      if (formatted_timestamp)
+        g_print ("%s%*s%s %s\n", on, len, _("Date:"), off, formatted_timestamp);
       if (subpaths[0] != NULL)
         {
           int i;
-          g_print ("%s%s%s ", on, _("Installed subdirectories:"), off);
+          g_print ("%s%*s%s ", on, len, _("Subdirectories:"), off);
           for (i = 0; subpaths[i] != NULL; i++)
             g_print (i == 0 ? "%s" : ",%s", subpaths[i]);
           g_print ("\n");
         }
+
+      if (alt_id)
+        g_print ("%s%*s%s %s\n", on, len, _("alt-id:"), off, alt_id);
+      if (eol)
+        g_print ("%s%*s%s %s\n", on, len, _("end-of-life:"), off, eol);
+      if (eol_rebase)
+        g_print ("%s%*s%s %s\n", on, len, _("end-of-life-rebase:"), off, eol_rebase);
     }
   else
     {
@@ -397,7 +455,7 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
             }
           else
             {
-              ext_deploy_data = flatpak_dir_get_deploy_data (dir, ext->ref, cancellable, error);
+              ext_deploy_data = flatpak_dir_get_deploy_data (dir, ext->ref, FLATPAK_DEPLOY_VERSION_CURRENT, cancellable, error);
               if (ext_deploy_data == NULL)
                 return FALSE;
 
