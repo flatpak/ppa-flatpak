@@ -1,6 +1,7 @@
 flatpak (1.1.2-1) UNRELEASED; urgency=medium
 
   * New upstream release
+    - Drop most patches, applied upstream
 
  -- Simon McVittie <smcv@debian.org>  Thu, 03 Jan 2019 12:47:18 +0000
 
