@@ -1,9 +1,11 @@
-flatpak (1.1.2-1) UNRELEASED; urgency=medium
+flatpak (1.1.2-1) experimental; urgency=medium
 
   * New upstream release
     - Drop most patches, applied upstream
+  * Standards-Version: 4.3.0 (no changes required)
+  * Fix Vcs-Git branch in d/control
 
- -- Simon McVittie <smcv@debian.org>  Thu, 03 Jan 2019 12:47:18 +0000
+ -- Simon McVittie <smcv@debian.org>  Thu, 03 Jan 2019 12:52:43 +0000
 
 flatpak (1.1.1-1) experimental; urgency=medium
 
