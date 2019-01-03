@@ -203,7 +203,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   g_autofree char *pid_path = NULL;
   g_autoptr(GFile) app_id_dir = NULL;
 
-  context = g_option_context_new (_("DIRECTORY [COMMAND [args...]] - Build in directory"));
+  context = g_option_context_new (_("DIRECTORY [COMMAND [ARGUMENT…]] - Build in directory"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   rest_argc = 0;
@@ -304,7 +304,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
       if (runtime_deploy == NULL)
         return FALSE;
 
-      runtime_deploy_data = flatpak_deploy_get_deploy_data (runtime_deploy, cancellable, error);
+      runtime_deploy_data = flatpak_deploy_get_deploy_data (runtime_deploy, FLATPAK_DEPLOY_VERSION_ANY, cancellable, error);
       if (runtime_deploy_data == NULL)
         return FALSE;
 

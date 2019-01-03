@@ -33,6 +33,10 @@
 #ifdef USE_SYSTEM_HELPER
 #include <polkit/polkit.h>
 #include "flatpak-polkit-agent-text-listener.h"
+
+/* Work with polkit before and after autoptr support was added */
+typedef PolkitSubject             AutoPolkitSubject;
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (AutoPolkitSubject, g_object_unref)
 #endif
 
 #include "flatpak-builtins.h"
@@ -50,10 +54,6 @@ static gboolean opt_system;
 static char **opt_installations;
 
 static gboolean is_in_complete;
-
-/* Work with polkit before and after autoptr support was added */
-typedef PolkitSubject             AutoPolkitSubject;
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (AutoPolkitSubject, g_object_unref)
 
 typedef struct
 {
@@ -304,6 +304,9 @@ flatpak_option_context_parse (GOptionContext     *context,
         g_print ("%s\n", drivers[i]);
       exit (EXIT_SUCCESS);
     }
+
+  if (opt_verbose > 0 || opt_ostree_verbose)
+    flatpak_disable_fancy_output ();
 
   if (!(flags & FLATPAK_BUILTIN_FLAG_NO_DIR))
     {
@@ -657,7 +660,7 @@ main (int    argc,
       GVariantBuilder opt_builder;
       g_autoptr(GVariant) options = NULL;
 
-      subject = polkit_unix_process_new_for_owner (getpid (), 0, -1);
+      subject = polkit_unix_process_new_for_owner (getpid (), 0, getuid ());
 
       g_variant_builder_init (&opt_builder, G_VARIANT_TYPE_VARDICT);
       if (g_strcmp0 (g_getenv ("FLATPAK_FORCE_TEXT_AUTH"), "1") != 0)

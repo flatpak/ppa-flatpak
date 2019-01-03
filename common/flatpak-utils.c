@@ -42,11 +42,13 @@
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/ioctl.h>
+#include <termios.h>
 
 #include <glib.h>
 #include "libglnx/libglnx.h"
 #include <gio/gunixoutputstream.h>
 #include <gio/gunixinputstream.h>
+
 
 /* This is also here so the common code can report these errors to the lib */
 static const GDBusErrorEntry flatpak_error_entries[] = {
@@ -589,9 +591,20 @@ flatpak_get_gtk_theme (void)
   return (const char *) gtk_theme;
 }
 
+static gboolean no_fancy_output;
+
+void
+flatpak_disable_fancy_output (void)
+{
+  no_fancy_output = TRUE;
+}
+
 gboolean
 flatpak_fancy_output (void)
 {
+  if (no_fancy_output)
+    return FALSE;
+
   if (g_strcmp0 (g_getenv ("FLATPAK_FANCY_OUTPUT"), "0") == 0)
     return FALSE;
 
@@ -1034,6 +1047,62 @@ flatpak_id_has_subref_suffix (const char *id)
     g_str_has_suffix (id, ".Locale") ||
     g_str_has_suffix (id, ".Debug") ||
     g_str_has_suffix (id, ".Sources");
+}
+
+
+static const char *
+skip_segment (const char *s)
+{
+  const char *slash;
+
+  slash = strchr (s, '/');
+  if (slash)
+    return slash + 1;
+  return s + strlen (s);
+}
+
+static int
+compare_segment (const char *s1, const char *s2)
+{
+  gint c1, c2;
+
+  while (*s1 && *s1 != '/' &&
+         *s2 && *s2 != '/')
+    {
+      c1 = *s1;
+      c2 = *s2;
+      if (c1 != c2)
+        return (c1 - c2);
+      s1++; s2++;
+    }
+
+  c1 = *s1;
+  if (c1 == '/')
+    c1 = 0;
+  c2 = *s2;
+  if (c2 == '/')
+    c2 = 0;
+
+  return c1 - c2;
+}
+
+int
+flatpak_compare_ref (const char *ref1, const char *ref2)
+{
+  int res;
+  int i;
+
+  /* Skip first element and do per-segment compares for rest */
+  for (i = 0; i < 3; i++)
+    {
+      ref1 = skip_segment (ref1);
+      ref2 = skip_segment (ref2);
+
+      res = compare_segment (ref1, ref2);
+      if (res != 0)
+        return res;
+    }
+  return 0;
 }
 
 char **
@@ -4012,7 +4081,7 @@ flatpak_extension_new (const char *id,
 
   if (deploy_dir)
     {
-      deploy_data = flatpak_load_deploy_data (deploy_dir, NULL, NULL);
+      deploy_data = flatpak_load_deploy_data (deploy_dir, ref, FLATPAK_DEPLOY_VERSION_ANY, NULL, NULL);
       if (deploy_data)
         ext->commit = g_strdup (flatpak_deploy_data_get_commit (deploy_data));
     }
@@ -5331,6 +5400,25 @@ flatpak_number_prompt (gboolean default_yes, int min, int max, const char *promp
     }
 }
 
+void
+flatpak_format_choices (const char **choices,
+                        const char *prompt,
+                        ...)
+{
+  va_list var_args;
+  g_autofree char *s = NULL;
+  int i;
+
+  va_start (var_args, prompt);
+  s = g_strdup_vprintf (prompt, var_args);
+  va_end (var_args);
+
+  g_print ("%s\n\n", s);
+  for (i = 0; choices[i]; i++)
+    g_print ("  %d) %s\n", i+1, choices[i]);
+  g_print ("\n");
+}
+
 /* In this NULL means don't care about these paths, while
    an empty array means match anything */
 char **
@@ -5440,6 +5528,7 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
   gboolean last_was_metadata = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (progress), "last-was-metadata"));
   FlatpakProgressCallback progress_cb = g_object_get_data (G_OBJECT (progress), "callback");
   guint last_progress = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (progress), "last_progress"));
+  guint last_total = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (progress), "last_total"));
   GString *buf;
   g_autofree char *status = NULL;
   guint outstanding_fetches;
@@ -5451,7 +5540,7 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
   guint outstanding_extra_data;
   guint64 total_extra_data_bytes;
   guint64 transferred_extra_data_bytes;
-  guint64 total;
+  guint64 total = 0;
   guint metadata_fetched;
   guint64 start_time;
   guint64 elapsed_time;
@@ -5645,9 +5734,10 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
     }
 
 out:
-  if (new_progress < last_progress)
+  if (new_progress < last_progress && last_total == total)
     new_progress = last_progress;
   g_object_set_data (G_OBJECT (progress), "last_progress", GUINT_TO_POINTER (new_progress));
+  g_object_set_data (G_OBJECT (progress), "last_total", GUINT_TO_POINTER (total));
 
   progress_cb (buf->str, new_progress, estimating, user_data);
 
@@ -5664,6 +5754,7 @@ flatpak_progress_new (FlatpakProgressCallback progress,
 
   g_object_set_data (G_OBJECT (ostree_progress), "callback", progress);
   g_object_set_data (G_OBJECT (ostree_progress), "last_progress", GUINT_TO_POINTER (0));
+  g_object_set_data (G_OBJECT (ostree_progress), "last_total", GUINT_TO_POINTER (0));
 
   return ostree_progress;
 }
@@ -5850,4 +5941,51 @@ flatpak_levenshtein_distance (const char *s, const char *t)
       d[i * (lt + 1) + j] = -1;
 
   return dist (s, ls, t, lt, 0, 0, d);
+}
+
+void
+flatpak_get_window_size (int *rows, int *cols)
+{
+  struct winsize w;
+
+  if (ioctl (STDOUT_FILENO, TIOCGWINSZ, &w) == 0)
+    {
+      *rows = w.ws_row;
+      *cols = w.ws_col;
+    }
+  else
+    {
+      *rows = 24;
+      *cols = 80;
+    }
+}
+
+gboolean
+flatpak_get_cursor_pos (int* row, int *col)
+{
+  fd_set readset;
+  struct timeval time;
+  struct termios term, initial_term;
+  int res = 0;
+
+  tcgetattr (STDIN_FILENO, &initial_term);
+  term = initial_term;
+  term.c_lflag &= ~ICANON;
+  term.c_lflag &= ~ECHO;
+  tcsetattr (STDIN_FILENO, TCSANOW, &term);
+
+  printf ("\033[6n");
+  fflush (stdout);
+
+  FD_ZERO (&readset);
+  FD_SET (STDIN_FILENO, &readset);
+  time.tv_sec = 0;
+  time.tv_usec = 100000;
+
+  if (select (STDIN_FILENO + 1, &readset, NULL, NULL, &time) == 1)
+    res = scanf ("\033[%d;%dR", row, col);
+
+  tcsetattr (STDIN_FILENO, TCSADRAIN, &initial_term);
+
+  return res == 2;
 }

@@ -1304,6 +1304,16 @@ flatpak_run_apply_env_default (FlatpakBwrap *bwrap, gboolean use_ld_so_cache)
     bwrap->envp = apply_exports (bwrap->envp, no_ld_so_cache_exports, G_N_ELEMENTS (no_ld_so_cache_exports));
 }
 
+static void
+flatpak_run_apply_env_prompt (FlatpakBwrap *bwrap, const char *app_id)
+{
+  /* A custom shell prompt. FLATPAK_ID is always set.
+   * PS1 can be overwritten by runtime metadata or by --env overrides
+   */
+  flatpak_bwrap_set_env (bwrap, "FLATPAK_ID", app_id, TRUE);
+  flatpak_bwrap_set_env (bwrap, "PS1", "[📦 $FLATPAK_ID \\W]\\$ ", FALSE);
+}
+
 void
 flatpak_run_apply_env_appid (FlatpakBwrap *bwrap,
                              GFile        *app_dir)
@@ -1318,6 +1328,13 @@ flatpak_run_apply_env_appid (FlatpakBwrap *bwrap,
   flatpak_bwrap_set_env (bwrap, "XDG_DATA_HOME", flatpak_file_get_path_cached (app_dir_data), TRUE);
   flatpak_bwrap_set_env (bwrap, "XDG_CONFIG_HOME", flatpak_file_get_path_cached (app_dir_config), TRUE);
   flatpak_bwrap_set_env (bwrap, "XDG_CACHE_HOME", flatpak_file_get_path_cached (app_dir_cache), TRUE);
+
+  if (g_getenv ("XDG_DATA_HOME"))
+    flatpak_bwrap_set_env (bwrap, "HOST_XDG_DATA_HOME", g_getenv ("XDG_DATA_HOME"), TRUE);
+  if (g_getenv ("XDG_CONFIG_HOME"))
+    flatpak_bwrap_set_env (bwrap, "HOST_XDG_CONFIG_HOME", g_getenv ("XDG_CONFIG_HOME"), TRUE);
+  if (g_getenv ("XDG_CACHE_HOME"))
+    flatpak_bwrap_set_env (bwrap, "HOST_XDG_CACHE_HOME", g_getenv ("XDG_CACHE_HOME"), TRUE);
 }
 
 void
@@ -2845,6 +2862,7 @@ flatpak_run_app (const char     *app_ref,
                  const char     *custom_runtime_version,
                  const char     *custom_runtime_commit,
                  FlatpakRunFlags flags,
+                 const char     *cwd,
                  const char     *custom_command,
                  char           *args[],
                  int             n_args,
@@ -2905,7 +2923,7 @@ flatpak_run_app (const char     *app_ref,
     {
       const gchar *key;
 
-      app_deploy_data = flatpak_deploy_get_deploy_data (app_deploy, cancellable, error);
+      app_deploy_data = flatpak_deploy_get_deploy_data (app_deploy, FLATPAK_DEPLOY_VERSION_ANY, cancellable, error);
       if (app_deploy_data == NULL)
         return FALSE;
 
@@ -2961,7 +2979,7 @@ flatpak_run_app (const char     *app_ref,
   if (runtime_deploy == NULL)
     return FALSE;
 
-  runtime_deploy_data = flatpak_deploy_get_deploy_data (runtime_deploy, cancellable, error);
+  runtime_deploy_data = flatpak_deploy_get_deploy_data (runtime_deploy, FLATPAK_DEPLOY_VERSION_ANY, cancellable, error);
   if (runtime_deploy_data == NULL)
     return FALSE;
 
@@ -3008,6 +3026,7 @@ flatpak_run_app (const char     *app_ref,
 
   flatpak_run_apply_env_default (bwrap, use_ld_so_cache);
   flatpak_run_apply_env_vars (bwrap, app_context);
+  flatpak_run_apply_env_prompt (bwrap, app_ref_parts[1]);
 
   if (real_app_id_dir)
     {
@@ -3103,6 +3122,9 @@ flatpak_run_app (const char     *app_ref,
                           "--symlink", "/app/lib/debug/source", "/run/build",
                           "--symlink", "/usr/lib/debug/source", "/run/build-runtime",
                           NULL);
+
+  if (cwd)
+    flatpak_bwrap_add_args (bwrap, "--chdir", cwd, NULL);
 
   if (custom_command)
     {

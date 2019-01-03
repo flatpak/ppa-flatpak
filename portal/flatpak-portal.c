@@ -117,6 +117,7 @@ typedef struct
   GPid  pid;
   char *client;
   guint child_watch;
+  gboolean watch_bus;
 } PidData;
 
 static void
@@ -329,9 +330,45 @@ handle_spawn (PortalFlatpak         *object,
                                   FLATPAK_METADATA_GROUP_APPLICATION,
                                   FLATPAK_METADATA_KEY_NAME, NULL);
   g_assert (app_id != NULL);
+
+  g_debug ("spawn() called from app: '%s'", app_id);
+  if (*app_id == 0)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                             G_DBUS_ERROR_INVALID_ARGS,
+                                             "org.freedesktop.portal.Flatpak.Spawn only works in a flatpak");
+      return TRUE;
+    }
+
+
+  if (*arg_cwd_path == 0)
+    arg_cwd_path = NULL;
+
+  if (arg_argv == NULL || *arg_argv == NULL)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                             G_DBUS_ERROR_INVALID_ARGS,
+                                             "No command given");
+      return TRUE;
+    }
+
+  if ((arg_flags & ~FLATPAK_SPAWN_FLAGS_ALL) != 0)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                             "Unsupported flags enabled: 0x%x", arg_flags & ~FLATPAK_SPAWN_FLAGS_ALL);
+      return TRUE;
+    }
+
   runtime_ref = g_key_file_get_string (app_info,
                                        FLATPAK_METADATA_GROUP_APPLICATION,
                                        FLATPAK_METADATA_KEY_RUNTIME, NULL);
+  if (runtime_ref == NULL)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                             "No runtime found");
+      return TRUE;
+    }
+
   runtime_parts = g_strsplit (runtime_ref, "/", -1);
 
   branch = g_key_file_get_string (app_info,
@@ -354,27 +391,6 @@ handle_spawn (PortalFlatpak         *object,
                                           FLATPAK_METADATA_KEY_RUNTIME_COMMIT, NULL);
   shares = g_key_file_get_string_list (app_info, FLATPAK_METADATA_GROUP_CONTEXT,
                                        FLATPAK_METADATA_KEY_SHARED, NULL, NULL);
-
-  g_debug ("spawn() called from app: %s", app_id);
-
-  if (*app_id == 0)
-    {
-      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
-                                             G_DBUS_ERROR_INVALID_ARGS,
-                                             "org.freedesktop.portal.Flatpak.Spawn only works in a flatpak");
-      return TRUE;
-    }
-
-  if (*arg_cwd_path == 0)
-    arg_cwd_path = NULL;
-
-  if (arg_argv == NULL || *arg_argv == NULL)
-    {
-      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
-                                             G_DBUS_ERROR_INVALID_ARGS,
-                                             "No command given");
-      return TRUE;
-    }
 
   g_variant_lookup (arg_options, "sandbox-expose", "^as", &sandbox_expose);
   g_variant_lookup (arg_options, "sandbox-expose-ro", "^as", &sandbox_expose_ro);
@@ -543,6 +559,8 @@ handle_spawn (PortalFlatpak         *object,
         g_ptr_array_add (flatpak_argv, g_strdup_printf ("--runtime-commit=%s", runtime_commit));
     }
 
+  if (arg_cwd_path != NULL)
+    g_ptr_array_add (flatpak_argv, g_strdup_printf ("--cwd=%s", arg_cwd_path));
 
   if (arg_argv[0][0] != 0)
     g_ptr_array_add (flatpak_argv, g_strdup_printf ("--command=%s", arg_argv[0]));
@@ -567,7 +585,7 @@ handle_spawn (PortalFlatpak         *object,
       g_debug ("Starting: %s\n", cmd->str);
     }
 
-  if (!g_spawn_async_with_pipes (arg_cwd_path,
+  if (!g_spawn_async_with_pipes (NULL,
                                  (char **) flatpak_argv->pdata,
                                  env,
                                  G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD,
@@ -592,6 +610,7 @@ handle_spawn (PortalFlatpak         *object,
   pid_data = g_new0 (PidData, 1);
   pid_data->pid = pid;
   pid_data->client = g_strdup (g_dbus_method_invocation_get_sender (invocation));
+  pid_data->watch_bus = (arg_flags & FLATPAK_SPAWN_FLAGS_WATCH_BUS) != 0;
   pid_data->child_watch = g_child_watch_add_full (G_PRIORITY_DEFAULT,
                                                   pid,
                                                   child_watch_died,
@@ -676,6 +695,52 @@ authorize_method_handler (GDBusInterfaceSkeleton *interface,
 }
 
 static void
+name_owner_changed (GDBusConnection *connection,
+                    const gchar     *sender_name,
+                    const gchar     *object_path,
+                    const gchar     *interface_name,
+                    const gchar     *signal_name,
+                    GVariant        *parameters,
+                    gpointer         user_data)
+{
+  const char *name, *from, *to;
+
+  g_variant_get (parameters, "(&s&s&s)", &name, &from, &to);
+
+  if (name[0] == ':' &&
+      strcmp (name, from) == 0 &&
+      strcmp (to, "") == 0)
+    {
+      GHashTableIter iter;
+      PidData *pid_data = NULL;
+      gpointer value = NULL;
+      GList *list = NULL, *l;
+
+      g_hash_table_iter_init (&iter, client_pid_data_hash);
+      while (g_hash_table_iter_next (&iter, NULL, &value))
+        {
+          pid_data = value;
+
+          if (pid_data->watch_bus && g_str_equal (pid_data->client, name))
+            list = g_list_prepend (list, pid_data);
+        }
+
+      for (l = list; l; l = l->next)
+        {
+          pid_data = l->data;
+          g_debug ("%s dropped off the bus, killing %d", pid_data->client, pid_data->pid);
+          killpg (pid_data->pid, SIGINT);
+        }
+
+      g_list_free (list);
+    }
+}
+
+#define DBUS_NAME_DBUS "org.freedesktop.DBus"
+#define DBUS_INTERFACE_DBUS DBUS_NAME_DBUS
+#define DBUS_PATH_DBUS "/org/freedesktop/DBus"
+
+static void
 on_bus_acquired (GDBusConnection *connection,
                  const gchar     *name,
                  gpointer         user_data)
@@ -685,6 +750,16 @@ on_bus_acquired (GDBusConnection *connection,
   g_debug ("Bus acquired, creating skeleton");
 
   portal = portal_flatpak_skeleton_new ();
+
+  g_dbus_connection_signal_subscribe (connection,
+                                      DBUS_NAME_DBUS,
+                                      DBUS_INTERFACE_DBUS,
+                                      "NameOwnerChanged",
+                                      DBUS_PATH_DBUS,
+                                      NULL,
+                                      G_DBUS_SIGNAL_FLAGS_NONE,
+                                      name_owner_changed,
+                                      NULL, NULL);
 
   g_object_set_data_full (G_OBJECT (portal), "track-alive", GINT_TO_POINTER (42), skeleton_died_cb);
 

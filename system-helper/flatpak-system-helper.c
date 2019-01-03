@@ -159,7 +159,7 @@ get_sender_pid (GDBusMethodInvocation *invocation)
   GVariant *body;
   g_autoptr(GVariantIter) iter = NULL;
   const char *key;
-  GVariant *value;
+  g_autoptr(GVariant) value = NULL;
 
   connection = g_dbus_method_invocation_get_connection (invocation);
   sender = g_dbus_method_invocation_get_sender (invocation);
@@ -190,6 +190,7 @@ get_sender_pid (GDBusMethodInvocation *invocation)
       if (strcmp (key, "ProcessID") == 0)
         return g_variant_get_uint32 (value);
     }
+  value = NULL; /* g_variant_iter_loop freed it */
 
   return 0;
 }
@@ -1255,7 +1256,7 @@ dir_ref_is_installed (FlatpakDir *dir,
 {
   g_autoptr(GVariant) deploy_data = NULL;
 
-  deploy_data = flatpak_dir_get_deploy_data (dir, ref, NULL, NULL);
+  deploy_data = flatpak_dir_get_deploy_data (dir, ref, FLATPAK_DEPLOY_VERSION_ANY, NULL, NULL);
 
   return deploy_data != NULL;
 }
@@ -1298,7 +1299,7 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
       g_variant_get_child (parameters, 3, "&s", &origin);
       g_variant_get_child (parameters, 5, "&s", &installation);
 
-      /* For metadata updates, redirect to the modify-repo action since they
+      /* For metadata updates, redirect to the metadata-update action which
        * should basically always be allowed */
       if (ref != NULL && g_strcmp0 (ref, OSTREE_REPO_METADATA_REF) == 0)
         {
