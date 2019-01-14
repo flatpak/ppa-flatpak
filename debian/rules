@@ -42,6 +42,7 @@ override_dh_auto_configure:
 		--with-priv-mode=none \
 		--with-privileged-group=sudo \
 		--with-system-bubblewrap=bwrap \
+		--with-system-dbus-proxy=xdg-dbus-proxy \
 		--with-systemdsystemunitdir=/lib/systemd/system \
 		$(configure_options)
 

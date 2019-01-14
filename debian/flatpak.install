@@ -5,7 +5,6 @@ etc/X11/Xsession.d
 etc/profile.d/
 lib/systemd/system/flatpak-system-helper.service
 usr/bin/flatpak
-usr/libexec/flatpak-dbus-proxy
 usr/libexec/flatpak-portal
 usr/libexec/flatpak-session-helper
 usr/libexec/flatpak-system-helper
