@@ -43,6 +43,7 @@ Build-Depends:
  procps,
  python3 <!nocheck>,
  shared-mime-info <!nocheck>,
+ xdg-dbus-proxy (>= 0.1.0),
  xmlto <!nodoc>,
  xsltproc <!nodoc>,
 Build-Depends-Indep:
@@ -58,6 +59,7 @@ Package: flatpak
 Architecture: linux-any
 Depends:
  bubblewrap (>= 0.2.1),
+ xdg-dbus-proxy (>= 0.1.0),
  xdg-desktop-portal (>= 0.10),
  ${misc:Depends},
  ${shlibs:Depends},
