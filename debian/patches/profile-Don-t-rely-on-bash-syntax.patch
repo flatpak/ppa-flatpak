@@ -8,6 +8,7 @@ part of the X11 session environment. We might also have
 non-bash-compatible shells that read profile.d (I'm not sure).
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
+Forwarded: https://github.com/flatpak/flatpak/pull/2597
 ---
  profile/flatpak.sh | 28 ++++++++++++++++++----------
  1 file changed, 18 insertions(+), 10 deletions(-)
