@@ -28,7 +28,6 @@
 #include <sys/file.h>
 #include <sys/types.h>
 #include <utime.h>
-#include <glnx-console.h>
 
 #include <glib/gi18n-lib.h>
 #include <glib/gstdio.h>
@@ -46,6 +45,7 @@
 #include "flatpak-utils-private.h"
 #include "flatpak-oci-registry-private.h"
 #include "flatpak-run-private.h"
+#include "flatpak-appdata-private.h"
 
 #include "errno.h"
 
@@ -61,9 +61,10 @@
 
 #define SYSCONF_INSTALLATIONS_DIR "installations.d"
 #define SYSCONF_INSTALLATIONS_FILE_EXT ".conf"
+#define SYSCONF_REMOTES_DIR "remotes.d"
 
 #define SYSTEM_DIR_DEFAULT_ID "default"
-#define SYSTEM_DIR_DEFAULT_DISPLAY_NAME "Default system directory"
+#define SYSTEM_DIR_DEFAULT_DISPLAY_NAME _("Default system installation")
 #define SYSTEM_DIR_DEFAULT_STORAGE_TYPE FLATPAK_DIR_STORAGE_TYPE_DEFAULT
 #define SYSTEM_DIR_DEFAULT_PRIORITY 0
 
@@ -736,6 +737,13 @@ is_good_installation_id (const char *id)
       strcmp (id, "user") == 0 ||
       strcmp (id, "default") == 0 ||
       strcmp (id, "system") == 0)
+    return FALSE;
+
+  if (!g_str_is_ascii (id) ||
+      strpbrk (id, " /\n"))
+    return FALSE;
+
+  if (strlen (id) > 80)
     return FALSE;
 
   return TRUE;
@@ -1509,11 +1517,14 @@ system_ostree_repo_new (GFile *repodir)
 
   config_dir = g_strdup_printf ("%s/%s",
                                 get_config_dir_location (),
-                                "/remotes.d");
+                                SYSCONF_REMOTES_DIR);
 
-  return g_object_new (OSTREE_TYPE_REPO, "path", repodir,
-                       "remotes-config-dir",
-                       config_dir,
+  if (!g_file_test (config_dir, G_FILE_TEST_IS_DIR))
+    g_clear_pointer (&config_dir, g_free);
+
+  return g_object_new (OSTREE_TYPE_REPO,
+                       "path", repodir,
+                       "remotes-config-dir", config_dir,
                        NULL);
 }
 
@@ -1660,6 +1671,9 @@ flatpak_dir_get_changed_path (FlatpakDir *self)
 const char *
 flatpak_dir_get_id (FlatpakDir *self)
 {
+  if (self->user)
+    return "user";
+
   if (self->extra_data != NULL)
     return self->extra_data->id;
 
@@ -1699,6 +1713,9 @@ flatpak_dir_get_name_cached (FlatpakDir *self)
 const char *
 flatpak_dir_get_display_name (FlatpakDir *self)
 {
+  if (self->user)
+    return _("User installation");
+
   if (self->extra_data != NULL)
     return self->extra_data->display_name;
 
@@ -2162,6 +2179,12 @@ flatpak_deploy_data_get_appdata_version (GVariant *deploy_data)
     return flatpak_deploy_data_get_string (deploy_data, "appdata-version");
 }
 
+const char *
+flatpak_deploy_data_get_appdata_license (GVariant *deploy_data)
+{
+    return flatpak_deploy_data_get_string (deploy_data, "appdata-license");
+}
+
 /*<private>
  * flatpak_deploy_data_get_subpaths:
  *
@@ -2241,26 +2264,26 @@ add_appdata_to_deploy_data (GVariantBuilder *metadata_builder,
                             GFile      *deploy_dir,
                             const char *id)
 {
-  g_autoptr(AsStore) store = as_store_new ();
   g_autofree char *appdata_xml = NULL;
-  GPtrArray *apps;
+  g_autoptr(GHashTable) names = NULL;
+  g_autoptr(GHashTable) comments = NULL;
+  g_autofree char *version = NULL;
+  g_autofree char *license = NULL;
 
   appdata_xml = read_appdata_xml_from_deploy_dir (deploy_dir, id);
   if (appdata_xml == NULL)
     return;
 
-  as_store_from_xml (store, appdata_xml, NULL, NULL);
-  apps = as_store_get_apps (store);
-  if (apps->len > 0)
+  if (flatpak_parse_appdata (appdata_xml, id, &names, &comments, &version, &license))
     {
-      AsApp *app = g_ptr_array_index (apps, 0);
-      AsRelease *release = as_app_get_release_default (app);
-
-      add_locale_metadata_string (metadata_builder, "appdata-name", as_app_get_names (app));
-      add_locale_metadata_string (metadata_builder, "appdata-summary", as_app_get_comments (app));
-      if (release)
+      add_locale_metadata_string (metadata_builder, "appdata-name", names);
+      add_locale_metadata_string (metadata_builder, "appdata-summary", comments);
+      if (version)
         g_variant_builder_add (metadata_builder, "{s@v}", "appdata-version",
-                               g_variant_new_variant (g_variant_new_string (as_release_get_version (release))));
+                               g_variant_new_variant (g_variant_new_string (version)));
+      if (license)
+        g_variant_builder_add (metadata_builder, "{s@v}", "appdata-license",
+                               g_variant_new_variant (g_variant_new_string (license)));
     }
 }
 
@@ -2649,8 +2672,21 @@ flatpak_dir_get_config (FlatpakDir *self,
                         const char *key,
                         GError    **error)
 {
-  GKeyFile *config = ostree_repo_get_config (self->repo);
-  g_autofree char *ostree_key = g_strconcat ("xa.", key, NULL);
+  GKeyFile *config;
+  g_autofree char *ostree_key = NULL;
+
+  if (!flatpak_dir_maybe_ensure_repo (self, NULL, error))
+    return NULL;
+
+  if (self->repo == NULL)
+    {
+      g_set_error (error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_KEY_NOT_FOUND,
+                   _("The config key %s is not set"), key);
+      return NULL;
+    }
+
+  config = ostree_repo_get_config (self->repo);
+  ostree_key = g_strconcat ("xa.", key, NULL);
 
   return g_key_file_get_string (config, "core", ostree_key, error);
 }
@@ -2661,8 +2697,14 @@ flatpak_dir_set_config (FlatpakDir *self,
                         const char *value,
                         GError    **error)
 {
-  g_autoptr(GKeyFile) config = ostree_repo_copy_config (self->repo);
-  g_autofree char *ostree_key = g_strconcat ("xa.", key, NULL);
+  g_autoptr(GKeyFile) config = NULL;
+  g_autofree char *ostree_key = NULL;
+
+  if (!flatpak_dir_ensure_repo (self, NULL, error))
+    return FALSE;
+
+  config = ostree_repo_copy_config (self->repo);
+  ostree_key = g_strconcat ("xa.", key, NULL);
 
   if (flatpak_dir_use_system_helper (self, NULL))
     {
@@ -3735,38 +3777,6 @@ flatpak_dir_update_appstream (FlatpakDir          *self,
                                        error);
 }
 
-static void
-default_progress_changed (OstreeAsyncProgress *progress,
-                          gpointer             user_data)
-{
-  guint outstanding_extra_data;
-  guint64 transferred_extra_data_bytes;
-  guint64 total_extra_data_bytes;
-
-  outstanding_extra_data = ostree_async_progress_get_uint (progress, "outstanding-extra-data");
-  total_extra_data_bytes = ostree_async_progress_get_uint64 (progress, "total-extra-data-bytes");
-  transferred_extra_data_bytes = ostree_async_progress_get_uint64 (progress, "transferred-extra-data-bytes");
-
-  if (outstanding_extra_data > 0)
-    {
-      g_autofree char *transferred = g_format_size (transferred_extra_data_bytes);
-      g_autofree char *total = g_format_size (total_extra_data_bytes);
-      g_autofree char *line = g_strdup_printf ("Downloading extra data %s/%s", transferred, total);
-      glnx_console_text (line);
-    }
-  else
-    {
-      g_autoptr(GVariant) outstanding_fetches = NULL;
-      /* We get some extra calls before we've really started due to the initialization of the
-         extra data, so ignore those */
-      outstanding_fetches = ostree_async_progress_get_variant (progress, "outstanding-fetches");
-      if (outstanding_fetches == NULL)
-        return;
-
-      ostree_repo_pull_default_console_progress_changed (progress, user_data);
-    }
-}
-
 /* Get the configured collection-id for @remote_name, squashing empty strings into
  * %NULL. Return %TRUE if the ID was fetched successfully, or if it was unset or
  * empty. */
@@ -3838,6 +3848,22 @@ get_common_pull_options (GVariantBuilder     *builder,
 
   g_variant_builder_add (builder, "{s@v}", "update-frequency",
                          g_variant_new_variant (g_variant_new_uint32 (update_freq)));
+}
+
+static gboolean
+translate_ostree_repo_pull_errors (GError **error)
+{
+  if (*error)
+    {
+      if (strstr ((*error)->message, "min-free-space-size") ||
+          strstr ((*error)->message, "min-free-space-percent"))
+        {
+          (*error)->domain = FLATPAK_ERROR;
+          (*error)->code = FLATPAK_ERROR_OUT_OF_SPACE;
+        }
+    }
+
+  return FALSE;
 }
 
 static gboolean
@@ -3999,7 +4025,7 @@ repo_pull (OstreeRepo                           *self,
 
       if (!ostree_repo_pull_with_options (self, remote_name, options,
                                           progress, cancellable, error))
-        return FALSE;
+        return translate_ostree_repo_pull_errors (error);
     }
 
   if (old_commit &&
@@ -4414,8 +4440,6 @@ flatpak_dir_mirror_oci (FlatpakDir          *self,
   g_autofree char *registry_uri = NULL;
   g_autofree char *oci_digest = NULL;
   g_autofree char *latest_rev = NULL;
-  g_auto(GLnxConsoleRef) console = { 0, };
-  g_autoptr(OstreeAsyncProgress) console_progress = NULL;
   g_autoptr(GVariant) summary_element = NULL;
   g_autoptr(GVariant) metadata = NULL;
   g_autofree char *oci_repository = NULL;
@@ -4451,16 +4475,7 @@ flatpak_dir_mirror_oci (FlatpakDir          *self,
   if (registry == NULL)
     return FALSE;
 
-  if (progress == NULL)
-    {
-      glnx_console_lock (&console);
-      if (console.is_tty)
-        {
-          console_progress = ostree_async_progress_new_and_connect (default_progress_changed, &console);
-          progress = console_progress;
-        }
-    }
-
+  g_assert (progress != NULL);
   oci_pull_init_progress (progress);
 
   g_debug ("Mirroring OCI image %s", oci_digest);
@@ -4495,8 +4510,6 @@ flatpak_dir_pull_oci (FlatpakDir          *self,
   g_autofree char *oci_repository = NULL;
   g_autofree char *oci_digest = NULL;
   g_autofree char *checksum = NULL;
-  g_auto(GLnxConsoleRef) console = { 0, };
-  g_autoptr(OstreeAsyncProgress) console_progress = NULL;
   g_autoptr(GVariant) summary_element = NULL;
   g_autofree char *latest_alt_commit = NULL;
   g_autoptr(GVariant) metadata = NULL;
@@ -4545,16 +4558,7 @@ flatpak_dir_pull_oci (FlatpakDir          *self,
   if (repo == NULL)
     repo = self->repo;
 
-  if (progress == NULL)
-    {
-      glnx_console_lock (&console);
-      if (console.is_tty)
-        {
-          console_progress = ostree_async_progress_new_and_connect (default_progress_changed, &console);
-          progress = console_progress;
-        }
-    }
-
+  g_assert (progress != NULL);
   oci_pull_init_progress (progress);
 
   g_debug ("Pulling OCI image %s", oci_digest);
@@ -4603,8 +4607,6 @@ flatpak_dir_pull (FlatpakDir                           *self,
   g_autofree char *rev = NULL;
   g_autofree char *url = NULL;
 
-  g_auto(GLnxConsoleRef) console = { 0, };
-  g_autoptr(OstreeAsyncProgress) console_progress = NULL;
   g_autoptr(GPtrArray) subdirs_arg = NULL;
   g_auto(OstreeRepoFinderResultv) allocated_results = NULL;
   const OstreeRepoFinderResult * const *results;
@@ -4641,16 +4643,7 @@ flatpak_dir_pull (FlatpakDir                           *self,
   if (*url == 0)
     return TRUE; /* Empty url, silently disables updates */
 
-  /* Set up progress reporting. */
-  if (progress == NULL)
-    {
-      glnx_console_lock (&console);
-      if (console.is_tty)
-        {
-          console_progress = ostree_async_progress_new_and_connect (default_progress_changed, &console);
-          progress = console_progress;
-        }
-    }
+  g_assert (progress != NULL);
 
   /* We get the rev ahead of time so that we know it for looking up e.g. extra-data
      and to make sure we're atomically using a single rev if we happen to do multiple
@@ -4835,8 +4828,6 @@ repo_pull_local_untrusted (FlatpakDir          *self,
   GVariantBuilder builder;
   g_autoptr(GVariant) options = NULL;
   g_auto(GVariantBuilder) refs_builder = FLATPAK_VARIANT_BUILDER_INITIALIZER;
-  g_auto(GLnxConsoleRef) console = { 0, };
-  g_autoptr(OstreeAsyncProgress) console_progress = NULL;
   gboolean res;
   g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
   const char *refs[2] = { NULL, NULL };
@@ -4848,15 +4839,7 @@ repo_pull_local_untrusted (FlatpakDir          *self,
   if (error == NULL)
     error = &dummy_error;
 
-  if (progress == NULL)
-    {
-      glnx_console_lock (&console);
-      if (console.is_tty)
-        {
-          console_progress = ostree_async_progress_new_and_connect (default_progress_changed, &console);
-          progress = console_progress;
-        }
-    }
+  g_assert (progress != NULL);
 
   if (!repo_get_remote_collection_id (repo, remote_name, &collection_id, error))
     return FALSE;
@@ -4904,6 +4887,8 @@ repo_pull_local_untrusted (FlatpakDir          *self,
   options = g_variant_ref_sink (g_variant_builder_end (&builder));
   res = ostree_repo_pull_with_options (repo, url, options,
                                        progress, cancellable, error);
+  if (!res)
+    translate_ostree_repo_pull_errors (error);
 
   if (progress)
     ostree_async_progress_finish (progress);
@@ -5472,7 +5457,7 @@ flatpak_dir_read_latest_commit (FlatpakDir   *self,
   g_autoptr(GVariant) commit_data = NULL;
 
   /* There may be several remotes with the same branch (if we for
-   * instance changed the origin, so prepend the current origin to
+   * instance changed the origin) so prepend the current origin to
    * make sure we get the right one */
 
   if (remote)
@@ -5506,7 +5491,7 @@ flatpak_dir_read_latest (FlatpakDir   *self,
   g_autofree char *res = NULL;
 
   /* There may be several remotes with the same branch (if we for
-   * instance changed the origin, so prepend the current origin to
+   * instance changed the origin) so prepend the current origin to
    * make sure we get the right one */
 
   if (remote)
@@ -6864,6 +6849,22 @@ apply_extra_data (FlatpakDir   *self,
   return TRUE;
 }
 
+/* We create a deploy ref for the currently deployed version of all refs to avoid
+   deployed commits being pruned when e.g. we pull --no-deploy. */
+static gboolean
+flatpak_dir_update_deploy_ref (FlatpakDir          *self,
+                               const char          *ref,
+                               const char          *checksum,
+                               GError             **error)
+{
+  g_autofree char *deploy_ref = g_strconcat ("deploy/", ref, NULL);
+
+  if (!ostree_repo_set_ref_immediate (self->repo, NULL, deploy_ref, checksum, NULL, error))
+    return FALSE;
+
+  return TRUE;
+}
+
 gboolean
 flatpak_dir_deploy (FlatpakDir          *self,
                     const char          *origin,
@@ -7298,6 +7299,9 @@ flatpak_dir_deploy (FlatpakDir          *self,
   if (!flatpak_dir_set_active (self, ref, checkout_basename, cancellable, error))
     return FALSE;
 
+  if (!flatpak_dir_update_deploy_ref (self, ref, checksum, error))
+    return FALSE;
+
   return TRUE;
 }
 
@@ -7696,66 +7700,6 @@ flatpak_dir_create_system_child_repo (FlatpakDir   *self,
   return flatpak_dir_create_child_repo (self, cache_dir, file_lock, optional_commit, error);
 }
 
-/**
- * flatpak_dir_load_appstream_store:
- * @self: a #FlatpakDir
- * @remote_name: name of the remote to load the AppStream data for
- * @arch: (nullable): name of the architecture to load the AppStream data for,
- *    or %NULL to use the default
- * @store: the store to load into
- * @cancellable: (nullable): a #GCancellable, or %NULL
- * @error: return location for a #GError
- *
- * Load the cached AppStream data for the given @remote_name into @store, which
- * must have already been constructed using as_store_new(). If no cache
- * exists, %FALSE is returned with no error set. If there is an error loading or
- * parsing the cache, an error is returned.
- *
- * Returns: %TRUE if the cache exists and was loaded into @store; %FALSE
- *    otherwise
- */
-gboolean
-flatpak_dir_load_appstream_store (FlatpakDir    *self,
-                                  const gchar   *remote_name,
-                                  const gchar   *arch,
-                                  AsStore       *store,
-                                  GCancellable  *cancellable,
-                                  GError       **error)
-{
-  const char *install_path = flatpak_file_get_path_cached (flatpak_dir_get_path (self));
-  g_autoptr(GFile) appstream_file = NULL;
-  g_autofree char *appstream_path = NULL;
-  g_autoptr(GError) local_error = NULL;
-  gboolean success;
-
-  if (arch == NULL)
-    arch = flatpak_get_arch ();
-
-  if (flatpak_dir_get_remote_oci (self, remote_name))
-    appstream_path = g_build_filename (install_path, "appstream", remote_name,
-                                       arch, "appstream.xml.gz",
-                                       NULL);
-  else
-    appstream_path = g_build_filename (install_path, "appstream", remote_name,
-                                       arch, "active", "appstream.xml.gz",
-                                       NULL);
-
-  appstream_file = g_file_new_for_path (appstream_path);
-  as_store_from_file (store, appstream_file, NULL, cancellable, &local_error);
-  success = (local_error == NULL);
-
-  /* We want to ignore ENOENT error as it is harmless and valid
-   * FIXME: appstream-glib doesn't have granular file-not-found error
-   * See: https://github.com/hughsie/appstream-glib/pull/268 */
-  if (local_error != NULL &&
-      g_str_has_suffix (local_error->message, "No such file or directory"))
-    g_clear_error (&local_error);
-  else if (local_error != NULL)
-    g_propagate_error (error, g_steal_pointer (&local_error));
-
-  return success;
-}
-
 gboolean
 flatpak_dir_install (FlatpakDir          *self,
                      gboolean             no_pull,
@@ -7859,8 +7803,6 @@ flatpak_dir_install (FlatpakDir          *self,
 
           flatpak_flags |= FLATPAK_PULL_FLAGS_SIDELOAD_EXTRA_DATA;
 
-          /* Don’t resolve a rev or OstreeRepoFinderResult set early; the pull
-           * code will do this. */
           if (!flatpak_dir_pull (self, state, ref, opt_commit, NULL, subpaths,
                                  child_repo,
                                  flatpak_flags,
@@ -7902,8 +7844,6 @@ flatpak_dir_install (FlatpakDir          *self,
 
   if (!no_pull)
     {
-      /* Don’t resolve a rev or OstreeRepoFinderResult set early; the pull
-       * code will do this. */
       if (!flatpak_dir_pull (self, state, ref, opt_commit, NULL, opt_subpaths, NULL,
                              flatpak_flags, OSTREE_REPO_PULL_FLAGS_NONE,
                              progress, cancellable, error))
@@ -8621,6 +8561,9 @@ flatpak_dir_uninstall (FlatpakDir                 *self,
             return FALSE;
         }
     }
+
+  if (!flatpak_dir_update_deploy_ref (self, ref, NULL, error))
+    return FALSE;
 
   if (!flatpak_dir_undeploy_all (self, ref, force_remove, &was_deployed, cancellable, error))
     return FALSE;
@@ -10151,7 +10094,11 @@ flatpak_dir_get_remote_collection_id (FlatpakDir *self,
 {
   char *collection_id = NULL;
 
+  if (!flatpak_dir_ensure_repo (self, NULL, NULL))
+    return NULL;
+
   repo_get_remote_collection_id (self->repo, remote_name, &collection_id, NULL);
+
   return collection_id;
 }
 
@@ -10754,11 +10701,20 @@ get_group (const char *remote_name)
   return g_strdup_printf ("remote \"%s\"", remote_name);
 }
 
+static GKeyFile *
+flatpak_dir_get_repo_config (FlatpakDir *self)
+{
+  if (!flatpak_dir_ensure_repo (self, NULL, NULL))
+    return NULL;
+
+  return ostree_repo_get_config (self->repo);
+}
+
 char *
 flatpak_dir_get_remote_title (FlatpakDir *self,
                               const char *remote_name)
 {
-  GKeyFile *config = ostree_repo_get_config (self->repo);
+  GKeyFile *config = flatpak_dir_get_repo_config (self);
   g_autofree char *group = get_group (remote_name);
 
   if (config)
@@ -10773,10 +10729,10 @@ flatpak_dir_get_remote_oci (FlatpakDir *self,
 {
   g_autofree char *url = NULL;
 
-  if (!ostree_repo_remote_get_url (self->repo,
-                                   remote_name,
-                                   &url,
-                                   NULL))
+  if (!flatpak_dir_ensure_repo (self, NULL, NULL))
+    return FALSE;
+
+  if (!ostree_repo_remote_get_url (self->repo, remote_name, &url, NULL))
     return FALSE;
 
   return url && g_str_has_prefix (url, "oci+");
@@ -10786,7 +10742,7 @@ char *
 flatpak_dir_get_remote_main_ref (FlatpakDir *self,
                                  const char *remote_name)
 {
-  GKeyFile *config = ostree_repo_get_config (self->repo);
+  GKeyFile *config = flatpak_dir_get_repo_config (self);
   g_autofree char *group = get_group (remote_name);
 
   if (config)
@@ -10799,7 +10755,7 @@ char *
 flatpak_dir_get_remote_default_branch (FlatpakDir *self,
                                        const char *remote_name)
 {
-  GKeyFile *config = ostree_repo_get_config (self->repo);
+  GKeyFile *config = flatpak_dir_get_repo_config (self);
   g_autofree char *group = get_group (remote_name);
 
   if (config)
@@ -10812,7 +10768,7 @@ int
 flatpak_dir_get_remote_prio (FlatpakDir *self,
                              const char *remote_name)
 {
-  GKeyFile *config = ostree_repo_get_config (self->repo);
+  GKeyFile *config = flatpak_dir_get_repo_config (self);
   g_autofree char *group = get_group (remote_name);
 
   if (config && g_key_file_has_key (config, group, "xa.prio", NULL))
@@ -10825,7 +10781,7 @@ gboolean
 flatpak_dir_get_remote_noenumerate (FlatpakDir *self,
                                     const char *remote_name)
 {
-  GKeyFile *config = ostree_repo_get_config (self->repo);
+  GKeyFile *config = flatpak_dir_get_repo_config (self);
   g_autofree char *group = get_group (remote_name);
 
   if (config)
@@ -10838,7 +10794,7 @@ gboolean
 flatpak_dir_get_remote_nodeps (FlatpakDir *self,
                                const char *remote_name)
 {
-  GKeyFile *config = ostree_repo_get_config (self->repo);
+  GKeyFile *config = flatpak_dir_get_repo_config (self);
   g_autofree char *group = get_group (remote_name);
 
   if (config)
@@ -10851,7 +10807,7 @@ gboolean
 flatpak_dir_get_remote_disabled (FlatpakDir *self,
                                  const char *remote_name)
 {
-  GKeyFile *config = ostree_repo_get_config (self->repo);
+  GKeyFile *config = flatpak_dir_get_repo_config (self);
   g_autofree char *group = get_group (remote_name);
   g_autofree char *url = NULL;
 
@@ -10859,7 +10815,8 @@ flatpak_dir_get_remote_disabled (FlatpakDir *self,
       g_key_file_get_boolean (config, group, "xa.disable", NULL))
     return TRUE;
 
-  if (ostree_repo_remote_get_url (self->repo, remote_name, &url, NULL) && *url == 0)
+  if (self->repo &&
+      ostree_repo_remote_get_url (self->repo, remote_name, &url, NULL) && *url == 0)
     return TRUE; /* Empty URL => disabled */
 
   return FALSE;
@@ -12993,7 +12950,7 @@ flatpak_dir_get_default_locale_languages (FlatpakDir *self)
 char **
 flatpak_dir_get_locale_languages (FlatpakDir *self)
 {
-  GKeyFile *config = ostree_repo_get_config (self->repo);
+  GKeyFile *config = flatpak_dir_get_repo_config (self);
 
   if (config)
     {

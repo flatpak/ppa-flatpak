@@ -81,6 +81,8 @@ CLEANFILES += $(nodist_libflatpak_common_la_SOURCES)
 libflatpak_common_la_SOURCES = \
 	$(flatpakinclude_HEADERS) \
 	common/flatpak-common-types-private.h \
+	common/flatpak-appdata.c \
+	common/flatpak-appdata-private.h \
 	common/flatpak-bwrap.c \
 	common/flatpak-bwrap-private.h \
 	common/flatpak-dir.c \
@@ -129,7 +131,6 @@ libflatpak_common_la_SOURCES = \
 libflatpak_common_la_CFLAGS = \
 	-DFLATPAK_COMPILATION \
 	$(AM_CFLAGS) \
-	$(APPSTREAM_GLIB_CFLAGS) \
 	$(BASE_CFLAGS) \
 	$(HIDDEN_VISIBILITY_CFLAGS) \
 	$(OSTREE_CFLAGS) \
@@ -139,9 +140,10 @@ libflatpak_common_la_CFLAGS = \
 	$(LIBSECCOMP_CFLAGS) \
 	$(INTERNAL_GPGME_CFLAGS) \
 	$(SYSTEMD_CFLAGS) \
+	$(DCONF_CFLAGS) \
 	-I$(srcdir)/dbus-proxy \
 	$(NULL)
-libflatpak_common_la_LIBADD = $(AM_LIBADD) libglnx.la $(APPSTREAM_GLIB_LIBS) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(XAUTH_LIBS) $(LIBSECCOMP_LIBS) $(INTERNAL_GPGME_LIBS) $(SYSTEMD_LIBS)
+libflatpak_common_la_LIBADD = $(AM_LIBADD) libglnx.la $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(XAUTH_LIBS) $(LIBSECCOMP_LIBS) $(INTERNAL_GPGME_LIBS) $(SYSTEMD_LIBS) $(DCONF_LIBS)
 
 
 libflatpak_la_SOURCES = \

@@ -56,18 +56,18 @@ static GOptionEntry options[] = {
 };
 
 static Column all_columns[] = {
-  { "description",    N_("Description"),    N_("Show the description"),    1, 1 },
-  { "application",    N_("Application"),    N_("Show the application ID"), 0, 1 },
-  { "version",        N_("Version"),        N_("Show the version"),        1, 1 },
-  { "branch",         N_("Branch"),         N_("Show the branch"),         0, 1 },
-  { "arch",           N_("Arch"),           N_("Show the architecture"),   0, 0 },
-  { "origin",         N_("Origin"),         N_("Show the origin remote"),  1, 1 },
-  { "ref",            N_("Ref"),            N_("Show the ref"),            1, 0 },
-  { "commit",         N_("Commit"),         N_("Show the active commit"),  1, 0 },
-  { "runtime",        N_("Runtime"),        N_("Show the runtime"),        1, 0 },
-  { "installed-size", N_("Installed size"), N_("Show the installed size"), 1, 0 },
-  { "download-size",  N_("Download size"),  N_("Show the download size"),  1, 0 },
-  { "options",        N_("Options"),        N_("Show options"),            1, 0 },
+  { "description",    N_("Description"),    N_("Show the description"),    1, FLATPAK_ELLIPSIZE_MODE_END, 1, 1 },
+  { "application",    N_("Application"),    N_("Show the application ID"), 1, FLATPAK_ELLIPSIZE_MODE_START, 0, 1 },
+  { "version",        N_("Version"),        N_("Show the version"),        1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
+  { "branch",         N_("Branch"),         N_("Show the branch"),         1, FLATPAK_ELLIPSIZE_MODE_NONE, 0, 1 },
+  { "arch",           N_("Arch"),           N_("Show the architecture"),   1, FLATPAK_ELLIPSIZE_MODE_NONE, 0, 0 },
+  { "origin",         N_("Origin"),         N_("Show the origin remote"),  1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
+  { "ref",            N_("Ref"),            N_("Show the ref"),            1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 0 },
+  { "commit",         N_("Commit"),         N_("Show the active commit"),  1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 0 },
+  { "runtime",        N_("Runtime"),        N_("Show the runtime"),        1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 0 },
+  { "installed-size", N_("Installed size"), N_("Show the installed size"), 1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 0 },
+  { "download-size",  N_("Download size"),  N_("Show the download size"),  1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 0 },
+  { "options",        N_("Options"),        N_("Show options"),            1, FLATPAK_ELLIPSIZE_MODE_END, 1, 0 },
   { NULL }
 };
 
@@ -120,13 +120,7 @@ ls_remote (GHashTable *refs_hash, const char **arches, const char *app_runtime, 
 
   printer = flatpak_table_printer_new ();
 
-  flatpak_table_printer_set_column_titles (printer, columns);
-
-  for (i = 0; columns[i].name; i++)
-    flatpak_table_printer_set_column_expand (printer, i, TRUE);
-  flatpak_table_printer_set_column_ellipsize (printer,
-                                              find_column (columns, "description", NULL),
-                                              FLATPAK_ELLIPSIZE_MODE_END);
+  flatpak_table_printer_set_columns (printer, columns);
 
   if (app_runtime)
     {
@@ -372,9 +366,12 @@ ls_remote (GHashTable *refs_hash, const char **arches, const char *app_runtime, 
         }
     }
 
-  flatpak_get_window_size (&rows, &cols);
-  flatpak_table_printer_print_full (printer, 0, cols, NULL, NULL);
-  g_print ("\n");
+  if (flatpak_table_printer_get_current_row (printer) > 0)
+    {
+      flatpak_get_window_size (&rows, &cols);
+      flatpak_table_printer_print_full (printer, 0, cols, NULL, NULL);
+      g_print ("\n");
+    }
 
   flatpak_table_printer_free (printer);
 
@@ -488,7 +485,8 @@ flatpak_builtin_remote_ls (int argc, char **argv, GCancellable *cancellable, GEr
         }
     }
 
-  all_columns[6].def = !has_remote;
+  /* show origin by default if listing multiple remotes */
+  all_columns[5].def = !has_remote;
 
   columns = handle_column_args (all_columns, opt_show_details, opt_cols, error);
   if (columns == NULL)
@@ -517,6 +515,7 @@ flatpak_complete_remote_ls (FlatpakCompletion *completion)
       flatpak_complete_options (completion, global_entries);
       flatpak_complete_options (completion, options);
       flatpak_complete_options (completion, user_entries);
+      flatpak_complete_columns (completion, all_columns);
 
       for (i = 0; i < dirs->len; i++)
         {

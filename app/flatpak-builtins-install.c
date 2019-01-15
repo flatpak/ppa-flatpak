@@ -34,6 +34,7 @@
 #include "flatpak-builtins.h"
 #include "flatpak-builtins-utils.h"
 #include "flatpak-cli-transaction.h"
+#include "flatpak-quiet-transaction.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-error.h"
 #include "flatpak-chain-input-stream-private.h"
@@ -52,6 +53,7 @@ static gboolean opt_bundle;
 static gboolean opt_from;
 static gboolean opt_yes;
 static gboolean opt_reinstall;
+static gboolean opt_noninteractive;
 
 static GOptionEntry options[] = {
   { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to install for"), N_("ARCH") },
@@ -68,6 +70,7 @@ static GOptionEntry options[] = {
   { "subpath", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_subpaths, N_("Only install this subpath"), N_("PATH") },
   { "assumeyes", 'y', 0, G_OPTION_ARG_NONE, &opt_yes, N_("Automatically answer yes for all questions"), NULL },
   { "reinstall", 0, 0, G_OPTION_ARG_NONE, &opt_reinstall, N_("Uninstall first if already installed"), NULL },
+  { "noninteractive", 0, 0, G_OPTION_ARG_NONE, &opt_noninteractive, N_("Produce minimal output and don't ask questions"), NULL },
   { NULL }
 };
 
@@ -146,7 +149,10 @@ install_bundle (FlatpakDir *dir,
         return FALSE;
     }
 
-  transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
+  if (opt_noninteractive)
+    transaction = flatpak_quiet_transaction_new (dir, error);
+  else
+    transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
   if (transaction == NULL)
     return FALSE;
 
@@ -160,8 +166,16 @@ install_bundle (FlatpakDir *dir,
   if (!flatpak_transaction_add_install_bundle (transaction, file, gpg_data, error))
     return FALSE;
 
-  if (!flatpak_cli_transaction_run (transaction, cancellable, error))
-    return FALSE;
+  if (!flatpak_transaction_run (transaction, cancellable, error))
+    {
+      if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
+        {
+          g_clear_error (error);
+          return TRUE;
+        }
+
+      return FALSE;
+    }
 
   return TRUE;
 }
@@ -209,7 +223,10 @@ install_from (FlatpakDir *dir,
       file_data = g_bytes_new_take (g_steal_pointer (&data), data_len);
     }
 
-  transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
+  if (opt_noninteractive)
+    transaction = flatpak_quiet_transaction_new (dir, error);
+  else
+    transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
   if (transaction == NULL)
     return FALSE;
 
@@ -224,8 +241,16 @@ install_from (FlatpakDir *dir,
   if (!flatpak_transaction_add_install_flatpakref (transaction, file_data, error))
     return FALSE;
 
-  if (!flatpak_cli_transaction_run (transaction, cancellable, error))
-    return FALSE;
+  if (!flatpak_transaction_run (transaction, cancellable, error))
+    {
+      if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
+        {
+          g_clear_error (error);
+          return TRUE;
+        }
+
+      return FALSE;
+    }
 
   return TRUE;
 }
@@ -251,7 +276,7 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv,
-                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS,
+                                     FLATPAK_BUILTIN_FLAG_ALL_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
                                      &dirs, cancellable, error))
     return FALSE;
 
@@ -280,7 +305,8 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
 
   kinds = flatpak_kinds_from_bools (opt_app, opt_runtime);
 
-  g_print (_("Looking for matches…\n"));
+  if (!opt_noninteractive)
+    g_print (_("Looking for matches…\n"));
 
   if (!auto_remote &&
       (g_path_is_absolute (argv[1]) ||
@@ -418,7 +444,10 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
 
   default_branch = flatpak_dir_get_remote_default_branch (dir, remote);
 
-  transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
+  if (opt_noninteractive)
+    transaction = flatpak_quiet_transaction_new (dir, error);
+  else
+    transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
   if (transaction == NULL)
     return FALSE;
 
@@ -474,12 +503,26 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
       if (!flatpak_resolve_matching_refs (remote, dir, opt_yes, refs, id, &ref, error))
         return FALSE;
 
-      if (!flatpak_cli_transaction_add_install (transaction, remote, ref, (const char **) opt_subpaths, error))
-        return FALSE;
+      if (!flatpak_transaction_add_install (transaction, remote, ref, (const char **)opt_subpaths, error))
+        {
+          if (!g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED))
+            return FALSE;
+
+          g_printerr (_("Skipping: %s\n"), (*error)->message);
+          g_clear_error (error);
+        }
     }
 
-  if (!flatpak_cli_transaction_run (transaction, cancellable, error))
-    return FALSE;
+  if (!flatpak_transaction_run (transaction, cancellable, error))
+    {
+      if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
+        {
+          g_clear_error (error);
+          return TRUE;
+        }
+
+      return FALSE;
+    }
 
   return TRUE;
 }
@@ -495,7 +538,8 @@ flatpak_complete_install (FlatpakCompletion *completion)
 
   context = g_option_context_new ("");
   if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv,
-                                     FLATPAK_BUILTIN_FLAG_ONE_DIR, &dirs, NULL, NULL))
+                                     FLATPAK_BUILTIN_FLAG_ONE_DIR | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
+                                     &dirs, NULL, NULL))
     return FALSE;
 
   dir = g_ptr_array_index (dirs, 0);

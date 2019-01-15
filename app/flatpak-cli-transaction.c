@@ -36,7 +36,6 @@ struct _FlatpakCliTransaction
 
   gboolean           disable_interaction;
   gboolean           stop_on_first_error;
-  gboolean           aborted;
   GError            *first_operation_error;
 
   int                rows;
@@ -62,7 +61,7 @@ struct _FlatpakCliTransaction
 
 struct _FlatpakCliTransactionClass
 {
-  FlatpakCliTransactionClass parent_class;
+  FlatpakTransactionClass parent_class;
 };
 
 G_DEFINE_TYPE (FlatpakCliTransaction, flatpak_cli_transaction, FLATPAK_TYPE_TRANSACTION);
@@ -299,6 +298,9 @@ progress_changed_cb (FlatpakTransactionProgress *progress,
   g_string_append (str, cli->progress_msg);
   g_string_append (str, " ");
 
+  if (flatpak_fancy_output ())
+    g_string_append (str, FLATPAK_ANSI_FAINT_ON);
+
   for (i = 0; i < n_full; i++)
     g_string_append (str, full_block);
 
@@ -307,6 +309,9 @@ progress_changed_cb (FlatpakTransactionProgress *progress,
       g_string_append (str, partial_blocks[partial]);
       i++;
     }
+
+  if (flatpak_fancy_output ())
+    g_string_append (str, FLATPAK_ANSI_FAINT_OFF);
 
   for (; i < bar_length; i++)
     g_string_append (str, " ");
@@ -467,6 +472,8 @@ operation_error (FlatpakTransaction            *transaction,
     msg = g_strdup_printf (_("%s not installed"), flatpak_ref_get_name (rref));
   else if (g_error_matches (error, FLATPAK_ERROR, FLATPAK_ERROR_NEED_NEW_FLATPAK))
     msg = g_strdup_printf (_("%s needs a later flatpak version"), flatpak_ref_get_name (rref));
+  else if (g_error_matches (error, FLATPAK_ERROR, FLATPAK_ERROR_OUT_OF_SPACE))
+    msg = g_strdup (_("Not enough disk space to complete this operation"));
   else
     msg = g_strdup (error->message);
 
@@ -702,7 +709,7 @@ print_permissions (FlatpakCliTransaction *self,
     g_ptr_array_add (permissions, g_strdup_printf ("bus ownership [%d]", j++));
   if (system_bus_talk->len > 0)
     g_ptr_array_add (permissions, g_strdup_printf ("system dbus access [%d]", j++));
-  if (session_bus_own->len > 0)
+  if (system_bus_own->len > 0)
     g_ptr_array_add (permissions, g_strdup_printf ("system bus ownership [%d]", j++));
   if (tags->len > 0)
     g_ptr_array_add (permissions, g_strdup_printf ("tags [%d]", j++));
@@ -769,6 +776,29 @@ print_permissions (FlatpakCliTransaction *self,
   if (tags->len > 0)
     print_perm_line (j++, tags, cols);
 
+}
+
+static void
+message_handler (const gchar   *log_domain,
+                 GLogLevelFlags log_level,
+                 const gchar   *message,
+                 gpointer       user_data)
+{
+  FlatpakCliTransaction *self = FLATPAK_CLI_TRANSACTION (user_data);
+  g_autofree char *text = NULL;
+
+  text = g_strconcat (_("Warning: "), message, NULL);
+
+  if (flatpak_fancy_output ())
+    {
+      flatpak_table_printer_set_cell (self->printer, self->progress_row, 0, text);
+      self->progress_row++;
+      flatpak_table_printer_add_span (self->printer, "");
+      flatpak_table_printer_finish_row (self->printer);
+      redraw (self);
+    }
+  else
+    g_print ("\r%-*s\n", self->table_width, text);
 }
 
 static gboolean
@@ -841,7 +871,8 @@ transaction_ready (FlatpakTransaction *transaction)
   if (self->installing + self->updating + self->uninstalling > 1)
     {
       flatpak_table_printer_set_column_expand (printer, i, TRUE);
-      flatpak_table_printer_set_column_title (printer, i++, _("Change"));
+      /* translators: This is short for operation, the title of a one-char column */
+      flatpak_table_printer_set_column_title (printer, i++, _("Op"));
     }
 
   if (self->installing || self->updating)
@@ -920,21 +951,22 @@ transaction_ready (FlatpakTransaction *transaction)
     {
       FlatpakInstallation *installation = flatpak_transaction_get_installation (transaction);
       const char *name;
+      gboolean ret;
+
+      g_print ("\n");
 
       name = flatpak_installation_get_display_name (installation);
       if (name == NULL)
         name = flatpak_installation_get_id (installation);
-      if (name == NULL)
-        {
-          if (flatpak_installation_get_is_user (installation))
-            name = "user";
-          else
-            name = "system";
-        }
 
-      g_print ("\n");
+      if (name != NULL)
+        ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the %s installation?"), name);
+      else if (flatpak_installation_get_is_user (installation))
+        ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the user installation?"));
+      else
+        ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the system installation?"));
 
-      if (!flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the %s installation?"), name))
+      if (!ret)
         {
           g_list_free_full (ops, g_object_unref);
           return FALSE;
@@ -961,9 +993,11 @@ transaction_ready (FlatpakTransaction *transaction)
 
   if (flatpak_fancy_output ())
     {
-      g_print (FLATPAK_ANSI_HIDE_CURSOR);
+      flatpak_hide_cursor ();
       redraw (self);
     }
+
+  g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_MESSAGE | G_LOG_LEVEL_WARNING, message_handler, transaction);
 
   return TRUE;
 }
@@ -986,6 +1020,10 @@ flatpak_cli_transaction_init (FlatpakCliTransaction *self)
 {
 }
 
+static gboolean flatpak_cli_transaction_run (FlatpakTransaction *transaction,
+                                             GCancellable       *cancellable,
+                                             GError            **error);
+
 static void
 flatpak_cli_transaction_class_init (FlatpakCliTransactionClass *klass)
 {
@@ -1000,6 +1038,7 @@ flatpak_cli_transaction_class_init (FlatpakCliTransactionClass *klass)
   transaction_class->operation_error = operation_error;
   transaction_class->choose_remote_for_ref = choose_remote_for_ref;
   transaction_class->end_of_lifed = end_of_lifed;
+  transaction_class->run = flatpak_cli_transaction_run;
 }
 
 FlatpakTransaction *
@@ -1032,45 +1071,18 @@ flatpak_cli_transaction_new (FlatpakDir *dir,
   return (FlatpakTransaction *) g_steal_pointer (&self);
 }
 
-gboolean
-flatpak_cli_transaction_add_install (FlatpakTransaction *transaction,
-                                     const char         *remote,
-                                     const char         *ref,
-                                     const char        **subpaths,
-                                     GError            **error)
-{
-  g_autoptr(GError) local_error = NULL;
-
-  if (!flatpak_transaction_add_install (transaction, remote, ref, subpaths, &local_error))
-    {
-      if (g_error_matches (local_error, FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED))
-        {
-          g_printerr (_("Skipping: %s\n"), local_error->message);
-          return TRUE;
-        }
-
-      g_propagate_error (error, g_steal_pointer (&local_error));
-      return FALSE;
-    }
-
-  return TRUE;
-}
-
-
-gboolean
+static gboolean
 flatpak_cli_transaction_run (FlatpakTransaction *transaction,
                              GCancellable       *cancellable,
                              GError            **error)
 {
   FlatpakCliTransaction *self = FLATPAK_CLI_TRANSACTION (transaction);
-
-  g_autoptr(GError) local_error = NULL;
   gboolean res;
 
-  res = flatpak_transaction_run (transaction, cancellable, &local_error);
+  res = FLATPAK_TRANSACTION_CLASS (flatpak_cli_transaction_parent_class)->run (transaction, cancellable, error);
 
   if (flatpak_fancy_output ())
-    g_print (FLATPAK_ANSI_SHOW_CURSOR);
+    flatpak_show_cursor ();
 
   if (res && self->n_ops > 0)
     {
@@ -1096,23 +1108,10 @@ flatpak_cli_transaction_run (FlatpakTransaction *transaction,
       g_print ("\n");
     }
 
-  /* If we got some weird error (i.e. not ABORTED because we chose to abort
-     on an error, report that */
-  if (!res)
-    {
-      if (g_error_matches (local_error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
-        {
-          self->aborted = TRUE;
-        }
-      else
-        {
-          g_propagate_error (error, g_steal_pointer (&local_error));
-          return FALSE;
-        }
-    }
-
   if (self->first_operation_error)
     {
+      g_clear_error (error);
+
       /* We always want to return an error if there was some kind of operation error,
          as that causes the main CLI to return an error status. */
 
@@ -1133,13 +1132,8 @@ flatpak_cli_transaction_run (FlatpakTransaction *transaction,
         }
     }
 
+  if (!res)
+    return FALSE;
+
   return TRUE;
-}
-
-gboolean
-flatpak_cli_transaction_was_aborted (FlatpakTransaction *transaction)
-{
-  FlatpakCliTransaction *self = FLATPAK_CLI_TRANSACTION (transaction);
-
-  return self->aborted;
 }

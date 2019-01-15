@@ -140,33 +140,20 @@ zshcompletion_DATA = completion/_flatpak
 EXTRA_DIST += $(zshcompletion_DATA)
 
 profiledir = $(PROFILE_DIR)
-profile_DATA = flatpak.sh
-EXTRA_DIST += \
-	profile/flatpak.sh.in \
-	$(NULL)
-DISTCLEANFILES += flatpak.sh
-
-flatpak.sh: profile/flatpak.sh.in
-	$(AM_V_GEN) $(SED) -e "s|\@localstatedir\@|$(localstatedir)|" \
-		-e "s|\@sysconfdir\@|$(sysconfdir)|" $< > $@
+profile_DATA = profile/flatpak.sh
+EXTRA_DIST += $(profile_DATA)
 
 envdir = $(datadir)/gdm/env.d
 env_DATA = flatpak.env
-EXTRA_DIST += env.d/flatpak.env.in
+EXTRA_DIST += env.d/flatpak.env.in env.d/60-flatpak
 DISTCLEANFILES += flatpak.env
 
 flatpak.env: env.d/flatpak.env.in
 	$(AM_V_GEN) $(SED) -e "s|\@localstatedir\@|$(localstatedir)|" \
 		-e "s|\@sysconfdir\@|$(sysconfdir)|" $< > $@
 
-dbussnippetdir = $(systemduserunitdir)/dbus.service.d
-dbussnippet_DATA = flatpak.conf
-EXTRA_DIST += dbus.service.d/flatpak.conf.in
-DISTCLEANFILES += flatpak.conf
-
-flatpak.conf: dbus.service.d/flatpak.conf.in
-	$(AM_V_GEN) $(SED) -e "s|\@localstatedir\@|$(localstatedir)|" \
-		-e "s|\@sysconfdir\@|$(sysconfdir)|" $< > $@
+envgendir = $(systemduserenvgendir)
+envgen_DATA = env.d/60-flatpak
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = flatpak.pc
@@ -198,4 +185,3 @@ lcov-clean:
 genlcov:
 	$(AM_V_GEN) $(LCOV) --directory $(top_builddir) --capture --output-file coverage.info
 	$(AM_V_GEN) $(GENHTML) --prefix $(top_builddir) --output-directory coverage coverage.info
-	$(AM_V_GEN)

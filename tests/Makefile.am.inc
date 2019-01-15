@@ -1,4 +1,5 @@
 AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 \
+	FLATPAK_CONFIG_DIR=/dev/null \
 	FLATPAK_TRIGGERSDIR=$$(cd $(top_srcdir) && pwd)/triggers \
 	FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && pwd)/flatpak-dbus-proxy \
 	GI_TYPELIB_PATH=$$(cd $(top_builddir) && pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
@@ -12,15 +13,44 @@ else
 AM_TESTS_ENVIRONMENT += FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
 endif
 
-testlibrary_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) -DFLATPAK_COMPILATION
+testlibrary_CFLAGS = \
+	$(AM_CFLAGS) \
+	$(BASE_CFLAGS) \
+	$(OSTREE_CFLAGS) \
+	-DFLATPAK_COMPILATION \
+	$(NULL)
 testlibrary_LDADD = \
-             $(AM_LDADD) \
-             $(BASE_LIBS) \
-             $(OSTREE_LIBS) \
-             libglnx.la \
-             libflatpak.la \
-             $(NULL)
+	$(AM_LDADD) \
+	$(BASE_LIBS) \
+	$(OSTREE_LIBS) \
+	libglnx.la \
+	libflatpak.la \
+	$(NULL)
 testlibrary_SOURCES = tests/testlibrary.c
+
+testcommon_CFLAGS = \
+	$(AM_CFLAGS) \
+	$(BASE_CFLAGS) \
+	$(OSTREE_CFLAGS) \
+	$(SOUP_CFLAGS) \
+	$(JSON_CFLAGS) \
+	$(APPSTREAM_GLIB_CFLAGS) \
+	-DFLATPAK_COMPILATION \
+	-I$(srcdir)/app \
+	-I$(builddir)/app \
+	$(NULL)
+testcommon_LDADD = \
+	$(AM_LDADD) \
+	$(BASE_LIBS) \
+	$(OSTREE_LIBS) \
+	$(SOUP_LIBS) \
+	$(JSON_LIBS) \
+	$(APPSTREAM_GLIB_LIBS) \     
+	libglnx.la \
+	libflatpak-common.la \
+	libflatpak-app.la \
+	$(NULL)
+testcommon_SOURCES = tests/testcommon.c
 
 tests_httpcache_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
 	-DFLATPAK_COMPILATION \
@@ -89,6 +119,8 @@ endif
 # Run make update-test-matrix after changing this
 TEST_MATRIX_SOURCE = \
 	tests/test-basic.sh \
+	tests/test-completion.sh \
+	tests/test-config.sh \
 	tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh \
 	tests/test-run.sh{{user+system},{nodeltas+deltas}} \
@@ -124,7 +156,7 @@ test_scripts = ${TEST_MATRIX}
 dist_test_scripts = ${TEST_MATRIX_DIST}
 dist_installed_test_extra_scripts += ${TEST_MATRIX_EXTRA_DIST}
 
-test_programs = testlibrary
+test_programs = testlibrary testcommon
 test_extra_programs = tests/httpcache
 
 @VALGRIND_CHECK_RULES@
