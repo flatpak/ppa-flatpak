@@ -10,6 +10,11 @@ binaries := $(shell dh_listpackages)
 %:
 	dh $@ --with=gir
 
+override_dh_clean:
+	dh_clean
+	rm -fr debian/HOME
+	rm -fr debian/XDG_RUNTIME_DIR
+
 override_dh_autoreconf:
 	dh_autoreconf \
 		--as-needed \
