@@ -5,6 +5,7 @@ flatpak (1.1.3-1) UNRELEASED; urgency=medium
     - d/copyright: Update
     - d/flatpak.install: Adjust installed paths for profile/environment
       snippets
+    - d/libflatpak0.symbols: Update
   * Use external xdg-dbus-proxy now that it has passed NEW
   * d/flatpak.install: Canonicalize order
 

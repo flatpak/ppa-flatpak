@@ -48,6 +48,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_list_remote_related_refs_sync@Base 0.6.7
  flatpak_installation_list_remotes@Base 0.5.2
  flatpak_installation_list_remotes_by_type@Base 0.11.4
+ flatpak_installation_list_unused_refs@Base 1.1.3
  flatpak_installation_load_app_overrides@Base 0.5.2
  flatpak_installation_modify_remote@Base 0.5.2+git20160516
  flatpak_installation_new_for_path@Base 0.5.2
@@ -67,6 +68,10 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_update_appstream_sync@Base 0.5.2
  flatpak_installation_update_full@Base 0.6.5
  flatpak_installation_update_remote_sync@Base 0.6.13
+ flatpak_installed_ref_get_appdata_license@Base 1.1.3
+ flatpak_installed_ref_get_appdata_name@Base 1.1.3
+ flatpak_installed_ref_get_appdata_summary@Base 1.1.3
+ flatpak_installed_ref_get_appdata_version@Base 1.1.3
  flatpak_installed_ref_get_deploy_dir@Base 0.5.2
  flatpak_installed_ref_get_eol@Base 0.11.4
  flatpak_installed_ref_get_eol_rebase@Base 0.11.4
@@ -76,6 +81,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installed_ref_get_origin@Base 0.5.2
  flatpak_installed_ref_get_subpaths@Base 0.5.2+git20160516
  flatpak_installed_ref_get_type@Base 0.5.2
+ flatpak_installed_ref_load_appdata@Base 1.1.3
  flatpak_installed_ref_load_metadata@Base 0.5.2
  flatpak_instance_get_all@Base 1.0.2
  flatpak_instance_get_app@Base 1.0.2
@@ -161,6 +167,8 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_transaction_new_for_installation@Base 0.11.8
  flatpak_transaction_operation_get_bundle_path@Base 0.99.1
  flatpak_transaction_operation_get_commit@Base 0.99.1
+ flatpak_transaction_operation_get_download_size@Base 1.1.3
+ flatpak_transaction_operation_get_installed_size@Base 1.1.3
  flatpak_transaction_operation_get_metadata@Base 0.99.1
  flatpak_transaction_operation_get_old_metadata@Base 0.99.1
  flatpak_transaction_operation_get_operation_type@Base 0.99.1
@@ -169,8 +177,10 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_transaction_operation_get_type@Base 0.99.1
  flatpak_transaction_operation_type_get_type@Base 0.11.8
  flatpak_transaction_operation_type_to_string@Base 0.99.3
+ flatpak_transaction_progress_get_bytes_transferred@Base 1.1.3
  flatpak_transaction_progress_get_is_estimating@Base 0.11.8
  flatpak_transaction_progress_get_progress@Base 0.11.8
+ flatpak_transaction_progress_get_start_time@Base 1.1.3
  flatpak_transaction_progress_get_status@Base 0.11.8
  flatpak_transaction_progress_get_type@Base 0.11.8
  flatpak_transaction_progress_set_update_frequency@Base 0.11.8
