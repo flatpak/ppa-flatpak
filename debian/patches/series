@@ -1,2 +1,3 @@
 Install-environment-generator-as-an-executable-file.patch
+profile-Don-t-rely-on-bash-syntax.patch
 debian/Use-Python-3-for-test-web-server.patch
