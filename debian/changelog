@@ -1,3 +1,10 @@
+flatpak (1.1.3-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+  * Use external xdg-dbus-proxy now that it has passed NEW
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 15 Jan 2019 18:18:13 +0000
+
 flatpak (1.1.2-1) experimental; urgency=medium
 
   * New upstream release
