@@ -1,23 +1,39 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
-<book xmlns="http://www.devhelp.net/book" title="Flatpak Library Reference Manual" link="index.html" author="" name="flatpak" version="2" language="c">
+<book xmlns="http://www.devhelp.net/book" title="Flatpak Reference Manual" link="index.html" author="" name="flatpak" version="2" language="c" online="http://[SERVER]/Flatpak/index.html">
   <chapters>
-    <sub name="Flatpak" link="ch01.html">
+    <sub name="[Insert title here]" link="ch01.html">
       <sub name="FlatpakInstallation" link="FlatpakInstallation.html"/>
-      <sub name="FlatpakRemote" link="FlatpakRemote.html"/>
-      <sub name="FlatpakTransactionOperation" link="FlatpakTransactionOperation.html"/>
-      <sub name="FlatpakTransactionProgress" link="FlatpakTransactionProgress.html"/>
-      <sub name="FlatpakTransaction" link="FlatpakTransaction.html"/>
-      <sub name="FlatpakRef" link="FlatpakRef.html"/>
       <sub name="FlatpakInstalledRef" link="FlatpakInstalledRef.html"/>
-      <sub name="FlatpakRelatedRef" link="FlatpakRelatedRef.html"/>
       <sub name="FlatpakRemoteRef" link="FlatpakRemoteRef.html"/>
+      <sub name="FlatpakRelatedRef" link="FlatpakRelatedRef.html"/>
+      <sub name="FlatpakRef" link="FlatpakRef.html"/>
+      <sub name="FlatpakRemote" link="FlatpakRemote.html"/>
+      <sub name="FlatpakTransactionProgress" link="FlatpakTransactionProgress.html"/>
+      <sub name="FlatpakTransactionOperation" link="FlatpakTransactionOperation.html"/>
+      <sub name="FlatpakTransaction" link="FlatpakTransaction.html"/>
+      <sub name="Version information" link="flatpak-Version-information.html"/>
+      <sub name="Error codes" link="flatpak-Error-codes.html"/>
       <sub name="FlatpakBundleRef" link="FlatpakBundleRef.html"/>
       <sub name="FlatpakInstance" link="FlatpakInstance.html"/>
-      <sub name="Error codes" link="flatpak-Error-codes.html"/>
-      <sub name="Version information" link="flatpak-Version-information.html"/>
     </sub>
     <sub name="Object Hierarchy" link="object-tree.html"/>
-    <sub name="API Index" link="full-api-index.html"/>
+    <sub name="API Index" link="api-index-full.html"/>
+    <sub name="Index of deprecated API" link="deprecated-api-index.html"/>
+    <sub name="Index of new API in 1.1.1" link="api-index-1-1-1.html"/>
+    <sub name="Index of new API in 0.8" link="api-index-0-8.html"/>
+    <sub name="Index of new API in 1.1.2" link="api-index-1-1-2.html"/>
+    <sub name="Index of new API in 0.11.8" link="api-index-0-11-8.html"/>
+    <sub name="Index of new API in 1.1" link="api-index-1-1.html"/>
+    <sub name="Index of new API in 0.10.0" link="api-index-0-10-0.html"/>
+    <sub name="Index of new API in 0.9.8" link="api-index-0-9-8.html"/>
+    <sub name="Index of new API in 1.0.3" link="api-index-1-0-3.html"/>
+    <sub name="Index of new API in 0.6.7" link="api-index-0-6-7.html"/>
+    <sub name="Index of new API in 0.8.0" link="api-index-0-8-0.html"/>
+    <sub name="Index of new API in 0.6.13" link="api-index-0-6-13.html"/>
+    <sub name="Index of new API in 0.6.12" link="api-index-0-6-12.html"/>
+    <sub name="Index of new API in 0.6.10" link="api-index-0-6-10.html"/>
+    <sub name="Index of new API in 2.26" link="api-index-2-26.html"/>
+    <sub name="Index of new API in 0.6.15" link="api-index-0-6-15.html"/>
     <sub name="Annotation Glossary" link="annotation-glossary.html"/>
   </chapters>
   <functions>
@@ -80,6 +96,67 @@
     <keyword type="enum" name="enum FlatpakUninstallFlags" link="FlatpakInstallation.html#FlatpakUninstallFlags" since="0.11.8"/>
     <keyword type="enum" name="enum FlatpakLaunchFlags" link="FlatpakInstallation.html#FlatpakLaunchFlags"/>
     <keyword type="enum" name="enum FlatpakStorageType" link="FlatpakInstallation.html#FlatpakStorageType" since="0.6.15"/>
+    <keyword type="function" name="flatpak_installed_ref_get_deploy_dir ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-deploy-dir"/>
+    <keyword type="function" name="flatpak_installed_ref_get_installed_size ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-installed-size"/>
+    <keyword type="function" name="flatpak_installed_ref_get_is_current ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-is-current"/>
+    <keyword type="function" name="flatpak_installed_ref_get_latest_commit ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-latest-commit"/>
+    <keyword type="function" name="flatpak_installed_ref_get_origin ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-origin"/>
+    <keyword type="function" name="flatpak_installed_ref_load_metadata ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-load-metadata"/>
+    <keyword type="function" name="flatpak_installed_ref_get_subpaths ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-subpaths"/>
+    <keyword type="function" name="flatpak_installed_ref_get_eol ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-eol"/>
+    <keyword type="function" name="flatpak_installed_ref_get_eol_rebase ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-eol-rebase"/>
+    <keyword type="struct" name="struct FlatpakInstalledRef" link="FlatpakInstalledRef.html#FlatpakInstalledRef-struct"/>
+    <keyword type="property" name="The “appdata-license” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-license"/>
+    <keyword type="property" name="The “appdata-name” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-name"/>
+    <keyword type="property" name="The “appdata-summary” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-summary"/>
+    <keyword type="property" name="The “appdata-version” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-version"/>
+    <keyword type="property" name="The “deploy-dir” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--deploy-dir"/>
+    <keyword type="property" name="The “end-of-life” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--end-of-life"/>
+    <keyword type="property" name="The “end-of-life-rebase” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--end-of-life-rebase"/>
+    <keyword type="property" name="The “installed-size” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--installed-size"/>
+    <keyword type="property" name="The “is-current” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--is-current"/>
+    <keyword type="property" name="The “latest-commit” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--latest-commit"/>
+    <keyword type="property" name="The “origin” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--origin"/>
+    <keyword type="property" name="The “subpaths” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--subpaths"/>
+    <keyword type="function" name="flatpak_remote_ref_get_remote_name ()" link="FlatpakRemoteRef.html#flatpak-remote-ref-get-remote-name"/>
+    <keyword type="function" name="flatpak_remote_ref_get_download_size ()" link="FlatpakRemoteRef.html#flatpak-remote-ref-get-download-size"/>
+    <keyword type="function" name="flatpak_remote_ref_get_eol ()" link="FlatpakRemoteRef.html#flatpak-remote-ref-get-eol"/>
+    <keyword type="function" name="flatpak_remote_ref_get_eol_rebase ()" link="FlatpakRemoteRef.html#flatpak-remote-ref-get-eol-rebase"/>
+    <keyword type="function" name="flatpak_remote_ref_get_installed_size ()" link="FlatpakRemoteRef.html#flatpak-remote-ref-get-installed-size"/>
+    <keyword type="function" name="flatpak_remote_ref_get_metadata ()" link="FlatpakRemoteRef.html#flatpak-remote-ref-get-metadata"/>
+    <keyword type="struct" name="struct FlatpakRemoteRef" link="FlatpakRemoteRef.html#FlatpakRemoteRef-struct"/>
+    <keyword type="property" name="The “download-size” property" link="FlatpakRemoteRef.html#FlatpakRemoteRef--download-size"/>
+    <keyword type="property" name="The “end-of-life” property" link="FlatpakRemoteRef.html#FlatpakRemoteRef--end-of-life"/>
+    <keyword type="property" name="The “end-of-life-rebase” property" link="FlatpakRemoteRef.html#FlatpakRemoteRef--end-of-life-rebase"/>
+    <keyword type="property" name="The “installed-size” property" link="FlatpakRemoteRef.html#FlatpakRemoteRef--installed-size"/>
+    <keyword type="property" name="The “metadata” property" link="FlatpakRemoteRef.html#FlatpakRemoteRef--metadata"/>
+    <keyword type="property" name="The “remote-name” property" link="FlatpakRemoteRef.html#FlatpakRemoteRef--remote-name"/>
+    <keyword type="function" name="flatpak_related_ref_new ()" link="FlatpakRelatedRef.html#flatpak-related-ref-new"/>
+    <keyword type="function" name="flatpak_related_ref_get_subpaths ()" link="FlatpakRelatedRef.html#flatpak-related-ref-get-subpaths" since="0.6.7"/>
+    <keyword type="function" name="flatpak_related_ref_should_download ()" link="FlatpakRelatedRef.html#flatpak-related-ref-should-download" since="0.6.7"/>
+    <keyword type="function" name="flatpak_related_ref_should_delete ()" link="FlatpakRelatedRef.html#flatpak-related-ref-should-delete" since="0.6.7"/>
+    <keyword type="function" name="flatpak_related_ref_should_autoprune ()" link="FlatpakRelatedRef.html#flatpak-related-ref-should-autoprune" since="0.11.8"/>
+    <keyword type="struct" name="struct FlatpakRelatedRef" link="FlatpakRelatedRef.html#FlatpakRelatedRef-struct"/>
+    <keyword type="property" name="The “should-autoprune” property" link="FlatpakRelatedRef.html#FlatpakRelatedRef--should-autoprune"/>
+    <keyword type="property" name="The “should-delete” property" link="FlatpakRelatedRef.html#FlatpakRelatedRef--should-delete"/>
+    <keyword type="property" name="The “should-download” property" link="FlatpakRelatedRef.html#FlatpakRelatedRef--should-download"/>
+    <keyword type="property" name="The “subpaths” property" link="FlatpakRelatedRef.html#FlatpakRelatedRef--subpaths"/>
+    <keyword type="function" name="flatpak_ref_format_ref ()" link="FlatpakRef.html#flatpak-ref-format-ref"/>
+    <keyword type="function" name="flatpak_ref_get_arch ()" link="FlatpakRef.html#flatpak-ref-get-arch"/>
+    <keyword type="function" name="flatpak_ref_get_branch ()" link="FlatpakRef.html#flatpak-ref-get-branch"/>
+    <keyword type="function" name="flatpak_ref_get_collection_id ()" link="FlatpakRef.html#flatpak-ref-get-collection-id"/>
+    <keyword type="function" name="flatpak_ref_get_commit ()" link="FlatpakRef.html#flatpak-ref-get-commit"/>
+    <keyword type="function" name="flatpak_ref_get_kind ()" link="FlatpakRef.html#flatpak-ref-get-kind"/>
+    <keyword type="function" name="flatpak_ref_get_name ()" link="FlatpakRef.html#flatpak-ref-get-name"/>
+    <keyword type="function" name="flatpak_ref_parse ()" link="FlatpakRef.html#flatpak-ref-parse"/>
+    <keyword type="struct" name="struct FlatpakRef" link="FlatpakRef.html#FlatpakRef-struct"/>
+    <keyword type="enum" name="enum FlatpakRefKind" link="FlatpakRef.html#FlatpakRefKind"/>
+    <keyword type="property" name="The “arch” property" link="FlatpakRef.html#FlatpakRef--arch"/>
+    <keyword type="property" name="The “branch” property" link="FlatpakRef.html#FlatpakRef--branch"/>
+    <keyword type="property" name="The “collection-id” property" link="FlatpakRef.html#FlatpakRef--collection-id"/>
+    <keyword type="property" name="The “commit” property" link="FlatpakRef.html#FlatpakRef--commit"/>
+    <keyword type="property" name="The “kind” property" link="FlatpakRef.html#FlatpakRef--kind"/>
+    <keyword type="property" name="The “name” property" link="FlatpakRef.html#FlatpakRef--name"/>
     <keyword type="function" name="flatpak_remote_new ()" link="FlatpakRemote.html#flatpak-remote-new"/>
     <keyword type="function" name="flatpak_remote_get_name ()" link="FlatpakRemote.html#flatpak-remote-get-name"/>
     <keyword type="function" name="flatpak_remote_get_appstream_dir ()" link="FlatpakRemote.html#flatpak-remote-get-appstream-dir"/>
@@ -108,6 +185,12 @@
     <keyword type="enum" name="enum FlatpakRemoteType" link="FlatpakRemote.html#FlatpakRemoteType"/>
     <keyword type="property" name="The “name” property" link="FlatpakRemote.html#FlatpakRemote--name"/>
     <keyword type="property" name="The “type” property" link="FlatpakRemote.html#FlatpakRemote--type"/>
+    <keyword type="function" name="flatpak_transaction_progress_get_is_estimating ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-get-is-estimating"/>
+    <keyword type="function" name="flatpak_transaction_progress_get_progress ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-get-progress"/>
+    <keyword type="function" name="flatpak_transaction_progress_get_status ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-get-status"/>
+    <keyword type="function" name="flatpak_transaction_progress_set_update_frequency ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-set-update-frequency"/>
+    <keyword type="struct" name="FlatpakTransactionProgress" link="FlatpakTransactionProgress.html#FlatpakTransactionProgress-struct"/>
+    <keyword type="signal" name="The “changed” signal" link="FlatpakTransactionProgress.html#FlatpakTransactionProgress-changed"/>
     <keyword type="function" name="flatpak_transaction_operation_get_bundle_path ()" link="FlatpakTransactionOperation.html#flatpak-transaction-operation-get-bundle-path"/>
     <keyword type="function" name="flatpak_transaction_operation_get_commit ()" link="FlatpakTransactionOperation.html#flatpak-transaction-operation-get-commit"/>
     <keyword type="function" name="flatpak_transaction_operation_get_operation_type ()" link="FlatpakTransactionOperation.html#flatpak-transaction-operation-get-operation-type"/>
@@ -117,12 +200,6 @@
     <keyword type="function" name="flatpak_transaction_operation_get_old_metadata ()" link="FlatpakTransactionOperation.html#flatpak-transaction-operation-get-old-metadata"/>
     <keyword type="function" name="flatpak_transaction_operation_type_to_string ()" link="FlatpakTransactionOperation.html#flatpak-transaction-operation-type-to-string"/>
     <keyword type="struct" name="FlatpakTransactionOperation" link="FlatpakTransactionOperation.html#FlatpakTransactionOperation-struct"/>
-    <keyword type="function" name="flatpak_transaction_progress_get_is_estimating ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-get-is-estimating"/>
-    <keyword type="function" name="flatpak_transaction_progress_get_progress ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-get-progress"/>
-    <keyword type="function" name="flatpak_transaction_progress_get_status ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-get-status"/>
-    <keyword type="function" name="flatpak_transaction_progress_set_update_frequency ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-set-update-frequency"/>
-    <keyword type="struct" name="FlatpakTransactionProgress" link="FlatpakTransactionProgress.html#FlatpakTransactionProgress-struct"/>
-    <keyword type="signal" name="The “changed” signal" link="FlatpakTransactionProgress.html#FlatpakTransactionProgress-changed"/>
     <keyword type="function" name="flatpak_transaction_new_for_installation ()" link="FlatpakTransaction.html#flatpak-transaction-new-for-installation"/>
     <keyword type="function" name="flatpak_transaction_add_install ()" link="FlatpakTransaction.html#flatpak-transaction-add-install"/>
     <keyword type="function" name="flatpak_transaction_add_install_bundle ()" link="FlatpakTransaction.html#flatpak-transaction-add-install-bundle"/>
@@ -158,66 +235,14 @@
     <keyword type="signal" name="The “operation-done” signal" link="FlatpakTransaction.html#FlatpakTransaction-operation-done"/>
     <keyword type="signal" name="The “operation-error” signal" link="FlatpakTransaction.html#FlatpakTransaction-operation-error"/>
     <keyword type="signal" name="The “ready” signal" link="FlatpakTransaction.html#FlatpakTransaction-ready"/>
-    <keyword type="function" name="flatpak_ref_format_ref ()" link="FlatpakRef.html#flatpak-ref-format-ref"/>
-    <keyword type="function" name="flatpak_ref_get_arch ()" link="FlatpakRef.html#flatpak-ref-get-arch"/>
-    <keyword type="function" name="flatpak_ref_get_branch ()" link="FlatpakRef.html#flatpak-ref-get-branch"/>
-    <keyword type="function" name="flatpak_ref_get_collection_id ()" link="FlatpakRef.html#flatpak-ref-get-collection-id"/>
-    <keyword type="function" name="flatpak_ref_get_commit ()" link="FlatpakRef.html#flatpak-ref-get-commit"/>
-    <keyword type="function" name="flatpak_ref_get_kind ()" link="FlatpakRef.html#flatpak-ref-get-kind"/>
-    <keyword type="function" name="flatpak_ref_get_name ()" link="FlatpakRef.html#flatpak-ref-get-name"/>
-    <keyword type="function" name="flatpak_ref_parse ()" link="FlatpakRef.html#flatpak-ref-parse"/>
-    <keyword type="struct" name="struct FlatpakRef" link="FlatpakRef.html#FlatpakRef-struct"/>
-    <keyword type="enum" name="enum FlatpakRefKind" link="FlatpakRef.html#FlatpakRefKind"/>
-    <keyword type="property" name="The “arch” property" link="FlatpakRef.html#FlatpakRef--arch"/>
-    <keyword type="property" name="The “branch” property" link="FlatpakRef.html#FlatpakRef--branch"/>
-    <keyword type="property" name="The “collection-id” property" link="FlatpakRef.html#FlatpakRef--collection-id"/>
-    <keyword type="property" name="The “commit” property" link="FlatpakRef.html#FlatpakRef--commit"/>
-    <keyword type="property" name="The “kind” property" link="FlatpakRef.html#FlatpakRef--kind"/>
-    <keyword type="property" name="The “name” property" link="FlatpakRef.html#FlatpakRef--name"/>
-    <keyword type="function" name="flatpak_installed_ref_get_deploy_dir ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-deploy-dir"/>
-    <keyword type="function" name="flatpak_installed_ref_get_installed_size ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-installed-size"/>
-    <keyword type="function" name="flatpak_installed_ref_get_is_current ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-is-current"/>
-    <keyword type="function" name="flatpak_installed_ref_get_latest_commit ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-latest-commit"/>
-    <keyword type="function" name="flatpak_installed_ref_get_origin ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-origin"/>
-    <keyword type="function" name="flatpak_installed_ref_load_metadata ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-load-metadata"/>
-    <keyword type="function" name="flatpak_installed_ref_get_subpaths ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-subpaths"/>
-    <keyword type="function" name="flatpak_installed_ref_get_eol ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-eol"/>
-    <keyword type="function" name="flatpak_installed_ref_get_eol_rebase ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-eol-rebase"/>
-    <keyword type="struct" name="struct FlatpakInstalledRef" link="FlatpakInstalledRef.html#FlatpakInstalledRef-struct"/>
-    <keyword type="property" name="The “appdata-name” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-name"/>
-    <keyword type="property" name="The “appdata-summary” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-summary"/>
-    <keyword type="property" name="The “appdata-version” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-version"/>
-    <keyword type="property" name="The “deploy-dir” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--deploy-dir"/>
-    <keyword type="property" name="The “end-of-life” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--end-of-life"/>
-    <keyword type="property" name="The “end-of-life-rebase” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--end-of-life-rebase"/>
-    <keyword type="property" name="The “installed-size” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--installed-size"/>
-    <keyword type="property" name="The “is-current” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--is-current"/>
-    <keyword type="property" name="The “latest-commit” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--latest-commit"/>
-    <keyword type="property" name="The “origin” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--origin"/>
-    <keyword type="property" name="The “subpaths” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--subpaths"/>
-    <keyword type="function" name="flatpak_related_ref_new ()" link="FlatpakRelatedRef.html#flatpak-related-ref-new"/>
-    <keyword type="function" name="flatpak_related_ref_get_subpaths ()" link="FlatpakRelatedRef.html#flatpak-related-ref-get-subpaths" since="0.6.7"/>
-    <keyword type="function" name="flatpak_related_ref_should_download ()" link="FlatpakRelatedRef.html#flatpak-related-ref-should-download" since="0.6.7"/>
-    <keyword type="function" name="flatpak_related_ref_should_delete ()" link="FlatpakRelatedRef.html#flatpak-related-ref-should-delete" since="0.6.7"/>
-    <keyword type="function" name="flatpak_related_ref_should_autoprune ()" link="FlatpakRelatedRef.html#flatpak-related-ref-should-autoprune" since="0.11.8"/>
-    <keyword type="struct" name="struct FlatpakRelatedRef" link="FlatpakRelatedRef.html#FlatpakRelatedRef-struct"/>
-    <keyword type="property" name="The “should-autoprune” property" link="FlatpakRelatedRef.html#FlatpakRelatedRef--should-autoprune"/>
-    <keyword type="property" name="The “should-delete” property" link="FlatpakRelatedRef.html#FlatpakRelatedRef--should-delete"/>
-    <keyword type="property" name="The “should-download” property" link="FlatpakRelatedRef.html#FlatpakRelatedRef--should-download"/>
-    <keyword type="property" name="The “subpaths” property" link="FlatpakRelatedRef.html#FlatpakRelatedRef--subpaths"/>
-    <keyword type="function" name="flatpak_remote_ref_get_remote_name ()" link="FlatpakRemoteRef.html#flatpak-remote-ref-get-remote-name"/>
-    <keyword type="function" name="flatpak_remote_ref_get_download_size ()" link="FlatpakRemoteRef.html#flatpak-remote-ref-get-download-size"/>
-    <keyword type="function" name="flatpak_remote_ref_get_eol ()" link="FlatpakRemoteRef.html#flatpak-remote-ref-get-eol"/>
-    <keyword type="function" name="flatpak_remote_ref_get_eol_rebase ()" link="FlatpakRemoteRef.html#flatpak-remote-ref-get-eol-rebase"/>
-    <keyword type="function" name="flatpak_remote_ref_get_installed_size ()" link="FlatpakRemoteRef.html#flatpak-remote-ref-get-installed-size"/>
-    <keyword type="function" name="flatpak_remote_ref_get_metadata ()" link="FlatpakRemoteRef.html#flatpak-remote-ref-get-metadata"/>
-    <keyword type="struct" name="struct FlatpakRemoteRef" link="FlatpakRemoteRef.html#FlatpakRemoteRef-struct"/>
-    <keyword type="property" name="The “download-size” property" link="FlatpakRemoteRef.html#FlatpakRemoteRef--download-size"/>
-    <keyword type="property" name="The “end-of-life” property" link="FlatpakRemoteRef.html#FlatpakRemoteRef--end-of-life"/>
-    <keyword type="property" name="The “end-of-life-rebase” property" link="FlatpakRemoteRef.html#FlatpakRemoteRef--end-of-life-rebase"/>
-    <keyword type="property" name="The “installed-size” property" link="FlatpakRemoteRef.html#FlatpakRemoteRef--installed-size"/>
-    <keyword type="property" name="The “metadata” property" link="FlatpakRemoteRef.html#FlatpakRemoteRef--metadata"/>
-    <keyword type="property" name="The “remote-name” property" link="FlatpakRemoteRef.html#FlatpakRemoteRef--remote-name"/>
+    <keyword type="macro" name="FLATPAK_CHECK_VERSION()" link="flatpak-Version-information.html#FLATPAK-CHECK-VERSION:CAPS"/>
+    <keyword type="macro" name="FLATPAK_MAJOR_VERSION" link="flatpak-Version-information.html#FLATPAK-MAJOR-VERSION:CAPS"/>
+    <keyword type="macro" name="FLATPAK_MINOR_VERSION" link="flatpak-Version-information.html#FLATPAK-MINOR-VERSION:CAPS"/>
+    <keyword type="macro" name="FLATPAK_MICRO_VERSION" link="flatpak-Version-information.html#FLATPAK-MICRO-VERSION:CAPS"/>
+    <keyword type="macro" name="FLATPAK_ERROR" link="flatpak-Error-codes.html#FLATPAK-ERROR:CAPS"/>
+    <keyword type="enum" name="enum FlatpakError" link="flatpak-Error-codes.html#FlatpakError"/>
+    <keyword type="macro" name="FLATPAK_PORTAL_ERROR" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR:CAPS"/>
+    <keyword type="enum" name="enum FlatpakPortalError" link="flatpak-Error-codes.html#FlatpakPortalError"/>
     <keyword type="function" name="flatpak_bundle_ref_new ()" link="FlatpakBundleRef.html#flatpak-bundle-ref-new"/>
     <keyword type="function" name="flatpak_bundle_ref_get_file ()" link="FlatpakBundleRef.html#flatpak-bundle-ref-get-file"/>
     <keyword type="function" name="flatpak_bundle_ref_get_metadata ()" link="FlatpakBundleRef.html#flatpak-bundle-ref-get-metadata"/>
@@ -241,14 +266,6 @@
     <keyword type="function" name="flatpak_instance_get_info ()" link="FlatpakInstance.html#flatpak-instance-get-info" since="1.1"/>
     <keyword type="function" name="flatpak_instance_is_running ()" link="FlatpakInstance.html#flatpak-instance-is-running"/>
     <keyword type="struct" name="struct FlatpakInstance" link="FlatpakInstance.html#FlatpakInstance-struct"/>
-    <keyword type="macro" name="FLATPAK_ERROR" link="flatpak-Error-codes.html#FLATPAK-ERROR:CAPS"/>
-    <keyword type="enum" name="enum FlatpakError" link="flatpak-Error-codes.html#FlatpakError"/>
-    <keyword type="macro" name="FLATPAK_PORTAL_ERROR" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR:CAPS"/>
-    <keyword type="enum" name="enum FlatpakPortalError" link="flatpak-Error-codes.html#FlatpakPortalError"/>
-    <keyword type="macro" name="FLATPAK_CHECK_VERSION()" link="flatpak-Version-information.html#FLATPAK-CHECK-VERSION:CAPS"/>
-    <keyword type="macro" name="FLATPAK_MAJOR_VERSION" link="flatpak-Version-information.html#FLATPAK-MAJOR-VERSION:CAPS"/>
-    <keyword type="macro" name="FLATPAK_MINOR_VERSION" link="flatpak-Version-information.html#FLATPAK-MINOR-VERSION:CAPS"/>
-    <keyword type="macro" name="FLATPAK_MICRO_VERSION" link="flatpak-Version-information.html#FLATPAK-MICRO-VERSION:CAPS"/>
     <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NONE" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NONE:CAPS"/>
     <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NO_DEPLOY" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NO-DEPLOY:CAPS"/>
     <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NO_PULL" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NO-PULL:CAPS"/>
@@ -270,6 +287,8 @@
     <keyword type="constant" name="FLATPAK_STORAGE_TYPE_SDCARD" link="FlatpakInstallation.html#FLATPAK-STORAGE-TYPE-SDCARD:CAPS"/>
     <keyword type="constant" name="FLATPAK_STORAGE_TYPE_MMC" link="FlatpakInstallation.html#FLATPAK-STORAGE-TYPE-MMC:CAPS"/>
     <keyword type="constant" name="FLATPAK_STORAGE_TYPE_NETWORK" link="FlatpakInstallation.html#FLATPAK-STORAGE-TYPE-NETWORK:CAPS"/>
+    <keyword type="constant" name="FLATPAK_REF_KIND_APP" link="FlatpakRef.html#FLATPAK-REF-KIND-APP:CAPS"/>
+    <keyword type="constant" name="FLATPAK_REF_KIND_RUNTIME" link="FlatpakRef.html#FLATPAK-REF-KIND-RUNTIME:CAPS"/>
     <keyword type="constant" name="FLATPAK_REMOTE_TYPE_STATIC" link="FlatpakRemote.html#FLATPAK-REMOTE-TYPE-STATIC:CAPS"/>
     <keyword type="constant" name="FLATPAK_REMOTE_TYPE_USB" link="FlatpakRemote.html#FLATPAK-REMOTE-TYPE-USB:CAPS"/>
     <keyword type="constant" name="FLATPAK_REMOTE_TYPE_LAN" link="FlatpakRemote.html#FLATPAK-REMOTE-TYPE-LAN:CAPS"/>
@@ -282,8 +301,6 @@
     <keyword type="constant" name="FLATPAK_TRANSACTION_REMOTE_GENERIC_REPO" link="FlatpakTransaction.html#FLATPAK-TRANSACTION-REMOTE-GENERIC-REPO:CAPS"/>
     <keyword type="constant" name="FLATPAK_TRANSACTION_REMOTE_RUNTIME_DEPS" link="FlatpakTransaction.html#FLATPAK-TRANSACTION-REMOTE-RUNTIME-DEPS:CAPS"/>
     <keyword type="constant" name="FLATPAK_TRANSACTION_RESULT_NO_CHANGE" link="FlatpakTransaction.html#FLATPAK-TRANSACTION-RESULT-NO-CHANGE:CAPS"/>
-    <keyword type="constant" name="FLATPAK_REF_KIND_APP" link="FlatpakRef.html#FLATPAK-REF-KIND-APP:CAPS"/>
-    <keyword type="constant" name="FLATPAK_REF_KIND_RUNTIME" link="FlatpakRef.html#FLATPAK-REF-KIND-RUNTIME:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_ALREADY_INSTALLED" link="flatpak-Error-codes.html#FLATPAK-ERROR-ALREADY-INSTALLED:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_NOT_INSTALLED" link="flatpak-Error-codes.html#FLATPAK-ERROR-NOT-INSTALLED:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_ONLY_PULLED" link="flatpak-Error-codes.html#FLATPAK-ERROR-ONLY-PULLED:CAPS"/>
@@ -302,6 +319,7 @@
     <keyword type="constant" name="FLATPAK_ERROR_REMOTE_USED" link="flatpak-Error-codes.html#FLATPAK-ERROR-REMOTE-USED:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_RUNTIME_USED" link="flatpak-Error-codes.html#FLATPAK-ERROR-RUNTIME-USED:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_INVALID_NAME" link="flatpak-Error-codes.html#FLATPAK-ERROR-INVALID-NAME:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_OUT_OF_SPACE" link="flatpak-Error-codes.html#FLATPAK-ERROR-OUT-OF-SPACE:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_FAILED" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-FAILED:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-INVALID-ARGUMENT:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-NOT-FOUND:CAPS"/>

@@ -58,6 +58,8 @@ typedef enum {
 
 void flatpak_get_window_size (int *rows, int *cols);
 gboolean flatpak_get_cursor_pos  (int *row, int *col);
+void flatpak_hide_cursor (void);
+void flatpak_show_cursor (void);
 
 /* https://bugzilla.gnome.org/show_bug.cgi?id=766370 */
 #if !GLIB_CHECK_VERSION (2, 49, 3)
@@ -91,6 +93,7 @@ const char * flatpak_path_match_prefix (const char *pattern,
                                         const char *path);
 
 void     flatpak_disable_fancy_output (void);
+void     flatpak_enable_fancy_output (void);
 gboolean flatpak_fancy_output (void);
 
 const char * flatpak_get_arch (void);
@@ -685,6 +688,14 @@ long flatpak_number_prompt (gboolean    default_yes,
                             int         max,
                             const char *prompt,
                             ...) G_GNUC_PRINTF (4, 5);
+int *flatpak_numbers_prompt (gboolean    default_yes,
+                             int         min,
+                             int         max,
+                             const char *prompt,
+                             ...) G_GNUC_PRINTF (4, 5);
+int *flatpak_parse_numbers (const char *buf,
+                            int         min,
+                            int         max);
 
 void flatpak_format_choices (const char **choices,
                              const char *prompt,

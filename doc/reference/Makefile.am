@@ -1,5 +1,5 @@
 DOC_MODULE = flatpak
-DOC_MAIN_SGML_FILE = flatpak-docs.xml
+DOC_MAIN_SGML_FILE = libflatpak-docs.xml
 DOC_SOURCE_DIR = $(top_srcdir)/common $(top_builddir)/common
 
 SCAN_OPTIONS = --rebuild-types \
@@ -56,3 +56,7 @@ TESTS_ENVIRONMENT = \
 	SRCDIR=$(abs_srcdir) BUILDDIR=$(abs_builddir)
 TESTS = $(GTKDOC_CHECK)
 endif
+
+libflatpak-docs.html: libflatpak-docs.xml docs
+	$(AM_V_GEN) $(XMLTO) $(XMLTO_FLAGS) --skip-validation xhtml-nochunks -m $(srcdir)/../xmlto-config.xsl $<
+

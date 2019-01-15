@@ -54,7 +54,7 @@ static GOptionEntry options[] = {
   { "extra-data", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_extra_data, N_("Extra data info") },
   { "extension", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_extensions, N_("Add extension point info"),  N_("NAME=VARIABLE[=VALUE]") },
   { "remove-extension", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_remove_extensions, N_("Remove extension point info"),  N_("NAME") },
-  { "extension-priority", 0, 0, G_OPTION_ARG_INT, &opt_extension_prio, N_("Set extension priority (only for extensions)"), N_("0") },
+  { "extension-priority", 0, 0, G_OPTION_ARG_INT, &opt_extension_prio, N_("Set extension priority (only for extensions)"), N_("VALUE") },
   { "sdk", 0, 0, G_OPTION_ARG_STRING, &opt_sdk, N_("Change the sdk used for the app"),  N_("SDK") },
   { "runtime", 0, 0, G_OPTION_ARG_STRING, &opt_runtime, N_("Change the runtime used for the app"),  N_("RUNTIME") },
   { "metadata", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_metadata, N_("Set generic metadata option"),  N_("GROUP=KEY[=VALUE]") },
@@ -493,7 +493,17 @@ update_metadata (GFile *base, FlatpakContext *arg_context, gboolean is_runtime, 
     }
 
   if (opt_require_version)
-    g_key_file_set_string (keyfile, group, "required-flatpak", opt_require_version);
+    {
+      g_autoptr(GError) local_error = NULL;
+
+      g_key_file_set_string (keyfile, group, "required-flatpak", opt_require_version);
+      if (!flatpak_check_required_version ("test", keyfile, &local_error) &&
+          g_error_matches (local_error, FLATPAK_ERROR, FLATPAK_ERROR_INVALID_DATA))
+        {
+          flatpak_fail (error, _("Invalid --require-version argument: %s"), opt_require_version);
+          goto out;
+        }
+    }
 
   app_context = flatpak_context_new ();
   if (inherited_context)

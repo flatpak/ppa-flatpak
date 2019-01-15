@@ -39,13 +39,13 @@ static GOptionEntry options[] = {
 };
 
 static Column all_columns[] = {
-  { "description",    N_("Description"),    N_("Show the description"),         1, 1 },
-  { "application",    N_("Application"),    N_("Show the application ID"),      1, 1 },
-  { "version",        N_("Version"),        N_("Show the version"),             1, 1 },
+  { "description", N_("Description"), N_("Show the description"),        1, FLATPAK_ELLIPSIZE_MODE_END, 1, 1 },
+  { "application", N_("Application"), N_("Show the application ID"),     1, FLATPAK_ELLIPSIZE_MODE_START, 1, 1 },
+  { "version",     N_("Version"),     N_("Show the version"),            1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
 #if AS_CHECK_VERSION (0, 6, 1)
-  { "branch",         N_("Branch"),         N_("Show the application branch"),  1, 1 },
+  { "branch",      N_("Branch"),      N_("Show the application branch"), 1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
 #endif
-  { "remotes",        N_("Remotes"),        N_("Show the remotes"),             1, 1 },
+  { "remotes",     N_("Remotes"),     N_("Show the remotes"),            1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
   { NULL }
 };
 
@@ -246,11 +246,10 @@ print_matches (Column *columns, GSList *matches)
   FlatpakTablePrinter *printer = NULL;
   int rows, cols;
   GSList *s;
-  int ellip;
 
   printer = flatpak_table_printer_new ();
 
-  flatpak_table_printer_set_column_titles (printer, columns);
+  flatpak_table_printer_set_columns (printer, columns);
 
   for (s = matches; s; s = s->next)
     {
@@ -259,10 +258,6 @@ print_matches (Column *columns, GSList *matches)
     }
 
   flatpak_get_window_size (&rows, &cols);
-  ellip = find_column (columns, "description", NULL);
-  flatpak_table_printer_set_column_ellipsize (printer, ellip, FLATPAK_ELLIPSIZE_MODE_END);
-  ellip = find_column (columns, "application", NULL);
-  flatpak_table_printer_set_column_ellipsize (printer, ellip, FLATPAK_ELLIPSIZE_MODE_START);
   flatpak_table_printer_print_full (printer, 0, cols, NULL, NULL);
   g_print ("\n");
 
@@ -281,7 +276,7 @@ flatpak_builtin_search (int argc, char **argv, GCancellable *cancellable, GError
   g_option_context_set_description (context, col_help);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv,
-                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
+                                     FLATPAK_BUILTIN_FLAG_ALL_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
                                      &dirs, cancellable, error))
     return FALSE;
 
@@ -357,7 +352,8 @@ flatpak_complete_search (FlatpakCompletion *completion)
 
   context = g_option_context_new ("");
   if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv,
-                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS, NULL, NULL, NULL))
+                                     FLATPAK_BUILTIN_FLAG_ALL_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
+                                     NULL, NULL, NULL))
     return FALSE;
 
   flatpak_complete_options (completion, global_entries);

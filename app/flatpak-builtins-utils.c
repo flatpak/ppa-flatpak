@@ -21,7 +21,7 @@
 #include "config.h"
 
 #include <glib/gi18n.h>
-
+#include <glib/gprintf.h>
 
 #include <gio/gunixinputstream.h>
 #include "flatpak-chain-input-stream-private.h"
@@ -492,11 +492,12 @@ gboolean
 flatpak_resolve_matching_installed_refs (gboolean     disable_interaction,
                                          GPtrArray   *ref_dir_pairs,
                                          const char  *opt_search_ref,
-                                         RefDirPair **out_pair,
+                                         GPtrArray   *out_pairs,
                                          GError     **error)
 {
   guint chosen = 0;
-  guint i;
+  g_autofree int *choices = NULL;
+  guint i, k;
 
   g_assert (ref_dir_pairs->len > 0);
 
@@ -518,7 +519,12 @@ flatpak_resolve_matching_installed_refs (gboolean     disable_interaction,
         }
     }
 
-  if (chosen == 0)
+  if (chosen != 0)
+    {
+      g_ptr_array_add (out_pairs, g_ptr_array_index (ref_dir_pairs, chosen - 1));
+      return TRUE;
+    }
+  else
     {
       if (ref_dir_pairs->len == 1)
         {
@@ -533,21 +539,37 @@ flatpak_resolve_matching_installed_refs (gboolean     disable_interaction,
         }
       else
         {
-          g_auto(GStrv) names = g_new0 (char *, ref_dir_pairs->len + 1);
+          int len = ref_dir_pairs->len + 1;
+          g_auto(GStrv) names = g_new0 (char *, len + 1);
           for (i = 0; i < ref_dir_pairs->len; i++)
             {
               RefDirPair *pair = g_ptr_array_index (ref_dir_pairs, i);
-              names[i] = flatpak_dir_get_name (pair->dir);
+              names[i] = g_strdup_printf ("%s (%s)", pair->ref, flatpak_dir_get_name_cached (pair->dir));
             }
+          names[i] = g_strdup_printf (_("All of the above"));
           flatpak_format_choices ((const char **)names, _("Similar installed refs found for ‘%s’:"), opt_search_ref);
-          chosen = flatpak_number_prompt (TRUE, 0, ref_dir_pairs->len, _("Which do you want to use (0 to abort)?"));
-          if (chosen == 0)
+          choices = flatpak_numbers_prompt (TRUE, 0, len, _("Which do you want to use (0 to abort)?"));
+          if (choices[0] == 0)
             return flatpak_fail (error, _("No ref chosen to resolve matches for ‘%s’"), opt_search_ref);
         }
     }
 
-  if (out_pair)
-    *out_pair = g_ptr_array_index (ref_dir_pairs, chosen - 1);
+  if (choices)
+    {
+      for (i = 0; choices[i] != 0; i++)
+        {
+          chosen = choices[i];
+          if (chosen == ref_dir_pairs->len + 1)
+            {
+              for (k = 0; k < ref_dir_pairs->len; k++)
+                g_ptr_array_add (out_pairs, g_ptr_array_index (ref_dir_pairs, k));
+            }
+          else
+            g_ptr_array_add (out_pairs, g_ptr_array_index (ref_dir_pairs, chosen - 1));
+       }
+    }
+  else
+    g_ptr_array_add (out_pairs, g_ptr_array_index (ref_dir_pairs, chosen - 1));
 
   return TRUE;
 }
@@ -840,18 +862,18 @@ column_filter (Column *columns,
 {
   g_auto(GStrv) cols = g_strsplit (col_arg, ",", 0);
   int n_cols = g_strv_length (cols);
-  Column *result = g_new0 (Column, n_cols + 1);
+  g_autofree Column *result = g_new0 (Column, n_cols + 1);
   int i;
 
   for (i = 0; i < n_cols; i++)
     {
       int idx = find_column (columns, cols[i], error);
       if (idx < 0)
-        return FALSE;
+        return NULL;
       result[i] = columns[idx];
     }
 
-  return result;
+  return g_steal_pointer (&result);
 }
 
 static gboolean
@@ -866,10 +888,12 @@ list_has (const char *list,
     {
       p = strstr (p, term);
       len = strlen (term);
-      if (p &&
-          (p == list || p[-1] == ',') &&
+      if (!p)
+        break;
+      if ((p == list || p[-1] == ',') &&
           (p[len] == '\0' || p[len] == ','))
         return TRUE;
+      p++;
     }
 
   return FALSE;
@@ -1085,4 +1109,127 @@ as_store_find_app (AsStore *store,
     }
 
   return NULL;
+}
+
+/**
+ * flatpak_dir_load_appstream_store:
+ * @self: a #FlatpakDir
+ * @remote_name: name of the remote to load the AppStream data for
+ * @arch: (nullable): name of the architecture to load the AppStream data for,
+ *    or %NULL to use the default
+ * @store: the store to load into
+ * @cancellable: (nullable): a #GCancellable, or %NULL
+ * @error: return location for a #GError
+ *
+ * Load the cached AppStream data for the given @remote_name into @store, which
+ * must have already been constructed using as_store_new(). If no cache
+ * exists, %FALSE is returned with no error set. If there is an error loading or
+ * parsing the cache, an error is returned.
+ *
+ * Returns: %TRUE if the cache exists and was loaded into @store; %FALSE
+ *    otherwise
+ */
+gboolean
+flatpak_dir_load_appstream_store (FlatpakDir    *self,
+                                  const gchar   *remote_name,
+                                  const gchar   *arch,
+                                  AsStore       *store,
+                                  GCancellable  *cancellable,
+                                  GError       **error)
+{
+  const char *install_path = flatpak_file_get_path_cached (flatpak_dir_get_path (self));
+  g_autoptr(GFile) appstream_file = NULL;
+  g_autofree char *appstream_path = NULL;
+  g_autoptr(GError) local_error = NULL;
+  gboolean success;
+
+  if (arch == NULL)
+    arch = flatpak_get_arch ();
+
+  if (flatpak_dir_get_remote_oci (self, remote_name))
+    appstream_path = g_build_filename (install_path, "appstream", remote_name,
+                                       arch, "appstream.xml.gz",
+                                       NULL);
+  else
+    appstream_path = g_build_filename (install_path, "appstream", remote_name,
+                                       arch, "active", "appstream.xml.gz",
+                                       NULL);
+
+  appstream_file = g_file_new_for_path (appstream_path);
+  as_store_from_file (store, appstream_file, NULL, cancellable, &local_error);
+  success = (local_error == NULL);
+
+  /* We want to ignore ENOENT error as it is harmless and valid
+   * FIXME: appstream-glib doesn't have granular file-not-found error
+   * See: https://github.com/hughsie/appstream-glib/pull/268 */
+  if (local_error != NULL &&
+      g_str_has_suffix (local_error->message, "No such file or directory"))
+    g_clear_error (&local_error);
+  else if (local_error != NULL)
+    g_propagate_error (error, g_steal_pointer (&local_error));
+
+  return success;
+}
+
+
+void
+print_aligned (int len, const char *title, const char *value)
+{
+  const char *on = "";
+  const char *off = "";
+
+  if (flatpak_fancy_output ())
+    {
+      on = FLATPAK_ANSI_BOLD_ON;
+      off = FLATPAK_ANSI_BOLD_OFF;
+    }
+
+  g_print ("%s%*s%s%s %s\n", on, len - (int)g_utf8_strlen (title, -1), "", title, off, value);
+}
+
+static void
+print_line_wrapped (int cols, const char *line)
+{
+  g_auto(GStrv) words = g_strsplit (line, " ", 0);
+  int i;
+  int col = 0;
+
+  for (i = 0; words[i]; i++)
+    {
+       int len = g_utf8_strlen (words[i], -1);
+       int space = col > 0;
+
+       if (col + space + len >= cols)
+         {
+           g_print ("\n%s", words[i]);
+           col = len;
+         }
+       else
+         {
+           g_print ("%*s%s", space, "", words[i]);
+           col = col + space + len;
+         }
+    }
+}
+
+void
+print_wrapped (int cols,
+               const char *text,
+               ...)
+{
+  va_list args;
+  g_autofree char *msg = NULL;
+  g_auto(GStrv) lines = NULL;
+  int i;
+
+  va_start (args, text);
+  g_vasprintf (&msg, text, args);
+  va_end (args);
+
+  lines = g_strsplit (msg, "\n", 0);
+  for (i = 0; lines[i]; i++)
+    {
+      print_line_wrapped (cols, lines[i]);
+      g_print ("\n");
+    }
 }

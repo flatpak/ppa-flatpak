@@ -33,6 +33,7 @@
 #include "flatpak-builtins-utils.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-cli-transaction.h"
+#include "flatpak-quiet-transaction.h"
 #include <flatpak-dir-private.h>
 #include <flatpak-installation-private.h>
 #include "flatpak-error.h"
@@ -47,6 +48,7 @@ static gboolean opt_all;
 static gboolean opt_yes;
 static gboolean opt_unused;
 static gboolean opt_delete_data;
+static gboolean opt_noninteractive;
 
 static GOptionEntry options[] = {
   { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to uninstall"), N_("ARCH") },
@@ -59,6 +61,7 @@ static GOptionEntry options[] = {
   { "unused", 0, 0, G_OPTION_ARG_NONE, &opt_unused, N_("Uninstall unused"), NULL },
   { "delete-data", 0, 0, G_OPTION_ARG_NONE, &opt_delete_data, N_("Delete app data"), NULL },
   { "assumeyes", 'y', 0, G_OPTION_ARG_NONE, &opt_yes, N_("Automatically answer yes for all questions"), NULL },
+  { "noninteractive", 0, 0, G_OPTION_ARG_NONE, &opt_noninteractive, N_("Produce minimal output and don't ask questions"), NULL },
   { NULL }
 };
 
@@ -153,7 +156,7 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv,
-                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS,
+                                     FLATPAK_BUILTIN_FLAG_ALL_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
                                      &dirs, cancellable, error))
     return FALSE;
 
@@ -248,7 +251,7 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
           g_autoptr(GPtrArray) ref_dir_pairs = NULL;
           UninstallDir *udir = NULL;
           gboolean found_exact_name_match = FALSE;
-          RefDirPair *chosen_pair = NULL;
+          g_autoptr(GPtrArray) chosen_pairs = NULL;
 
           pref = prefs[j];
 
@@ -314,15 +317,17 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
                 }
             }
 
-          if (!flatpak_resolve_matching_installed_refs (opt_yes, ref_dir_pairs, id, &chosen_pair, error))
+          chosen_pairs = g_ptr_array_new ();
+
+          if (!flatpak_resolve_matching_installed_refs (opt_yes, ref_dir_pairs, id, chosen_pairs, error))
             return FALSE;
 
-          g_assert (chosen_pair->ref);
-          g_assert (chosen_pair->dir);
-
-          udir = uninstall_dir_ensure (uninstall_dirs, chosen_pair->dir);
-
-          uninstall_dir_add_ref (udir, chosen_pair->ref);
+          for (i = 0; i < chosen_pairs->len; i++)
+            {
+              RefDirPair *pair = g_ptr_array_index (chosen_pairs, i);
+              udir = uninstall_dir_ensure (uninstall_dirs, pair->dir);
+              uninstall_dir_add_ref (udir, pair->ref);
+            }
         }
     }
 
@@ -330,7 +335,10 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
   {
     g_autoptr(FlatpakTransaction) transaction = NULL;
 
-    transaction = flatpak_cli_transaction_new (udir->dir, opt_yes, TRUE, error);
+    if (opt_noninteractive)
+      transaction = flatpak_quiet_transaction_new (udir->dir, error);
+    else
+      transaction = flatpak_cli_transaction_new (udir->dir, opt_yes, TRUE, error);
     if (transaction == NULL)
       return FALSE;
 
@@ -349,8 +357,16 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
           return FALSE;
       }
 
-    if (!flatpak_cli_transaction_run (transaction, cancellable, error))
-      return FALSE;
+    if (!flatpak_transaction_run (transaction, cancellable, error))
+      {
+        if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
+          {
+            g_clear_error (error);
+            return TRUE;
+          }
+
+        return FALSE;
+      }
 
     if (opt_delete_data)
       {
@@ -415,7 +431,8 @@ flatpak_complete_uninstall (FlatpakCompletion *completion)
 
   context = g_option_context_new ("");
   if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv,
-                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS, &dirs, NULL, NULL))
+                                     FLATPAK_BUILTIN_FLAG_ALL_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
+                                     &dirs, NULL, NULL))
     return FALSE;
 
   kinds = flatpak_kinds_from_bools (opt_app, opt_runtime);

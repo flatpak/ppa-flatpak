@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [1])
 m4_define([flatpak_minor_version], [1])
-m4_define([flatpak_micro_version], [2])
+m4_define([flatpak_micro_version], [3])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -121,6 +121,15 @@ AC_ARG_WITH([systemdsystemunitdir],
     [with_systemdsystemunitdir='${prefix}/lib/systemd/system'])
 AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
 
+AC_ARG_WITH([systemduserenvgendir],
+            [AS_HELP_STRING([--with-systemduserenvgendir=DIR],
+                            [Directory for systemd user environment generators (default=PREFIX/lib/systemd/user-environment-generators)])],
+    [],
+    dnl This is deliberately not ${libdir}: systemd units always go in
+    dnl .../lib, never .../lib64 or .../lib/x86_64-linux-gnu
+    [with_systemduserenvgendir='${prefix}/lib/systemd/user-environment-generators'])
+AC_SUBST([systemduserenvgendir], [$with_systemduserenvgendir])
+
 AC_ARG_WITH(system_fonts_dir,
 		AS_HELP_STRING([--with-system-fonts-dir=PATH],[Directory where system fonts are, [default=/usr/share/fonts]]),
             with_system_fonts_dir="$withval", with_system_fonts_dir=/usr/share/fonts)
@@ -203,6 +212,7 @@ POLKIT_GOBJECT_REQUIRED=0.98
 
 PKG_CHECK_MODULES(BASE, [glib-2.0 >= $GLIB_REQS gio-2.0 gio-unix-2.0 libarchive >= 2.8.0 libxml-2.0 >= 2.4 ])
 PKG_CHECK_MODULES(SOUP, [libsoup-2.4])
+PKG_CHECK_MODULES(DCONF, [dconf])
 PKG_CHECK_MODULES(SYSTEMD, [libsystemd], [have_libsystemd=yes], [have_libsystemd=no])
 if test $have_libsystemd = yes; then
   AC_DEFINE(HAVE_LIBSYSTEMD, 1, [Define if libsystemd is available])

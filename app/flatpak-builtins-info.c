@@ -54,7 +54,7 @@ static GOptionEntry options[] = {
   { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to use"), N_("ARCH") },
   { "user", 0, 0, G_OPTION_ARG_NONE, &opt_user, N_("Show user installations"), NULL },
   { "system", 0, 0, G_OPTION_ARG_NONE, &opt_system, N_("Show system-wide installations"), NULL },
-  { "installation", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_installations, N_("Show specific system-wide installations"), NULL },
+  { "installation", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_installations, N_("Show specific system-wide installations"), N_("NAME") },
   { "show-ref", 'r', 0, G_OPTION_ARG_NONE, &opt_show_ref, N_("Show ref"), NULL },
   { "show-commit", 'c', 0, G_OPTION_ARG_NONE, &opt_show_commit, N_("Show commit"), NULL },
   { "show-origin", 'o', 0, G_OPTION_ARG_NONE, &opt_show_origin, N_("Show origin"), NULL },
@@ -93,9 +93,10 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
   const char *alt_id = NULL;
   const char *eol;
   const char *eol_rebase;
-  const char *appdata_name;
-  const char *appdata_summary;
-  const char *appdata_version;
+  const char *name;
+  const char *summary;
+  const char *version;
+  const char *license;
   const char *pref = NULL;
   const char *default_branch = NULL;
   const char *origin = NULL;
@@ -103,13 +104,14 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
   gboolean search_all = FALSE;
   gboolean first = TRUE;
   FlatpakKinds kinds;
-  const char *on = "";
-  const char *off = "";
   g_auto(GStrv) parts = NULL;
   const char *path;
-  g_autofree char *formatted = NULL;
+  g_autofree char *formatted_size = NULL;
   gboolean friendly = TRUE;
   g_autofree const char **subpaths = NULL;
+  int len = 0;
+  int rows, cols;
+  int width;
 
   context = g_option_context_new (_("NAME [BRANCH] - Get info about an installed app or runtime"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
@@ -146,27 +148,22 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
   if (deploy == NULL)
     return FALSE;
 
-  if (flatpak_fancy_output ())
-    {
-      on = FLATPAK_ANSI_BOLD_ON;
-      off = FLATPAK_ANSI_BOLD_OFF; /* bold off */
-    }
-
   parts = g_strsplit (ref, "/", 0);
 
   commit = flatpak_deploy_data_get_commit (deploy_data);
   alt_id = flatpak_deploy_data_get_alt_id (deploy_data);
   origin = flatpak_deploy_data_get_origin (deploy_data);
   size = flatpak_deploy_data_get_installed_size (deploy_data);
-  formatted = g_format_size (size);
+  formatted_size = g_format_size (size);
   deploy_dir = flatpak_deploy_get_dir (deploy);
   path = flatpak_file_get_path_cached (deploy_dir);
   subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
   eol = flatpak_deploy_data_get_eol (deploy_data);
   eol_rebase = flatpak_deploy_data_get_eol_rebase (deploy_data);
-  appdata_name = flatpak_deploy_data_get_appdata_name (deploy_data);
-  appdata_summary = flatpak_deploy_data_get_appdata_summary (deploy_data);
-  appdata_version = flatpak_deploy_data_get_appdata_version (deploy_data);
+  name = flatpak_deploy_data_get_appdata_name (deploy_data);
+  summary = flatpak_deploy_data_get_appdata_summary (deploy_data);
+  version = flatpak_deploy_data_get_appdata_version (deploy_data);
+  license = flatpak_deploy_data_get_appdata_license (deploy_data);
 
   metakey = flatpak_deploy_get_metadata (deploy);
 
@@ -186,16 +183,13 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
       g_autofree char *latest = NULL;
       const char *xa_metadata = NULL;
       const char *collection_id = NULL;
-      int len;
-      int rows, cols;
-      int width;
 
-      if (appdata_name)
+      if (name)
         {
-          if (appdata_summary)
-            g_print ("\n%s - %s\n\n", appdata_name, appdata_summary);
+          if (summary)
+            g_print ("\n%s - %s\n\n", name, summary);
           else
-            g_print ("\n%s\n\n", appdata_name);
+            g_print ("\n%s\n\n", name);
         }
 
       latest = flatpak_dir_read_latest (dir, origin, ref, NULL, NULL, NULL);
@@ -219,107 +213,122 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
         }
 
       len = 0;
-      len = MAX (len, strlen (_("ID:")));
-      len = MAX (len, strlen (_("Ref:")));
-      len = MAX (len, strlen (_("Arch:")));
-      len = MAX (len, strlen (_("Branch:")));
-      len = MAX (len, strlen (_("Version:")));
+      len = MAX (len, g_utf8_strlen (_("ID:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Ref:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Arch:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Branch:"), -1));
+      if (version)
+        len = MAX (len, g_utf8_strlen (_("Version:"), -1));
+      if (license)
+        len = MAX (len, g_utf8_strlen (_("License:"), -1));
       if (collection_id != NULL)
-        len = MAX (len, strlen (_("Collection:")));
-      len = MAX (len, strlen (_("Installation:")));
-      len = MAX (len, strlen (_("Installed:")));
+        len = MAX (len, g_utf8_strlen (_("Collection:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Installation:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Installed:"), -1));
       if (strcmp (parts[0], "app") == 0)
-        len = MAX (len, strlen (_("Runtime:")));
+        {
+          len = MAX (len, g_utf8_strlen (_("Runtime:"), -1));
+          len = MAX (len, g_utf8_strlen (_("Sdk:"), -1));
+        }
       if (formatted_timestamp)
-        len = MAX (len, strlen (_("Date:")));
+        len = MAX (len, g_utf8_strlen (_("Date:"), -1));
       if (subject)
-        len = MAX (len, strlen (_("Subject:")));
+        len = MAX (len, g_utf8_strlen (_("Subject:"), -1));
       if (strcmp (commit, latest) != 0)
         {
-          len = MAX (len, strlen (_("Active commit:")));
-          len = MAX (len, strlen (_("Latest commit:")));
+          len = MAX (len, g_utf8_strlen (_("Active commit:"), -1));
+          len = MAX (len, g_utf8_strlen (_("Latest commit:"), -1));
         }
       else
-        len = MAX (len, strlen (_("Commit:")));
+        len = MAX (len, g_utf8_strlen (_("Commit:"), -1));
       if (parent)
-        len = MAX (len, strlen (_("Parent:")));
+        len = MAX (len, g_utf8_strlen (_("Parent:"), -1));
       if (alt_id)
-        len = MAX (len, strlen (_("alt-id:")));
-      len = MAX (len, strlen (_("Parent:")));
+        len = MAX (len, g_utf8_strlen (_("Alt-id:"), -1));
       if (eol)
-        len = MAX (len, strlen (_("end-of-life:")));
+        len = MAX (len, g_utf8_strlen (_("End-of-life:"), -1));
       if (eol_rebase)
-        len = MAX (len, strlen (_("end-of-life-rebase:")));
-      if (strcmp (parts[0], "app") == 0)
-        len = MAX (len, strlen (_("Sdk:")));
+        len = MAX (len, g_utf8_strlen (_("End-of-life-rebase:"), -1));
       if (subpaths[0] != NULL)
-        len = MAX (len, strlen (_("Subdirectories:")));
+        len = MAX (len, g_utf8_strlen (_("Subdirectories:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Extension:"), -1));
 
       flatpak_get_window_size (&rows, &cols);
       width = cols - (len + 1);
 
-      g_print ("%s%*s%s %s\n", on, len, _("ID:"), off, parts[1]);
-      g_print ("%s%*s%s %s\n", on, len, _("Ref:"), off, ref);
-      g_print ("%s%*s%s %s\n", on, len, _("Arch:"), off, parts[2]);
-      g_print ("%s%*s%s %s\n", on, len, _("Branch:"), off, parts[3]);
-      if (appdata_version)
-        g_print ("%s%*s%s %s\n", on, len, _("Version:"), off, appdata_version);
-      g_print ("%s%*s%s %s\n", on, len, _("Origin:"), off, origin ? origin : "-");
+      print_aligned (len, _("ID:"), parts[1]);
+      print_aligned (len, _("Ref:"), ref);
+      print_aligned (len, _("Arch:"), parts[2]);
+      print_aligned (len, _("Branch:"), parts[3]);
+      if (version)
+        print_aligned (len, _("Version:"), version);
+      if (license)
+        print_aligned (len, _("License:"), license);
+      print_aligned (len, _("Origin:"), origin ? origin : "-");
       if (collection_id)
-        g_print ("%s%*s%s %s\n", on, len, _("Collection:"), off, collection_id);
-      g_print ("%s%*s%s %s\n", on, len, _("Installation:"), off, flatpak_dir_get_name_cached (dir));
-      g_print ("%s%*s%s %s\n", on, len, _("Installed:"), off, formatted);
+        print_aligned (len, _("Collection:"), collection_id);
+      print_aligned (len, _("Installation:"), flatpak_dir_get_name_cached (dir));
+      print_aligned (len, _("Installed:"), formatted_size);
       if (strcmp (parts[0], "app") == 0)
         {
           g_autofree char *runtime = NULL;
-          runtime = g_key_file_get_string (metakey, "Application", "runtime", error);
-          g_print ("%s%*s%s %s\n", on, len, _("Runtime:"), off, runtime ? runtime : "-");
+          runtime = g_key_file_get_string (metakey,
+                                           FLATPAK_METADATA_GROUP_APPLICATION,
+                                           FLATPAK_METADATA_KEY_RUNTIME,
+                                           error);
+          print_aligned (len, _("Runtime:"), runtime ? runtime : "-");
         }
       if (strcmp (parts[0], "app") == 0)
         {
           g_autofree char *sdk = NULL;
-          sdk = g_key_file_get_string (metakey, "Application", "sdk", error);
-          g_print ("%s%*s%s %s\n", on, len, _("Sdk:"), off, sdk ? sdk : "-");
+          sdk = g_key_file_get_string (metakey,
+                                       FLATPAK_METADATA_GROUP_APPLICATION,
+                                       FLATPAK_METADATA_KEY_SDK,
+                                       error);
+          print_aligned (len, _("Sdk:"), sdk ? sdk : "-");
         }
       g_print ("\n");
 
       if (strcmp (commit, latest) != 0)
         {
           g_autofree char *formatted_commit = ellipsize_string (commit, width);
-          g_print ("%s%*s%s %s\n", on, len, _("Active commit:"), off, formatted_commit);
+          print_aligned (len, _("Active commit:"), formatted_commit);
           g_free (formatted_commit);
           formatted_commit = ellipsize_string (latest, width);
-          g_print ("%s%*s%s %s\n", on, len, _("Latest commit:"), off, latest);
+          print_aligned (len, _("Latest commit:"), formatted_commit);
         }
       else
         {
           g_autofree char *formatted_commit = ellipsize_string (commit, width);
-          g_print ("%s%*s%s %s\n", on, len, _("Commit:"), off, formatted_commit);
+          print_aligned (len, _("Commit:"), formatted_commit);
         }
       if (parent)
         {
           g_autofree char *formatted_commit = ellipsize_string (parent, width);
-          g_print ("%s%*s%s %s\n", on, len, _("Parent:"), off, formatted_commit);
+          print_aligned (len, _("Parent:"), formatted_commit);
         }
       if (subject)
-        g_print ("%s%*s%s %s\n", on, len, _("Subject:"), off, subject);
+        print_aligned (len, _("Subject:"), subject);
       if (formatted_timestamp)
-        g_print ("%s%*s%s %s\n", on, len, _("Date:"), off, formatted_timestamp);
+        print_aligned (len, _("Date:"), formatted_timestamp);
       if (subpaths[0] != NULL)
         {
-          int i;
-          g_print ("%s%*s%s ", on, len, _("Subdirectories:"), off);
-          for (i = 0; subpaths[i] != NULL; i++)
-            g_print (i == 0 ? "%s" : ",%s", subpaths[i]);
-          g_print ("\n");
+          g_autofree char *s = g_strjoinv (",", (char **)subpaths);
+          print_aligned (len, _("Subdirectories:"), s);
         }
 
       if (alt_id)
-        g_print ("%s%*s%s %s\n", on, len, _("alt-id:"), off, alt_id);
+        print_aligned (len, _("Alt-id:"), alt_id);
       if (eol)
-        g_print ("%s%*s%s %s\n", on, len, _("end-of-life:"), off, eol);
+        {
+          g_autofree char *formatted_eol = ellipsize_string (eol, width);
+          print_aligned (len, _("End-of-life:"), formatted_eol);
+        }
       if (eol_rebase)
-        g_print ("%s%*s%s %s\n", on, len, _("end-of-life-rebase:"), off, eol_rebase);
+        {
+          g_autofree char *formatted_eol = ellipsize_string (eol_rebase, width);
+          print_aligned (len, _("End-of-life-rebase:"), formatted_eol);
+        }
     }
   else
     {
@@ -344,7 +353,7 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
       if (opt_show_size)
         {
           maybe_print_space (&first);
-          g_print ("%s", formatted);
+          g_print ("%" G_GUINT64_FORMAT, size);
         }
 
       if (opt_show_location)
@@ -359,9 +368,15 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
           maybe_print_space (&first);
 
           if (strcmp (parts[0], "app") == 0)
-            runtime = g_key_file_get_string (metakey, "Application", "runtime", NULL);
+            runtime = g_key_file_get_string (metakey,
+                                             FLATPAK_METADATA_GROUP_APPLICATION,
+                                             FLATPAK_METADATA_KEY_RUNTIME,
+                                             NULL);
           else
-            runtime = g_key_file_get_string (metakey, "Runtime", "runtime", NULL);
+            runtime = g_key_file_get_string (metakey,
+                                             FLATPAK_METADATA_GROUP_RUNTIME,
+                                             FLATPAK_METADATA_KEY_RUNTIME,
+                                             NULL);
           g_print ("%s", runtime ? runtime : "-");
         }
 
@@ -371,9 +386,15 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
           maybe_print_space (&first);
 
           if (strcmp (parts[0], "app") == 0)
-            sdk = g_key_file_get_string (metakey, "Application", "sdk", NULL);
+            sdk = g_key_file_get_string (metakey,
+                                         FLATPAK_METADATA_GROUP_APPLICATION,
+                                         FLATPAK_METADATA_KEY_SDK,
+                                         NULL);
           else
-            sdk = g_key_file_get_string (metakey, "Runtime", "sdk", NULL);
+            sdk = g_key_file_get_string (metakey,
+                                         FLATPAK_METADATA_GROUP_RUNTIME,
+                                         FLATPAK_METADATA_KEY_SDK,
+                                         NULL);
           g_print ("%s", sdk ? sdk : "-");
         }
 
@@ -437,6 +458,16 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
     {
       GList *extensions, *l;
 
+      len = MAX (len, g_utf8_strlen (_("Extension:"), -1));
+      len = MAX (len, g_utf8_strlen (_("ID:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Origin:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Commit:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Installed:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Subpaths:"), -1));
+
+      flatpak_get_window_size (&rows, &cols);
+      width = cols - (len + 1);
+
       extensions = flatpak_list_extensions (metakey, parts[2], parts[3]);
       for (l = extensions; l; l = l->next)
         {
@@ -444,13 +475,15 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
           g_autofree const char **subpaths = NULL;
           g_autoptr(GVariant) ext_deploy_data = NULL;
           g_autofree char *formatted = NULL;
+          g_autofree char *formatted_size = NULL;
+          g_autofree char *formatted_commit = NULL;
 
           if (ext->is_unmaintained)
             {
-              commit = "unmaintained";
+              formatted_commit = g_strdup (_("unmaintained"));
               origin = NULL;
               size = 0;
-              formatted = g_strdup ("unknown");
+              formatted_size = g_strdup (_("unknown"));
               subpaths = NULL;
             }
           else
@@ -460,24 +493,28 @@ flatpak_builtin_info (int argc, char **argv, GCancellable *cancellable, GError *
                 return FALSE;
 
               commit = flatpak_deploy_data_get_commit (ext_deploy_data);
+              formatted_commit = ellipsize_string (commit, width);
               origin = flatpak_deploy_data_get_origin (ext_deploy_data);
               size = flatpak_deploy_data_get_installed_size (ext_deploy_data);
               formatted = g_format_size (size);
               subpaths = flatpak_deploy_data_get_subpaths (ext_deploy_data);
+              if (subpaths && subpaths[0])
+                formatted_size = g_strconcat ("<", formatted, NULL);
+              else
+                formatted_size = g_steal_pointer (&formatted);
             }
 
-          g_print ("\n%s%s%s %s\n", on, _("Extension:"), off, ext->ref);
-          g_print ("%s%s%s %s\n", on, _("ID:"), off, ext->id);
-          g_print ("%s%s%s %s\n", on, _("Origin:"), off, origin ? origin : "-");
-          g_print ("%s%s%s %s\n", on, _("Commit:"), off, commit);
-          g_print ("%s%s%s %s%s\n", on, _("Installed size:"), off, subpaths && subpaths[0] ? "<" : "", formatted);
+          g_print ("\n");
+          print_aligned (len, _("Extension:"), ext->ref);
+          print_aligned (len, _("ID:"), ext->id);
+          print_aligned (len, _("Origin:"), origin ? origin : "-");
+          print_aligned (len, _("Commit:"), formatted_commit);
+          print_aligned (len, _("Installed:"), formatted_size);
 
           if (subpaths && subpaths[0])
             {
-              g_autofree char *subpath_str = NULL;
-
-              subpath_str = g_strjoinv (",", (char **) subpaths);
-              g_print ("%s%s%s %s\n", on, _("Subpaths:"), off, subpath_str);
+              g_autofree char *s = g_strjoinv (",", (char **) subpaths);
+              print_aligned (len, _("Subpaths:"), s);
             }
         }
 
