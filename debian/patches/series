@@ -1,1 +1,2 @@
+Install-environment-generator-as-an-executable-file.patch
 debian/Use-Python-3-for-test-web-server.patch
