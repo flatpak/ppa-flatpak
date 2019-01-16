@@ -4,6 +4,7 @@ Subject: Install environment generator as an executable file
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
 Forwarded: https://github.com/flatpak/flatpak/pull/2596
+Applied-upstream: 1.1.4, commit:96fde5b29c86635a2bf5ef4e191d0ba63cbfe2c0
 ---
  Makefile.am | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

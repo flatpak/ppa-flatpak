@@ -9,6 +9,7 @@ non-bash-compatible shells that read profile.d (I'm not sure).
 
 Signed-off-by: Simon McVittie <smcv@debian.org>
 Forwarded: https://github.com/flatpak/flatpak/pull/2597
+Applied-upstream: 1.1.4, commit:2a25ecf6ee8e6cff6ef56aeccc220b4640feb168
 ---
  profile/flatpak.sh | 28 ++++++++++++++++++----------
  1 file changed, 18 insertions(+), 10 deletions(-)
