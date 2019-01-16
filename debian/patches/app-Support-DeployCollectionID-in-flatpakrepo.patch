@@ -1,0 +1,38 @@
+From: Matthew Leeds <matthew.leeds@endlessm.com>
+Date: Tue, 15 Jan 2019 15:25:29 -0800
+Subject: app: Support DeployCollectionID in flatpakrepo
+
+Unfortunately when I added the DeployCollectionID key for flatpakrepo
+files I only added support for it in flatpak_dir_parse_repofile and
+missed adding it to the remote-add command. So fix the oversight so that
+flatpakrepo files that use the key are properly interpreted.
+
+Closes: #2598
+Approved by: matthiasclasen
+Applied-upstream: 1.1.4, commit:6bf47b4c26e195509f771c91c8070903b0404afa
+---
+ app/flatpak-builtins-remote-add.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
+
+diff --git a/app/flatpak-builtins-remote-add.c b/app/flatpak-builtins-remote-add.c
+index f66cf1a..b6374aa 100644
+--- a/app/flatpak-builtins-remote-add.c
++++ b/app/flatpak-builtins-remote-add.c
+@@ -228,9 +228,15 @@ load_options (const char *filename,
+   if (str != NULL)
+     opt_url = str;
+ 
+-  str = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP, FLATPAK_REPO_COLLECTION_ID_KEY, NULL);
+-  if (str != NULL)
++  str = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP, FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY, NULL);
++  if (str != NULL && *str != '\0')
+     opt_collection_id = str;
++  else
++    {
++      str = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP, FLATPAK_REPO_COLLECTION_ID_KEY, NULL);
++      if (str != NULL && *str != '\0')
++        opt_collection_id = str;
++    }
+ 
+   str = g_key_file_get_locale_string (keyfile, FLATPAK_REPO_GROUP,
+                                       FLATPAK_REPO_TITLE_KEY, NULL, NULL);

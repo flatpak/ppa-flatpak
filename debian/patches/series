@@ -1,4 +1,8 @@
+docs-Clarify-that-command-is-only-for-run.patch
+app-Support-DeployCollectionID-in-flatpakrepo.patch
+uninstall-Deal-with-empty-installations.patch
 Install-environment-generator-as-an-executable-file.patch
 profile-Don-t-rely-on-bash-syntax.patch
+Fix-xml-syntax-in-org.freedesktop.portal.Flatpak.xml.patch
 testcommon-An-i386-Flatpak-doesn-t-support-x86_64-apps.patch
 debian/Use-Python-3-for-test-web-server.patch
