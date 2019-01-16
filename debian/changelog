@@ -1,3 +1,18 @@
+flatpak (1.1.3-2) experimental; urgency=medium
+
+  * d/p/Install-environment-generator-as-an-executable-file.patch,
+    d/p/profile-Don-t-rely-on-bash-syntax.patch:
+    Mark patches as applied upstream
+  * d/p/testcommon-An-i386-Flatpak-doesn-t-support-x86_64-apps.patch:
+    Add patch to fix build-time test failure on i386
+  * d/p/docs-Clarify-that-command-is-only-for-run.patch,
+    d/p/app-Support-DeployCollectionID-in-flatpakrepo.patch,
+    d/p/uninstall-Deal-with-empty-installations.patch,
+    d/p/Fix-xml-syntax-in-org.freedesktop.portal.Flatpak.xml.patch:
+    Add additional bugfix patches from upstream
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 16 Jan 2019 08:14:38 +0000
+
 flatpak (1.1.3-1) experimental; urgency=medium
 
   * New upstream release
