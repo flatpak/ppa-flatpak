@@ -9,6 +9,8 @@ and aarch64 binaries.
 This caused test failures on Debian i386 autobuilders.
 
 Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/2603
+Applied-upstream: 1.1.4, commit:beb0427
 ---
  tests/testcommon.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
