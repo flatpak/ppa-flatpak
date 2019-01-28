@@ -1,1 +1,3 @@
+build-export-Allow-sandboxing-on-icon-validator-to-be-dis.patch
+make-test-Don-t-sandbox-the-icon-validator.patch
 debian/Use-Python-3-for-test-web-server.patch

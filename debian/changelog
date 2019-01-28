@@ -3,6 +3,10 @@ flatpak (1.2.0-1) UNRELEASED; urgency=medium
   * New upstream release
     - Drop most patches, applied upstream
     - B-D on libgdk-pixbuf2.0-dev for icon validator
+  * d/p/build-export-Allow-sandboxing-on-icon-validator-to-be-dis.patch,
+    d/p/make-test-Don-t-sandbox-the-icon-validator.patch:
+    Disable sandboxing on icon validator during build-time tests.
+    We can't rely on bwrap working in a buildd environment.
   * Merge debian/experimental branch into debian/master
     - Use upstream/1.2.x branch to import future releases
     - d/watch: Only watch for 1.even.x releases
