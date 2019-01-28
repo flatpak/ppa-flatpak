@@ -1,9 +1,8 @@
 flatpak (1.2.0-1) UNRELEASED; urgency=medium
 
   * d/upstream/metadata: Add DEP-12 metadata
-  * d/p/testcommon-An-i386-Flatpak-doesn-t-support-x86_64-apps.patch:
-    Mark as applied upstream
   * New upstream release
+    - Drop most patches, applied upstream
 
  -- Simon McVittie <smcv@debian.org>  Fri, 18 Jan 2019 08:48:48 +0000
 
