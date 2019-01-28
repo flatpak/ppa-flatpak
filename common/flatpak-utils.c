@@ -849,7 +849,9 @@ flatpak_name_matches_one_wildcard_prefix (const char         *name,
         {
           end_of_match += 2;
           while (*end_of_match != 0 &&
-                 is_valid_name_character (*end_of_match, TRUE))
+                 (is_valid_name_character (*end_of_match, TRUE) ||
+                  (end_of_match[0] == '.' &&
+                   is_valid_initial_name_character (end_of_match[1], TRUE))))
             end_of_match++;
         }
 
@@ -3064,11 +3066,6 @@ flatpak_repo_update (OstreeRepo   *repo,
   if (default_branch)
     g_variant_builder_add (&builder, "{sv}", "xa.default-branch",
                            g_variant_new_string (default_branch));
-
-/* FIXME: Remove this check when we depend on ostree 2018.9 */
-#ifndef OSTREE_META_KEY_DEPLOY_COLLECTION_ID
-#define OSTREE_META_KEY_DEPLOY_COLLECTION_ID "ostree.deploy-collection-id"
-#endif
 
   if (deploy_collection_id && collection_id != NULL)
     g_variant_builder_add (&builder, "{sv}", OSTREE_META_KEY_DEPLOY_COLLECTION_ID,
@@ -6131,4 +6128,28 @@ void
 flatpak_show_cursor (void)
 {
   write (STDOUT_FILENO, FLATPAK_ANSI_SHOW_CURSOR, strlen (FLATPAK_ANSI_SHOW_CURSOR));
+}
+
+void
+flatpak_enable_raw_mode (void)
+{
+  struct termios raw;
+
+  tcgetattr (STDIN_FILENO, &raw);
+
+  raw.c_lflag &= ~(ECHO | ICANON);
+
+  tcsetattr (STDIN_FILENO, TCSAFLUSH, &raw);
+}
+
+void
+flatpak_disable_raw_mode (void)
+{
+  struct termios raw;
+
+  tcgetattr (STDIN_FILENO, &raw);
+
+  raw.c_lflag |= (ECHO | ICANON);
+
+  tcsetattr (STDIN_FILENO, TCSAFLUSH, &raw);
 }

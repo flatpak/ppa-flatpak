@@ -14,8 +14,8 @@ AC_PREREQ([2.63])
 # on the unstable (ie master), interface age = 0
 
 m4_define([flatpak_major_version], [1])
-m4_define([flatpak_minor_version], [1])
-m4_define([flatpak_micro_version], [3])
+m4_define([flatpak_minor_version], [2])
+m4_define([flatpak_micro_version], [0])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -271,6 +271,8 @@ PKG_CHECK_MODULES(OSTREE, [ostree-1 >= $OSTREE_REQS])
 PKG_CHECK_MODULES(JSON, [json-glib-1.0])
 
 PKG_CHECK_MODULES(APPSTREAM_GLIB, [appstream-glib >= 0.5.10])
+
+PKG_CHECK_MODULES(GDK_PIXBUF, [gdk-pixbuf-2.0])
 
 AC_ARG_ENABLE([seccomp],
               AC_HELP_STRING([--disable-seccomp],

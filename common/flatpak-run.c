@@ -1503,6 +1503,7 @@ out:
 static void
 add_font_path_args (FlatpakBwrap *bwrap)
 {
+  g_autoptr(GString) xml_snippet = g_string_new ("");
   g_autoptr(GFile) home = NULL;
   g_autoptr(GFile) user_font1 = NULL;
   g_autoptr(GFile) user_font2 = NULL;
@@ -1511,11 +1512,20 @@ add_font_path_args (FlatpakBwrap *bwrap)
   gboolean found_cache = FALSE;
   int i;
 
+
+  g_string_append (xml_snippet,
+                   "<?xml version=\"1.0\"?>\n"
+                   "<!DOCTYPE fontconfig SYSTEM \"fonts.dtd\">\n"
+                   "<fontconfig>\n");
+
   if (g_file_test (SYSTEM_FONTS_DIR, G_FILE_TEST_EXISTS))
     {
       flatpak_bwrap_add_args (bwrap,
                               "--ro-bind", SYSTEM_FONTS_DIR, "/run/host/fonts",
                               NULL);
+      g_string_append_printf (xml_snippet,
+                              "\t<remap-dir as-path=\"%s\">/run/host/fonts</remap-dir>\n",
+                              SYSTEM_FONTS_DIR);
     }
 
   system_cache_dirs = g_strsplit (SYSTEM_FONT_CACHE_DIRS, ":", 0);
@@ -1550,12 +1560,18 @@ add_font_path_args (FlatpakBwrap *bwrap)
       flatpak_bwrap_add_args (bwrap,
                               "--ro-bind", flatpak_file_get_path_cached (user_font1), "/run/host/user-fonts",
                               NULL);
+      g_string_append_printf (xml_snippet,
+                              "\t<remap-dir as-path=\"%s\">/run/host/user-fonts</remap-dir>\n",
+                              flatpak_file_get_path_cached (user_font1));
     }
   else if (g_file_query_exists (user_font2, NULL))
     {
       flatpak_bwrap_add_args (bwrap,
                               "--ro-bind", flatpak_file_get_path_cached (user_font2), "/run/host/user-fonts",
                               NULL);
+      g_string_append_printf (xml_snippet,
+                              "\t<remap-dir as-path=\"%s\">/run/host/user-fonts</remap-dir>\n",
+                              flatpak_file_get_path_cached (user_font2));
     }
 
   user_font_cache = g_file_resolve_relative_path (home, ".cache/fontconfig");
@@ -1574,6 +1590,12 @@ add_font_path_args (FlatpakBwrap *bwrap)
                               "--remount-ro", "/run/host/user-fonts-cache",
                               NULL);
     }
+
+  g_string_append (xml_snippet,
+                   "</fontconfig>\n");
+
+  if (!flatpak_bwrap_add_args_data (bwrap, "font-dirs.xml", xml_snippet->str, xml_snippet->len, "/run/host/font-dirs.xml", NULL))
+    g_warning ("Unable to add fontconfig data snippet");
 }
 
 static void
@@ -2723,7 +2745,7 @@ forward_file (XdpDbusDocuments *documents,
 
   fd = open (file, O_PATH | O_CLOEXEC);
   if (fd == -1)
-    return flatpak_fail (error, "Failed to open '%s'", file);
+    return flatpak_fail (error, _("Failed to open ‘%s’"), file);
 
   fd_list = g_unix_fd_list_new ();
   fd_id = g_unix_fd_list_append (fd_list, fd, error);
