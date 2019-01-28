@@ -23,7 +23,7 @@ set -euo pipefail
 
 skip_without_bwrap
 
-echo "1..12"
+echo "1..13"
 
 setup_repo
 install_repo
@@ -336,6 +336,29 @@ ${FLATPAK} build-export ${FL_GPGARGS} repos/test ${DIR}
 
 ${FLATPAK} ${U} update -y org.test.OldVersion
 
+# Make sure a multi-ref update succeeds even if some update requires a newer version
+# Note that updates are in alphabetical order, so CurrentVersion will be pulled first
+# and should not block a successful install of OldVersion later
+
+DIR=`mktemp -d`
+${FLATPAK} build-init ${DIR} org.test.CurrentVersion org.test.Platform org.test.Platform
+touch ${DIR}/files/updated
+${FLATPAK} build-finish --require-version=99.0.0 --command=hello.sh ${DIR}
+${FLATPAK} build-export ${FL_GPGARGS} repos/test ${DIR}
+DIR=`mktemp -d`
+${FLATPAK} build-init ${DIR} org.test.OldVersion org.test.Platform org.test.Platform
+touch ${DIR}/files/updated
+${FLATPAK} build-finish --require-version=${VERSION} --command=hello.sh ${DIR}
+${FLATPAK} build-export ${FL_GPGARGS} repos/test ${DIR}
+
+if ${FLATPAK} ${U} update -y &> err_version.txt; then
+    assert_not_reached "Should not have been able to update due to version"
+fi
+assert_file_has_content err_version.txt "needs a later flatpak version"
+
+assert_not_has_file $FL_DIR/app/org.test.CurrentVersion/$ARCH/master/active/files/updated
+assert_has_file $FL_DIR/app/org.test.OldVersion/$ARCH/master/active/files/updated
+
 echo "ok version checks"
 
 rm -rf app
@@ -369,3 +392,18 @@ fi
 assert_file_has_content err2.txt [Ii]nvalid
 
 echo "ok no setuid"
+
+rm -rf app
+flatpak build-init app org.test.App org.test.Platform org.test.Platform
+mkdir -p app/files/
+touch app/files/exe
+flatpak build-finish --command=hello.sh --sdk=org.test.Sdk app
+${FLATPAK} build-export ${FL_GPGARGS} repos/test app
+update_repo
+
+${FLATPAK} ${U} install -y test-repo org.test.App
+${FLATPAK} ${U} info -m org.test.App > out
+
+assert_file_has_content out "^sdk=org.test.Sdk/$(flatpak --default-arch)/master$"
+
+echo "ok --sdk option"

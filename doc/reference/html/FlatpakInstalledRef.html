@@ -2,12 +2,12 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>FlatpakInstalledRef: Flatpak Library Reference Manual</title>
+<title>FlatpakInstalledRef: Flatpak Reference Manual</title>
 <meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
-<link rel="home" href="index.html" title="Flatpak Library Reference Manual">
-<link rel="up" href="ch01.html" title="Flatpak">
-<link rel="prev" href="FlatpakRef.html" title="FlatpakRef">
-<link rel="next" href="FlatpakRelatedRef.html" title="FlatpakRelatedRef">
+<link rel="home" href="index.html" title="Flatpak Reference Manual">
+<link rel="up" href="ch01.html" title="[Insert title here]">
+<link rel="prev" href="FlatpakInstallation.html" title="FlatpakInstallation">
+<link rel="next" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef">
 <meta name="generator" content="GTK-Doc V1.28.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
@@ -21,8 +21,8 @@
 </td>
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
-<td><a accesskey="p" href="FlatpakRef.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="FlatpakRelatedRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="p" href="FlatpakInstallation.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="FlatpakRemoteRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="FlatpakInstalledRef"></a><div class="titlepage"></div>
@@ -119,6 +119,30 @@
 <col width="200px" class="properties_flags">
 </colgroup>
 <tbody>
+<tr>
+<td class="property_type">
+<span class="type">gchar</span> *</td>
+<td class="property_name"><a class="link" href="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-license" title="The “appdata-license” property">appdata-license</a></td>
+<td class="property_flags">Read / Write / Construct Only</td>
+</tr>
+<tr>
+<td class="property_type">
+<span class="type">gchar</span> *</td>
+<td class="property_name"><a class="link" href="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-name" title="The “appdata-name” property">appdata-name</a></td>
+<td class="property_flags">Read / Write / Construct Only</td>
+</tr>
+<tr>
+<td class="property_type">
+<span class="type">gchar</span> *</td>
+<td class="property_name"><a class="link" href="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-summary" title="The “appdata-summary” property">appdata-summary</a></td>
+<td class="property_flags">Read / Write / Construct Only</td>
+</tr>
+<tr>
+<td class="property_type">
+<span class="type">gchar</span> *</td>
+<td class="property_name"><a class="link" href="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-version" title="The “appdata-version” property">appdata-version</a></td>
+<td class="property_flags">Read / Write / Construct Only</td>
+</tr>
 <tr>
 <td class="property_type">
 <span class="type">gchar</span> *</td>
@@ -299,7 +323,7 @@ flatpak_installed_ref_get_latest_commit
 <div class="refsect3">
 <a name="flatpak-installed-ref-get-latest-commit.returns"></a><h4>Returns</h4>
 <p>the latest commit. </p>
-<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 </div>
 <hr>
@@ -464,6 +488,38 @@ ref is not end-of-lifed.</p>
 </div>
 <div class="refsect1">
 <a name="FlatpakInstalledRef.property-details"></a><h2>Property Details</h2>
+<div class="refsect2">
+<a name="FlatpakInstalledRef--appdata-license"></a><h3>The <code class="literal">“appdata-license”</code> property</h3>
+<pre class="programlisting">  “appdata-license”          <span class="type">gchar</span> *</pre>
+<p>The license from the appdata.</p>
+<p>Flags: Read / Write / Construct Only</p>
+<p>Default value: NULL</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakInstalledRef--appdata-name"></a><h3>The <code class="literal">“appdata-name”</code> property</h3>
+<pre class="programlisting">  “appdata-name”             <span class="type">gchar</span> *</pre>
+<p>The localized name field from the appdata.</p>
+<p>Flags: Read / Write / Construct Only</p>
+<p>Default value: NULL</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakInstalledRef--appdata-summary"></a><h3>The <code class="literal">“appdata-summary”</code> property</h3>
+<pre class="programlisting">  “appdata-summary”          <span class="type">gchar</span> *</pre>
+<p>The localized summary field from the appdata.</p>
+<p>Flags: Read / Write / Construct Only</p>
+<p>Default value: NULL</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakInstalledRef--appdata-version"></a><h3>The <code class="literal">“appdata-version”</code> property</h3>
+<pre class="programlisting">  “appdata-version”          <span class="type">gchar</span> *</pre>
+<p>The default version field from the appdata.</p>
+<p>Flags: Read / Write / Construct Only</p>
+<p>Default value: NULL</p>
+</div>
+<hr>
 <div class="refsect2">
 <a name="FlatpakInstalledRef--deploy-dir"></a><h3>The <code class="literal">“deploy-dir”</code> property</h3>
 <pre class="programlisting">  “deploy-dir”               <span class="type">gchar</span> *</pre>

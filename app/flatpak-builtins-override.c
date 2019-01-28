@@ -136,7 +136,8 @@ flatpak_complete_override (FlatpakCompletion *completion)
   g_option_context_add_group (context, flatpak_context_get_options (arg_context));
 
   if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv,
-                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS, &dirs, NULL, NULL))
+                                     FLATPAK_BUILTIN_FLAG_ONE_DIR | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
+                                     &dirs, NULL, NULL))
     return FALSE;
 
   switch (completion->argc)
@@ -144,6 +145,7 @@ flatpak_complete_override (FlatpakCompletion *completion)
     case 0:
     case 1: /* NAME */
       flatpak_complete_options (completion, global_entries);
+      flatpak_complete_options (completion, user_entries);
       flatpak_complete_options (completion, options);
       flatpak_complete_context (completion);
 
@@ -152,7 +154,9 @@ flatpak_complete_override (FlatpakCompletion *completion)
           FlatpakDir *dir = g_ptr_array_index (dirs, i);
           int j;
           g_auto(GStrv) refs = flatpak_dir_find_installed_refs (dir, NULL, NULL, NULL,
-                                                                FLATPAK_KINDS_APP, &error);
+                                                                FLATPAK_KINDS_APP,
+                                                                FIND_MATCHING_REFS_FLAGS_NONE,
+                                                                &error);
           if (refs == NULL)
             flatpak_completion_debug ("find local refs error: %s", error->message);
           for (j = 0; refs != NULL && refs[j] != NULL; j++)

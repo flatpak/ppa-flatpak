@@ -18,11 +18,59 @@ app/flatpak-permission-dbus-generated.c: data/org.freedesktop.impl.portal.Permis
 app/%-dbus-generated.h: app/%-dbus-generated.c
 	@true # Built as a side-effect of the rules for the .c
 
+
+if BUILD_SYSTEM_HELPER
+polkit_sources = \
+	app/flatpak-polkit-agent-text-listener.h \
+	app/flatpak-polkit-agent-text-listener.c \
+	$(NULL)
+endif
+
+noinst_LTLIBRARIES += libflatpak-app.la
+
+libflatpak_app_la_SOURCES = \
+	app/flatpak-builtins-utils.h \
+	app/flatpak-builtins-utils.c \
+	app/flatpak-table-printer.c \
+	app/flatpak-table-printer.h \
+	app/parse-datetime.h \
+	$(NULL)
+
+nodist_libflatpak_app_la_SOURCES = \
+	app/parse-datetime.c \
+	$(NULL)
+
+libflatpak_app_la_LIBADD = \
+	$(AM_LDADD) \
+	$(BASE_LIBS) \
+	$(OSTREE_LIBS) \
+	$(SOUP_LIBS) \
+	$(JSON_LIBS) \
+	$(APPSTREAM_GLIB_LIBS) \
+	$(SYSTEMD_LIBS) \
+	$(POLKIT_LIBS) \
+	libglnx.la \
+	libflatpak-common.la \
+	$(NULL)
+
+libflatpak_app_la_CFLAGS = \
+	$(AM_CFLAGS) \
+	$(BASE_CFLAGS) \
+	$(OSTREE_CFLAGS) \
+	$(SOUP_CFLAGS) \
+	$(JSON_CFLAGS) \
+	$(APPSTREAM_GLIB_CFLAGS) \
+	 $(SYSTEMD_CFLAGS) \
+	$(POLKIT_CFLAGS) \
+	-DFLATPAK_COMPILATION \
+        -I$(srcdir)/app \
+        -I$(builddir)/app \
+        -DLOCALEDIR=\"$(localedir)\" \
+	$(NULL)
+
 flatpak_SOURCES = \
 	app/flatpak-main.c \
 	app/flatpak-builtins.h \
-	app/flatpak-builtins-utils.h \
-	app/flatpak-builtins-utils.c \
 	app/flatpak-builtins-remote-add.c \
 	app/flatpak-builtins-remote-modify.c \
 	app/flatpak-builtins-remote-delete.c \
@@ -61,18 +109,20 @@ flatpak_SOURCES = \
 	app/flatpak-builtins-search.c \
 	app/flatpak-builtins-repair.c \
 	app/flatpak-builtins-create-usb.c \
-	app/flatpak-table-printer.c \
-	app/flatpak-table-printer.h \
+	app/flatpak-builtins-kill.c \
+	app/flatpak-builtins-history.c \
 	app/flatpak-complete.c \
 	app/flatpak-complete.h \
 	app/flatpak-cli-transaction.c \
 	app/flatpak-cli-transaction.h \
+	app/flatpak-quiet-transaction.c \
+	app/flatpak-quiet-transaction.h \
 	app/parse-datetime.h \
+	$(polkit_sources) \
 	$(NULL)
 
 nodist_flatpak_SOURCES = \
 	$(flatpak_dbus_built_sources) \
-	app/parse-datetime.c \
 	$(NULL)
 
 app/parse-datetime.c: app/parse-datetime.y Makefile
@@ -81,10 +131,32 @@ app/parse-datetime.c: app/parse-datetime.y Makefile
 BUILT_SOURCES += $(flatpak_dbus_built_sources)
 CLEANFILES += app/parse-datetime.c $(flatpak_dbus_built_sources)
 
-flatpak_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) \
-	libglnx.la libflatpak-common.la
-flatpak_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
+flatpak_LDADD = \
+	$(AM_LDADD) \
+	$(BASE_LIBS) \
+	$(OSTREE_LIBS) \
+	$(SOUP_LIBS) \
+	$(JSON_LIBS) \
+	$(APPSTREAM_GLIB_LIBS) \
+	$(SYSTEMD_LIBS) \
+	$(POLKIT_LIBS) \
+	libglnx.la \
+	libflatpak-app.la \
+	libflatpak-common.la \
+	$(NULL)
+
+flatpak_CFLAGS = \
+	$(AM_CFLAGS) \
+	$(BASE_CFLAGS) \
+	$(OSTREE_CFLAGS) \
+	$(SOUP_CFLAGS) \
+	$(JSON_CFLAGS) \
+	$(APPSTREAM_GLIB_CFLAGS) \
+	$(SYSTEMD_CFLAGS) \
+	$(POLKIT_CFLAGS) \
 	-DFLATPAK_COMPILATION \
         -I$(srcdir)/app \
         -I$(builddir)/app \
-        -DLOCALEDIR=\"$(localedir)\"
+        -DLIBEXECDIR=\"$(libexecdir)\" \
+        -DLOCALEDIR=\"$(localedir)\" \
+	$(NULL)

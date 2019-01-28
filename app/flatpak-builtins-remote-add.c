@@ -228,9 +228,15 @@ load_options (const char *filename,
   if (str != NULL)
     opt_url = str;
 
-  str = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP, FLATPAK_REPO_COLLECTION_ID_KEY, NULL);
-  if (str != NULL)
+  str = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP, FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY, NULL);
+  if (str != NULL && *str != '\0')
     opt_collection_id = str;
+  else
+    {
+      str = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP, FLATPAK_REPO_COLLECTION_ID_KEY, NULL);
+      if (str != NULL && *str != '\0')
+        opt_collection_id = str;
+    }
 
   str = g_key_file_get_locale_string (keyfile, FLATPAK_REPO_GROUP,
                                       FLATPAK_REPO_TITLE_KEY, NULL, NULL);
@@ -400,7 +406,8 @@ flatpak_complete_remote_add (FlatpakCompletion *completion)
   context = g_option_context_new ("");
   g_option_context_add_main_entries (context, common_options, NULL);
   if (!flatpak_option_context_parse (context, add_options, &completion->argc, &completion->argv,
-                                     FLATPAK_BUILTIN_FLAG_ONE_DIR, NULL, NULL, NULL))
+                                     FLATPAK_BUILTIN_FLAG_ONE_DIR | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
+                                     NULL, NULL, NULL))
     return FALSE;
 
   switch (completion->argc)

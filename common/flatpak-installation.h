@@ -29,6 +29,7 @@ typedef struct _FlatpakInstallation FlatpakInstallation;
 
 #include <gio/gio.h>
 #include <flatpak-installed-ref.h>
+#include <flatpak-instance.h>
 #include <flatpak-remote.h>
 
 #define FLATPAK_TYPE_INSTALLATION flatpak_installation_get_type ()
@@ -102,10 +103,23 @@ typedef enum {
  * Since: 0.11.8
  */
 typedef enum {
-  FLATPAK_UNINSTALL_FLAGS_NONE        = 0,
-  FLATPAK_UNINSTALL_FLAGS_NO_PRUNE    = (1 << 0),
-  FLATPAK_UNINSTALL_FLAGS_NO_TRIGGERS = (1 << 1),
+  FLATPAK_UNINSTALL_FLAGS_NONE            = 0,
+  FLATPAK_UNINSTALL_FLAGS_NO_PRUNE        = (1 << 0),
+  FLATPAK_UNINSTALL_FLAGS_NO_TRIGGERS     = (1 << 1),
 } FlatpakUninstallFlags;
+
+/**
+ * FlatpakLaunchFlags:
+ * @FLATPAK_LAUNCH_FLAGS_NONE: Default
+ * @FLATPAK_LAUNCH_FLAGS_DO_NOT_REAP: Do not reap the child. Use this if you want to wait
+ * for the child with g_child_watch_add(). (Snce: 1.1)
+ *
+ * Flags to alter the behavior of flatpak_installation_launch_full().
+ */
+typedef enum {
+  FLATPAK_LAUNCH_FLAGS_NONE        = 0,
+  FLATPAK_LAUNCH_FLAGS_DO_NOT_REAP = (1 << 0),
+} FlatpakLaunchFlags;
 
 /**
  * FlatpakStorageType:
@@ -149,6 +163,9 @@ FLATPAK_EXTERN FlatpakInstallation *flatpak_installation_new_for_path (GFile    
                                                                        gboolean      user,
                                                                        GCancellable *cancellable,
                                                                        GError      **error);
+FLATPAK_EXTERN void flatpak_installation_set_no_interaction (FlatpakInstallation *self,
+                                                             gboolean             no_interaction);
+FLATPAK_EXTERN gboolean flatpak_installation_get_no_interaction (FlatpakInstallation *installation);
 
 /**
  * FlatpakProgressCallback:
@@ -184,6 +201,15 @@ FLATPAK_EXTERN gboolean             flatpak_installation_launch (FlatpakInstalla
                                                                  const char          *commit,
                                                                  GCancellable        *cancellable,
                                                                  GError             **error);
+FLATPAK_EXTERN gboolean             flatpak_installation_launch_full (FlatpakInstallation *self,
+                                                                      FlatpakLaunchFlags   flags,
+                                                                      const char          *name,
+                                                                      const char          *arch,
+                                                                      const char          *branch,
+                                                                      const char          *commit,
+                                                                      FlatpakInstance    **instance_out,
+                                                                      GCancellable        *cancellable,
+                                                                      GError             **error);
 FLATPAK_EXTERN GFileMonitor        *flatpak_installation_create_monitor (FlatpakInstallation *self,
                                                                          GCancellable        *cancellable,
                                                                          GError             **error);
@@ -197,6 +223,10 @@ FLATPAK_EXTERN GPtrArray           *flatpak_installation_list_installed_refs_by_
 FLATPAK_EXTERN GPtrArray           *flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
                                                                                          GCancellable        *cancellable,
                                                                                          GError             **error);
+FLATPAK_EXTERN GPtrArray           *flatpak_installation_list_unused_refs (FlatpakInstallation  *self,
+                                                                           const char           *arch,
+                                                                           GCancellable         *cancellable,
+                                                                           GError              **error);
 FLATPAK_EXTERN FlatpakInstalledRef * flatpak_installation_get_installed_ref (FlatpakInstallation *self,
                                                                              FlatpakRefKind       kind,
                                                                              const char          *name,
@@ -238,6 +268,9 @@ FLATPAK_EXTERN gboolean              flatpak_installation_set_config_sync (Flatp
                                                                            const char          *value,
                                                                            GCancellable        *cancellable,
                                                                            GError             **error);
+FLATPAK_EXTERN gboolean              flatpak_installation_get_min_free_space_bytes (FlatpakInstallation *self,
+                                                                                    guint64             *out_bytes,
+                                                                                    GError             **error);
 FLATPAK_EXTERN char *                flatpak_installation_get_config (FlatpakInstallation *self,
                                                                       const char          *key,
                                                                       GCancellable        *cancellable,

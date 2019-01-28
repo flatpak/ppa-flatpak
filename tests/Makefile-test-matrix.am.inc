@@ -4,6 +4,8 @@ TEST_MATRIX= \
 	tests/test-run@user,deltas.wrap \
 	tests/test-run@system,nodeltas.wrap \
 	tests/test-run@system,deltas.wrap \
+	tests/test-info@user.wrap \
+	tests/test-info@system.wrap \
 	tests/test-repo@user.wrap \
 	tests/test-repo@system.wrap \
 	tests/test-repo@collections.wrap \
@@ -15,15 +17,19 @@ TEST_MATRIX= \
 	$(NULL)
 TEST_MATRIX_DIST= \
 	tests/test-basic.sh \
+	tests/test-completion.sh \
+	tests/test-config.sh \
 	tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh \
 	tests/test-extensions.sh \
 	tests/test-oci.sh \
 	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
+	tests/test-override.sh \
 	$(NULL)
 TEST_MATRIX_EXTRA_DIST= \
 	tests/test-run.sh \
+	tests/test-info.sh \
 	tests/test-repo.sh \
 	tests/test-bundle.sh \
 	tests/test-oci-registry.sh \

@@ -40,6 +40,7 @@
 static char *opt_arch;
 static char *opt_branch;
 static char *opt_command;
+static char *opt_cwd;
 static gboolean opt_devel;
 static gboolean opt_log_session_bus;
 static gboolean opt_log_system_bus;
@@ -57,6 +58,7 @@ static char *opt_runtime_commit;
 static GOptionEntry options[] = {
   { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to use"), N_("ARCH") },
   { "command", 0, 0, G_OPTION_ARG_STRING, &opt_command, N_("Command to run"), N_("COMMAND") },
+  { "cwd", 0, 0, G_OPTION_ARG_STRING, &opt_cwd, N_("Directory to run the command in"), N_("DIR") },
   { "branch", 0, 0, G_OPTION_ARG_STRING, &opt_branch, N_("Branch to use"), N_("BRANCH") },
   { "devel", 'd', 0, G_OPTION_ARG_NONE, &opt_devel, N_("Use development runtime"), NULL },
   { "runtime", 0, 0, G_OPTION_ARG_STRING, &opt_runtime, N_("Runtime to use"), N_("RUNTIME") },
@@ -92,7 +94,7 @@ flatpak_builtin_run (int argc, char **argv, GCancellable *cancellable, GError **
   g_autoptr(GError) local_error = NULL;
   g_autoptr(GPtrArray) dirs = NULL;
 
-  context = g_option_context_new (_("APP [args...] - Run an app"));
+  context = g_option_context_new (_("APP [ARGUMENT…] - Run an app"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   rest_argc = 0;
@@ -115,6 +117,23 @@ flatpak_builtin_run (int argc, char **argv, GCancellable *cancellable, GError **
                                      FLATPAK_BUILTIN_FLAG_ALL_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
                                      &dirs, cancellable, error))
     return FALSE;
+
+  /* Move the user dir to the front so it "wins" in case an app is in more than
+   * one installation */
+  if (dirs->len > 1)
+    {
+      /* Walk through the array backwards so we can safely remove */
+      for (i = dirs->len; i > 0; i--)
+        {
+          FlatpakDir *dir = g_ptr_array_index (dirs, i - 1);
+          if (flatpak_dir_is_user (dir))
+            {
+              g_ptr_array_insert (dirs, 0, g_object_ref (dir));
+              g_ptr_array_remove_index (dirs, i);
+              break;
+            }
+        }
+    }
 
   if (rest_argc == 0)
     return usage_error (context, _("APP must be specified"), error);
@@ -200,9 +219,11 @@ flatpak_builtin_run (int argc, char **argv, GCancellable *cancellable, GError **
                         (opt_file_forwarding ? FLATPAK_RUN_FLAG_FILE_FORWARDING : 0) |
                         (opt_no_a11y_bus ? FLATPAK_RUN_FLAG_NO_A11Y_BUS_PROXY : 0) |
                         (opt_no_documents_portal ? FLATPAK_RUN_FLAG_NO_DOCUMENTS_PORTAL : 0),
+                        opt_cwd,
                         opt_command,
                         &argv[rest_argv_start + 1],
                         rest_argc - 1,
+                        NULL,
                         cancellable,
                         error))
     return FALSE;
@@ -227,7 +248,8 @@ flatpak_complete_run (FlatpakCompletion *completion)
   g_option_context_add_group (context, flatpak_context_get_options (arg_context));
 
   if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv,
-                                     FLATPAK_BUILTIN_FLAG_NO_DIR, NULL, NULL, NULL))
+                                     FLATPAK_BUILTIN_FLAG_ALL_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
+                                     NULL, NULL, NULL))
     return FALSE;
 
   switch (completion->argc)
@@ -235,13 +257,16 @@ flatpak_complete_run (FlatpakCompletion *completion)
     case 0:
     case 1: /* NAME */
       flatpak_complete_options (completion, global_entries);
+      flatpak_complete_options (completion, user_entries);
       flatpak_complete_options (completion, options);
       flatpak_complete_context (completion);
 
       user_dir = flatpak_dir_get_user ();
       {
         g_auto(GStrv) refs = flatpak_dir_find_installed_refs (user_dir, NULL, NULL, opt_arch,
-                                                              FLATPAK_KINDS_APP, &error);
+                                                              FLATPAK_KINDS_APP,
+                                                              FIND_MATCHING_REFS_FLAGS_NONE,
+                                                              &error);
         if (refs == NULL)
           flatpak_completion_debug ("find local refs error: %s", error->message);
         for (i = 0; refs != NULL && refs[i] != NULL; i++)
@@ -263,7 +288,9 @@ flatpak_complete_run (FlatpakCompletion *completion)
         {
           FlatpakDir *dir = g_ptr_array_index (system_dirs, i);
           g_auto(GStrv) refs = flatpak_dir_find_installed_refs (dir, NULL, NULL, opt_arch,
-                                                                FLATPAK_KINDS_APP, &error);
+                                                                FLATPAK_KINDS_APP,
+                                                                FIND_MATCHING_REFS_FLAGS_NONE,
+                                                                &error);
           if (refs == NULL)
             flatpak_completion_debug ("find local refs error: %s", error->message);
           for (j = 0; refs != NULL && refs[j] != NULL; j++)

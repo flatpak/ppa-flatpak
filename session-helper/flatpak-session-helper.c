@@ -56,6 +56,7 @@ typedef struct
   GPid  pid;
   char *client;
   guint child_watch;
+  gboolean watch_bus;
 } PidData;
 
 static void
@@ -63,17 +64,6 @@ pid_data_free (PidData *data)
 {
   g_free (data->client);
   g_free (data);
-}
-
-static gboolean
-handle_request_monitor (FlatpakSessionHelper  *object,
-                        GDBusMethodInvocation *invocation,
-                        gpointer               user_data)
-{
-  flatpak_session_helper_complete_request_monitor (object, invocation,
-                                                   monitor_dir);
-
-  return TRUE;
 }
 
 static gboolean
@@ -187,7 +177,7 @@ child_setup_func (gpointer user_data)
   if (data->set_tty)
     {
       /* data->tty is our from fd which is closed at this point.
-       * so locate the destnation fd and use it for the ioctl.
+       * so locate the destination fd and use it for the ioctl.
        */
       for (i = 0; i < data->fd_map_len; i++)
         {
@@ -232,6 +222,17 @@ handle_host_command (FlatpakDevelopment    *object,
       g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
                                              G_DBUS_ERROR_INVALID_ARGS,
                                              "No command given");
+      return TRUE;
+    }
+
+  if (!g_variant_is_of_type (arg_fds, G_VARIANT_TYPE ("a{uh}")) ||
+      !g_variant_is_of_type (arg_envs, G_VARIANT_TYPE ("a{ss}")) ||
+      (flags & ~(FLATPAK_HOST_COMMAND_FLAGS_CLEAR_ENV|
+                 FLATPAK_HOST_COMMAND_FLAGS_WATCH_BUS)) != 0)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                             G_DBUS_ERROR_INVALID_ARGS,
+                                             "Unexpected argument");
       return TRUE;
     }
 
@@ -343,6 +344,7 @@ handle_host_command (FlatpakDevelopment    *object,
   pid_data = g_new0 (PidData, 1);
   pid_data->pid = pid;
   pid_data->client = g_strdup (g_dbus_method_invocation_get_sender (invocation));
+  pid_data->watch_bus = (flags & FLATPAK_HOST_COMMAND_FLAGS_WATCH_BUS) != 0;
   pid_data->child_watch = g_child_watch_add_full (G_PRIORITY_DEFAULT,
                                                   pid,
                                                   child_watch_died,
@@ -392,6 +394,51 @@ handle_host_command_signal (FlatpakDevelopment    *object,
 }
 
 static void
+name_owner_changed (GDBusConnection *connection,
+                    const gchar     *sender_name,
+                    const gchar     *object_path,
+                    const gchar     *interface_name,
+                    const gchar     *signal_name,
+                    GVariant        *parameters,
+                    gpointer         user_data)
+{
+  const char *name, *from, *to;
+
+  g_variant_get (parameters, "(&s&s&s)", &name, &from, &to);
+
+  if (name[0] == ':' &&
+      strcmp (name, from) == 0 &&
+      strcmp (to, "") == 0)
+    {
+      GHashTableIter iter;
+      PidData *pid_data = NULL;
+      gpointer value = NULL;
+      GList *list = NULL, *l;
+
+      g_hash_table_iter_init (&iter, client_pid_data_hash);
+      while (g_hash_table_iter_next (&iter, NULL, &value))
+        {
+          pid_data = value;
+
+          if (pid_data->watch_bus && g_str_equal (pid_data->client, name))
+            list = g_list_prepend (list, pid_data);
+        }
+
+      for (l = list; l; l = l->next)
+        {
+          pid_data = l->data;
+          killpg (pid_data->pid, SIGINT);
+        }
+
+      g_list_free (list);
+    }
+}
+
+#define DBUS_NAME_DBUS "org.freedesktop.DBus"
+#define DBUS_INTERFACE_DBUS DBUS_NAME_DBUS
+#define DBUS_PATH_DBUS "/org/freedesktop/DBus"
+
+static void
 on_bus_acquired (GDBusConnection *connection,
                  const gchar     *name,
                  gpointer         user_data)
@@ -400,11 +447,20 @@ on_bus_acquired (GDBusConnection *connection,
   FlatpakDevelopment *devel;
   GError *error = NULL;
 
+  g_dbus_connection_signal_subscribe (connection,
+                                      DBUS_NAME_DBUS,
+                                      DBUS_INTERFACE_DBUS,
+                                      "NameOwnerChanged",
+                                      DBUS_PATH_DBUS,
+                                      NULL,
+                                      G_DBUS_SIGNAL_FLAGS_NONE,
+                                      name_owner_changed,
+                                      NULL, NULL);
+
   helper = flatpak_session_helper_skeleton_new ();
 
   flatpak_session_helper_set_version (FLATPAK_SESSION_HELPER (helper), 1);
 
-  g_signal_connect (helper, "handle-request-monitor", G_CALLBACK (handle_request_monitor), NULL);
   g_signal_connect (helper, "handle-request-session", G_CALLBACK (handle_request_session), NULL);
 
   if (!g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (helper),
@@ -659,13 +715,13 @@ start_p11_kit_server (const char *flatpak_dir)
                      &p11_kit_stdout, NULL,
                      &exit_status, &local_error))
     {
-      g_warning ("Unable to start p11-kit server: %s\n", local_error->message);
+      g_warning ("Unable to start p11-kit server: %s", local_error->message);
       return;
     }
 
-  if (exit_status != 0)
+  if (!g_spawn_check_exit_status (exit_status, &local_error))
     {
-      g_warning ("Unable to start p11-kit server, exited with status %d\n", exit_status);
+      g_warning ("Unable to start p11-kit server: %s", local_error->message);
       return;
     }
 
@@ -766,8 +822,6 @@ main (int    argc,
 
   if (verbose)
     g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, message_handler, NULL);
-
-  flatpak_migrate_from_xdg_app ();
 
   client_pid_data_hash = g_hash_table_new_full (NULL, NULL, NULL, (GDestroyNotify) pid_data_free);
 

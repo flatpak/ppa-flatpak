@@ -34,6 +34,7 @@
 #include "flatpak-builtins.h"
 #include "flatpak-builtins-utils.h"
 #include "flatpak-cli-transaction.h"
+#include "flatpak-quiet-transaction.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-error.h"
 #include "flatpak-chain-input-stream-private.h"
@@ -52,6 +53,7 @@ static gboolean opt_bundle;
 static gboolean opt_from;
 static gboolean opt_yes;
 static gboolean opt_reinstall;
+static gboolean opt_noninteractive;
 
 static GOptionEntry options[] = {
   { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to install for"), N_("ARCH") },
@@ -68,6 +70,7 @@ static GOptionEntry options[] = {
   { "subpath", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_subpaths, N_("Only install this subpath"), N_("PATH") },
   { "assumeyes", 'y', 0, G_OPTION_ARG_NONE, &opt_yes, N_("Automatically answer yes for all questions"), NULL },
   { "reinstall", 0, 0, G_OPTION_ARG_NONE, &opt_reinstall, N_("Uninstall first if already installed"), NULL },
+  { "noninteractive", 0, 0, G_OPTION_ARG_NONE, &opt_noninteractive, N_("Produce minimal output and don't ask questions"), NULL },
   { NULL }
 };
 
@@ -146,7 +149,10 @@ install_bundle (FlatpakDir *dir,
         return FALSE;
     }
 
-  transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
+  if (opt_noninteractive)
+    transaction = flatpak_quiet_transaction_new (dir, error);
+  else
+    transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
   if (transaction == NULL)
     return FALSE;
 
@@ -160,8 +166,16 @@ install_bundle (FlatpakDir *dir,
   if (!flatpak_transaction_add_install_bundle (transaction, file, gpg_data, error))
     return FALSE;
 
-  if (!flatpak_cli_transaction_run (transaction, cancellable, error))
-    return FALSE;
+  if (!flatpak_transaction_run (transaction, cancellable, error))
+    {
+      if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
+        {
+          g_clear_error (error);
+          return TRUE;
+        }
+
+      return FALSE;
+    }
 
   return TRUE;
 }
@@ -209,7 +223,10 @@ install_from (FlatpakDir *dir,
       file_data = g_bytes_new_take (g_steal_pointer (&data), data_len);
     }
 
-  transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
+  if (opt_noninteractive)
+    transaction = flatpak_quiet_transaction_new (dir, error);
+  else
+    transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
   if (transaction == NULL)
     return FALSE;
 
@@ -224,8 +241,16 @@ install_from (FlatpakDir *dir,
   if (!flatpak_transaction_add_install_flatpakref (transaction, file_data, error))
     return FALSE;
 
-  if (!flatpak_cli_transaction_run (transaction, cancellable, error))
-    return FALSE;
+  if (!flatpak_transaction_run (transaction, cancellable, error))
+    {
+      if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
+        {
+          g_clear_error (error);
+          return TRUE;
+        }
+
+      return FALSE;
+    }
 
   return TRUE;
 }
@@ -235,8 +260,8 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
 {
   g_autoptr(GOptionContext) context = NULL;
   g_autoptr(GPtrArray) dirs = NULL;
-  FlatpakDir *dir;
-  const char *remote;
+  g_autoptr(FlatpakDir) dir = NULL;
+  g_autofree char *remote = NULL;
   g_autofree char *remote_url = NULL;
   char **prefs = NULL;
   int i, n_prefs;
@@ -245,17 +270,18 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
   FlatpakKinds kinds;
   g_autoptr(FlatpakTransaction) transaction = NULL;
   g_autoptr(FlatpakDir) dir_with_remote = NULL;
+  gboolean auto_remote = FALSE;
 
-  context = g_option_context_new (_("LOCATION/REMOTE [REF...] - Install applications or runtimes"));
+  context = g_option_context_new (_("[LOCATION/REMOTE] [REF…] - Install applications or runtimes"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv,
-                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS,
+                                     FLATPAK_BUILTIN_FLAG_ALL_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
                                      &dirs, cancellable, error))
     return FALSE;
 
   /* Start with the default or specified dir, this is fine for opt_bundle or opt_from */
-  dir = g_ptr_array_index (dirs, 0);
+  dir = g_object_ref (g_ptr_array_index (dirs, 0));
 
   if (!opt_bundle && !opt_from && argc >= 2)
     {
@@ -271,43 +297,157 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
   if (opt_from)
     return install_from (dir, context, argc, argv, cancellable, error);
 
-  if (argc < 3)
-    return usage_error (context, _("REMOTE and REF must be specified"), error);
+  if (argc < 2)
+    return usage_error (context, _("At least one REF must be specified"), error);
 
-  if (g_path_is_absolute (argv[1]) ||
-      g_str_has_prefix (argv[1], "./"))
+  if (argc == 2)
+    auto_remote = TRUE;
+
+  kinds = flatpak_kinds_from_bools (opt_app, opt_runtime);
+
+  if (!opt_noninteractive)
+    g_print (_("Looking for matches…\n"));
+
+  if (!auto_remote &&
+      (g_path_is_absolute (argv[1]) ||
+       g_str_has_prefix (argv[1], "./")))
     {
       g_autoptr(GFile) remote_file = g_file_new_for_commandline_arg (argv[1]);
       remote_url = g_file_get_uri (remote_file);
-      remote = remote_url;
+      remote = g_strdup (remote_url);
     }
   else
     {
-      remote = argv[1];
+      g_autoptr(GError) local_error = NULL;
 
-      /* If the remote was used, and no single dir was specified, find which one based on the remote */
-      if (dirs->len > 1)
+      /* If the remote was used, and no single dir was specified, find which
+       * one based on the remote. If the remote isn't found assume it's a ref
+       * and we should auto-detect the remote. */
+      if (!auto_remote &&
+          !flatpak_resolve_duplicate_remotes (dirs, argv[1], &dir_with_remote, cancellable, &local_error))
         {
-          if (!flatpak_resolve_duplicate_remotes (dirs, remote, &dir_with_remote, cancellable, error))
-            return FALSE;
-          dir = dir_with_remote;
+          if (g_error_matches (local_error, FLATPAK_ERROR, FLATPAK_ERROR_REMOTE_NOT_FOUND))
+            {
+              auto_remote = TRUE;
+            }
+          else
+            {
+              g_propagate_error (error, g_steal_pointer (&local_error));
+              return FALSE;
+            }
+        }
+
+      if (!auto_remote)
+        {
+          remote = g_strdup (argv[1]);
+          g_clear_object (&dir);
+          dir = g_object_ref (dir_with_remote);
+        }
+      else
+        {
+          g_autoptr(GPtrArray) remote_dir_pairs = NULL;
+          RemoteDirPair *chosen_pair = NULL;
+
+          remote_dir_pairs = g_ptr_array_new_with_free_func ((GDestroyNotify) remote_dir_pair_free);
+
+          /* Search all remotes for a matching ref. This is imperfect
+           * because it only takes the first specified ref into account and
+           * doesn't distinguish between an exact match and a fuzzy match, but
+           * that's okay because the user will be asked to confirm the remote
+           */
+          for (i = 0; i < dirs->len; i++)
+            {
+              FlatpakDir *this_dir = g_ptr_array_index (dirs, i);
+              g_auto(GStrv) remotes = NULL;
+              guint j = 0;
+
+              remotes = flatpak_dir_list_remotes (this_dir, cancellable, error);
+              if (remotes == NULL)
+                return FALSE;
+
+              for (j = 0; remotes[j] != NULL; j++)
+                {
+                  const char *this_remote = remotes[j];
+                  g_autofree char *this_default_branch = NULL;
+                  g_autofree char *id = NULL;
+                  g_autofree char *arch = NULL;
+                  g_autofree char *branch = NULL;
+                  FlatpakKinds matched_kinds;
+                  g_auto(GStrv) refs = NULL;
+                  g_autoptr(GError) local_error = NULL;
+
+                  if (flatpak_dir_get_remote_disabled (this_dir, this_remote) ||
+                      flatpak_dir_get_remote_noenumerate (this_dir, this_remote))
+                    continue;
+
+                  this_default_branch = flatpak_dir_get_remote_default_branch (this_dir, this_remote);
+
+                  flatpak_split_partial_ref_arg_novalidate (argv[1], kinds, opt_arch, target_branch,
+                                                            &matched_kinds, &id, &arch, &branch);
+
+                  if (opt_no_pull)
+                    refs = flatpak_dir_find_local_refs (this_dir, this_remote, id, branch, this_default_branch, arch,
+                                                        flatpak_get_default_arch (),
+                                                        matched_kinds, FIND_MATCHING_REFS_FLAGS_FUZZY,
+                                                        cancellable, &local_error);
+                  else
+                    refs = flatpak_dir_find_remote_refs (this_dir, this_remote, id, branch, this_default_branch, arch,
+                                                         flatpak_get_default_arch (),
+                                                         matched_kinds, FIND_MATCHING_REFS_FLAGS_FUZZY,
+                                                         cancellable, &local_error);
+
+                  if (refs == NULL)
+                    {
+                      g_warning ("An error was encountered searching remote ‘%s’ for ‘%s’: %s", this_remote, argv[1], local_error->message);
+                      continue;
+                    }
+
+                  if (g_strv_length (refs) == 0)
+                    continue;
+                  else
+                    {
+                      RemoteDirPair *pair = remote_dir_pair_new (this_remote, this_dir);
+                      g_ptr_array_add (remote_dir_pairs, pair);
+                    }
+                }
+            }
+
+            if (remote_dir_pairs->len == 0)
+              return flatpak_fail (error, _("No remote refs found similar to ‘%s’"), argv[1]);
+
+            if (!flatpak_resolve_matching_remotes (opt_yes, remote_dir_pairs, argv[1], &chosen_pair, error))
+              return FALSE;
+
+            remote = g_strdup (chosen_pair->remote_name);
+            g_clear_object (&dir);
+            dir = g_object_ref (chosen_pair->dir);
         }
     }
 
-  prefs = &argv[2];
-  n_prefs = argc - 2;
+  if (auto_remote)
+    {
+      prefs = &argv[1];
+      n_prefs = argc - 1;
+    }
+  else
+    {
+      prefs = &argv[2];
+      n_prefs = argc - 2;
+    }
 
   /* Backwards compat for old "REMOTE NAME [BRANCH]" argument version */
-  if (argc == 4 && looks_like_branch (argv[3]))
+  if (argc == 4 && flatpak_is_valid_name (argv[2], NULL) && looks_like_branch (argv[3]))
     {
       target_branch = g_strdup (argv[3]);
       n_prefs = 1;
     }
 
   default_branch = flatpak_dir_get_remote_default_branch (dir, remote);
-  kinds = flatpak_kinds_from_bools (opt_app, opt_runtime);
 
-  transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
+  if (opt_noninteractive)
+    transaction = flatpak_quiet_transaction_new (dir, error);
+  else
+    transaction = flatpak_cli_transaction_new (dir, opt_yes, TRUE, error);
   if (transaction == NULL)
     return FALSE;
 
@@ -325,30 +465,64 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
       g_autofree char *id = NULL;
       g_autofree char *arch = NULL;
       g_autofree char *branch = NULL;
-      FlatpakKinds kind;
       g_autofree char *ref = NULL;
+      g_auto(GStrv) refs = NULL;
+      guint refs_len;
+      g_autoptr(GError) local_error = NULL;
 
-      if (!flatpak_split_partial_ref_arg (pref, kinds, opt_arch, target_branch,
-                                          &matched_kinds, &id, &arch, &branch, error))
-        return FALSE;
+      flatpak_split_partial_ref_arg_novalidate (pref, kinds, opt_arch, target_branch,
+                                                &matched_kinds, &id, &arch, &branch);
 
+      /* We used _novalidate so that the id can be partial, but we can still validate the branch */
+      if (branch != NULL && !flatpak_is_valid_branch (branch, &local_error))
+        return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_REF, _("Invalid branch %s: %s"), branch, local_error->message);
 
       if (opt_no_pull)
-        ref = flatpak_dir_find_local_ref (dir, remote, id, branch, default_branch, arch,
-                                          matched_kinds, &kind, cancellable, error);
+        refs = flatpak_dir_find_local_refs (dir, remote, id, branch, default_branch, arch,
+                                           flatpak_get_default_arch (),
+                                           matched_kinds, FIND_MATCHING_REFS_FLAGS_FUZZY,
+                                           cancellable, error);
       else
-        ref = flatpak_dir_find_remote_ref (dir, remote, id, branch, default_branch, arch,
-                                           matched_kinds, &kind, cancellable, error);
-
-      if (ref == NULL)
+        refs = flatpak_dir_find_remote_refs (dir, remote, id, branch, default_branch, arch,
+                                             flatpak_get_default_arch (),
+                                             matched_kinds, FIND_MATCHING_REFS_FLAGS_FUZZY,
+                                             cancellable, error);
+      if (refs == NULL)
         return FALSE;
 
-      if (!flatpak_cli_transaction_add_install (transaction, remote, ref, (const char **) opt_subpaths, error))
+      refs_len = g_strv_length (refs);
+      if (refs_len == 0)
+        {
+          if (opt_no_pull)
+            g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("Nothing matches %s in local repository for remote %s"), id, remote);
+          else
+            g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, _("Nothing matches %s in remote %s"), id, remote);
+          return FALSE;
+        }
+
+      if (!flatpak_resolve_matching_refs (remote, dir, opt_yes, refs, id, &ref, error))
         return FALSE;
+
+      if (!flatpak_transaction_add_install (transaction, remote, ref, (const char **)opt_subpaths, error))
+        {
+          if (!g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED))
+            return FALSE;
+
+          g_printerr (_("Skipping: %s\n"), (*error)->message);
+          g_clear_error (error);
+        }
     }
 
-  if (!flatpak_cli_transaction_run (transaction, cancellable, error))
-    return FALSE;
+  if (!flatpak_transaction_run (transaction, cancellable, error))
+    {
+      if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
+        {
+          g_clear_error (error);
+          return TRUE;
+        }
+
+      return FALSE;
+    }
 
   return TRUE;
 }
@@ -364,7 +538,8 @@ flatpak_complete_install (FlatpakCompletion *completion)
 
   context = g_option_context_new ("");
   if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv,
-                                     FLATPAK_BUILTIN_FLAG_ONE_DIR, &dirs, NULL, NULL))
+                                     FLATPAK_BUILTIN_FLAG_ONE_DIR | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
+                                     &dirs, NULL, NULL))
     return FALSE;
 
   dir = g_ptr_array_index (dirs, 0);

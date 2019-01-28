@@ -40,6 +40,17 @@
  * you start the transaction with flatpak_transaction_run() which will resolve all kinds
  * of dependencies and report progress and status while downloading and installing these.
  *
+ * The dependency resolution that is the first step of executing a transaction can
+ * be influenced by flatpak_transaction_set_disable_dependencies(),
+ * flatpak_transaction_set_disable_related(), flatpak_transaction_add_dependency_source()
+ * and flatpak_transaction_add_default_dependency_sources().
+ *
+ * The underlying operations that get orchestrated by a FlatpakTransaction are: pulling
+ * new data from remote repositories, deploying newer applications or runtimes and pruning
+ * old deployments. Which of these operations are carried out can be controlled with
+ * flatpak_transaction_set_no_pull(), flatpak_transaction_set_no_deploy() and
+ * flatpak_transaction_set_disable_prune().
+ *
  * A transaction is a blocking operation, and all signals are emitted in the same thread.
  * This means you should either handle the signals directly (say, by doing blocking console
  * interaction, or by just returning without interaction), or run the operation in a separate
@@ -50,12 +61,23 @@
  * They become visible to the system as they are completed. When an error occurs, already
  * completed operations are not rolled back.
  *
+ * For each operation that is executed during a transaction, you first get a
+ * #FlatpakTransaction::new-operation signal, followed by either a
+ * #FlatpakTransaction::operation-done or #FlatpakTransaction::operation-error.
+
  * The FlatpakTransaction API is threadsafe in the sense that it is safe to run two
  * transactions at the same time, in different threads (or processes).
  */
 
 /* This is an internal-only element of FlatpakTransactionOperationType */
 #define FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE FLATPAK_TRANSACTION_OPERATION_LAST_TYPE + 1
+
+enum {
+  RUNTIME_UPDATE,
+  RUNTIME_INSTALL,
+  APP_UPDATE,
+  APP_INSTALL
+};
 
 struct _FlatpakTransactionOperation
 {
@@ -79,6 +101,8 @@ struct _FlatpakTransactionOperation
   GKeyFile                       *resolved_metakey;
   GBytes                         *resolved_old_metadata;
   GKeyFile                       *resolved_old_metakey;
+  guint64                         download_size;
+  guint64                         installed_size;
   int                             run_after_count;
   int                             run_after_prio; /* Higher => run later (when it becomes runnable). Used to run related ops (runtime extensions) before deps (apps using the runtime) */
   GList                          *run_before_ops;
@@ -107,7 +131,7 @@ struct _FlatpakTransactionPrivate
   GList                       *ops;
   GPtrArray                   *added_origin_remotes;
 
-  GList                       *flatpakrefs; /* GKeyFiles */
+ GList                       *flatpakrefs; /* GKeyFiles */
   GList                       *bundles; /* BundleData */
 
   FlatpakTransactionOperation *current_op;
@@ -120,7 +144,9 @@ struct _FlatpakTransactionPrivate
   gboolean                     disable_related;
   gboolean                     reinstall;
   gboolean                     force_uninstall;
+  gboolean                     can_run;
   char                        *default_arch;
+  guint                        max_op;
 };
 
 enum {
@@ -147,6 +173,8 @@ struct _FlatpakTransactionProgress
   char                *status;
   gboolean             estimating;
   int                  progress;
+  guint64              total_transferred;
+  guint64              start_time;
 
   gboolean             done;
 };
@@ -247,6 +275,36 @@ flatpak_transaction_progress_get_progress (FlatpakTransactionProgress *self)
   return self->progress;
 }
 
+/**
+ * flatpak_transaction_progress_get_bytes_transferred:
+ * @self: a #FlatpakTransactionProgress
+ *
+ * Gets the number of bytes that have been transferred.
+ *
+ * Returns: the number of bytes transferred
+ * Since: 1.1.2
+ */
+guint64
+flatpak_transaction_progress_get_bytes_transferred (FlatpakTransactionProgress *self)
+{
+  return self->total_transferred;
+}
+
+/**
+ * flatpak_transaction_progress_get_start_time:
+ * @self: a #FlatpakTransactionProgress
+ *
+ * Gets the time at which this operation has started, as monotonic time.
+ *
+ * Returns: the start time
+ * Since: 1.1.2
+ */
+guint64
+flatpak_transaction_progress_get_start_time (FlatpakTransactionProgress *self)
+{
+  return self->start_time;
+}
+
 static void
 flatpak_transaction_progress_finalize (GObject *object)
 {
@@ -288,11 +346,22 @@ got_progress_cb (const char *status,
                  gpointer    user_data)
 {
   FlatpakTransactionProgress *p = user_data;
+  guint64 bytes_transferred;
+  guint64 transferred_extra_data_bytes;
+  guint64 start_time;
+
+  ostree_async_progress_get (p->ostree_progress,
+                             "bytes-transferred", "t", &bytes_transferred,
+                             "transferred-extra-data-bytes", "t", &transferred_extra_data_bytes,
+                             "start-time", "t", &start_time,
+                             NULL);
 
   g_free (p->status);
   p->status = g_strdup (status);
   p->progress = progress;
   p->estimating = estimating;
+  p->total_transferred = bytes_transferred + transferred_extra_data_bytes;
+  p->start_time = start_time;
 
   if (!p->done)
     g_signal_emit (p, progress_signals[CHANGED], 0);
@@ -353,6 +422,8 @@ remote_name_is_file (const char *remote_name)
  * on runtimes from this additional installation (wheres it would normally
  * install required runtimes that are not installed in the installation
  * the transaction works on).
+ *
+ * Also see flatpak_transaction_add_default_dependency_sources().
  */
 void
 flatpak_transaction_add_dependency_source (FlatpakTransaction  *self,
@@ -433,7 +504,7 @@ dir_ref_is_installed (FlatpakDir *dir, const char *ref, char **remote_out, GVari
 {
   g_autoptr(GVariant) deploy_data = NULL;
 
-  deploy_data = flatpak_dir_get_deploy_data (dir, ref, NULL, NULL);
+  deploy_data = flatpak_dir_get_deploy_data (dir, ref, FLATPAK_DEPLOY_VERSION_ANY, NULL, NULL);
   if (deploy_data == NULL)
     return FALSE;
 
@@ -616,6 +687,54 @@ flatpak_transaction_operation_get_commit (FlatpakTransactionOperation *self)
 }
 
 /**
+ * flatpak_transaction_operation_get_download_size:
+ * @self: a #flatpakTransactionOperation
+ *
+ * Gets the maximum download size for the operation.
+ *
+ * Note that this does not include the size of dependencies, and
+ * the acutal download may be smaller, if some of the data is already
+ * available locally.
+ *
+ * For uninstall operations, this returns 0.
+ *
+ * This information is available when the transaction is resolved,
+ * i.e. when #FlatpakTransaction::ready is emitted.
+ *
+ * Returns: the download size
+ * Since: 1.1.2
+ */
+guint64
+flatpak_transaction_operation_get_download_size (FlatpakTransactionOperation *self)
+{
+  return self->download_size;
+}
+
+/**
+ * flatpak_transaction_operation_get_installed_size:
+ * @self: a #flatpakTransactionOperation
+ *
+ * Gets the installed size for the operation.
+ *
+ * Note that even for a new install, the extra space required on
+ * disk may be smaller than this numer, if some of the data is already
+ * available locally.
+ *
+ * For uninstall operations, this returns 0.
+ *
+ * This information is available when the transaction is resolved,
+ * i.e. when #FlatpakTransaction::ready is emitted.
+ *
+ * Returns: the installed size
+ * Since: 1.1.2
+ */
+guint64
+flatpak_transaction_operation_get_installed_size (FlatpakTransactionOperation *self)
+{
+  return self->installed_size;
+}
+
+/**
  * flatpak_transaction_operation_get_metadata:
  * @self: a #FlatpakTransactionOperation
  *
@@ -667,8 +786,17 @@ gboolean
 flatpak_transaction_is_empty (FlatpakTransaction *self)
 {
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+  GList *l;
 
-  return priv->ops == NULL;
+  for (l = priv->ops; l; l = l->next)
+    {
+      FlatpakTransactionOperation *op = l->data;
+
+      if (!op->skip)
+        return FALSE;
+    }
+
+  return TRUE;
 }
 
 static void
@@ -769,6 +897,10 @@ flatpak_transaction_add_new_remote (FlatpakTransaction            *transaction,
   return FALSE;
 }
 
+static gboolean flatpak_transaction_real_run (FlatpakTransaction  *transaction,
+                                              GCancellable        *cancellable,
+                                              GError             **error);
+
 static void
 flatpak_transaction_class_init (FlatpakTransactionClass *klass)
 {
@@ -776,6 +908,7 @@ flatpak_transaction_class_init (FlatpakTransactionClass *klass)
 
   klass->ready = flatpak_transaction_ready;
   klass->add_new_remote = flatpak_transaction_add_new_remote;
+  klass->run = flatpak_transaction_real_run;
   object_class->finalize = flatpak_transaction_finalize;
   object_class->get_property = flatpak_transaction_get_property;
   object_class->set_property = flatpak_transaction_set_property;
@@ -944,6 +1077,7 @@ flatpak_transaction_init (FlatpakTransaction *self)
   priv->remote_states = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) flatpak_remote_state_unref);
   priv->added_origin_remotes = g_ptr_array_new_with_free_func (g_free);
   priv->extra_dependency_dirs = g_ptr_array_new_with_free_func (g_object_unref);
+  priv->can_run = TRUE;
 }
 
 
@@ -1419,7 +1553,7 @@ find_runtime_remote (FlatpakTransaction             *self,
       return NULL;
     }
 
-  /* In the no-puil case, if only one local ref is available, assume that is the one because
+  /* In the no-pull case, if only one local ref is available, assume that is the one because
      the user chose it interactively when pulling */
   if (priv->no_pull && g_strv_length (remotes) == 1)
     res = 0;
@@ -1508,6 +1642,11 @@ add_deps (FlatpakTransaction          *self,
   /* Install/Update the runtime before the app */
   if (runtime_op)
     {
+      if (runtime_op->kind == FLATPAK_TRANSACTION_OPERATION_UNINSTALL)
+        return flatpak_fail_error (error, FLATPAK_ERROR_RUNTIME_USED,
+                                   _("Can't uninstall %s which is needed by %s"),
+                                   runtime_op->ref, op->ref);
+
       op->fail_if_op_fails = runtime_op;
       run_operation_before (runtime_op, op, 2);
     }
@@ -1590,8 +1729,8 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
   else if (kind == FLATPAK_TRANSACTION_OPERATION_UNINSTALL)
     {
       if (!dir_ref_is_installed (priv->dir, ref, &origin, NULL))
-        flatpak_fail_error (error, FLATPAK_ERROR_NOT_INSTALLED,
-                            _("%s not installed"), pref);
+        return flatpak_fail_error (error, FLATPAK_ERROR_NOT_INSTALLED,
+                                   _("%s not installed"), pref);
 
       remote = origin;
     }
@@ -1817,7 +1956,7 @@ emit_op_done (FlatpakTransaction          *self,
     commit = flatpak_dir_read_latest (priv->dir, op->remote, op->ref, NULL, NULL, NULL);
   else
     {
-      g_autoptr(GVariant) deploy_data = flatpak_dir_get_deploy_data (priv->dir, op->ref, NULL, NULL);
+      g_autoptr(GVariant) deploy_data = flatpak_dir_get_deploy_data (priv->dir, op->ref, FLATPAK_DEPLOY_VERSION_ANY, NULL, NULL);
       if (deploy_data)
         commit = g_strdup (flatpak_deploy_data_get_commit (deploy_data));
     }
@@ -1929,6 +2068,9 @@ resolve_p2p_ops (FlatpakTransaction *self,
       FlatpakDirResolve *resolve = g_ptr_array_index (resolves, i);
       g_autoptr(GBytes) old_metadata_bytes = NULL;
 
+      op->download_size = resolve->download_size;
+      op->installed_size = resolve->installed_size;
+
       old_metadata_bytes = load_deployed_metadata (self, op->ref);
       mark_op_resolved (op, resolve->resolved_commit, resolve->resolved_metadata, old_metadata_bytes);
     }
@@ -1959,6 +2101,8 @@ resolve_ops (FlatpakTransaction *self,
       g_autoptr(GVariant) commit_metadata = NULL;
       g_autoptr(GBytes) metadata_bytes = NULL;
       g_autoptr(GBytes) old_metadata_bytes = NULL;
+      guint64 download_size = 0;
+      guint64 installed_size = 0;
 
       if (op->resolved)
         continue;
@@ -1981,6 +2125,19 @@ resolve_ops (FlatpakTransaction *self,
 
       /* op->kind is INSTALL or UPDATE */
 
+      if (g_str_has_prefix (op->ref, "app/"))
+        {
+          if (op->kind == FLATPAK_TRANSACTION_OPERATION_INSTALL)
+            priv->max_op = APP_INSTALL;
+          else
+            priv->max_op = MAX (priv->max_op, APP_UPDATE);
+        }
+      else if (g_str_has_prefix (op->ref, "runtime/"))
+        {
+          if (op->kind == FLATPAK_TRANSACTION_OPERATION_INSTALL)
+            priv->max_op = MAX (priv->max_op, RUNTIME_INSTALL);
+        }
+           
       state = flatpak_transaction_ensure_remote_state (self, op->kind, op->remote, error);
       if (state == NULL)
         return FALSE;
@@ -1999,6 +2156,11 @@ resolve_ops (FlatpakTransaction *self,
             g_message ("Warning: No xa.metadata in local commit %s ref %s", checksum, op->ref);
           else
             metadata_bytes = g_bytes_new (xa_metadata, strlen (xa_metadata) + 1);
+
+          if (g_variant_lookup (commit_metadata, "xa.download-size", "t", &download_size))
+            op->download_size = GUINT64_FROM_BE (download_size);
+          if (g_variant_lookup (commit_metadata, "xa.installed-size", "t", &installed_size))
+            op->installed_size = GUINT64_FROM_BE (installed_size);
 
           old_metadata_bytes = load_deployed_metadata (self, op->ref);
           mark_op_resolved (op, checksum, metadata_bytes, old_metadata_bytes);
@@ -2030,13 +2192,16 @@ resolve_ops (FlatpakTransaction *self,
 
           /* TODO: This only gets the metadata for the latest only, we need to handle the case
              where the user specified a commit, or p2p doesn't have the latest commit available */
-          if (!flatpak_remote_state_lookup_cache (state, op->ref, NULL, NULL, &metadata, &local_error))
+          if (!flatpak_remote_state_lookup_cache (state, op->ref, &download_size, &installed_size, &metadata, &local_error))
             {
               g_message (_("Warning: Can't find %s metadata for dependencies: %s"), op->ref, local_error->message);
               g_clear_error (&local_error);
             }
           else
             metadata_bytes = g_bytes_new (metadata, strlen (metadata) + 1);
+
+          op->installed_size = installed_size;
+          op->download_size = download_size;
 
           old_metadata_bytes = load_deployed_metadata (self, op->ref);
           mark_op_resolved (op, checksum, metadata_bytes, old_metadata_bytes);
@@ -2174,7 +2339,10 @@ flatpak_transaction_get_current_operation (FlatpakTransaction *self)
 {
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
 
-  return g_object_ref (priv->current_op);
+  if (priv->current_op)
+    return g_object_ref (priv->current_op);
+
+  return NULL;
 }
 
 /**
@@ -2537,7 +2705,7 @@ flatpak_transaction_resolve_bundles (FlatpakTransaction *self,
 
 /**
  * flatpak_transaction_run:
- * @self: a #FlatpakTransaction
+ * @transaction: a #FlatpakTransaction
  * @cancellable: (nullable): a #GCancellable
  * @error: return location for an error
  *
@@ -2557,9 +2725,17 @@ flatpak_transaction_resolve_bundles (FlatpakTransaction *self,
  * Returns: %TRUE on success, %FALSE if an error occurred
  */
 gboolean
-flatpak_transaction_run (FlatpakTransaction *self,
+flatpak_transaction_run (FlatpakTransaction *transaction,
                          GCancellable       *cancellable,
                          GError            **error)
+{
+  return FLATPAK_TRANSACTION_GET_CLASS (transaction)->run (transaction, cancellable, error);
+}
+
+static gboolean
+flatpak_transaction_real_run (FlatpakTransaction *self,
+                              GCancellable       *cancellable,
+                              GError            **error)
 {
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
   GList *l, *next;
@@ -2571,7 +2747,25 @@ flatpak_transaction_run (FlatpakTransaction *self,
   gboolean ready_res = FALSE;
   int i;
 
+  if (!priv->can_run)
+    return flatpak_fail (error, _("Transaction already executed"));
+
+  priv->can_run = FALSE;
+  
   priv->current_op = NULL;
+
+  if (flatpak_dir_is_user (priv->dir) && getuid () == 0)
+    {
+      struct stat st_buf;
+      g_autofree char *dir_path = NULL;
+
+      /* Check that it's not root's own user installation */
+      dir_path = g_file_get_path (flatpak_dir_get_path (priv->dir));
+      if (stat (dir_path, &st_buf) == 0 && st_buf.st_uid != 0)
+        return flatpak_fail_error (error, FLATPAK_ERROR_WRONG_USER,
+                                   _("Refusing to operate on a user installation as root! "
+                                     "This can lead to incorrect file ownership and permission errors."));
+    }
 
   if (!priv->no_pull &&
       !flatpak_transaction_update_metadata (self, cancellable, error))
@@ -2700,6 +2894,7 @@ flatpak_transaction_run (FlatpakTransaction *self,
                                        priv->no_deploy,
                                        priv->disable_static_deltas,
                                        priv->reinstall,
+                                       priv->max_op >= APP_UPDATE,
                                        state, op->ref, op->resolved_commit,
                                        (const char **) op->subpaths,
                                        progress->ostree_progress,
@@ -2739,6 +2934,8 @@ flatpak_transaction_run (FlatpakTransaction *self,
                                           priv->no_deploy,
                                           priv->disable_static_deltas,
                                           op->commit != NULL, /* Allow downgrade if we specify commit */
+                                          priv->max_op >= APP_UPDATE,
+                                          priv->max_op == APP_INSTALL || priv->max_op == RUNTIME_INSTALL,
                                           state, op->ref, op->resolved_commit,
                                           NULL,
                                           (const char **) op->subpaths,
@@ -2821,7 +3018,7 @@ flatpak_transaction_run (FlatpakTransaction *self,
       if (res)
         {
           g_autoptr(GVariant) deploy_data = NULL;
-          deploy_data = flatpak_dir_get_deploy_data (priv->dir, op->ref, NULL, NULL);
+          deploy_data = flatpak_dir_get_deploy_data (priv->dir, op->ref, FLATPAK_DEPLOY_VERSION_ANY, NULL, NULL);
 
           if (deploy_data)
             {

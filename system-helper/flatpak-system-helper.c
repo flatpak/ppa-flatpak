@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <gio/gio.h>
+#include <glib/gprintf.h>
 #include <polkit/polkit.h>
 
 #include "flatpak-dbus-generated.h"
@@ -119,7 +120,9 @@ schedule_idle_callback (void)
 }
 
 static FlatpakDir *
-dir_get_system (const char *installation, GError **error)
+dir_get_system (const char *installation,
+                pid_t       source_pid,
+                GError **error)
 {
   FlatpakDir *system = NULL;
 
@@ -132,13 +135,86 @@ dir_get_system (const char *installation, GError **error)
   if (system == NULL)
     return NULL;
 
+  flatpak_dir_set_source_pid (system, source_pid);
   flatpak_dir_set_no_system_helper (system, TRUE);
+
   return system;
 }
 
 static void
 no_progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
 {
+}
+
+#define DBUS_NAME_DBUS "org.freedesktop.DBus"
+#define DBUS_INTERFACE_DBUS DBUS_NAME_DBUS
+#define DBUS_PATH_DBUS "/org/freedesktop/DBus"
+
+static int
+get_sender_pid (GDBusMethodInvocation *invocation)
+{
+  g_autoptr(GDBusMessage) msg = NULL;
+  g_autoptr(GDBusMessage) reply = NULL;
+  GDBusConnection *connection;
+  const char *sender;
+  GVariant *body;
+  g_autoptr(GVariantIter) iter = NULL;
+  const char *key;
+  g_autoptr(GVariant) value = NULL;
+
+  connection = g_dbus_method_invocation_get_connection (invocation);
+  sender = g_dbus_method_invocation_get_sender (invocation);
+
+  msg = g_dbus_message_new_method_call (DBUS_NAME_DBUS,
+                                        DBUS_PATH_DBUS,
+                                        DBUS_INTERFACE_DBUS,
+                                        "GetConnectionCredentials");
+  g_dbus_message_set_body (msg, g_variant_new ("(s)", sender));
+
+  reply = g_dbus_connection_send_message_with_reply_sync (connection, msg,
+                                                          G_DBUS_SEND_MESSAGE_FLAGS_NONE,
+                                                          30000,
+                                                          NULL,
+                                                          NULL,
+                                                          NULL);
+  if (reply == NULL)
+    return 0;
+
+  if (g_dbus_message_get_message_type (reply) == G_DBUS_MESSAGE_TYPE_ERROR)
+    return 0;
+
+  body = g_dbus_message_get_body (reply);
+
+  g_variant_get (body, "(a{sv})", &iter);
+  while (g_variant_iter_loop (iter, "{&sv}", &key, &value))
+    {
+      if (strcmp (key, "ProcessID") == 0)
+        return g_variant_get_uint32 (value);
+    }
+  value = NULL; /* g_variant_iter_loop freed it */
+
+  return 0;
+}
+
+static void
+flatpak_invocation_return_error (GDBusMethodInvocation *invocation,
+                                 GError                *error,
+                                 const char            *fmt,
+                                 ...)
+{
+  if (error->domain == FLATPAK_ERROR)
+    g_dbus_method_invocation_return_gerror (invocation, error);
+  else
+    {
+      va_list args;
+      g_autofree char *prefix = NULL;
+      va_start (args, fmt);
+      g_vasprintf (&prefix, fmt, args);
+      va_end (args);
+      g_dbus_method_invocation_return_error (invocation,
+                                             G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                                             "%s: %s", prefix, error->message);
+    }
 }
 
 static gboolean
@@ -152,11 +228,10 @@ handle_deploy (FlatpakSystemHelper   *object,
                const gchar           *arg_installation)
 {
   g_autoptr(FlatpakDir) system = NULL;
-  g_autoptr(GFile) path = g_file_new_for_path (arg_repo_path);
+  g_autoptr(GFile) repo_file = g_file_new_for_path (arg_repo_path);
   g_autoptr(GError) error = NULL;
   g_autoptr(GFile) deploy_dir = NULL;
   g_autoptr(OstreeAsyncProgress) ostree_progress = NULL;
-  gboolean is_update;
   gboolean is_oci;
   gboolean no_deploy;
   gboolean local_pull;
@@ -165,7 +240,7 @@ handle_deploy (FlatpakSystemHelper   *object,
 
   g_debug ("Deploy %s %u %s %s %s", arg_repo_path, arg_flags, arg_ref, arg_origin, arg_installation);
 
-  system = dir_get_system (arg_installation, &error);
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
   if (system == NULL)
     {
       g_dbus_method_invocation_return_gerror (invocation, error);
@@ -179,55 +254,34 @@ handle_deploy (FlatpakSystemHelper   *object,
       return TRUE;
     }
 
-  if (!g_file_query_exists (path, NULL))
+  if (!g_file_query_exists (repo_file, NULL))
     {
-      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS, "Path does not exist");
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                             "Path does not exist");
       return TRUE;
     }
 
-  is_update = (arg_flags & FLATPAK_HELPER_DEPLOY_FLAGS_UPDATE) != 0;
   no_deploy = (arg_flags & FLATPAK_HELPER_DEPLOY_FLAGS_NO_DEPLOY) != 0;
   local_pull = (arg_flags & FLATPAK_HELPER_DEPLOY_FLAGS_LOCAL_PULL) != 0;
   reinstall = (arg_flags & FLATPAK_HELPER_DEPLOY_FLAGS_REINSTALL) != 0;
 
   deploy_dir = flatpak_dir_get_if_deployed (system, arg_ref, NULL, NULL);
 
-  if (deploy_dir)
+  if (deploy_dir && !reinstall)
     {
       g_autofree char *real_origin = NULL;
-      if (!is_update)
+      real_origin = flatpak_dir_get_origin (system, arg_ref, NULL, NULL);
+      if (g_strcmp0 (real_origin, arg_origin) != 0)
         {
-          if (!reinstall)
-            {
-              /* Can't install already installed app */
-              g_dbus_method_invocation_return_error (invocation, FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED,
-                                                     "%s is already installed", arg_ref);
-              return TRUE;
-            }
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                                 "Wrong origin %s for update", arg_origin);
+          return TRUE;
         }
-      else
-        {
-          real_origin = flatpak_dir_get_origin (system, arg_ref, NULL, NULL);
-          if (g_strcmp0 (real_origin, arg_origin) != 0)
-            {
-              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
-                                                     "Wrong origin %s for update", arg_origin);
-              return TRUE;
-            }
-        }
-    }
-  else if (!deploy_dir && is_update)
-    {
-      /* Can't update not installed app */
-      g_dbus_method_invocation_return_error (invocation, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
-                                             "%s is not installed", arg_ref);
-      return TRUE;
     }
 
   if (!flatpak_dir_ensure_repo (system, NULL, &error))
     {
-      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                                             "Can't open system repo %s", error->message);
+      flatpak_invocation_return_error (invocation, error, "Can't open system repo %s", arg_installation);
       return TRUE;
     }
 
@@ -355,12 +409,7 @@ handle_deploy (FlatpakSystemHelper   *object,
                                              ostree_progress,
                                              NULL, &error))
         {
-          if (error->domain == FLATPAK_ERROR)
-            g_dbus_method_invocation_return_gerror (invocation, error);
-          else
-            g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                                                   "Error pulling from repo: %s", error->message);
-
+          flatpak_invocation_return_error (invocation, error, "Error pulling from repo");
           return TRUE;
         }
 
@@ -377,8 +426,7 @@ handle_deploy (FlatpakSystemHelper   *object,
                                        &url,
                                        &error))
         {
-          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                                                 "Error getting remote url: %s", error->message);
+          flatpak_invocation_return_error (invocation, error, "Error getting remote url");
           return TRUE;
         }
 
@@ -392,8 +440,7 @@ handle_deploy (FlatpakSystemHelper   *object,
       state = flatpak_dir_get_remote_state_optional (system, arg_origin, NULL, &error);
       if (state == NULL)
         {
-          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                                                 "Error pulling from repo: %s", error->message);
+          flatpak_invocation_return_error (invocation, error, "Error getting remote state");
           return TRUE;
         }
 
@@ -406,12 +453,7 @@ handle_deploy (FlatpakSystemHelper   *object,
                              FLATPAK_PULL_FLAGS_NONE, OSTREE_REPO_PULL_FLAGS_UNTRUSTED, ostree_progress,
                              NULL, &error))
         {
-          if (error->domain == FLATPAK_ERROR)
-            g_dbus_method_invocation_return_gerror (invocation, error);
-          else
-            g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                                                   "Error pulling from repo: %s", error->message);
-
+          flatpak_invocation_return_error (invocation, error, "Error pulling from repo");
           return TRUE;
         }
 
@@ -421,17 +463,12 @@ handle_deploy (FlatpakSystemHelper   *object,
 
   if (!no_deploy)
     {
-      if (is_update)
+      if (deploy_dir && !reinstall)
         {
           if (!flatpak_dir_deploy_update (system, arg_ref,
                                           NULL, (const char **) arg_subpaths, NULL, &error))
             {
-              if (g_error_matches (error, FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED))
-                g_dbus_method_invocation_return_error (invocation, FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED,
-                                                       "%s", error->message);
-              else
-                g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                                                       "Error deploying: %s", error->message);
+              flatpak_invocation_return_error (invocation, error, "Error deploying");
               return TRUE;
             }
         }
@@ -442,8 +479,7 @@ handle_deploy (FlatpakSystemHelper   *object,
                                            reinstall,
                                            NULL, &error))
             {
-              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                                                     "Error deploying: %s", error->message);
+              flatpak_invocation_return_error (invocation, error, "Error deploying");
               return TRUE;
             }
         }
@@ -458,6 +494,7 @@ static gboolean
 handle_deploy_appstream (FlatpakSystemHelper   *object,
                          GDBusMethodInvocation *invocation,
                          const gchar           *arg_repo_path,
+                         guint                  arg_flags,
                          const gchar           *arg_origin,
                          const gchar           *arg_arch,
                          const gchar           *arg_installation)
@@ -468,9 +505,9 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
   g_autofree char *old_branch = NULL;
   gboolean is_oci;
 
-  g_debug ("DeployAppstream %s %s %s %s", arg_repo_path, arg_origin, arg_arch, arg_installation);
+  g_debug ("DeployAppstream %s %u %s %s %s", arg_repo_path, arg_flags, arg_origin, arg_arch, arg_installation);
 
-  system = dir_get_system (arg_installation, &error);
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
   if (system == NULL)
     {
       g_dbus_method_invocation_return_gerror (invocation, error);
@@ -479,10 +516,11 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
 
   if (strlen (arg_repo_path) > 0)
     {
-      g_autoptr(GFile) path = g_file_new_for_path (arg_repo_path);
-      if (!g_file_query_exists (path, NULL))
+      g_autoptr(GFile) repo_file = g_file_new_for_path (arg_repo_path);
+      if (!g_file_query_exists (repo_file, NULL))
         {
-          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS, "Path does not exist");
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                                 "Path does not exist");
           return TRUE;
         }
     }
@@ -516,9 +554,8 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
                                          NULL,
                                          NULL,
                                          &error))
-        {
-          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                                                 "Error updating appstream: %s", error->message);
+        { 
+          flatpak_invocation_return_error (invocation, error, "Error updating appstream");
           return TRUE;
         }
 
@@ -530,22 +567,25 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
       g_autoptr(GError) first_error = NULL;
       g_autoptr(GError) second_error = NULL;
       g_autoptr(GMainContextPopDefault) main_context = NULL;
+      g_autoptr(OstreeAsyncProgress) ostree_progress = NULL;
 
       /* Work around ostree-pull spinning the default main context for the sync calls */
       main_context = flatpak_main_context_new_default ();
+
+      ostree_progress = ostree_async_progress_new_and_connect (no_progress_cb, NULL);
 
       if (!flatpak_dir_pull_untrusted_local (system, arg_repo_path,
                                              arg_origin,
                                              new_branch,
                                              NULL,
-                                             NULL,
+                                             ostree_progress,
                                              NULL, &first_error))
         {
           if (!flatpak_dir_pull_untrusted_local (system, arg_repo_path,
                                                  arg_origin,
                                                  old_branch,
                                                  NULL,
-                                                 NULL,
+                                                 ostree_progress,
                                                  NULL, &second_error))
             {
               g_prefix_error (&first_error, "Error updating appstream2: ");
@@ -570,8 +610,7 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
                                        &url,
                                        &error))
         {
-          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                                                 "Error getting remote url: %s", error->message);
+          flatpak_invocation_return_error (invocation, error, "Error getting remote url");
           return TRUE;
         }
 
@@ -585,8 +624,7 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
       state = flatpak_dir_get_remote_state_optional (system, arg_origin, NULL, &error);
       if (state == NULL)
         {
-          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                                                 "Error pulling from repo: %s", error->message);
+          flatpak_invocation_return_error (invocation, error, "Error getting remote state");
           return TRUE;
         }
 
@@ -622,8 +660,7 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
                                      NULL,
                                      &error))
     {
-      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                                             "Error deploying appstream: %s", error->message);
+      flatpak_invocation_return_error (invocation, error, "Error deploying appstream");
       return TRUE;
     }
 
@@ -644,7 +681,7 @@ handle_uninstall (FlatpakSystemHelper   *object,
 
   g_debug ("Uninstall %u %s %s", arg_flags, arg_ref, arg_installation);
 
-  system = dir_get_system (arg_installation, &error);
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
   if (system == NULL)
     {
       g_dbus_method_invocation_return_gerror (invocation, error);
@@ -666,7 +703,7 @@ handle_uninstall (FlatpakSystemHelper   *object,
 
   if (!flatpak_dir_uninstall (system, arg_ref, arg_flags, NULL, &error))
     {
-      g_dbus_method_invocation_return_gerror (invocation, error);
+      flatpak_invocation_return_error (invocation, error, "Error uninstalling");
       return TRUE;
     }
 
@@ -684,36 +721,36 @@ handle_install_bundle (FlatpakSystemHelper   *object,
                        const gchar           *arg_installation)
 {
   g_autoptr(FlatpakDir) system = NULL;
-  g_autoptr(GFile) path = g_file_new_for_path (arg_bundle_path);
+  g_autoptr(GFile) bundle_file = g_file_new_for_path (arg_bundle_path);
   g_autoptr(GError) error = NULL;
   g_autofree char *ref = NULL;
 
   g_debug ("InstallBundle %s %u %s %s", arg_bundle_path, arg_flags, arg_remote, arg_installation);
 
-  system = dir_get_system (arg_installation, &error);
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
   if (system == NULL)
     {
       g_dbus_method_invocation_return_gerror (invocation, error);
       return TRUE;
     }
 
-  if (arg_flags != 0)
+  if ((arg_flags & ~FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_ALL) != 0)
     {
       g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
-                                             "Unsupported flags enabled: 0x%x", arg_flags);
+                                             "Unsupported flags enabled: 0x%x", (arg_flags & ~FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_ALL));
       return TRUE;
     }
 
-  if (!g_file_query_exists (path, NULL))
+  if (!g_file_query_exists (bundle_file, NULL))
     {
       g_dbus_method_invocation_return_error (invocation, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
                                              "Bundle %s does not exist", arg_bundle_path);
       return TRUE;
     }
 
-  if (!flatpak_dir_install_bundle (system, path, arg_remote, &ref, NULL, &error))
+  if (!flatpak_dir_install_bundle (system, bundle_file, arg_remote, &ref, NULL, &error))
     {
-      g_dbus_method_invocation_return_gerror (invocation, error);
+      flatpak_invocation_return_error (invocation, error, "Error installing bundle");
       return TRUE;
     }
 
@@ -741,7 +778,7 @@ handle_configure_remote (FlatpakSystemHelper   *object,
 
   g_debug ("ConfigureRemote %u %s %s", arg_flags, arg_remote, arg_installation);
 
-  system = dir_get_system (arg_installation, &error);
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
   if (system == NULL)
     {
       g_dbus_method_invocation_return_gerror (invocation, error);
@@ -783,23 +820,17 @@ handle_configure_remote (FlatpakSystemHelper   *object,
 
   if (g_key_file_has_group (config, group))
     {
-      /* Add/Modify */
-      if (!flatpak_dir_modify_remote (system, arg_remote, config,
-                                      gpg_data, NULL, &error))
+      if (!flatpak_dir_modify_remote (system, arg_remote, config, gpg_data, NULL, &error))
         {
-          g_dbus_method_invocation_return_gerror (invocation, error);
+          flatpak_invocation_return_error (invocation, error, "Error modifying remote");
           return TRUE;
         }
     }
   else
     {
-      /* Remove */
-      if (!flatpak_dir_remove_remote (system,
-                                      force_remove,
-                                      arg_remote,
-                                      NULL, &error))
+      if (!flatpak_dir_remove_remote (system, force_remove, arg_remote, NULL, &error))
         {
-          g_dbus_method_invocation_return_gerror (invocation, error);
+          flatpak_invocation_return_error (invocation, error, "Error removing remote");
           return TRUE;
         }
     }
@@ -822,7 +853,7 @@ handle_configure (FlatpakSystemHelper   *object,
 
   g_debug ("Configure %u %s=%s %s", arg_flags, arg_key, arg_value, arg_installation);
 
-  system = dir_get_system (arg_installation, &error);
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
   if (system == NULL)
     {
       g_dbus_method_invocation_return_gerror (invocation, error);
@@ -855,7 +886,7 @@ handle_configure (FlatpakSystemHelper   *object,
 
   if (!flatpak_dir_set_config (system, arg_key, arg_value, &error))
     {
-      g_dbus_method_invocation_return_gerror (invocation, error);
+      flatpak_invocation_return_error (invocation, error, "Error setting config");
       return TRUE;
     }
 
@@ -885,7 +916,7 @@ handle_update_remote (FlatpakSystemHelper   *object,
 
   g_debug ("UpdateRemote %u %s %s %s %s", arg_flags, arg_remote, arg_installation, arg_summary_path, arg_summary_sig_path);
 
-  system = dir_get_system (arg_installation, &error);
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
   if (system == NULL)
     {
       g_dbus_method_invocation_return_gerror (invocation, error);
@@ -926,7 +957,7 @@ handle_update_remote (FlatpakSystemHelper   *object,
   state = flatpak_dir_get_remote_state_for_summary (system, arg_remote, summary_bytes, summary_sig_bytes, NULL, &error);
   if (state == NULL)
     {
-      g_dbus_method_invocation_return_gerror (invocation, error);
+      flatpak_invocation_return_error (invocation, error, "Error getting remote state");
       return TRUE;
     }
 
@@ -939,7 +970,7 @@ handle_update_remote (FlatpakSystemHelper   *object,
 
   if (!flatpak_dir_update_remote_configuration_for_state (system, state, FALSE, NULL, NULL, &error))
     {
-      g_dbus_method_invocation_return_gerror (invocation, error);
+      flatpak_invocation_return_error (invocation, error, "Error updating remote config");
       return TRUE;
     }
 
@@ -951,6 +982,7 @@ handle_update_remote (FlatpakSystemHelper   *object,
 static gboolean
 handle_remove_local_ref (FlatpakSystemHelper   *object,
                          GDBusMethodInvocation *invocation,
+                         guint                  arg_flags,
                          const gchar           *arg_remote,
                          const gchar           *arg_ref,
                          const gchar           *arg_installation)
@@ -958,12 +990,19 @@ handle_remove_local_ref (FlatpakSystemHelper   *object,
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
 
-  g_debug ("RemoveLocalRef %s %s %s", arg_remote, arg_ref, arg_installation);
+  g_debug ("RemoveLocalRef %u %s %s %s", arg_flags, arg_remote, arg_ref, arg_installation);
 
-  system = dir_get_system (arg_installation, &error);
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
   if (system == NULL)
     {
       g_dbus_method_invocation_return_gerror (invocation, error);
+      return TRUE;
+    }
+
+  if ((arg_flags & ~FLATPAK_HELPER_REMOVE_LOCAL_REF_FLAGS_ALL) != 0)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                             "Unsupported flags enabled: 0x%x", (arg_flags & ~FLATPAK_HELPER_REMOVE_LOCAL_REF_FLAGS_ALL));
       return TRUE;
     }
 
@@ -982,7 +1021,7 @@ handle_remove_local_ref (FlatpakSystemHelper   *object,
 
   if (!flatpak_dir_remove_ref (system, arg_remote, arg_ref, NULL, &error))
     {
-      g_dbus_method_invocation_return_gerror (invocation, error);
+      flatpak_invocation_return_error (invocation, error, "Error removing ref");
       return TRUE;
     }
 
@@ -994,17 +1033,25 @@ handle_remove_local_ref (FlatpakSystemHelper   *object,
 static gboolean
 handle_prune_local_repo (FlatpakSystemHelper   *object,
                          GDBusMethodInvocation *invocation,
+                         guint                  arg_flags,
                          const gchar           *arg_installation)
 {
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
 
-  g_debug ("PruneLocalRepo %s", arg_installation);
+  g_debug ("PruneLocalRepo %u %s", arg_flags, arg_installation);
 
-  system = dir_get_system (arg_installation, &error);
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
   if (system == NULL)
     {
       g_dbus_method_invocation_return_gerror (invocation, error);
+      return TRUE;
+    }
+
+  if ((arg_flags & ~FLATPAK_HELPER_PRUNE_LOCAL_REPO_FLAGS_ALL) != 0)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                             "Unsupported flags enabled: 0x%x", (arg_flags & ~FLATPAK_HELPER_PRUNE_LOCAL_REPO_FLAGS_ALL));
       return TRUE;
     }
 
@@ -1016,7 +1063,7 @@ handle_prune_local_repo (FlatpakSystemHelper   *object,
 
   if (!flatpak_dir_prune (system, NULL, &error))
     {
-      g_dbus_method_invocation_return_gerror (invocation, error);
+      flatpak_invocation_return_error (invocation, error, "Error pruning repo");
       return TRUE;
     }
 
@@ -1029,17 +1076,25 @@ handle_prune_local_repo (FlatpakSystemHelper   *object,
 static gboolean
 handle_ensure_repo (FlatpakSystemHelper   *object,
                     GDBusMethodInvocation *invocation,
+                    guint                  arg_flags,
                     const gchar           *arg_installation)
 {
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
 
-  g_debug ("EnsureRepo %s", arg_installation);
+  g_debug ("EnsureRepo %u %s", arg_flags, arg_installation);
 
-  system = dir_get_system (arg_installation, &error);
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
   if (system == NULL)
     {
       g_dbus_method_invocation_return_gerror (invocation, error);
+      return TRUE;
+    }
+
+  if ((arg_flags & ~FLATPAK_HELPER_ENSURE_REPO_FLAGS_ALL) != 0)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                             "Unsupported flags enabled: 0x%x", (arg_flags & ~FLATPAK_HELPER_ENSURE_REPO_FLAGS_ALL));
       return TRUE;
     }
 
@@ -1057,17 +1112,25 @@ handle_ensure_repo (FlatpakSystemHelper   *object,
 static gboolean
 handle_run_triggers (FlatpakSystemHelper   *object,
                      GDBusMethodInvocation *invocation,
+                     guint                  arg_flags,
                      const gchar           *arg_installation)
 {
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
 
-  g_debug ("RunTriggers %s", arg_installation);
+  g_debug ("RunTriggers %u %s", arg_flags, arg_installation);
 
-  system = dir_get_system (arg_installation, &error);
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
   if (system == NULL)
     {
       g_dbus_method_invocation_return_gerror (invocation, error);
+      return TRUE;
+    }
+
+  if ((arg_flags & ~FLATPAK_HELPER_RUN_TRIGGERS_FLAGS_ALL) != 0)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                             "Unsupported flags enabled: 0x%x", (arg_flags & ~FLATPAK_HELPER_RUN_TRIGGERS_FLAGS_ALL));
       return TRUE;
     }
 
@@ -1079,7 +1142,7 @@ handle_run_triggers (FlatpakSystemHelper   *object,
 
   if (!flatpak_dir_run_triggers (system, NULL, &error))
     {
-      g_dbus_method_invocation_return_gerror (invocation, error);
+      flatpak_invocation_return_error (invocation, error, "Error running triggers");
       return TRUE;
     }
 
@@ -1091,17 +1154,25 @@ handle_run_triggers (FlatpakSystemHelper   *object,
 static gboolean
 handle_update_summary (FlatpakSystemHelper   *object,
                        GDBusMethodInvocation *invocation,
+                       guint                  arg_flags,
                        const gchar           *arg_installation)
 {
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
 
-  g_debug ("UpdateSummary %s", arg_installation);
+  g_debug ("UpdateSummary %u %s", arg_flags, arg_installation);
 
-  system = dir_get_system (arg_installation, &error);
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
   if (system == NULL)
     {
       g_dbus_method_invocation_return_gerror (invocation, error);
+      return TRUE;
+    }
+
+  if ((arg_flags & ~FLATPAK_HELPER_UPDATE_SUMMARY_FLAGS_ALL) != 0)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                             "Unsupported flags enabled: 0x%x", (arg_flags & ~FLATPAK_HELPER_UPDATE_SUMMARY_FLAGS_ALL));
       return TRUE;
     }
 
@@ -1113,13 +1184,78 @@ handle_update_summary (FlatpakSystemHelper   *object,
 
   if (!flatpak_dir_update_summary (system, NULL, &error))
     {
-      g_dbus_method_invocation_return_gerror (invocation, error);
+      flatpak_invocation_return_error (invocation, error, "Error updating summary");
       return TRUE;
     }
 
   flatpak_system_helper_complete_update_summary (object, invocation);
 
   return TRUE;
+}
+
+static gboolean
+handle_generate_oci_summary (FlatpakSystemHelper   *object,
+                             GDBusMethodInvocation *invocation,
+                             guint                  arg_flags,
+                             const gchar           *arg_origin,
+                             const gchar           *arg_installation)
+{
+  g_autoptr(FlatpakDir) system = NULL;
+  g_autoptr(GError) error = NULL;
+  gboolean is_oci;
+
+  g_debug ("GenerateOciSummary %u %s %s", arg_flags, arg_origin, arg_installation);
+
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
+  if (system == NULL)
+    {
+      g_dbus_method_invocation_return_gerror (invocation, error);
+      return TRUE;
+    }
+
+  if ((arg_flags & ~FLATPAK_HELPER_GENERATE_OCI_SUMMARY_FLAGS_ALL) != 0)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                             "Unsupported flags enabled: 0x%x", (arg_flags & ~FLATPAK_HELPER_GENERATE_OCI_SUMMARY_FLAGS_ALL));
+      return TRUE;
+    }
+
+  if (!flatpak_dir_ensure_repo (system, NULL, &error))
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                                             "Can't open system repo %s", error->message);
+      return TRUE;
+    }
+
+  is_oci = flatpak_dir_get_remote_oci (system, arg_origin);
+  if (!is_oci)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                             "%s is not a OCI remote", arg_origin);
+      return TRUE;
+    }
+
+  if (!flatpak_dir_remote_make_oci_summary (system, arg_origin, NULL, NULL, &error))
+    {
+      flatpak_invocation_return_error (invocation, error, "Failed to update OCI summary");
+      return TRUE;
+    }
+
+
+  flatpak_system_helper_complete_generate_oci_summary (object, invocation);
+
+  return TRUE;
+}
+
+static gboolean
+dir_ref_is_installed (FlatpakDir *dir,
+                      const char *ref)
+{
+  g_autoptr(GVariant) deploy_data = NULL;
+
+  deploy_data = flatpak_dir_get_deploy_data (dir, ref, FLATPAK_DEPLOY_VERSION_ANY, NULL, NULL);
+
+  return deploy_data != NULL;
 }
 
 static gboolean
@@ -1135,6 +1271,7 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
   g_autoptr(AutoPolkitDetails) details = polkit_details_new ();
   const gchar *action = NULL;
   gboolean authorized = FALSE;
+  gboolean no_interaction = FALSE;
 
   /* Ensure we don't idle exit */
   schedule_idle_callback ();
@@ -1150,30 +1287,66 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
     }
   else if (g_strcmp0 (method_name, "Deploy") == 0)
     {
+      const char *installation;
       const char *ref, *origin;
       guint32 flags;
-      gboolean is_update, is_app;
 
       g_variant_get_child (parameters, 1, "u", &flags);
       g_variant_get_child (parameters, 2, "&s", &ref);
       g_variant_get_child (parameters, 3, "&s", &origin);
+      g_variant_get_child (parameters, 5, "&s", &installation);
 
-      is_update = (flags & FLATPAK_HELPER_DEPLOY_FLAGS_UPDATE) != 0;
-      is_app = g_str_has_prefix (ref, "app/");
-
-      if (is_update)
+      /* For metadata updates, redirect to the metadata-update action which
+       * should basically always be allowed */
+      if (ref != NULL && g_strcmp0 (ref, OSTREE_REPO_METADATA_REF) == 0)
         {
-          if (is_app)
-            action = "org.freedesktop.Flatpak.app-update";
-          else
-            action = "org.freedesktop.Flatpak.runtime-update";
+          action = "org.freedesktop.Flatpak.metadata-update";
         }
       else
         {
-          if (is_app)
-            action = "org.freedesktop.Flatpak.app-install";
+          gboolean is_app, is_install;
+
+          /* These flags allow clients to "upgrade" the permission,
+           * avoiding the need for multiple polkit dialogs when we first
+           * update a runtime, then install the app that needs it.
+           *
+           * Note that our policy has implications:
+           * app-install > app-update > runtime-install > runtime-update
+           * which means that these hints only ever select a stronger
+           * permission, and are safe in that sense.
+           */
+
+          if ((flags & FLATPAK_HELPER_DEPLOY_FLAGS_APP_HINT) != 0)
+            is_app = TRUE;
           else
-            action = "org.freedesktop.Flatpak.runtime-install";
+            is_app = g_str_has_prefix (ref, "app/");
+
+          if ((flags & FLATPAK_HELPER_DEPLOY_FLAGS_INSTALL_HINT) != 0 ||
+              (flags & FLATPAK_HELPER_DEPLOY_FLAGS_REINSTALL) != 0)
+            is_install = TRUE;
+          else
+            {
+              g_autoptr(FlatpakDir) system = dir_get_system (installation, 0, NULL);
+
+              is_install = !dir_ref_is_installed (system, ref);
+            }
+
+          if (is_install)
+            {
+              if (is_app)
+                action = "org.freedesktop.Flatpak.app-install";
+              else
+                action = "org.freedesktop.Flatpak.runtime-install";
+            }
+          else
+            {
+              if (is_app)
+                action = "org.freedesktop.Flatpak.app-update";
+              else
+                action = "org.freedesktop.Flatpak.runtime-update";
+            }
+
+          no_interaction = (flags & FLATPAK_HELPER_DEPLOY_FLAGS_NO_INTERACTION) != 0;
         }
 
       polkit_details_insert (details, "origin", origin);
@@ -1181,12 +1354,15 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
     }
   else if (g_strcmp0 (method_name, "DeployAppstream") == 0)
     {
+      guint32 flags;
       const char *arch, *origin;
 
-      g_variant_get_child (parameters, 1, "&s", &origin);
-      g_variant_get_child (parameters, 2, "&s", &arch);
+      g_variant_get_child (parameters, 1, "u", &flags);
+      g_variant_get_child (parameters, 2, "&s", &origin);
+      g_variant_get_child (parameters, 3, "&s", &arch);
 
       action = "org.freedesktop.Flatpak.appstream-update";
+      no_interaction = (flags & FLATPAK_HELPER_DEPLOY_APPSTREAM_FLAGS_NO_INTERACTION) != 0;
 
       polkit_details_insert (details, "origin", origin);
       polkit_details_insert (details, "arch", arch);
@@ -1194,10 +1370,13 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
   else if (g_strcmp0 (method_name, "InstallBundle") == 0)
     {
       const char *path;
+      guint32 flags;
 
       g_variant_get_child (parameters, 0, "^&ay", &path);
+      g_variant_get_child (parameters, 1, "u", &flags);
 
       action = "org.freedesktop.Flatpak.install-bundle";
+      no_interaction = (flags & FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_NO_INTERACTION) != 0;
 
       polkit_details_insert (details, "path", path);
     }
@@ -1205,7 +1384,9 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
     {
       const char *ref;
       gboolean is_app;
+      guint32 flags;
 
+      g_variant_get_child (parameters, 0, "u", &flags);
       g_variant_get_child (parameters, 1, "&s", &ref);
 
       is_app = g_str_has_prefix (ref, "app/");
@@ -1213,65 +1394,86 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
         action = "org.freedesktop.Flatpak.app-uninstall";
       else
         action = "org.freedesktop.Flatpak.runtime-uninstall";
+      no_interaction = (flags & FLATPAK_HELPER_UNINSTALL_FLAGS_NO_INTERACTION) != 0;
 
       polkit_details_insert (details, "ref", ref);
     }
   else if (g_strcmp0 (method_name, "ConfigureRemote") == 0)
     {
       const char *remote;
+      guint32 flags;
 
+      g_variant_get_child (parameters, 0, "u", &flags);
       g_variant_get_child (parameters, 1, "&s", &remote);
 
       action = "org.freedesktop.Flatpak.configure-remote";
+      no_interaction = (flags & FLATPAK_HELPER_CONFIGURE_REMOTE_FLAGS_NO_INTERACTION) != 0;
 
       polkit_details_insert (details, "remote", remote);
     }
   else if (g_strcmp0 (method_name, "Configure") == 0)
     {
       const char *key;
+      guint32 flags;
 
+      g_variant_get_child (parameters, 0, "u", &flags);
       g_variant_get_child (parameters, 1, "&s", &key);
 
       action = "org.freedesktop.Flatpak.configure";
+      no_interaction = (flags & FLATPAK_HELPER_CONFIGURE_FLAGS_NO_INTERACTION) != 0;
 
       polkit_details_insert (details, "key", key);
     }
   else if (g_strcmp0 (method_name, "UpdateRemote") == 0)
     {
       const char *remote;
+      guint32 flags;
 
+      g_variant_get_child (parameters, 0, "u", &flags);
       g_variant_get_child (parameters, 1, "&s", &remote);
 
       action = "org.freedesktop.Flatpak.update-remote";
+      no_interaction = (flags & FLATPAK_HELPER_UPDATE_REMOTE_FLAGS_NO_INTERACTION) != 0;
 
       polkit_details_insert (details, "remote", remote);
     }
   else if (g_strcmp0 (method_name, "RemoveLocalRef") == 0 ||
            g_strcmp0 (method_name, "PruneLocalRepo") == 0 ||
            g_strcmp0 (method_name, "EnsureRepo") == 0 ||
-           g_strcmp0 (method_name, "RunTriggers") == 0 ||
-           g_strcmp0 (method_name, "UpdateSummary") == 0)
+           g_strcmp0 (method_name, "RunTriggers") == 0)
     {
-      const char *remote;
-
-      g_variant_get_child (parameters, 0, "&s", &remote);
+      guint32 flags;
 
       action = "org.freedesktop.Flatpak.modify-repo";
 
-      polkit_details_insert (details, "remote", remote);
+      /* all of these methods have flags as first argument, and 1 << 0 as 'no-interaction' */
+      g_variant_get_child (parameters, 0, "u", &flags);
+      no_interaction = (flags & (1 << 0)) != 0;
+    }
+  else if (g_strcmp0 (method_name, "UpdateSummary") == 0 ||
+           g_strcmp0 (method_name, "GenerateOciSummary") == 0)
+    {
+      action = "org.freedesktop.Flatpak.metadata-update";
     }
 
   if (action)
     {
       g_autoptr(AutoPolkitAuthorizationResult) result = NULL;
       g_autoptr(GError) error = NULL;
+      PolkitCheckAuthorizationFlags auth_flags;
+
+      if (no_interaction)
+        auth_flags = POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE;
+      else
+        auth_flags = POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION;
 
       result = polkit_authority_check_authorization_sync (authority, subject,
                                                           action, details,
-                                                          POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION,
+                                                          auth_flags,
                                                           NULL, &error);
       if (result == NULL)
         {
+          g_dbus_error_strip_remote_error (error);
           g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
                                                  "Authorization error: %s", error->message);
           return FALSE;
@@ -1300,9 +1502,11 @@ on_bus_acquired (GDBusConnection *connection,
 
   g_debug ("Bus acquired, creating skeleton");
 
+  g_dbus_connection_set_exit_on_close (connection, FALSE);
+
   helper = flatpak_system_helper_skeleton_new ();
 
-  flatpak_system_helper_set_version (FLATPAK_SYSTEM_HELPER (helper), 1);
+  flatpak_system_helper_set_version (FLATPAK_SYSTEM_HELPER (helper), 2);
 
   g_object_set_data_full (G_OBJECT (helper), "track-alive", GINT_TO_POINTER (42), skeleton_died_cb);
 
@@ -1321,6 +1525,7 @@ on_bus_acquired (GDBusConnection *connection,
   g_signal_connect (helper, "handle-ensure-repo", G_CALLBACK (handle_ensure_repo), NULL);
   g_signal_connect (helper, "handle-run-triggers", G_CALLBACK (handle_run_triggers), NULL);
   g_signal_connect (helper, "handle-update-summary", G_CALLBACK (handle_update_summary), NULL);
+  g_signal_connect (helper, "handle-generate-oci-summary", G_CALLBACK (handle_generate_oci_summary), NULL);
 
   g_signal_connect (helper, "g-authorize-method",
                     G_CALLBACK (flatpak_authorize_method_handler),

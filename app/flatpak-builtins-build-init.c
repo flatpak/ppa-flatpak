@@ -104,7 +104,7 @@ ensure_extensions (FlatpakDeploy *src_deploy, const char *default_branch,
                   deploy = flatpak_find_deploy_dir_for_ref (ext->ref, &src_dir, cancellable, error);
                   if (deploy == NULL)
                     return FALSE;
-                  deploy_data = flatpak_dir_get_deploy_data (src_dir, ext->ref, cancellable, error);
+                  deploy_data = flatpak_dir_get_deploy_data (src_dir, ext->ref, FLATPAK_DEPLOY_VERSION_ANY, cancellable, error);
                   if (deploy_data == NULL)
                     return FALSE;
 
@@ -247,6 +247,8 @@ flatpak_builtin_build_init (int argc, char **argv, GCancellable *cancellable, GE
     return FALSE;
 
   base = g_file_new_for_commandline_arg (directory);
+  if (flatpak_file_get_path_cached (base) == NULL)
+    return flatpak_fail (error, _("'%s' is not a valid filename"), directory);
 
   if (!flatpak_mkdir_p (base, cancellable, error))
     return FALSE;
@@ -466,7 +468,9 @@ flatpak_complete_build_init (FlatpakCompletion *completion)
       {
         g_autoptr(GError) error = NULL;
         g_auto(GStrv) refs = flatpak_dir_find_installed_refs (user_dir, NULL, NULL, opt_arch,
-                                                              FLATPAK_KINDS_RUNTIME, &error);
+                                                              FLATPAK_KINDS_RUNTIME,
+                                                              FIND_MATCHING_REFS_FLAGS_NONE,
+                                                              &error);
         if (refs == NULL)
           flatpak_completion_debug ("find local refs error: %s", error->message);
         for (i = 0; refs != NULL && refs[i] != NULL; i++)
@@ -481,7 +485,9 @@ flatpak_complete_build_init (FlatpakCompletion *completion)
       {
         g_autoptr(GError) error = NULL;
         g_auto(GStrv) refs = flatpak_dir_find_installed_refs (system_dir, NULL, NULL, opt_arch,
-                                                              FLATPAK_KINDS_RUNTIME, &error);
+                                                              FLATPAK_KINDS_RUNTIME,
+                                                              FIND_MATCHING_REFS_FLAGS_NONE,
+                                                              &error);
         if (refs == NULL)
           flatpak_completion_debug ("find local refs error: %s", error->message);
         for (i = 0; refs != NULL && refs[i] != NULL; i++)
@@ -499,7 +505,9 @@ flatpak_complete_build_init (FlatpakCompletion *completion)
       {
         g_autoptr(GError) error = NULL;
         g_auto(GStrv) refs = flatpak_dir_find_installed_refs (user_dir, completion->argv[3], NULL, opt_arch,
-                                                              FLATPAK_KINDS_RUNTIME, &error);
+                                                              FLATPAK_KINDS_RUNTIME,
+                                                              FIND_MATCHING_REFS_FLAGS_NONE,
+                                                              &error);
         if (refs == NULL)
           flatpak_completion_debug ("find local refs error: %s", error->message);
         for (i = 0; refs != NULL && refs[i] != NULL; i++)
@@ -514,7 +522,9 @@ flatpak_complete_build_init (FlatpakCompletion *completion)
       {
         g_autoptr(GError) error = NULL;
         g_auto(GStrv) refs = flatpak_dir_find_installed_refs (system_dir, completion->argv[3], NULL, opt_arch,
-                                                              FLATPAK_KINDS_RUNTIME, &error);
+                                                              FLATPAK_KINDS_RUNTIME,
+                                                              FIND_MATCHING_REFS_FLAGS_NONE,
+                                                              &error);
         if (refs == NULL)
           flatpak_completion_debug ("find local refs error: %s", error->message);
         for (i = 0; refs != NULL && refs[i] != NULL; i++)

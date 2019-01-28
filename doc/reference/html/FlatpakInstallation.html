@@ -2,12 +2,12 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>FlatpakInstallation: Flatpak Library Reference Manual</title>
+<title>FlatpakInstallation: Flatpak Reference Manual</title>
 <meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
-<link rel="home" href="index.html" title="Flatpak Library Reference Manual">
-<link rel="up" href="ch01.html" title="Flatpak">
-<link rel="prev" href="ch01.html" title="Flatpak">
-<link rel="next" href="FlatpakRemote.html" title="FlatpakRemote">
+<link rel="home" href="index.html" title="Flatpak Reference Manual">
+<link rel="up" href="ch01.html" title="[Insert title here]">
+<link rel="prev" href="ch01.html" title="[Insert title here]">
+<link rel="next" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef">
 <meta name="generator" content="GTK-Doc V1.28.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
@@ -21,7 +21,7 @@
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
 <td><a accesskey="p" href="ch01.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="FlatpakRemote.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="n" href="FlatpakInstalledRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="FlatpakInstallation"></a><div class="titlepage"></div>
@@ -154,6 +154,14 @@
 </tr>
 <tr>
 <td class="function_type">
+<span class="returnvalue">gboolean</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstallation.html#flatpak-installation-launch-full" title="flatpak_installation_launch_full ()">flatpak_installation_launch_full</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
 <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="returnvalue">FlatpakInstalledRef</span></a> *
 </td>
 <td class="function_name">
@@ -180,6 +188,14 @@
 </td>
 <td class="function_name">
 <a class="link" href="FlatpakInstallation.html#flatpak-installation-get-installed-ref" title="flatpak_installation_get_installed_ref ()">flatpak_installation_get_installed_ref</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">gboolean</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstallation.html#flatpak-installation-get-min-free-space-bytes" title="flatpak_installation_get_min_free_space_bytes ()">flatpak_installation_get_min_free_space_bytes</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
@@ -473,6 +489,10 @@
 </tr>
 <tr>
 <td class="datatype_keyword">enum</td>
+<td class="function_name"><a class="link" href="FlatpakInstallation.html#FlatpakLaunchFlags" title="enum FlatpakLaunchFlags">FlatpakLaunchFlags</a></td>
+</tr>
+<tr>
+<td class="datatype_keyword">enum</td>
 <td class="function_name"><a class="link" href="FlatpakInstallation.html#FlatpakStorageType" title="enum FlatpakStorageType">FlatpakStorageType</a></td>
 </tr>
 </tbody>
@@ -497,7 +517,7 @@ and runtime references (in short: refs), and it can add, remove and modify remot
 runtimes, but <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> is a better, high-level API for these tasks.</p>
 <p>To get a list of all configured installations, use <a class="link" href="FlatpakInstallation.html#flatpak-get-system-installations" title="flatpak_get_system_installations ()"><code class="function">flatpak_get_system_installations()</code></a>,
 together with <a class="link" href="FlatpakInstallation.html#flatpak-installation-new-user" title="flatpak_installation_new_user ()"><code class="function">flatpak_installation_new_user()</code></a>.</p>
-<p>The FlatpakInstallatio nAPI is threadsafe in the sense that it is safe to run two
+<p>The FlatpakInstallation API is threadsafe in the sense that it is safe to run two
 operations at the same time, in different threads (or processes).</p>
 </div>
 <div class="refsect1">
@@ -507,7 +527,7 @@ operations at the same time, in different threads (or processes).</p>
 <pre class="programlisting"><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="returnvalue">FlatpakInstallation</span></a> *
 flatpak_installation_new_system (<em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
                                  <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
-<p>Creates a new <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> for the system-wide installation.</p>
+<p>Creates a new <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> for the default system-wide installation.</p>
 <div class="refsect3">
 <a name="flatpak-installation-new-system.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -578,7 +598,7 @@ flatpak_installation_new_system_with_id
 <p>a new <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
-<p class="since">Since: 0.8</p>
+<p class="since">Since: <a class="link" href="api-index-0-8.html#api-index-0.8">0.8</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1300,7 +1320,7 @@ if <code class="literal">NULL</code>, <code class="literal">master</code> is ass
 <a name="flatpak-installation-uninstall-full.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success</p>
 </div>
-<p class="since">Since: 0.11.8</p>
+<p class="since">Since: <a class="link" href="api-index-0-11-8.html#api-index-0.11.8">0.11.8</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1373,6 +1393,92 @@ to launch. </p></td>
 </div>
 <hr>
 <div class="refsect2">
+<a name="flatpak-installation-launch-full"></a><h3>flatpak_installation_launch_full ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>
+flatpak_installation_launch_full (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>,
+                                  <em class="parameter"><code><a class="link" href="FlatpakInstallation.html#FlatpakLaunchFlags" title="enum FlatpakLaunchFlags"><span class="type">FlatpakLaunchFlags</span></a> flags</code></em>,
+                                  <em class="parameter"><code>const <span class="type">char</span> *name</code></em>,
+                                  <em class="parameter"><code>const <span class="type">char</span> *arch</code></em>,
+                                  <em class="parameter"><code>const <span class="type">char</span> *branch</code></em>,
+                                  <em class="parameter"><code>const <span class="type">char</span> *commit</code></em>,
+                                  <em class="parameter"><code><a class="link" href="FlatpakInstance.html" title="FlatpakInstance"><span class="type">FlatpakInstance</span></a> **instance_out</code></em>,
+                                  <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
+                                  <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>Launch an installed application.</p>
+<p>You can use <a class="link" href="FlatpakInstallation.html#flatpak-installation-get-installed-ref" title="flatpak_installation_get_installed_ref ()"><code class="function">flatpak_installation_get_installed_ref()</code></a> or
+<a class="link" href="FlatpakInstallation.html#flatpak-installation-get-current-installed-app" title="flatpak_installation_get_current_installed_app ()"><code class="function">flatpak_installation_get_current_installed_app()</code></a> to find out what builds
+are available, in order to get a value for <em class="parameter"><code>commit</code></em>
+.</p>
+<p>Compared to <a class="link" href="FlatpakInstallation.html#flatpak-installation-launch" title="flatpak_installation_launch ()"><code class="function">flatpak_installation_launch()</code></a>, this function returns a <a class="link" href="FlatpakInstance.html" title="FlatpakInstance"><span class="type">FlatpakInstance</span></a>
+that can be used to get information about the running instance. You can also use
+it to wait for the instance to be done with <code class="function">g_child_watch_add()</code> if you pass the
+<a class="link" href="FlatpakInstallation.html#FLATPAK-LAUNCH-FLAGS-DO-NOT-REAP:CAPS"><span class="type">FLATPAK_LAUNCH_FLAGS_DO_NOT_REAP</span></a> flag.</p>
+<div class="refsect3">
+<a name="flatpak-installation-launch-full.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>flags</p></td>
+<td class="parameter_description"><p>set of <a class="link" href="FlatpakInstallation.html#FlatpakLaunchFlags" title="enum FlatpakLaunchFlags"><span class="type">FlatpakLaunchFlags</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>name</p></td>
+<td class="parameter_description"><p>name of the app to launch</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>arch</p></td>
+<td class="parameter_description"><p>which architecture to launch (default: current architecture). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>branch</p></td>
+<td class="parameter_description"><p>which branch of the application (default: "master"). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>commit</p></td>
+<td class="parameter_description"><p>the commit of <em class="parameter"><code>branch</code></em>
+to launch. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>instance_out</p></td>
+<td class="parameter_description"><p>return location for a <a class="link" href="FlatpakInstance.html" title="FlatpakInstance"><span class="type">FlatpakInstance</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <span class="type">GError</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installation-launch-full.returns"></a><h4>Returns</h4>
+<p> <code class="literal">TRUE</code>, unless an error occurred</p>
+</div>
+<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="flatpak-installation-get-current-installed-app"></a><h3>flatpak_installation_get_current_installed_app ()</h3>
 <pre class="programlisting"><a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="returnvalue">FlatpakInstalledRef</span></a> *
 flatpak_installation_get_current_installed_app
@@ -1427,8 +1533,10 @@ never been installed locally.</p>
 <a name="flatpak-installation-get-display-name"></a><h3>flatpak_installation_get_display_name ()</h3>
 <pre class="programlisting">const <span class="returnvalue">char</span> *
 flatpak_installation_get_display_name (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>);</pre>
-<p>Returns the display name of the system installation for <em class="parameter"><code>self</code></em>
+<p>Returns the display name of the installation for <em class="parameter"><code>self</code></em>
 .</p>
+<p>Note that this function may return <code class="literal">NULL</code> if the installation
+does not have a display name.</p>
 <div class="refsect3">
 <a name="flatpak-installation-get-display-name.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1449,15 +1557,17 @@ flatpak_installation_get_display_name (<em class="parameter"><code><a class="lin
 <p>a string with the installation's display name. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
-<p class="since">Since: 0.8</p>
+<p class="since">Since: <a class="link" href="api-index-0-8.html#api-index-0.8">0.8</a></p>
 </div>
 <hr>
 <div class="refsect2">
 <a name="flatpak-installation-get-id"></a><h3>flatpak_installation_get_id ()</h3>
 <pre class="programlisting">const <span class="returnvalue">char</span> *
 flatpak_installation_get_id (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>);</pre>
-<p>Returns the ID of the system installation for <em class="parameter"><code>self</code></em>
+<p>Returns the ID of the installation for <em class="parameter"><code>self</code></em>
 .</p>
+<p>The ID for the default system installation is "default".
+The ID for the user installation is "user".</p>
 <div class="refsect3">
 <a name="flatpak-installation-get-id.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1478,7 +1588,7 @@ flatpak_installation_get_id (<em class="parameter"><code><a class="link" href="F
 <p>a string with the installation's ID. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
-<p class="since">Since: 0.8</p>
+<p class="since">Since: <a class="link" href="api-index-0-8.html#api-index-0.8">0.8</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1549,10 +1659,55 @@ its size, location, etc.</p>
 </div>
 <hr>
 <div class="refsect2">
+<a name="flatpak-installation-get-min-free-space-bytes"></a><h3>flatpak_installation_get_min_free_space_bytes ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>
+flatpak_installation_get_min_free_space_bytes
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code><span class="type">guint64</span> *out_bytes</code></em>,
+                                <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>Returns the min-free-space config value from the OSTree repository of this installation.</p>
+<p>Applications can use this value, together with information about the available
+disk space and the size of pending updates or installs, to estimate whether a
+pull operation will fail due to running out of disk space.</p>
+<div class="refsect3">
+<a name="flatpak-installation-get-min-free-space-bytes.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>out_bytes</p></td>
+<td class="parameter_description"><p>Location to store the result. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>Return location for a <span class="type">GError</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installation-get-min-free-space-bytes.returns"></a><h4>Returns</h4>
+<p> <code class="literal">TRUE</code> on success, or <code class="literal">FALSE</code> on error.</p>
+</div>
+<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="flatpak-installation-get-priority"></a><h3>flatpak_installation_get_priority ()</h3>
 <pre class="programlisting"><span class="returnvalue">gint</span>
 flatpak_installation_get_priority (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>);</pre>
-<p>Returns the numeric priority of the system installation for <em class="parameter"><code>self</code></em>
+<p>Returns the numeric priority of the installation for <em class="parameter"><code>self</code></em>
 .</p>
 <div class="refsect3">
 <a name="flatpak-installation-get-priority.parameters"></a><h4>Parameters</h4>
@@ -1573,14 +1728,14 @@ flatpak_installation_get_priority (<em class="parameter"><code><a class="link" h
 <a name="flatpak-installation-get-priority.returns"></a><h4>Returns</h4>
 <p> an integer with the configured priority value</p>
 </div>
-<p class="since">Since: 0.8</p>
+<p class="since">Since: <a class="link" href="api-index-0-8.html#api-index-0.8">0.8</a></p>
 </div>
 <hr>
 <div class="refsect2">
 <a name="flatpak-installation-get-storage-type"></a><h3>flatpak_installation_get_storage_type ()</h3>
 <pre class="programlisting"><a class="link" href="FlatpakInstallation.html#FlatpakStorageType" title="enum FlatpakStorageType"><span class="returnvalue">FlatpakStorageType</span></a>
 flatpak_installation_get_storage_type (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>);</pre>
-<p>Returns the type of storage of the system installation for <em class="parameter"><code>self</code></em>
+<p>Returns the type of storage of the installation for <em class="parameter"><code>self</code></em>
 .</p>
 <div class="refsect3">
 <a name="flatpak-installation-get-storage-type.parameters"></a><h4>Parameters</h4>
@@ -1601,7 +1756,7 @@ flatpak_installation_get_storage_type (<em class="parameter"><code><a class="lin
 <a name="flatpak-installation-get-storage-type.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="FlatpakInstallation.html#FlatpakStorageType" title="enum FlatpakStorageType"><span class="type">FlatpakStorageType</span></a></p>
 </div>
-<p class="since">Since: 0.8</p>
+<p class="since">Since: <a class="link" href="api-index-0-8.html#api-index-0.8">0.8</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1806,7 +1961,7 @@ FLATPAK_UPDATE_FLAGS_NO_PULL to install previously pulled refs.</p>
 <a class="link" href="FlatpakRelatedRef.html" title="FlatpakRelatedRef"><span class="type">FlatpakRelatedRef</span></a> instances. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakRelatedRef]</span></p>
 </div>
-<p class="since">Since: 0.6.7</p>
+<p class="since">Since: <a class="link" href="api-index-0-6-7.html#api-index-0.6.7">0.6.7</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1982,7 +2137,7 @@ non-<code class="literal">NULL</code>.</p>
 <a class="link" href="FlatpakRelatedRef.html" title="FlatpakRelatedRef"><span class="type">FlatpakRelatedRef</span></a> instances. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakRelatedRef]</span></p>
 </div>
-<p class="since">Since: 0.6.7</p>
+<p class="since">Since: <a class="link" href="api-index-0-6-7.html#api-index-0.6.7">0.6.7</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -2501,7 +2656,7 @@ explicitly with <a class="link" href="FlatpakInstallation.html#flatpak-installat
 on error. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
-<p class="since">Since: 0.6.10</p>
+<p class="since">Since: <a class="link" href="api-index-0-6-10.html#api-index-0.6.10">0.6.10</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -2685,7 +2840,7 @@ repository and committing the changes to the local installation.</p>
 <a name="flatpak-installation-update-remote-sync.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> if the remote has been updated successfully</p>
 </div>
-<p class="since">Since: 0.6.13</p>
+<p class="since">Since: <a class="link" href="api-index-0-6-13.html#api-index-0.6.13">0.6.13</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -2736,7 +2891,7 @@ referred to by <em class="parameter"><code>ref</code></em>
 <a name="flatpak-installation-cleanup-local-refs-sync.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success</p>
 </div>
-<p class="since">Since: 0.10.0</p>
+<p class="since">Since: <a class="link" href="api-index-0-10-0.html#api-index-0.10.0">0.10.0</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -2826,7 +2981,7 @@ flatpak_installation_prune_local_repo (<em class="parameter"><code><a class="lin
 <a name="flatpak-installation-prune-local-repo.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success</p>
 </div>
-<p class="since">Since: 0.10.0</p>
+<p class="since">Since: <a class="link" href="api-index-0-10-0.html#api-index-0.10.0">0.10.0</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -2891,7 +3046,7 @@ referred to by <em class="parameter"><code>ref</code></em>
 <a name="flatpak-installation-remove-local-ref-sync.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success</p>
 </div>
-<p class="since">Since: 0.10.0</p>
+<p class="since">Since: <a class="link" href="api-index-0-10-0.html#api-index-0.10.0">0.10.0</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -3065,7 +3220,7 @@ flags set.</p>
 <a name="flatpak-installation-run-triggers.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success</p>
 </div>
-<p class="since">Since: 1.0.3</p>
+<p class="since">Since: <a class="link" href="api-index-1-0-3.html#api-index-1.0.3">1.0.3</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -3126,7 +3281,7 @@ availability (e.g. doesn't return a configured installation if not reachable).</
 <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> instances. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakInstallation]</span></p>
 </div>
-<p class="since">Since: 0.8</p>
+<p class="since">Since: <a class="link" href="api-index-0-8.html#api-index-0.8">0.8</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -3335,7 +3490,39 @@ the exported file. (Since: 1.0.3)</p>
 </tbody>
 </table></div>
 </div>
-<p class="since">Since: 0.11.8</p>
+<p class="since">Since: <a class="link" href="api-index-0-11-8.html#api-index-0.11.8">0.11.8</a></p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakLaunchFlags"></a><h3>enum FlatpakLaunchFlags</h3>
+<p>Flags to alter the behavior of <a class="link" href="FlatpakInstallation.html#flatpak-installation-launch-full" title="flatpak_installation_launch_full ()"><code class="function">flatpak_installation_launch_full()</code></a>.</p>
+<div class="refsect3">
+<a name="FlatpakLaunchFlags.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="300px" class="enum_members_name">
+<col class="enum_members_description">
+<col width="200px" class="enum_members_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-LAUNCH-FLAGS-NONE:CAPS"></a>FLATPAK_LAUNCH_FLAGS_NONE</p></td>
+<td class="enum_member_description">
+<p>Default</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-LAUNCH-FLAGS-DO-NOT-REAP:CAPS"></a>FLATPAK_LAUNCH_FLAGS_DO_NOT_REAP</p></td>
+<td class="enum_member_description">
+<p>Do not reap the child. Use this if you want to wait
+for the child with <code class="function">g_child_watch_add()</code>. (Snce: 1.1)</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
 </div>
 <hr>
 <div class="refsect2">
@@ -3388,7 +3575,7 @@ the exported file. (Since: 1.0.3)</p>
 </tbody>
 </table></div>
 </div>
-<p class="since">Since: 0.6.15</p>
+<p class="since">Since: <a class="link" href="api-index-0-6-15.html#api-index-0.6.15">0.6.15</a></p>
 </div>
 </div>
 <div class="refsect1">

@@ -23,7 +23,7 @@ set -euo pipefail
 
 skip_without_bwrap
 
-echo "1..22"
+echo "1..27"
 
 #Regular repo
 setup_repo
@@ -130,6 +130,45 @@ echo "ok failed to install again from different remote"
 ${FLATPAK} ${U} install -y --reinstall test-repo org.test.Platform
 echo "ok re-install"
 
+${FLATPAK} ${U} uninstall -y org.test.Hello
+
+# Note: This typo is only auto-corrected without user interaction because we're using -y
+${FLATPAK} ${U} install -y test-repo org.test.Hllo >install-log
+assert_file_has_content install-log "org.test.Hello"
+
+${FLATPAK} ${U} list -d > list-log
+assert_file_has_content list-log "org.test.Hello"
+
+echo "ok typo correction works for install"
+
+${FLATPAK} ${U} uninstall -y org.test.Hello
+
+# Temporarily disable some remotes so that org.test.Hello only exists in one
+${FLATPAK} ${U} remote-modify --disable test-missing-gpg-repo
+${FLATPAK} ${U} remote-modify --disable test-wrong-gpg-repo
+${FLATPAK} ${U} remote-modify --disable test-gpg2-repo
+${FLATPAK} ${U} remote-modify --disable local-test-no-gpg-repo
+if [ x${USE_COLLECTIONS_IN_CLIENT-} != xyes ] ; then
+    ${FLATPAK} ${U} remote-modify --disable test-no-gpg-repo
+fi
+
+# Note: The missing remote is only auto-corrected without user interaction because we're using -y
+${FLATPAK} ${U} install -y org.test.Hello |& tee install-log
+assert_file_has_content install-log "org.test.Hello"
+
+${FLATPAK} ${U} list -d > list-log
+assert_file_has_content list-log "org.test.Hello"
+
+${FLATPAK} ${U} remote-modify --enable test-missing-gpg-repo
+${FLATPAK} ${U} remote-modify --enable test-wrong-gpg-repo
+${FLATPAK} ${U} remote-modify --enable test-gpg2-repo
+${FLATPAK} ${U} remote-modify --enable local-test-no-gpg-repo
+if [ x${USE_COLLECTIONS_IN_CLIENT-} != xyes ] ; then
+    ${FLATPAK} ${U} remote-modify --enable test-no-gpg-repo
+fi
+
+echo "ok missing remote name auto-corrects for install"
+
 ${FLATPAK} ${U} uninstall -y org.test.Platform org.test.Hello
 
 if ${FLATPAK} ${U} install -y test-missing-gpg-repo org.test.Platform 2> install-error-log; then
@@ -208,16 +247,16 @@ ${FLATPAK} repo --branches repos/test > branches-log
 assert_file_has_content branches-log "^app/org.test.Hello/.*eol=Reason2"
 
 ${FLATPAK} ${U} remote-ls -d test-repo > remote-ls-log
-assert_file_has_content remote-ls-log "^app/org.test.Hello/.*eol=Reason2"
+assert_file_has_content remote-ls-log "app/org.test.Hello/.*eol=Reason2"
 
-${FLATPAK} ${U} update -y org.test.Hello 2> update-log
-assert_file_has_content update-log "app/org.test.Hello/.*Reason2"
+${FLATPAK} ${U} update -y org.test.Hello > update-log
+assert_file_has_content update-log "org.test.Hello.*Reason2"
 
 ${FLATPAK} ${U} info org.test.Hello > info-log
-assert_file_has_content info-log "end-of-life: Reason2"
+assert_file_has_content info-log "End-of-life: Reason2"
 
 ${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "^org.test.Hello/.*eol=Reason2"
+assert_file_has_content list-log "org.test.Hello/.*eol=Reason2"
 
 ${FLATPAK} ${U} uninstall -y org.test.Hello org.test.Platform
 
@@ -251,16 +290,16 @@ fi
 ${FLATPAK} uninstall -y org.test.Platform org.test.Hello
 
 ${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "^org.test.Hello"
-assert_not_file_has_content list-log "^org.test.Platform"
+assert_not_file_has_content list-log "org.test.Hello"
+assert_not_file_has_content list-log "org.test.Platform"
 
 echo "ok uninstall vs installations"
 
 ${FLATPAK} ${U} install -y test-repo org.test.Hello
 
 ${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "^org.test.Hello"
-assert_file_has_content list-log "^org.test.Platform"
+assert_file_has_content list-log "org.test.Hello"
+assert_file_has_content list-log "org.test.Platform"
 
 if ${FLATPAK} ${U} uninstall -y org.test.Platform; then
     assert_not_reached "Should not be able to uninstall ${U} when there is a dependency installed"
@@ -270,16 +309,31 @@ ${FLATPAK} ${U} uninstall -y org.test.Hello
 ${FLATPAK} ${U} uninstall -y org.test.Platform
 
 ${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "^org.test.Hello"
-assert_not_file_has_content list-log "^org.test.Platform"
+assert_not_file_has_content list-log "org.test.Hello"
+assert_not_file_has_content list-log "org.test.Platform"
 
 echo "ok uninstall dependencies"
+
+${FLATPAK} ${U} install -y test-repo org.test.Hello
+
+# Note: This typo is only auto-corrected without user interaction because we're using -y
+${FLATPAK} ${U} uninstall -y hello
+${FLATPAK} ${U} uninstall -y platform
+
+echo "ok typo correction works for uninstall"
+
+${FLATPAK} ${U} install -y test-repo org.test.Hello master
+
+${FLATPAK} ${U} uninstall -y org.test.Hello master
+${FLATPAK} ${U} uninstall -y org.test.Platform master
+
+echo "ok install and uninstall support 'NAME BRANCH' syntax"
 
 ${FLATPAK} ${U} install -y --no-deploy test-repo org.test.Hello
 
 ${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "^org.test.Hello"
-assert_not_file_has_content list-log "^org.test.Platform"
+assert_not_file_has_content list-log "org.test.Hello"
+assert_not_file_has_content list-log "org.test.Platform"
 
 # Disable the remote to make sure we don't do i/o
 port=$(cat httpd-port-main)
@@ -291,16 +345,40 @@ ${FLATPAK} ${U} install -y --no-pull test-repo org.test.Hello
 ${FLATPAK}  ${U} remote-modify --url="http://127.0.0.1:${port}/test" test-repo
 
 ${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "^org.test.Hello"
-assert_file_has_content list-log "^org.test.Platform"
+assert_file_has_content list-log "org.test.Hello"
+assert_file_has_content list-log "org.test.Platform"
 
 echo "ok install with --no-deploy and then --no-pull"
+
+${FLATPAK} ${U} uninstall -y org.test.Hello org.test.Platform
+
+${FLATPAK} ${U} install -y --no-deploy test-repo hello
+
+${FLATPAK} ${U} list -d > list-log
+assert_not_file_has_content list-log "org.test.Hello"
+assert_not_file_has_content list-log "org.test.Platform"
+
+# Disable the remote to make sure we don't do i/o
+port=$(cat httpd-port-main)
+${FLATPAK}  ${U} remote-modify --url="http://127.0.0.1:${port}/disable-test" test-repo
+
+# Note: The partial ref is only auto-corrected without user interaction because we're using -y
+${FLATPAK} ${U} install -y --no-pull test-repo hello
+
+# re-enable remote
+${FLATPAK}  ${U} remote-modify --url="http://127.0.0.1:${port}/test" test-repo
+
+${FLATPAK} ${U} list -d > list-log
+assert_file_has_content list-log "org.test.Hello"
+assert_file_has_content list-log "org.test.Platform"
+
+echo "ok install with --no-deploy and then --no-pull works with typo correction"
 
 ${FLATPAK} uninstall -y --all
 
 ${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "^org.test.Hello"
-assert_not_file_has_content list-log "^org.test.Platform"
+assert_not_file_has_content list-log "org.test.Hello"
+assert_not_file_has_content list-log "org.test.Platform"
 
 echo "ok uninstall --all"
 

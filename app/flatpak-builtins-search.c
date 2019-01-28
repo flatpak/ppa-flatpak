@@ -30,10 +30,23 @@
 #include "flatpak-utils-private.h"
 
 static char *opt_arch;
+static const char **opt_cols;
 
 static GOptionEntry options[] = {
   { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to search for"), N_("ARCH") },
+  { "columns", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_cols, N_("What information to show"), N_("FIELD,…") },
   { NULL}
+};
+
+static Column all_columns[] = {
+  { "description", N_("Description"), N_("Show the description"),        1, FLATPAK_ELLIPSIZE_MODE_END, 1, 1 },
+  { "application", N_("Application"), N_("Show the application ID"),     1, FLATPAK_ELLIPSIZE_MODE_START, 1, 1 },
+  { "version",     N_("Version"),     N_("Show the version"),            1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
+#if AS_CHECK_VERSION (0, 6, 1)
+  { "branch",      N_("Branch"),      N_("Show the application branch"), 1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
+#endif
+  { "remotes",     N_("Remotes"),     N_("Show the remotes"),            1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
+  { NULL }
 };
 
 static GPtrArray *
@@ -42,9 +55,6 @@ get_remote_stores (GPtrArray *dirs, const char *arch, GCancellable *cancellable)
   GError *error = NULL;
   GPtrArray *ret = g_ptr_array_new_with_free_func (g_object_unref);
   guint i, j;
-
-  if (arch == NULL)
-    arch = flatpak_get_arch ();
 
   for (i = 0; i < dirs->len; ++i)
     {
@@ -74,26 +84,11 @@ get_remote_stores (GPtrArray *dirs, const char *arch, GCancellable *cancellable)
           as_store_set_add_flags (store, as_store_get_add_flags (store) | AS_STORE_ADD_FLAG_USE_UNIQUE_ID);
 #endif
 
-          g_autofree char *appstream_path = NULL;
+          flatpak_dir_load_appstream_store (dir, remotes[j], arch, store, cancellable, &error);
 
-          if (flatpak_dir_get_remote_oci (dir, remotes[j]))
-            appstream_path = g_build_filename (install_path, "appstream", remotes[j],
-                                               arch, "appstream.xml.gz",
-                                               NULL);
-          else
-            appstream_path = g_build_filename (install_path, "appstream", remotes[j],
-                                               arch, "active", "appstream.xml.gz",
-                                               NULL);
-
-          g_autoptr(GFile) appstream_file = g_file_new_for_path (appstream_path);
-
-          as_store_from_file (store, appstream_file, NULL, cancellable, &error);
           if (error)
             {
-              // We want to ignore this error as it is harmless and valid
-              // NOTE: appstream-glib doesn't have granular file-not-found error
-              if (!g_str_has_suffix (error->message, "No such file or directory"))
-                g_warning ("%s", error->message);
+              g_warning ("%s", error->message);
               g_clear_error (&error);
             }
 
@@ -212,55 +207,85 @@ compare_apps (MatchResult *a, AsApp *b)
   return !as_app_equal (a->app, b);
 }
 
-static const char *
-get_comment_localized (AsApp *app)
+static void
+print_app (Column *columns, MatchResult *res, FlatpakTablePrinter *printer)
 {
-  const char * const * languages = g_get_language_names ();
-  gsize i;
+  const char *version = as_app_get_version (res->app);
+  const char *id = as_app_get_id_filename (res->app);
+  const char *name = as_app_get_localized_name (res->app);
+  const char *comment = as_app_get_localized_comment (res->app);
+  g_autofree char *description = g_strconcat (name, " - ", comment, NULL);
+  guint i;
 
-  for (i = 0; languages[i]; ++i)
+  for (i = 0; columns[i].name; i++)
     {
-      const char *comment = as_app_get_comment (app, languages[i]);
-      if (comment != NULL)
-        return comment;
+      if (strcmp (columns[i].name, "description") == 0)
+        flatpak_table_printer_add_column (printer, description);
+      else if (strcmp (columns[i].name, "application") == 0)
+        flatpak_table_printer_add_column (printer, id);
+      else if (strcmp (columns[i].name, "version") == 0)
+        flatpak_table_printer_add_column (printer, version);
+#if AS_CHECK_VERSION (0, 6, 1)
+      else if (strcmp (columns[i].name, "branch") == 0)
+        flatpak_table_printer_add_column (printer, as_app_get_branch (res->app));
+#endif
+      else if (strcmp (columns[i].name, "remotes") == 0)
+        {
+          int j;
+          flatpak_table_printer_add_column (printer, g_ptr_array_index (res->remotes, 0));
+          for (j = 1; j < res->remotes->len; j++)
+            flatpak_table_printer_append_with_comma (printer, g_ptr_array_index (res->remotes, j));
+        }
     }
-  return NULL;
+  flatpak_table_printer_finish_row (printer);
 }
 
 static void
-print_app (MatchResult *res, FlatpakTablePrinter *printer)
+print_matches (Column *columns, GSList *matches)
 {
-  AsRelease *release = as_app_get_release_default (res->app);
-  const char *version = release ? as_release_get_version (release) : NULL;
-  const char *id = as_app_get_id_filename (res->app);
-  guint i;
+  FlatpakTablePrinter *printer = NULL;
+  int rows, cols;
+  GSList *s;
 
-  flatpak_table_printer_add_column (printer, id);
-  flatpak_table_printer_add_column (printer, version);
-#if AS_CHECK_VERSION (0, 6, 1)
-  flatpak_table_printer_add_column (printer, as_app_get_branch (res->app));
-#endif
-  flatpak_table_printer_add_column (printer, g_ptr_array_index (res->remotes, 0));
-  for (i = 1; i < res->remotes->len; ++i)
-    flatpak_table_printer_append_with_comma (printer, g_ptr_array_index (res->remotes, i));
-  flatpak_table_printer_add_column (printer, get_comment_localized (res->app));
-  flatpak_table_printer_finish_row (printer);
+  printer = flatpak_table_printer_new ();
+
+  flatpak_table_printer_set_columns (printer, columns);
+
+  for (s = matches; s; s = s->next)
+    {
+      MatchResult *res = s->data;
+      print_app (columns, res, printer);
+    }
+
+  flatpak_get_window_size (&rows, &cols);
+  flatpak_table_printer_print_full (printer, 0, cols, NULL, NULL);
+  g_print ("\n");
+
+  flatpak_table_printer_free (printer);
 }
 
 gboolean
 flatpak_builtin_search (int argc, char **argv, GCancellable *cancellable, GError **error)
 {
   g_autoptr(GPtrArray) dirs = NULL;
+  g_autofree char *col_help = NULL;
+  g_autofree Column *columns = NULL;
   g_autoptr(GOptionContext) context = g_option_context_new (_("TEXT - Search remote apps/runtimes for text"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
+  col_help = column_help (all_columns);
+  g_option_context_set_description (context, col_help);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv,
-                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
+                                     FLATPAK_BUILTIN_FLAG_ALL_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
                                      &dirs, cancellable, error))
     return FALSE;
 
   if (argc < 2)
     return usage_error (context, _("TEXT must be specified"), error);
+
+  columns = handle_column_args (all_columns, FALSE, opt_cols, error);
+  if (columns == NULL)
+    return FALSE;
 
   if (!update_appstream (dirs, NULL, opt_arch, FLATPAK_APPSTREAM_TTL, TRUE, cancellable, error))
     return FALSE;
@@ -310,20 +335,7 @@ flatpak_builtin_search (int argc, char **argv, GCancellable *cancellable, GError
 
   if (matches != NULL)
     {
-      FlatpakTablePrinter *printer = flatpak_table_printer_new ();
-      int col = 0;
-
-      flatpak_table_printer_set_column_title (printer, col++, _("Application ID"));
-      flatpak_table_printer_set_column_title (printer, col++, _("Version"));
-#if AS_CHECK_VERSION (0, 6, 1)
-      flatpak_table_printer_set_column_title (printer, col++, _("Branch"));
-#endif
-      flatpak_table_printer_set_column_title (printer, col++, _("Remotes"));
-      flatpak_table_printer_set_column_title (printer, col++, _("Description"));
-      g_slist_foreach (matches, (GFunc) print_app, printer);
-      flatpak_table_printer_print (printer);
-      flatpak_table_printer_free (printer);
-
+      print_matches (columns, matches);
       g_slist_free_full (matches, (GDestroyNotify) match_result_free);
     }
   else
@@ -340,7 +352,8 @@ flatpak_complete_search (FlatpakCompletion *completion)
 
   context = g_option_context_new ("");
   if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv,
-                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS, NULL, NULL, NULL))
+                                     FLATPAK_BUILTIN_FLAG_ALL_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
+                                     NULL, NULL, NULL))
     return FALSE;
 
   flatpak_complete_options (completion, global_entries);

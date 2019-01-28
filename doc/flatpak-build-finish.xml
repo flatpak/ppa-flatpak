@@ -89,6 +89,11 @@
                     The command to use. If this option is not specified,
                     the first executable found in <filename>files/bin</filename>
                     is used.
+                </para><para>
+                    Note that the command is used when the application is run
+                    via <command>flatpak run</command>, and does not affect what
+                    gets executed when the application is run in other ways,
+                    e.g. via the desktop file or D-Bus activation.
                 </para></listitem>
             </varlistentry>
 
@@ -218,7 +223,7 @@
                 <listitem><para>
                     Allow the application access to a subset of the filesystem.
                     This updates the [Context] group in the metadata.
-                    FS can be one of: home, host, xdg-desktop, xdg-documents, xdg-download
+                    FS can be one of: home, host, xdg-desktop, xdg-documents, xdg-download,
                     xdg-music, xdg-pictures, xdg-public-share, xdg-templates, xdg-videos, xdg-run,
                     xdg-config, xdg-cache, xdg-data, an absolute path, or a homedir-relative
                     path like ~/dir or paths relative to the xdg dirs, like xdg-download/subdir.
@@ -235,7 +240,7 @@
                     Remove access to the specified subset of the filesystem from
                     the application. This overrides to the Context section from the
                     application metadata.
-                    FILESYSTEM can be one of: home, host, xdg-desktop, xdg-documents, xdg-download
+                    FILESYSTEM can be one of: home, host, xdg-desktop, xdg-documents, xdg-download,
                     xdg-music, xdg-pictures, xdg-public-share, xdg-templates, xdg-videos,
                     an absolute path, or a homedir-relative path like ~/dir.
                     This option can be used multiple times.
@@ -280,8 +285,8 @@ key=v1;v2;
                 <term><option>--own-name=NAME</option></term>
 
                 <listitem><para>
-                    Allow the application to own the well known name NAME on the session bus.
-                    If NAME ends with .*, it allows the application to own all matching names.
+                    Allow the application to own the well known name <arg choice="plain">NAME</arg> on the session bus.
+                    If <arg choice="plain">NAME</arg> ends with .*, it allows the application to own all matching names.
 
                     This updates the [Session Bus Policy] group in the metadata.
                     This option can be used multiple times.
@@ -292,8 +297,8 @@ key=v1;v2;
                 <term><option>--talk-name=NAME</option></term>
 
                 <listitem><para>
-                    Allow the application to talk to the well known name NAME on the session bus.
-                    If NAME ends with .*, it allows the application to talk to all matching names.
+                    Allow the application to talk to the well known name <arg choice="plain">NAME</arg> on the session bus.
+                    If <arg choice="plain">NAME</arg> ends with .*, it allows the application to talk to all matching names.
                     This updates the [Session Bus Policy] group in the metadata.
                     This option can be used multiple times.
                 </para></listitem>
@@ -303,8 +308,8 @@ key=v1;v2;
                 <term><option>--system-own-name=NAME</option></term>
 
                 <listitem><para>
-                    Allow the application to own the well known name NAME on the system bus.
-                    If NAME ends with .*, it allows the application to own all matching names.
+                    Allow the application to own the well known name <arg choice="plain">NAME</arg> on the system bus.
+                    If <arg choice="plain">NAME</arg> ends with .*, it allows the application to own all matching names.
                     This updates the [System Bus Policy] group in the metadata.
                     This option can be used multiple times.
                 </para></listitem>
@@ -314,8 +319,8 @@ key=v1;v2;
                 <term><option>--system-talk-name=NAME</option></term>
 
                 <listitem><para>
-                    Allow the application to talk to the well known name NAME on the system bus.
-                    If NAME ends with .*, it allows the application to talk to all matching names.
+                    Allow the application to talk to the well known name <arg choice="plain">NAME</arg> on the system bus.
+                    If <arg choice="plain">NAME</arg> ends with .*, it allows the application to talk to all matching names.
                     This updates the [System Bus Policy] group in the metadata.
                     This option can be used multiple times.
                 </para></listitem>
@@ -326,7 +331,7 @@ key=v1;v2;
 
                 <listitem><para>
                     If the application doesn't have access to the real homedir, make the (homedir-relative) path
-                    FILENAME a bind mount to the corresponding path in the per-application directory,
+                    <arg choice="plain">FILENAME</arg> a bind mount to the corresponding path in the per-application directory,
                     allowing that location to be used for persistent data.
                     This updates the [Context] group in the metadata.
                     This option can be used multiple times.
@@ -391,7 +396,7 @@ key=v1;v2;
                 <listitem><para>
                     Adds information about extra data uris to the app. These will be downloaded
                     and verified by the client when the app is installed and placed in the
-                    /app/extra directory. You can also supply an /app/bin/apply_extra script
+                    <filename>/app/extra</filename> directory. You can also supply an <filename>/app/bin/apply_extra</filename> script
                     that will be run after the files are downloaded.
                 </para></listitem>
             </varlistentry>

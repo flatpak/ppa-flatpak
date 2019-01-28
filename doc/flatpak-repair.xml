@@ -58,6 +58,13 @@
                 Enumerate all deployed refs and re-install any that are not in the repo (or are partial for a non-subdir deploy).
             </para></listitem>
         </itemizedlist>
+        <para>
+          Note that <command>flatpak repair</command> has to be run with root privileges to
+          operate on the system installation.
+        </para>
+        <para>
+          An alternative command for repairing OSTree repositories is ostree fsck.
+        </para>
 
     </refsect1>
 
@@ -105,6 +112,23 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--dry-run</option></term>
+
+                <listitem><para>
+                    Only report inconsistencies, don't make any changes
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--reinstall-all</option></term>
+
+                <listitem><para>
+                    Reinstall all refs, regardless of whether they were removed from
+                    the repo or not
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>-v</option></term>
                 <term><option>--verbose</option></term>
 
@@ -141,6 +165,7 @@
 
         <para>
             <citerefentry><refentrytitle>flatpak</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+            <citerefentry><refentrytitle>ostree-fsck</refentrytitle><manvolnum>1</manvolnum></citerefentry>
         </para>
 
     </refsect1>

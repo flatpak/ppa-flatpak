@@ -12,7 +12,7 @@ Build-Depends:
  bubblewrap (>= 0.2.1),
  ca-certificates <!nocheck>,
  dbus,
- debhelper (>= 10~),
+ debhelper-compat (= 11),
  desktop-file-utils <!nocheck>,
  dh-exec (>= 0.23~),
  docbook-xml <!nodoc>,
@@ -26,20 +26,24 @@ Build-Depends:
  libarchive-dev (>= 2.8.0),
  libattr1-dev,
  libcap-dev,
+ libdconf-dev,
  libdw-dev,
  libelf-dev,
+ libgdk-pixbuf2.0-dev,
  libgirepository1.0-dev,
  libglib2.0-dev (>= 2.44),
  libgpgme-dev (>= 1.1.8),
  libjson-glib-dev,
- libostree-dev (>= 2018.7),
+ libostree-dev (>= 2018.9),
+ libpolkit-agent-1-dev,
  libpolkit-gobject-1-dev,
  libseccomp-dev,
  libsoup2.4-dev,
+ libsystemd-dev,
  libxau-dev,
  libxml2-dev (>= 2.4),
  libxml2-utils,
- ostree (>= 2018.7) <!nocheck>,
+ ostree (>= 2018.9) <!nocheck>,
  procps,
  python3 <!nocheck>,
  shared-mime-info <!nocheck>,
@@ -51,7 +55,7 @@ Build-Depends-Indep:
  libostree-doc,
 Standards-Version: 4.3.0
 Homepage: http://flatpak.org/
-Vcs-Git: https://salsa.debian.org/debian/flatpak.git
+Vcs-Git: https://salsa.debian.org/debian/flatpak.git -b debian/experimental
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
 Rules-Requires-Root: no
 
@@ -107,7 +111,7 @@ Depends:
  gnupg,
  gtk-update-icon-cache,
  hicolor-icon-theme,
- ostree (>= 2018.7),
+ ostree (>= 2018.9),
  shared-mime-info,
  ${misc:Depends},
  ${shlibs:Depends},
@@ -141,7 +145,7 @@ Depends:
  gir1.2-flatpak-1.0 (= ${binary:Version}),
  libflatpak0 (= ${binary:Version}),
  libglib2.0-dev,
- libostree-dev (>= 2018.7),
+ libostree-dev (>= 2018.9),
  libxml2-dev (>= 2.4),
  pkg-config,
  ${misc:Depends},

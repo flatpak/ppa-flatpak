@@ -45,7 +45,7 @@
             filesystem, and the per-application permissions.
         </para>
         <para>
-            FILE can either be a file in the fuse filesystem at /run/user/$UID/doc/,
+            <arg choice="plain">FILE</arg> can either be a file in the fuse filesystem at <filename>/run/user/$UID/doc/</filename>,
             or a file anywhere else.
         </para>
 
@@ -108,7 +108,7 @@ permissions:
             <citerefentry><refentrytitle>flatpak</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
             <citerefentry><refentrytitle>flatpak-document-export</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
             <citerefentry><refentrytitle>flatpak-document-unexport</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
-            <citerefentry><refentrytitle>flatpak-document-list</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+            <citerefentry><refentrytitle>flatpak-documents</refentrytitle><manvolnum>1</manvolnum></citerefentry>
         </para>
 
     </refsect1>

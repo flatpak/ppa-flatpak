@@ -41,7 +41,7 @@
         <para>
             Searches for applications and runtimes matching
             <arg choice="plain">TEXT</arg>. Note that this uses appstream data
-            that can be updated with <citerefentry><refentrytitle>flatpak-update</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+            that can be updated with the <command>flatpak update</command> command.
             The appstream data is updated automatically only if it's at least a day old.
         </para>
     </refsect1>
@@ -74,8 +74,8 @@
                 <listitem><para>
                     Show a system-wide installation by <arg choice="plain">NAME</arg> among
                     those defined in <filename>/etc/flatpak/installations.d/</filename>.
-                    Using <arg choice="plain">--installation=default</arg> is equivalent to using
-                    <arg choice="plain">--system</arg>.
+                    Using <option>--installation=default</option> is equivalent to using
+                    <option>--system</option>.
                 </para></listitem>
             </varlistentry>
 
@@ -104,7 +104,97 @@
                     Print OSTree debug information during command processing.
                 </para></listitem>
             </varlistentry>
+
+           <varlistentry>
+                <term><option>--columns=FIELD,…</option></term>
+
+                <listitem><para>
+                    Specify what information to show about each result. You can
+                    list multiple fields, or use this option multiple times.
+                </para><para>
+                    Append :s[tart], :m[iddle], :e[nd] or :f[ull] to column
+                    names to change ellipsization.
+                </para></listitem>
+            </varlistentry>
+
         </variablelist>
+    </refsect1>
+
+   <refsect1>
+        <title>Fields</title>
+
+        <para>The following fields are understood by the <option>--columns</option> option:</para>
+
+        <variablelist>
+            <varlistentry>
+                <term>description</term>
+
+                <listitem><para>
+                    Show the description
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>application</term>
+
+                <listitem><para>
+                    Show the application ID
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>version</term>
+
+                <listitem><para>
+                    Show the version
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>version</term>
+
+                <listitem><para>
+                    Show the branch
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>remotes</term>
+
+                <listitem><para>
+                    Show the remotes
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>all</term>
+
+                <listitem><para>
+                    Show all columns
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>help</term>
+
+                <listitem><para>
+                    Show the list of available columns
+                </para></listitem>
+            </varlistentry>
+        </variablelist>
+
+        <para>
+          Note that field names can be abbreviated to a unique prefix.
+        </para>
+
+    </refsect1>
+
+    <refsect1>
+        <title>See also</title>
+
+            <para>
+                <citerefentry><refentrytitle>flatpak</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+            </para>
     </refsect1>
 
 </refentry>

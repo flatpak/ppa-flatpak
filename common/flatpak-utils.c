@@ -42,11 +42,13 @@
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <sys/ioctl.h>
+#include <termios.h>
 
 #include <glib.h>
 #include "libglnx/libglnx.h"
 #include <gio/gunixoutputstream.h>
 #include <gio/gunixinputstream.h>
+
 
 /* This is also here so the common code can report these errors to the lib */
 static const GDBusErrorEntry flatpak_error_entries[] = {
@@ -121,24 +123,6 @@ flatpak_debug2 (const char *format, ...)
   va_end (var_args);
 #pragma GCC diagnostic pop
 
-}
-
-GFile *
-flatpak_file_new_tmp_in (GFile      *dir,
-                         const char *template,
-                         GError    **error)
-{
-  glnx_autofd int tmp_fd = -1;
-  g_autofree char *tmpl = g_build_filename (flatpak_file_get_path_cached (dir), template, NULL);
-
-  tmp_fd = g_mkstemp_full (tmpl, O_RDWR, 0644);
-  if (tmp_fd == -1)
-    {
-      glnx_set_error_from_errno (error);
-      return NULL;
-    }
-
-  return g_file_new_for_path (tmpl);
 }
 
 gboolean
@@ -607,9 +591,29 @@ flatpak_get_gtk_theme (void)
   return (const char *) gtk_theme;
 }
 
+static int fancy_output = -1;
+
+void
+flatpak_disable_fancy_output (void)
+{
+  fancy_output = FALSE;
+}
+
+void
+flatpak_enable_fancy_output (void)
+{
+  fancy_output = TRUE;
+}
+
 gboolean
 flatpak_fancy_output (void)
 {
+  if (fancy_output != -1)
+    return fancy_output;
+
+  if (g_strcmp0 (g_getenv ("FLATPAK_FANCY_OUTPUT"), "0") == 0)
+    return FALSE;
+
   return isatty (STDOUT_FILENO);
 }
 
@@ -621,29 +625,6 @@ flatpak_get_bwrap (void)
   if (e != NULL)
     return e;
   return HELPER;
-}
-
-/* We only migrate the user dir, because thats what most people used with xdg-app,
- * and its where all per-user state/config are stored.
- */
-void
-flatpak_migrate_from_xdg_app (void)
-{
-  g_autofree char *source = g_build_filename (g_get_user_data_dir (), "xdg-app", NULL);
-  g_autofree char *dest = g_build_filename (g_get_user_data_dir (), "flatpak", NULL);
-
-  if (!g_file_test (dest, G_FILE_TEST_EXISTS) &&
-      g_file_test (source, G_FILE_TEST_EXISTS))
-    {
-      g_print (_("Migrating %s to %s\n"), source, dest);
-      if (rename (source, dest) != 0)
-        {
-          if (errno != ENOENT &&
-              errno != ENOTEMPTY &&
-              errno != EEXIST)
-            g_print (_("Error during migration: %s\n"), g_strerror (errno));
-        }
-    }
 }
 
 char *
@@ -868,7 +849,9 @@ flatpak_name_matches_one_wildcard_prefix (const char         *name,
         {
           end_of_match += 2;
           while (*end_of_match != 0 &&
-                 is_valid_name_character (*end_of_match, TRUE))
+                 (is_valid_name_character (*end_of_match, TRUE) ||
+                  (end_of_match[0] == '.' &&
+                   is_valid_initial_name_character (end_of_match[1], TRUE))))
             end_of_match++;
         }
 
@@ -1072,6 +1055,62 @@ flatpak_id_has_subref_suffix (const char *id)
     g_str_has_suffix (id, ".Locale") ||
     g_str_has_suffix (id, ".Debug") ||
     g_str_has_suffix (id, ".Sources");
+}
+
+
+static const char *
+skip_segment (const char *s)
+{
+  const char *slash;
+
+  slash = strchr (s, '/');
+  if (slash)
+    return slash + 1;
+  return s + strlen (s);
+}
+
+static int
+compare_segment (const char *s1, const char *s2)
+{
+  gint c1, c2;
+
+  while (*s1 && *s1 != '/' &&
+         *s2 && *s2 != '/')
+    {
+      c1 = *s1;
+      c2 = *s2;
+      if (c1 != c2)
+        return (c1 - c2);
+      s1++; s2++;
+    }
+
+  c1 = *s1;
+  if (c1 == '/')
+    c1 = 0;
+  c2 = *s2;
+  if (c2 == '/')
+    c2 = 0;
+
+  return c1 - c2;
+}
+
+int
+flatpak_compare_ref (const char *ref1, const char *ref2)
+{
+  int res;
+  int i;
+
+  /* Skip first element and do per-segment compares for rest */
+  for (i = 0; i < 3; i++)
+    {
+      ref1 = skip_segment (ref1);
+      ref2 = skip_segment (ref2);
+
+      res = compare_segment (ref1, ref2);
+      if (res != 0)
+        return res;
+    }
+  return 0;
 }
 
 char **
@@ -1752,72 +1791,6 @@ flatpak_switch_symlink_and_remove (const char *symlink_path,
   return flatpak_fail (error, "flatpak_switch_symlink_and_remove looped too many times");
 }
 
-
-/* Based on g_mkstemp from glib */
-
-gint
-flatpak_mkstempat (int    dir_fd,
-                   gchar *tmpl,
-                   int    flags,
-                   int    mode)
-{
-  char *XXXXXX;
-  int count, fd;
-  static const char letters[] =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  static const int NLETTERS = sizeof (letters) - 1;
-  glong value;
-  GTimeVal tv;
-  static int counter = 0;
-
-  g_return_val_if_fail (tmpl != NULL, -1);
-
-  /* find the last occurrence of "XXXXXX" */
-  XXXXXX = g_strrstr (tmpl, "XXXXXX");
-
-  if (!XXXXXX || strncmp (XXXXXX, "XXXXXX", 6))
-    {
-      errno = EINVAL;
-      return -1;
-    }
-
-  /* Get some more or less random data.  */
-  g_get_current_time (&tv);
-  value = (tv.tv_usec ^ tv.tv_sec) + counter++;
-
-  for (count = 0; count < 100; value += 7777, ++count)
-    {
-      glong v = value;
-
-      /* Fill in the random bits.  */
-      XXXXXX[0] = letters[v % NLETTERS];
-      v /= NLETTERS;
-      XXXXXX[1] = letters[v % NLETTERS];
-      v /= NLETTERS;
-      XXXXXX[2] = letters[v % NLETTERS];
-      v /= NLETTERS;
-      XXXXXX[3] = letters[v % NLETTERS];
-      v /= NLETTERS;
-      XXXXXX[4] = letters[v % NLETTERS];
-      v /= NLETTERS;
-      XXXXXX[5] = letters[v % NLETTERS];
-
-      fd = openat (dir_fd, tmpl, flags | O_CREAT | O_EXCL, mode);
-
-      if (fd >= 0)
-        return fd;
-      else if (errno != EEXIST)
-        /* Any other error will apply also to other names we might
-         *  try, and there are 2^32 or so of them, so give up now.
-         */
-        return -1;
-    }
-
-  /* We got out of the loop because we ran out of combinations to try.  */
-  errno = EEXIST;
-  return -1;
-}
-
 static gboolean
 needs_quoting (const char *arg)
 {
@@ -2097,6 +2070,8 @@ static gboolean
 _flatpak_canonicalize_permissions (int           parent_dfd,
                                    const char   *rel_path,
                                    gboolean      toplevel,
+                                   int           uid,
+                                   int           gid,
                                    GError      **error)
 {
   struct stat stbuf;
@@ -2110,6 +2085,22 @@ _flatpak_canonicalize_permissions (int           parent_dfd,
     {
       glnx_set_error_from_errno (error);
       return FALSE;
+    }
+
+  if ((uid != -1 && uid != stbuf.st_uid) || (gid != -1 && gid != stbuf.st_gid))
+    {
+      if (TEMP_FAILURE_RETRY (fchownat (parent_dfd, rel_path, uid, gid, AT_SYMLINK_NOFOLLOW)) != 0)
+        {
+          glnx_set_error_from_errno (error);
+          return FALSE;
+        }
+
+      /* Re-read st_mode for new owner */
+      if (TEMP_FAILURE_RETRY (fstatat (parent_dfd, rel_path, &stbuf, AT_SYMLINK_NOFOLLOW)) != 0)
+        {
+          glnx_set_error_from_errno (error);
+          return FALSE;
+        }
     }
 
   if (S_ISDIR (stbuf.st_mode))
@@ -2135,7 +2126,7 @@ _flatpak_canonicalize_permissions (int           parent_dfd,
               if (!glnx_dirfd_iterator_next_dent (&dfd_iter, &dent, NULL, NULL) || dent == NULL)
                 break;
 
-              if (!_flatpak_canonicalize_permissions (dfd_iter.fd, dent->d_name, FALSE, error))
+              if (!_flatpak_canonicalize_permissions (dfd_iter.fd, dent->d_name, FALSE, uid, gid, error))
                 {
                   error = NULL;
                   res = FALSE;
@@ -2190,9 +2181,11 @@ _flatpak_canonicalize_permissions (int           parent_dfd,
 gboolean
 flatpak_canonicalize_permissions (int           parent_dfd,
                                   const char   *rel_path,
+                                  int           uid,
+                                  int           gid,
                                   GError      **error)
 {
-  return _flatpak_canonicalize_permissions (parent_dfd, rel_path, TRUE, error);
+  return _flatpak_canonicalize_permissions (parent_dfd, rel_path, TRUE, uid, gid, error);
 }
 
 /* Make a directory, and its parent. Don't error if it already exists.
@@ -2373,14 +2366,6 @@ flatpak_open_in_tmpdir_at (int             tmpdir_fd,
   return TRUE;
 }
 
-GVariant *
-flatpak_gvariant_new_empty_string_dict (void)
-{
-  g_auto(GVariantBuilder) builder = FLATPAK_VARIANT_BUILDER_INITIALIZER;
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("a{sv}"));
-  return g_variant_builder_end (&builder);
-}
-
 gboolean
 flatpak_variant_save (GFile        *dest,
                       GVariant     *variant,
@@ -2408,24 +2393,6 @@ flatpak_variant_save (GFile        *dest,
     return FALSE;
 
   return TRUE;
-}
-
-void
-flatpak_variant_builder_init_from_variant (GVariantBuilder *builder,
-                                           const char      *type,
-                                           GVariant        *variant)
-{
-  gint i, n;
-
-  g_variant_builder_init (builder, G_VARIANT_TYPE (type));
-
-  n = g_variant_n_children (variant);
-  for (i = 0; i < n; i++)
-    {
-      GVariant *child = g_variant_get_child_value (variant, i);
-      g_variant_builder_add_value (builder, child);
-      g_variant_unref (child);
-    }
 }
 
 gboolean
@@ -3099,11 +3066,6 @@ flatpak_repo_update (OstreeRepo   *repo,
   if (default_branch)
     g_variant_builder_add (&builder, "{sv}", "xa.default-branch",
                            g_variant_new_string (default_branch));
-
-/* FIXME: Remove this check when we depend on ostree 2018.9 */
-#ifndef OSTREE_META_KEY_DEPLOY_COLLECTION_ID
-#define OSTREE_META_KEY_DEPLOY_COLLECTION_ID "ostree.deploy-collection-id"
-#endif
 
   if (deploy_collection_id && collection_id != NULL)
     g_variant_builder_add (&builder, "{sv}", OSTREE_META_KEY_DEPLOY_COLLECTION_ID,
@@ -4122,7 +4084,7 @@ flatpak_extension_new (const char *id,
 
   if (deploy_dir)
     {
-      deploy_data = flatpak_load_deploy_data (deploy_dir, NULL, NULL);
+      deploy_data = flatpak_load_deploy_data (deploy_dir, ref, FLATPAK_DEPLOY_VERSION_ANY, NULL, NULL);
       if (deploy_data)
         ext->commit = g_strdup (flatpak_deploy_data_get_commit (deploy_data));
     }
@@ -4150,6 +4112,8 @@ flatpak_extension_matches_reason (const char *extension_id,
                                   gboolean    default_value)
 {
   const char *extension_basename;
+  g_auto(GStrv) reason_list = NULL;
+  size_t i;
 
   if (reason == NULL || *reason == 0)
     return default_value;
@@ -4159,29 +4123,54 @@ flatpak_extension_matches_reason (const char *extension_id,
     return FALSE;
   extension_basename += 1;
 
-  if (strcmp (reason, "active-gl-driver") == 0)
-    {
-      /* handled below */
-      const char **gl_drivers = flatpak_get_gl_drivers ();
-      int i;
+  reason_list = g_strsplit (reason, ";", -1);
 
-      for (i = 0; gl_drivers[i] != NULL; i++)
+  for (i = 0; reason_list[i]; ++i)
+    {
+      const char *reason = reason_list[i];
+
+      if (strcmp (reason, "active-gl-driver") == 0)
         {
-          if (strcmp (gl_drivers[i], extension_basename) == 0)
+          /* handled below */
+          const char **gl_drivers = flatpak_get_gl_drivers ();
+          size_t j;
+
+          for (j = 0; gl_drivers[j]; j++)
+            {
+              if (strcmp (gl_drivers[j], extension_basename) == 0)
+                return TRUE;
+            }
+        }
+      else if (strcmp (reason, "active-gtk-theme") == 0)
+        {
+          const char *gtk_theme = flatpak_get_gtk_theme ();
+          if (strcmp (gtk_theme, extension_basename) == 0)
             return TRUE;
         }
+      else if (strcmp (reason, "have-intel-gpu") == 0)
+        {
+          /* Used for Intel VAAPI driver extension */
+          if (flatpak_get_have_intel_gpu ())
+            return TRUE;
+        }
+      else if (g_str_has_prefix (reason, "on-xdg-desktop-"))
+        {
+          const char *desktop_name = reason + strlen ("on-xdg-desktop-");
+          const char *current_desktop_var = g_getenv ("XDG_CURRENT_DESKTOP");
+          g_auto(GStrv) current_desktop_names = NULL;
+          size_t j;
 
-      return FALSE;
-    }
-  else if (strcmp (reason, "active-gtk-theme") == 0)
-    {
-      const char *gtk_theme = flatpak_get_gtk_theme ();
-      return strcmp (gtk_theme, extension_basename) == 0;
-    }
-  else if (strcmp (reason, "have-intel-gpu") == 0)
-    {
-      /* Used for Intel VAAPI driver extension */
-      return flatpak_get_have_intel_gpu ();
+          if (!current_desktop_var)
+            continue;
+
+          current_desktop_names = g_strsplit (current_desktop_var, ":", -1);
+
+          for (j = 0; current_desktop_names[j]; ++j)
+            {
+              if (g_ascii_strcasecmp (desktop_name, current_desktop_names[j]) == 0)
+                return TRUE;
+            }
+        }
     }
 
   return FALSE;
@@ -5316,7 +5305,7 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
 }
 
 gboolean
-flatpak_yes_no_prompt (const char *prompt, ...)
+flatpak_yes_no_prompt (gboolean default_yes, const char *prompt, ...)
 {
   char buf[512];
   va_list var_args;
@@ -5332,7 +5321,7 @@ flatpak_yes_no_prompt (const char *prompt, ...)
 
   while (TRUE)
     {
-      g_print ("%s %s: ", s, "[y/n]");
+      g_print ("%s %s: ", s, default_yes ? "[Y/n]" : "[y/n]");
 
       if (!isatty (STDIN_FILENO) || !isatty (STDOUT_FILENO))
         {
@@ -5344,6 +5333,10 @@ flatpak_yes_no_prompt (const char *prompt, ...)
         return FALSE;
 
       g_strstrip (buf);
+
+      if (default_yes && strlen (buf) == 0)
+        return TRUE;
+
       if (g_ascii_strcasecmp (buf, "y") == 0 ||
           g_ascii_strcasecmp (buf, "yes") == 0)
         return TRUE;
@@ -5371,7 +5364,7 @@ is_number (const char *s)
 }
 
 long
-flatpak_number_prompt (int min, int max, const char *prompt, ...)
+flatpak_number_prompt (gboolean default_yes, int min, int max, const char *prompt, ...)
 {
   char buf[512];
   va_list var_args;
@@ -5396,6 +5389,10 @@ flatpak_number_prompt (int min, int max, const char *prompt, ...)
 
       g_strstrip (buf);
 
+      if (default_yes && strlen (buf) == 0 &&
+          max - min == 1 && min == 0)
+        return 1;
+
       if (is_number (buf))
         {
           long res = strtol (buf, NULL, 10);
@@ -5404,6 +5401,150 @@ flatpak_number_prompt (int min, int max, const char *prompt, ...)
             return res;
         }
     }
+}
+
+static gboolean
+parse_range (const char *s, int *a, int *b)
+{
+  char *p;
+
+  p = strchr (s, '-');
+  if (!p)
+    return FALSE;
+
+  p++;
+  p[-1] = '\0';
+
+  if (is_number (s) && is_number (p))
+    {
+      *a = (int) strtol (s, NULL, 10);
+      *b = (int) strtol (p, NULL, 10);
+      p[-1] = '-';
+      return TRUE;
+    }
+
+  p[-1] = '-';
+  return FALSE;
+}
+
+static void
+add_number (GArray *numbers,
+            int     num)
+{
+  int i;
+
+  for (i = 0; i < numbers->len; i++)
+    {
+      if (g_array_index (numbers, int, i) == num)
+        return;
+    }
+
+  g_array_append_val (numbers, num);
+}
+
+int *
+flatpak_parse_numbers (const char *buf,
+                       int         min,
+                       int         max)
+{
+  g_autoptr(GArray) numbers = g_array_new (FALSE, FALSE, sizeof (int));
+  g_auto(GStrv) parts = g_strsplit_set (buf, " ,", 0);
+  int i, j;
+
+  for (i = 0; parts[i]; i++)
+    {
+      int a, b;
+
+      g_strstrip (parts[i]);
+
+      if (parse_range (parts[i], &a, &b) &&
+          min <= a && a <= max &&
+          min <= b && b <= max)
+        {
+          for (j = a; j <= b; j++)
+            add_number (numbers, j);
+        }
+      else if (is_number (parts[i]))
+        {
+          int res = (int)strtol (parts[i], NULL, 10);
+          if (min <= res && res <= max)
+            add_number (numbers, res);
+          else
+            return NULL;
+        }
+      else
+        return NULL;
+    }
+
+  j = 0;
+  g_array_append_val (numbers, j);
+
+  return (int *) g_array_free (g_steal_pointer (&numbers), FALSE);
+}
+
+/* Returns a 0-terminated array of ints. Free with g_free */
+int *
+flatpak_numbers_prompt (gboolean default_yes, int min, int max, const char *prompt, ...)
+{
+  char buf[512];
+  va_list var_args;
+  g_autofree char *s = NULL;
+  g_autofree int *choice = g_new0 (int, 2);
+  int *numbers;
+
+  va_start (var_args, prompt);
+  s = g_strdup_vprintf (prompt, var_args);
+  va_end (var_args);
+
+  while (TRUE)
+    {
+      g_print ("%s [%d-%d]: ", s, min, max);
+
+      if (!isatty (STDIN_FILENO) || !isatty (STDOUT_FILENO))
+        {
+          g_print ("0\n");
+          choice[0] = 0;
+          return g_steal_pointer (&choice);
+        }
+
+      if (fgets (buf, sizeof (buf), stdin) == NULL)
+        {
+          choice[0] = 0;
+          return g_steal_pointer (&choice);
+        }
+
+      g_strstrip (buf);
+
+      if (default_yes && strlen (buf) == 0 &&
+          max - min == 1 && min == 0)
+        {
+          choice[0] = 0;
+          return g_steal_pointer (&choice);
+        }
+
+      numbers = flatpak_parse_numbers (buf, min, max);
+      if (numbers)
+        return numbers;
+    }
+}
+
+void
+flatpak_format_choices (const char **choices,
+                        const char *prompt,
+                        ...)
+{
+  va_list var_args;
+  g_autofree char *s = NULL;
+  int i;
+
+  va_start (var_args, prompt);
+  s = g_strdup_vprintf (prompt, var_args);
+  va_end (var_args);
+
+  g_print ("%s\n\n", s);
+  for (i = 0; choices[i]; i++)
+    g_print ("  %2d) %s\n", i+1, choices[i]);
+  g_print ("\n");
 }
 
 /* In this NULL means don't care about these paths, while
@@ -5492,9 +5633,9 @@ flatpak_get_current_locale_langs (void)
 
   for (i = 0; locales[i] != NULL; i++)
     {
-      char *lang = flatpak_get_lang_from_locale (locales[i]);
+      g_autofree char *lang = flatpak_get_lang_from_locale (locales[i]);
       if (lang != NULL && !flatpak_g_ptr_array_contains_string (langs, lang))
-        g_ptr_array_add (langs, lang);
+        g_ptr_array_add (langs, g_steal_pointer (&lang));
     }
 
   g_ptr_array_sort (langs, flatpak_strcmp0_ptr);
@@ -5515,6 +5656,7 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
   gboolean last_was_metadata = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (progress), "last-was-metadata"));
   FlatpakProgressCallback progress_cb = g_object_get_data (G_OBJECT (progress), "callback");
   guint last_progress = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (progress), "last_progress"));
+  guint last_total = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (progress), "last_total"));
   GString *buf;
   g_autofree char *status = NULL;
   guint outstanding_fetches;
@@ -5526,7 +5668,7 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
   guint outstanding_extra_data;
   guint64 total_extra_data_bytes;
   guint64 transferred_extra_data_bytes;
-  guint64 total;
+  guint64 total = 0;
   guint metadata_fetched;
   guint64 start_time;
   guint64 elapsed_time;
@@ -5720,9 +5862,10 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
     }
 
 out:
-  if (new_progress < last_progress)
+  if (new_progress < last_progress && last_total == total)
     new_progress = last_progress;
   g_object_set_data (G_OBJECT (progress), "last_progress", GUINT_TO_POINTER (new_progress));
+  g_object_set_data (G_OBJECT (progress), "last_total", GUINT_TO_POINTER (total));
 
   progress_cb (buf->str, new_progress, estimating, user_data);
 
@@ -5739,6 +5882,7 @@ flatpak_progress_new (FlatpakProgressCallback progress,
 
   g_object_set_data (G_OBJECT (ostree_progress), "callback", progress);
   g_object_set_data (G_OBJECT (ostree_progress), "last_progress", GUINT_TO_POINTER (0));
+  g_object_set_data (G_OBJECT (ostree_progress), "last_total", GUINT_TO_POINTER (0));
 
   return ostree_progress;
 }
@@ -5877,4 +6021,135 @@ flatpak_utils_ascii_string_to_unsigned (const gchar  *str,
   if (out_num != NULL)
     *out_num = number;
   return TRUE;
+}
+
+static int
+dist (const char *s, int ls, const char *t, int lt, int i, int j, int *d)
+{
+  int x, y;
+
+  if (d[i * (lt + 1) + j] >= 0)
+    return d[i * (lt + 1) + j];
+
+  if (i == ls)
+    x = lt - j;
+  else if (j == lt)
+    x = ls - i;
+  else if (s[i] == t[j])
+    x = dist(s, ls, t, lt, i + 1, j + 1, d);
+  else
+    {
+      x = dist (s, ls, t, lt, i + 1, j + 1, d);
+      y = dist (s, ls, t, lt, i, j + 1, d);
+      if (y < x)
+        x = y;
+      y = dist (s, ls, t, lt, i + 1, j, d);
+      if (y < x)
+        x = y;
+      x++;
+    }
+
+  d[i * (lt + 1) + j] = x;
+
+  return x;
+}
+
+int
+flatpak_levenshtein_distance (const char *s, const char *t)
+{
+  int ls = strlen (s);
+  int lt = strlen (t);
+  int i, j;
+  int *d;
+
+  d = alloca (sizeof (int) * (ls + 1) * (lt + 1));
+
+  for (i = 0; i <= ls; i++)
+    for (j = 0; j <= lt; j++)
+      d[i * (lt + 1) + j] = -1;
+
+  return dist (s, ls, t, lt, 0, 0, d);
+}
+
+void
+flatpak_get_window_size (int *rows, int *cols)
+{
+  struct winsize w;
+
+  if (ioctl (STDOUT_FILENO, TIOCGWINSZ, &w) == 0)
+    {
+      *rows = w.ws_row;
+      *cols = w.ws_col;
+    }
+  else
+    {
+      *rows = 24;
+      *cols = 80;
+    }
+}
+
+gboolean
+flatpak_get_cursor_pos (int* row, int *col)
+{
+  fd_set readset;
+  struct timeval time;
+  struct termios term, initial_term;
+  int res = 0;
+
+  tcgetattr (STDIN_FILENO, &initial_term);
+  term = initial_term;
+  term.c_lflag &= ~ICANON;
+  term.c_lflag &= ~ECHO;
+  tcsetattr (STDIN_FILENO, TCSANOW, &term);
+
+  printf ("\033[6n");
+  fflush (stdout);
+
+  FD_ZERO (&readset);
+  FD_SET (STDIN_FILENO, &readset);
+  time.tv_sec = 0;
+  time.tv_usec = 100000;
+
+  if (select (STDIN_FILENO + 1, &readset, NULL, NULL, &time) == 1)
+    res = scanf ("\033[%d;%dR", row, col);
+
+  tcsetattr (STDIN_FILENO, TCSADRAIN, &initial_term);
+
+  return res == 2;
+}
+
+void
+flatpak_hide_cursor (void)
+{
+  write (STDOUT_FILENO, FLATPAK_ANSI_HIDE_CURSOR, strlen (FLATPAK_ANSI_HIDE_CURSOR));
+}
+
+void
+flatpak_show_cursor (void)
+{
+  write (STDOUT_FILENO, FLATPAK_ANSI_SHOW_CURSOR, strlen (FLATPAK_ANSI_SHOW_CURSOR));
+}
+
+void
+flatpak_enable_raw_mode (void)
+{
+  struct termios raw;
+
+  tcgetattr (STDIN_FILENO, &raw);
+
+  raw.c_lflag &= ~(ECHO | ICANON);
+
+  tcsetattr (STDIN_FILENO, TCSAFLUSH, &raw);
+}
+
+void
+flatpak_disable_raw_mode (void)
+{
+  struct termios raw;
+
+  tcgetattr (STDIN_FILENO, &raw);
+
+  raw.c_lflag |= (ECHO | ICANON);
+
+  tcsetattr (STDIN_FILENO, TCSAFLUSH, &raw);
 }

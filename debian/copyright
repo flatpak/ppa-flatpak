@@ -11,7 +11,7 @@ Copyright:
  © 2010 Lennart Poettering
  © 2011-2015 Colin Walters
  © 2014-2016 Alexander Larsson
- © 2014-2018 Red Hat, Inc
+ © 2014-2019 Red Hat, Inc
  © 2016-2017 Free Software Foundation, Inc.
  © 2016 Piotr Drag
  © 2016 Aviary.pl
@@ -24,16 +24,21 @@ Copyright:
 License: LGPL-2.1+
 
 Files:
+ app/flatpak-polkit-agent-text-listener.c
+ app/flatpak-polkit-agent-text-listener.h
  app/parse-datetime.h
  app/parse-datetime.y
  data/org.freedesktop.portal.Flatpak.xml
  tests/make-multi-collection-id-repo.sh
  tests/test-build-update-repo.sh
+ tests/test-completion.sh
+ tests/test-config.sh
 Copyright:
  © 1995-2015 Free Software Foundation, Inc.
+ © 2008-2018 Red Hat, Inc
  © 2017 Endless, Inc.
- © 2018 Red Hat, Inc
  © 2018 Endless Mobile, Inc.
+ © 2019 Matthias Clasen
 License: LGPL-2+
 
 Files:

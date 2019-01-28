@@ -22,6 +22,7 @@
 #define __FLATPAK_BUILTINS_UTILS_H__
 
 #include <glib.h>
+#include <appstream-glib.h>
 #include "libglnx/libglnx.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-dir-private.h"
@@ -29,6 +30,26 @@
 
 /* Appstream data expires after a day */
 #define FLATPAK_APPSTREAM_TTL 86400
+
+typedef struct RemoteDirPair
+{
+  gchar              *remote_name;
+  FlatpakDir         *dir;
+} RemoteDirPair;
+
+typedef struct RefDirPair
+{
+  gchar      *ref;
+  FlatpakDir *dir;
+} RefDirPair;
+
+void         ref_dir_pair_free (RefDirPair *pair);
+RefDirPair * ref_dir_pair_new (const char *ref,
+                               FlatpakDir *dir);
+
+void            remote_dir_pair_free (RemoteDirPair *pair);
+RemoteDirPair * remote_dir_pair_new (const char *remote_name,
+                                     FlatpakDir *dir);
 
 gboolean    looks_like_branch (const char *branch);
 GBytes *    download_uri (const char *url,
@@ -56,6 +77,26 @@ gboolean flatpak_resolve_duplicate_remotes (GPtrArray    *dirs,
                                             GCancellable *cancellable,
                                             GError      **error);
 
+gboolean flatpak_resolve_matching_refs (const char *remote_name,
+                                        FlatpakDir *dir,
+                                        gboolean    disable_interaction,
+                                        char      **refs,
+                                        const char *opt_search_ref,
+                                        char      **out_ref,
+                                        GError    **error);
+
+gboolean flatpak_resolve_matching_installed_refs (gboolean     disable_interaction,
+                                                  GPtrArray   *ref_dir_pairs,
+                                                  const char  *opt_search_ref,
+                                                  GPtrArray   *out_pairs,
+                                                  GError     **error);
+
+gboolean flatpak_resolve_matching_remotes (gboolean        disable_interaction,
+                                           GPtrArray      *remote_dir_pairs,
+                                           const char     *opt_search_ref,
+                                           RemoteDirPair **out_pair,
+                                           GError        **error);
+
 gboolean update_appstream (GPtrArray    *dirs,
                            const char   *remote,
                            const char   *arch,
@@ -65,6 +106,59 @@ gboolean update_appstream (GPtrArray    *dirs,
                            GError      **error);
 
 char ** get_permission_tables (XdpDbusPermissionStore *store);
+gboolean reset_permissions_for_app (const char *app_id,
+                                    GError **error);
 
+
+/* --columns handling */
+
+typedef enum {
+              FLATPAK_ELLIPSIZE_MODE_NONE,
+              FLATPAK_ELLIPSIZE_MODE_START,
+              FLATPAK_ELLIPSIZE_MODE_MIDDLE,
+              FLATPAK_ELLIPSIZE_MODE_END,
+} FlatpakEllipsizeMode;
+
+typedef struct {
+  const char *name;
+  const char *title; /* use N_() */
+  const char *desc;  /* use N_() */
+  gboolean expand;
+  FlatpakEllipsizeMode ellipsize;
+  gboolean all;
+  gboolean def;
+} Column;
+
+int find_column (Column *columns,
+                 const char *name,
+                 GError **error);
+char   *column_help        (Column *columns);
+Column *handle_column_args (Column *all_columns,
+                            gboolean opt_show_all,
+                            const char **opt_cols,
+                            GError **error);
+
+char *  format_timestamp (guint64 timestamp);
+
+
+char *  ellipsize_string (const char *text, int len);
+char *  ellipsize_string_full (const char *text, int len, FlatpakEllipsizeMode mode);
+
+void print_aligned (int len, const char *title, const char *value);
+
+AsApp *as_store_find_app (AsStore *store,
+                          const char *ref);
+const char *as_app_get_localized_name (AsApp *app);
+const char *as_app_get_localized_comment (AsApp *app);
+const char *as_app_get_version (AsApp *app);
+
+gboolean    flatpak_dir_load_appstream_store (FlatpakDir    *self,
+                                              const gchar   *remote_name,
+                                              const gchar   *arch,
+                                              AsStore       *store,
+                                              GCancellable  *cancellable,
+                                              GError       **error);
+
+void print_wrapped (int columns, const char *text, ...) G_GNUC_PRINTF (2, 3);
 
 #endif /* __FLATPAK_BUILTINS_UTILS_H__ */

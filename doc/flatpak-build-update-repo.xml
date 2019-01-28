@@ -119,7 +119,7 @@
                 <term><option>--deploy-collection-id</option></term>
 
                 <listitem><para>
-                    Deploy the collection ID (set using <option>--collection-id</option>
+                    Deploy the collection ID (set using <option>--collection-id</option>)
                     in the static remote configuration for all clients. This is
                     irrevocable once published in a repository. Use it to decide
                     when to roll out a collection ID to users of an existing repository.
@@ -151,6 +151,14 @@
                 <listitem><para>
                   Generate static deltas for all references. This generates from-empty and
                   delta static files that allow for faster download.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--static-delta-jobs=NUM-JOBS</option></term>
+
+                <listitem><para>
+                  Limit the number of parallel jobs creating static deltas. The default is the number of cpus.
                 </para></listitem>
             </varlistentry>
 

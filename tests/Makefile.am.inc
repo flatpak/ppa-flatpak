@@ -1,5 +1,7 @@
 AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 \
+	FLATPAK_CONFIG_DIR=/dev/null \
 	FLATPAK_TRIGGERSDIR=$$(cd $(top_srcdir) && pwd)/triggers \
+	FLATPAK_VALIDATE_ICON=$$(cd $(top_builddir) && pwd)/flatpak-validate-icon \
 	FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && pwd)/flatpak-dbus-proxy \
 	GI_TYPELIB_PATH=$$(cd $(top_builddir) && pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
 	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} \
@@ -12,15 +14,44 @@ else
 AM_TESTS_ENVIRONMENT += FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
 endif
 
-testlibrary_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) -DFLATPAK_COMPILATION
+testlibrary_CFLAGS = \
+	$(AM_CFLAGS) \
+	$(BASE_CFLAGS) \
+	$(OSTREE_CFLAGS) \
+	-DFLATPAK_COMPILATION \
+	$(NULL)
 testlibrary_LDADD = \
-             $(AM_LDADD) \
-             $(BASE_LIBS) \
-             $(OSTREE_LIBS) \
-             libglnx.la \
-             libflatpak.la \
-             $(NULL)
+	$(AM_LDADD) \
+	$(BASE_LIBS) \
+	$(OSTREE_LIBS) \
+	libglnx.la \
+	libflatpak.la \
+	$(NULL)
 testlibrary_SOURCES = tests/testlibrary.c
+
+testcommon_CFLAGS = \
+	$(AM_CFLAGS) \
+	$(BASE_CFLAGS) \
+	$(OSTREE_CFLAGS) \
+	$(SOUP_CFLAGS) \
+	$(JSON_CFLAGS) \
+	$(APPSTREAM_GLIB_CFLAGS) \
+	-DFLATPAK_COMPILATION \
+	-I$(srcdir)/app \
+	-I$(builddir)/app \
+	$(NULL)
+testcommon_LDADD = \
+	$(AM_LDADD) \
+	$(BASE_LIBS) \
+	$(OSTREE_LIBS) \
+	$(SOUP_LIBS) \
+	$(JSON_LIBS) \
+	$(APPSTREAM_GLIB_LIBS) \     
+	libglnx.la \
+	libflatpak-common.la \
+	libflatpak-app.la \
+	$(NULL)
+testcommon_SOURCES = tests/testcommon.c
 
 tests_httpcache_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
 	-DFLATPAK_COMPILATION \
@@ -89,9 +120,12 @@ endif
 # Run make update-test-matrix after changing this
 TEST_MATRIX_SOURCE = \
 	tests/test-basic.sh \
+	tests/test-completion.sh \
+	tests/test-config.sh \
 	tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh \
 	tests/test-run.sh{{user+system},{nodeltas+deltas}} \
+	tests/test-info.sh{user+system} \
 	tests/test-repo.sh{user+system+collections+collections-server-only} \
 	tests/test-extensions.sh \
 	tests/test-bundle.sh{user+system} \
@@ -99,6 +133,7 @@ TEST_MATRIX_SOURCE = \
 	tests/test-oci-registry.sh{user+system} \
 	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
+	tests/test-override.sh \
 	$(NULL)
 
 update-test-matrix:
@@ -107,13 +142,22 @@ update-test-matrix:
 tests/test-%.wrap:
 	@true
 
+tests/runtime-repo: tests/make-test-runtime.sh flatpak
+	rm -rf tests/runtime-repo
+	PATH=$(abs_top_builddir):$${PATH} $(top_srcdir)/tests/make-test-runtime.sh tests/runtime-repo org.test.Platform ""
+
+check_DATA += tests/runtime-repo
+
+distclean-local:
+	rm -rf tests/runtime-repo
+
 include tests/Makefile-test-matrix.am.inc
 
 test_scripts = ${TEST_MATRIX}
 dist_test_scripts = ${TEST_MATRIX_DIST}
 dist_installed_test_extra_scripts += ${TEST_MATRIX_EXTRA_DIST}
 
-test_programs = testlibrary
+test_programs = testlibrary testcommon
 test_extra_programs = tests/httpcache
 
 @VALGRIND_CHECK_RULES@

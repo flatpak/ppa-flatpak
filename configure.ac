@@ -14,8 +14,8 @@ AC_PREREQ([2.63])
 # on the unstable (ie master), interface age = 0
 
 m4_define([flatpak_major_version], [1])
-m4_define([flatpak_minor_version], [0])
-m4_define([flatpak_micro_version], [6])
+m4_define([flatpak_minor_version], [2])
+m4_define([flatpak_micro_version], [0])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -32,7 +32,7 @@ AC_INIT([Flatpak],
 GLIB_REQS=2.44
 SYSTEM_BWRAP_REQS=0.2.1
 SYSTEM_DBUS_PROXY_REQS=0.1.0
-OSTREE_REQS=2018.7
+OSTREE_REQS=2018.9
 
 AC_USE_SYSTEM_EXTENSIONS
 AC_SYS_LARGEFILE
@@ -121,6 +121,15 @@ AC_ARG_WITH([systemdsystemunitdir],
     [with_systemdsystemunitdir='${prefix}/lib/systemd/system'])
 AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
 
+AC_ARG_WITH([systemduserenvgendir],
+            [AS_HELP_STRING([--with-systemduserenvgendir=DIR],
+                            [Directory for systemd user environment generators (default=PREFIX/lib/systemd/user-environment-generators)])],
+    [],
+    dnl This is deliberately not ${libdir}: systemd units always go in
+    dnl .../lib, never .../lib64 or .../lib/x86_64-linux-gnu
+    [with_systemduserenvgendir='${prefix}/lib/systemd/user-environment-generators'])
+AC_SUBST([systemduserenvgendir], [$with_systemduserenvgendir])
+
 AC_ARG_WITH(system_fonts_dir,
 		AS_HELP_STRING([--with-system-fonts-dir=PATH],[Directory where system fonts are, [default=/usr/share/fonts]]),
             with_system_fonts_dir="$withval", with_system_fonts_dir=/usr/share/fonts)
@@ -203,6 +212,11 @@ POLKIT_GOBJECT_REQUIRED=0.98
 
 PKG_CHECK_MODULES(BASE, [glib-2.0 >= $GLIB_REQS gio-2.0 gio-unix-2.0 libarchive >= 2.8.0 libxml-2.0 >= 2.4 ])
 PKG_CHECK_MODULES(SOUP, [libsoup-2.4])
+PKG_CHECK_MODULES(DCONF, [dconf])
+PKG_CHECK_MODULES(SYSTEMD, [libsystemd], [have_libsystemd=yes], [have_libsystemd=no])
+if test $have_libsystemd = yes; then
+  AC_DEFINE(HAVE_LIBSYSTEMD, 1, [Define if libsystemd is available])
+fi
 
 save_LIBS=$LIBS
 LIBS=$BASE_LIBS
@@ -226,7 +240,7 @@ AC_ARG_ENABLE([system-helper],
               [enable_system_helper=yes])
 if test "x$enable_system_helper" = "xyes"; then
   PKG_CHECK_MODULES(POLKIT, \
-  		    polkit-gobject-1 >= $POLKIT_GOBJECT_REQUIRED)
+		    polkit-agent-1 >= $POLKIT_GOBJECT_REQUIRED)
   AC_DEFINE([USE_SYSTEM_HELPER], [1], [Define if using system-helper])
 fi
 AM_CONDITIONAL(BUILD_SYSTEM_HELPER, test x$enable_system_helper = xyes)
@@ -257,6 +271,8 @@ PKG_CHECK_MODULES(OSTREE, [ostree-1 >= $OSTREE_REQS])
 PKG_CHECK_MODULES(JSON, [json-glib-1.0])
 
 PKG_CHECK_MODULES(APPSTREAM_GLIB, [appstream-glib >= 0.5.10])
+
+PKG_CHECK_MODULES(GDK_PIXBUF, [gdk-pixbuf-2.0])
 
 AC_ARG_ENABLE([seccomp],
               AC_HELP_STRING([--disable-seccomp],
@@ -395,6 +411,27 @@ case "$host" in
 esac
 AC_SUBST(HIDDEN_VISIBILITY_CFLAGS)
 
+##########################################
+# Coverage testing
+##########################################
+AC_ARG_ENABLE(coverage,
+  AS_HELP_STRING([--enable-coverage],
+                 [enable coverage testing with gcov]),
+  [use_lcov=$enableval], [use_lcov=no])
+
+if test x$use_lcov = xyes; then
+  AC_PATH_PROG(LCOV, lcov)
+  AC_PATH_PROG(GENHTML, genhtml)
+
+  # remove all optimization from CFLAGS
+  changequote({,})
+  CFLAGS=`echo "$CFLAGS" | $SED -e 's/-O[0-9]*//g'`
+  changequote([,])
+
+  CFLAGS="$CFLAGS -O0 -fprofile-arcs -ftest-coverage"
+  LDFLAGS="$LDFLAGS -lgcov"
+fi
+
 GLIB_TESTS
 
 FLATPAK_MAJOR_VERSION=flatpak_major_version
@@ -463,4 +500,5 @@ echo "          Use sandboxed triggers: $enable_sandboxed_triggers"
 echo "          Use seccomp:            $enable_seccomp"
 echo "          Privileged group:       $PRIVILEGED_GROUP"
 echo "          Privilege mode:         $with_priv_mode"
+echo "          Use libsystemd:         $have_libsystemd"
 echo ""

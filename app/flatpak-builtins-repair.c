@@ -34,9 +34,14 @@
 #include "flatpak-utils-private.h"
 #include "flatpak-table-printer.h"
 #include "flatpak-error.h"
-#include "flatpak-cli-transaction.h"
+#include "flatpak-quiet-transaction.h"
+
+static gboolean opt_dry_run;
+static gboolean opt_reinstall_all;
 
 static GOptionEntry options[] = {
+  { "dry-run", 0, 0, G_OPTION_ARG_NONE, &opt_dry_run, N_("Don't make any changes"), NULL },
+  { "reinstall-all", 0, 0, G_OPTION_ARG_NONE, &opt_reinstall_all, N_("Reinstall all refs"), NULL },
   { NULL }
 };
 
@@ -66,8 +71,16 @@ fsck_one_object (OstreeRepo      *repo,
         }
       else
         {
-          g_printerr (_("%s, deleting object\n"), local_error->message);
-          (void) ostree_repo_delete_object (repo, objtype, checksum, NULL, NULL);
+          if (opt_dry_run)
+            {
+              g_printerr (_("Object invalid: %s.%s\n"), checksum,
+                          ostree_object_type_to_string (objtype));
+            }
+          else
+            {
+              g_printerr (_("%s, deleting object\n"), local_error->message);
+              (void)ostree_repo_delete_object (repo, objtype, checksum, NULL, NULL);
+            }
           return FSCK_STATUS_HAS_INVALID_OBJECTS;
         }
     }
@@ -246,7 +259,7 @@ transaction_add_local_ref (FlatpakDir         *dir,
   const char *origin;
   const char **subpaths;
 
-  deploy_data = flatpak_dir_get_deploy_data (dir, ref, NULL, &local_error);
+  deploy_data = flatpak_dir_get_deploy_data (dir, ref, FLATPAK_DEPLOY_VERSION_ANY, NULL, &local_error);
   if (deploy_data == NULL)
     {
       if (!g_error_matches (local_error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED))
@@ -259,7 +272,7 @@ transaction_add_local_ref (FlatpakDir         *dir,
   subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
 
   repo_checksum = flatpak_dir_read_latest (dir, origin, ref, NULL, NULL, NULL);
-  if (repo_checksum == NULL)
+  if (repo_checksum == NULL || opt_reinstall_all)
     {
       if (!flatpak_transaction_add_install (transaction, origin, ref, subpaths, &local_error))
         {
@@ -283,6 +296,7 @@ flatpak_builtin_repair (int argc, char **argv, GCancellable *cancellable, GError
   g_auto(GStrv) runtime_refs = NULL;
   g_autoptr(FlatpakTransaction) transaction = NULL;
   OstreeRepo *repo;
+  g_autoptr(GFile) file = NULL;
   int i;
 
   context = g_option_context_new (_("- Repair a flatpak installation"));
@@ -292,13 +306,22 @@ flatpak_builtin_repair (int argc, char **argv, GCancellable *cancellable, GError
                                      FLATPAK_BUILTIN_FLAG_ONE_DIR, &dirs, cancellable, error))
     return FALSE;
 
-
   dir = g_ptr_array_index (dirs, 0);
 
   if (!flatpak_dir_ensure_repo (dir, cancellable, error))
     return FALSE;
 
   repo = flatpak_dir_get_repo (dir);
+
+  g_print ("Working on the %s installation at %s\n",
+           flatpak_dir_get_name_cached (dir),
+           flatpak_file_get_path_cached (flatpak_dir_get_path (dir)));
+
+  if (!opt_dry_run && !flatpak_dir_is_user (dir) && geteuid () != 0)
+    {
+      g_print ("Privileges are required to make changes; assuming --dry-run\n");
+      opt_dry_run = TRUE;
+    }
 
   /*
    * Try to repair a flatpak directory:
@@ -309,6 +332,7 @@ flatpak_builtin_repair (int argc, char **argv, GCancellable *cancellable, GError
    *  +  Note any missing objects
    *  + Any refs that had invalid object, or non-partial refs that had missing objects are removed
    *  + prune (depth=0) all object not references by a ref, which gets rid of any possibly invalid non-scanned objects
+   *  * Remove leftover .removed contents
    *  + Enumerate all deployed refs:
    *  +   if they are not in the repo (or is partial for a non-subdir deploy), re-install them (pull + deploy)
    */
@@ -319,8 +343,7 @@ flatpak_builtin_repair (int argc, char **argv, GCancellable *cancellable, GError
   invalid_refs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
   /* Validate that the commit for each ref is available */
-  if (!ostree_repo_list_refs (repo, NULL, &all_refs,
-                              cancellable, error))
+  if (!ostree_repo_list_refs (repo, NULL, &all_refs, cancellable, error))
     return FALSE;
 
   GLNX_HASH_TABLE_FOREACH_KV (all_refs, const char *, refspec, const char *, checksum)
@@ -340,26 +363,75 @@ flatpak_builtin_repair (int argc, char **argv, GCancellable *cancellable, GError
         /* If so, is it deployed, and from this remote? */
         if (remote == NULL || g_strcmp0 (origin, remote) != 0)
           {
-            g_print (_("Removing non-deployed ref %s...\n"), refspec);
-            (void) ostree_repo_set_ref_immediate (repo, remote, ref_name, NULL, cancellable, NULL);
+            if (!opt_dry_run)
+              {
+                g_print (_("Removing non-deployed ref %s…\n"), refspec);
+                (void) ostree_repo_set_ref_immediate (repo, remote, ref_name, NULL, cancellable, NULL);
+              }
+            else
+              g_print (_("Skipping non-deployed ref %s…\n"), refspec);
+
             continue;
           }
       }
 
-    g_print (_("Verifying %s...\n"), refspec);
+    g_print (_("Verifying %s…\n"), refspec);
 
     status = fsck_commit (repo, checksum, object_status_cache);
-    if (status != FSCK_STATUS_OK)
+    if (status != FSCK_STATUS_OK && !opt_dry_run)
       {
-        g_printerr (_("Deleting ref %s due to missing objects\n"), refspec);
+        switch (status)
+          {
+          case FSCK_STATUS_HAS_MISSING_OBJECTS:
+            g_printerr (_("Deleting ref %s due to missing objects\n"), refspec);
+            break;
+          case FSCK_STATUS_HAS_INVALID_OBJECTS:
+            g_printerr (_("Deleting ref %s due to invalid objects\n"), refspec);
+            break;
+          default:
+            g_printerr (_("Deleting ref %s due to %d\n"), refspec, status);
+            break;
+          }
         (void) ostree_repo_set_ref_immediate (repo, remote, ref_name, NULL, cancellable, NULL);
       }
   }
+
+  GLNX_HASH_TABLE_FOREACH_KV (all_refs, const char *, refspec, const char *, checksum)
+  {
+    g_autofree char *remote = NULL;
+    g_autofree char *ref_name = NULL;
+
+    if (!ostree_parse_refspec (refspec, &remote, &ref_name, error))
+      return FALSE;
+
+    if (remote == NULL)
+      continue;
+
+    /* Does this look like a regular ref? */
+    if (!g_str_has_prefix (ref_name, "app/") && !g_str_has_prefix (ref_name, "runtime/"))
+      continue;
+
+    if (!flatpak_dir_has_remote (dir, remote, NULL))
+      g_print (_("Remote %s for ref %s is missing\n"), remote, ref_name);
+    else if (flatpak_dir_get_remote_disabled (dir, remote))
+      g_print (_("Remote %s for ref %s is disabled\n"), remote, ref_name);
+  }
+
+  if (opt_dry_run)
+    return TRUE;
 
   g_print (_("Pruning objects\n"));
 
   if (!flatpak_dir_prune (dir, cancellable, error))
     return FALSE;
+
+  file = flatpak_dir_get_removed_dir (dir);
+  if (g_file_query_exists (file, cancellable))
+    {
+      g_print (_("Erasing .removed\n"));
+      if (!flatpak_rm_rf (file, cancellable, error))
+        return FALSE;
+    }
 
   if (!flatpak_dir_list_refs (dir, "app", &app_refs, cancellable, NULL))
     return FALSE;
@@ -367,7 +439,7 @@ flatpak_builtin_repair (int argc, char **argv, GCancellable *cancellable, GError
   if (!flatpak_dir_list_refs (dir, "runtime", &runtime_refs, cancellable, NULL))
     return FALSE;
 
-  transaction = flatpak_cli_transaction_new (dir, TRUE, FALSE, error);
+  transaction = flatpak_quiet_transaction_new (dir, error);
   if (transaction == NULL)
     return FALSE;
 
@@ -391,9 +463,46 @@ flatpak_builtin_repair (int argc, char **argv, GCancellable *cancellable, GError
 
   if (!flatpak_transaction_is_empty (transaction))
     {
-      g_print (_("Reinstalling removed refs\n"));
-      if (!flatpak_cli_transaction_run (transaction, cancellable, error))
+      if (opt_reinstall_all)
+        g_print (_("Reinstalling refs\n"));
+      else
+        g_print (_("Reinstalling removed refs\n"));
+      if (!flatpak_transaction_run (transaction, cancellable, error))
         return FALSE;
+    }
+
+  if (opt_reinstall_all)
+    {
+      g_print ("Reinstalling appstream\n");
+
+      GLNX_HASH_TABLE_FOREACH_KV (all_refs, const char *, refspec, const char *, checksum)
+      {
+        g_autofree char *remote = NULL;
+        g_autofree char *ref_name = NULL;
+
+        if (!ostree_parse_refspec (refspec, &remote, &ref_name, error))
+          return FALSE;
+
+        /* Does this look like an appstream ref? */
+        if (g_str_has_prefix (ref_name, "appstream"))
+          {
+            g_auto(GStrv) parts = g_strsplit (ref_name, "/", 0);
+            gboolean changed;
+
+            if (!flatpak_dir_remove_appstream (dir, remote, cancellable, error))
+              {
+                g_prefix_error (error, _("While removing appstream for %s: "), remote);
+                return FALSE;
+              }
+          
+            if (!flatpak_dir_deploy_appstream (dir, remote, parts[1], &changed,
+                 cancellable, error))
+              {
+                g_prefix_error (error, _("While deploying appstream for %s: "), remote);
+                return FALSE;
+              }
+          }
+      }
     }
 
   return TRUE;
@@ -408,19 +517,13 @@ flatpak_complete_repair (FlatpakCompletion *completion)
   context = g_option_context_new ("");
 
   if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv,
-                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS, &dirs, NULL, NULL))
+                                     FLATPAK_BUILTIN_FLAG_ONE_DIR | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
+                                     &dirs, NULL, NULL))
     return FALSE;
 
-  switch (completion->argc)
-    {
-    case 0:
-    case 1: /* REMOTE */
-      flatpak_complete_options (completion, global_entries);
-      flatpak_complete_options (completion, options);
-      flatpak_complete_options (completion, user_entries);
-
-      break;
-    }
+  flatpak_complete_options (completion, global_entries);
+  flatpak_complete_options (completion, options);
+  flatpak_complete_options (completion, user_entries);
 
   return TRUE;
 }

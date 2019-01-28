@@ -39,9 +39,9 @@ man1 = \
 	flatpak-document-export.1	\
 	flatpak-document-unexport.1	\
 	flatpak-document-info.1		\
-	flatpak-document-list.1		\
+	flatpak-documents.1		\
 	flatpak-permission-remove.1	\
-	flatpak-permission-list.1	\
+	flatpak-permissions.1		\
 	flatpak-permission-show.1	\
 	flatpak-permission-reset.1	\
 	flatpak-build-init.1		\
@@ -55,8 +55,11 @@ man1 = \
 	flatpak-build-commit-from.1	\
 	flatpak-repo.1			\
 	flatpak-search.1		\
-	flatpak-create-usb.1 \
-	flatpak-repair.1 \
+	flatpak-create-usb.1 		\
+	flatpak-repair.1 		\
+	flatpak-kill.1 			\
+	flatpak-history.1 		\
+	flatpak-spawn.1 		\
 	$(NULL)
 
 man5 = \

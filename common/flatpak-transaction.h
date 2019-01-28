@@ -121,7 +121,12 @@ struct _FlatpakTransactionClass
                               const char                    *from_id,
                               const char                    *remote_name,
                               const char                    *url);
-  gpointer padding[10];
+
+  gboolean (*run)            (FlatpakTransaction  *transaction,
+                              GCancellable        *cancellable,
+                              GError             **error);
+                   
+  gpointer padding[9];
 };
 
 FLATPAK_EXTERN
@@ -138,6 +143,10 @@ FLATPAK_EXTERN
 gboolean    flatpak_transaction_progress_get_is_estimating (FlatpakTransactionProgress *self);
 FLATPAK_EXTERN
 int         flatpak_transaction_progress_get_progress (FlatpakTransactionProgress *self);
+FLATPAK_EXTERN
+guint64     flatpak_transaction_progress_get_bytes_transferred (FlatpakTransactionProgress *self);
+FLATPAK_EXTERN
+guint64     flatpak_transaction_progress_get_start_time (FlatpakTransactionProgress *self);
 
 
 FLATPAK_EXTERN
@@ -150,6 +159,10 @@ FLATPAK_EXTERN
 GFile *                         flatpak_transaction_operation_get_bundle_path (FlatpakTransactionOperation *self);
 FLATPAK_EXTERN
 const char *                    flatpak_transaction_operation_get_commit (FlatpakTransactionOperation *self);
+FLATPAK_EXTERN
+guint64                         flatpak_transaction_operation_get_download_size (FlatpakTransactionOperation *self);
+FLATPAK_EXTERN
+guint64                         flatpak_transaction_operation_get_installed_size (FlatpakTransactionOperation *self);
 FLATPAK_EXTERN
 GKeyFile *                      flatpak_transaction_operation_get_metadata (FlatpakTransactionOperation *self);
 FLATPAK_EXTERN
@@ -190,7 +203,7 @@ void                flatpak_transaction_add_dependency_source (FlatpakTransactio
 FLATPAK_EXTERN
 void                flatpak_transaction_add_default_dependency_sources (FlatpakTransaction *self);
 FLATPAK_EXTERN
-gboolean            flatpak_transaction_run (FlatpakTransaction *self,
+gboolean            flatpak_transaction_run (FlatpakTransaction *transaction,
                                              GCancellable       *cancellable,
                                              GError            **error);
 FLATPAK_EXTERN

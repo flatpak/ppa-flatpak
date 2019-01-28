@@ -39,13 +39,30 @@
 
 typedef enum {
   FLATPAK_HOST_COMMAND_FLAGS_CLEAR_ENV = 1 << 0,
+  FLATPAK_HOST_COMMAND_FLAGS_WATCH_BUS = 1 << 1,
 } FlatpakHostCommandFlags;
 
-
+#define FLATPAK_ANSI_ALT_SCREEN_ON "\x1b[?1049h"
+#define FLATPAK_ANSI_ALT_SCREEN_OFF "\x1b[?1049l"
+#define FLATPAK_ANSI_HIDE_CURSOR "\x1b[?25l"
+#define FLATPAK_ANSI_SHOW_CURSOR "\x1b[?25h"
 #define FLATPAK_ANSI_BOLD_ON "\x1b[1m"
 #define FLATPAK_ANSI_BOLD_OFF "\x1b[22m"
+#define FLATPAK_ANSI_FAINT_ON "\x1b[2m"
+#define FLATPAK_ANSI_FAINT_OFF "\x1b[22m"
 #define FLATPAK_ANSI_RED "\x1b[31m"
 #define FLATPAK_ANSI_COLOR_RESET "\x1b[0m"
+
+#define FLATPAK_ANSI_ROW_N "\x1b[%d;1H"
+#define FLATPAK_ANSI_CLEAR "\x1b[0J"
+
+void flatpak_get_window_size (int *rows, int *cols);
+gboolean flatpak_get_cursor_pos  (int *row, int *col);
+void flatpak_hide_cursor (void);
+void flatpak_show_cursor (void);
+
+void flatpak_enable_raw_mode (void);
+void flatpak_disable_raw_mode (void);
 
 /* https://bugzilla.gnome.org/show_bug.cgi?id=766370 */
 #if !GLIB_CHECK_VERSION (2, 49, 3)
@@ -78,6 +95,8 @@ gboolean  flatpak_has_path_prefix (const char *str,
 const char * flatpak_path_match_prefix (const char *pattern,
                                         const char *path);
 
+void     flatpak_disable_fancy_output (void);
+void     flatpak_enable_fancy_output (void);
 gboolean flatpak_fancy_output (void);
 
 const char * flatpak_get_arch (void);
@@ -98,12 +117,6 @@ char **flatpak_subpaths_merge (char **subpaths1,
 
 char *flatpak_get_lang_from_locale (const char *locale);
 char **flatpak_get_current_locale_langs (void);
-
-void flatpak_migrate_from_xdg_app (void);
-
-GFile *flatpak_file_new_tmp_in (GFile      *dir,
-                                const char *templatename,
-                                GError    **error);
 
 gboolean flatpak_write_update_checksum (GOutputStream *out,
                                         gconstpointer  data,
@@ -130,10 +143,6 @@ gboolean flatpak_variant_save (GFile        *dest,
                                GVariant     *variant,
                                GCancellable *cancellable,
                                GError      **error);
-GVariant * flatpak_gvariant_new_empty_string_dict (void);
-void    flatpak_variant_builder_init_from_variant (GVariantBuilder *builder,
-                                                   const char      *type,
-                                                   GVariant        *variant);
 gboolean flatpak_variant_bsearch_str (GVariant   *array,
                                       const char *str,
                                       int        *out_pos);
@@ -190,6 +199,8 @@ gboolean flatpak_split_partial_ref_arg_novalidate (const char   *partial_ref,
                                                    char        **out_id,
                                                    char        **out_arch,
                                                    char        **out_branch);
+
+int flatpak_compare_ref (const char *ref1, const char *ref2);
 
 char * flatpak_compose_ref (gboolean    app,
                             const char *name,
@@ -326,10 +337,6 @@ flatpak_auto_lock_helper (GMutex *mutex)
 gboolean flatpak_switch_symlink_and_remove (const char *symlink_path,
                                             const char *target,
                                             GError    **error);
-gint flatpak_mkstempat (int    dir_fd,
-                        gchar *tmpl,
-                        int    flags,
-                        int    mode);
 
 gboolean flatpak_repo_set_title (OstreeRepo *repo,
                                  const char *title,
@@ -481,11 +488,6 @@ gboolean   flatpak_cp_a (GFile         *src,
                          GCancellable  *cancellable,
                          GError       **error);
 
-gboolean flatpak_zero_mtime (int           parent_dfd,
-                             const char   *rel_path,
-                             GCancellable *cancellable,
-                             GError      **error);
-
 gboolean flatpak_mkdir_p (GFile        *dir,
                           GCancellable *cancellable,
                           GError      **error);
@@ -496,6 +498,8 @@ gboolean flatpak_rm_rf (GFile        *dir,
 
 gboolean flatpak_canonicalize_permissions (int           parent_dfd,
                                            const char   *rel_path,
+                                           int           uid,
+                                           int           gid,
                                            GError      **error);
 
 char * flatpak_readlink (const char *path,
@@ -585,23 +589,6 @@ flatpak_repo_transaction_start (OstreeRepo   *repo,
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakRepoTransaction, flatpak_repo_transaction_cleanup)
 
 #define AUTOLOCK(name) G_GNUC_UNUSED __attribute__((cleanup (flatpak_auto_unlock_helper))) GMutex * G_PASTE (auto_unlock, __LINE__) = flatpak_auto_lock_helper (&G_LOCK_NAME (name))
-
-/* OSTREE_CHECK_VERSION was added immediately after the 2017.3 release */
-#ifndef OSTREE_CHECK_VERSION
-#define OSTREE_CHECK_VERSION(year, minor) (0)
-#endif
-/* Cleanups are always exported in 2017.4, and some git releases between 2017.3 and 2017.4.
-   We actually check against 2017.3 so that we work on the git releases *after* 2017.3
-   which is safe, because the real OSTREE_CHECK_VERSION macro was added after 2017.3
-   too. */
-#if !OSTREE_CHECK_VERSION (2017, 3)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeRepo, g_object_unref)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeMutableTree, g_object_unref)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeAsyncProgress, g_object_unref)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeGpgVerifyResult, g_object_unref)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeRepoCommitModifier, ostree_repo_commit_modifier_unref)
-G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeRepoDevInoCache, ostree_repo_devino_cache_unref)
-#endif
 
 #if !defined(SOUP_AUTOCLEANUPS_H) && !defined(__SOUP_AUTOCLEANUPS_H__)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (SoupSession, g_object_unref)
@@ -695,12 +682,27 @@ gboolean flatpak_allocate_tmpdir (int           tmpdir_dfd,
                                   GError      **error);
 
 
-gboolean flatpak_yes_no_prompt (const char *prompt,
-                                ...) G_GNUC_PRINTF (1, 2);
-long flatpak_number_prompt (int         min,
+gboolean flatpak_yes_no_prompt (gboolean default_yes,
+                                const char *prompt,
+                                ...) G_GNUC_PRINTF (2, 3);
+                            
+long flatpak_number_prompt (gboolean    default_yes,
+                            int         min,
                             int         max,
                             const char *prompt,
-                            ...) G_GNUC_PRINTF (3, 4);
+                            ...) G_GNUC_PRINTF (4, 5);
+int *flatpak_numbers_prompt (gboolean    default_yes,
+                             int         min,
+                             int         max,
+                             const char *prompt,
+                             ...) G_GNUC_PRINTF (4, 5);
+int *flatpak_parse_numbers (const char *buf,
+                            int         min,
+                            int         max);
+
+void flatpak_format_choices (const char **choices,
+                             const char *prompt,
+                             ...) G_GNUC_PRINTF (2, 3);
 
 typedef void (*FlatpakProgressCallback)(const char *status,
                                         guint       progress,
@@ -715,5 +717,9 @@ void flatpak_log_dir_access (FlatpakDir *dir);
 gboolean flatpak_check_required_version (const char *ref,
                                          GKeyFile   *metakey,
                                          GError    **error);
+
+int flatpak_levenshtein_distance (const char *s, const char *t);
+
+#define FLATPAK_MESSAGE_ID "c7b39b1e006b464599465e105b361485" 
 
 #endif /* __FLATPAK_UTILS_H__ */

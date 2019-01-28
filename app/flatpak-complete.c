@@ -21,6 +21,7 @@
 #include "config.h"
 
 #include "flatpak-complete.h"
+#include "flatpak-installation.h"
 #include "flatpak-utils-private.h"
 
 /* Uncomment to get debug traces in /tmp/flatpak-completion-debug.txt (nice
@@ -35,7 +36,10 @@ flatpak_completion_debug (const gchar *format, ...)
   static FILE *f = NULL;
 
   va_start (var_args, format);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
   s = g_strdup_vprintf (format, var_args);
+#pragma GCC diagnostic pop
   if (f == NULL)
     f = fopen ("/tmp/flatpak-completion-debug.txt", "a+");
   fprintf (f, "%s\n", s);
@@ -194,8 +198,12 @@ flatpak_complete_partial_ref (FlatpakCompletion *completion,
       refs = flatpak_dir_find_remote_refs (dir, completion->argv[1],
                                            (element > 1) ? id : NULL,
                                            (element > 3) ? branch : NULL,
+                                           NULL, /* default branch */
                                            (element > 2) ? arch : only_arch,
-                                           matched_kinds, NULL, &error);
+                                           NULL, /* default arch */
+                                           matched_kinds,
+                                           FIND_MATCHING_REFS_FLAGS_NONE,
+                                           NULL, &error);
     }
   else
     {
@@ -203,7 +211,9 @@ flatpak_complete_partial_ref (FlatpakCompletion *completion,
                                               (element > 1) ? id : NULL,
                                               (element > 3) ? branch : NULL,
                                               (element > 2) ? arch : only_arch,
-                                              matched_kinds, &error);
+                                              matched_kinds,
+                                              FIND_MATCHING_REFS_FLAGS_NONE,
+                                              &error);
     }
   if (refs == NULL)
     flatpak_completion_debug ("find refs error: %s", error->message);
@@ -337,6 +347,20 @@ flatpak_complete_options (FlatpakCompletion *completion,
                 {
                   flatpak_complete_file (completion, "__FLATPAK_FILE");
                 }
+              else if (strcmp (e->long_name, "installation") == 0)
+                {
+                  g_autoptr(GPtrArray) installations = NULL;
+                  installations = flatpak_get_system_installations (NULL, NULL);
+                  for (i = 0; i < installations->len; i++)
+                    {
+                      FlatpakInstallation *inst = g_ptr_array_index (installations, i);
+                      flatpak_complete_word (completion, "%s%s ", prefix, flatpak_installation_get_id (inst));
+                    }
+                }
+              else if (strcmp (e->long_name, "columns") == 0)
+                {
+                   /* columns are treated separately */
+                }
               else
                 flatpak_complete_word (completion, "%s", prefix);
             }
@@ -383,6 +407,69 @@ flatpak_complete_options (FlatpakCompletion *completion,
     }
 }
 
+static void
+flatpak_complete_column (FlatpakCompletion *completion,
+                         char **used,
+                         const char *column)
+{
+  g_autoptr(GString) s = NULL;
+
+  s = g_string_new ("");
+
+  if (used[0] != NULL)
+    {
+      int i;
+
+      if (g_strv_contains ((const char * const *)used, column))
+        return;
+
+      const char *last = NULL;
+      last = used[g_strv_length (used) - 1];
+      if (!g_str_has_prefix (column, last))
+        return;
+
+      for (i = 0; used[i + 1]; i++)
+        {
+          g_string_append (s, used[i]);
+          g_string_append_c (s, ',');
+        }
+    }
+
+  g_string_append (s, column);
+  flatpak_completion_debug ("completing column: %s", s->str);
+
+  g_print ("%s\n", s->str);
+}
+
+void
+flatpak_complete_columns (FlatpakCompletion *completion,
+                          Column            *columns)
+{
+  int i;
+  const char *list = NULL;
+  g_auto(GStrv) used = NULL;
+
+  if (!g_str_has_prefix (completion->cur, "--columns="))
+    return;
+
+  list = completion->cur + strlen ("--columns=");
+  if (strcmp (list, "all") == 0 ||
+      strcmp (list, "help") == 0)
+    return;
+
+  used = g_strsplit (list, ",", 0);
+  flatpak_completion_debug ("complete columns, used: '%s'", list);
+
+  if (g_strv_length (used) <= 1)
+    {
+      flatpak_complete_column (completion, used, "all");
+      flatpak_complete_column (completion, used, "help");
+    }
+
+  for (i = 0; columns[i].name; i++)
+    flatpak_complete_column (completion, used, columns[i].name);
+}
+
 void
 flatpak_complete_context (FlatpakCompletion *completion)
 {
@@ -410,7 +497,7 @@ pick_word_at (const char *s,
       return g_strdup ("");
     }
 
-  while (!is_word_separator (s[cursor - 1]) && cursor > 0)
+  while (cursor > 0 && !is_word_separator (s[cursor - 1]))
     cursor--;
   begin = cursor;
 
@@ -456,6 +543,9 @@ flatpak_completion_new (const char *arg_line,
   _point = strtol (arg_point, &endp, 10);
   if (endp == arg_point || *endp != '\0')
     return NULL;
+
+  /* Ensure we're not going oob if we got weird arguments. */
+  _point = MIN (_point, strlen (arg_line));
 
   completion = g_new0 (FlatpakCompletion, 1);
   completion->line = g_strdup (arg_line);

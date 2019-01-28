@@ -58,10 +58,10 @@ static GOptionEntry options[] = {
   { "repo-url", 0, 0, G_OPTION_ARG_STRING, &opt_repo_url, N_("Url for repo"), N_("URL") },
   { "runtime-repo", 0, 0, G_OPTION_ARG_STRING, &opt_runtime_repo, N_("Url for runtime flatpakrepo file"), N_("URL") },
   { "gpg-keys", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_gpg_file, N_("Add GPG key from FILE (- for stdin)"), N_("FILE") },
-  { "oci", 0, 0, G_OPTION_ARG_NONE, &opt_oci, N_("Export oci image instead of flatpak bundle"), NULL },
   { "gpg-sign", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_gpg_key_ids, N_("GPG Key ID to sign the OCI image with"), N_("KEY-ID") },
   { "gpg-homedir", 0, 0, G_OPTION_ARG_STRING, &opt_gpg_homedir, N_("GPG Homedir to use when looking for keyrings"), N_("HOMEDIR") },
   { "from-commit", 0, 0, G_OPTION_ARG_STRING, &opt_from_commit, N_("OSTree commit to create a delta bundle from"), N_("COMMIT") },
+  { "oci", 0, 0, G_OPTION_ARG_NONE, &opt_oci, N_("Export oci image instead of flatpak bundle"), NULL },
   { NULL }
 };
 
@@ -574,9 +574,10 @@ flatpak_builtin_build_bundle (int argc, char **argv, GCancellable *cancellable, 
     return flatpak_fail (error, _("'%s' is not a valid repository"), location);
 
   if (!ostree_repo_open (repo, cancellable, error))
-    return FALSE;
-
-  file = g_file_new_for_commandline_arg (filename);
+    {
+      g_prefix_error (error, _("'%s' is not a valid repository: "), location);
+      return FALSE;
+    }
 
   if (ostree_repo_resolve_rev (repo, name, FALSE, NULL, NULL))
     full_branch = g_strdup (name);
@@ -593,6 +594,11 @@ flatpak_builtin_build_bundle (int argc, char **argv, GCancellable *cancellable, 
       else
         full_branch = flatpak_build_app_ref (name, branch, opt_arch);
     }
+
+  file = g_file_new_for_commandline_arg (filename);
+
+  if (flatpak_file_get_path_cached (file) == NULL)
+    return flatpak_fail (error, _("'%s' is not a valid filename"), filename);
 
   if (opt_oci)
     {

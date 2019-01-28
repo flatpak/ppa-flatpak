@@ -32,6 +32,7 @@
 #include "flatpak-builtins.h"
 #include "flatpak-builtins-utils.h"
 #include "flatpak-cli-transaction.h"
+#include "flatpak-quiet-transaction.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-error.h"
 
@@ -48,6 +49,7 @@ static gboolean opt_runtime;
 static gboolean opt_app;
 static gboolean opt_appstream;
 static gboolean opt_yes;
+static gboolean opt_noninteractive;
 
 static GOptionEntry options[] = {
   { "arch", 0, 0, G_OPTION_ARG_STRING, &opt_arch, N_("Arch to update for"), N_("ARCH") },
@@ -63,6 +65,7 @@ static GOptionEntry options[] = {
   { "appstream", 0, 0, G_OPTION_ARG_NONE, &opt_appstream, N_("Update appstream for remote"), NULL },
   { "subpath", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_subpaths, N_("Only update this subpath"), N_("PATH") },
   { "assumeyes", 'y', 0, G_OPTION_ARG_NONE, &opt_yes, N_("Automatically answer yes for all questions"), NULL },
+  { "noninteractive", 0, 0, G_OPTION_ARG_NONE, &opt_noninteractive, N_("Produce minimal output and don't ask questions"), NULL },
   { NULL }
 };
 
@@ -79,12 +82,13 @@ flatpak_builtin_update (int           argc,
   const char *default_branch = NULL;
   FlatpakKinds kinds;
   g_autoptr(GPtrArray) transactions = NULL;
+  gboolean has_updates;
 
-  context = g_option_context_new (_("[REF...] - Update applications or runtimes"));
+  context = g_option_context_new (_("[REF…] - Update applications or runtimes"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   if (!flatpak_option_context_parse (context, options, &argc, &argv,
-                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS,
+                                     FLATPAK_BUILTIN_FLAG_ALL_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
                                      &dirs, cancellable, error))
     return FALSE;
 
@@ -99,7 +103,7 @@ flatpak_builtin_update (int           argc,
   prefs = &argv[1];
   n_prefs = argc - 1;
 
-  /* Backwards compat for old "REPOSITORY NAME [BRANCH]" argument version */
+  /* Backwards compat for old "NAME [BRANCH]" argument version */
   if (argc == 3 && looks_like_branch (argv[2]))
     {
       default_branch = argv[2];
@@ -108,9 +112,23 @@ flatpak_builtin_update (int           argc,
 
   transactions = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
 
-  for (k = 0; k < dirs->len; k++)
+  /* Walk through the array backwards so we can safely remove */
+  for (k = dirs->len; k > 0; k--)
     {
-      FlatpakTransaction *transaction = flatpak_cli_transaction_new (g_ptr_array_index (dirs, k), opt_yes, FALSE, error);
+      FlatpakTransaction *transaction;
+
+      FlatpakDir *dir = g_ptr_array_index (dirs, k - 1);
+      OstreeRepo *repo = flatpak_dir_get_repo (dir);
+      if (repo == NULL)
+        {
+          g_ptr_array_remove_index (dirs, k - 1);
+          continue;
+        }
+
+      if (opt_noninteractive)
+        transaction = flatpak_quiet_transaction_new (dir, error);
+      else
+        transaction = flatpak_cli_transaction_new (dir, opt_yes, FALSE, error);
       if (transaction == NULL)
         return FALSE;
 
@@ -120,12 +138,13 @@ flatpak_builtin_update (int           argc,
       flatpak_transaction_set_disable_dependencies (transaction, opt_no_deps);
       flatpak_transaction_set_disable_related (transaction, opt_no_related);
 
-      g_ptr_array_add (transactions, transaction);
+      g_ptr_array_insert (transactions, 0, transaction);
     }
 
   kinds = flatpak_kinds_from_bools (opt_app, opt_runtime);
 
-  g_print (_("Looking for updates...\n"));
+  if (!opt_noninteractive)
+    g_print (_("Looking for updates…\n"));
 
   for (j = 0; j == 0 || j < n_prefs; j++)
     {
@@ -178,8 +197,18 @@ flatpak_builtin_update (int           argc,
                     continue;
 
                   found = TRUE;
-                  if (!flatpak_transaction_add_update (transaction, refs[i], (const char **) opt_subpaths, opt_commit, error))
-                    return FALSE;
+                  if (flatpak_transaction_add_update (transaction, refs[i], (const char **) opt_subpaths, opt_commit, error))
+                    continue;
+
+                  if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_REMOTE_NOT_FOUND))
+                    {
+                      g_printerr (_("Unable to update %s: %s\n"), refs[i], (*error)->message);
+                      g_clear_error (error);
+                    }
+                  else
+                    {
+                      return FALSE;
+                    }
                 }
             }
 
@@ -209,8 +238,18 @@ flatpak_builtin_update (int           argc,
                     continue;
 
                   found = TRUE;
-                  if (!flatpak_transaction_add_update (transaction, refs[i], (const char **) opt_subpaths, opt_commit, error))
-                    return FALSE;
+                  if (flatpak_transaction_add_update (transaction, refs[i], (const char **) opt_subpaths, opt_commit, error))
+                    continue;
+
+                  if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_REMOTE_NOT_FOUND))
+                    {
+                      g_printerr (_("Unable to update %s: %s\n"), refs[i], (*error)->message);
+                      g_clear_error (error);
+                    }
+                  else
+                    {
+                      return FALSE;
+                    }
                 }
             }
         }
@@ -223,17 +262,32 @@ flatpak_builtin_update (int           argc,
         }
     }
 
+  has_updates = FALSE;
+
   for (k = 0; k < dirs->len; k++)
     {
       FlatpakTransaction *transaction = g_ptr_array_index (transactions, k);
 
-      if (!flatpak_transaction_is_empty (transaction) &&
-          !flatpak_cli_transaction_run (transaction, cancellable, error))
-        return FALSE;
+      if (flatpak_transaction_is_empty (transaction))
+        continue;
 
-      if (flatpak_cli_transaction_was_aborted (transaction))
-        return TRUE;
+      if (!flatpak_transaction_run (transaction, cancellable, error))
+        {
+          if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
+            {
+              g_clear_error (error);
+              return TRUE;
+            }
+
+          return FALSE;
+        }
+
+      if (!flatpak_transaction_is_empty (transaction))
+        has_updates = TRUE;
     }
+
+  if (!has_updates)
+    g_print ("Nothing to do.\n");
 
   if (n_prefs == 0)
     {
@@ -254,7 +308,8 @@ flatpak_complete_update (FlatpakCompletion *completion)
 
   context = g_option_context_new ("");
   if (!flatpak_option_context_parse (context, options, &completion->argc, &completion->argv,
-                                     FLATPAK_BUILTIN_FLAG_STANDARD_DIRS, &dirs, NULL, NULL))
+                                     FLATPAK_BUILTIN_FLAG_ALL_DIRS | FLATPAK_BUILTIN_FLAG_OPTIONAL_REPO,
+                                     &dirs, NULL, NULL))
     return FALSE;
 
   kinds = flatpak_kinds_from_bools (opt_app, opt_runtime);

@@ -70,23 +70,6 @@ maybe_print_space (gboolean *first)
     g_print (" ");
 }
 
-static gchar *
-format_timestamp (guint64 timestamp)
-{
-  GDateTime *dt;
-  gchar *str;
-
-  dt = g_date_time_new_from_unix_utc (timestamp);
-  if (dt == NULL)
-    return g_strdup ("?");
-
-  str = g_date_time_format (dt, "%Y-%m-%d %H:%M:%S +0000");
-  g_date_time_unref (dt);
-
-  return str;
-}
-
-
 gboolean
 flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, GError **error)
 {
@@ -108,8 +91,10 @@ flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, G
   g_autofree char *ref = NULL;
   g_autofree char *commit = NULL;
   g_autofree char *parent = NULL;
-  const char *on = "";
-  const char *off = "";
+  g_autoptr(FlatpakRemoteState) state = NULL;
+  g_autoptr(GVariant) sparse = NULL;
+  const char *eol = NULL;
+  const char *eol_rebase = NULL;
   gboolean friendly = TRUE;
   const char *xa_metadata = NULL;
   const char *collection_id = NULL;
@@ -158,10 +143,15 @@ flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, G
   if (commit_v == NULL)
     return FALSE;
 
-  if (flatpak_fancy_output ())
+  state = flatpak_dir_get_remote_state (preferred_dir, remote, cancellable, error);
+  if (state == NULL)
+    return FALSE;
+
+  sparse = flatpak_remote_state_lookup_sparse_cache (state, ref, NULL);
+  if (sparse)
     {
-      on = FLATPAK_ANSI_BOLD_ON;
-      off = FLATPAK_ANSI_BOLD_OFF; /* bold off */
+      g_variant_lookup (sparse, "eol", "&s", &eol);
+      g_variant_lookup (sparse, "eolr", "&s", &eol_rebase);
     }
 
   if (opt_show_ref || opt_show_commit || opt_show_parent || opt_show_metadata || opt_show_runtime || opt_show_sdk)
@@ -171,6 +161,33 @@ flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, G
 
   if (friendly)
     {
+      int len;
+      int rows, cols;
+      int width;
+      g_autoptr(AsStore) store = as_store_new ();
+      AsApp *app = NULL;
+      const char *version = NULL;
+      const char *license = NULL;
+
+      flatpak_get_window_size (&rows, &cols);
+
+#if AS_CHECK_VERSION (0, 6, 1)
+      as_store_set_add_flags (store, as_store_get_add_flags (store) | AS_STORE_ADD_FLAG_USE_UNIQUE_ID);
+#endif
+
+      flatpak_dir_load_appstream_store (preferred_dir, remote, parts[2], store, NULL, NULL);
+      app = as_store_find_app (store, ref);
+      if (app)
+        {
+          const char *name = as_app_get_localized_name (app);
+          const char *comment = as_app_get_localized_comment (app);
+
+          print_wrapped (MIN (cols, 80), "\n%s - %s\n", name, comment);
+
+          version = as_app_get_version (app);
+          license = as_app_get_project_license (app);
+        }
+
       g_variant_get (commit_v, "(a{sv}aya(say)&s&stayay)", NULL, NULL, NULL,
                      &subject, &body, NULL, NULL, NULL);
 
@@ -200,33 +217,89 @@ flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, G
       formatted_download_size = g_format_size (download_size);
       formatted_timestamp = format_timestamp (timestamp);
 
-      g_print ("%s%s%s %s\n", on, _("Ref:"), off, ref);
-      g_print ("%s%s%s %s\n", on, _("ID:"), off, parts[1]);
-      g_print ("%s%s%s %s\n", on, _("Arch:"), off, parts[2]);
-      g_print ("%s%s%s %s\n", on, _("Branch:"), off, parts[3]);
+      len = 0;
+      len = MAX (len, g_utf8_strlen (_("ID:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Ref:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Arch:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Branch:"), -1));
+      if (version != NULL)
+        len = MAX (len, g_utf8_strlen (_("Version:"), -1));
+      if (license != NULL)
+        len = MAX (len, g_utf8_strlen (_("License:"), -1));
       if (collection_id != NULL)
-        g_print ("%s%s%s %s\n", on, _("Collection ID:"), off, collection_id);
-      g_print ("%s%s%s %s\n", on, _("Date:"), off, formatted_timestamp);
-      g_print ("%s%s%s %s\n", on, _("Subject:"), off, subject);
-      g_print ("%s%s%s %s\n", on, _("Commit:"), off, commit);
-      g_print ("%s%s%s %s\n", on, _("Parent:"), off, parent ? parent : "-");
-      g_print ("%s%s%s %s\n", on, _("Download size:"), off, formatted_download_size);
-      g_print ("%s%s%s %s\n", on, _("Installed size:"), off, formatted_installed_size);
+        len = MAX (len, g_utf8_strlen (_("Collection:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Download:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Installed:"), -1));
       if (strcmp (parts[0], "app") == 0 && metakey != NULL)
         {
-          g_autofree char *runtime = NULL;
-          g_autofree char *sdk = NULL;
-          runtime = g_key_file_get_string (metakey, "Application", "runtime", error);
-          g_print ("%s%s%s %s\n", on, _("Runtime:"), off, runtime ? runtime : "-");
-          sdk = g_key_file_get_string (metakey, "Application", "sdk", error);
-          g_print ("%s%s%s %s\n", on, _("Sdk:"), off, sdk ? sdk : "-");
+          len = MAX (len, g_utf8_strlen (_("Runtime:"), -1));
+          len = MAX (len, g_utf8_strlen (_("Sdk:"), -1));
         }
+      len = MAX (len, g_utf8_strlen (_("Date:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Subject:"), -1));
+      len = MAX (len, g_utf8_strlen (_("Commit:"), -1));
+      if (parent)
+        len = MAX (len, g_utf8_strlen (_("Parent:"), -1));
+      if (eol)
+        len = MAX (len, strlen (_("End-of-life:")));
+      if (eol_rebase)
+        len = MAX (len, strlen (_("End-of-life-rebase:")));
+      if (opt_log)
+        len = MAX (len, g_utf8_strlen (_("History:"), -1));
+
+      width = cols - (len + 1);
+
+      print_aligned (len, _("ID:"), parts[1]);
+      print_aligned (len, _("Ref:"), ref);
+      print_aligned (len, _("Arch:"), parts[2]);
+      print_aligned (len, _("Branch:"), parts[3]);
+      if (version != NULL)
+        print_aligned (len, _("Version:"), version);
+      if (license != NULL)
+        print_aligned (len, _("License:"), license);
+      if (collection_id != NULL)
+        print_aligned (len, _("Collection:"), collection_id);
+      print_aligned (len, _("Download:"), formatted_download_size);
+      print_aligned (len, _("Installed:"), formatted_installed_size);
+      if (strcmp (parts[0], "app") == 0 && metakey != NULL)
+        {
+          g_autofree char *runtime = g_key_file_get_string (metakey, "Application", "runtime", error);
+          print_aligned (len, _("Runtime:"), runtime ? runtime : "-");
+        }
+      g_print ("\n");
+      if (strcmp (parts[0], "app") == 0 && metakey != NULL)
+        {
+          g_autofree char *sdk = g_key_file_get_string (metakey, "Application", "sdk", error);
+          print_aligned (len, _("Sdk:"), sdk ? sdk : "-");
+        }
+      {
+        g_autofree char *formatted_commit = ellipsize_string (commit, width);
+        print_aligned (len, _("Commit:"), formatted_commit);
+      }
+      if (parent)
+        {
+          g_autofree char *formatted_commit = ellipsize_string (parent, width);
+        print_aligned (len, _("Parent:"), formatted_commit);
+        }
+      if (eol)
+        {
+          g_autofree char *formatted_eol = ellipsize_string (eol, width);
+          print_aligned (len, _("End-of-life:"), formatted_eol);
+        }
+      if (eol_rebase)
+        {
+          g_autofree char *formatted_eol = ellipsize_string (eol_rebase, width);
+          print_aligned (len, _("End-of-life-rebase:"), formatted_eol);
+        }
+
+      print_aligned (len, _("Subject:"), subject);
+      print_aligned (len, _("Date:"), formatted_timestamp);
 
       if (opt_log)
         {
           g_autofree char *p = g_strdup (parent);
 
-          g_print ("%s%s%s", on, _("History:\n"), off);
+          print_aligned (len, _("History:"), "\n");
 
           while (p)
             {
@@ -247,9 +320,9 @@ flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, G
               g_variant_get (p_commit_v, "(a{sv}aya(say)&s&stayay)", NULL, NULL, NULL,
                              &p_subject, NULL, NULL, NULL, NULL);
 
-              g_print ("%s%s%s %s\n", on, _(" Subject:"), off, p_subject);
-              g_print ("%s%s%s %s\n", on, _(" Date:"), off, p_formatted_timestamp);
-              g_print ("%s%s%s %s\n", on, _(" Commit:"), off, p);
+              print_aligned (len, _(" Commit:"), p);
+              print_aligned (len, _(" Subject:"), p_subject);
+              print_aligned (len, _(" Date:"), p_formatted_timestamp);
 
               g_free (p);
               p = g_steal_pointer (&p_parent);
