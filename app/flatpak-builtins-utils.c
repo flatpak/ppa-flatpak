@@ -353,7 +353,7 @@ flatpak_load_gpg_keys (char        **gpg_import,
   gssize n_bytes_written;
 
   if (!open_source_stream (gpg_import, &input_stream, cancellable, error))
-    return FALSE;
+    return NULL;
 
   output_stream = g_memory_output_stream_new_resizable ();
 
@@ -819,6 +819,37 @@ get_permission_tables (XdpDbusPermissionStore *store)
 
 /*** column handling ***/
 
+static gboolean
+parse_ellipsize_suffix (const char *p,
+                        FlatpakEllipsizeMode *mode,
+                        GError **error)
+{
+  if (g_str_equal (":", p))
+    {
+      g_autofree char *msg1 = g_strdup_printf (_("Ambiguous suffix: '%s'."), p);
+      /* Translators: don't translate the values */
+      const char *msg2 = _("Possible values are :s[tart], :m[iddle], :e[nd] or :f[ull]");
+      return flatpak_fail (error, "%s %s", msg1, msg2);
+    }
+  else if (g_str_has_prefix (":full", p))
+    *mode = FLATPAK_ELLIPSIZE_MODE_NONE;
+  else if (g_str_has_prefix (":start", p))
+    *mode = FLATPAK_ELLIPSIZE_MODE_START;
+  else if (g_str_has_prefix (":middle", p))
+    *mode = FLATPAK_ELLIPSIZE_MODE_MIDDLE;
+  else if (g_str_has_prefix (":end", p))
+    *mode = FLATPAK_ELLIPSIZE_MODE_END;
+  else
+    {
+      g_autofree char *msg1 = g_strdup_printf (_("Invalid suffix: '%s'."), p);
+      /* Translators: don't translate the values */
+      const char *msg2 = _("Possible values are :s[tart], :m[iddle], :e[nd] or :f[ull]");
+      return flatpak_fail (error, "%s %s", msg1, msg2);
+    }
+
+  return TRUE;
+}
+
 int
 find_column (Column *columns,
              const char *name,
@@ -826,13 +857,16 @@ find_column (Column *columns,
 {
   int i;
   int candidate;
+  char *p = strchr (name, ':');
 
   candidate = -1;
   for (i = 0; columns[i].name; i++)
     {
-      if (g_str_equal (columns[i].name, name))
+      if (g_str_equal (columns[i].name, name) ||
+          (p != 0 && strncmp (columns[i].name, name, p - name) == 0))
         {
-          return i;
+          candidate = i;
+          break;
         }
       else if (g_str_has_prefix (columns[i].name, name))
         {
@@ -849,7 +883,11 @@ find_column (Column *columns,
     }
 
   if (candidate >= 0)
-    return candidate;
+    {
+      if (p && !parse_ellipsize_suffix (p, &columns[candidate].ellipsize, error))
+        return -1;
+      return candidate;
+    }
 
   flatpak_fail (error, _("Unknown column: %s"), name);
   return -1;
@@ -922,6 +960,8 @@ column_help (Column *columns)
   g_string_append_printf (s, "  %-*s %s\n", len, "all", _("Show all columns"));
   g_string_append_printf (s, "  %-*s %s\n", len, "help", _("Show available columns"));
 
+  g_string_append_printf  (s, "\n%s\n",
+                    _("Append :s[tart], :m[iddle], :e[nd] or :f[ull] to change ellipsization"));
   return g_string_free (s, FALSE);
 }
 

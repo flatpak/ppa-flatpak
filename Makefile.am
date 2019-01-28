@@ -96,6 +96,7 @@ include app/Makefile.am.inc
 include session-helper/Makefile.am.inc
 include portal/Makefile.am.inc
 include system-helper/Makefile.am.inc
+include icon-validator/Makefile.am.inc
 include tests/Makefile.am.inc
 
 if !WITH_SYSTEM_DBUS_PROXY
@@ -153,7 +154,7 @@ flatpak.env: env.d/flatpak.env.in
 		-e "s|\@sysconfdir\@|$(sysconfdir)|" $< > $@
 
 envgendir = $(systemduserenvgendir)
-envgen_DATA = env.d/60-flatpak
+envgen_SCRIPTS = env.d/60-flatpak
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = flatpak.pc

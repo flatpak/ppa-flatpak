@@ -48,7 +48,7 @@ test_arches (void)
 
 #if defined(__i386__)
   g_assert_cmpstr (flatpak_get_arch (), ==, "i386");
-  g_assert_true (g_strv_contains (arches, "x86_64"));
+  g_assert_false (g_strv_contains (arches, "x86_64"));
   g_assert_true (g_strv_contains (arches, "i386"));
 #elif defined(__x86_64__)
   g_assert_cmpstr (flatpak_get_arch (), ==, "x86_64");
@@ -451,7 +451,7 @@ test_parse_appdata (void)
     "    </categories>\n"
     "    <icon height=\"64\" width=\"64\" type=\"cached\">64x64/org.gnome.gedit.png</icon>\n"
     "    <releases>\n"
-    "      <release timestamp=\"1525132800\" version=\"0.0.1\"/>\n"
+    "      <release timestamp=\"1525132800\" version=\"0.0.1\"/>\n" /* 01-05-2018 */
     "    </releases>\n"
     "  </component>\n"
     "</components>";
@@ -470,7 +470,9 @@ test_parse_appdata (void)
     "    </categories>\n"
     "    <icon height=\"64\" width=\"64\" type=\"cached\">64x64/org.gnome.gedit.png</icon>\n"
     "    <releases>\n"
-    "      <release timestamp=\"1525132800\" version=\"0.0.2\"/>\n"
+    "      <release timestamp=\"1525132800\" version=\"0.1.0\"/>\n"
+    "      <release timestamp=\"1525000800\" date=\"2018-05-02\" version=\"0.0.2\"/>\n"
+    "      <release date=\"2017-05-02\" version=\"0.0.3\"/>\n"
     "      <release timestamp=\"1000000000\" version=\"0.0.1\"/>\n"
     "    </releases>\n"
     "    <project_license>anything goes</project_license>\n"
@@ -504,7 +506,7 @@ test_parse_appdata (void)
 
   res = flatpak_parse_appdata (appdata2, "org.test.Hello", &names, &comments, &version, &license);
   g_assert_true (res);
-  g_assert_cmpstr (version, ==, "0.0.2");
+  g_assert_cmpstr (version, ==, "0.1.0");
   g_assert_cmpstr (license, ==, "anything goes");
   g_assert_nonnull (names);
   g_assert_nonnull (comments);
@@ -518,6 +520,69 @@ test_parse_appdata (void)
   g_assert_cmpstr (comment, ==, "Print a greeting");
   comment = g_hash_table_lookup (comments, "de");
   g_assert_cmpstr (comment, ==, "Schreib mal was");
+}
+
+static void
+test_name_matching (void)
+{
+  gboolean res;
+
+  /* examples from 8f428fd7683765dd706da06e9f376d3732ce5c0c */
+
+  res = flatpak_name_matches_one_wildcard_prefix ("org.sparkleshare.SparkleShare.Invites",
+                                                  (const char *[]){"org.sparkleshare.SparkleShare.*", NULL},
+                                                   FALSE);
+  g_assert_true (res);
+
+  res = flatpak_name_matches_one_wildcard_prefix ("org.sparkleshare.SparkleShare-symbolic",
+                                                  (const char *[]){"org.sparkleshare.SparkleShare.*", NULL},
+                                                   FALSE);
+  g_assert_true (res);
+
+  res = flatpak_name_matches_one_wildcard_prefix ("org.libreoffice.LibreOffice",
+                                                  (const char *[]){"org.libreoffice.LibreOffice.*", NULL},
+                                                   FALSE);
+  g_assert_true (res);
+
+  res = flatpak_name_matches_one_wildcard_prefix ("org.libreoffice.LibreOffice-impress",
+                                                  (const char *[]){"org.libreoffice.LibreOffice.*", NULL},
+                                                   FALSE);
+  g_assert_true (res);
+
+  res = flatpak_name_matches_one_wildcard_prefix ("org.libreoffice.LibreOffice-writer",
+                                                  (const char *[]){"org.libreoffice.LibreOffice.*", NULL},
+                                                   FALSE);
+  g_assert_true (res);
+
+  res = flatpak_name_matches_one_wildcard_prefix ("org.libreoffice.LibreOffice-calc",
+                                                  (const char *[]){"org.libreoffice.LibreOffice.*", NULL},
+                                                   FALSE);
+  g_assert_true (res);
+
+  res = flatpak_name_matches_one_wildcard_prefix ("com.github.bajoja.indicator-kdeconnect",
+                                                  (const char *[]){"com.github.bajoja.indicator-kdeconnect.*", NULL},
+                                                   FALSE);
+  g_assert_true (res);
+
+  res = flatpak_name_matches_one_wildcard_prefix ("com.github.bajoja.indicator-kdeconnect.settings",
+                                                  (const char *[]){"com.github.bajoja.indicator-kdeconnect.*", NULL},
+                                                   FALSE);
+  g_assert_true (res);
+
+  res = flatpak_name_matches_one_wildcard_prefix ("com.github.bajoja.indicator-kdeconnect.tablettrusted",
+                                                  (const char *[]){"com.github.bajoja.indicator-kdeconnect.*", NULL},
+                                                   FALSE);
+  g_assert_true (res);
+
+  res = flatpak_name_matches_one_wildcard_prefix ("org.gnome.Characters.BackgroundService",
+                                                  (const char *[]){"org.gnome.Characters.*", NULL},
+                                                   TRUE);
+  g_assert_true (res);
+
+  res = flatpak_name_matches_one_wildcard_prefix ("org.example.Example.Tracker1.Miner.Applications",
+                                                  (const char *[]){"org.example.Example.*", NULL},
+                                                   TRUE);
+  g_assert_true (res);
 }
 
 static void
@@ -553,7 +618,9 @@ test_columns (void)
                    "  helper      helper\n"
                    "  column2     col2\n"
                    "  all         Show all columns\n"
-                   "  help        Show available columns\n");
+                   "  help        Show available columns\n"
+                   "\n"
+                   "Append :s[tart], :m[iddle], :e[nd] or :f[ull] to change ellipsization\n");
 
   cols = handle_column_args (columns, FALSE, NULL, &error);
   g_assert_no_error (error);
@@ -905,6 +972,8 @@ main (int argc, char *argv[])
   g_test_add_func ("/common/subpaths-merge", test_subpaths_merge);
   g_test_add_func ("/common/lang-from-locale", test_lang_from_locale);
   g_test_add_func ("/common/appdata", test_parse_appdata);
+  g_test_add_func ("/common/name-matching", test_name_matching);
+
   g_test_add_func ("/app/looks-like-branch", test_looks_like_branch);
   g_test_add_func ("/app/columns", test_columns);
   g_test_add_func ("/app/string-ellipsize", test_string_ellipsize);

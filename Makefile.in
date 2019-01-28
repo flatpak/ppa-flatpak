@@ -116,7 +116,8 @@ noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_10) \
 	test-libflatpak$(EXEEXT)
 libexec_PROGRAMS = $(am__EXEEXT_1) flatpak-session-helper$(EXEEXT) \
 	$(am__EXEEXT_1) flatpak-portal$(EXEEXT) $(am__EXEEXT_1) \
-	$(am__EXEEXT_8) $(am__EXEEXT_9)
+	$(am__EXEEXT_8) flatpak-validate-icon$(EXEEXT) $(am__EXEEXT_1) \
+	$(am__EXEEXT_9)
 TESTS = $(am__EXEEXT_2) $(am__EXEEXT_12) $(am__EXEEXT_14) \
 	$(am__EXEEXT_6)
 installed_test_PROGRAMS = $(am__EXEEXT_7)
@@ -196,14 +197,14 @@ am__EXEEXT_1 =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" \
-	"$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" \
-	"$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(bashcompletiondir)" \
+	"$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(envgendir)" \
+	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" \
+	"$(DESTDIR)$(bashcompletiondir)" \
 	"$(DESTDIR)$(dbus_servicedir)" \
 	"$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" \
 	"$(DESTDIR)$(installed_test_keyringdir)" \
 	"$(DESTDIR)$(installed_test_keyring2dir)" \
-	"$(DESTDIR)$(envdir)" "$(DESTDIR)$(envgendir)" \
-	"$(DESTDIR)$(installed_testdir)" \
+	"$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(installed_test_metadir)" \
 	"$(DESTDIR)$(introspectiondir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" \
@@ -518,6 +519,14 @@ flatpak_system_helper_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_system_helper_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_flatpak_validate_icon_OBJECTS =  \
+	icon-validator/flatpak_validate_icon-validate-icon.$(OBJEXT)
+flatpak_validate_icon_OBJECTS = $(am_flatpak_validate_icon_OBJECTS)
+flatpak_validate_icon_DEPENDENCIES = $(am__DEPENDENCIES_1)
+flatpak_validate_icon_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(flatpak_validate_icon_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_test_libflatpak_OBJECTS =  \
 	common/test_libflatpak-test-lib.$(OBJEXT) $(am__objects_1)
 test_libflatpak_OBJECTS = $(am_test_libflatpak_OBJECTS)
@@ -589,8 +598,8 @@ tests_httpcache_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(tests_httpcache_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SCRIPTS = $(dist_triggers_SCRIPTS) $(installed_test_SCRIPTS) \
-	$(noinst_SCRIPTS) $(scripts_SCRIPTS)
+SCRIPTS = $(dist_triggers_SCRIPTS) $(envgen_SCRIPTS) \
+	$(installed_test_SCRIPTS) $(noinst_SCRIPTS) $(scripts_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -692,6 +701,7 @@ am__depfiles_remade =  \
 	common/$(DEPDIR)/test_libflatpak-test-lib.Po \
 	dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po \
 	dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Po \
+	icon-validator/$(DEPDIR)/flatpak_validate_icon-validate-icon.Po \
 	libglnx/$(DEPDIR)/la-glnx-backports.Plo \
 	libglnx/$(DEPDIR)/la-glnx-console.Plo \
 	libglnx/$(DEPDIR)/la-glnx-dirfd.Plo \
@@ -742,7 +752,8 @@ SOURCES = $(libflatpak_app_la_SOURCES) \
 	$(flatpak_bwrap_SOURCES) $(flatpak_dbus_proxy_SOURCES) \
 	$(flatpak_portal_SOURCES) $(nodist_flatpak_portal_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
-	$(flatpak_system_helper_SOURCES) $(test_libflatpak_SOURCES) \
+	$(flatpak_system_helper_SOURCES) \
+	$(flatpak_validate_icon_SOURCES) $(test_libflatpak_SOURCES) \
 	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
 	$(test_libglnx_macros_SOURCES) $(test_libglnx_shutil_SOURCES) \
 	$(test_libglnx_xattrs_SOURCES) $(testcommon_SOURCES) \
@@ -754,10 +765,11 @@ DIST_SOURCES = $(libflatpak_app_la_SOURCES) \
 	$(am__flatpak_dbus_proxy_SOURCES_DIST) \
 	$(flatpak_portal_SOURCES) $(flatpak_session_helper_SOURCES) \
 	$(am__flatpak_system_helper_SOURCES_DIST) \
-	$(test_libflatpak_SOURCES) $(test_libglnx_errors_SOURCES) \
-	$(test_libglnx_fdio_SOURCES) $(test_libglnx_macros_SOURCES) \
-	$(test_libglnx_shutil_SOURCES) $(test_libglnx_xattrs_SOURCES) \
-	$(testcommon_SOURCES) $(testlibrary_SOURCES) tests/httpcache.c
+	$(flatpak_validate_icon_SOURCES) $(test_libflatpak_SOURCES) \
+	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
+	$(test_libglnx_macros_SOURCES) $(test_libglnx_shutil_SOURCES) \
+	$(test_libglnx_xattrs_SOURCES) $(testcommon_SOURCES) \
+	$(testlibrary_SOURCES) tests/httpcache.c
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -782,13 +794,12 @@ DATA = $(bashcompletion_DATA) $(dbus_service_DATA) \
 	$(dbussystemservice_DATA) $(dist_dbusconf_DATA) \
 	$(dist_installed_test_keyring_DATA) \
 	$(dist_installed_test_keyring2_DATA) $(env_DATA) \
-	$(envgen_DATA) $(installed_test_DATA) \
-	$(installed_test_meta_DATA) $(introspection_DATA) \
-	$(nobase_installed_test_DATA) $(nodist_gir_DATA) \
-	$(nodist_typelib_DATA) $(noinst_DATA) $(pkgconfig_DATA) \
-	$(polkit_policy_DATA) $(polkit_rules_DATA) $(profile_DATA) \
-	$(systemdsystemunit_DATA) $(systemduserunit_DATA) \
-	$(zshcompletion_DATA)
+	$(installed_test_DATA) $(installed_test_meta_DATA) \
+	$(introspection_DATA) $(nobase_installed_test_DATA) \
+	$(nodist_gir_DATA) $(nodist_typelib_DATA) $(noinst_DATA) \
+	$(pkgconfig_DATA) $(polkit_policy_DATA) $(polkit_rules_DATA) \
+	$(profile_DATA) $(systemdsystemunit_DATA) \
+	$(systemduserunit_DATA) $(zshcompletion_DATA)
 HEADERS = $(flatpakinclude_HEADERS) $(nodist_flatpakinclude_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
@@ -1018,6 +1029,7 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/app/Makefile.am.inc \
 	$(srcdir)/bubblewrap/Makefile-bwrap.am.inc \
 	$(srcdir)/common/Makefile.am.inc $(srcdir)/config.h.in \
 	$(srcdir)/data/Makefile.am.inc $(srcdir)/flatpak.pc.in \
+	$(srcdir)/icon-validator/Makefile.am.inc \
 	$(srcdir)/libglnx/Makefile-libglnx.am.inc \
 	$(srcdir)/portal/Makefile.am.inc \
 	$(srcdir)/session-helper/Makefile.am.inc \
@@ -1114,6 +1126,8 @@ FLATPAK_MICRO_VERSION = @FLATPAK_MICRO_VERSION@
 FLATPAK_MINOR_VERSION = @FLATPAK_MINOR_VERSION@
 FLATPAK_VERSION = @FLATPAK_VERSION@
 GDBUS_CODEGEN = @GDBUS_CODEGEN@
+GDK_PIXBUF_CFLAGS = @GDK_PIXBUF_CFLAGS@
+GDK_PIXBUF_LIBS = @GDK_PIXBUF_LIBS@
 GENHTML = @GENHTML@
 GETTEXT_MACRO_VERSION = @GETTEXT_MACRO_VERSION@
 GLIB_COMPILE_RESOURCES = @GLIB_COMPILE_RESOURCES@
@@ -1774,6 +1788,7 @@ flatpak_CFLAGS = \
 	-DFLATPAK_COMPILATION \
         -I$(srcdir)/app \
         -I$(builddir)/app \
+        -DLIBEXECDIR=\"$(libexecdir)\" \
         -DLOCALEDIR=\"$(localedir)\" \
 	$(NULL)
 
@@ -1815,12 +1830,16 @@ flatpak_portal_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/portal
 @BUILD_SYSTEM_HELPER_TRUE@polkit_policy_DATA = \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/org.freedesktop.Flatpak.policy
 
+flatpak_validate_icon_SOURCES = icon-validator/validate-icon.c
+flatpak_validate_icon_LDADD = $(GDK_PIXBUF_LIBS)
+flatpak_validate_icon_CFLAGS = $(GDK_PIXBUF_CFLAGS) -DLIBEXECDIR=\"$(libexecdir)\"
 AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 \
 	FLATPAK_CONFIG_DIR=/dev/null FLATPAK_TRIGGERSDIR=$$(cd \
-	$(top_srcdir) && pwd)/triggers FLATPAK_DBUSPROXY=$$(cd \
-	$(top_builddir) && pwd)/flatpak-dbus-proxy \
-	GI_TYPELIB_PATH=$$(cd $(top_builddir) && \
-	pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
+	$(top_srcdir) && pwd)/triggers FLATPAK_VALIDATE_ICON=$$(cd \
+	$(top_builddir) && pwd)/flatpak-validate-icon \
+	FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && \
+	pwd)/flatpak-dbus-proxy GI_TYPELIB_PATH=$$(cd $(top_builddir) \
+	&& pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
 	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && \
 	pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} PATH=$$(cd \
 	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_24) \
@@ -1993,7 +2012,7 @@ profile_DATA = profile/flatpak.sh
 envdir = $(datadir)/gdm/env.d
 env_DATA = flatpak.env
 envgendir = $(systemduserenvgendir)
-envgen_DATA = env.d/60-flatpak
+envgen_SCRIPTS = env.d/60-flatpak
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = flatpak.pc
 scriptsdir = $(bindir)
@@ -2010,7 +2029,7 @@ all: $(BUILT_SOURCES) config.h
 .SUFFIXES: .c .lo .log .o .obj .test .test$(EXEEXT) .trs
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/tests/Makefile-test-matrix.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/icon-validator/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/tests/Makefile-test-matrix.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -2032,7 +2051,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles);; \
 	esac;
-$(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/tests/Makefile-test-matrix.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__empty):
+$(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/icon-validator/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/tests/Makefile-test-matrix.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -2654,6 +2673,19 @@ system-helper/flatpak_system_helper-flatpak-system-helper.$(OBJEXT):  \
 flatpak-system-helper$(EXEEXT): $(flatpak_system_helper_OBJECTS) $(flatpak_system_helper_DEPENDENCIES) $(EXTRA_flatpak_system_helper_DEPENDENCIES) 
 	@rm -f flatpak-system-helper$(EXEEXT)
 	$(AM_V_CCLD)$(flatpak_system_helper_LINK) $(flatpak_system_helper_OBJECTS) $(flatpak_system_helper_LDADD) $(LIBS)
+icon-validator/$(am__dirstamp):
+	@$(MKDIR_P) icon-validator
+	@: > icon-validator/$(am__dirstamp)
+icon-validator/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) icon-validator/$(DEPDIR)
+	@: > icon-validator/$(DEPDIR)/$(am__dirstamp)
+icon-validator/flatpak_validate_icon-validate-icon.$(OBJEXT):  \
+	icon-validator/$(am__dirstamp) \
+	icon-validator/$(DEPDIR)/$(am__dirstamp)
+
+flatpak-validate-icon$(EXEEXT): $(flatpak_validate_icon_OBJECTS) $(flatpak_validate_icon_DEPENDENCIES) $(EXTRA_flatpak_validate_icon_DEPENDENCIES) 
+	@rm -f flatpak-validate-icon$(EXEEXT)
+	$(AM_V_CCLD)$(flatpak_validate_icon_LINK) $(flatpak_validate_icon_OBJECTS) $(flatpak_validate_icon_LDADD) $(LIBS)
 common/test_libflatpak-test-lib.$(OBJEXT): common/$(am__dirstamp) \
 	common/$(DEPDIR)/$(am__dirstamp)
 
@@ -2760,6 +2792,41 @@ uninstall-dist_triggersSCRIPTS:
 	files=`for p in $$list; do echo "$$p"; done | \
 	       sed -e 's,.*/,,;$(transform)'`; \
 	dir='$(DESTDIR)$(triggersdir)'; $(am__uninstall_files_from_dir)
+install-envgenSCRIPTS: $(envgen_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	@list='$(envgen_SCRIPTS)'; test -n "$(envgendir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(envgendir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(envgendir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n' \
+	    -e 'h;s|.*|.|' \
+	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
+	      if (++n[d] == $(am__install_max)) { \
+		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
+	    else { print "f", d "/" $$4, $$1 } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	     test -z "$$files" || { \
+	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(envgendir)$$dir'"; \
+	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(envgendir)$$dir" || exit $$?; \
+	     } \
+	; done
+
+uninstall-envgenSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(envgen_SCRIPTS)'; test -n "$(envgendir)" || exit 0; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	       sed -e 's,.*/,,;$(transform)'`; \
+	dir='$(DESTDIR)$(envgendir)'; $(am__uninstall_files_from_dir)
 install-installed_testSCRIPTS: $(installed_test_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	@list='$(installed_test_SCRIPTS)'; test -n "$(installed_testdir)" || list=; \
@@ -2839,6 +2906,7 @@ mostlyclean-compile:
 	-rm -f common/*.$(OBJEXT)
 	-rm -f common/*.lo
 	-rm -f dbus-proxy/*.$(OBJEXT)
+	-rm -f icon-validator/*.$(OBJEXT)
 	-rm -f libglnx/*.$(OBJEXT)
 	-rm -f libglnx/*.lo
 	-rm -f libglnx/tests/*.$(OBJEXT)
@@ -2935,6 +3003,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/test_libflatpak-test-lib.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@icon-validator/$(DEPDIR)/flatpak_validate_icon-validate-icon.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/la-glnx-backports.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/la-glnx-console.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@libglnx/$(DEPDIR)/la-glnx-dirfd.Plo@am__quote@ # am--include-marker
@@ -4080,6 +4149,20 @@ system-helper/flatpak_system_helper-flatpak-system-helper.obj: system-helper/fla
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_system_helper_CFLAGS) $(CFLAGS) -c -o system-helper/flatpak_system_helper-flatpak-system-helper.obj `if test -f 'system-helper/flatpak-system-helper.c'; then $(CYGPATH_W) 'system-helper/flatpak-system-helper.c'; else $(CYGPATH_W) '$(srcdir)/system-helper/flatpak-system-helper.c'; fi`
 
+icon-validator/flatpak_validate_icon-validate-icon.o: icon-validator/validate-icon.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_validate_icon_CFLAGS) $(CFLAGS) -MT icon-validator/flatpak_validate_icon-validate-icon.o -MD -MP -MF icon-validator/$(DEPDIR)/flatpak_validate_icon-validate-icon.Tpo -c -o icon-validator/flatpak_validate_icon-validate-icon.o `test -f 'icon-validator/validate-icon.c' || echo '$(srcdir)/'`icon-validator/validate-icon.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) icon-validator/$(DEPDIR)/flatpak_validate_icon-validate-icon.Tpo icon-validator/$(DEPDIR)/flatpak_validate_icon-validate-icon.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icon-validator/validate-icon.c' object='icon-validator/flatpak_validate_icon-validate-icon.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_validate_icon_CFLAGS) $(CFLAGS) -c -o icon-validator/flatpak_validate_icon-validate-icon.o `test -f 'icon-validator/validate-icon.c' || echo '$(srcdir)/'`icon-validator/validate-icon.c
+
+icon-validator/flatpak_validate_icon-validate-icon.obj: icon-validator/validate-icon.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_validate_icon_CFLAGS) $(CFLAGS) -MT icon-validator/flatpak_validate_icon-validate-icon.obj -MD -MP -MF icon-validator/$(DEPDIR)/flatpak_validate_icon-validate-icon.Tpo -c -o icon-validator/flatpak_validate_icon-validate-icon.obj `if test -f 'icon-validator/validate-icon.c'; then $(CYGPATH_W) 'icon-validator/validate-icon.c'; else $(CYGPATH_W) '$(srcdir)/icon-validator/validate-icon.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) icon-validator/$(DEPDIR)/flatpak_validate_icon-validate-icon.Tpo icon-validator/$(DEPDIR)/flatpak_validate_icon-validate-icon.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='icon-validator/validate-icon.c' object='icon-validator/flatpak_validate_icon-validate-icon.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_validate_icon_CFLAGS) $(CFLAGS) -c -o icon-validator/flatpak_validate_icon-validate-icon.obj `if test -f 'icon-validator/validate-icon.c'; then $(CYGPATH_W) 'icon-validator/validate-icon.c'; else $(CYGPATH_W) '$(srcdir)/icon-validator/validate-icon.c'; fi`
+
 common/test_libflatpak-test-lib.o: common/test-lib.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libflatpak_CFLAGS) $(CFLAGS) -MT common/test_libflatpak-test-lib.o -MD -MP -MF common/$(DEPDIR)/test_libflatpak-test-lib.Tpo -c -o common/test_libflatpak-test-lib.o `test -f 'common/test-lib.c' || echo '$(srcdir)/'`common/test-lib.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/test_libflatpak-test-lib.Tpo common/$(DEPDIR)/test_libflatpak-test-lib.Po
@@ -4365,27 +4448,6 @@ uninstall-envDATA:
 	@list='$(env_DATA)'; test -n "$(envdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(envdir)'; $(am__uninstall_files_from_dir)
-install-envgenDATA: $(envgen_DATA)
-	@$(NORMAL_INSTALL)
-	@list='$(envgen_DATA)'; test -n "$(envgendir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(envgendir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(envgendir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  echo "$$d$$p"; \
-	done | $(am__base_list) | \
-	while read files; do \
-	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(envgendir)'"; \
-	  $(INSTALL_DATA) $$files "$(DESTDIR)$(envgendir)" || exit $$?; \
-	done
-
-uninstall-envgenDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(envgen_DATA)'; test -n "$(envgendir)" || list=; \
-	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
-	dir='$(DESTDIR)$(envgendir)'; $(am__uninstall_files_from_dir)
 install-installed_testDATA: $(installed_test_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(installed_test_DATA)'; test -n "$(installed_testdir)" || list=; \
@@ -5386,7 +5448,7 @@ install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(envgendir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(zshcompletiondir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(envgendir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(zshcompletiondir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -5428,6 +5490,8 @@ distclean-generic:
 	-rm -f common/$(am__dirstamp)
 	-rm -f dbus-proxy/$(DEPDIR)/$(am__dirstamp)
 	-rm -f dbus-proxy/$(am__dirstamp)
+	-rm -f icon-validator/$(DEPDIR)/$(am__dirstamp)
+	-rm -f icon-validator/$(am__dirstamp)
 	-rm -f libglnx/$(DEPDIR)/$(am__dirstamp)
 	-rm -f libglnx/$(am__dirstamp)
 	-rm -f libglnx/tests/$(DEPDIR)/$(am__dirstamp)
@@ -5542,6 +5606,7 @@ distclean: distclean-recursive
 	-rm -f common/$(DEPDIR)/test_libflatpak-test-lib.Po
 	-rm -f dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po
 	-rm -f dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Po
+	-rm -f icon-validator/$(DEPDIR)/flatpak_validate_icon-validate-icon.Po
 	-rm -f libglnx/$(DEPDIR)/la-glnx-backports.Plo
 	-rm -f libglnx/$(DEPDIR)/la-glnx-console.Plo
 	-rm -f libglnx/$(DEPDIR)/la-glnx-dirfd.Plo
@@ -5586,7 +5651,7 @@ install-data-am: install-bashcompletionDATA install-bwrapPROGRAMS \
 	install-dist_installed_test_keyring2DATA \
 	install-dist_installed_test_keyringDATA \
 	install-dist_triggersSCRIPTS install-envDATA \
-	install-envgenDATA install-flatpakincludeHEADERS \
+	install-envgenSCRIPTS install-flatpakincludeHEADERS \
 	install-installed_testDATA install-installed_testLTLIBRARIES \
 	install-installed_testPROGRAMS install-installed_testSCRIPTS \
 	install-installed_test_metaDATA install-introspectionDATA \
@@ -5714,6 +5779,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f common/$(DEPDIR)/test_libflatpak-test-lib.Po
 	-rm -f dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po
 	-rm -f dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Po
+	-rm -f icon-validator/$(DEPDIR)/flatpak_validate_icon-validate-icon.Po
 	-rm -f libglnx/$(DEPDIR)/la-glnx-backports.Plo
 	-rm -f libglnx/$(DEPDIR)/la-glnx-console.Plo
 	-rm -f libglnx/$(DEPDIR)/la-glnx-dirfd.Plo
@@ -5758,7 +5824,7 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	uninstall-dist_installed_test_keyring2DATA \
 	uninstall-dist_installed_test_keyringDATA \
 	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
-	uninstall-envgenDATA uninstall-flatpakincludeHEADERS \
+	uninstall-envgenSCRIPTS uninstall-flatpakincludeHEADERS \
 	uninstall-installed_testDATA \
 	uninstall-installed_testLTLIBRARIES \
 	uninstall-installed_testPROGRAMS \
@@ -5796,7 +5862,7 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	install-dist_installed_test_keyring2DATA \
 	install-dist_installed_test_keyringDATA \
 	install-dist_triggersSCRIPTS install-dvi install-dvi-am \
-	install-envDATA install-envgenDATA install-exec \
+	install-envDATA install-envgenSCRIPTS install-exec \
 	install-exec-am install-flatpakincludeHEADERS install-html \
 	install-html-am install-info install-info-am \
 	install-installed_testDATA install-installed_testLTLIBRARIES \
@@ -5821,7 +5887,7 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	uninstall-dist_installed_test_keyring2DATA \
 	uninstall-dist_installed_test_keyringDATA \
 	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
-	uninstall-envgenDATA uninstall-flatpakincludeHEADERS \
+	uninstall-envgenSCRIPTS uninstall-flatpakincludeHEADERS \
 	uninstall-installed_testDATA \
 	uninstall-installed_testLTLIBRARIES \
 	uninstall-installed_testPROGRAMS \
