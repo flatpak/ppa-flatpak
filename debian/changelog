@@ -3,6 +3,7 @@ flatpak (1.2.0-1) UNRELEASED; urgency=medium
   * d/upstream/metadata: Add DEP-12 metadata
   * New upstream release
     - Drop most patches, applied upstream
+    - B-D on libgdk-pixbuf2.0-dev for icon validator
 
  -- Simon McVittie <smcv@debian.org>  Fri, 18 Jan 2019 08:48:48 +0000
 
