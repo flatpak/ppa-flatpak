@@ -1,6 +1,6 @@
-flatpak (1.2.0-1) UNRELEASED; urgency=medium
+flatpak (1.2.0-1) unstable; urgency=medium
 
-  * New upstream release
+  * New upstream stable release branch
     - Drop most patches, applied upstream
     - B-D on libgdk-pixbuf2.0-dev for icon validator
     - Install new flatpak-validate-icon tool
@@ -12,8 +12,9 @@ flatpak (1.2.0-1) UNRELEASED; urgency=medium
     - Use upstream/1.2.x branch to import future releases
     - d/watch: Only watch for 1.even.x releases
   * d/upstream/metadata: Add DEP-12 metadata
+  * Release to unstable
 
- -- Simon McVittie <smcv@debian.org>  Fri, 18 Jan 2019 08:48:48 +0000
+ -- Simon McVittie <smcv@debian.org>  Mon, 28 Jan 2019 14:07:47 +0000
 
 flatpak (1.0.6-2) unstable; urgency=medium
 
