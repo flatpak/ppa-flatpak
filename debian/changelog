@@ -1,8 +1,9 @@
-flatpak (1.1.3-3) UNRELEASED; urgency=medium
+flatpak (1.2.0-1) UNRELEASED; urgency=medium
 
   * d/upstream/metadata: Add DEP-12 metadata
   * d/p/testcommon-An-i386-Flatpak-doesn-t-support-x86_64-apps.patch:
     Mark as applied upstream
+  * New upstream release
 
  -- Simon McVittie <smcv@debian.org>  Fri, 18 Jan 2019 08:48:48 +0000
 
