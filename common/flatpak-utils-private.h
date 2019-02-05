@@ -51,6 +51,7 @@ typedef enum {
 #define FLATPAK_ANSI_FAINT_ON "\x1b[2m"
 #define FLATPAK_ANSI_FAINT_OFF "\x1b[22m"
 #define FLATPAK_ANSI_RED "\x1b[31m"
+#define FLATPAK_ANSI_GREEN "\x1b[32m"
 #define FLATPAK_ANSI_COLOR_RESET "\x1b[0m"
 
 #define FLATPAK_ANSI_ROW_N "\x1b[%d;1H"
@@ -294,6 +295,17 @@ g_key_file_load_from_bytes (GKeyFile     *key_file,
 
   data = g_bytes_get_data (bytes, &size);
   return g_key_file_load_from_data (key_file, (const gchar *) data, size, flags, error);
+}
+#endif
+
+
+#if !GLIB_CHECK_VERSION (2, 56, 0)
+GDateTime *flatpak_g_date_time_new_from_iso8601 (const gchar *text, GTimeZone *default_tz);
+
+static inline GDateTime *
+g_date_time_new_from_iso8601 (const gchar *text, GTimeZone *default_tz)
+{
+  return flatpak_g_date_time_new_from_iso8601 (text, default_tz);
 }
 #endif
 
