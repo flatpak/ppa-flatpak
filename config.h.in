@@ -40,6 +40,9 @@
    */
 #undef HAVE_DCGETTEXT
 
+/* Define if dconf is available */
+#undef HAVE_DCONF
+
 /* Define to 1 if you have the declaration of `copy_file_range', and to 0 if
    you don't. */
 #undef HAVE_DECL_COPY_FILE_RANGE

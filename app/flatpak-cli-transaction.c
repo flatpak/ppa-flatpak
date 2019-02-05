@@ -422,9 +422,9 @@ operation_done (FlatpakTransaction          *transaction,
   FlatpakTransactionOperationType op_type = flatpak_transaction_operation_get_operation_type (op);
 
   if (op_type == FLATPAK_TRANSACTION_OPERATION_UNINSTALL)
-    set_op_progress (self, op, "-");
+    set_op_progress (self, op, FLATPAK_ANSI_GREEN "-" FLATPAK_ANSI_COLOR_RESET);
   else
-    set_op_progress (self, op, "✓");
+    set_op_progress (self, op, FLATPAK_ANSI_GREEN "✓" FLATPAK_ANSI_COLOR_RESET);
 
   if (flatpak_fancy_output ())
     redraw (self);
@@ -951,20 +951,20 @@ transaction_ready (FlatpakTransaction *transaction)
     {
       FlatpakInstallation *installation = flatpak_transaction_get_installation (transaction);
       const char *name;
+      const char *id;
       gboolean ret;
 
       g_print ("\n");
 
       name = flatpak_installation_get_display_name (installation);
-      if (name == NULL)
-        name = flatpak_installation_get_id (installation);
+      id = flatpak_installation_get_id (installation);
 
-      if (name != NULL)
-        ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the %s installation?"), name);
-      else if (flatpak_installation_get_is_user (installation))
+      if (flatpak_installation_get_is_user (installation))
         ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the user installation?"));
-      else
+      else if (g_strcmp0 (id, "default") == 0)
         ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the system installation?"));
+      else
+        ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the %s?"), name);
 
       if (!ret)
         {
