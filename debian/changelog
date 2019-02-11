@@ -1,3 +1,12 @@
+flatpak (1.2.3-1) UNRELEASED; urgency=medium
+
+  * New upstream stable release
+    - Security update: do not let the apply_extra script for a system
+      installation modify the host-side executable via /proc/self/exe,
+      similar to CVE-2019-5736 in runc (Closes: #922059)
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 11 Feb 2019 15:33:53 +0000
+
 flatpak (1.2.2-1) unstable; urgency=medium
 
   * New upstream stable release
