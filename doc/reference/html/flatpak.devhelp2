@@ -106,10 +106,6 @@
     <keyword type="function" name="flatpak_installed_ref_get_eol ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-eol"/>
     <keyword type="function" name="flatpak_installed_ref_get_eol_rebase ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-eol-rebase"/>
     <keyword type="struct" name="struct FlatpakInstalledRef" link="FlatpakInstalledRef.html#FlatpakInstalledRef-struct"/>
-    <keyword type="property" name="The “appdata-license” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-license"/>
-    <keyword type="property" name="The “appdata-name” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-name"/>
-    <keyword type="property" name="The “appdata-summary” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-summary"/>
-    <keyword type="property" name="The “appdata-version” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-version"/>
     <keyword type="property" name="The “deploy-dir” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--deploy-dir"/>
     <keyword type="property" name="The “end-of-life” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--end-of-life"/>
     <keyword type="property" name="The “end-of-life-rebase” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--end-of-life-rebase"/>
