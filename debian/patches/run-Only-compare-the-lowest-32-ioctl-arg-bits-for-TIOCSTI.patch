@@ -1,0 +1,32 @@
+From: Ryan Gonzalez <rymg19@gmail.com>
+Date: Mon, 25 Mar 2019 13:00:15 -0500
+Subject: run: Only compare the lowest 32 ioctl arg bits for TIOCSTI
+
+Closes #2782.
+
+Closes: #2783
+Approved by: alexlarsson
+
+(cherry picked from commit a9107feeb4b8275b78965b36bf21b92d5724699e)
+
+Origin: upstream, 1.2.4, commit:8e0aaf4b70d6d7c02c331c655e1a05763485085e
+Bug: https://github.com/flatpak/flatpak/issues/2782
+Bug-Debian: https://bugs.debian.org/925541
+Bug-CVE: CVE-2019-10063
+---
+ common/flatpak-run.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/flatpak-run.c b/common/flatpak-run.c
+index 16faf9b..ed76ed2 100644
+--- a/common/flatpak-run.c
++++ b/common/flatpak-run.c
+@@ -2380,7 +2380,7 @@ setup_seccomp (FlatpakBwrap   *bwrap,
+     {SCMP_SYS (clone), &SCMP_A0 (SCMP_CMP_MASKED_EQ, CLONE_NEWUSER, CLONE_NEWUSER)},
+ 
+     /* Don't allow faking input to the controlling tty (CVE-2017-5226) */
+-    {SCMP_SYS (ioctl), &SCMP_A1 (SCMP_CMP_EQ, (int) TIOCSTI)},
++    {SCMP_SYS (ioctl), &SCMP_A1 (SCMP_CMP_MASKED_EQ, 0xFFFFFFFFu, (int) TIOCSTI)},
+   };
+ 
+   struct
