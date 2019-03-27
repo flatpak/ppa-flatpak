@@ -1,4 +1,4 @@
-flatpak (1.2.4-1) UNRELEASED; urgency=medium
+flatpak (1.2.4-1) unstable; urgency=medium
 
   * New upstream stable release
     - Canonicalize XDG_RUNTIME_DIR if it's a symlink
@@ -10,7 +10,7 @@ flatpak (1.2.4-1) UNRELEASED; urgency=medium
   * d/p/run-Only-compare-the-lowest-32-ioctl-arg-bits-for-TIOCSTI.patch:
     Drop patch, applied upstream
 
- -- Simon McVittie <smcv@debian.org>  Wed, 27 Mar 2019 10:20:36 +0000
+ -- Simon McVittie <smcv@debian.org>  Wed, 27 Mar 2019 20:47:33 +0000
 
 flatpak (1.2.3-2) unstable; urgency=high
 
