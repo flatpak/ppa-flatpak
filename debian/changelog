@@ -1,3 +1,17 @@
+flatpak (1.2.4-1) UNRELEASED; urgency=medium
+
+  * New upstream stable release
+    - Canonicalize XDG_RUNTIME_DIR if it's a symlink
+    - Support device nodes for multiple Nvidia graphics cards if the
+      proprietary driver is used
+    - Fix a crash when certain errors occur while updating apps
+    - Fix "flatpak list --arch"
+    - Make "Installing %d/%d..." translatable
+  * d/p/run-Only-compare-the-lowest-32-ioctl-arg-bits-for-TIOCSTI.patch:
+    Drop patch, applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 27 Mar 2019 10:20:36 +0000
+
 flatpak (1.2.3-2) unstable; urgency=high
 
   * seccomp: Reject all ioctls that the kernel will interpret as TIOCSTI,

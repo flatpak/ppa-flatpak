@@ -1,2 +1,1 @@
-run-Only-compare-the-lowest-32-ioctl-arg-bits-for-TIOCSTI.patch
 debian/Use-Python-3-for-test-web-server.patch
