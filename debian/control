@@ -29,6 +29,7 @@ Build-Depends:
  libdconf-dev,
  libdw-dev,
  libelf-dev,
+ libfuse-dev (>= 2.9.2),
  libgdk-pixbuf2.0-dev,
  libgirepository1.0-dev,
  libglib2.0-dev (>= 2.44),

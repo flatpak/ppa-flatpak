@@ -12,6 +12,7 @@ usr/libexec/flatpak-portal
 usr/libexec/flatpak-session-helper
 usr/libexec/flatpak-system-helper
 usr/libexec/flatpak-validate-icon
+usr/libexec/revokefs-fuse
 usr/share/bash-completion
 usr/share/dbus-1/services
 usr/share/dbus-1/system-services
