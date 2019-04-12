@@ -399,6 +399,8 @@ FLATPAK_MAJOR_VERSION = @FLATPAK_MAJOR_VERSION@
 FLATPAK_MICRO_VERSION = @FLATPAK_MICRO_VERSION@
 FLATPAK_MINOR_VERSION = @FLATPAK_MINOR_VERSION@
 FLATPAK_VERSION = @FLATPAK_VERSION@
+FUSE_CFLAGS = @FUSE_CFLAGS@
+FUSE_LIBS = @FUSE_LIBS@
 GDBUS_CODEGEN = @GDBUS_CODEGEN@
 GDK_PIXBUF_CFLAGS = @GDK_PIXBUF_CFLAGS@
 GDK_PIXBUF_LIBS = @GDK_PIXBUF_LIBS@
@@ -498,6 +500,7 @@ SYSTEMD_CFLAGS = @SYSTEMD_CFLAGS@
 SYSTEMD_LIBS = @SYSTEMD_LIBS@
 SYSTEM_FONTS_DIR = @SYSTEM_FONTS_DIR@
 SYSTEM_FONT_CACHE_DIRS = @SYSTEM_FONT_CACHE_DIRS@
+SYSTEM_HELPER_USER = @SYSTEM_HELPER_USER@
 SYSTEM_INSTALL_DIR = @SYSTEM_INSTALL_DIR@
 USE_NLS = @USE_NLS@
 VALGRIND = @VALGRIND@
@@ -1159,6 +1162,7 @@ html-build.stamp: sgml.stamp $(DOC_MAIN_SGML_FILE) $(content_files) $(expand_con
 	for file in $(HTML_IMAGES) ; do \
 	  test -f $(abs_srcdir)/$$file && cp $(abs_srcdir)/$$file $(abs_builddir)/html; \
 	  test -f $(abs_builddir)/$$file && cp $(abs_builddir)/$$file $(abs_builddir)/html; \
+	  test -f $$file && cp $$file $(abs_builddir)/html; \
 	done;
 	$(GTK_DOC_V_XREF)gtkdoc-fixxref --module=$(DOC_MODULE) --module-dir=html --html-dir=$(HTML_DIR) $(FIXXREF_OPTIONS)
 	$(AM_V_at)touch html-build.stamp

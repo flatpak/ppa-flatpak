@@ -43,11 +43,20 @@ static gboolean opt_if_not_exists;
 static gboolean opt_disable;
 static int opt_prio = -1;
 static char *opt_title;
+static char *opt_comment;
+static char *opt_description;
+static char *opt_homepage;
+static char *opt_icon;
 static char *opt_default_branch;
 static char *opt_url;
 static char *opt_collection_id = NULL;
 static gboolean opt_from;
 static char **opt_gpg_import;
+
+static char *comment = NULL;
+static char *description = NULL;
+static char *icon = NULL;
+static char *homepage = NULL;
 
 
 static GOptionEntry add_options[] = {
@@ -62,6 +71,10 @@ static GOptionEntry common_options[] = {
   { "no-use-for-deps", 0, 0, G_OPTION_ARG_NONE, &opt_no_deps, N_("Mark the remote as don't use for deps"), NULL },
   { "prio", 0, 0, G_OPTION_ARG_INT, &opt_prio, N_("Set priority (default 1, higher is more prioritized)"), N_("PRIORITY") },
   { "title", 0, 0, G_OPTION_ARG_STRING, &opt_title, N_("A nice name to use for this remote"), N_("TITLE") },
+  { "comment", 0, 0, G_OPTION_ARG_STRING, &opt_comment, N_("A one-line comment for this remote"), N_("COMMENT") },
+  { "description", 0, 0, G_OPTION_ARG_STRING, &opt_description, N_("A full-paragraph description for this remote"), N_("DESCRIPTION") },
+  { "homepage", 0, 0, G_OPTION_ARG_STRING, &opt_homepage, N_("URL for a website for this remote"), N_("URL") },
+  { "icon", 0, 0, G_OPTION_ARG_STRING, &opt_icon, N_("URL for an icon for this remote"), N_("URL") },
   { "default-branch", 0, 0, G_OPTION_ARG_STRING, &opt_default_branch, N_("Default branch to use for this remote"), N_("BRANCH") },
   { "collection-id", 0, 0, G_OPTION_ARG_STRING, &opt_collection_id, N_("Collection ID"), N_("COLLECTION-ID") },
   { "gpg-import", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_gpg_import, N_("Import GPG key from FILE (- for stdin)"), N_("FILE") },
@@ -120,6 +133,34 @@ get_config_from_opts (FlatpakDir *dir, const char *remote_name, gboolean *change
       *changed = TRUE;
     }
 
+  if (opt_comment)
+    {
+      g_key_file_set_string (config, group, "xa.comment", opt_comment);
+      g_key_file_set_boolean (config, group, "xa.comment-is-set", TRUE);
+      *changed = TRUE;
+    }
+
+  if (opt_description)
+    {
+      g_key_file_set_string (config, group, "xa.description", opt_description);
+      g_key_file_set_boolean (config, group, "xa.description-is-set", TRUE);
+      *changed = TRUE;
+    }
+
+  if (opt_homepage)
+    {
+      g_key_file_set_string (config, group, "xa.homepage", opt_homepage);
+      g_key_file_set_boolean (config, group, "xa.homepage-is-set", TRUE);
+      *changed = TRUE;
+    }
+
+  if (opt_icon)
+    {
+      g_key_file_set_string (config, group, "xa.icon", opt_icon);
+      g_key_file_set_boolean (config, group, "xa.icon-is-set", TRUE);
+      *changed = TRUE;
+    }
+
   if (opt_default_branch)
     {
       g_key_file_set_string (config, group, "xa.default-branch", opt_default_branch);
@@ -164,6 +205,34 @@ get_config_from_opts (FlatpakDir *dir, const char *remote_name, gboolean *change
       *changed = TRUE;
     }
 
+  if (comment)
+    {
+      g_key_file_set_string (config, group, "xa.comment", comment);
+      g_key_file_set_boolean (config, group, "xa.comment-is-set", TRUE);
+      *changed = TRUE;
+    }
+
+  if (description)
+    {
+      g_key_file_set_string (config, group, "xa.description", description);
+      g_key_file_set_boolean (config, group, "xa.description-is-set", TRUE);
+      *changed = TRUE;
+    }
+
+  if (icon)
+    {
+      g_key_file_set_string (config, group, "xa.icon", icon);
+      g_key_file_set_boolean (config, group, "xa.icon-is-set", TRUE);
+      *changed = TRUE;
+    }
+
+  if (homepage)
+    {
+      g_key_file_set_string (config, group, "xa.homepage", homepage);
+      g_key_file_set_boolean (config, group, "xa.homepage-is-set", TRUE);
+      *changed = TRUE;
+    }
+
   return config;
 }
 
@@ -183,8 +252,10 @@ load_options (const char *filename,
     {
       const char *options_data;
       gsize options_size;
+      g_autoptr(SoupSession) soup_session = NULL;
 
-      bytes = download_uri (filename, &error);
+      soup_session = flatpak_create_soup_session (PACKAGE_STRING);
+      bytes = flatpak_load_http_uri (soup_session, filename, 0, NULL, NULL, NULL, &error);
 
       if (bytes == NULL)
         {
@@ -275,6 +346,18 @@ load_options (const char *filename,
       if (!opt_no_gpg_verify)
         opt_do_gpg_verify = TRUE;
     }
+
+  comment = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                   FLATPAK_REPO_COMMENT_KEY, NULL);
+
+  description = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                       FLATPAK_REPO_DESCRIPTION_KEY, NULL);
+
+  icon = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                FLATPAK_REPO_ICON_KEY, NULL);
+
+  homepage  = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                     FLATPAK_REPO_HOMEPAGE_KEY, NULL);
 }
 
 gboolean

@@ -8,6 +8,8 @@ REPO=$1
 shift
 APP_ID=$1
 shift
+BRANCH=$1
+shift
 COLLECTION_ID=$1
 shift
 
@@ -23,10 +25,10 @@ ARCH=`flatpak --default-arch`
 cat > ${DIR}/metadata <<EOF
 [Application]
 name=$APP_ID
-runtime=org.test.Platform/$ARCH/master
-sdk=org.test.Platform/$ARCH/master
+runtime=org.test.Platform/$ARCH/$BRANCH
+sdk=org.test.Platform/$ARCH/$BRANCH
 
-[Extension org.test.Hello.Locale]
+[Extension $APP_ID.Locale]
 directory=share/runtime/locale
 autodelete=true
 locale-subset=true
@@ -51,6 +53,16 @@ Name=Hello
 Exec=hello.sh
 Icon=$APP_ID
 MimeType=x-test/Hello;
+EOF
+cat > ${DIR}/files/share/applications/org.test.Hello.Again.desktop <<EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Hello Again
+Exec=hello.sh --again
+Icon=$APP_ID
+MimeType=x-test/Hello;
+X-Flatpak-RenamedFrom=hello-again.desktop;
 EOF
 
 mkdir -p ${DIR}/files/share/icons/hicolor/64x64/apps
@@ -96,7 +108,7 @@ ln -s -t ${DIR}/files/share/locale ../../share/runtime/locale/fr/share/fr
 
 flatpak build-finish --command=hello.sh ${DIR}
 mkdir -p repos
-flatpak build-export ${collection_args} ${GPGARGS-} ${EXPORT_ARGS-} ${REPO} ${DIR}
+flatpak build-export --disable-sandbox ${collection_args} ${GPGARGS-} ${EXPORT_ARGS-} ${REPO} ${DIR} ${BRANCH}
 rm -rf ${DIR}
 
 # build a locale extension
@@ -109,7 +121,7 @@ cat > ${DIR}/metadata <<EOF
 name=${APP_ID}.Locale
 
 [ExtensionOf]
-ref=app/$APP_ID/$ARCH/master
+ref=app/$APP_ID/$ARCH/$BRANCH
 EOF
 
 cat > de.po <<EOF
@@ -127,7 +139,7 @@ msgfmt --output-file ${DIR}/files/fr/share/fr/LC_MESSAGES/helloworld.mo fr.po
 
 flatpak build-finish ${DIR}
 mkdir -p repos
-flatpak build-export --runtime ${collection_args} ${GPGARGS-} ${EXPORT_ARGS-} ${REPO} ${DIR}
+flatpak build-export --runtime ${collection_args} ${GPGARGS-} ${EXPORT_ARGS-} ${REPO} ${DIR} ${BRANCH}
 rm -rf ${DIR}
 
 

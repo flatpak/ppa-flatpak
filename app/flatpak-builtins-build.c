@@ -99,7 +99,6 @@ find_matching_extension_group_in_metakey (GKeyFile   *metakey,
     {
       const char *group_name = *iter;
       const char *extension_name = NULL;
-      ;
       g_autofree char *extension_tag = NULL;
 
       if (!g_str_has_prefix (group_name, extension_prefix))
@@ -327,7 +326,11 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
     {
       app_files = g_object_ref (res_files);
       if (opt_with_appdir)
-        app_id_dir = flatpak_ensure_data_dir (id, cancellable, NULL);
+        {
+          app_id_dir = flatpak_get_data_dir (id);
+          if (!flatpak_ensure_data_dir (app_id_dir, cancellable, NULL))
+            g_clear_object (&app_id_dir);
+        }
     }
   else if (is_extension)
     {
@@ -540,7 +543,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
     return FALSE;
 
   if (!flatpak_run_add_environment_args (bwrap, app_info_path, run_flags, id,
-                                         app_context, app_id_dir, NULL, cancellable, error))
+                                         app_context, app_id_dir, NULL, NULL, cancellable, error))
     return FALSE;
 
   for (i = 0; opt_bind_mounts != NULL && opt_bind_mounts[i] != NULL; i++)

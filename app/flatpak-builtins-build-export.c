@@ -40,6 +40,7 @@ static gboolean opt_runtime;
 static gboolean opt_update_appstream;
 static gboolean opt_no_update_summary;
 static gboolean opt_disable_fsync;
+static gboolean opt_disable_sandbox = FALSE;
 static char **opt_gpg_key_ids;
 static char **opt_exclude;
 static char **opt_include;
@@ -48,6 +49,7 @@ static char *opt_files;
 static char *opt_metadata;
 static char *opt_timestamp = NULL;
 static char *opt_endoflife;
+static char *opt_endoflife_rebase;
 static char *opt_collection_id = NULL;
 
 static GOptionEntry options[] = {
@@ -64,9 +66,11 @@ static GOptionEntry options[] = {
   { "include", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_include, N_("Excluded files to include"), N_("PATTERN") },
   { "gpg-homedir", 0, 0, G_OPTION_ARG_STRING, &opt_gpg_homedir, N_("GPG Homedir to use when looking for keyrings"), N_("HOMEDIR") },
   { "end-of-life", 0, 0, G_OPTION_ARG_STRING, &opt_endoflife, N_("Mark build as end-of-life"), N_("REASON") },
+  { "end-of-life-rebase", 0, 0, G_OPTION_ARG_STRING, &opt_endoflife_rebase, N_("Mark build as end-of-life, to be replaced with the given ID"), N_("ID") },
   { "timestamp", 0, 0, G_OPTION_ARG_STRING, &opt_timestamp, N_("Override the timestamp of the commit"), N_("TIMESTAMP") },
   { "collection-id", 0, 0, G_OPTION_ARG_STRING, &opt_collection_id, N_("Collection ID"), "COLLECTION-ID" },
   { "disable-fsync", 0, 0, G_OPTION_ARG_NONE, &opt_disable_fsync, "Do not invoke fsync()", NULL },
+  { "disable-sandbox", 0, 0, G_OPTION_ARG_NONE, &opt_disable_sandbox, "Do not sandbox icon validator", NULL },
 
   { NULL }
 };
@@ -75,7 +79,6 @@ static gboolean
 metadata_get_arch (GFile *file, char **out_arch, GError **error)
 {
   g_autofree char *path = NULL;
-
   g_autoptr(GKeyFile) keyfile = NULL;
   g_autofree char *runtime = NULL;
   g_auto(GStrv) parts = NULL;
@@ -294,12 +297,13 @@ find_file_in_tree (GFile *base, const char *filename)
   return FALSE;
 }
 
-typedef gboolean (* VisitFileFunc) (GFile *file, GError **error);
+typedef gboolean (* VisitFileFunc) (GFile   *file,
+                                    GError **error);
 
 static gboolean
-visit_files_in_tree (GFile *base,
+visit_files_in_tree (GFile        *base,
                      VisitFileFunc visit_file,
-                     gpointer data)
+                     gpointer      data)
 {
   g_autoptr(GFileEnumerator) enumerator = NULL;
   GError **error = data;
@@ -373,13 +377,15 @@ validate_icon_file (GFile *file, GError **error)
   args = g_ptr_array_new_with_free_func (g_free);
 
 #ifndef DISABLE_SANDBOXED_TRIGGERS
-  add_args (args, validate_icon, "--sandbox", "512", "512", name, NULL);
-#else
-  add_args (args, validate_icon, "512", "512", name, NULL);
+  if (!opt_disable_sandbox)
+    add_args (args, validate_icon, "--sandbox", "512", "512", name, NULL);
+  else
 #endif
+    add_args (args, validate_icon, "512", "512", name, NULL);
+
   g_ptr_array_add (args, NULL);
 
-  if (!g_spawn_sync (NULL, (char **)args->pdata, NULL, 0, NULL, NULL, NULL, &err, &status, error))
+  if (!g_spawn_sync (NULL, (char **) args->pdata, NULL, 0, NULL, NULL, NULL, &err, &status, error))
     {
       g_debug ("Icon validation: %s", (*error)->message);
       return FALSE;
@@ -435,7 +441,6 @@ validate_desktop_file (GFile      *desktop_file,
                        GError    **error)
 {
   g_autofree char *path = g_file_get_path (desktop_file);
-
   g_autoptr(GSubprocess) subprocess = NULL;
   g_autofree char *stdout_buf = NULL;
   g_autofree char *stderr_buf = NULL;
@@ -540,7 +545,6 @@ validate_service_file (GFile      *service_file,
                        GError    **error)
 {
   g_autofree char *path = g_file_get_path (service_file);
-
   g_autoptr(GKeyFile) key_file = NULL;
   g_autofree char *name = NULL;
   g_autofree char *command = NULL;
@@ -599,7 +603,6 @@ static gboolean
 validate_exports (GFile *export, GFile *files, const char *app_id, GError **error)
 {
   g_autofree char *desktop_path = NULL;
-
   g_autoptr(GFile) desktop_file = NULL;
   g_autofree char *service_path = NULL;
   g_autoptr(GFile) service_file = NULL;
@@ -742,7 +745,6 @@ gboolean
 flatpak_builtin_build_export (int argc, char **argv, GCancellable *cancellable, GError **error)
 {
   gboolean ret = FALSE;
-
   g_autoptr(GOptionContext) context = NULL;
   g_autoptr(GFile) base = NULL;
   g_autoptr(GFile) files = NULL;
@@ -938,14 +940,14 @@ flatpak_builtin_build_export (int argc, char **argv, GCancellable *cancellable, 
     goto out;
 
   /* This is useful only if the target is a "bare" rep, but this happens
-     in flatpak-builder when commiting to the cache repo. For other repos
+     in flatpak-builder when committing to the cache repo. For other repos
      this is a no-op */
   if (!ostree_repo_scan_hardlinks (repo, cancellable, error))
     goto out;
 
   mtree = ostree_mutable_tree_new ();
 
-  if (!flatpak_mtree_create_root (repo, mtree, cancellable, error))
+  if (!flatpak_mtree_ensure_dir_metadata (repo, mtree, cancellable, error))
     goto out;
 
   if (!ostree_mutable_tree_ensure_dir (mtree, "files", &files_mtree, error))
@@ -1012,6 +1014,18 @@ flatpak_builtin_build_export (int argc, char **argv, GCancellable *cancellable, 
   if (opt_endoflife && *opt_endoflife)
     g_variant_dict_insert_value (&metadata_dict, OSTREE_COMMIT_META_KEY_ENDOFLIFE,
                                  g_variant_new_string (opt_endoflife));
+
+  if (opt_endoflife_rebase && *opt_endoflife_rebase)
+    {
+      g_auto(GStrv) full_ref_parts = g_strsplit (full_branch, "/", 0);
+      g_autofree char *rebased_ref = g_build_filename (full_ref_parts[0], opt_endoflife_rebase, full_ref_parts[2], full_ref_parts[3], NULL);
+
+      if (!flatpak_is_valid_name (opt_endoflife_rebase, error))
+        return glnx_prefix_error (error, "Invalid name in --end-of-life-rebase");
+
+      g_variant_dict_insert_value (&metadata_dict, OSTREE_COMMIT_META_KEY_ENDOFLIFE_REBASE,
+                                   g_variant_new_string (rebased_ref));
+    }
 
   metadata_dict_v = g_variant_ref_sink (g_variant_dict_end (&metadata_dict));
 

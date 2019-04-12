@@ -59,6 +59,7 @@ static Column all_columns[] = {
   { "version",      N_("Version"),        N_("Show the version"),        1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
   { "branch",       N_("Branch"),         N_("Show the branch"),         1, FLATPAK_ELLIPSIZE_MODE_NONE, 0, 1 },
   { "arch",         N_("Arch"),           N_("Show the architecture"),   1, FLATPAK_ELLIPSIZE_MODE_NONE, 0, 1 },
+  { "runtime",      N_("Runtime"),        N_("Show the used runtime"),   1, FLATPAK_ELLIPSIZE_MODE_START, 0, 0 },
   { "origin",       N_("Origin"),         N_("Show the origin remote"),  1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
   { "installation", N_("Installation"),   N_("Show the installation"),   1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 0 },
   { "ref",          N_("Ref"),            N_("Show the ref"),            1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 0 },
@@ -124,11 +125,11 @@ join_strv (char **a, char **b)
 }
 
 static gboolean
-find_refs_for_dir (FlatpakDir *dir,
-                   GStrv *apps,
-                   GStrv *runtimes,
+find_refs_for_dir (FlatpakDir   *dir,
+                   GStrv        *apps,
+                   GStrv        *runtimes,
                    GCancellable *cancellable,
-                   GError **error)
+                   GError      **error)
 {
   if (flatpak_dir_ensure_repo (dir, cancellable, NULL))
     {
@@ -142,13 +143,13 @@ find_refs_for_dir (FlatpakDir *dir,
 }
 
 static gboolean
-print_table_for_refs (gboolean print_apps,
-                      GPtrArray * refs_array,
-                      const char *arch,
-                      const char *app_runtime,
-                      Column *columns,
+print_table_for_refs (gboolean      print_apps,
+                      GPtrArray   * refs_array,
+                      const char   *arch,
+                      const char   *app_runtime,
+                      Column       *columns,
                       GCancellable *cancellable,
-                      GError **error)
+                      GError      **error)
 {
   FlatpakTablePrinter *printer;
   int i;
@@ -205,6 +206,7 @@ print_table_for_refs (gboolean print_apps,
           const char *appdata_name;
           const char *appdata_summary;
           const char *appdata_version;
+          const char *runtime;
           g_autofree char *latest = NULL;
           g_autofree const char **subpaths = NULL;
           int k;
@@ -214,7 +216,7 @@ print_table_for_refs (gboolean print_apps,
           parts = g_strsplit (ref, "/", -1);
           partial_ref = strchr (ref, '/') + 1;
 
-          if (arch != NULL && strcmp (arch, parts[1]) != 0)
+          if (arch != NULL && strcmp (arch, parts[2]) != 0)
             continue;
 
           deploy = flatpak_dir_load_deployed (dir, ref, NULL, cancellable, NULL);
@@ -222,9 +224,10 @@ print_table_for_refs (gboolean print_apps,
           if (deploy_data == NULL)
             continue;
 
+         runtime = flatpak_deploy_data_get_runtime (deploy_data);
+
           if (app_runtime)
             {
-              const char *runtime = flatpak_deploy_data_get_runtime (deploy_data);
               if (runtime)
                 {
                   g_auto(GStrv) pref = g_strsplit (runtime, "/", 3);
@@ -295,6 +298,8 @@ print_table_for_refs (gboolean print_apps,
                 flatpak_table_printer_add_column (printer, appdata_version ? appdata_version : "");
               else if (strcmp (columns[k].name, "installation") == 0)
                 flatpak_table_printer_add_column (printer, flatpak_dir_get_name_cached (dir));
+              else if (strcmp (columns[k].name, "runtime") == 0)
+                flatpak_table_printer_add_column (printer, runtime ? runtime : "");
               else if (strcmp (columns[k].name, "ref") == 0)
                 flatpak_table_printer_add_column (printer, partial_ref);
               else if (strcmp (columns[k].name, "application") == 0)
@@ -346,7 +351,7 @@ print_table_for_refs (gboolean print_apps,
                   subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
                   if (subpaths[0] != NULL)
                     {
-                      g_autofree char *paths = g_strjoinv (" ", (char **)subpaths);
+                      g_autofree char *paths = g_strjoinv (" ", (char **) subpaths);
                       g_autofree char *value = g_strconcat ("partial (", paths, ")", NULL);
                       flatpak_table_printer_append_with_comma (printer, value);
                     }
@@ -363,7 +368,7 @@ print_table_for_refs (gboolean print_apps,
         }
     }
 
-  flatpak_table_printer_sort (printer, (GCompareFunc)flatpak_compare_ref);
+  flatpak_table_printer_sort (printer, (GCompareFunc) flatpak_compare_ref);
 
   if (flatpak_table_printer_get_current_row (printer) > 0)
     {
@@ -378,14 +383,14 @@ print_table_for_refs (gboolean print_apps,
 }
 
 static gboolean
-print_installed_refs (gboolean app,
-                      gboolean runtime,
-                      GPtrArray *dirs,
-                      const char *arch,
-                      const char *app_runtime,
-                      Column *cols,
+print_installed_refs (gboolean      app,
+                      gboolean      runtime,
+                      GPtrArray    *dirs,
+                      const char   *arch,
+                      const char   *app_runtime,
+                      Column       *cols,
                       GCancellable *cancellable,
-                      GError **error)
+                      GError      **error)
 {
   g_autoptr(GPtrArray) refs_array = NULL;
   int i;
