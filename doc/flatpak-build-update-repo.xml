@@ -85,6 +85,42 @@
                 </para></listitem>
             </varlistentry>
 
+             <varlistentry>
+                <term><option>--comment=COMMENT</option></term>
+
+                <listitem><para>
+                    A single-line comment for the remote, e.g. for display in a UI.
+                    The comment is stored in the repository summary.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--description=DESCRIPTION</option></term>
+
+                <listitem><para>
+                    A full-paragraph description for the remote, e.g. for display in a UI.
+                    The description is stored in the repository summary.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--homepage=URL</option></term>
+
+                <listitem><para>
+                    URL for a website for the remote, e.g. for display in a UI.
+                    The url is stored in the repository summary.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--icon=URL</option></term>
+
+                <listitem><para>
+                    URL for an icon for the remote, e.g. for display in a UI.
+                    The url is stored in the repository summary.
+                </para></listitem>
+            </varlistentry>
+
             <varlistentry>
                 <term><option>--default-branch=BRANCH</option></term>
 
@@ -159,6 +195,15 @@
 
                 <listitem><para>
                   Limit the number of parallel jobs creating static deltas. The default is the number of cpus.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--static-delta-ignore-ref=PATTERN</option></term>
+
+                <listitem><para>
+                  Don't generate deltas for runtime or application id matching this pattern. For instance,
+                  --static-delta-ignore-ref=*.Sources means there will not be any deltas for source refs.
                 </para></listitem>
             </varlistentry>
 

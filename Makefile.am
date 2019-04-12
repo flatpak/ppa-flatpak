@@ -45,6 +45,7 @@ AM_CPPFLAGS =							\
 	-DFLATPAK_BASEDIR=\"$(pkgdatadir)\"			\
 	-DFLATPAK_TRIGGERDIR=\"$(pkgdatadir)/triggers\"		\
 	-DSYSTEM_FONTS_DIR=\"$(SYSTEM_FONTS_DIR)\"		\
+	-DSYSTEM_HELPER_USER=\"$(SYSTEM_HELPER_USER)\"          \
 	-DSYSTEM_FONT_CACHE_DIRS=\"$(SYSTEM_FONT_CACHE_DIRS)\"		\
 	-DG_LOG_DOMAIN=\"flatpak\"				\
 	-I$(srcdir)/libglnx					\
@@ -97,6 +98,8 @@ include session-helper/Makefile.am.inc
 include portal/Makefile.am.inc
 include system-helper/Makefile.am.inc
 include icon-validator/Makefile.am.inc
+include revokefs/Makefile.am.inc
+include selinux/Makefile.am.inc
 include tests/Makefile.am.inc
 
 if !WITH_SYSTEM_DBUS_PROXY

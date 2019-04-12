@@ -106,6 +106,7 @@ gboolean flatpak_run_in_transient_unit (const char *app_id,
 
 #define FLATPAK_METADATA_GROUP_DCONF "X-DConf"
 #define FLATPAK_METADATA_KEY_DCONF_PATHS "paths"
+#define FLATPAK_METADATA_KEY_DCONF_MIGRATE_PATH "migrate-path"
 
 gboolean  flatpak_run_add_extension_args (FlatpakBwrap *bwrap,
                                           GKeyFile     *metakey,
@@ -120,6 +121,7 @@ gboolean flatpak_run_add_environment_args (FlatpakBwrap    *bwrap,
                                            const char      *app_id,
                                            FlatpakContext  *context,
                                            GFile           *app_id_dir,
+                                           GPtrArray       *previous_app_id_dirs,
                                            FlatpakExports **exports_out,
                                            GCancellable    *cancellable,
                                            GError         **error);
@@ -135,9 +137,9 @@ FlatpakContext *flatpak_app_compute_permissions (GKeyFile *app_metadata,
                                                  GKeyFile *runtime_metadata,
                                                  GError  **error);
 GFile *flatpak_get_data_dir (const char *app_id);
-GFile *flatpak_ensure_data_dir (const char   *app_id,
-                                GCancellable *cancellable,
-                                GError      **error);
+gboolean flatpak_ensure_data_dir (GFile        *app_id_dir,
+                                  GCancellable *cancellable,
+                                  GError      **error);
 
 gboolean flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
                                       GFile          *runtime_files,

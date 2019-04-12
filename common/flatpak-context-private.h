@@ -41,6 +41,7 @@ typedef enum {
   FLATPAK_CONTEXT_SOCKET_SYSTEM_BUS  = 1 << 4,
   FLATPAK_CONTEXT_SOCKET_FALLBACK_X11 = 1 << 5, /* For backwards compat, also set SOCKET_X11 */
   FLATPAK_CONTEXT_SOCKET_SSH_AUTH    = 1 << 6,
+  FLATPAK_CONTEXT_SOCKET_PCSC        = 1 << 7,
 } FlatpakContextSockets;
 
 typedef enum {
@@ -127,6 +128,7 @@ void flatpak_context_append_bwrap_filesystem (FlatpakContext  *context,
                                               FlatpakBwrap    *bwrap,
                                               const char      *app_id,
                                               GFile           *app_id_dir,
+                                              GPtrArray       *extra_app_id_dirs,
                                               FlatpakExports **exports_out);
 
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakContext, flatpak_context_free)

@@ -95,8 +95,8 @@ EOF
 
 mkdir -p repos
 ostree init --repo=repos/test --mode=archive-z2
-. $(dirname $0)/make-test-runtime.sh repos/test org.test.Platform "" bash ls cat echo readlink > /dev/null
-. $(dirname $0)/make-test-app.sh repos/test "" "" > /dev/null
+. $(dirname $0)/make-test-runtime.sh repos/test org.test.Platform master "" bash ls cat echo readlink > /dev/null
+. $(dirname $0)/make-test-app.sh repos/test "" master "" > /dev/null
 
 # Modify platform metadata
 ostree checkout -U --repo=repos/test runtime/org.test.Platform/${ARCH}/master platform
@@ -123,13 +123,13 @@ make_extension org.test.Multiversion.notmaster not-master
 assert_has_extension_file () {
     local prefix=$1
     local file=$2 
-    run_sh "test -f $prefix/foo/$file" || (echo 1>&2 "Couldn't find '$file'"; exit 1)
+    run_sh org.test.Hello "test -f $prefix/foo/$file" || (echo 1>&2 "Couldn't find '$file'"; exit 1)
 }
 
 assert_not_has_extension_file () {
     local prefix=$1
     local file=$2 
-    if run_sh "test -f $prefix/foo/$file" ; then
+    if run_sh org.test.Hello "test -f $prefix/foo/$file" ; then
         echo 1>&2 "File '$file' exists";
         exit 1
     fi
@@ -146,7 +146,7 @@ assert_has_extension_file /usr dir/foo/exists
 assert_has_extension_file /usr dir/foo/extension-org.test.Dir.foo:master
 assert_has_extension_file /usr dir/bar/extension-org.test.Dir.bar:master
 assert_not_has_extension_file /usr dir2/foo/exists
-run_sh "ls -lR /usr/foo/multiversion"
+run_sh org.test.Hello "ls -lR /usr/foo/multiversion"
 assert_has_extension_file /usr multiversion/master/extension-org.test.Multiversion.master:master
 assert_has_extension_file /usr multiversion/notmaster/extension-org.test.Multiversion.notmaster:not-master
 

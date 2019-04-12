@@ -44,7 +44,7 @@
             application or runtime to uninstall.
         </para>
         <para>
-            Each <arg choice="plain">REF</arg> argument is a full or partial indentifier in the
+            Each <arg choice="plain">REF</arg> argument is a full or partial identifier in the
             flatpak ref format, which looks like "(app|runtime)/ID/ARCH/BRANCH". All elements
             except ID are optional and can be left out, including the slashes,
             so most of the time you need only specify ID. Any part left out will be matched
@@ -233,7 +233,7 @@
         <title>Examples</title>
 
         <para>
-            <command>$ flatpak --user uninstall org.gnome.GEdit</command>
+            <command>$ flatpak --user uninstall org.gnome.gedit</command>
         </para>
 
     </refsect1>

@@ -222,6 +222,14 @@
             </varlistentry>
 
             <varlistentry>
+                <term>runtime</term>
+
+                <listitem><para>
+                    Show the used runtime
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term>version</term>
 
                 <listitem><para>
@@ -319,7 +327,7 @@
 org.gnome.Builder
 org.freedesktop.glxgears
 org.gnome.MyApp
-org.gnome.GEdit
+org.gnome.gedit
 </programlisting>
 
     </refsect1>

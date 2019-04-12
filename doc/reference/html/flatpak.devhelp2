@@ -177,6 +177,14 @@
     <keyword type="function" name="flatpak_remote_get_remote_type ()" link="FlatpakRemote.html#flatpak-remote-get-remote-type" since="0.9.8"/>
     <keyword type="function" name="flatpak_remote_get_title ()" link="FlatpakRemote.html#flatpak-remote-get-title"/>
     <keyword type="function" name="flatpak_remote_set_title ()" link="FlatpakRemote.html#flatpak-remote-set-title"/>
+    <keyword type="function" name="flatpak_remote_get_comment ()" link="FlatpakRemote.html#flatpak-remote-get-comment" since="1.4"/>
+    <keyword type="function" name="flatpak_remote_set_comment ()" link="FlatpakRemote.html#flatpak-remote-set-comment" since="1.4"/>
+    <keyword type="function" name="flatpak_remote_get_description ()" link="FlatpakRemote.html#flatpak-remote-get-description" since="1.4"/>
+    <keyword type="function" name="flatpak_remote_set_description ()" link="FlatpakRemote.html#flatpak-remote-set-description" since="1.4"/>
+    <keyword type="function" name="flatpak_remote_get_homepage ()" link="FlatpakRemote.html#flatpak-remote-get-homepage" since="1.4"/>
+    <keyword type="function" name="flatpak_remote_set_homepage ()" link="FlatpakRemote.html#flatpak-remote-set-homepage" since="1.4"/>
+    <keyword type="function" name="flatpak_remote_get_icon ()" link="FlatpakRemote.html#flatpak-remote-get-icon" since="1.4"/>
+    <keyword type="function" name="flatpak_remote_set_icon ()" link="FlatpakRemote.html#flatpak-remote-set-icon" since="1.4"/>
     <keyword type="function" name="flatpak_remote_get_url ()" link="FlatpakRemote.html#flatpak-remote-get-url"/>
     <keyword type="function" name="flatpak_remote_set_url ()" link="FlatpakRemote.html#flatpak-remote-set-url"/>
     <keyword type="function" name="flatpak_remote_get_disabled ()" link="FlatpakRemote.html#flatpak-remote-get-disabled"/>
@@ -231,6 +239,7 @@
     <keyword type="signal" name="The “add-new-remote” signal" link="FlatpakTransaction.html#FlatpakTransaction-add-new-remote"/>
     <keyword type="signal" name="The “choose-remote-for-ref” signal" link="FlatpakTransaction.html#FlatpakTransaction-choose-remote-for-ref"/>
     <keyword type="signal" name="The “end-of-lifed” signal" link="FlatpakTransaction.html#FlatpakTransaction-end-of-lifed"/>
+    <keyword type="signal" name="The “end-of-lifed-with-rebase” signal" link="FlatpakTransaction.html#FlatpakTransaction-end-of-lifed-with-rebase"/>
     <keyword type="signal" name="The “new-operation” signal" link="FlatpakTransaction.html#FlatpakTransaction-new-operation"/>
     <keyword type="signal" name="The “operation-done” signal" link="FlatpakTransaction.html#FlatpakTransaction-operation-done"/>
     <keyword type="signal" name="The “operation-error” signal" link="FlatpakTransaction.html#FlatpakTransaction-operation-error"/>

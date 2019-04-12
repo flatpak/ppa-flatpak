@@ -264,7 +264,8 @@
                 <listitem><para>
                     Expose a well known socket to the application. This overrides to
                     the Context section from the application metadata.
-                    <arg choice="plain">SOCKET</arg> must be one of: x11, wayland, fallback-x11, pulseaudio, system-bus, session-bus, ssh-auth.
+                    <arg choice="plain">SOCKET</arg> must be one of: x11, wayland, fallback-x11, pulseaudio, system-bus, session-bus,
+                    ssh-auth, pcsc.
                     This option can be used multiple times.
                 </para></listitem>
             </varlistentry>
@@ -275,7 +276,8 @@
                 <listitem><para>
                     Don't expose a well known socket to the application. This overrides to
                     the Context section from the application metadata.
-                    <arg choice="plain">SOCKET</arg> must be one of: x11, wayland, fallback-x11, pulseaudio, system-bus, session-bus, ssh-auth.
+                    <arg choice="plain">SOCKET</arg> must be one of: x11, wayland, fallback-x11, pulseaudio, system-bus, session-bus,
+                    ssh-auth, pcsc.
                     This option can be used multiple times.
                 </para></listitem>
             </varlistentry>
@@ -414,6 +416,17 @@ key=v1;v2;
             </varlistentry>
 
             <varlistentry>
+                <term><option>--no-talk-name=NAME</option></term>
+
+                <listitem><para>
+                    Don't allow the application to talk to the well known name <arg choice="plain">NAME</arg> on the session bus.
+                    If <arg choice="plain">NAME</arg> ends with .*, it allows the application to talk to all matching names.
+                    This overrides to the Context section from the application metadata.
+                    This option can be used multiple times.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--system-own-name=NAME</option></term>
 
                 <listitem><para>
@@ -429,6 +442,17 @@ key=v1;v2;
 
                 <listitem><para>
                     Allow the application to talk to the well known name <arg choice="plain">NAME</arg> on the system bus.
+                    If <arg choice="plain">NAME</arg> ends with .*, it allows the application to talk to all matching names.
+                    This overrides to the Context section from the application metadata.
+                    This option can be used multiple times.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--system-no-talk-name=NAME</option></term>
+
+                <listitem><para>
+                    Don't allow the application to talk to the well known name <arg choice="plain">NAME</arg> on the system bus.
                     If <arg choice="plain">NAME</arg> ends with .*, it allows the application to talk to all matching names.
                     This overrides to the Context section from the application metadata.
                     This option can be used multiple times.
@@ -493,7 +517,7 @@ key=v1;v2;
         <title>Examples</title>
 
         <para>
-            <command>$ flatpak run org.gnome.GEdit</command>
+            <command>$ flatpak run org.gnome.gedit</command>
         </para>
         <para>
             <command>$ flatpak run --devel --command=bash org.gnome.Builder</command>

@@ -2,6 +2,7 @@ AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 \
 	FLATPAK_CONFIG_DIR=/dev/null \
 	FLATPAK_TRIGGERSDIR=$$(cd $(top_srcdir) && pwd)/triggers \
 	FLATPAK_VALIDATE_ICON=$$(cd $(top_builddir) && pwd)/flatpak-validate-icon \
+	FLATPAK_REVOKEFS_FUSE=$$(cd $(top_builddir) && pwd)/revokefs-fuse \
 	FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && pwd)/flatpak-dbus-proxy \
 	GI_TYPELIB_PATH=$$(cd $(top_builddir) && pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
 	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} \
@@ -89,7 +90,6 @@ dist_installed_test_extra_scripts += \
 	tests/make-multi-collection-id-repo.sh \
 	tests/make-test-app.sh \
 	tests/make-test-runtime.sh \
-	tests/make-test-bundles.sh \
 	tests/test-webserver.sh \
 	tests/test-wrapper.sh \
 	$(NULL)
@@ -124,11 +124,11 @@ TEST_MATRIX_SOURCE = \
 	tests/test-config.sh \
 	tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh \
-	tests/test-run.sh{{user+system},{nodeltas+deltas}} \
+	tests/test-run.sh{{user+system+system-norevokefs},{nodeltas+deltas}} \
 	tests/test-info.sh{user+system} \
-	tests/test-repo.sh{user+system+collections+collections-server-only} \
+	tests/test-repo.sh{user+system+system-norevokefs+collections+collections-server-only} \
 	tests/test-extensions.sh \
-	tests/test-bundle.sh{user+system} \
+	tests/test-bundle.sh{user+system+system-norevokefs} \
 	tests/test-oci.sh \
 	tests/test-oci-registry.sh{user+system} \
 	tests/test-unsigned-summaries.sh \
@@ -144,7 +144,7 @@ tests/test-%.wrap:
 
 tests/runtime-repo: tests/make-test-runtime.sh flatpak
 	rm -rf tests/runtime-repo
-	PATH=$(abs_top_builddir):$${PATH} $(top_srcdir)/tests/make-test-runtime.sh tests/runtime-repo org.test.Platform ""
+	PATH=$(abs_top_builddir):$${PATH} $(top_srcdir)/tests/make-test-runtime.sh tests/runtime-repo org.test.Platform master ""
 
 check_DATA += tests/runtime-repo
 

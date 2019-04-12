@@ -45,7 +45,6 @@ struct _FlatpakRemoteRefPrivate
   GBytes *metadata;
   char   *eol;
   char   *eol_rebase;
-
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (FlatpakRemoteRef, flatpak_remote_ref, FLATPAK_TYPE_REF)
@@ -271,7 +270,7 @@ flatpak_remote_ref_get_download_size (FlatpakRemoteRef *self)
  * flatpak_remote_ref_get_metadata:
  * @self: a #FlatpakRemoteRef
  *
- * Returns the app metadata from the metadata cach of the ref.
+ * Returns the app metadata from the metadata cache of the ref.
  *
  * Returns: (transfer none) (nullable): a #GBytes with the metadata file
  * contents or %NULL
@@ -327,7 +326,6 @@ flatpak_remote_ref_new (FlatpakCollectionRef *coll_ref,
   FlatpakRefKind kind = FLATPAK_REF_KIND_APP;
   guint64 download_size = 0, installed_size = 0;
   const char *metadata = NULL;
-
   g_autoptr(GBytes) metadata_bytes = NULL;
   g_auto(GStrv) parts = NULL;
   FlatpakRemoteRef *ref;

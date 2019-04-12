@@ -60,6 +60,7 @@ const char *flatpak_context_sockets[] = {
   "system-bus",
   "fallback-x11",
   "ssh-auth",
+  "pcsc",
   NULL
 };
 
@@ -423,7 +424,6 @@ flatpak_context_get_session_bus_policy_allowed_own_names (FlatpakContext *contex
 {
   GHashTableIter iter;
   gpointer key, value;
-
   g_autoptr(GPtrArray) names = g_ptr_array_new_with_free_func (g_free);
 
   g_hash_table_iter_init (&iter, context->session_bus_policy);
@@ -835,7 +835,6 @@ flatpak_context_merge (FlatpakContext *context,
       for (i = 0; policy_values[i] != NULL; i++)
         flatpak_context_apply_generic_policy (context, (char *) key, policy_values[i]);
     }
-
 }
 
 static gboolean
@@ -1025,7 +1024,6 @@ option_env_cb (const gchar *option_name,
                GError     **error)
 {
   FlatpakContext *context = data;
-
   g_auto(GStrv) split = g_strsplit (value, "=", 2);
 
   if (split == NULL || split[0] == NULL || split[0][0] == 0 || split[1] == NULL)
@@ -1070,6 +1068,21 @@ option_talk_name_cb (const gchar *option_name,
 }
 
 static gboolean
+option_no_talk_name_cb (const gchar *option_name,
+                        const gchar *value,
+                        gpointer     data,
+                        GError     **error)
+{
+  FlatpakContext *context = data;
+
+  if (!flatpak_verify_dbus_name (value, error))
+    return FALSE;
+
+  flatpak_context_set_session_bus_policy (context, value, FLATPAK_POLICY_NONE);
+  return TRUE;
+}
+
+static gboolean
 option_system_own_name_cb (const gchar *option_name,
                            const gchar *value,
                            gpointer     data,
@@ -1096,6 +1109,21 @@ option_system_talk_name_cb (const gchar *option_name,
     return FALSE;
 
   flatpak_context_set_system_bus_policy (context, value, FLATPAK_POLICY_TALK);
+  return TRUE;
+}
+
+static gboolean
+option_system_no_talk_name_cb (const gchar *option_name,
+                               const gchar *value,
+                               gpointer     data,
+                               GError     **error)
+{
+  FlatpakContext *context = data;
+
+  if (!flatpak_verify_dbus_name (value, error))
+    return FALSE;
+
+  flatpak_context_set_system_bus_policy (context, value, FLATPAK_POLICY_NONE);
   return TRUE;
 }
 
@@ -1208,8 +1236,10 @@ static GOptionEntry context_options[] = {
   { "env", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_env_cb, N_("Set environment variable"), N_("VAR=VALUE") },
   { "own-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_own_name_cb, N_("Allow app to own name on the session bus"), N_("DBUS_NAME") },
   { "talk-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_talk_name_cb, N_("Allow app to talk to name on the session bus"), N_("DBUS_NAME") },
+  { "no-talk-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_no_talk_name_cb, N_("Don't allow app to talk to name on the session bus"), N_("DBUS_NAME") },
   { "system-own-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_system_own_name_cb, N_("Allow app to own name on the system bus"), N_("DBUS_NAME") },
   { "system-talk-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_system_talk_name_cb, N_("Allow app to talk to name on the system bus"), N_("DBUS_NAME") },
+  { "system-no-talk-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_system_no_talk_name_cb, N_("Don't allow app to talk to name on the system bus"), N_("DBUS_NAME") },
   { "add-policy", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_add_generic_policy_cb, N_("Add generic policy option"), N_("SUBSYSTEM.KEY=VALUE") },
   { "remove-policy", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_remove_generic_policy_cb, N_("Remove generic policy option"), N_("SUBSYSTEM.KEY=VALUE") },
   { "persist", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_persist_cb, N_("Persist home directory"), N_("FILENAME") },
@@ -1271,7 +1301,6 @@ flatpak_context_load_metadata (FlatpakContext *context,
                                GError        **error)
 {
   gboolean remove;
-
   g_auto(GStrv) groups = NULL;
   int i;
 
@@ -1651,10 +1680,13 @@ flatpak_context_save_metadata (FlatpakContext *context,
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       FlatpakPolicy policy = GPOINTER_TO_INT (value);
-      if (policy > 0)
-        g_key_file_set_string (metakey,
-                               FLATPAK_METADATA_GROUP_SESSION_BUS_POLICY,
-                               (char *) key, flatpak_policy_to_string (policy));
+
+      if (flatten && (policy == 0))
+        continue;
+
+      g_key_file_set_string (metakey,
+                             FLATPAK_METADATA_GROUP_SESSION_BUS_POLICY,
+                             (char *) key, flatpak_policy_to_string (policy));
     }
 
   g_key_file_remove_group (metakey, FLATPAK_METADATA_GROUP_SYSTEM_BUS_POLICY, NULL);
@@ -1662,10 +1694,13 @@ flatpak_context_save_metadata (FlatpakContext *context,
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       FlatpakPolicy policy = GPOINTER_TO_INT (value);
-      if (policy > 0)
-        g_key_file_set_string (metakey,
-                               FLATPAK_METADATA_GROUP_SYSTEM_BUS_POLICY,
-                               (char *) key, flatpak_policy_to_string (policy));
+
+      if (flatten && (policy == 0))
+        continue;
+
+      g_key_file_set_string (metakey,
+                             FLATPAK_METADATA_GROUP_SYSTEM_BUS_POLICY,
+                             (char *) key, flatpak_policy_to_string (policy));
     }
 
   g_key_file_remove_group (metakey, FLATPAK_METADATA_GROUP_ENVIRONMENT, NULL);
@@ -1884,6 +1919,7 @@ static void
 flatpak_context_export (FlatpakContext *context,
                         FlatpakExports *exports,
                         GFile          *app_id_dir,
+                        GPtrArray       *extra_app_id_dirs,
                         gboolean        do_create,
                         GString        *xdg_dirs_conf,
                         gboolean       *home_access_out)
@@ -2008,11 +2044,22 @@ flatpak_context_export (FlatpakContext *context,
   if (app_id_dir)
     {
       g_autoptr(GFile) apps_dir = g_file_get_parent (app_id_dir);
+      int i;
       /* Hide the .var/app dir by default (unless explicitly made visible) */
       flatpak_exports_add_path_tmpfs (exports, flatpak_file_get_path_cached (apps_dir));
       /* But let the app write to the per-app dir in it */
       flatpak_exports_add_path_expose (exports, FLATPAK_FILESYSTEM_MODE_READ_WRITE,
                                        flatpak_file_get_path_cached (app_id_dir));
+
+      if (extra_app_id_dirs != NULL)
+        {
+          for (i = 0; i < extra_app_id_dirs->len; i++)
+            {
+              GFile *extra_app_id_dir = g_ptr_array_index (extra_app_id_dirs, i);
+              flatpak_exports_add_path_expose (exports, FLATPAK_FILESYSTEM_MODE_READ_WRITE,
+                                               flatpak_file_get_path_cached (extra_app_id_dir));
+            }
+        }
     }
 
   if (home_access_out != NULL)
@@ -2026,7 +2073,7 @@ flatpak_context_get_exports (FlatpakContext *context,
   g_autoptr(FlatpakExports) exports = flatpak_exports_new ();
   g_autoptr(GFile) app_id_dir = flatpak_get_data_dir (app_id);
 
-  flatpak_context_export (context, exports, app_id_dir, FALSE, NULL, NULL);
+  flatpak_context_export (context, exports, app_id_dir, NULL, FALSE, NULL, NULL);
   return g_steal_pointer (&exports);
 }
 
@@ -2055,6 +2102,7 @@ flatpak_context_append_bwrap_filesystem (FlatpakContext  *context,
                                          FlatpakBwrap    *bwrap,
                                          const char      *app_id,
                                          GFile           *app_id_dir,
+                                         GPtrArray       *extra_app_id_dirs,
                                          FlatpakExports **exports_out)
 {
   g_autoptr(FlatpakExports) exports = flatpak_exports_new ();
@@ -2064,7 +2112,7 @@ flatpak_context_append_bwrap_filesystem (FlatpakContext  *context,
   GHashTableIter iter;
   gpointer key, value;
 
-  flatpak_context_export (context, exports, app_id_dir, TRUE, xdg_dirs_conf, &home_access);
+  flatpak_context_export (context, exports, app_id_dir, extra_app_id_dirs, TRUE, xdg_dirs_conf, &home_access);
   if (app_id_dir != NULL)
     flatpak_run_apply_env_appid (bwrap, app_id_dir);
 
@@ -2112,7 +2160,7 @@ flatpak_context_append_bwrap_filesystem (FlatpakContext  *context,
   flatpak_exports_append_bwrap_args (exports, bwrap);
 
   /* Special case subdirectories of the cache, config and data xdg
-   * dirs.  If these are accessible explicilty, then we bind-mount
+   * dirs.  If these are accessible explicitly, then we bind-mount
    * these in the app-id dir. This allows applications to explicitly
    * opt out of keeping some config/cache/data in the app-specific
    * directory.
@@ -2147,7 +2195,7 @@ flatpak_context_append_bwrap_filesystem (FlatpakContext  *context,
         }
     }
 
-  if (home_access  && app_id_dir != NULL)
+  if (home_access && app_id_dir != NULL)
     {
       g_autofree char *src_path = g_build_filename (g_get_user_config_dir (),
                                                     "user-dirs.dirs",
