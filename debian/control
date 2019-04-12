@@ -62,6 +62,7 @@ Rules-Requires-Root: no
 Package: flatpak
 Architecture: linux-any
 Depends:
+ adduser,
  bubblewrap (>= 0.2.1),
  xdg-dbus-proxy (>= 0.1.0),
  xdg-desktop-portal (>= 0.10),

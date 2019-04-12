@@ -3,6 +3,9 @@ flatpak (1.3.2-1) UNRELEASED; urgency=medium
   * New upstream development release
   * d/watch: Watch for development (odd-numbered) versions
   * d/gbp.conf: Branch to upstream/latest and debian/experimental
+  * Depend on adduser and create _flatpak user in postinst.
+    This is now required by the helper that installs apps and runtimes
+    system-wide.
 
  -- Simon McVittie <smcv@debian.org>  Fri, 12 Apr 2019 13:49:24 +0100
 
