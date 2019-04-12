@@ -45,6 +45,7 @@ Build-Depends:
  libxml2-dev (>= 2.4),
  libxml2-utils,
  ostree (>= 2018.9) <!nocheck>,
+ policykit-1 <!nocheck>,
  procps,
  python3 <!nocheck>,
  shared-mime-info <!nocheck>,
