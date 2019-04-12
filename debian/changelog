@@ -1,5 +1,6 @@
-flatpak (1.2.4-2) UNRELEASED; urgency=medium
+flatpak (1.3.2-1) UNRELEASED; urgency=medium
 
+  * New upstream development release
   * d/watch: Watch for development (odd-numbered) versions
   * d/gbp.conf: Branch to upstream/latest and debian/experimental
 
