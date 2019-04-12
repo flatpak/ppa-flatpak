@@ -12,6 +12,7 @@ containers give us uid 0 but not CAP_SYS_ADMIN.
 These checks are taken from libostree.
 
 Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/2824
 ---
  tests/libtest.sh                          | 24 +++++++++++++++++++++++-
  tests/test-build-update-repo.sh           |  1 +

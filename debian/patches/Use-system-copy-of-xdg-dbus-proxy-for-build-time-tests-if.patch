@@ -9,6 +9,7 @@ xdg-dbus-proxy and not compiling our own (the symptom is that testlibrary
 hangs).
 
 Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/2823
 ---
  tests/Makefile.am.inc | 7 ++++++-
  1 file changed, 6 insertions(+), 1 deletion(-)
