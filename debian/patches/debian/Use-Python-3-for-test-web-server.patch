@@ -56,7 +56,7 @@ index c4107ea..2247d2b 100755
  mv httpd-port httpd-port-main
  port=$(cat httpd-port-main)
 diff --git a/tests/test-oci-registry.sh b/tests/test-oci-registry.sh
-index 13e26b5..ae20794 100755
+index a7f2751..891af20 100755
 --- a/tests/test-oci-registry.sh
 +++ b/tests/test-oci-registry.sh
 @@ -27,11 +27,11 @@ echo "1..13"
