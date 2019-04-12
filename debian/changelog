@@ -16,6 +16,9 @@ flatpak (1.3.2-1) UNRELEASED; urgency=medium
   * Build-depend on fuse for tests
   * d/p/Use-system-copy-of-xdg-dbus-proxy-for-build-time-tests-if.patch:
     Use the correct system xdg-dbus-proxy for build-time tests
+  * d/p/Skip-some-tests-if-we-can-t-use-FUSE.patch:
+    Skip tests that rely on FUSE when built on a buildd, in a schroot
+    or in a Docker container. FUSE doesn't work in any of these places.
 
  -- Simon McVittie <smcv@debian.org>  Fri, 12 Apr 2019 13:49:24 +0100
 
