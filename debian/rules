@@ -41,6 +41,7 @@ endif
 override_dh_auto_configure:
 	rm -f app/parse-datetime.c
 	dh_auto_configure -- \
+		--disable-selinux-module \
 		--enable-installed-tests \
 		--libexecdir=/usr/libexec \
 		--with-dbus-config-dir=/usr/share/dbus-1/system.d \

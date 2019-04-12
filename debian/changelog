@@ -6,6 +6,9 @@ flatpak (1.3.2-1) UNRELEASED; urgency=medium
   * Depend on adduser and create _flatpak user in postinst.
     This is now required by the helper that installs apps and runtimes
     system-wide.
+  * Disable SELinux module for now.
+    Advice from SELinux users/maintainers on whether/how this can fit
+    into Debian systems with the non-default SELinux LSM would be welcomed.
 
  -- Simon McVittie <smcv@debian.org>  Fri, 12 Apr 2019 13:49:24 +0100
 
