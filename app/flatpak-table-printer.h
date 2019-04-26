@@ -33,7 +33,8 @@ void                flatpak_table_printer_set_column_title (FlatpakTablePrinter 
                                                             int                  column,
                                                             const char          *title);
 void                flatpak_table_printer_set_columns (FlatpakTablePrinter *printer,
-                                                       Column              *columns);
+                                                       Column              *columns,
+                                                       gboolean             defaults);
 void                flatpak_table_printer_add_column (FlatpakTablePrinter *printer,
                                                       const char          *text);
 void                flatpak_table_printer_add_aligned_column (FlatpakTablePrinter *printer,
@@ -77,5 +78,8 @@ void               flatpak_table_printer_set_column_expand (FlatpakTablePrinter 
 void               flatpak_table_printer_set_column_ellipsize (FlatpakTablePrinter *printer,
                                                                int                  col,
                                                                FlatpakEllipsizeMode mode);
+void               flatpak_table_printer_set_column_skip_unique (FlatpakTablePrinter *printer,
+                                                                 int                  column,
+                                                                 gboolean             skip_unique);
 
 #endif /* __FLATPAK_TABLE_PRINTER_H__ */

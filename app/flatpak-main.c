@@ -698,14 +698,15 @@ flatpak_run (int      argc,
 
   success = TRUE;
 out:
-  g_assert (success || error);
+  /* Note: We allow failures with NULL error (it means don't print anything), useful when e.g. the user aborted */
+  g_assert (!success || error == NULL);
 
   if (error)
     {
       g_propagate_error (res_error, error);
-      return 1;
     }
-  return 0;
+
+  return success ? 0 : 1;
 }
 
 static int
@@ -768,6 +769,14 @@ main (int    argc,
   g_autofree const char *old_env = NULL;
   int ret;
   struct sigaction action;
+
+  /* The child repo shared between the client process and the
+     system-helper really needs to support creating files that
+     are readable by others, so override the umask to 022.
+     Ideally this should be set when needed, but umask is thread-unsafe
+     so there is really no local way to fix this.
+  */
+  umask(022);
 
   memset (&action, 0, sizeof (struct sigaction));
   action.sa_handler = handle_sigterm;

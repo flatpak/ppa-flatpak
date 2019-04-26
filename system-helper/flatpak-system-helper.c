@@ -545,7 +545,7 @@ handle_deploy (FlatpakSystemHelper   *object,
           return TRUE;
         }
 
-      state = flatpak_dir_get_remote_state (system, arg_origin, NULL, &error);
+      state = flatpak_dir_get_remote_state (system, arg_origin, FALSE, NULL, &error);
       if (state == NULL)
         {
           g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
@@ -1751,6 +1751,7 @@ handle_update_summary (FlatpakSystemHelper   *object,
 {
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
+  gboolean delete_summary;
 
   g_debug ("UpdateSummary %u %s", arg_flags, arg_installation);
 
@@ -1773,10 +1774,11 @@ handle_update_summary (FlatpakSystemHelper   *object,
       g_dbus_method_invocation_return_gerror (invocation, error);
       return TRUE;
     }
-
-  if (!flatpak_dir_update_summary (system, NULL, &error))
+  delete_summary = (arg_flags & FLATPAK_HELPER_UPDATE_SUMMARY_FLAGS_DELETE) != 0;
+  if (!flatpak_dir_update_summary (system, delete_summary, NULL, &error))
     {
-      flatpak_invocation_return_error (invocation, error, "Error updating summary");
+      flatpak_invocation_return_error (invocation, error, "Error %s summary",
+                                       delete_summary ? "deleting" : "updating");
       return TRUE;
     }
 
@@ -1794,6 +1796,7 @@ handle_generate_oci_summary (FlatpakSystemHelper   *object,
 {
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
+  gboolean only_cached;
   gboolean is_oci;
 
   g_debug ("GenerateOciSummary %u %s %s", arg_flags, arg_origin, arg_installation);
@@ -1812,6 +1815,8 @@ handle_generate_oci_summary (FlatpakSystemHelper   *object,
       return TRUE;
     }
 
+  only_cached = (arg_flags & FLATPAK_HELPER_GENERATE_OCI_SUMMARY_FLAGS_ONLY_CACHED) != 0;
+
   if (!flatpak_dir_ensure_repo (system, NULL, &error))
     {
       g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
@@ -1827,7 +1832,7 @@ handle_generate_oci_summary (FlatpakSystemHelper   *object,
       return TRUE;
     }
 
-  if (!flatpak_dir_remote_make_oci_summary (system, arg_origin, NULL, NULL, &error))
+  if (!flatpak_dir_remote_make_oci_summary (system, arg_origin, only_cached, NULL, NULL, &error))
     {
       flatpak_invocation_return_error (invocation, error, "Failed to update OCI summary");
       return TRUE;
@@ -1885,7 +1890,7 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
       g_variant_get_child (parameters, 1, "u", &flags);
       g_variant_get_child (parameters, 2, "&s", &ref);
       g_variant_get_child (parameters, 3, "&s", &origin);
-      g_variant_get_child (parameters, 5, "&s", &installation);
+      g_variant_get_child (parameters, 6, "&s", &installation);
 
       /* For metadata updates, redirect to the metadata-update action which
        * should basically always be allowed */
@@ -2046,7 +2051,12 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
   else if (g_strcmp0 (method_name, "UpdateSummary") == 0 ||
            g_strcmp0 (method_name, "GenerateOciSummary") == 0)
     {
+      guint32 flags;
       action = "org.freedesktop.Flatpak.metadata-update";
+
+      /* all of these methods have flags as first argument, and 1 << 0 as 'no-interaction' */
+      g_variant_get_child (parameters, 0, "u", &flags);
+      no_interaction = (flags & (1 << 0)) != 0;
     }
 
   if (action)
@@ -2204,6 +2214,14 @@ main (int    argc,
     { "version", 0, 0, G_OPTION_ARG_NONE, &show_version, "Show program version.", NULL},
     { NULL }
   };
+
+  /* The child repo shared between the client process and the
+     system-helper really needs to support creating files that
+     are readable by others, so override the umask to 022
+     Ideally this should be set when needed, but umask is thread-unsafe
+     so there is really no local way to fix this.
+  */
+  umask(022);
 
   setlocale (LC_ALL, "");
 

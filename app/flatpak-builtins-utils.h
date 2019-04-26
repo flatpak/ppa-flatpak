@@ -127,6 +127,7 @@ typedef struct
   FlatpakEllipsizeMode ellipsize;
   gboolean             all;
   gboolean             def;
+  gboolean             skip_unique_if_default;
 } Column;
 
 int find_column (Column     *columns,
@@ -171,5 +172,11 @@ const char *cell_advance (const char *text,
 void print_wrapped (int         columns,
                     const char *text,
                     ...) G_GNUC_PRINTF (2, 3);
+
+FlatpakRemoteState * get_remote_state (FlatpakDir   *dir,
+                                       const char   *remote,
+                                       gboolean      cached,
+                                       GCancellable *cancellable,
+                                       GError      **error);
 
 #endif /* __FLATPAK_BUILTINS_UTILS_H__ */
