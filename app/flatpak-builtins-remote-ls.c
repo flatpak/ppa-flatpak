@@ -39,6 +39,7 @@ static gboolean opt_runtime;
 static gboolean opt_app;
 static gboolean opt_all;
 static gboolean opt_only_updates;
+static gboolean opt_cached;
 static char *opt_arch;
 static char *opt_app_runtime;
 static const char **opt_cols;
@@ -52,16 +53,18 @@ static GOptionEntry options[] = {
   { "all", 'a', 0, G_OPTION_ARG_NONE, &opt_all, N_("List all refs (including locale/debug)"), NULL },
   { "app-runtime", 0, 0, G_OPTION_ARG_STRING, &opt_app_runtime, N_("List all applications using RUNTIME"), N_("RUNTIME") },
   { "columns", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_cols, N_("What information to show"), N_("FIELD,…") },
+  { "cached", 0, 0, G_OPTION_ARG_NONE, &opt_cached, N_("Use local caches even if they are stale"), NULL },
   { NULL }
 };
 
 static Column all_columns[] = {
-  { "description",    N_("Description"),    N_("Show the description"),    1, FLATPAK_ELLIPSIZE_MODE_END, 1, 1 },
-  { "application",    N_("Application"),    N_("Show the application ID"), 1, FLATPAK_ELLIPSIZE_MODE_START, 0, 1 },
+  { "name",           N_("Name"),           N_("Show the name"),           1, FLATPAK_ELLIPSIZE_MODE_END, 1, 1 },
+  { "description",    N_("Description"),    N_("Show the description"),    1, FLATPAK_ELLIPSIZE_MODE_END, 1, 0 },
+  { "application",    N_("Application ID"),    N_("Show the application ID"), 1, FLATPAK_ELLIPSIZE_MODE_START, 0, 1 },
   { "version",        N_("Version"),        N_("Show the version"),        1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
   { "branch",         N_("Branch"),         N_("Show the branch"),         1, FLATPAK_ELLIPSIZE_MODE_NONE, 0, 1 },
   { "arch",           N_("Arch"),           N_("Show the architecture"),   1, FLATPAK_ELLIPSIZE_MODE_NONE, 0, 0 },
-  { "origin",         N_("Origin"),         N_("Show the origin remote"),  1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
+  { "origin",         N_("Origin"),         N_("Show the origin remote"),  1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1, 1 },
   { "ref",            N_("Ref"),            N_("Show the ref"),            1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 0 },
   { "commit",         N_("Commit"),         N_("Show the active commit"),  1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 0 },
   { "runtime",        N_("Runtime"),        N_("Show the runtime"),        1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 0 },
@@ -120,7 +123,8 @@ ls_remote (GHashTable *refs_hash, const char **arches, const char *app_runtime, 
 
   printer = flatpak_table_printer_new ();
 
-  flatpak_table_printer_set_columns (printer, columns);
+  flatpak_table_printer_set_columns (printer, columns,
+                                     opt_cols == NULL && !opt_show_details);
 
   if (app_runtime)
     {
@@ -136,7 +140,8 @@ ls_remote (GHashTable *refs_hash, const char **arches, const char *app_runtime, 
           strcmp (columns[j].name, "installed-size") == 0 ||
           strcmp (columns[j].name, "runtime") == 0)
         need_cache_data = TRUE;
-      if (strcmp (columns[j].name, "description") == 0 ||
+      if (strcmp (columns[j].name, "name") == 0 ||
+          strcmp (columns[j].name, "description") == 0 ||
           strcmp (columns[j].name, "version") == 0)
         need_appstream_data = TRUE;
     }
@@ -259,6 +264,17 @@ ls_remote (GHashTable *refs_hash, const char **arches, const char *app_runtime, 
           g_autofree char *runtime = NULL;
           AsApp *app = NULL;
           g_auto(GStrv) parts = NULL;
+          g_autoptr(GVariant) sparse = NULL;
+
+          sparse = flatpak_remote_state_lookup_sparse_cache (state, ref, NULL);
+
+          /* The sparse cache is optional */
+          if (sparse)
+            {
+              const char *eol;
+              if (!opt_all && (g_variant_lookup (sparse, "eol", "&s", &eol) || g_variant_lookup (sparse, "eolr", "&s", &eol)))
+                continue;
+            }
 
           parts = flatpak_decompose_ref (ref, NULL);
 
@@ -291,18 +307,22 @@ ls_remote (GHashTable *refs_hash, const char **arches, const char *app_runtime, 
 
           for (j = 0; columns[j].name; j++)
             {
-              if (strcmp (columns[j].name, "description") == 0)
+              if (strcmp (columns[j].name, "name") == 0)
                 {
+                  const char *name = NULL;
+
                   if (app)
-                    {
-                      g_autofree char *description = NULL;
-                      const char *name = as_app_get_localized_name (app);
-                      const char *comment = as_app_get_localized_comment (app);
-                      description = g_strconcat (name, " - ", comment, NULL);
-                      flatpak_table_printer_add_column (printer, description);
-                    }
-                  else
-                    flatpak_table_printer_add_column (printer, parts[1]);
+                    name = as_app_get_localized_name (app);
+
+                  flatpak_table_printer_add_column (printer, name ? name : strrchr (parts[1], '.') + 1);
+                }
+              else if (strcmp (columns[j].name, "description") == 0)
+                {
+                  const char *comment = NULL;
+                  if (app)
+                      comment = as_app_get_localized_comment (app);
+
+                  flatpak_table_printer_add_column (printer, comment);
                 }
               else if (strcmp (columns[j].name, "version") == 0)
                 flatpak_table_printer_add_column (printer, app ? as_app_get_version (app) : "");
@@ -324,39 +344,31 @@ ls_remote (GHashTable *refs_hash, const char **arches, const char *app_runtime, 
                   value[MIN (strlen (value), 12)] = 0;
                   flatpak_table_printer_add_column (printer, value);
                 }
-              else
+              else if (strcmp (columns[j].name, "installed-size") == 0)
                 {
-                  g_autoptr(GVariant) sparse = NULL;
+                  g_autofree char *installed = g_format_size (installed_size);
+                  flatpak_table_printer_add_decimal_column (printer, installed);
+                }
+              else if (strcmp (columns[j].name, "download-size") == 0)
+                {
+                  g_autofree char *download = g_format_size (download_size);
+                  flatpak_table_printer_add_decimal_column (printer, download);
+                }
+              else if (strcmp (columns[j].name, "runtime") == 0)
+                {
+                  flatpak_table_printer_add_column (printer, runtime);
+                }
+              else if (strcmp (columns[j].name, "options") == 0)
+                {
+                  flatpak_table_printer_add_column (printer, ""); /* Extra */
+                  if (sparse)
+                    {
+                      const char *eol;
 
-                  /* The sparse cache is optional */
-                  sparse = flatpak_remote_state_lookup_sparse_cache (state, ref, NULL);
-
-                  if (strcmp (columns[j].name, "installed-size") == 0)
-                    {
-                      g_autofree char *installed = g_format_size (installed_size);
-                      flatpak_table_printer_add_decimal_column (printer, installed);
-                    }
-                  else if (strcmp (columns[j].name, "download-size") == 0)
-                    {
-                      g_autofree char *download = g_format_size (download_size);
-                      flatpak_table_printer_add_decimal_column (printer, download);
-                    }
-                  else if (strcmp (columns[j].name, "runtime") == 0)
-                    {
-                      flatpak_table_printer_add_column (printer, runtime);
-                    }
-                  else if (strcmp (columns[j].name, "options") == 0)
-                    {
-                      flatpak_table_printer_add_column (printer, ""); /* Extra */
-                      if (sparse)
-                        {
-                          const char *eol;
-
-                          if (g_variant_lookup (sparse, "eol", "&s", &eol))
-                            flatpak_table_printer_append_with_comma_printf (printer, "eol=%s", eol);
-                          if (g_variant_lookup (sparse, "eolr", "&s", &eol))
-                            flatpak_table_printer_append_with_comma_printf (printer, "eol-rebase=%s", eol);
-                        }
+                      if (g_variant_lookup (sparse, "eol", "&s", &eol))
+                        flatpak_table_printer_append_with_comma_printf (printer, "eol=%s", eol);
+                      if (g_variant_lookup (sparse, "eolr", "&s", &eol))
+                        flatpak_table_printer_append_with_comma_printf (printer, "eol-rebase=%s", eol);
                     }
                 }
             }
@@ -423,7 +435,7 @@ flatpak_builtin_remote_ls (int argc, char **argv, GCancellable *cancellable, GEr
             return FALSE;
         }
 
-      state = flatpak_dir_get_remote_state (preferred_dir, argv[1], cancellable, error);
+      state = get_remote_state (preferred_dir, argv[1], opt_cached, cancellable, error);
       if (state == NULL)
         return FALSE;
 
@@ -458,8 +470,8 @@ flatpak_builtin_remote_ls (int argc, char **argv, GCancellable *cancellable, GEr
               if (flatpak_dir_get_remote_disabled (dir, remote_name))
                 continue;
 
-              state = flatpak_dir_get_remote_state (dir, remote_name,
-                                                    cancellable, error);
+              state = get_remote_state (dir, remote_name, opt_cached,
+                                        cancellable, error);
               if (state == NULL)
                 return FALSE;
 

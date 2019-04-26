@@ -184,9 +184,11 @@ check_PROGRAMS = $(am__EXEEXT_5) $(am__EXEEXT_6)
 @BUILD_SYSTEM_HELPER_TRUE@am__append_23 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service
 @BUILD_SELINUX_MODULE_TRUE@am__append_24 = flatpak.pp.bz2
 @BUILD_SELINUX_MODULE_TRUE@am__append_25 = selinux/flatpak.if
-@WITH_SYSTEM_BWRAP_TRUE@am__append_26 = FLATPAK_BWRAP=$(BWRAP)
-@WITH_SYSTEM_BWRAP_FALSE@am__append_27 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
-@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_28 = flatpak-dbus-proxy
+@WITH_SYSTEM_DBUS_PROXY_TRUE@am__append_26 = FLATPAK_DBUSPROXY=$(DBUS_PROXY)
+@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_27 = FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && pwd)/flatpak-dbus-proxy
+@WITH_SYSTEM_BWRAP_TRUE@am__append_28 = FLATPAK_BWRAP=$(BWRAP)
+@WITH_SYSTEM_BWRAP_FALSE@am__append_29 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
+@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_30 = flatpak-dbus-proxy
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_PROGRAMS = flatpak-bwrap$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -1904,13 +1906,12 @@ AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 \
 	$(top_srcdir) && pwd)/triggers FLATPAK_VALIDATE_ICON=$$(cd \
 	$(top_builddir) && pwd)/flatpak-validate-icon \
 	FLATPAK_REVOKEFS_FUSE=$$(cd $(top_builddir) && \
-	pwd)/revokefs-fuse FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && \
-	pwd)/flatpak-dbus-proxy GI_TYPELIB_PATH=$$(cd $(top_builddir) \
-	&& pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
+	pwd)/revokefs-fuse GI_TYPELIB_PATH=$$(cd $(top_builddir) && \
+	pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
 	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && \
 	pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} PATH=$$(cd \
 	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_26) \
-	$(am__append_27)
+	$(am__append_27) $(am__append_28) $(am__append_29)
 testlibrary_CFLAGS = \
 	$(AM_CFLAGS) \
 	$(BASE_CFLAGS) \

@@ -169,10 +169,7 @@ install_bundle (FlatpakDir *dir,
   if (!flatpak_transaction_run (transaction, cancellable, error))
     {
       if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
-        {
-          g_clear_error (error);
-          return TRUE;
-        }
+        g_clear_error (error); /* Don't report on stderr */
 
       return FALSE;
     }
@@ -246,10 +243,7 @@ install_from (FlatpakDir *dir,
   if (!flatpak_transaction_run (transaction, cancellable, error))
     {
       if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
-        {
-          g_clear_error (error);
-          return TRUE;
-        }
+        g_clear_error (error); /* Don't report on stderr */
 
       return FALSE;
     }
@@ -304,6 +298,9 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
 
   if (argc == 2)
     auto_remote = TRUE;
+
+  if (opt_noninteractive)
+    opt_yes = TRUE; /* Implied */
 
   kinds = flatpak_kinds_from_bools (opt_app, opt_runtime);
 
@@ -518,10 +515,7 @@ flatpak_builtin_install (int argc, char **argv, GCancellable *cancellable, GErro
   if (!flatpak_transaction_run (transaction, cancellable, error))
     {
       if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
-        {
-          g_clear_error (error);
-          return TRUE;
-        }
+        g_clear_error (error); /* Don't report on stderr */
 
       return FALSE;
     }

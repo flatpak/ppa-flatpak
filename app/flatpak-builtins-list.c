@@ -54,13 +54,14 @@ static GOptionEntry options[] = {
 };
 
 static Column all_columns[] = {
-  { "description",  N_("Description"),    N_("Show the description"),    1, FLATPAK_ELLIPSIZE_MODE_END, 1, 1 },
-  { "application",  N_("Application"),    N_("Show the application ID"), 1, FLATPAK_ELLIPSIZE_MODE_START, 0, 1 },
+  { "name",         N_("Name"),           N_("Show the name"),           1, FLATPAK_ELLIPSIZE_MODE_END, 1, 1 },
+  { "description",  N_("Description"),    N_("Show the description"),    1, FLATPAK_ELLIPSIZE_MODE_END, 1, 0 },
+  { "application",  N_("Application ID"), N_("Show the application ID"), 1, FLATPAK_ELLIPSIZE_MODE_START, 0, 1 },
   { "version",      N_("Version"),        N_("Show the version"),        1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
   { "branch",       N_("Branch"),         N_("Show the branch"),         1, FLATPAK_ELLIPSIZE_MODE_NONE, 0, 1 },
-  { "arch",         N_("Arch"),           N_("Show the architecture"),   1, FLATPAK_ELLIPSIZE_MODE_NONE, 0, 1 },
+  { "arch",         N_("Arch"),           N_("Show the architecture"),   1, FLATPAK_ELLIPSIZE_MODE_NONE, 0, 1, 1 },
   { "runtime",      N_("Runtime"),        N_("Show the used runtime"),   1, FLATPAK_ELLIPSIZE_MODE_START, 0, 0 },
-  { "origin",       N_("Origin"),         N_("Show the origin remote"),  1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1 },
+  { "origin",       N_("Origin"),         N_("Show the origin remote"),  1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 1, 1 },
   { "installation", N_("Installation"),   N_("Show the installation"),   1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 0 },
   { "ref",          N_("Ref"),            N_("Show the ref"),            1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 0 },
   { "active",       N_("Active commit"),  N_("Show the active commit"),  1, FLATPAK_ELLIPSIZE_MODE_NONE, 1, 0 },
@@ -164,7 +165,8 @@ print_table_for_refs (gboolean      print_apps,
 
   printer = flatpak_table_printer_new ();
 
-  flatpak_table_printer_set_columns (printer, columns);
+  flatpak_table_printer_set_columns (printer, columns,
+                                     opt_cols == NULL && !opt_show_details);
 
   if (app_runtime)
     {
@@ -283,15 +285,15 @@ print_table_for_refs (gboolean      print_apps,
 
           for (k = 0; columns[k].name; k++)
             {
-              if (strcmp (columns[k].name, "description") == 0)
+              if (strcmp (columns[k].name, "name") == 0)
                 {
-                  g_autofree char *description = NULL;
                   const char *name = appdata_name ? appdata_name : strrchr (parts[1], '.') + 1;
 
-                  if (appdata_summary)
-                    description =  g_strconcat (name, " - ", appdata_summary, NULL);
-                  else
-                    description =  g_strdup (name);
+                  flatpak_table_printer_add_column (printer, name);
+                }
+              else if (strcmp (columns[k].name, "description") == 0)
+                {
+                  const char *description = appdata_summary ? appdata_summary : "";
                   flatpak_table_printer_add_column (printer, description);
                 }
               else if (strcmp (columns[k].name, "version") == 0)

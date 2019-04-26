@@ -22,6 +22,7 @@ set -euo pipefail
 . $(dirname $0)/libtest.sh
 
 skip_without_bwrap
+skip_revokefs_without_fuse
 
 echo "1..30"
 
@@ -210,7 +211,7 @@ UPDATE_REPO_ARGS=--title=new-title update_repo
 assert_file_has_content repos/test/config new-title
 
 # This should make us automatically pick up the new metadata
-${FLATPAK} ${U} install test-repo org.test.Platform
+${FLATPAK} ${U} install -y test-repo org.test.Platform
 ${FLATPAK} ${U} remotes -d | grep ^test-repo > repo-info
 assert_file_has_content repo-info "new-title"
 
@@ -254,7 +255,11 @@ assert_not_file_has_content appdata.xml "org\.test\.Hello\.desktop"
 ${FLATPAK} repo --branches repos/test > branches-log
 assert_file_has_content branches-log "^app/org\.test\.Hello/.*eol=Reason2"
 
+# eol only visible in remote-ls if -a:
 ${FLATPAK} ${U} remote-ls -d test-repo > remote-ls-log
+assert_not_file_has_content remote-ls-log "app/org\.test\.Hello"
+
+${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
 assert_file_has_content remote-ls-log "app/org\.test\.Hello/.*eol=Reason2"
 
 ${FLATPAK} ${U} update -y org.test.Hello > update-log
@@ -267,6 +272,9 @@ ${FLATPAK} ${U} list -d > list-log
 assert_file_has_content list-log "org\.test\.Hello/.*eol=Reason2"
 
 ${FLATPAK} ${U} uninstall -y org.test.Hello
+
+# Remove eol for future tests
+EXPORT_ARGS="" make_updated_app
 
 echo "ok eol build-export"
 

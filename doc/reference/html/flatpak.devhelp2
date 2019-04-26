@@ -330,6 +330,7 @@
     <keyword type="constant" name="FLATPAK_ERROR_INVALID_NAME" link="flatpak-Error-codes.html#FLATPAK-ERROR-INVALID-NAME:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_OUT_OF_SPACE" link="flatpak-Error-codes.html#FLATPAK-ERROR-OUT-OF-SPACE:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_WRONG_USER" link="flatpak-Error-codes.html#FLATPAK-ERROR-WRONG-USER:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_NOT_CACHED" link="flatpak-Error-codes.html#FLATPAK-ERROR-NOT-CACHED:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_FAILED" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-FAILED:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-INVALID-ARGUMENT:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-NOT-FOUND:CAPS"/>
