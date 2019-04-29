@@ -1,1 +1,2 @@
 debian/Use-Python-3-for-test-web-server.patch
+debian/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch

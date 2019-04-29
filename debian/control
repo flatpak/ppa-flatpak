@@ -20,7 +20,7 @@ Build-Depends:
  gnupg <!nocheck>,
  gobject-introspection (>= 1.54.1-2~),
  gtk-doc-tools,
- gtk-update-icon-cache <!nocheck>,
+ gtk-update-icon-cache  | libgtk-3-bin <!nocheck>,
  hicolor-icon-theme <!nocheck>,
  libappstream-glib-dev (>= 0.5.10),
  libarchive-dev (>= 2.8.0),
