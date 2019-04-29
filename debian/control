@@ -18,7 +18,7 @@ Build-Depends:
  docbook-xsl <!nodoc>,
  fuse <!nocheck>,
  gnupg <!nocheck>,
- gobject-introspection (>= 1.54.1-2~),
+ gobject-introspection,
  gtk-doc-tools,
  gtk-update-icon-cache  | libgtk-3-bin <!nocheck>,
  hicolor-icon-theme <!nocheck>,
@@ -58,7 +58,6 @@ Standards-Version: 4.3.0
 Homepage: http://flatpak.org/
 Vcs-Git: https://salsa.debian.org/debian/flatpak.git
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
-Rules-Requires-Root: no
 
 Package: flatpak
 Architecture: linux-any
