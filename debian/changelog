@@ -1,3 +1,9 @@
+flatpak (1.3.3-1flatpak1~bionic) bionic; urgency=medium
+
+  * Rebuild  for flatpak ppa
+
+ -- Alexander Larsson <alexl@redhat.com>  Mon, 29 Apr 2019 10:56:40 +0200
+
 flatpak (1.3.3-1) experimental; urgency=medium
 
   * New upstream development release
