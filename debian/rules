@@ -47,8 +47,6 @@ override_dh_auto_configure:
 		--with-dbus-config-dir=/usr/share/dbus-1/system.d \
 		--with-priv-mode=none \
 		--with-privileged-group=sudo \
-		--with-system-bubblewrap=bwrap \
-		--with-system-dbus-proxy=xdg-dbus-proxy \
 		--with-systemdsystemunitdir=/lib/systemd/system \
 		--with-system-helper-user=_flatpak \
 		$(configure_options)

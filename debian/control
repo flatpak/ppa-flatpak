@@ -9,7 +9,6 @@ Build-Depends:
  attr <!nocheck>,
  automake (>= 1.14.1),
  bison,
- bubblewrap (>= 0.2.1),
  ca-certificates <!nocheck>,
  dbus,
  debhelper (>= 9),
@@ -50,7 +49,6 @@ Build-Depends:
  procps,
  python3 <!nocheck>,
  shared-mime-info <!nocheck>,
- xdg-dbus-proxy (>= 0.1.0),
  xmlto <!nodoc>,
  xsltproc <!nodoc>,
 Build-Depends-Indep:
@@ -66,8 +64,6 @@ Package: flatpak
 Architecture: linux-any
 Depends:
  adduser,
- bubblewrap (>= 0.2.1),
- xdg-dbus-proxy (>= 0.1.0),
  xdg-desktop-portal (>= 0.10),
  ${misc:Depends},
  ${shlibs:Depends},
@@ -179,7 +175,6 @@ Package: libflatpak0
 Architecture: linux-any
 Section: libs
 Depends:
- bubblewrap (>= 0.2.1),
  ${misc:Depends},
  ${shlibs:Depends},
 Pre-Depends:
