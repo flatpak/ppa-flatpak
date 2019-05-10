@@ -4,6 +4,17 @@ flatpak (1.3.4-1) UNRELEASED; urgency=medium
     - Incompatible change: /etc/flatpak/remotes.d/*.conf are no longer
       read, and are superseded by /etc/flatpak/remotes.d/*.flatpakrepo
   * Require libostree 2019.2, for OSTREE_REPO_PULL_FLAGS_MIRROR
+  * Install flatpak-docker-seccomp.json to /u/s/d/flatpak/examples.
+    This seccomp profile can be used to configure a Docker container to
+    allow bubblewrap and Flatpak to be run, with some caveats:
+    - The host kernel must allow unprivileged user namespace creation
+      (for example Debian with sysctl kernel.unprivileged_userns_clone=1,
+      or recent Ubuntu in its default configuration)
+    - Use the seccomp profile
+      (docker run --security-opt seccomp=flatpak-docker-seccomp.json)
+    - Make the host system /proc visible in the container
+      (docker run -v=/proc:/host/proc)
+    - Run flatpak as an ordinary user in the container, not as root
 
  -- Simon McVittie <smcv@debian.org>  Fri, 10 May 2019 11:44:36 +0100
 
