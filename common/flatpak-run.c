@@ -572,21 +572,34 @@ flatpak_run_add_session_dbus_args (FlatpakBwrap   *app_bwrap,
 {
   gboolean unrestricted, no_proxy;
   const char *dbus_address = g_getenv ("DBUS_SESSION_BUS_ADDRESS");
-  char *dbus_session_socket = NULL;
+  g_autofree char *dbus_session_socket = NULL;
   g_autofree char *sandbox_socket_path = g_strdup_printf ("/run/user/%d/bus", getuid ());
   g_autofree char *sandbox_dbus_address = g_strdup_printf ("unix:path=/run/user/%d/bus", getuid ());
 
   unrestricted = (context->sockets & FLATPAK_CONTEXT_SOCKET_SESSION_BUS) != 0;
 
-  if (dbus_address == NULL)
-    return FALSE;
+  if (dbus_address != NULL)
+    {
+      dbus_session_socket = extract_unix_path_from_dbus_address (dbus_address);
+    }
+  else
+    {
+      g_autofree char *user_runtime_dir = flatpak_get_real_xdg_runtime_dir ();
+      struct stat statbuf;
+
+      dbus_session_socket = g_build_filename (user_runtime_dir, "bus", NULL);
+
+      if (stat (dbus_session_socket, &statbuf) < 0
+          || (statbuf.st_mode & S_IFMT) != S_IFSOCK
+          || statbuf.st_uid != getuid ())
+        return FALSE;
+    }
 
   if (unrestricted)
     g_debug ("Allowing session-dbus access");
 
   no_proxy = (flags & FLATPAK_RUN_FLAG_NO_SESSION_BUS_PROXY) != 0;
 
-  dbus_session_socket = extract_unix_path_from_dbus_address (dbus_address);
   if (dbus_session_socket != NULL && unrestricted)
     {
       flatpak_bwrap_add_args (app_bwrap,
@@ -762,18 +775,13 @@ add_bwrap_wrapper (FlatpakBwrap *bwrap,
         }
       else if (dent->d_type == DT_LNK)
         {
-          ssize_t symlink_size;
-          char path_buffer[PATH_MAX + 1];
+          g_autofree gchar *target = NULL;
 
-          symlink_size = readlinkat (dir_iter.fd, dent->d_name, path_buffer, sizeof (path_buffer) - 1);
-          if (symlink_size < 0)
-            {
-              glnx_set_error_from_errno (error);
-              return FALSE;
-            }
-          path_buffer[symlink_size] = 0;
-
-          flatpak_bwrap_add_args (bwrap, "--symlink", path_buffer, NULL);
+          target = glnx_readlinkat_malloc (dir_iter.fd, dent->d_name,
+                                           NULL, error);
+          if (target == NULL)
+            return FALSE;
+          flatpak_bwrap_add_args (bwrap, "--symlink", target, NULL);
           flatpak_bwrap_add_arg_printf (bwrap, "/%s", dent->d_name);
         }
     }
@@ -1831,57 +1839,6 @@ add_dconf_locks_to_list (GString     *s,
     }
 }
 
-static char *
-dconf_path_for_app_id (const char *app_id)
-{
-  GString *s;
-  const char *p;
-
-  s = g_string_new ("");
-
-  g_string_append_c (s, '/');
-  for (p = app_id; *p; p++)
-    {
-      if (*p == '.')
-        g_string_append_c (s, '/');
-      else
-        g_string_append_c (s, *p);
-    }
-  g_string_append_c (s, '/');
-
-  return g_string_free (s, FALSE);
-}
-
-/* Check if two dconf paths are 'similar enough', which
- * for now is defined as equal except case differences
- * and -/_
- */
-static gboolean
-path_is_similar (const char *path1, const char *path2)
-{
-  int i;
-
-  for (i = 0; path1[i]; i++)
-    {
-      if (path2[i] == '\0')
-        return FALSE;
-
-      if (tolower (path1[i]) == tolower (path2[i]))
-        continue;
-
-      if ((path1[i] == '-' || path1[i] == '_') &&
-          (path2[i] == '-' || path2[i] == '_'))
-        continue;
-
-      return FALSE;
-    }
-
-  if (path2[0] != '\0')
-    return FALSE;
-
-  return TRUE;
-}
-
 #endif /* HAVE_DCONF */
 
 static void
@@ -1911,12 +1868,12 @@ get_dconf_data (const char  *app_id,
 
   client = dconf_client_new ();
 
-  prefix = dconf_path_for_app_id (app_id);
+  prefix = flatpak_dconf_path_for_app_id (app_id);
 
   if (migrate_path)
     {
-      g_debug ("Add values in dir %s", migrate_path);
-      if (path_is_similar (migrate_path, prefix))
+      g_debug ("Add values in dir '%s', prefix is '%s'", migrate_path, prefix);
+      if (flatpak_dconf_path_is_similar (migrate_path, prefix))
         add_dconf_dir_to_keyfile (values_data, client, migrate_path, DCONF_READ_USER_VALUE);
       else
         g_warning ("Ignoring D-Conf migrate-path setting %s", migrate_path);
@@ -2028,15 +1985,23 @@ flatpak_run_add_dconf_args (FlatpakBwrap *bwrap,
                                    "config/glib-2.0/settings/keyfile",
                                    NULL);
 
+      g_debug ("writing D-Conf values to %s", filename);
+
       if (values_size != 0 && !g_file_test (filename, G_FILE_TEST_EXISTS))
         {
           g_autofree char *dir = g_path_get_dirname (filename);
 
           if (g_mkdir_with_parents (dir, 0700) == -1)
-            return FALSE;
+            {
+              g_warning ("failed creating dirs for %s", filename);
+              return FALSE;
+            }
 
           if (!g_file_set_contents (filename, values, values_size, error))
-            return FALSE;
+            {
+              g_warning ("failed writing %s", filename);
+              return FALSE;
+            }
         }
     }
 
@@ -2306,21 +2271,18 @@ add_monitor_path_args (gboolean      use_session_helper,
        */
       if (g_file_test ("/etc/localtime", G_FILE_TEST_EXISTS))
         {
-          char localtime[PATH_MAX + 1];
-          ssize_t symlink_size;
+          g_autofree char *localtime = NULL;
           gboolean is_reachable = FALSE;
           g_autofree char *timezone = flatpak_get_timezone ();
           g_autofree char *timezone_content = g_strdup_printf ("%s\n", timezone);
 
-          symlink_size = readlink ("/etc/localtime", localtime, sizeof (localtime) - 1);
-          if (symlink_size > 0)
+          localtime = glnx_readlinkat_malloc (-1, "/etc/localtime", NULL, NULL);
+
+          if (localtime != NULL)
             {
               g_autoptr(GFile) base_file = NULL;
               g_autoptr(GFile) target_file = NULL;
               g_autofree char *target_canonical = NULL;
-
-              /* readlink() does not append a null byte to the buffer. */
-              localtime[symlink_size] = 0;
 
               base_file = g_file_new_for_path ("/etc");
               target_file = g_file_resolve_relative_path (base_file, localtime);
@@ -2788,8 +2750,6 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
     {
       g_auto(GLnxDirFdIterator) dfd_iter = { 0, };
       struct dirent *dent;
-      char path_buffer[PATH_MAX + 1];
-      ssize_t symlink_size;
       gboolean inited;
 
       inited = glnx_dirfd_iterator_init_at (AT_FDCWD, flatpak_file_get_path_cached (etc), FALSE, &dfd_iter, NULL);
@@ -2817,14 +2777,14 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
           dest = g_build_filename ("/etc", dent->d_name, NULL);
           if (dent->d_type == DT_LNK)
             {
-              symlink_size = readlinkat (dfd_iter.fd, dent->d_name, path_buffer, sizeof (path_buffer) - 1);
-              if (symlink_size < 0)
-                {
-                  glnx_set_error_from_errno (error);
-                  return FALSE;
-                }
-              path_buffer[symlink_size] = 0;
-              flatpak_bwrap_add_args (bwrap, "--symlink", path_buffer, dest, NULL);
+              g_autofree char *target = NULL;
+
+              target = glnx_readlinkat_malloc (dfd_iter.fd, dent->d_name,
+                                               NULL, error);
+              if (target == NULL)
+                return FALSE;
+
+              flatpak_bwrap_add_args (bwrap, "--symlink", target, dest, NULL);
             }
           else
             {

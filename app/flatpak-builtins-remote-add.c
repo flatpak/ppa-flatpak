@@ -42,6 +42,7 @@ static gboolean opt_no_deps;
 static gboolean opt_if_not_exists;
 static gboolean opt_disable;
 static int opt_prio = -1;
+static char *opt_filter;
 static char *opt_title;
 static char *opt_comment;
 static char *opt_description;
@@ -52,12 +53,6 @@ static char *opt_url;
 static char *opt_collection_id = NULL;
 static gboolean opt_from;
 static char **opt_gpg_import;
-
-static char *comment = NULL;
-static char *description = NULL;
-static char *icon = NULL;
-static char *homepage = NULL;
-
 
 static GOptionEntry add_options[] = {
   { "if-not-exists", 0, 0, G_OPTION_ARG_NONE, &opt_if_not_exists, N_("Do nothing if the provided remote exists"), NULL },
@@ -78,36 +73,30 @@ static GOptionEntry common_options[] = {
   { "default-branch", 0, 0, G_OPTION_ARG_STRING, &opt_default_branch, N_("Default branch to use for this remote"), N_("BRANCH") },
   { "collection-id", 0, 0, G_OPTION_ARG_STRING, &opt_collection_id, N_("Collection ID"), N_("COLLECTION-ID") },
   { "gpg-import", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_gpg_import, N_("Import GPG key from FILE (- for stdin)"), N_("FILE") },
+  { "filter", 0, 0, G_OPTION_ARG_FILENAME, &opt_filter, N_("Set path to local filter FILE"), N_("FILE") },
   { "disable", 0, 0, G_OPTION_ARG_NONE, &opt_disable, N_("Disable the remote"), NULL },
   { NULL }
 };
 
 
-static GKeyFile *
-get_config_from_opts (FlatpakDir *dir, const char *remote_name, gboolean *changed)
+static gboolean
+get_config_from_opts (GKeyFile *config,
+                      const char *remote_name,
+                      GBytes    **gpg_data,
+                      GError    **error)
 {
-  OstreeRepo *repo;
-  GKeyFile *config;
   g_autofree char *group = g_strdup_printf ("remote \"%s\"", remote_name);
-
-  repo = flatpak_dir_get_repo (dir);
-  if (repo == NULL)
-    config = g_key_file_new ();
-  else
-    config = ostree_repo_copy_config (repo);
 
   if (opt_no_gpg_verify)
     {
       g_key_file_set_boolean (config, group, "gpg-verify", FALSE);
       g_key_file_set_boolean (config, group, "gpg-verify-summary", FALSE);
-      *changed = TRUE;
     }
 
   if (opt_do_gpg_verify)
     {
       g_key_file_set_boolean (config, group, "gpg-verify", TRUE);
       g_key_file_set_boolean (config, group, "gpg-verify-summary", TRUE);
-      *changed = TRUE;
     }
 
   if (opt_url)
@@ -116,136 +105,95 @@ get_config_from_opts (FlatpakDir *dir, const char *remote_name, gboolean *change
         g_key_file_set_string (config, group, "metalink", opt_url + strlen ("metalink="));
       else
         g_key_file_set_string (config, group, "url", opt_url);
-      *changed = TRUE;
     }
 
   if (opt_collection_id)
     {
       g_key_file_set_string (config, group, "collection-id", opt_collection_id);
       g_key_file_set_boolean (config, group, "gpg-verify-summary", FALSE);
-      *changed = TRUE;
     }
 
   if (opt_title)
     {
       g_key_file_set_string (config, group, "xa.title", opt_title);
       g_key_file_set_boolean (config, group, "xa.title-is-set", TRUE);
-      *changed = TRUE;
     }
 
   if (opt_comment)
     {
       g_key_file_set_string (config, group, "xa.comment", opt_comment);
       g_key_file_set_boolean (config, group, "xa.comment-is-set", TRUE);
-      *changed = TRUE;
     }
 
   if (opt_description)
     {
       g_key_file_set_string (config, group, "xa.description", opt_description);
       g_key_file_set_boolean (config, group, "xa.description-is-set", TRUE);
-      *changed = TRUE;
     }
 
   if (opt_homepage)
     {
       g_key_file_set_string (config, group, "xa.homepage", opt_homepage);
       g_key_file_set_boolean (config, group, "xa.homepage-is-set", TRUE);
-      *changed = TRUE;
     }
 
   if (opt_icon)
     {
       g_key_file_set_string (config, group, "xa.icon", opt_icon);
       g_key_file_set_boolean (config, group, "xa.icon-is-set", TRUE);
-      *changed = TRUE;
     }
 
   if (opt_default_branch)
     {
       g_key_file_set_string (config, group, "xa.default-branch", opt_default_branch);
       g_key_file_set_boolean (config, group, "xa.default-branch-is-set", TRUE);
-      *changed = TRUE;
     }
+
+  if (opt_filter)
+    g_key_file_set_string (config, group, "xa.filter", opt_filter);
 
   if (opt_no_enumerate)
-    {
-      g_key_file_set_boolean (config, group, "xa.noenumerate", TRUE);
-      *changed = TRUE;
-    }
+    g_key_file_set_boolean (config, group, "xa.noenumerate", TRUE);
 
   if (opt_do_enumerate)
-    {
-      g_key_file_set_boolean (config, group, "xa.noenumerate", FALSE);
-      *changed = TRUE;
-    }
+    g_key_file_set_boolean (config, group, "xa.noenumerate", FALSE);
 
   if (opt_no_deps)
-    {
-      g_key_file_set_boolean (config, group, "xa.nodeps", TRUE);
-      *changed = TRUE;
-    }
+    g_key_file_set_boolean (config, group, "xa.nodeps", TRUE);
 
   if (opt_do_deps)
-    {
-      g_key_file_set_boolean (config, group, "xa.nodeps", FALSE);
-      *changed = TRUE;
-    }
+    g_key_file_set_boolean (config, group, "xa.nodeps", FALSE);
 
   if (opt_disable)
-    {
-      g_key_file_set_boolean (config, group, "xa.disable", TRUE);
-      *changed = TRUE;
-    }
+    g_key_file_set_boolean (config, group, "xa.disable", TRUE);
 
   if (opt_prio != -1)
     {
       g_autofree char *prio_as_string = g_strdup_printf ("%d", opt_prio);
       g_key_file_set_string (config, group, "xa.prio", prio_as_string);
-      *changed = TRUE;
     }
 
-  if (comment)
+  if (opt_gpg_import != NULL)
     {
-      g_key_file_set_string (config, group, "xa.comment", comment);
-      g_key_file_set_boolean (config, group, "xa.comment-is-set", TRUE);
-      *changed = TRUE;
+      g_clear_pointer (gpg_data, g_bytes_unref); /* Free if set from flatpakrepo file */
+      *gpg_data = flatpak_load_gpg_keys (opt_gpg_import, NULL, error);
+      if (*gpg_data == NULL)
+        return FALSE;
     }
 
-  if (description)
-    {
-      g_key_file_set_string (config, group, "xa.description", description);
-      g_key_file_set_boolean (config, group, "xa.description-is-set", TRUE);
-      *changed = TRUE;
-    }
-
-  if (icon)
-    {
-      g_key_file_set_string (config, group, "xa.icon", icon);
-      g_key_file_set_boolean (config, group, "xa.icon-is-set", TRUE);
-      *changed = TRUE;
-    }
-
-  if (homepage)
-    {
-      g_key_file_set_string (config, group, "xa.homepage", homepage);
-      g_key_file_set_boolean (config, group, "xa.homepage-is-set", TRUE);
-      *changed = TRUE;
-    }
-
-  return config;
+  return TRUE;
 }
 
-static void
-load_options (const char *filename,
-              GBytes    **gpg_data)
+static GKeyFile *
+load_options (const char *remote_name,
+              const char *filename,
+              GBytes    **gpg_data,
+              GError    **error)
 {
-  g_autoptr(GError) error = NULL;
+  g_autoptr(GError) local_error = NULL;
   g_autoptr(GKeyFile) keyfile = g_key_file_new ();
-  char *str;
-  gboolean nodeps;
+  g_autoptr(GKeyFile) config = NULL;
   g_autoptr(GBytes) bytes = NULL;
-  g_autofree char *version = NULL;
 
   if (g_str_has_prefix (filename, "http:") ||
       g_str_has_prefix (filename, "https:"))
@@ -255,109 +203,35 @@ load_options (const char *filename,
       g_autoptr(SoupSession) soup_session = NULL;
 
       soup_session = flatpak_create_soup_session (PACKAGE_STRING);
-      bytes = flatpak_load_http_uri (soup_session, filename, 0, NULL, NULL, NULL, &error);
+      bytes = flatpak_load_http_uri (soup_session, filename, 0, NULL, NULL, NULL, &local_error);
 
       if (bytes == NULL)
         {
-          g_printerr (_("Can't load uri %s: %s\n"), filename, error->message);
-          exit (1);
+          flatpak_fail (error, _("Can't load uri %s: %s\n"), filename, local_error->message);
+          return NULL;
         }
 
       options_data = g_bytes_get_data (bytes, &options_size);
-      if (!g_key_file_load_from_data (keyfile, options_data, options_size, 0, &error))
+      if (!g_key_file_load_from_data (keyfile, options_data, options_size, 0, &local_error))
         {
-          g_printerr (_("Can't load uri %s: %s\n"), filename, error->message);
-          exit (1);
+          flatpak_fail (error, _("Can't load uri %s: %s\n"), filename, local_error->message);
+          return NULL;
         }
     }
   else
     {
-      if (!g_key_file_load_from_file (keyfile, filename, 0, &error))
+      if (!g_key_file_load_from_file (keyfile, filename, 0, &local_error))
         {
-          g_printerr (_("Can't load file %s: %s\n"), filename, error->message);
-          exit (1);
+          flatpak_fail (error, _("Can't load file %s: %s\n"), filename, local_error->message);
+          return NULL;
         }
     }
 
+  config = flatpak_parse_repofile (remote_name, FALSE, keyfile, gpg_data, NULL, error);
+  if (config == NULL)
+    return NULL;
 
-  if (!g_key_file_has_group (keyfile, FLATPAK_REPO_GROUP))
-    {
-      g_printerr (_("Invalid file format"));
-      exit (1);
-    }
-
-  version = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
-                                   FLATPAK_REPO_VERSION_KEY, NULL);
-  if (version != NULL && strcmp (version, "1") != 0)
-    {
-      g_printerr (_("Invalid version %s, only 1 supported"), version);
-      exit (1);
-    }
-
-  str = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
-                               FLATPAK_REPO_URL_KEY, NULL);
-  if (str != NULL)
-    opt_url = str;
-
-  str = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP, FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY, NULL);
-  if (str != NULL && *str != '\0')
-    opt_collection_id = str;
-  else
-    {
-      str = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP, FLATPAK_REPO_COLLECTION_ID_KEY, NULL);
-      if (str != NULL && *str != '\0')
-        opt_collection_id = str;
-    }
-
-  str = g_key_file_get_locale_string (keyfile, FLATPAK_REPO_GROUP,
-                                      FLATPAK_REPO_TITLE_KEY, NULL, NULL);
-  if (str != NULL)
-    opt_title = str;
-
-  str = g_key_file_get_locale_string (keyfile, FLATPAK_REPO_GROUP,
-                                      FLATPAK_REPO_DEFAULT_BRANCH_KEY, NULL, NULL);
-  if (str != NULL)
-    opt_default_branch = str;
-
-  nodeps = g_key_file_get_boolean (keyfile, FLATPAK_REPO_GROUP,
-                                   FLATPAK_REPO_NODEPS_KEY, NULL);
-  if (nodeps)
-    {
-      opt_no_deps = TRUE;
-      opt_do_deps = FALSE;
-    }
-
-  str = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
-                               FLATPAK_REPO_GPGKEY_KEY, NULL);
-  if (str != NULL)
-    {
-      guchar *decoded;
-      gsize decoded_len;
-
-      str = g_strstrip (str);
-      decoded = g_base64_decode (str, &decoded_len);
-      if (decoded_len < 10) /* Check some minimal size so we don't get crap */
-        {
-          g_printerr (_("Invalid gpg key"));
-          exit (1);
-        }
-
-      *gpg_data = g_bytes_new_take (decoded, decoded_len);
-      if (!opt_no_gpg_verify)
-        opt_do_gpg_verify = TRUE;
-    }
-
-  comment = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
-                                   FLATPAK_REPO_COMMENT_KEY, NULL);
-
-  description = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
-                                       FLATPAK_REPO_DESCRIPTION_KEY, NULL);
-
-  icon = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
-                                FLATPAK_REPO_ICON_KEY, NULL);
-
-  homepage  = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
-                                     FLATPAK_REPO_HOMEPAGE_KEY, NULL);
+  return g_steal_pointer (&config);
 }
 
 gboolean
@@ -374,9 +248,7 @@ flatpak_builtin_remote_add (int argc, char **argv,
   const char *location = NULL;
   g_autoptr(GKeyFile) config = NULL;
   g_autoptr(GBytes) gpg_data = NULL;
-  gboolean changed = FALSE;
   g_autoptr(GError) local_error = NULL;
-  gboolean is_oci;
 
   context = g_option_context_new (_("NAME LOCATION - Add a remote repository"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
@@ -410,6 +282,34 @@ flatpak_builtin_remote_add (int argc, char **argv,
   remote_name = argv[1];
   location = argv[2];
 
+  if (opt_from ||
+      flatpak_file_arg_has_suffix (location, ".flatpakrepo"))
+    {
+      config = load_options (remote_name, location, &gpg_data, error);
+      if (config == NULL)
+        return FALSE;
+    }
+  else
+    {
+      gboolean is_oci;
+
+      config = g_key_file_new ();
+      file = g_file_new_for_commandline_arg (location);
+      if (g_file_is_native (file))
+        remote_url = g_file_get_uri (file);
+      else
+        remote_url = g_strdup (location);
+      opt_url = remote_url;
+
+      /* Default to gpg verify, except for OCI registries */
+      is_oci = opt_url && g_str_has_prefix (opt_url, "oci+");
+      if (!opt_no_gpg_verify && !is_oci)
+        opt_do_gpg_verify = TRUE;
+    }
+
+  if (!get_config_from_opts (config, remote_name, &gpg_data, error))
+    return FALSE;
+
   remotes = flatpak_dir_list_remotes (dir, cancellable, error);
   if (remotes == NULL)
     return FALSE;
@@ -417,37 +317,34 @@ flatpak_builtin_remote_add (int argc, char **argv,
   if (g_strv_contains ((const char **) remotes, remote_name))
     {
       if (opt_if_not_exists)
-        return TRUE; /* Do nothing */
+        {
+          /* Do nothing */
+
+          /* Except, for historical reasons this applies/clears the filter of pre-existing
+             remotes, so that a default-shipped filtering remote can be replaced, clearing the
+             filter, by following  standard docs. */
+          g_autofree char *group = g_strdup_printf ("remote \"%s\"", remote_name);
+          g_autofree char *new_filter = g_key_file_get_string (config, group, "xa.filter", NULL);
+
+          if (!flatpak_dir_compare_remote_filter (dir, remote_name, new_filter))
+            {
+              GKeyFile *config = ostree_repo_copy_config (flatpak_dir_get_repo (dir));
+
+              g_key_file_set_string (config, group, "xa.filter", new_filter ? new_filter : "");
+
+              if (!flatpak_dir_modify_remote (dir, remote_name, config, NULL, cancellable, error))
+                return FALSE;
+            }
+
+          return TRUE;
+        }
 
       return flatpak_fail (error, _("Remote %s already exists"), remote_name);
     }
 
-  if (opt_from ||
-      flatpak_file_arg_has_suffix (location, ".flatpakrepo"))
-    {
-      load_options (location, &gpg_data);
-      if (opt_url == NULL)
-        return flatpak_fail (error, _("No url specified in flatpakrepo file"));
-    }
-  else
-    {
-      file = g_file_new_for_commandline_arg (location);
-      if (g_file_is_native (file))
-        remote_url = g_file_get_uri (file);
-      else
-        remote_url = g_strdup (location);
-      opt_url = remote_url;
-    }
-
-  /* Default to gpg verify, except for OCI registries */
-  is_oci = opt_url && g_str_has_prefix (opt_url, "oci+");
-  if (!opt_no_gpg_verify && !is_oci)
-    opt_do_gpg_verify = TRUE;
-
-  config = get_config_from_opts (dir, remote_name, &changed);
-
   if (opt_gpg_import != NULL)
     {
+      g_clear_pointer (&gpg_data, g_bytes_unref);
       gpg_data = flatpak_load_gpg_keys (opt_gpg_import, cancellable, error);
       if (gpg_data == NULL)
         return FALSE;
@@ -466,8 +363,7 @@ flatpak_builtin_remote_add (int argc, char **argv,
      remote should already be usable. */
   if (!flatpak_dir_update_remote_configuration (dir, remote_name, cancellable, &local_error))
     {
-      if (local_error->domain == G_RESOLVER_ERROR ||
-          g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_FAILED))
+      if (local_error->domain == G_RESOLVER_ERROR || local_error->domain == G_IO_ERROR)
         {
           g_printerr (_("Warning: Could not update extra metadata for '%s': %s\n"), remote_name, local_error->message);
         }

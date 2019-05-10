@@ -76,9 +76,11 @@ TEST_DATA_DIR=`mktemp -d /tmp/test-flatpak-XXXXXX`
 mkdir -p ${TEST_DATA_DIR}/home
 mkdir -p ${TEST_DATA_DIR}/runtime
 mkdir -p ${TEST_DATA_DIR}/system
+mkdir -p ${TEST_DATA_DIR}/config
 export FLATPAK_SYSTEM_DIR=${TEST_DATA_DIR}/system
 export FLATPAK_SYSTEM_CACHE_DIR=${TEST_DATA_DIR}/system-cache
 export FLATPAK_SYSTEM_HELPER_ON_SESSION=1
+export FLATPAK_CONFIG_DIR=${TEST_DATA_DIR}/config
 
 export HOME=${TEST_DATA_DIR}/home
 export XDG_CACHE_HOME=${TEST_DATA_DIR}/home/cache
@@ -176,6 +178,18 @@ assert_file_empty() {
     if test -s "$1"; then
         sed -e 's/^/# /' < "$1" >&2
         echo 1>&2 "File '$1' is not empty"
+        exit 1
+    fi
+}
+
+assert_remote_has_config () {
+    ostree config --repo=$FL_DIR/repo get --group 'remote "'"$1"'"' "$2" > key-output
+    assert_file_has_content key-output "$3"
+}
+
+assert_remote_has_no_config () {
+    if ostree config --repo=$FL_DIR/repo get --group 'remote "'"$1"'"' "$2" > /dev/null; then
+        echo 1>&2 "Remote '$1' unexpectedly has key '$2'"
         exit 1
     fi
 }
@@ -381,6 +395,27 @@ skip_without_fuse () {
 skip_revokefs_without_fuse () {
     if [ "x${USE_SYSTEMDIR-}" = xyes ] && [ "x${FLATPAK_DISABLE_REVOKEFS-}" != xyes ]; then
         skip_without_fuse
+    fi
+}
+
+skip_without_p2p () {
+    if [ x${USE_COLLECTIONS_IN_CLIENT-} == xyes ] ; then
+        return 0
+    else
+        skip "No P2P support enabled"
+    fi
+}
+
+# Usage: skip_without_ostree_version 2019 2
+skip_without_ostree_version () {
+    OSTREE_YEAR_VERSION=$(ostree --version | sed -n "s/^ Version: '\([0-9]\+\)\.[0-9]\+'$/\1/p")
+    OSTREE_RELEASE_VERSION=$(ostree --version | sed -n "s/^ Version: '[0-9]\+\.\([0-9]\+\)'$/\1/p")
+    if [ "$OSTREE_YEAR_VERSION" -gt "$1" ]; then
+        return 0
+    elif [ "$OSTREE_YEAR_VERSION" -eq "$1" ] && [ "$OSTREE_RELEASE_VERSION" -ge "$2" ]; then
+        return 0
+    else
+        skip "OSTree version requirement $1.$2 not met"
     fi
 }
 
