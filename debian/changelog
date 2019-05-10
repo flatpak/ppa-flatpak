@@ -15,6 +15,7 @@ flatpak (1.3.4-1) UNRELEASED; urgency=medium
     - Make the host system /proc visible in the container
       (docker run -v=/proc:/host/proc)
     - Run flatpak as an ordinary user in the container, not as root
+  * d/copyright: Update
 
  -- Simon McVittie <smcv@debian.org>  Fri, 10 May 2019 11:44:36 +0100
 
