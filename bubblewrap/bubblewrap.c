@@ -73,6 +73,7 @@ int opt_sync_fd = -1;
 int opt_block_fd = -1;
 int opt_userns_block_fd = -1;
 int opt_info_fd = -1;
+int opt_json_status_fd = -1;
 int opt_seccomp_fd = -1;
 const char *opt_sandbox_hostname = NULL;
 char *opt_args_data = NULL;  /* owned */
@@ -99,6 +100,7 @@ typedef enum {
 
 typedef enum {
   NO_CREATE_DEST = (1 << 0),
+  ALLOW_NOTEXIST = (2 << 0),
 } SetupOpFlag;
 
 typedef struct _SetupOp SetupOp;
@@ -207,8 +209,11 @@ usage (int ecode, FILE *out)
            "    --lock-file DEST             Take a lock on DEST while sandbox is running\n"
            "    --sync-fd FD                 Keep this fd open while sandbox is running\n"
            "    --bind SRC DEST              Bind mount the host path SRC on DEST\n"
+           "    --bind-try SRC DEST          Equal to --bind but ignores non-existent SRC\n"
            "    --dev-bind SRC DEST          Bind mount the host path SRC on DEST, allowing device access\n"
+           "    --dev-bind-try SRC DEST      Equal to --dev-bind but ignores non-existent SRC\n"
            "    --ro-bind SRC DEST           Bind mount the host path SRC readonly on DEST\n"
+           "    --ro-bind-try SRC DEST       Equal to --ro-bind but ignores non-existent SRC\n"
            "    --remount-ro DEST            Remount DEST as readonly; does not recursively remount\n"
            "    --exec-label LABEL           Exec label for the sandbox\n"
            "    --file-label LABEL           File label for temporary sandbox content\n"
@@ -225,6 +230,7 @@ usage (int ecode, FILE *out)
            "    --block-fd FD                Block on FD until some data to read is available\n"
            "    --userns-block-fd FD         Block on FD until the user namespace is ready\n"
            "    --info-fd FD                 Write information about the running container to FD\n"
+           "    --json-status-fd FD          Write container status to FD as multiple JSON documents\n"
            "    --new-session                Create a new terminal session\n"
            "    --die-with-parent            Kills with SIGKILL child process (COMMAND) when bwrap or bwrap's parent dies.\n"
            "    --as-pid-1                   Do not install a reaper process with PID=1\n"
@@ -310,6 +316,39 @@ propagate_exit_status (int status)
   return 255;
 }
 
+static void
+dump_info (int fd, const char *output, bool exit_on_error)
+{
+  size_t len = strlen (output);
+  if (write_to_fd (fd, output, len))
+    {
+      if (exit_on_error)
+        die_with_error ("Write to info_fd");
+    }
+}
+
+static void
+report_child_exit_status (int exitc, int setup_finished_fd)
+{
+  ssize_t s;
+  char data[2];
+  cleanup_free char *output = NULL;
+  if (opt_json_status_fd == -1 || setup_finished_fd == -1)
+    return;
+
+  s = TEMP_FAILURE_RETRY (read (setup_finished_fd, data, sizeof data));
+  if (s == -1 && errno != EAGAIN)
+    die_with_error ("read eventfd");
+  if (s != 1) // Is 0 if pipe closed before exec, is 2 if closed after exec.
+    return;
+
+  output = xasprintf ("{ \"exit-code\": %i }\n", exitc);
+  dump_info (opt_json_status_fd, output, FALSE);
+  close (opt_json_status_fd);
+  opt_json_status_fd = -1;
+  close (setup_finished_fd);
+}
+
 /* This stays around for as long as the initial process in the app does
  * and when that exits it exits, propagating the exit status. We do this
  * by having pid 1 in the sandbox detect this exit and tell the monitor
@@ -317,7 +356,7 @@ propagate_exit_status (int status)
  * pid 1 via a signalfd for SIGCHLD, and exit with an error in this case.
  * This is to catch e.g. problems during setup. */
 static int
-monitor_child (int event_fd, pid_t child_pid)
+monitor_child (int event_fd, pid_t child_pid, int setup_finished_fd)
 {
   int res;
   uint64_t val;
@@ -327,12 +366,21 @@ monitor_child (int event_fd, pid_t child_pid)
   struct pollfd fds[2];
   int num_fds;
   struct signalfd_siginfo fdsi;
-  int dont_close[] = { event_fd, -1 };
+  int dont_close[] = {-1, -1, -1, -1};
+  int j = 0;
+  int exitc;
   pid_t died_pid;
   int died_status;
 
   /* Close all extra fds in the monitoring process.
      Any passed in fds have been passed on to the child anyway. */
+  if (event_fd != -1)
+    dont_close[j++] = event_fd;
+  if (opt_json_status_fd != -1)
+    dont_close[j++] = opt_json_status_fd;
+  if (setup_finished_fd != -1)
+    dont_close[j++] = setup_finished_fd;
+  assert (j < sizeof(dont_close)/sizeof(*dont_close));
   fdwalk (proc_fd, close_extra_fds, dont_close);
 
   sigemptyset (&mask);
@@ -368,12 +416,16 @@ monitor_child (int event_fd, pid_t child_pid)
           if (s == -1 && errno != EINTR && errno != EAGAIN)
             die_with_error ("read eventfd");
           else if (s == 8)
-            return ((int) val - 1);
+            {
+              exitc = (int) val - 1;
+              report_child_exit_status (exitc, setup_finished_fd);
+              return exitc;
+            }
         }
 
       /* We need to read the signal_fd, or it will keep polling as read,
        * however we ignore the details as we get them from waitpid
-       * below anway */
+       * below anyway */
       s = read (signal_fd, &fdsi, sizeof (struct signalfd_siginfo));
       if (s == -1 && errno != EINTR && errno != EAGAIN)
         die_with_error ("read signalfd");
@@ -385,7 +437,11 @@ monitor_child (int event_fd, pid_t child_pid)
           /* We may be getting sigchild from other children too. For instance if
              someone created a child process, and then exec:ed bubblewrap. Ignore them */
           if (died_pid == child_pid)
-            return propagate_exit_status (died_status);
+            {
+              exitc = propagate_exit_status (died_status);
+              report_child_exit_status (exitc, setup_finished_fd);
+              return exitc;
+            }
         }
     }
 
@@ -634,7 +690,7 @@ set_ambient_capabilities (void)
  * "is_privileged = FALSE".
  *
  * If bwrap is setuid, then we do things in phases.
- * The first part is run as euid 0, but with with fsuid as the real user.
+ * The first part is run as euid 0, but with fsuid as the real user.
  * The second part, inside the child, is run as the real user but with
  * capabilities.
  * And finally we drop all capabilities.
@@ -966,7 +1022,11 @@ setup_newroot (bool unshare_pid,
           source = get_oldroot_path (op->source);
           source_mode = get_file_mode (source);
           if (source_mode < 0)
-            die_with_error ("Can't get type of source %s", op->source);
+            {
+              if (op->flags & ALLOW_NOTEXIST && errno == ENOENT)
+                continue; /* Ignore and move on */
+              die_with_error("Can't get type of source %s", op->source);
+            }
         }
 
       if (op->dest &&
@@ -1252,7 +1312,12 @@ resolve_symlinks_in_ops (void)
           old_source = op->source;
           op->source = realpath (old_source, NULL);
           if (op->source == NULL)
-            die_with_error ("Can't find source path %s", old_source);
+            {
+              if (op->flags & ALLOW_NOTEXIST && errno == ENOENT)
+                op->source = old_source;
+              else
+                die_with_error("Can't find source path %s", old_source);
+            }
           break;
         default:
           break;
@@ -1485,38 +1550,47 @@ parse_args_recurse (int          *argcp,
           argv++;
           argc--;
         }
-      else if (strcmp (arg, "--bind") == 0)
+      else if (strcmp(arg, "--bind") == 0 ||
+               strcmp(arg, "--bind-try") == 0)
         {
           if (argc < 3)
-            die ("--bind takes two arguments");
+            die ("%s takes two arguments", arg);
 
           op = setup_op_new (SETUP_BIND_MOUNT);
           op->source = argv[1];
           op->dest = argv[2];
+          if (strcmp(arg, "--bind-try") == 0)
+            op->flags = ALLOW_NOTEXIST;
 
           argv += 2;
           argc -= 2;
         }
-      else if (strcmp (arg, "--ro-bind") == 0)
+      else if (strcmp(arg, "--ro-bind") == 0 ||
+               strcmp(arg, "--ro-bind-try") == 0)
         {
           if (argc < 3)
-            die ("--ro-bind takes two arguments");
+            die ("%s takes two arguments", arg);
 
           op = setup_op_new (SETUP_RO_BIND_MOUNT);
           op->source = argv[1];
           op->dest = argv[2];
+          if (strcmp(arg, "--ro-bind-try") == 0)
+            op->flags = ALLOW_NOTEXIST;
 
           argv += 2;
           argc -= 2;
         }
-      else if (strcmp (arg, "--dev-bind") == 0)
+      else if (strcmp (arg, "--dev-bind") == 0 ||
+               strcmp (arg, "--dev-bind-try") == 0)
         {
           if (argc < 3)
-            die ("--dev-bind takes two arguments");
+            die ("%s takes two arguments", arg);
 
           op = setup_op_new (SETUP_DEV_BIND_MOUNT);
           op->source = argv[1];
           op->dest = argv[2];
+          if (strcmp(arg, "--dev-bind-try") == 0)
+            op->flags = ALLOW_NOTEXIST;
 
           argv += 2;
           argc -= 2;
@@ -1746,6 +1820,23 @@ parse_args_recurse (int          *argcp,
           argv += 1;
           argc -= 1;
         }
+      else if (strcmp (arg, "--json-status-fd") == 0)
+        {
+          int the_fd;
+          char *endptr;
+
+          if (argc < 2)
+            die ("--json-status-fd takes an argument");
+
+          the_fd = strtol (argv[1], &endptr, 10);
+          if (argv[1][0] == 0 || endptr[0] != 0 || the_fd < 0)
+            die ("Invalid fd: %s", argv[1]);
+
+          opt_json_status_fd = the_fd;
+
+          argv += 1;
+          argc -= 1;
+        }
       else if (strcmp (arg, "--seccomp") == 0)
         {
           int the_fd;
@@ -1955,12 +2046,13 @@ main (int    argc,
       char **argv)
 {
   mode_t old_umask;
-  cleanup_free char *base_path = NULL;
+  const char *base_path = NULL;
   int clone_flags;
   char *old_cwd = NULL;
   pid_t pid;
   int event_fd = -1;
   int child_wait_fd = -1;
+  int setup_finished_pipe[] = {-1, -1};
   const char *new_cwd;
   uid_t ns_uid;
   gid_t ns_gid;
@@ -2095,15 +2187,12 @@ main (int    argc,
     die_with_error ("Can't open /proc");
 
   /* We need *some* mountpoint where we can mount the root tmpfs.
-     We first try in /run, and if that fails, try in /tmp. */
-  base_path = xasprintf ("/run/user/%d/.bubblewrap", real_uid);
-  if (ensure_dir (base_path, 0755))
-    {
-      free (base_path);
-      base_path = xasprintf ("/tmp/.bubblewrap-%d", real_uid);
-      if (ensure_dir (base_path, 0755))
-        die_with_error ("Creating root mountpoint failed");
-    }
+   * Because we use pivot_root, it won't appear to be mounted from
+   * the perspective of the sandboxed process, so we can use anywhere
+   * that is sure to exist, that is sure to not be a symlink controlled
+   * by someone malicious, and that we won't immediately need to
+   * access ourselves. */
+  base_path = "/tmp";
 
   __debug__ (("creating new namespace\n"));
 
@@ -2146,6 +2235,15 @@ main (int    argc,
   child_wait_fd = eventfd (0, EFD_CLOEXEC);
   if (child_wait_fd == -1)
     die_with_error ("eventfd()");
+
+  /* Track whether pre-exec setup finished if we're reporting process exit */
+  if (opt_json_status_fd != -1)
+    {
+      int ret;
+      ret = pipe2 (setup_finished_pipe, O_CLOEXEC);
+      if (ret == -1)
+        die_with_error ("pipe2()");
+    }
 
   pid = raw_clone (clone_flags, NULL);
   if (pid == -1)
@@ -2194,10 +2292,13 @@ main (int    argc,
       if (opt_info_fd != -1)
         {
           cleanup_free char *output = xasprintf ("{\n    \"child-pid\": %i\n}\n", pid);
-          size_t len = strlen (output);
-          if (write (opt_info_fd, output, len) != len)
-            die_with_error ("Write to info_fd");
+          dump_info (opt_info_fd, output, TRUE);
           close (opt_info_fd);
+        }
+      if (opt_json_status_fd != -1)
+        {
+          cleanup_free char *output = xasprintf ("{ \"child-pid\": %i }\n", pid);
+          dump_info (opt_json_status_fd, output, TRUE);
         }
 
       if (opt_userns_block_fd != -1)
@@ -2213,7 +2314,7 @@ main (int    argc,
       /* Ignore res, if e.g. the child died and closed child_wait_fd we don't want to error out here */
       close (child_wait_fd);
 
-      return monitor_child (event_fd, pid);
+      return monitor_child (event_fd, pid, setup_finished_pipe[0]);
     }
 
   /* Child, in sandbox, privileged in the parent or in the user namespace (if --unshare-user).
@@ -2232,6 +2333,9 @@ main (int    argc,
 
   if (opt_info_fd != -1)
     close (opt_info_fd);
+
+  if (opt_json_status_fd != -1)
+    close (opt_json_status_fd);
 
   /* Wait for the parent to init uid/gid maps and drop caps */
   res = read (child_wait_fd, &val, 8);
@@ -2280,7 +2384,7 @@ main (int    argc,
     die_with_error ("Failed to make / slave");
 
   /* Create a tmpfs which we will use as / in the namespace */
-  if (mount ("", base_path, "tmpfs", MS_NODEV | MS_NOSUID, NULL) != 0)
+  if (mount ("tmpfs", base_path, "tmpfs", MS_NODEV | MS_NOSUID, NULL) != 0)
     die_with_error ("Failed to mount tmpfs");
 
   old_cwd = get_current_dir_name ();
@@ -2293,7 +2397,8 @@ main (int    argc,
   /* We create a subdir "$base_path/newroot" for the new root, that
    * way we can pivot_root to base_path, and put the old root at
    * "$base_path/oldroot". This avoids problems accessing the oldroot
-   * dir if the user requested to bind mount something over / */
+   * dir if the user requested to bind mount something over / (or
+   * over /tmp, now that we use that for base_path). */
 
   if (mkdir ("newroot", 0755))
     die_with_error ("Creating newroot failed");
@@ -2539,8 +2644,27 @@ main (int    argc,
       prctl (PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &seccomp_prog) != 0)
     die_with_error ("prctl(PR_SET_SECCOMP)");
 
+  if (setup_finished_pipe[1] != -1)
+    {
+      char data = 0;
+      res = write_to_fd (setup_finished_pipe[1], &data, 1);
+      /* Ignore res, if e.g. the parent died and closed setup_finished_pipe[0]
+         we don't want to error out here */
+    }
+
   if (execvp (argv[0], argv) == -1)
-    die_with_error ("execvp %s", argv[0]);
+    {
+      if (setup_finished_pipe[1] != -1)
+        {
+          int saved_errno = errno;
+          char data = 0;
+          res = write_to_fd (setup_finished_pipe[1], &data, 1);
+          errno = saved_errno;
+          /* Ignore res, if e.g. the parent died and closed setup_finished_pipe[0]
+             we don't want to error out here */
+        }
+      die_with_error ("execvp %s", argv[0]);
+    }
 
   return 0;
 }

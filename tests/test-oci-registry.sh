@@ -23,7 +23,7 @@ set -euo pipefail
 
 skip_without_bwrap
 
-echo "1..13"
+echo "1..14"
 
 # Start the fake registry server
 
@@ -94,8 +94,30 @@ echo "ok detached icons"
 
 # Try installing from the remote
 
-${FLATPAK} ${U} install -y oci-registry org.test.Platform
+${FLATPAK} ${U} install -y oci-registry org.test.Hello
+
+run org.test.Hello > hello_out
+assert_file_has_content hello_out '^Hello world, from a sandbox$'
+
 echo "ok install"
+
+make_updated_app oci
+
+${FLATPAK} build-bundle --oci $FL_GPGARGS repos/oci oci/app-image org.test.Hello
+$client add hello latest $(pwd)/oci/app-image
+
+OLD_COMMIT=`${FLATPAK} ${U} info --show-commit org.test.Hello`
+
+${FLATPAK} ${U} update -y -vv --ostree-verbose org.test.Hello
+
+NEW_COMMIT=`${FLATPAK} ${U} info --show-commit org.test.Hello`
+
+assert_not_streq "$OLD_COMMIT" "$NEW_COMMIT"
+
+run org.test.Hello > hello_out
+assert_file_has_content hello_out '^Hello world, from a sandboxUPDATED$'
+
+echo "ok update"
 
 # Remove the app from the registry, check that things were removed properly
 
@@ -140,6 +162,7 @@ ${FLATPAK} update ${U} --appstream oci-registry
 assert_has_file $base/oci/oci-registry.index.gz
 assert_has_file $base/oci/oci-registry.summary
 assert_has_dir $base/appstream/oci-registry
+${FLATPAK} ${U} -y uninstall org.test.Hello
 ${FLATPAK} ${U} -y uninstall org.test.Platform
 ${FLATPAK} ${U} remote-delete oci-registry
 assert_not_has_file $base/oci/oci-registry.index.gz

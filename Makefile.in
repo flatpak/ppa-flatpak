@@ -1047,12 +1047,16 @@ am__EXEEXT_11 = tests/test-run@user,nodeltas.wrap \
 	tests/test-bundle@user.wrap tests/test-bundle@system.wrap \
 	tests/test-bundle@system-norevokefs.wrap \
 	tests/test-oci-registry@user.wrap \
-	tests/test-oci-registry@system.wrap $(am__EXEEXT_1)
+	tests/test-oci-registry@system.wrap \
+	tests/test-p2p-security@user,collections.wrap \
+	tests/test-p2p-security@system,collections.wrap \
+	$(am__EXEEXT_1)
 am__EXEEXT_12 = $(am__EXEEXT_11)
 am__EXEEXT_13 = tests/test-basic.sh tests/test-completion.sh \
 	tests/test-config.sh tests/test-build-update-repo.sh \
-	tests/test-http-utils.sh tests/test-extensions.sh \
-	tests/test-oci.sh tests/test-unsigned-summaries.sh \
+	tests/test-http-utils.sh tests/test-default-remotes.sh \
+	tests/test-extensions.sh tests/test-oci.sh \
+	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	tests/test-override.sh $(am__EXEEXT_1)
 am__EXEEXT_14 = $(am__EXEEXT_13)
@@ -1386,8 +1390,8 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	data/org.freedesktop.impl.portal.PermissionStore.xml \
 	data/org.freedesktop.systemd1.xml \
 	data/org.freedesktop.Flatpak.xml \
-	data/org.freedesktop.portal.Flatpak.xml $(NULL) \
-	app/parse-datetime.y \
+	data/org.freedesktop.portal.Flatpak.xml \
+	data/flatpak-docker-seccomp.json $(NULL) app/parse-datetime.y \
 	system-helper/org.freedesktop.Flatpak.policy.in \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.conf \
 	system-helper/org.freedesktop.Flatpak.rules.in \
@@ -1965,6 +1969,7 @@ dist_installed_test_data = \
 	tests/org.test.Hello.png \
 	tests/package_version.txt \
 	tests/session.conf.in \
+	tests/test.filter \
 	$(NULL)
 
 installed_test_keyringdir = $(installed_testdir)/test-keyring
@@ -1992,6 +1997,7 @@ TEST_MATRIX_SOURCE = \
 	tests/test-run.sh{{user+system+system-norevokefs},{nodeltas+deltas}} \
 	tests/test-info.sh{user+system} \
 	tests/test-repo.sh{user+system+system-norevokefs+collections+collections-server-only} \
+	tests/test-default-remotes.sh \
 	tests/test-extensions.sh \
 	tests/test-bundle.sh{user+system+system-norevokefs} \
 	tests/test-oci.sh \
@@ -1999,6 +2005,7 @@ TEST_MATRIX_SOURCE = \
 	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	tests/test-override.sh \
+	tests/test-p2p-security.sh{user,collections+system,collections} \
 	$(NULL)
 
 
@@ -2022,6 +2029,8 @@ TEST_MATRIX = \
 	tests/test-bundle@system-norevokefs.wrap \
 	tests/test-oci-registry@user.wrap \
 	tests/test-oci-registry@system.wrap \
+	tests/test-p2p-security@user,collections.wrap \
+	tests/test-p2p-security@system,collections.wrap \
 	$(NULL)
 
 TEST_MATRIX_DIST = \
@@ -2030,6 +2039,7 @@ TEST_MATRIX_DIST = \
 	tests/test-config.sh \
 	tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh \
+	tests/test-default-remotes.sh \
 	tests/test-extensions.sh \
 	tests/test-oci.sh \
 	tests/test-unsigned-summaries.sh \
@@ -2043,6 +2053,7 @@ TEST_MATRIX_EXTRA_DIST = \
 	tests/test-repo.sh \
 	tests/test-bundle.sh \
 	tests/test-oci-registry.sh \
+	tests/test-p2p-security.sh \
 	$(NULL)
 
 test_scripts = ${TEST_MATRIX}
@@ -5334,6 +5345,20 @@ tests/test-oci-registry@system.wrap.log: tests/test-oci-registry@system.wrap
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-p2p-security@user,collections.wrap.log: tests/test-p2p-security@user,collections.wrap
+	@p='tests/test-p2p-security@user,collections.wrap'; \
+	b='tests/test-p2p-security@user,collections.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-p2p-security@system,collections.wrap.log: tests/test-p2p-security@system,collections.wrap
+	@p='tests/test-p2p-security@system,collections.wrap'; \
+	b='tests/test-p2p-security@system,collections.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 tests/test-basic.sh.log: tests/test-basic.sh
 	@p='tests/test-basic.sh'; \
 	b='tests/test-basic.sh'; \
@@ -5365,6 +5390,13 @@ tests/test-build-update-repo.sh.log: tests/test-build-update-repo.sh
 tests/test-http-utils.sh.log: tests/test-http-utils.sh
 	@p='tests/test-http-utils.sh'; \
 	b='tests/test-http-utils.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-default-remotes.sh.log: tests/test-default-remotes.sh
+	@p='tests/test-default-remotes.sh'; \
+	b='tests/test-default-remotes.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
