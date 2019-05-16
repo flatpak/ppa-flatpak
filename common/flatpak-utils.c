@@ -31,6 +31,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
@@ -1140,6 +1141,213 @@ flatpak_compare_ref (const char *ref1, const char *ref2)
   return 0;
 }
 
+static char *
+line_get_word (char **line)
+{
+  char *word = NULL;
+
+  while (g_ascii_isspace (**line))
+    (*line)++;
+
+  if (**line == 0)
+    return NULL;
+
+  word = *line;
+
+  while (**line && !g_ascii_isspace (**line))
+    (*line)++;
+
+  if (**line)
+    {
+      **line = 0;
+      (*line)++;
+    }
+
+  return word;
+}
+
+static char *
+glob_to_regexp (const char *glob, GError **error)
+{
+  g_autoptr(GString) regexp = g_string_new ("");
+  int parts = 1;
+
+  if (g_str_has_prefix (glob, "app/"))
+    {
+      glob += strlen ("app/");
+      g_string_append (regexp, "app/");
+    }
+  else if (g_str_has_prefix (glob, "runtime/"))
+    {
+      glob += strlen ("runtime/");
+      g_string_append (regexp, "runtime/");
+    }
+  else
+    g_string_append (regexp, "(app|runtime)/");
+
+  /* We really need an id part, the rest is optional */
+  if (*glob == 0)
+    {
+      flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Empty glob"));
+      return NULL;
+    }
+
+  while (*glob != 0)
+    {
+      char c = *glob;
+      glob++;
+
+      if (c == '/')
+        {
+          parts++;
+          g_string_append (regexp, "/");
+          if (parts > 3)
+            {
+              flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Too many segments in glob"));
+              return NULL;
+            }
+        }
+      else if (c == '*')
+        {
+          g_string_append (regexp, "[.\\-_a-zA-Z0-9]*");
+        }
+      else if (c == '.')
+        {
+          g_string_append (regexp, "\\.");
+        }
+      else if (g_ascii_isalnum (c) || c == '-' || c == '_')
+        {
+          g_string_append_c (regexp, c);
+        }
+      else
+        {
+          flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Invalid glob character '%c'"), c);
+          return NULL;
+        }
+    }
+
+  while (parts < 3)
+    {
+      parts++;
+      g_string_append (regexp, "/[.\\-_a-zA-Z0-9]*");
+    }
+
+  return g_string_free (g_steal_pointer (&regexp), FALSE);
+}
+
+gboolean
+flatpak_parse_filters (const char *data,
+                       GRegex **allow_refs_out,
+                       GRegex **deny_refs_out,
+                       GError **error)
+{
+  g_auto(GStrv) lines = NULL;
+  int i;
+  g_autoptr(GString) allow_regexp = g_string_new ("^(");
+  g_autoptr(GString) deny_regexp = g_string_new ("^(");
+  gboolean has_allow = FALSE;
+  gboolean has_deny = FALSE;
+  g_autoptr(GRegex) allow_refs = NULL;
+  g_autoptr(GRegex) deny_refs = NULL;
+
+  lines = g_strsplit (data, "\n", -1);
+  for (i = 0; lines[i] != NULL; i++)
+    {
+      char *line = lines[i];
+      char *comment, *command;
+
+      /* Ignore shell-style comments */
+      comment = strchr (line, '#');
+      if (comment != NULL)
+        *comment = 0;
+
+      command = line_get_word (&line);
+      /* Ignore empty lines */
+      if (command == NULL)
+        continue;
+
+      if (strcmp (command, "allow") == 0 || strcmp (command, "deny") == 0)
+        {
+          char *glob, *next, *ref_regexp;
+          GString *command_regexp;
+          gboolean *has_type = NULL;
+
+          glob = line_get_word (&line);
+          if (glob == NULL)
+            return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Missing glob on line %d"), i + 1);
+
+          next = line_get_word (&line);
+          if (next != NULL)
+            return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Trailing text on line %d"), i + 1);
+
+          ref_regexp = glob_to_regexp (glob, error);
+          if (ref_regexp == NULL)
+            return glnx_prefix_error (error, _("on line %d"), i + 1);
+
+          if (strcmp (command, "allow") == 0)
+            {
+              command_regexp = allow_regexp;
+              has_type = &has_allow;
+            }
+          else
+            {
+              command_regexp = deny_regexp;
+              has_type = &has_deny;
+            }
+
+          if (*has_type)
+            g_string_append (command_regexp, "|");
+          else
+            *has_type = TRUE;
+
+          g_string_append (command_regexp, ref_regexp);
+        }
+      else
+        {
+          return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Unexpected word '%s' on line %d"), command, i + 1);
+        }
+    }
+
+  g_string_append (allow_regexp, ")$");
+  g_string_append (deny_regexp, ")$");
+
+  if (allow_regexp)
+    {
+      allow_refs = g_regex_new (allow_regexp->str, G_REGEX_DOLLAR_ENDONLY|G_REGEX_RAW|G_REGEX_OPTIMIZE, G_REGEX_MATCH_ANCHORED, error);
+      if (allow_refs == NULL)
+        return FALSE;
+    }
+
+  if (deny_regexp)
+    {
+      deny_refs = g_regex_new (deny_regexp->str, G_REGEX_DOLLAR_ENDONLY|G_REGEX_RAW|G_REGEX_OPTIMIZE, G_REGEX_MATCH_ANCHORED, error);
+      if (deny_refs == NULL)
+        return FALSE;
+    }
+
+  *allow_refs_out = g_steal_pointer (&allow_refs);
+  *deny_refs_out = g_steal_pointer (&deny_refs);
+
+  return TRUE;
+}
+
+gboolean
+flatpak_filters_allow_ref (GRegex *allow_refs,
+                           GRegex *deny_refs,
+                           const char *ref)
+{
+  if (deny_refs == NULL)
+    return TRUE; /* All refs are allowed by default */
+
+  if (!g_regex_match (deny_refs, ref, G_REGEX_MATCH_ANCHORED, NULL))
+    return TRUE; /* Not denied */
+
+  if (allow_refs &&  g_regex_match (allow_refs, ref, G_REGEX_MATCH_ANCHORED, NULL))
+    return TRUE; /* Explicitly allowed */
+
+  return FALSE;
+}
+
 char **
 flatpak_decompose_ref (const char *full_ref,
                        GError    **error)
@@ -2237,18 +2445,7 @@ char *
 flatpak_readlink (const char *path,
                   GError    **error)
 {
-  char buf[PATH_MAX + 1];
-  ssize_t symlink_size;
-
-  symlink_size = readlink (path, buf, sizeof (buf) - 1);
-  if (symlink_size < 0)
-    {
-      glnx_set_error_from_errno (error);
-      return NULL;
-    }
-
-  buf[symlink_size] = 0;
-  return g_strdup (buf);
+  return glnx_readlinkat_malloc (-1, path, NULL, error);
 }
 
 char *
@@ -2597,6 +2794,155 @@ flatpak_summary_lookup_ref (GVariant   *summary,
     *out_variant = g_steal_pointer (&reftargetdata);
 
   return TRUE;
+}
+
+GKeyFile *
+flatpak_parse_repofile (const char   *remote_name,
+                        gboolean      from_ref,
+                        GKeyFile     *keyfile,
+                        GBytes      **gpg_data_out,
+                        GCancellable *cancellable,
+                        GError      **error)
+{
+  g_autoptr(GBytes) gpg_data = NULL;
+  g_autofree char *uri = NULL;
+  g_autofree char *title = NULL;
+  g_autofree char *gpg_key = NULL;
+  g_autofree char *collection_id = NULL;
+  g_autofree char *default_branch = NULL;
+  g_autofree char *comment = NULL;
+  g_autofree char *description = NULL;
+  g_autofree char *icon = NULL;
+  g_autofree char *homepage = NULL;
+  g_autofree char *filter = NULL;
+  gboolean nodeps;
+  const char *source_group;
+  g_autofree char *version = NULL;
+
+  if (from_ref)
+    source_group = FLATPAK_REF_GROUP;
+  else
+    source_group = FLATPAK_REPO_GROUP;
+
+  GKeyFile *config = g_key_file_new ();
+  g_autofree char *group = g_strdup_printf ("remote \"%s\"", remote_name);
+
+  if (!g_key_file_has_group (keyfile, source_group))
+    {
+      flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Invalid %s: Missing group ‘%s’"),
+                          from_ref ? ".flatpakref" : ".flatpakrepo", source_group);
+      return NULL;
+    }
+
+  uri = g_key_file_get_string (keyfile, source_group,
+                               FLATPAK_REPO_URL_KEY, NULL);
+  if (uri == NULL)
+    {
+      flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Invalid %s: Missing key ‘%s’"),
+                          from_ref ? ".flatpakref" : ".flatpakrepo", FLATPAK_REPO_URL_KEY);
+      return NULL;
+    }
+
+  version = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                   FLATPAK_REPO_VERSION_KEY, NULL);
+  if (version != NULL && strcmp (version, "1") != 0)
+    {
+      flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA,
+                          _("Invalid version %s, only 1 supported"), version);
+      return NULL;
+    }
+
+  g_key_file_set_string (config, group, "url", uri);
+
+  title = g_key_file_get_locale_string (keyfile, source_group,
+                                        FLATPAK_REPO_TITLE_KEY, NULL, NULL);
+  if (title != NULL)
+    g_key_file_set_string (config, group, "xa.title", title);
+
+  default_branch = g_key_file_get_locale_string (keyfile, source_group,
+                                                 FLATPAK_REPO_DEFAULT_BRANCH_KEY, NULL, NULL);
+  if (default_branch != NULL)
+    g_key_file_set_string (config, group, "xa.default-branch", default_branch);
+
+  nodeps = g_key_file_get_boolean (keyfile, source_group,
+                                   FLATPAK_REPO_NODEPS_KEY, NULL);
+  if (nodeps)
+    g_key_file_set_boolean (config, group, "xa.nodeps", TRUE);
+
+  gpg_key = g_key_file_get_string (keyfile, source_group,
+                                   FLATPAK_REPO_GPGKEY_KEY, NULL);
+  if (gpg_key != NULL)
+    {
+      guchar *decoded;
+      gsize decoded_len;
+
+      gpg_key = g_strstrip (gpg_key);
+      decoded = g_base64_decode (gpg_key, &decoded_len);
+      if (decoded_len < 10) /* Check some minimal size so we don't get crap */
+        {
+          flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Invalid gpg key"));
+          return NULL;
+        }
+
+      gpg_data = g_bytes_new_take (decoded, decoded_len);
+      g_key_file_set_boolean (config, group, "gpg-verify", TRUE);
+    }
+  else
+    {
+      g_key_file_set_boolean (config, group, "gpg-verify", FALSE);
+    }
+
+  collection_id = g_key_file_get_string (keyfile, source_group,
+                                         FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY, NULL);
+  if (collection_id == NULL || *collection_id == '\0')
+    collection_id = g_key_file_get_string (keyfile, source_group,
+                                           FLATPAK_REPO_COLLECTION_ID_KEY, NULL);
+  if (collection_id != NULL)
+    {
+      if (gpg_key == NULL)
+        {
+          flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Collection ID requires GPG key to be provided"));
+          return NULL;
+        }
+
+      g_key_file_set_string (config, group, "collection-id", collection_id);
+    }
+
+  /* If a collection ID is set, refs are verified from commit metadata rather
+   * than the summary file. */
+  g_key_file_set_boolean (config, group, "gpg-verify-summary",
+                          (gpg_key != NULL && collection_id == NULL));
+
+  comment = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                   FLATPAK_REPO_COMMENT_KEY, NULL);
+  if (comment)
+    g_key_file_set_string (config, group, "xa.comment", comment);
+
+  description = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                       FLATPAK_REPO_DESCRIPTION_KEY, NULL);
+  if (description)
+    g_key_file_set_string (config, group, "xa.description", description);
+
+  icon = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                FLATPAK_REPO_ICON_KEY, NULL);
+  if (icon)
+    g_key_file_set_string (config, group, "xa.icon", icon);
+
+  homepage  = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                     FLATPAK_REPO_HOMEPAGE_KEY, NULL);
+  if (homepage)
+    g_key_file_set_string (config, group, "xa.homepage", homepage);
+
+  filter = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                   FLATPAK_REPO_FILTER_KEY, NULL);
+  if (filter)
+    g_key_file_set_string (config, group, "xa.filter", filter);
+  else
+    g_key_file_set_string (config, group, "xa.filter", ""); /* Default to override any pre-existing filters */
+
+  *gpg_data_out = g_steal_pointer (&gpg_data);
+
+  return g_steal_pointer (&config);
 }
 
 gboolean
@@ -3241,8 +3587,8 @@ flatpak_repo_update (OstreeRepo   *repo,
 
   old_summary = flatpak_repo_load_summary (repo, NULL);
 
-  if (!ostree_repo_resolve_rev (repo, OSTREE_REPO_METADATA_REF,
-                                TRUE, &old_ostree_metadata_checksum, error))
+  if (!flatpak_repo_resolve_rev (repo, collection_id, NULL, OSTREE_REPO_METADATA_REF,
+                                 TRUE, &old_ostree_metadata_checksum, cancellable, error))
     return FALSE;
 
   if (old_summary != NULL &&
@@ -3927,6 +4273,57 @@ flatpak_appstream_xml_root_to_data (FlatpakXml *appstream_root,
   return TRUE;
 }
 
+void
+flatpak_appstream_xml_filter (FlatpakXml *appstream,
+                              GRegex *allow_refs,
+                              GRegex *deny_refs)
+{
+  FlatpakXml *components;
+  FlatpakXml *component;
+  FlatpakXml *prev_component, *old;
+
+  for (components = appstream->first_child;
+       components != NULL;
+       components = components->next_sibling)
+    {
+      if (g_strcmp0 (components->element_name, "components") != 0)
+        continue;
+
+
+      prev_component = NULL;
+      component = components->first_child;
+      while (component != NULL)
+        {
+          FlatpakXml *bundle;
+          gboolean allow = FALSE;
+
+          if (g_strcmp0 (component->element_name, "component") == 0)
+            {
+              bundle = flatpak_xml_find (component, "bundle", NULL);
+              if (bundle && bundle->first_child && bundle->first_child->text)
+                allow = flatpak_filters_allow_ref (allow_refs, deny_refs, bundle->first_child->text);
+            }
+
+          if (allow)
+            {
+              prev_component = component;
+              component = component->next_sibling;
+            }
+          else
+            {
+              old = component;
+
+              /* prev_component is same as before */
+              component = component->next_sibling;
+
+              flatpak_xml_unlink (old, prev_component);
+              flatpak_xml_free (old);
+            }
+        }
+    }
+}
+
+
 gboolean
 flatpak_repo_generate_appstream (OstreeRepo   *repo,
                                  const char  **gpg_key_ids,
@@ -4097,7 +4494,8 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
         g_autofree char *commit_checksum = NULL;
 
         branch = g_strdup_printf ("%s/%s", branch_prefix, arch);
-        if (!ostree_repo_resolve_rev (repo, branch, TRUE, &parent, error))
+        if (!flatpak_repo_resolve_rev (repo, collection_id, NULL, branch, TRUE,
+                                       &parent, cancellable, error))
           return FALSE;
 
         if (i == 0)
@@ -6330,6 +6728,54 @@ flatpak_disable_raw_mode (void)
   tcsetattr (STDIN_FILENO, TCSAFLUSH, &raw);
 }
 
+/* Wrapper that uses ostree_repo_resolve_collection_ref() and on failure falls
+ * back to using ostree_repo_resolve_rev() for backwards compatibility. This
+ * means we support refs/heads/, refs/remotes/, and refs/mirrors/. */
+gboolean
+flatpak_repo_resolve_rev (OstreeRepo    *repo,
+                          const char    *collection_id, /* nullable */
+                          const char    *remote_name, /* nullable */
+                          const char    *ref_name,
+                          gboolean       allow_noent,
+                          char         **out_rev,
+                          GCancellable  *cancellable,
+                          GError       **error)
+{
+  if (collection_id != NULL)
+    {
+      /* Do a version check to ensure we have these:
+       * https://github.com/ostreedev/ostree/pull/1821
+       * https://github.com/ostreedev/ostree/pull/1825 */
+#if OSTREE_CHECK_VERSION (2019, 2)
+      const OstreeCollectionRef c_r =
+        {
+          .collection_id = (char *) collection_id,
+          .ref_name = (char *) ref_name,
+        };
+      OstreeRepoResolveRevExtFlags flags = remote_name == NULL ?
+                                           OSTREE_REPO_RESOLVE_REV_EXT_LOCAL_ONLY :
+                                           OSTREE_REPO_RESOLVE_REV_EXT_NONE;
+      if (ostree_repo_resolve_collection_ref (repo, &c_r,
+                                              allow_noent,
+                                              flags,
+                                              out_rev,
+                                              cancellable, NULL))
+        return TRUE;
+#endif
+    }
+
+  /* There may be several remotes with the same branch (if we for
+   * instance changed the origin) so prepend the current origin to
+   * make sure we get the right one */
+  if (remote_name != NULL)
+    {
+      g_autofree char *refspec = g_strdup_printf ("%s:%s", remote_name, ref_name);
+      return ostree_repo_resolve_rev (repo, refspec, allow_noent, out_rev, error);
+    }
+  else
+    return ostree_repo_resolve_rev_ext (repo, ref_name, allow_noent,
+                                        OSTREE_REPO_LIST_REFS_EXT_NONE, out_rev, error);
+}
 
 
 #if !GLIB_CHECK_VERSION (2, 56, 0)
@@ -6681,3 +7127,59 @@ out:
   return datetime;
 }
 #endif
+
+/* Convert an app id to a dconf path in the obvious way.
+ */
+char *
+flatpak_dconf_path_for_app_id (const char *app_id)
+{
+  GString *s;
+  const char *p;
+
+  s = g_string_new ("");
+
+  g_string_append_c (s, '/');
+  for (p = app_id; *p; p++)
+    {
+      if (*p == '.')
+        g_string_append_c (s, '/');
+      else
+        g_string_append_c (s, *p);
+    }
+  g_string_append_c (s, '/');
+
+  return g_string_free (s, FALSE);
+}
+
+/* Check if two dconf paths are 'similar enough', which
+ * for now is defined as equal except case differences
+ * and -/_
+ */
+gboolean
+flatpak_dconf_path_is_similar (const char *path1,
+                               const char *path2)
+{
+  int i;
+
+  for (i = 0; path1[i]; i++)
+    {
+      if (path2[i] == '\0')
+        return FALSE;
+
+      if (tolower (path1[i]) == tolower (path2[i]))
+        continue;
+
+      if ((path1[i] == '-' || path1[i] == '_') &&
+          (path2[i] == '-' || path2[i] == '_'))
+        continue;
+
+      return FALSE;
+    }
+
+  if (path2[i] != '\0')
+    return FALSE;
+
+  return TRUE;
+}
+
+

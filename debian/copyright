@@ -36,6 +36,7 @@ Files:
  tests/test-build-update-repo.sh
  tests/test-completion.sh
  tests/test-config.sh
+ tests/test-p2p-security.sh
 Copyright:
  © 1995-2015 Free Software Foundation, Inc.
  © 2008-2018 Red Hat, Inc
@@ -44,6 +45,7 @@ Copyright:
  © 2018 Endless Mobile, Inc.
  © 2018 Alexander Larsson
  © 2019 Matthias Clasen
+ © 2019 Matthew Leeds
 License: LGPL-2+
 
 Files:

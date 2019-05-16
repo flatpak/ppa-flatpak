@@ -76,6 +76,7 @@
     <keyword type="function" name="flatpak_installation_install_bundle ()" link="FlatpakInstallation.html#flatpak-installation-install-bundle"/>
     <keyword type="function" name="flatpak_installation_install_ref_file ()" link="FlatpakInstallation.html#flatpak-installation-install-ref-file" since="0.6.10"/>
     <keyword type="function" name="flatpak_installation_drop_caches ()" link="FlatpakInstallation.html#flatpak-installation-drop-caches"/>
+    <keyword type="function" name="flatpak_installation_add_remote ()" link="FlatpakInstallation.html#flatpak-installation-add-remote" since="1.3.4"/>
     <keyword type="function" name="flatpak_installation_modify_remote ()" link="FlatpakInstallation.html#flatpak-installation-modify-remote"/>
     <keyword type="function" name="flatpak_installation_remove_remote ()" link="FlatpakInstallation.html#flatpak-installation-remove-remote"/>
     <keyword type="function" name="flatpak_installation_update_remote_sync ()" link="FlatpakInstallation.html#flatpak-installation-update-remote-sync" since="0.6.13"/>
@@ -158,6 +159,7 @@
     <keyword type="property" name="The “kind” property" link="FlatpakRef.html#FlatpakRef--kind"/>
     <keyword type="property" name="The “name” property" link="FlatpakRef.html#FlatpakRef--name"/>
     <keyword type="function" name="flatpak_remote_new ()" link="FlatpakRemote.html#flatpak-remote-new"/>
+    <keyword type="function" name="flatpak_remote_new_from_file ()" link="FlatpakRemote.html#flatpak-remote-new-from-file" since="1.3.4"/>
     <keyword type="function" name="flatpak_remote_get_name ()" link="FlatpakRemote.html#flatpak-remote-get-name"/>
     <keyword type="function" name="flatpak_remote_get_appstream_dir ()" link="FlatpakRemote.html#flatpak-remote-get-appstream-dir"/>
     <keyword type="function" name="flatpak_remote_get_appstream_timestamp ()" link="FlatpakRemote.html#flatpak-remote-get-appstream-timestamp"/>

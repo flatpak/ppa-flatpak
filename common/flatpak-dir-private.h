@@ -71,6 +71,7 @@ GType flatpak_deploy_get_type (void);
 #define FLATPAK_REPO_DESCRIPTION_KEY "Description"
 #define FLATPAK_REPO_HOMEPAGE_KEY "Homepage"
 #define FLATPAK_REPO_ICON_KEY "Icon"
+#define FLATPAK_REPO_FILTER_KEY "Filter"
 
 #define FLATPAK_REPO_COLLECTION_ID_KEY "CollectionID"
 #define FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY "DeployCollectionID"
@@ -106,6 +107,8 @@ typedef struct
   GError   *summary_fetch_error;
   GVariant *metadata;
   GError   *metadata_fetch_error;
+  GRegex   *allow_refs;
+  GRegex   *deny_refs;
   int       refcount;
 } FlatpakRemoteState;
 
@@ -115,6 +118,8 @@ gboolean flatpak_remote_state_ensure_summary (FlatpakRemoteState *self,
                                               GError            **error);
 gboolean flatpak_remote_state_ensure_metadata (FlatpakRemoteState *self,
                                                GError            **error);
+gboolean flatpak_remote_state_allow_ref (FlatpakRemoteState *self,
+                                         const char *ref);
 gboolean flatpak_remote_state_lookup_ref (FlatpakRemoteState *self,
                                           const char         *ref,
                                           char              **out_checksum,
@@ -772,14 +777,6 @@ gboolean   flatpak_dir_create_remote_for_ref_file (FlatpakDir *self,
 gboolean   flatpak_dir_create_suggested_remote_for_ref_file (FlatpakDir *self,
                                                              GBytes     *data,
                                                              GError    **error);
-GKeyFile * flatpak_dir_parse_repofile (FlatpakDir   *self,
-                                       const char   *remote_name,
-                                       gboolean      from_ref,
-                                       GKeyFile     *keyfile,
-                                       GBytes      **gpg_data_out,
-                                       GCancellable *cancellable,
-                                       GError      **error);
-
 char      *flatpak_dir_find_remote_by_uri (FlatpakDir *self,
                                            const char *uri,
                                            const char *collection_id);
@@ -827,6 +824,11 @@ gboolean   flatpak_dir_get_remote_noenumerate (FlatpakDir *self,
                                                const char *remote_name);
 gboolean   flatpak_dir_get_remote_nodeps (FlatpakDir *self,
                                           const char *remote_name);
+char      *flatpak_dir_get_remote_filter (FlatpakDir *self,
+                                          const char *remote_name);
+gboolean   flatpak_dir_compare_remote_filter (FlatpakDir *self,
+                                              const char *remote_name,
+                                              const char *filter);
 gboolean   flatpak_dir_get_remote_disabled (FlatpakDir *self,
                                             const char *remote_name);
 gboolean   flatpak_dir_list_remote_refs (FlatpakDir         *self,
