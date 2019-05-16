@@ -24,7 +24,7 @@ set -euo pipefail
 skip_without_bwrap
 skip_revokefs_without_fuse
 
-echo "1..30"
+echo "1..32"
 
 #Regular repo
 setup_repo
@@ -86,7 +86,7 @@ assert_not_has_file $FL_DIR/repo/refs/remotes/test-repo/appstream2/$ARCH
 
 assert_has_file $FL_DIR/appstream/test-repo/$ARCH/.timestamp
 assert_has_symlink $FL_DIR/appstream/test-repo/$ARCH/active
-assert_not_has_file $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml
+assert_has_file $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml
 assert_has_file $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml.gz
 
 echo "ok update compat appstream"
@@ -608,3 +608,136 @@ else
 fi
 
 echo "ok remote-info"
+
+${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
+assert_file_has_content remote-ls-log "app/org\.test\.Hello"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
+
+${FLATPAK}  ${U} remote-info test-repo org.test.Hello > remote-ref-info
+assert_file_has_content remote-ref-info "ID: org\.test\.Hello"
+
+${FLATPAK} ${U} update --appstream test-repo
+assert_file_has_content $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml "app/org\.test\.Hello"
+
+# Make a copy so we can remove it later
+cp ${test_srcdir}/test.filter test.filter
+${FLATPAK} ${U} remote-modify test-repo --filter $(pwd)/test.filter
+
+${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
+
+assert_not_file_has_content remote-ls-log "app/org\.test\.Hello"
+assert_not_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
+
+if ${FLATPAK}  ${U} remote-info test-repo org.test.Hello > remote-ref-info; then
+        assert_not_reached "flatpak remote-info test-repo org.test.Hello should fail due to filter"
+fi
+
+if ${FLATPAK} ${U} install -y test-repo org.test.Hello; then
+    assert_not_reached "should not be able to install org.test.Hello should fail due to filter"
+fi
+
+${FLATPAK} ${U} update --appstream test-repo
+assert_not_file_has_content $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml "app/org\.test\.Hello"
+
+# Ensure that filter works even when the filter file is removed (uses the backup)
+rm -f test.filter
+${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
+assert_not_file_has_content remote-ls-log "app/org\.test\.Hello"
+assert_not_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
+if ${FLATPAK}  ${U} remote-info test-repo org.test.Hello > remote-ref-info; then
+        assert_not_reached "flatpak remote-info test-repo org.test.Hello should fail due to filter"
+fi
+if ${FLATPAK} ${U} install -y test-repo org.test.Hello; then
+    assert_not_reached "should not be able to install org.test.Hello should fail due to filter"
+fi
+
+${FLATPAK} ${U} update --appstream test-repo
+assert_not_file_has_content $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml "app/org\.test\.Hello"
+
+# Remove filter
+
+${FLATPAK} ${U} remote-modify test-repo --no-filter
+
+${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
+assert_file_has_content remote-ls-log "app/org\.test\.Hello"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
+
+echo "ok filter"
+
+# Try installing it from a flatpakref file. Don’t uninstall afterwards because
+# we need it for the next test.
+cat << EOF > test.flatpakrepo
+[Flatpak Repo]
+Url=http://127.0.0.1:${port}/test-no-gpg
+Title=The Title
+Comment=The Comment
+Description=The Description
+Homepage=https://the.homepage/
+Icon=https://the.icon/
+DefaultBranch=default-branch
+NoDeps=true
+EOF
+
+if ${FLATPAK} ${U} remote-add test-repo test.flatpakrepo; then
+    assert_not_reached "should not be able to add pre-existing remote"
+fi
+
+# No-op
+${FLATPAK} ${U} remote-add --if-not-exists test-repo test.flatpakrepo
+
+
+${FLATPAK} ${U} remote-add new-repo test.flatpakrepo
+
+assert_remote_has_config new-repo url "http://127.0.0.1:${port}/test-no-gpg"
+assert_remote_has_config new-repo gpg-verify "false"
+assert_remote_has_config new-repo xa.title "The Title"
+assert_remote_has_no_config new-repo xa.title-is-set
+assert_remote_has_config new-repo xa.comment "The Comment"
+assert_remote_has_no_config new-repo xa.comment-is-set
+assert_remote_has_config new-repo xa.description "The Description"
+assert_remote_has_no_config new-repo xa.description-is-set
+assert_remote_has_config new-repo xa.homepage "https://the.homepage/"
+assert_remote_has_no_config new-repo xa.homepage-is-set
+assert_remote_has_config new-repo xa.icon "https://the.icon/"
+assert_remote_has_no_config new-repo xa.icon-is-set
+assert_remote_has_config new-repo xa.default-branch "default-branch"
+assert_remote_has_no_config new-repo xa.default-branch-is-set
+assert_remote_has_config new-repo xa.nodeps "true"
+assert_remote_has_no_config new-repo xa.noenumerate
+assert_remote_has_no_config new-repo xa.filter
+
+${FLATPAK} ${U} remote-delete new-repo
+${FLATPAK} ${U} remote-add  --title=Title2 --comment=Comment2 --default-branch=branch2 new-repo test.flatpakrepo
+
+assert_remote_has_config new-repo url "http://127.0.0.1:${port}/test-no-gpg"
+assert_remote_has_config new-repo gpg-verify "false"
+assert_remote_has_config new-repo xa.title "Title2"
+assert_remote_has_config new-repo xa.title-is-set true
+assert_remote_has_config new-repo xa.comment "Comment2"
+assert_remote_has_config new-repo xa.comment-is-set true
+assert_remote_has_config new-repo xa.description "The Description"
+assert_remote_has_no_config new-repo xa.description-is-set
+assert_remote_has_config new-repo xa.homepage "https://the.homepage/"
+assert_remote_has_no_config new-repo xa.homepage-is-set
+assert_remote_has_config new-repo xa.icon "https://the.icon/"
+assert_remote_has_no_config new-repo xa.icon-is-set
+assert_remote_has_config new-repo xa.default-branch "branch2"
+assert_remote_has_config new-repo xa.default-branch-is-set true
+assert_remote_has_config new-repo xa.nodeps "true"
+assert_remote_has_no_config new-repo xa.noenumerate
+assert_remote_has_no_config new-repo xa.filter
+
+${FLATPAK} ${U} remote-delete new-repo
+${FLATPAK} ${U} remote-add  --filter="${test_srcdir}/test.filter" new-repo test.flatpakrepo
+
+assert_remote_has_config new-repo xa.filter "${test_srcdir}/test.filter"
+
+# This should unset the filter:
+${FLATPAK} ${U} remote-add --if-not-exists new-repo test.flatpakrepo
+assert_remote_has_no_config new-repo xa.filter
+
+echo "ok flatpakrepo"

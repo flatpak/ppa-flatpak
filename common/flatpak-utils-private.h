@@ -191,6 +191,14 @@ gboolean flatpak_id_has_subref_suffix (const char *id);
 char **flatpak_decompose_ref (const char *ref,
                               GError    **error);
 
+gboolean flatpak_parse_filters (const char *data,
+                                GRegex **allow_refs_out,
+                                GRegex **deny_refs_out,
+                                GError **error);
+gboolean flatpak_filters_allow_ref (GRegex *allow_refs,
+                                    GRegex *deny_refs,
+                                    const char *ref);
+
 FlatpakKinds flatpak_kinds_from_bools (gboolean app,
                                        gboolean runtime);
 
@@ -399,6 +407,13 @@ flatpak_auto_lock_helper (GMutex *mutex)
 gboolean flatpak_switch_symlink_and_remove (const char *symlink_path,
                                             const char *target,
                                             GError    **error);
+
+GKeyFile * flatpak_parse_repofile (const char   *remote_name,
+                                   gboolean      from_ref,
+                                   GKeyFile     *keyfile,
+                                   GBytes      **gpg_data_out,
+                                   GCancellable *cancellable,
+                                   GError      **error);
 
 gboolean flatpak_repo_set_title (OstreeRepo *repo,
                                  const char *title,
@@ -761,6 +776,10 @@ gboolean   flatpak_repo_generate_appstream (OstreeRepo   *repo,
                                             guint64       timestamp,
                                             GCancellable *cancellable,
                                             GError      **error);
+void flatpak_appstream_xml_filter (FlatpakXml *appstream,
+                                   GRegex *allow_refs,
+                                   GRegex *deny_refs);
+
 
 gboolean flatpak_allocate_tmpdir (int           tmpdir_dfd,
                                   const char   *tmpdir_relpath,
@@ -811,6 +830,19 @@ gboolean flatpak_check_required_version (const char *ref,
 
 int flatpak_levenshtein_distance (const char *s,
                                   const char *t);
+
+char *   flatpak_dconf_path_for_app_id (const char *app_id);
+gboolean flatpak_dconf_path_is_similar (const char *path1,
+                                        const char *path2);
+
+gboolean flatpak_repo_resolve_rev (OstreeRepo    *repo,
+                                   const char    *collection_id, /* nullable */
+                                   const char    *remote_name, /* nullable */
+                                   const char    *ref_name,
+                                   gboolean       allow_noent,
+                                   char         **out_rev,
+                                   GCancellable  *cancellable,
+                                   GError       **error);
 
 #define FLATPAK_MESSAGE_ID "c7b39b1e006b464599465e105b361485"
 

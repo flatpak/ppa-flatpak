@@ -46,8 +46,9 @@
 
        <para>
             System-wide remotes can be statically preconfigured by dropping
-            config fragments into <filename>/etc/flatpak/remotes.d/</filename>.
+            flatpakref files into <filename>/etc/flatpak/remotes.d/</filename>.
        </para>
+
     </refsect1>
 
     <refsect1>
