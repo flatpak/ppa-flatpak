@@ -1,3 +1,10 @@
+flatpak (1.4.1-1) UNRELEASED; urgency=high
+
+  * New upstream stable release
+    - This reverts an unintended ABI break in 1.4.0.
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 13 Jun 2019 11:42:57 +0100
+
 flatpak (1.4.0-1) experimental; urgency=medium
 
   * New upstream stable release
