@@ -1,6 +1,11 @@
 flatpak (1.2.4-2) UNRELEASED; urgency=medium
 
   * d/salsa-ci.yml: Request standard CI on salsa.debian.org
+  * d/p/tests-Skip-tests-that-use-system-helper-if-uid-or-gid-is-.patch:
+    Avoid testing the system helper if uid or gid is zero.
+    The system helper refuses to run in test mode if it has privileges,
+    but some CI systems (currently including salsa-ci) run as uid or
+    gid 0 in a disposable container.
 
  -- Simon McVittie <smcv@debian.org>  Sun, 23 Jun 2019 19:28:20 +0100
 

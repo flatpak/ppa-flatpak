@@ -1,1 +1,2 @@
+tests-Skip-tests-that-use-system-helper-if-uid-or-gid-is-.patch
 debian/Use-Python-3-for-test-web-server.patch
