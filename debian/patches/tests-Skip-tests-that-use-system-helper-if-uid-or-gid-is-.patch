@@ -1,0 +1,87 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Mon, 24 Jun 2019 12:08:06 +0100
+Subject: tests: Skip tests that use system helper if uid or gid is 0
+
+The system helper refuses to operate in test mode while privileged
+(because that would result in it skipping authentication, which would
+be very bad), but some CI systems build in a container or VM as uid 0
+or gid 0.
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ tests/libtest.sh     | 6 ++++++
+ tests/test-config.sh | 2 ++
+ tests/test-info.sh   | 4 ++++
+ tests/testlibrary.c  | 7 +++++++
+ 4 files changed, 19 insertions(+)
+
+diff --git a/tests/libtest.sh b/tests/libtest.sh
+index 46bcefb..2df1d73 100644
+--- a/tests/libtest.sh
++++ b/tests/libtest.sh
+@@ -364,6 +364,12 @@ skip() {
+     exit 0
+ }
+ 
++skip_if_root () {
++    if [ "x$(id -u)" = x0 ] || [ "x$(id -g)" = x0 ]; then
++        skip "system helper refuses to run in test mode as root"
++    fi
++}
++
+ skip_without_bwrap () {
+     if "${_flatpak_bwrap_works}"; then
+         return 0
+diff --git a/tests/test-config.sh b/tests/test-config.sh
+index 420f898..e275d1f 100755
+--- a/tests/test-config.sh
++++ b/tests/test-config.sh
+@@ -24,6 +24,8 @@ set -euo pipefail
+ # This test looks for specific localized strings.
+ export LC_ALL=C
+ 
++skip_if_root
++
+ echo "1..5"
+ 
+ ${FLATPAK} config --list > list_out
+diff --git a/tests/test-info.sh b/tests/test-info.sh
+index af17eca..af5fe28 100644
+--- a/tests/test-info.sh
++++ b/tests/test-info.sh
+@@ -6,6 +6,10 @@ set -euo pipefail
+ 
+ skip_revokefs_without_fuse
+ 
++if [ x${USE_SYSTEMDIR-} == xyes ] ; then
++    skip_if_root
++fi
++
+ echo "1..7"
+ 
+ setup_repo
+diff --git a/tests/testlibrary.c b/tests/testlibrary.c
+index f2773dc..acfd859 100644
+--- a/tests/testlibrary.c
++++ b/tests/testlibrary.c
+@@ -3,6 +3,7 @@
+ #include <string.h>
+ #include <sys/types.h>
+ #include <sys/wait.h>
++#include <unistd.h>
+ 
+ #include <glib.h>
+ #include <ostree.h>
+@@ -2729,6 +2730,12 @@ test_transaction_flatpakref_remote_creation (void)
+   g_autoptr(GBytes) data = NULL;
+   gboolean res;
+ 
++  if (getuid () == 0 || getgid () == 0 || geteuid () == 0 || getegid () == 0)
++    {
++      g_test_skip ("system helper refuses to run in test mode as root");
++      return;
++    }
++
+   system_inst = flatpak_installation_new_system (NULL, &error);
+   g_assert_no_error (error);
+   g_assert_nonnull (system_inst);
