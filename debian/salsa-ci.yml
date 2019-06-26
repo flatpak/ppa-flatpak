@@ -2,6 +2,20 @@ include:
   - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/salsa-ci.yml
   - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/pipeline-jobs.yml
 
+autopkgtest:
+  # Similar issue to https://salsa.debian.org/salsa-ci-team/pipeline/issues/58
+  except:
+    variables:
+      - $RELEASE == "experimental"
+      - $RELEASE =~ /-backports$/
+
+piuparts:
+  # https://salsa.debian.org/salsa-ci-team/pipeline/issues/58
+  except:
+    variables:
+      - $RELEASE == "experimental"
+      - $RELEASE =~ /-backports$/
+
 reprotest:
   # https://salsa.debian.org/salsa-ci-team/pipeline/issues/57
   only:
