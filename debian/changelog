@@ -1,3 +1,9 @@
+flatpak (1.4.2-flatpak1~bionic) bionic; urgency=medium
+
+  * Update to 1.4.2
+
+ -- Alexander Larsson <alexl@redhat.com>  Sun, 30 Jun 2019 20:21:39 +0200
+
 flatpak (1.4.1-1~bionic) bionic; urgency=medium
 
   * Rebuild for bionic
