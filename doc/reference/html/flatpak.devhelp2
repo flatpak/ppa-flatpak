@@ -19,21 +19,25 @@
     <sub name="Object Hierarchy" link="object-tree.html"/>
     <sub name="API Index" link="api-index-full.html"/>
     <sub name="Index of deprecated API" link="deprecated-api-index.html"/>
-    <sub name="Index of new API in 1.1.1" link="api-index-1-1-1.html"/>
-    <sub name="Index of new API in 0.8" link="api-index-0-8.html"/>
-    <sub name="Index of new API in 1.1.2" link="api-index-1-1-2.html"/>
-    <sub name="Index of new API in 0.11.8" link="api-index-0-11-8.html"/>
-    <sub name="Index of new API in 1.1" link="api-index-1-1.html"/>
-    <sub name="Index of new API in 0.10.0" link="api-index-0-10-0.html"/>
-    <sub name="Index of new API in 0.9.8" link="api-index-0-9-8.html"/>
-    <sub name="Index of new API in 1.0.3" link="api-index-1-0-3.html"/>
-    <sub name="Index of new API in 0.6.7" link="api-index-0-6-7.html"/>
-    <sub name="Index of new API in 0.8.0" link="api-index-0-8-0.html"/>
     <sub name="Index of new API in 0.6.13" link="api-index-0-6-13.html"/>
-    <sub name="Index of new API in 0.6.12" link="api-index-0-6-12.html"/>
-    <sub name="Index of new API in 0.6.10" link="api-index-0-6-10.html"/>
-    <sub name="Index of new API in 2.26" link="api-index-2-26.html"/>
+    <sub name="Index of new API in 1.1.2" link="api-index-1-1-2.html"/>
+    <sub name="Index of new API in 1.3.3." link="api-index-1-3-3-.html"/>
     <sub name="Index of new API in 0.6.15" link="api-index-0-6-15.html"/>
+    <sub name="Index of new API in 0.11.8" link="api-index-0-11-8.html"/>
+    <sub name="Index of new API in 0.6.12" link="api-index-0-6-12.html"/>
+    <sub name="Index of new API in 0.8" link="api-index-0-8.html"/>
+    <sub name="Index of new API in 0.6.7" link="api-index-0-6-7.html"/>
+    <sub name="Index of new API in 0.6.10" link="api-index-0-6-10.html"/>
+    <sub name="Index of new API in 1.4" link="api-index-1-4.html"/>
+    <sub name="Index of new API in 1.1.1" link="api-index-1-1-1.html"/>
+    <sub name="Index of new API in 2.26" link="api-index-2-26.html"/>
+    <sub name="Index of new API in 0.8.0" link="api-index-0-8-0.html"/>
+    <sub name="Index of new API in 1.1" link="api-index-1-1.html"/>
+    <sub name="Index of new API in 1.3.4" link="api-index-1-3-4.html"/>
+    <sub name="Index of new API in 1.3.3" link="api-index-1-3-3.html"/>
+    <sub name="Index of new API in 0.10.0" link="api-index-0-10-0.html"/>
+    <sub name="Index of new API in 1.0.3" link="api-index-1-0-3.html"/>
+    <sub name="Index of new API in 0.9.8" link="api-index-0-9-8.html"/>
     <sub name="Annotation Glossary" link="annotation-glossary.html"/>
   </chapters>
   <functions>
