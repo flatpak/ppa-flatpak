@@ -6,6 +6,8 @@ flatpak (1.2.4-2) UNRELEASED; urgency=medium
     The system helper refuses to run in test mode if it has privileges,
     but some CI systems (currently including salsa-ci) run as uid or
     gid 0 in a disposable container.
+  * d/test.sh: Don't run tests under linux32, even if reprotest did the
+    build under linux32
 
  -- Simon McVittie <smcv@debian.org>  Sun, 23 Jun 2019 19:28:20 +0100
 
