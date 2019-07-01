@@ -23,8 +23,7 @@ fi
 e=0
 $adverb dh_auto_test || e=$?
 
-find . -name '*.log' \
--not -name config.log \
+find . -name 'test*.log' \
 -not -name test-suite.log \
 -print0 | xargs -0 tail -v -c1M
 
