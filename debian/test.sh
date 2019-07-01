@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -eu
 
 export HOME="$(pwd)/debian/HOME"
 # Put these back to their defaults if we are not running with a clean
@@ -12,8 +12,16 @@ unset XDG_DATA_DIRS
 # dconf assumes this directory exists and is writable
 export XDG_RUNTIME_DIR="$(pwd)/debian/XDG_RUNTIME_DIR"
 
+adverb=
+
+if [ "$DEB_HOST_ARCH_BITS" = 64 ]; then
+    # reprotest sometimes uses linux32 even for x86_64 builds, and
+    # Flatpak's tests don't support this.
+    adverb=linux64
+fi
+
 e=0
-dh_auto_test || e=$?
+$adverb dh_auto_test || e=$?
 
 find . -name '*.log' \
 -not -name config.log \
