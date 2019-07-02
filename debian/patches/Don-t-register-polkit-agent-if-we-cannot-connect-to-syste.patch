@@ -1,0 +1,39 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Mon, 1 Jul 2019 12:39:50 +0100
+Subject: Don't register polkit agent if we cannot connect to system bus
+
+This works around an old polkit client library bug which would cause
+a segfault in this situation. The bug was fixed long ago in upstream
+polkit, but is still present in Debian 10 'buster', Ubuntu 19.04 'disco'
+and all older releases, due to Debian/Ubuntu using a branch of polkit
+to avoid the mozjs dependency. It should finally get fixed in Debian 11
+and Ubuntu 19.10.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Bug: https://github.com/flatpak/flatpak/issues/2781
+Bug-Debian: https://bugs.debian.org/923046
+Forwarded: https://github.com/flatpak/flatpak/pull/2997
+---
+ app/flatpak-main.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/app/flatpak-main.c b/app/flatpak-main.c
+index e0d5937..451583b 100644
+--- a/app/flatpak-main.c
++++ b/app/flatpak-main.c
+@@ -554,6 +554,15 @@ install_polkit_agent (void)
+ #ifdef USE_SYSTEM_HELPER
+   PolkitAgentListener *listener = NULL;
+   g_autoptr(GError) local_error = NULL;
++  g_autoptr(GDBusConnection) bus = NULL;
++
++  bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &local_error);
++
++  if (bus == NULL)
++    {
++      g_debug ("Unable to connect to system bus: %s", local_error->message);
++      return NULL;
++    }
+ 
+   /* Install a polkit agent as fallback, in case we're running on a console */
+   listener = flatpak_polkit_agent_text_listener_new (NULL, &local_error);

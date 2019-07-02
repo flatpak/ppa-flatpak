@@ -1,6 +1,9 @@
 flatpak (1.4.2-1) UNRELEASED; urgency=medium
 
   * New upstream release
+  * d/p/Don-t-register-polkit-agent-if-we-cannot-connect-to-syste.patch:
+    Add proposed patch to avoid crashing if the system bus is unavailable,
+    working around policykit-1 bug #923046
   * d/salsa-ci.yml: Request standard CI on salsa.debian.org
   * d/p/tests-Skip-tests-that-use-system-helper-if-uid-or-gid-is-.patch:
     Avoid testing the system helper if uid or gid is zero.
