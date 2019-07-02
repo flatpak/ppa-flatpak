@@ -1,4 +1,4 @@
-flatpak (1.4.2-1) UNRELEASED; urgency=medium
+flatpak (1.4.2-1) experimental; urgency=medium
 
   * New upstream release
   * d/p/Don-t-register-polkit-agent-if-we-cannot-connect-to-syste.patch:
@@ -15,7 +15,7 @@ flatpak (1.4.2-1) UNRELEASED; urgency=medium
   * d/test.sh: Don't output non-test logs (notably
     debian/output/reprotest.log on salsa-ci) after running tests
 
- -- Simon McVittie <smcv@debian.org>  Sun, 23 Jun 2019 19:28:20 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 02 Jul 2019 16:20:14 +0100
 
 flatpak (1.4.1-1) experimental; urgency=high
 
