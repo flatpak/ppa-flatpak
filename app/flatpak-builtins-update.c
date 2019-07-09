@@ -100,6 +100,9 @@ flatpak_builtin_update (int           argc,
       return TRUE;
     }
 
+  if (opt_noninteractive)
+    opt_yes = TRUE; /* Implied */
+
   prefs = &argv[1];
   n_prefs = argc - 1;
 
@@ -274,10 +277,7 @@ flatpak_builtin_update (int           argc,
       if (!flatpak_transaction_run (transaction, cancellable, error))
         {
           if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
-            {
-              g_clear_error (error);
-              return TRUE;
-            }
+            g_clear_error (error);  /* Don't report on stderr */
 
           return FALSE;
         }

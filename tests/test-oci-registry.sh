@@ -23,7 +23,7 @@ set -euo pipefail
 
 skip_without_bwrap
 
-echo "1..13"
+echo "1..14"
 
 # Start the fake registry server
 
@@ -68,7 +68,7 @@ else
 fi
 
 gunzip -c $appstream > appstream-uncompressed
-assert_file_has_content appstream-uncompressed '<id>org.test.Hello.desktop</id>'
+assert_file_has_content appstream-uncompressed '<id>org\.test\.Hello\.desktop</id>'
 assert_has_file $icondir/64x64/org.test.Hello.png
 
 echo "ok appstream"
@@ -94,8 +94,30 @@ echo "ok detached icons"
 
 # Try installing from the remote
 
-${FLATPAK} ${U} install -y oci-registry org.test.Platform
+${FLATPAK} ${U} install -y oci-registry org.test.Hello
+
+run org.test.Hello > hello_out
+assert_file_has_content hello_out '^Hello world, from a sandbox$'
+
 echo "ok install"
+
+make_updated_app oci
+
+${FLATPAK} build-bundle --oci $FL_GPGARGS repos/oci oci/app-image org.test.Hello
+$client add hello latest $(pwd)/oci/app-image
+
+OLD_COMMIT=`${FLATPAK} ${U} info --show-commit org.test.Hello`
+
+${FLATPAK} ${U} update -y -vv --ostree-verbose org.test.Hello
+
+NEW_COMMIT=`${FLATPAK} ${U} info --show-commit org.test.Hello`
+
+assert_not_streq "$OLD_COMMIT" "$NEW_COMMIT"
+
+run org.test.Hello > hello_out
+assert_file_has_content hello_out '^Hello world, from a sandboxUPDATED$'
+
+echo "ok update"
 
 # Remove the app from the registry, check that things were removed properly
 
@@ -106,7 +128,7 @@ assert_streq "$images" "org.test.Platform"
 
 ${FLATPAK} update ${U} --appstream oci-registry
 
-assert_not_file_has_content $appstream '<id>org.test.Hello.desktop</id>'
+assert_not_file_has_content $appstream '<id>org\.test\.Hello\.desktop</id>'
 assert_not_has_file $icondir/64x64/org.test.Hello.png
 assert_not_has_file $icondir/64x64
 
@@ -140,6 +162,7 @@ ${FLATPAK} update ${U} --appstream oci-registry
 assert_has_file $base/oci/oci-registry.index.gz
 assert_has_file $base/oci/oci-registry.summary
 assert_has_dir $base/appstream/oci-registry
+${FLATPAK} ${U} -y uninstall org.test.Hello
 ${FLATPAK} ${U} -y uninstall org.test.Platform
 ${FLATPAK} ${U} remote-delete oci-registry
 assert_not_has_file $base/oci/oci-registry.index.gz
@@ -187,7 +210,7 @@ ${FLATPAK} build-bundle --runtime --repo-url "oci+http://127.0.0.1:${port}" $FL_
 ${FLATPAK} ${U} install -y --bundle org.test.Platform.flatpak
 
 ${FLATPAK} remotes -d > remotes-list
-assert_file_has_content remotes-list "^platform-origin.*[ 	]oci+http://127.0.0.1:${port}"
+assert_file_has_content remotes-list "^platform-origin.*[ 	]oci+http://127\.0\.0\.1:${port}"
 
 assert_has_file $base/oci/platform-origin.index.gz
 
@@ -200,7 +223,7 @@ ${FLATPAK} build-bundle --repo-url "oci+http://127.0.0.1:${port}" $FL_GPGARGS re
 ${FLATPAK} ${U} install -y --bundle org.test.Hello.flatpak
 
 ${FLATPAK} remotes -d > remotes-list
-assert_file_has_content remotes-list "^hello-origin.*[ 	]oci+http://127.0.0.1:${port}"
+assert_file_has_content remotes-list "^hello-origin.*[ 	]oci+http://127\.0\.0\.1:${port}"
 
 assert_has_file $base/oci/hello-origin.index.gz
 
@@ -214,7 +237,7 @@ ${FLATPAK} build-bundle --repo-url "http://127.0.0.1:${port}" $FL_GPGARGS repos/
 ${FLATPAK} ${U} install -y --bundle org.test.Hello.flatpak
 
 ${FLATPAK} remotes -d > remotes-list
-assert_file_has_content remotes-list "^hello-origin.*[ 	]http://127.0.0.1:${port}"
+assert_file_has_content remotes-list "^hello-origin.*[ 	]http://127\.0\.0\.1:${port}"
 
 assert_not_has_file $base/oci/hello-origin.index.gz
 

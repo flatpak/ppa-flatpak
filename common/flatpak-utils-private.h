@@ -57,8 +57,10 @@ typedef enum {
 #define FLATPAK_ANSI_ROW_N "\x1b[%d;1H"
 #define FLATPAK_ANSI_CLEAR "\x1b[0J"
 
-void flatpak_get_window_size (int *rows, int *cols);
-gboolean flatpak_get_cursor_pos  (int *row, int *col);
+void flatpak_get_window_size (int *rows,
+                              int *cols);
+gboolean flatpak_get_cursor_pos (int *row,
+                                 int *col);
 void flatpak_hide_cursor (void);
 void flatpak_show_cursor (void);
 
@@ -80,9 +82,10 @@ void flatpak_disable_raw_mode (void);
  */
 #define flatpak_fail glnx_throw
 
-gboolean flatpak_fail_error (GError **error,
+gboolean flatpak_fail_error (GError     **error,
                              FlatpakError code,
-                             const char *fmt, ...) G_GNUC_PRINTF (3,4);
+                             const char  *fmt,
+                             ...) G_GNUC_PRINTF (3, 4);
 
 void flatpak_debug2 (const char *format,
                      ...) G_GNUC_PRINTF (1, 2);
@@ -117,6 +120,8 @@ const char * flatpak_get_bwrap (void);
 
 char *flatpak_get_timezone (void);
 
+char **flatpak_strv_merge (char   **strv1,
+                           char   **strv2);
 char **flatpak_subpaths_merge (char **subpaths1,
                                char **subpaths2);
 
@@ -132,16 +137,16 @@ gboolean flatpak_write_update_checksum (GOutputStream *out,
                                         GError       **error);
 
 
-gboolean flatpak_splice_update_checksum (GOutputStream         *out,
+gboolean flatpak_splice_update_checksum (GOutputStream         * out,
                                          GInputStream          *in,
                                          GChecksum             *checksum,
                                          FlatpakLoadUriProgress progress,
-                                         gpointer               progress_data,
+                                         gpointer progress_data,
                                          GCancellable          *cancellable,
                                          GError               **error);
 
-GBytes * flatpak_read_stream (GInputStream *in,
-                              gboolean      null_terminate,
+GBytes * flatpak_read_stream (GInputStream * in,
+                              gboolean null_terminate,
                               GError      **error);
 
 gboolean flatpak_variant_save (GFile        *dest,
@@ -177,12 +182,22 @@ gboolean flatpak_is_valid_name (const char *string,
                                 GError    **error);
 gboolean flatpak_is_valid_branch (const char *string,
                                   GError    **error);
+gboolean flatpak_has_name_prefix (const char *string,
+                                  const char *name);
 
 char * flatpak_make_valid_id_prefix (const char *orig_id);
 gboolean flatpak_id_has_subref_suffix (const char *id);
 
 char **flatpak_decompose_ref (const char *ref,
                               GError    **error);
+
+gboolean flatpak_parse_filters (const char *data,
+                                GRegex **allow_refs_out,
+                                GRegex **deny_refs_out,
+                                GError **error);
+gboolean flatpak_filters_allow_ref (GRegex *allow_refs,
+                                    GRegex *deny_refs,
+                                    const char *ref);
 
 FlatpakKinds flatpak_kinds_from_bools (gboolean app,
                                        gboolean runtime);
@@ -205,7 +220,8 @@ gboolean flatpak_split_partial_ref_arg_novalidate (const char   *partial_ref,
                                                    char        **out_arch,
                                                    char        **out_branch);
 
-int flatpak_compare_ref (const char *ref1, const char *ref2);
+int flatpak_compare_ref (const char *ref1,
+                         const char *ref2);
 
 char * flatpak_compose_ref (gboolean    app,
                             const char *name,
@@ -261,12 +277,12 @@ gboolean flatpak_remove_dangling_symlinks (GFile        *dir,
                                            GCancellable *cancellable,
                                            GError      **error);
 
-gboolean flatpak_utils_ascii_string_to_unsigned (const gchar  *str,
-                                                 guint         base,
-                                                 guint64       min,
-                                                 guint64       max,
-                                                 guint64      *out_num,
-                                                 GError      **error);
+gboolean flatpak_utils_ascii_string_to_unsigned (const gchar *str,
+                                                 guint        base,
+                                                 guint64      min,
+                                                 guint64      max,
+                                                 guint64     *out_num,
+                                                 GError     **error);
 
 
 #if !GLIB_CHECK_VERSION (2, 40, 0)
@@ -304,12 +320,50 @@ g_key_file_load_from_bytes (GKeyFile     *key_file,
 
 
 #if !GLIB_CHECK_VERSION (2, 56, 0)
-GDateTime *flatpak_g_date_time_new_from_iso8601 (const gchar *text, GTimeZone *default_tz);
+GDateTime *flatpak_g_date_time_new_from_iso8601 (const gchar *text,
+                                                 GTimeZone   *default_tz);
 
 static inline GDateTime *
 g_date_time_new_from_iso8601 (const gchar *text, GTimeZone *default_tz)
 {
   return flatpak_g_date_time_new_from_iso8601 (text, default_tz);
+}
+#endif
+
+
+#if !GLIB_CHECK_VERSION (2, 56, 0)
+typedef void (* GClearHandleFunc) (guint handle_id);
+
+static inline void
+g_clear_handle_id (guint            *tag_ptr,
+                   GClearHandleFunc  clear_func)
+{
+  guint _handle_id;
+
+  _handle_id = *tag_ptr;
+  if (_handle_id > 0)
+    {
+      *tag_ptr = 0;
+      clear_func (_handle_id);
+    }
+}
+#endif
+
+
+#if !GLIB_CHECK_VERSION (2, 58, 0)
+static inline gboolean
+g_hash_table_steal_extended (GHashTable    *hash_table,
+                             gconstpointer  lookup_key,
+                             gpointer      *stolen_key,
+                             gpointer      *stolen_value)
+{
+  if (g_hash_table_lookup_extended (hash_table, lookup_key, stolen_key, stolen_value))
+    {
+      g_hash_table_steal (hash_table, lookup_key);
+      return TRUE;
+    }
+  else
+      return FALSE;
 }
 #endif
 
@@ -354,9 +408,28 @@ gboolean flatpak_switch_symlink_and_remove (const char *symlink_path,
                                             const char *target,
                                             GError    **error);
 
+GKeyFile * flatpak_parse_repofile (const char   *remote_name,
+                                   gboolean      from_ref,
+                                   GKeyFile     *keyfile,
+                                   GBytes      **gpg_data_out,
+                                   GCancellable *cancellable,
+                                   GError      **error);
+
 gboolean flatpak_repo_set_title (OstreeRepo *repo,
                                  const char *title,
                                  GError    **error);
+gboolean flatpak_repo_set_comment (OstreeRepo *repo,
+                                   const char *comment,
+                                   GError    **error);
+gboolean flatpak_repo_set_description (OstreeRepo *repo,
+                                       const char *description,
+                                       GError    **error);
+gboolean flatpak_repo_set_icon (OstreeRepo *repo,
+                                const char *icon,
+                                GError    **error);
+gboolean flatpak_repo_set_homepage (OstreeRepo *repo,
+                                    const char *homepage,
+                                    GError    **error);
 gboolean flatpak_repo_set_redirect_url (OstreeRepo *repo,
                                         const char *redirect_url,
                                         GError    **error);
@@ -396,10 +469,27 @@ void flatpak_repo_parse_extra_data_sources (GVariant      *extra_data_sources,
                                             guint64       *installed_size,
                                             const guchar **sha256,
                                             const char   **uri);
-gboolean flatpak_mtree_create_root (OstreeRepo        *repo,
-                                    OstreeMutableTree *mtree,
-                                    GCancellable      *cancellable,
-                                    GError           **error);
+gboolean flatpak_mtree_ensure_dir_metadata (OstreeRepo        *repo,
+                                            OstreeMutableTree *mtree,
+                                            GCancellable      *cancellable,
+                                            GError           **error);
+gboolean flatpak_mtree_create_symlink (OstreeRepo         *repo,
+                                       OstreeMutableTree  *parent,
+                                       const char         *name,
+                                       const char         *target,
+                                       GError            **error);
+gboolean flatpak_mtree_add_file_from_bytes (OstreeRepo *repo,
+                                            GBytes *bytes,
+                                            OstreeMutableTree *parent,
+                                            const char *filename,
+                                            GCancellable *cancellable,
+                                            GError      **error);
+gboolean flatpak_mtree_create_dir (OstreeRepo         *repo,
+                                   OstreeMutableTree  *parent,
+                                   const char         *name,
+                                   OstreeMutableTree **dir_out,
+                                   GError            **error);
+
 
 GVariant * flatpak_bundle_load (GFile   *file,
                                 char   **commit,
@@ -512,11 +602,11 @@ gboolean flatpak_rm_rf (GFile        *dir,
                         GCancellable *cancellable,
                         GError      **error);
 
-gboolean flatpak_canonicalize_permissions (int           parent_dfd,
-                                           const char   *rel_path,
-                                           int           uid,
-                                           int           gid,
-                                           GError      **error);
+gboolean flatpak_canonicalize_permissions (int         parent_dfd,
+                                           const char *rel_path,
+                                           int         uid,
+                                           int         gid,
+                                           GError    **error);
 
 char * flatpak_readlink (const char *path,
                          GError    **error);
@@ -656,8 +746,8 @@ FlatpakXml *flatpak_xml_new_text (const gchar *text);
 void       flatpak_xml_add (FlatpakXml *parent,
                             FlatpakXml *node);
 void       flatpak_xml_free (FlatpakXml *node);
-FlatpakXml *flatpak_xml_parse (GInputStream *in,
-                               gboolean      compressed,
+FlatpakXml *flatpak_xml_parse (GInputStream * in,
+                               gboolean compressed,
                                GCancellable *cancellable,
                                GError      **error);
 void       flatpak_xml_to_string (FlatpakXml *node,
@@ -686,6 +776,10 @@ gboolean   flatpak_repo_generate_appstream (OstreeRepo   *repo,
                                             guint64       timestamp,
                                             GCancellable *cancellable,
                                             GError      **error);
+void flatpak_appstream_xml_filter (FlatpakXml *appstream,
+                                   GRegex *allow_refs,
+                                   GRegex *deny_refs);
+
 
 gboolean flatpak_allocate_tmpdir (int           tmpdir_dfd,
                                   const char   *tmpdir_relpath,
@@ -698,10 +792,10 @@ gboolean flatpak_allocate_tmpdir (int           tmpdir_dfd,
                                   GError      **error);
 
 
-gboolean flatpak_yes_no_prompt (gboolean default_yes,
+gboolean flatpak_yes_no_prompt (gboolean    default_yes,
                                 const char *prompt,
                                 ...) G_GNUC_PRINTF (2, 3);
-                            
+
 long flatpak_number_prompt (gboolean    default_yes,
                             int         min,
                             int         max,
@@ -717,7 +811,7 @@ int *flatpak_parse_numbers (const char *buf,
                             int         max);
 
 void flatpak_format_choices (const char **choices,
-                             const char *prompt,
+                             const char  *prompt,
                              ...) G_GNUC_PRINTF (2, 3);
 
 typedef void (*FlatpakProgressCallback)(const char *status,
@@ -734,8 +828,22 @@ gboolean flatpak_check_required_version (const char *ref,
                                          GKeyFile   *metakey,
                                          GError    **error);
 
-int flatpak_levenshtein_distance (const char *s, const char *t);
+int flatpak_levenshtein_distance (const char *s,
+                                  const char *t);
 
-#define FLATPAK_MESSAGE_ID "c7b39b1e006b464599465e105b361485" 
+char *   flatpak_dconf_path_for_app_id (const char *app_id);
+gboolean flatpak_dconf_path_is_similar (const char *path1,
+                                        const char *path2);
+
+gboolean flatpak_repo_resolve_rev (OstreeRepo    *repo,
+                                   const char    *collection_id, /* nullable */
+                                   const char    *remote_name, /* nullable */
+                                   const char    *ref_name,
+                                   gboolean       allow_noent,
+                                   char         **out_rev,
+                                   GCancellable  *cancellable,
+                                   GError       **error);
+
+#define FLATPAK_MESSAGE_ID "c7b39b1e006b464599465e105b361485"
 
 #endif /* __FLATPAK_UTILS_H__ */

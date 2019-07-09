@@ -22,8 +22,9 @@ set -euo pipefail
 . $(dirname $0)/libtest.sh
 
 skip_without_bwrap
+skip_revokefs_without_fuse
 
-echo "1..27"
+echo "1..32"
 
 #Regular repo
 setup_repo
@@ -36,10 +37,10 @@ if ! ostree show --repo=repos/test appstream2/${ARCH} > /dev/null; then
     assert_not_reached "No appstream2 branch"
 fi
 ostree cat --repo=repos/test appstream/${ARCH} /appstream.xml.gz | gunzip -d > appdata.xml
-assert_file_has_content appdata.xml "<id>org.test.Hello.desktop</id>"
+assert_file_has_content appdata.xml "<id>org\.test\.Hello\.desktop</id>"
 
 ostree cat --repo=repos/test appstream2/${ARCH} /appstream.xml > appdata2.xml
-assert_file_has_content appdata2.xml "<id>org.test.Hello.desktop</id>"
+assert_file_has_content appdata2.xml "<id>org\.test\.Hello\.desktop</id>"
 
 # Unsigned repo (not supported with collections; client-side use of collections requires GPG)
 if [ x${USE_COLLECTIONS_IN_CLIENT-} == xyes ] ; then
@@ -85,7 +86,7 @@ assert_not_has_file $FL_DIR/repo/refs/remotes/test-repo/appstream2/$ARCH
 
 assert_has_file $FL_DIR/appstream/test-repo/$ARCH/.timestamp
 assert_has_symlink $FL_DIR/appstream/test-repo/$ARCH/active
-assert_not_has_file $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml
+assert_has_file $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml
 assert_has_file $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml.gz
 
 echo "ok update compat appstream"
@@ -134,10 +135,10 @@ ${FLATPAK} ${U} uninstall -y org.test.Hello
 
 # Note: This typo is only auto-corrected without user interaction because we're using -y
 ${FLATPAK} ${U} install -y test-repo org.test.Hllo >install-log
-assert_file_has_content install-log "org.test.Hello"
+assert_file_has_content install-log "org\.test\.Hello"
 
 ${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "org.test.Hello"
+assert_file_has_content list-log "org\.test\.Hello"
 
 echo "ok typo correction works for install"
 
@@ -154,10 +155,10 @@ fi
 
 # Note: The missing remote is only auto-corrected without user interaction because we're using -y
 ${FLATPAK} ${U} install -y org.test.Hello |& tee install-log
-assert_file_has_content install-log "org.test.Hello"
+assert_file_has_content install-log "org\.test\.Hello"
 
 ${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "org.test.Hello"
+assert_file_has_content list-log "org\.test\.Hello"
 
 ${FLATPAK} ${U} remote-modify --enable test-missing-gpg-repo
 ${FLATPAK} ${U} remote-modify --enable test-wrong-gpg-repo
@@ -168,6 +169,14 @@ if [ x${USE_COLLECTIONS_IN_CLIENT-} != xyes ] ; then
 fi
 
 echo "ok missing remote name auto-corrects for install"
+
+port=$(cat httpd-port-main)
+if ${FLATPAK} ${U} install -y http://127.0.0.1:${port}/nonexistent.flatpakref 2> install-error-log; then
+    assert_not_reached "Should not be able to install a nonexistent flatpakref"
+fi
+assert_file_has_content install-error-log "Server returned status 404: Not Found"
+
+echo "ok install fails gracefully for 404 URLs"
 
 ${FLATPAK} ${U} uninstall -y org.test.Platform org.test.Hello
 
@@ -202,7 +211,7 @@ UPDATE_REPO_ARGS=--title=new-title update_repo
 assert_file_has_content repos/test/config new-title
 
 # This should make us automatically pick up the new metadata
-${FLATPAK} ${U} install test-repo org.test.Platform
+${FLATPAK} ${U} install -y test-repo org.test.Platform
 ${FLATPAK} ${U} remotes -d | grep ^test-repo > repo-info
 assert_file_has_content repo-info "new-title"
 
@@ -225,10 +234,10 @@ if ! ostree show --repo=repos/test-copy appstream/${ARCH} > /dev/null; then
     assert_not_reached "No appstream branch"
 fi
 ostree cat --repo=repos/test-copy appstream/${ARCH} /appstream.xml.gz | gunzip -d > appdata.xml
-assert_not_file_has_content appdata.xml "org.test.Hello.desktop"
+assert_not_file_has_content appdata.xml "org\.test\.Hello\.desktop"
 
 ${FLATPAK} repo --branches repos/test-copy > branches-log
-assert_file_has_content branches-log "^app/org.test.Hello/.*eol=Reason1"
+assert_file_has_content branches-log "^app/org\.test\.Hello/.*eol=Reason1"
 
 echo "ok eol build-commit-from"
 
@@ -241,32 +250,85 @@ if ! ostree show --repo=repos/test appstream/${ARCH} > /dev/null; then
     assert_not_reached "No appstream branch"
 fi
 ostree cat --repo=repos/test appstream/${ARCH} /appstream.xml.gz | gunzip -d > appdata.xml
-assert_not_file_has_content appdata.xml "org.test.Hello.desktop"
+assert_not_file_has_content appdata.xml "org\.test\.Hello\.desktop"
 
 ${FLATPAK} repo --branches repos/test > branches-log
-assert_file_has_content branches-log "^app/org.test.Hello/.*eol=Reason2"
+assert_file_has_content branches-log "^app/org\.test\.Hello/.*eol=Reason2"
 
+# eol only visible in remote-ls if -a:
 ${FLATPAK} ${U} remote-ls -d test-repo > remote-ls-log
-assert_file_has_content remote-ls-log "app/org.test.Hello/.*eol=Reason2"
+assert_not_file_has_content remote-ls-log "app/org\.test\.Hello"
+
+${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
+assert_file_has_content remote-ls-log "app/org\.test\.Hello/.*eol=Reason2"
 
 ${FLATPAK} ${U} update -y org.test.Hello > update-log
-assert_file_has_content update-log "org.test.Hello.*Reason2"
+assert_file_has_content update-log "org\.test\.Hello.*Reason2"
 
 ${FLATPAK} ${U} info org.test.Hello > info-log
 assert_file_has_content info-log "End-of-life: Reason2"
 
 ${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "org.test.Hello/.*eol=Reason2"
+assert_file_has_content list-log "org\.test\.Hello/.*eol=Reason2"
 
-${FLATPAK} ${U} uninstall -y org.test.Hello org.test.Platform
+${FLATPAK} ${U} uninstall -y org.test.Hello
+
+# Remove eol for future tests
+EXPORT_ARGS="" make_updated_app
 
 echo "ok eol build-export"
+
+if [ x${USE_COLLECTIONS_IN_SERVER-} == xyes ] ; then
+    REBASE_COLLECTION_ID=org.test.Collection.rebase
+    rebase_collection_args=--collection-id=${REBASE_COLLECTION_ID}
+else
+    REBASE_COLLECTION_ID=
+    rebase_collection_args=
+fi
+
+ostree init --repo=repos/test-rebase --mode=archive-z2 ${rebase_collection_args}
+${FLATPAK} build-commit-from --src-repo=repos/test ${FL_GPGARGS} repos/test-rebase app/org.test.Hello/$ARCH/master runtime/org.test.Hello.Locale/$ARCH/master
+update_repo test-rebase ${REBASE_COLLECTION_ID}
+
+flatpak remote-add ${U} --gpg-import=${FL_GPG_HOMEDIR}/pubring.gpg test-rebase "http://127.0.0.1:${port}/test-rebase"
+
+${FLATPAK} ${U} install -y test-rebase org.test.Hello
+
+assert_not_has_dir $HOME/.var/app/org.test.Hello
+${CMD_PREFIX} flatpak run --command=bash org.test.Hello -c 'echo foo > $XDG_DATA_HOME/a-file'
+assert_has_dir $HOME/.var/app/org.test.Hello
+assert_has_file $HOME/.var/app/org.test.Hello/data/a-file
+
+${FLATPAK} build-commit-from --end-of-life-rebase=org.test.Hello=org.test.NewHello --src-repo=repos/test ${FL_GPGARGS} repos/test-rebase app/org.test.Hello/$ARCH/master runtime/org.test.Hello.Locale/$ARCH/master
+GPGARGS="${FL_GPGARGS}" $(dirname $0)/make-test-app.sh repos/test-rebase org.test.NewHello master "${REBASE_COLLECTION_ID}" "NEW" > /dev/null
+
+${FLATPAK} ${U} update -y org.test.Hello
+
+# Make sure we got the new version installed
+assert_has_dir $FL_DIR/app/org.test.NewHello/$ARCH/master/active/files
+assert_not_has_file $FL_DIR/app/org.test.NewHello/$ARCH/master/active/files
+
+${CMD_PREFIX} flatpak run --command=bash org.test.NewHello -c 'echo foo > $XDG_DATA_HOME/another-file'
+
+# Ensure we migrated the app data
+assert_has_dir $HOME/.var/app/org.test.NewHello
+assert_has_file $HOME/.var/app/org.test.NewHello/data/a-file
+assert_has_file $HOME/.var/app/org.test.NewHello/data/another-file
+
+# And that the old is symlinked
+assert_has_symlink $HOME/.var/app/org.test.Hello
+assert_has_file $HOME/.var/app/org.test.Hello/data/a-file
+assert_has_file $HOME/.var/app/org.test.Hello/data/another-file
+
+${FLATPAK} ${U} uninstall -y org.test.NewHello org.test.Platform
+
+echo "ok eol-rebase"
 
 ${FLATPAK} ${U} install -y test-repo org.test.Platform
 
 port=$(cat httpd-port-main)
 UPDATE_REPO_ARGS="--redirect-url=http://127.0.0.1:${port}/test-gpg3 --gpg-import=${FL_GPG_HOMEDIR2}/pubring.gpg" update_repo
-GPGPUBKEY="${FL_GPG_HOMEDIR2}/pubring.gpg" GPGARGS="${FL_GPGARGS2}" setup_repo_no_add test-gpg3 org.test.Collection.test
+GPGPUBKEY="${FL_GPG_HOMEDIR2}/pubring.gpg" GPGARGS="${FL_GPGARGS2}" setup_repo_no_add test-gpg3 org.test.Collection.test master
 
 ${FLATPAK} ${U} update -y org.test.Platform
 # Ensure we have the new uri
@@ -274,13 +336,19 @@ ${FLATPAK} ${U} remotes -d | grep ^test-repo > repo-info
 assert_file_has_content repo-info "/test-gpg3"
 
 # Make sure we also get new installs from the new repo
-GPGARGS="${FL_GPGARGS2}" make_updated_app test-gpg3 org.test.Collection.test
+GPGARGS="${FL_GPGARGS2}" make_updated_app test-gpg3 org.test.Collection.test master
 update_repo test-gpg3 org.test.Collection.test
 
 ${FLATPAK} ${U} install -y test-repo org.test.Hello
 assert_file_has_content $FL_DIR/app/org.test.Hello/$ARCH/master/active/files/bin/hello.sh UPDATED
 
 echo "ok redirect url and gpg key"
+
+${FLATPAK} ${U} list --arch=$ARCH --columns=ref > list-log
+assert_file_has_content list-log "org\.test\.Hello"
+assert_file_has_content list-log "org\.test\.Platform"
+
+echo "ok flatpak list --arch --columns works"
 
 if ${FLATPAK} ${INVERT_U} uninstall -y org.test.Platform org.test.Hello; then
     assert_not_reached "Should not be able to uninstall ${INVERT_U} when installed ${U}"
@@ -290,16 +358,16 @@ fi
 ${FLATPAK} uninstall -y org.test.Platform org.test.Hello
 
 ${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "org.test.Hello"
-assert_not_file_has_content list-log "org.test.Platform"
+assert_not_file_has_content list-log "org\.test\.Hello"
+assert_not_file_has_content list-log "org\.test\.Platform"
 
 echo "ok uninstall vs installations"
 
 ${FLATPAK} ${U} install -y test-repo org.test.Hello
 
 ${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "org.test.Hello"
-assert_file_has_content list-log "org.test.Platform"
+assert_file_has_content list-log "org\.test\.Hello"
+assert_file_has_content list-log "org\.test\.Platform"
 
 if ${FLATPAK} ${U} uninstall -y org.test.Platform; then
     assert_not_reached "Should not be able to uninstall ${U} when there is a dependency installed"
@@ -309,8 +377,8 @@ ${FLATPAK} ${U} uninstall -y org.test.Hello
 ${FLATPAK} ${U} uninstall -y org.test.Platform
 
 ${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "org.test.Hello"
-assert_not_file_has_content list-log "org.test.Platform"
+assert_not_file_has_content list-log "org\.test\.Hello"
+assert_not_file_has_content list-log "org\.test\.Platform"
 
 echo "ok uninstall dependencies"
 
@@ -332,8 +400,8 @@ echo "ok install and uninstall support 'NAME BRANCH' syntax"
 ${FLATPAK} ${U} install -y --no-deploy test-repo org.test.Hello
 
 ${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "org.test.Hello"
-assert_not_file_has_content list-log "org.test.Platform"
+assert_not_file_has_content list-log "org\.test\.Hello"
+assert_not_file_has_content list-log "org\.test\.Platform"
 
 # Disable the remote to make sure we don't do i/o
 port=$(cat httpd-port-main)
@@ -345,8 +413,8 @@ ${FLATPAK} ${U} install -y --no-pull test-repo org.test.Hello
 ${FLATPAK}  ${U} remote-modify --url="http://127.0.0.1:${port}/test" test-repo
 
 ${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "org.test.Hello"
-assert_file_has_content list-log "org.test.Platform"
+assert_file_has_content list-log "org\.test\.Hello"
+assert_file_has_content list-log "org\.test\.Platform"
 
 echo "ok install with --no-deploy and then --no-pull"
 
@@ -355,8 +423,8 @@ ${FLATPAK} ${U} uninstall -y org.test.Hello org.test.Platform
 ${FLATPAK} ${U} install -y --no-deploy test-repo hello
 
 ${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "org.test.Hello"
-assert_not_file_has_content list-log "org.test.Platform"
+assert_not_file_has_content list-log "org\.test\.Hello"
+assert_not_file_has_content list-log "org\.test\.Platform"
 
 # Disable the remote to make sure we don't do i/o
 port=$(cat httpd-port-main)
@@ -369,16 +437,16 @@ ${FLATPAK} ${U} install -y --no-pull test-repo hello
 ${FLATPAK}  ${U} remote-modify --url="http://127.0.0.1:${port}/test" test-repo
 
 ${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "org.test.Hello"
-assert_file_has_content list-log "org.test.Platform"
+assert_file_has_content list-log "org\.test\.Hello"
+assert_file_has_content list-log "org\.test\.Platform"
 
 echo "ok install with --no-deploy and then --no-pull works with typo correction"
 
 ${FLATPAK} uninstall -y --all
 
 ${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "org.test.Hello"
-assert_not_file_has_content list-log "org.test.Platform"
+assert_not_file_has_content list-log "org\.test\.Hello"
+assert_not_file_has_content list-log "org\.test\.Platform"
 
 echo "ok uninstall --all"
 
@@ -392,10 +460,10 @@ echo "ok uninstall --all"
 # * user remote, and --system is used
 if [ x${USE_SYSTEMDIR-} == xyes ]; then
     ${FLATPAK} --system remote-ls test-repo > repo-list
-    assert_file_has_content repo-list "org.test.Hello"
+    assert_file_has_content repo-list "org\.test\.Hello"
 
     ${FLATPAK} remote-ls test-repo > repo-list
-    assert_file_has_content repo-list "org.test.Hello"
+    assert_file_has_content repo-list "org\.test\.Hello"
 
     if ${FLATPAK} --user remote-ls test-repo 2> remote-ls-error-log; then
         assert_not_reached "flatpak --user remote-ls should not work for system remotes"
@@ -403,10 +471,10 @@ if [ x${USE_SYSTEMDIR-} == xyes ]; then
     assert_file_has_content remote-ls-error-log "Remote \"test-repo\" not found"
 else
     ${FLATPAK} --user remote-ls test-repo > repo-list
-    assert_file_has_content repo-list "org.test.Hello"
+    assert_file_has_content repo-list "org\.test\.Hello"
 
     ${FLATPAK} remote-ls test-repo > repo-list
-    assert_file_has_content repo-list "org.test.Hello"
+    assert_file_has_content repo-list "org\.test\.Hello"
 
     if ${FLATPAK} --system remote-ls test-repo 2> remote-ls-error-log; then
         assert_not_reached "flatpak --system remote-ls should not work for user remotes"
@@ -419,7 +487,7 @@ echo "ok remote-ls"
 # Test that remote-ls can take a file:// URI
 ostree --repo=repos/test summary -u
 ${FLATPAK} remote-ls file://`pwd`/repos/test > repo-list
-assert_file_has_content repo-list "org.test.Hello"
+assert_file_has_content repo-list "org\.test\.Hello"
 
 echo "ok remote-ls URI"
 
@@ -517,10 +585,10 @@ echo "ok remote-delete"
 # * user remote, and --system is used
 if [ x${USE_SYSTEMDIR-} == xyes ]; then
     ${FLATPAK} --system remote-info test-repo org.test.Hello > remote-ref-info
-    assert_file_has_content remote-ref-info "ID: org.test.Hello"
+    assert_file_has_content remote-ref-info "ID: org\.test\.Hello"
 
     ${FLATPAK} remote-info test-repo org.test.Hello > remote-ref-info
-    assert_file_has_content remote-ref-info "ID: org.test.Hello"
+    assert_file_has_content remote-ref-info "ID: org\.test\.Hello"
 
     if ${FLATPAK} --user remote-info test-repo org.test.Hello 2> remote-info-error-log; then
         assert_not_reached "flatpak --user remote-info should not work for system remotes"
@@ -528,10 +596,10 @@ if [ x${USE_SYSTEMDIR-} == xyes ]; then
     assert_file_has_content remote-info-error-log "Remote \"test-repo\" not found"
 else
     ${FLATPAK} --user remote-info test-repo org.test.Hello > remote-ref-info
-    assert_file_has_content remote-ref-info "ID: org.test.Hello"
+    assert_file_has_content remote-ref-info "ID: org\.test\.Hello"
 
     ${FLATPAK} remote-info test-repo org.test.Hello > remote-ref-info
-    assert_file_has_content remote-ref-info "ID: org.test.Hello"
+    assert_file_has_content remote-ref-info "ID: org\.test\.Hello"
 
     if ${FLATPAK} --system remote-info test-repo org.test.Hello 2> remote-info-error-log; then
         assert_not_reached "flatpak --system remote-info should not work for user remotes"
@@ -540,3 +608,136 @@ else
 fi
 
 echo "ok remote-info"
+
+${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
+assert_file_has_content remote-ls-log "app/org\.test\.Hello"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
+
+${FLATPAK}  ${U} remote-info test-repo org.test.Hello > remote-ref-info
+assert_file_has_content remote-ref-info "ID: org\.test\.Hello"
+
+${FLATPAK} ${U} update --appstream test-repo
+assert_file_has_content $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml "app/org\.test\.Hello"
+
+# Make a copy so we can remove it later
+cp ${test_srcdir}/test.filter test.filter
+${FLATPAK} ${U} remote-modify test-repo --filter $(pwd)/test.filter
+
+${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
+
+assert_not_file_has_content remote-ls-log "app/org\.test\.Hello"
+assert_not_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
+
+if ${FLATPAK}  ${U} remote-info test-repo org.test.Hello > remote-ref-info; then
+        assert_not_reached "flatpak remote-info test-repo org.test.Hello should fail due to filter"
+fi
+
+if ${FLATPAK} ${U} install -y test-repo org.test.Hello; then
+    assert_not_reached "should not be able to install org.test.Hello should fail due to filter"
+fi
+
+${FLATPAK} ${U} update --appstream test-repo
+assert_not_file_has_content $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml "app/org\.test\.Hello"
+
+# Ensure that filter works even when the filter file is removed (uses the backup)
+rm -f test.filter
+${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
+assert_not_file_has_content remote-ls-log "app/org\.test\.Hello"
+assert_not_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
+if ${FLATPAK}  ${U} remote-info test-repo org.test.Hello > remote-ref-info; then
+        assert_not_reached "flatpak remote-info test-repo org.test.Hello should fail due to filter"
+fi
+if ${FLATPAK} ${U} install -y test-repo org.test.Hello; then
+    assert_not_reached "should not be able to install org.test.Hello should fail due to filter"
+fi
+
+${FLATPAK} ${U} update --appstream test-repo
+assert_not_file_has_content $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml "app/org\.test\.Hello"
+
+# Remove filter
+
+${FLATPAK} ${U} remote-modify test-repo --no-filter
+
+${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
+assert_file_has_content remote-ls-log "app/org\.test\.Hello"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
+
+echo "ok filter"
+
+# Try installing it from a flatpakref file. Don’t uninstall afterwards because
+# we need it for the next test.
+cat << EOF > test.flatpakrepo
+[Flatpak Repo]
+Url=http://127.0.0.1:${port}/test-no-gpg
+Title=The Title
+Comment=The Comment
+Description=The Description
+Homepage=https://the.homepage/
+Icon=https://the.icon/
+DefaultBranch=default-branch
+NoDeps=true
+EOF
+
+if ${FLATPAK} ${U} remote-add test-repo test.flatpakrepo; then
+    assert_not_reached "should not be able to add pre-existing remote"
+fi
+
+# No-op
+${FLATPAK} ${U} remote-add --if-not-exists test-repo test.flatpakrepo
+
+
+${FLATPAK} ${U} remote-add new-repo test.flatpakrepo
+
+assert_remote_has_config new-repo url "http://127.0.0.1:${port}/test-no-gpg"
+assert_remote_has_config new-repo gpg-verify "false"
+assert_remote_has_config new-repo xa.title "The Title"
+assert_remote_has_no_config new-repo xa.title-is-set
+assert_remote_has_config new-repo xa.comment "The Comment"
+assert_remote_has_no_config new-repo xa.comment-is-set
+assert_remote_has_config new-repo xa.description "The Description"
+assert_remote_has_no_config new-repo xa.description-is-set
+assert_remote_has_config new-repo xa.homepage "https://the.homepage/"
+assert_remote_has_no_config new-repo xa.homepage-is-set
+assert_remote_has_config new-repo xa.icon "https://the.icon/"
+assert_remote_has_no_config new-repo xa.icon-is-set
+assert_remote_has_config new-repo xa.default-branch "default-branch"
+assert_remote_has_no_config new-repo xa.default-branch-is-set
+assert_remote_has_config new-repo xa.nodeps "true"
+assert_remote_has_no_config new-repo xa.noenumerate
+assert_remote_has_no_config new-repo xa.filter
+
+${FLATPAK} ${U} remote-delete new-repo
+${FLATPAK} ${U} remote-add  --title=Title2 --comment=Comment2 --default-branch=branch2 new-repo test.flatpakrepo
+
+assert_remote_has_config new-repo url "http://127.0.0.1:${port}/test-no-gpg"
+assert_remote_has_config new-repo gpg-verify "false"
+assert_remote_has_config new-repo xa.title "Title2"
+assert_remote_has_config new-repo xa.title-is-set true
+assert_remote_has_config new-repo xa.comment "Comment2"
+assert_remote_has_config new-repo xa.comment-is-set true
+assert_remote_has_config new-repo xa.description "The Description"
+assert_remote_has_no_config new-repo xa.description-is-set
+assert_remote_has_config new-repo xa.homepage "https://the.homepage/"
+assert_remote_has_no_config new-repo xa.homepage-is-set
+assert_remote_has_config new-repo xa.icon "https://the.icon/"
+assert_remote_has_no_config new-repo xa.icon-is-set
+assert_remote_has_config new-repo xa.default-branch "branch2"
+assert_remote_has_config new-repo xa.default-branch-is-set true
+assert_remote_has_config new-repo xa.nodeps "true"
+assert_remote_has_no_config new-repo xa.noenumerate
+assert_remote_has_no_config new-repo xa.filter
+
+${FLATPAK} ${U} remote-delete new-repo
+${FLATPAK} ${U} remote-add  --filter="${test_srcdir}/test.filter" new-repo test.flatpakrepo
+
+assert_remote_has_config new-repo xa.filter "${test_srcdir}/test.filter"
+
+# This should unset the filter:
+${FLATPAK} ${U} remote-add --if-not-exists new-repo test.flatpakrepo
+assert_remote_has_no_config new-repo xa.filter
+
+echo "ok flatpakrepo"

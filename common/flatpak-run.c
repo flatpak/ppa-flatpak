@@ -21,6 +21,7 @@
 #include "config.h"
 
 #include <string.h>
+#include <ctype.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -227,7 +228,6 @@ flatpak_run_add_x11_args (FlatpakBwrap *bwrap,
     {
       flatpak_bwrap_unset_env (bwrap, "DISPLAY");
     }
-
 }
 
 static gboolean
@@ -282,6 +282,34 @@ flatpak_run_add_ssh_args (FlatpakBwrap *bwrap)
                           "--ro-bind", auth_socket, sandbox_auth_socket,
                           NULL);
   flatpak_bwrap_set_env (bwrap, "SSH_AUTH_SOCK", sandbox_auth_socket, TRUE);
+}
+
+static void
+flatpak_run_add_pcsc_args (FlatpakBwrap *bwrap)
+{
+  const char * pcsc_socket;
+  const char * sandbox_pcsc_socket = "/run/pcscd/pcscd.comm";
+
+  pcsc_socket = g_getenv ("PCSCLITE_CSOCK_NAME");
+  if (pcsc_socket)
+    {
+      if (!g_file_test (pcsc_socket, G_FILE_TEST_EXISTS))
+        {
+          flatpak_bwrap_unset_env (bwrap, "PCSCLITE_CSOCK_NAME");
+          return;
+        }
+    }
+  else
+    {
+      pcsc_socket = "/run/pcscd/pcscd.comm";
+      if (!g_file_test (pcsc_socket, G_FILE_TEST_EXISTS))
+        return;
+    }
+
+  flatpak_bwrap_add_args (bwrap,
+                          "--ro-bind", pcsc_socket, sandbox_pcsc_socket,
+                          NULL);
+  flatpak_bwrap_set_env (bwrap, "PCSCLITE_CSOCK_NAME", sandbox_pcsc_socket, TRUE);
 }
 
 /* Try to find a default server from a pulseaudio confguration file */
@@ -544,21 +572,34 @@ flatpak_run_add_session_dbus_args (FlatpakBwrap   *app_bwrap,
 {
   gboolean unrestricted, no_proxy;
   const char *dbus_address = g_getenv ("DBUS_SESSION_BUS_ADDRESS");
-  char *dbus_session_socket = NULL;
+  g_autofree char *dbus_session_socket = NULL;
   g_autofree char *sandbox_socket_path = g_strdup_printf ("/run/user/%d/bus", getuid ());
   g_autofree char *sandbox_dbus_address = g_strdup_printf ("unix:path=/run/user/%d/bus", getuid ());
 
   unrestricted = (context->sockets & FLATPAK_CONTEXT_SOCKET_SESSION_BUS) != 0;
 
-  if (dbus_address == NULL)
-    return FALSE;
+  if (dbus_address != NULL)
+    {
+      dbus_session_socket = extract_unix_path_from_dbus_address (dbus_address);
+    }
+  else
+    {
+      g_autofree char *user_runtime_dir = flatpak_get_real_xdg_runtime_dir ();
+      struct stat statbuf;
+
+      dbus_session_socket = g_build_filename (user_runtime_dir, "bus", NULL);
+
+      if (stat (dbus_session_socket, &statbuf) < 0
+          || (statbuf.st_mode & S_IFMT) != S_IFSOCK
+          || statbuf.st_uid != getuid ())
+        return FALSE;
+    }
 
   if (unrestricted)
     g_debug ("Allowing session-dbus access");
 
   no_proxy = (flags & FLATPAK_RUN_FLAG_NO_SESSION_BUS_PROXY) != 0;
 
-  dbus_session_socket = extract_unix_path_from_dbus_address (dbus_address);
   if (dbus_session_socket != NULL && unrestricted)
     {
       flatpak_bwrap_add_args (app_bwrap,
@@ -687,7 +728,6 @@ add_bwrap_wrapper (FlatpakBwrap *bwrap,
                    GError      **error)
 {
   glnx_autofd int app_info_fd = -1;
-
   g_auto(GLnxDirFdIterator) dir_iter = { 0 };
   struct dirent *dent;
   g_autofree char *user_runtime_dir = flatpak_get_real_xdg_runtime_dir ();
@@ -735,18 +775,13 @@ add_bwrap_wrapper (FlatpakBwrap *bwrap,
         }
       else if (dent->d_type == DT_LNK)
         {
-          ssize_t symlink_size;
-          char path_buffer[PATH_MAX + 1];
+          g_autofree gchar *target = NULL;
 
-          symlink_size = readlinkat (dir_iter.fd, dent->d_name, path_buffer, sizeof (path_buffer) - 1);
-          if (symlink_size < 0)
-            {
-              glnx_set_error_from_errno (error);
-              return FALSE;
-            }
-          path_buffer[symlink_size] = 0;
-
-          flatpak_bwrap_add_args (bwrap, "--symlink", path_buffer, NULL);
+          target = glnx_readlinkat_malloc (dir_iter.fd, dent->d_name,
+                                           NULL, error);
+          if (target == NULL)
+            return FALSE;
+          flatpak_bwrap_add_args (bwrap, "--symlink", target, NULL);
           flatpak_bwrap_add_arg_printf (bwrap, "/%s", dent->d_name);
         }
     }
@@ -772,7 +807,6 @@ start_dbus_proxy (FlatpakBwrap *app_bwrap,
   char x = 'x';
   const char *proxy;
   g_autofree char *commandline = NULL;
-
   g_autoptr(FlatpakBwrap) proxy_bwrap = NULL;
   int sync_fds[2] = {-1, -1};
   int proxy_start_index;
@@ -1017,6 +1051,7 @@ flatpak_run_add_environment_args (FlatpakBwrap    *bwrap,
                                   const char      *app_id,
                                   FlatpakContext  *context,
                                   GFile           *app_id_dir,
+                                  GPtrArray       *previous_app_id_dirs,
                                   FlatpakExports **exports_out,
                                   GCancellable    *cancellable,
                                   GError         **error)
@@ -1110,7 +1145,7 @@ flatpak_run_add_environment_args (FlatpakBwrap    *bwrap,
         }
     }
 
-  flatpak_context_append_bwrap_filesystem (context, bwrap, app_id, app_id_dir, &exports);
+  flatpak_context_append_bwrap_filesystem (context, bwrap, app_id, app_id_dir, previous_app_id_dirs, &exports);
 
   if (context->sockets & FLATPAK_CONTEXT_SOCKET_WAYLAND)
     {
@@ -1134,6 +1169,11 @@ flatpak_run_add_environment_args (FlatpakBwrap    *bwrap,
     {
       g_debug ("Allowing pulseaudio access");
       flatpak_run_add_pulseaudio_args (bwrap);
+    }
+
+  if (context->sockets & FLATPAK_CONTEXT_SOCKET_PCSC)
+    {
+      flatpak_run_add_pcsc_args (bwrap);
     }
 
   flatpak_run_add_session_dbus_args (bwrap, proxy_arg_bwrap, context, flags, app_id);
@@ -1380,34 +1420,33 @@ flatpak_get_data_dir (const char *app_id)
   return g_file_get_child (var_app, app_id);
 }
 
-GFile *
-flatpak_ensure_data_dir (const char   *app_id,
+gboolean
+flatpak_ensure_data_dir (GFile        *app_id_dir,
                          GCancellable *cancellable,
                          GError      **error)
 {
-  g_autoptr(GFile) dir = flatpak_get_data_dir (app_id);
-  g_autoptr(GFile) data_dir = g_file_get_child (dir, "data");
-  g_autoptr(GFile) cache_dir = g_file_get_child (dir, "cache");
+  g_autoptr(GFile) data_dir = g_file_get_child (app_id_dir, "data");
+  g_autoptr(GFile) cache_dir = g_file_get_child (app_id_dir, "cache");
   g_autoptr(GFile) fontconfig_cache_dir = g_file_get_child (cache_dir, "fontconfig");
   g_autoptr(GFile) tmp_dir = g_file_get_child (cache_dir, "tmp");
-  g_autoptr(GFile) config_dir = g_file_get_child (dir, "config");
+  g_autoptr(GFile) config_dir = g_file_get_child (app_id_dir, "config");
 
   if (!flatpak_mkdir_p (data_dir, cancellable, error))
-    return NULL;
+    return FALSE;
 
   if (!flatpak_mkdir_p (cache_dir, cancellable, error))
-    return NULL;
+    return FALSE;
 
   if (!flatpak_mkdir_p (fontconfig_cache_dir, cancellable, error))
-    return NULL;
+    return FALSE;
 
   if (!flatpak_mkdir_p (tmp_dir, cancellable, error))
-    return NULL;
+    return FALSE;
 
   if (!flatpak_mkdir_p (config_dir, cancellable, error))
-    return NULL;
+    return FALSE;
 
-  return g_object_ref (dir);
+  return TRUE;
 }
 
 struct JobData
@@ -1652,7 +1691,6 @@ static void
 flatpak_run_gc_ids (void)
 {
   g_autofree char *base_dir = g_build_filename (g_get_user_runtime_dir (), ".flatpak", NULL);
-
   g_auto(GLnxDirFdIterator) iter = { 0 };
   struct dirent *dent;
 
@@ -1732,7 +1770,7 @@ flatpak_run_allocate_id (int *lock_fd_out)
            * file and take a write lock on .ref to ensure its not in
            * use. */
           lock_fd = open (lock_file, O_RDWR | O_CREAT | O_CLOEXEC, 0644);
-          /* There is a tiny race here between the open creating the file and the lock suceeding.
+          /* There is a tiny race here between the open creating the file and the lock succeeding.
              We work around that by only gc:ing "old" .ref files */
           if (lock_fd != -1 && fcntl (lock_fd, F_SETLK, &l) == 0)
             {
@@ -1749,13 +1787,14 @@ flatpak_run_allocate_id (int *lock_fd_out)
 #ifdef HAVE_DCONF
 
 static void
-add_dconf_key_to_keyfile (GKeyFile    *keyfile,
-                          DConfClient *client,
-                          const char  *key)
+add_dconf_key_to_keyfile (GKeyFile      *keyfile,
+                          DConfClient   *client,
+                          const char    *key,
+                          DConfReadFlags flags)
 {
   g_autofree char *group = g_path_get_dirname (key);
   g_autofree char *k = g_path_get_basename (key);
-  GVariant *value = dconf_client_read_full (client, key, DCONF_READ_DEFAULT_VALUE, NULL);
+  GVariant *value = dconf_client_read_full (client, key, flags, NULL);
 
   if (value)
     {
@@ -1765,9 +1804,10 @@ add_dconf_key_to_keyfile (GKeyFile    *keyfile,
 }
 
 static void
-add_dconf_dir_to_keyfile (GKeyFile    *keyfile,
-                          DConfClient *client,
-                          const char  *dir)
+add_dconf_dir_to_keyfile (GKeyFile      *keyfile,
+                          DConfClient   *client,
+                          const char    *dir,
+                          DConfReadFlags flags)
 {
   g_auto(GStrv) keys = NULL;
   int i;
@@ -1777,9 +1817,9 @@ add_dconf_dir_to_keyfile (GKeyFile    *keyfile,
     {
       g_autofree char *k = g_strconcat (dir, keys[i], NULL);
       if (dconf_is_dir (k, NULL))
-        add_dconf_dir_to_keyfile (keyfile, client, k);
+        add_dconf_dir_to_keyfile (keyfile, client, k, flags);
       else if (dconf_is_key (k, NULL))
-        add_dconf_key_to_keyfile (keyfile, client, k);
+        add_dconf_key_to_keyfile (keyfile, client, k, flags);
     }
 }
 
@@ -1799,86 +1839,82 @@ add_dconf_locks_to_list (GString     *s,
     }
 }
 
-static char *
-dconf_path_for_app_id (const char *app_id)
-{
-  GString *s;
-  const char *p;
-
-  s = g_string_new ("");
-
-  g_string_append_c (s, '/');
-  for (p = app_id; *p; p++)
-    {
-      if (*p == '.')
-        g_string_append_c (s, '/');
-      else
-        g_string_append_c (s, *p);
-    }
-  g_string_append_c (s, '/');
-
-  return g_string_free (s, FALSE);
-}
-
 #endif /* HAVE_DCONF */
 
 static void
 get_dconf_data (const char  *app_id,
-                const char **settings,
-                char **defaults,
-                gsize *defaults_size,
-                char **locks,
-                gsize *locks_size)
+                const char **paths,
+                const char  *migrate_path,
+                char       **defaults,
+                gsize       *defaults_size,
+                char       **values,
+                gsize       *values_size,
+                char       **locks,
+                gsize       *locks_size)
 {
 #ifdef HAVE_DCONF
   DConfClient *client = NULL;
   g_autofree char *prefix = NULL;
 #endif
   g_autoptr(GKeyFile) defaults_data = NULL;
+  g_autoptr(GKeyFile) values_data = NULL;
   g_autoptr(GString) locks_data = NULL;
 
   defaults_data = g_key_file_new ();
+  values_data = g_key_file_new ();
   locks_data = g_string_new ("");
 
 #ifdef HAVE_DCONF
 
-  prefix = dconf_path_for_app_id (app_id);
-
   client = dconf_client_new ();
 
+  prefix = flatpak_dconf_path_for_app_id (app_id);
+
+  if (migrate_path)
+    {
+      g_debug ("Add values in dir '%s', prefix is '%s'", migrate_path, prefix);
+      if (flatpak_dconf_path_is_similar (migrate_path, prefix))
+        add_dconf_dir_to_keyfile (values_data, client, migrate_path, DCONF_READ_USER_VALUE);
+      else
+        g_warning ("Ignoring D-Conf migrate-path setting %s", migrate_path);
+    }
+
   g_debug ("Add defaults in dir %s", prefix);
-  add_dconf_dir_to_keyfile (defaults_data, client, prefix);
+  add_dconf_dir_to_keyfile (defaults_data, client, prefix, DCONF_READ_DEFAULT_VALUE);
 
   g_debug ("Add locks in dir %s", prefix);
   add_dconf_locks_to_list (locks_data, client, prefix);
 
-  if (settings)
+  /* We allow extra paths for defaults and locks, but not for user values */
+  if (paths)
     {
       int i;
-      for (i = 0; settings[i]; i++)
+      for (i = 0; paths[i]; i++)
         {
-          if (dconf_is_dir (settings[i], NULL))
+          if (dconf_is_dir (paths[i], NULL))
             {
-              g_debug ("Add defaults in dir %s", settings[i]);
-              add_dconf_dir_to_keyfile (defaults_data, client, settings[i]);
+              g_debug ("Add defaults in dir %s", paths[i]);
+              add_dconf_dir_to_keyfile (defaults_data, client, paths[i], DCONF_READ_DEFAULT_VALUE);
 
-              g_debug ("Add locks in dir %s", settings[i]);
-              add_dconf_locks_to_list (locks_data, client, settings[i]);
+              g_debug ("Add locks in dir %s", paths[i]);
+              add_dconf_locks_to_list (locks_data, client, paths[i]);
             }
-          else if (dconf_is_key (settings[i], NULL))
+          else if (dconf_is_key (paths[i], NULL))
             {
-              g_debug ("Add individual key %s", settings[i]);
-              add_dconf_key_to_keyfile (defaults_data, client, settings[i]);
+              g_debug ("Add individual key %s", paths[i]);
+              add_dconf_key_to_keyfile (defaults_data, client, paths[i], DCONF_READ_DEFAULT_VALUE);
+              add_dconf_key_to_keyfile (values_data, client, paths[i], DCONF_READ_USER_VALUE);
             }
           else
             {
-              g_warning ("Ignoring settings path '%s': neither dir nor key", settings[i]);
+              g_warning ("Ignoring settings path '%s': neither dir nor key", paths[i]);
             }
         }
     }
 #endif
 
   *defaults = g_key_file_to_data (defaults_data, defaults_size, NULL);
+  *values = g_key_file_to_data (values_data, values_size, NULL);
   *locks_size = locks_data->len;
   *locks = g_string_free (g_steal_pointer (&locks_data), FALSE);
 
@@ -1888,26 +1924,38 @@ get_dconf_data (const char  *app_id,
 }
 
 static gboolean
-flatpak_run_add_dconf_args (FlatpakBwrap  *bwrap,
-                            const char    *app_id,
-                            GKeyFile      *metakey,
-                            GError       **error)
+flatpak_run_add_dconf_args (FlatpakBwrap *bwrap,
+                            const char   *app_id,
+                            GKeyFile     *metakey,
+                            GError      **error)
 {
-  g_auto(GStrv) settings = NULL;
+  g_auto(GStrv) paths = NULL;
+  g_autofree char *migrate_path = NULL;
   g_autofree char *defaults = NULL;
+  g_autofree char *values = NULL;
   g_autofree char *locks = NULL;
   gsize defaults_size;
+  gsize values_size;
   gsize locks_size;
 
   if (metakey)
-    settings = g_key_file_get_string_list (metakey,
-                                           FLATPAK_METADATA_GROUP_DCONF,
-                                           FLATPAK_METADATA_KEY_DCONF_PATHS,
-                                           NULL, NULL);
- 
-  get_dconf_data (app_id, (const char **)settings,
-                           &defaults, &defaults_size,
-                           &locks, &locks_size);
+    {
+      paths = g_key_file_get_string_list (metakey,
+                                          FLATPAK_METADATA_GROUP_DCONF,
+                                          FLATPAK_METADATA_KEY_DCONF_PATHS,
+                                          NULL, NULL);
+      migrate_path = g_key_file_get_string (metakey,
+                                            FLATPAK_METADATA_GROUP_DCONF,
+                                            FLATPAK_METADATA_KEY_DCONF_MIGRATE_PATH,
+                                            NULL);
+    }
+
+  get_dconf_data (app_id,
+                  (const char **) paths,
+                  migrate_path,
+                  &defaults, &defaults_size,
+                  &values, &values_size,
+                  &locks, &locks_size);
 
   if (defaults_size != 0 &&
       !flatpak_bwrap_add_args_data (bwrap,
@@ -1924,6 +1972,38 @@ flatpak_run_add_dconf_args (FlatpakBwrap  *bwrap,
                                     "/etc/glib-2.0/settings/locks",
                                     error))
     return FALSE;
+
+  /* We do a one-time conversion of existing dconf settings to a keyfile.
+   * Only do that once the app stops requesting dconf access.
+   */
+  if (migrate_path)
+    {
+      g_autofree char *filename = NULL;
+
+      filename = g_build_filename (g_get_home_dir (),
+                                   ".var/app", app_id,
+                                   "config/glib-2.0/settings/keyfile",
+                                   NULL);
+
+      g_debug ("writing D-Conf values to %s", filename);
+
+      if (values_size != 0 && !g_file_test (filename, G_FILE_TEST_EXISTS))
+        {
+          g_autofree char *dir = g_path_get_dirname (filename);
+
+          if (g_mkdir_with_parents (dir, 0700) == -1)
+            {
+              g_warning ("failed creating dirs for %s", filename);
+              return FALSE;
+            }
+
+          if (!g_file_set_contents (filename, values, values_size, error))
+            {
+              g_warning ("failed writing %s", filename);
+              return FALSE;
+            }
+        }
+    }
 
   return TRUE;
 }
@@ -1952,7 +2032,6 @@ flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
   g_autofree char *info_path = NULL;
   g_autofree char *bwrapinfo_path = NULL;
   int fd, fd2, fd3;
-
   g_autoptr(GKeyFile) keyfile = NULL;
   g_autofree char *runtime_path = NULL;
   g_autofree char *old_dest = g_strdup_printf ("/run/user/%d/flatpak-info", getuid ());
@@ -2123,7 +2202,7 @@ flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
 
   flatpak_bwrap_add_args_data_fd (bwrap, "--info-fd", fd3, NULL);
 
- if (app_info_path_out != NULL)
+  if (app_info_path_out != NULL)
     *app_info_path_out = g_strdup_printf ("/proc/self/fd/%d", fd);
 
   if (instance_id_host_dir_out != NULL)
@@ -2192,21 +2271,18 @@ add_monitor_path_args (gboolean      use_session_helper,
        */
       if (g_file_test ("/etc/localtime", G_FILE_TEST_EXISTS))
         {
-          char localtime[PATH_MAX + 1];
-          ssize_t symlink_size;
+          g_autofree char *localtime = NULL;
           gboolean is_reachable = FALSE;
           g_autofree char *timezone = flatpak_get_timezone ();
           g_autofree char *timezone_content = g_strdup_printf ("%s\n", timezone);
 
-          symlink_size = readlink ("/etc/localtime", localtime, sizeof (localtime) - 1);
-          if (symlink_size > 0)
+          localtime = glnx_readlinkat_malloc (-1, "/etc/localtime", NULL, NULL);
+
+          if (localtime != NULL)
             {
               g_autoptr(GFile) base_file = NULL;
               g_autoptr(GFile) target_file = NULL;
               g_autofree char *target_canonical = NULL;
-
-              /* readlink() does not append a null byte to the buffer. */
-              localtime[symlink_size] = 0;
 
               base_file = g_file_new_for_path ("/etc");
               target_file = g_file_resolve_relative_path (base_file, localtime);
@@ -2594,7 +2670,6 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
   struct group *g;
   gulong pers;
   gid_t gid = getgid ();
-
   g_autoptr(GFile) etc = NULL;
 
   g = getgrgid (gid);
@@ -2675,8 +2750,6 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
     {
       g_auto(GLnxDirFdIterator) dfd_iter = { 0, };
       struct dirent *dent;
-      char path_buffer[PATH_MAX + 1];
-      ssize_t symlink_size;
       gboolean inited;
 
       inited = glnx_dirfd_iterator_init_at (AT_FDCWD, flatpak_file_get_path_cached (etc), FALSE, &dfd_iter, NULL);
@@ -2704,14 +2777,14 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
           dest = g_build_filename ("/etc", dent->d_name, NULL);
           if (dent->d_type == DT_LNK)
             {
-              symlink_size = readlinkat (dfd_iter.fd, dent->d_name, path_buffer, sizeof (path_buffer) - 1);
-              if (symlink_size < 0)
-                {
-                  glnx_set_error_from_errno (error);
-                  return FALSE;
-                }
-              path_buffer[symlink_size] = 0;
-              flatpak_bwrap_add_args (bwrap, "--symlink", path_buffer, dest, NULL);
+              g_autofree char *target = NULL;
+
+              target = glnx_readlinkat_malloc (dfd_iter.fd, dent->d_name,
+                                               NULL, error);
+              if (target == NULL)
+                return FALSE;
+
+              flatpak_bwrap_add_args (bwrap, "--symlink", target, dest, NULL);
             }
           else
             {
@@ -2770,7 +2843,6 @@ forward_file (XdpDbusDocuments *documents,
 {
   int fd, fd_id;
   g_autofree char *doc_id = NULL;
-
   g_autoptr(GUnixFDList) fd_list = NULL;
   const char *perms[] = { "read", "write", NULL };
 
@@ -3117,6 +3189,7 @@ flatpak_run_app (const char     *app_ref,
   g_autoptr(GError) my_error = NULL;
   g_auto(GStrv) runtime_parts = NULL;
   int i;
+  g_autoptr(GPtrArray) previous_app_id_dirs = NULL;
   g_autofree char *app_info_path = NULL;
   g_autofree char *instance_id_host_dir = NULL;
   g_autoptr(FlatpakContext) app_context = NULL;
@@ -3243,10 +3316,87 @@ flatpak_run_app (const char     *app_ref,
 
   if (app_deploy != NULL)
     {
+      g_autofree const char **previous_ids = NULL;
+      gsize len = 0;
+      gboolean do_migrate;
+      int i;
+
+      real_app_id_dir = flatpak_get_data_dir (app_ref_parts[1]);
       app_files = flatpak_deploy_get_files (app_deploy);
 
-      real_app_id_dir = flatpak_ensure_data_dir (app_ref_parts[1], cancellable, error);
-      if (real_app_id_dir == NULL)
+      previous_app_id_dirs = g_ptr_array_new_with_free_func (g_object_unref);
+      previous_ids = flatpak_deploy_data_get_previous_ids (app_deploy_data, &len);
+
+      do_migrate = !g_file_query_exists (real_app_id_dir, cancellable);
+
+      /* When migrating, find most recent old existing source and rename that to
+       * the new name.
+       *
+       * We ignore other names than that. For more recent names that don't exist
+       * we never ran them so nothing will even reference them. For older names
+       * either they were not used, or they were used but then the more recent
+       * name was used and a symlink to it was created.
+       *
+       * This means we may end up with a chain of symlinks: oldest -> old -> current.
+       * This is unfortunate but not really a problem, but for robustness reasons we
+       * don't want to mess with user files unnecessary. For example, the app dir could
+       * actually be a symlink for other reasons. Imagine for instance that you want to put the
+       * steam games somewhere else so you leave the app dir as a symlink to /mnt/steam.
+       */
+      for (i = len - 1; i >= 0; i--)
+        {
+          g_autoptr(GFile) previous_app_id_dir = NULL;
+          g_autoptr(GFileInfo) previous_app_id_dir_info = NULL;
+          g_autoptr(GError) local_error = NULL;
+
+          previous_app_id_dir = flatpak_get_data_dir (previous_ids[i]);
+          previous_app_id_dir_info = g_file_query_info (previous_app_id_dir,
+                                                        G_FILE_ATTRIBUTE_STANDARD_IS_SYMLINK ","
+                                                        G_FILE_ATTRIBUTE_STANDARD_SYMLINK_TARGET,
+                                                        G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                                        cancellable,
+                                                        &local_error);
+          /* Warn about the migration failures, but don't make them fatal, then you can never run the app */
+          if (previous_app_id_dir_info == NULL)
+            {
+              if  (!g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND) && do_migrate)
+                {
+                  g_warning (_("Failed to migrate from %s: %s"), flatpak_file_get_path_cached (previous_app_id_dir),
+                             local_error->message);
+                  do_migrate = FALSE; /* Don't migrate older things, they are likely symlinks to the thing that we failed on */
+                }
+
+              g_clear_error (&local_error);
+              continue;
+            }
+
+          if (do_migrate)
+            {
+              do_migrate = FALSE; /* Don't migrate older things, they are likely symlinks to this dir */
+
+              if (!flatpak_file_rename (previous_app_id_dir, real_app_id_dir, cancellable, &local_error))
+                {
+                  g_warning (_("Failed to migrate old app data directory %s to new name %s: %s"),
+                             flatpak_file_get_path_cached (previous_app_id_dir), app_ref_parts[1],
+                             local_error->message);
+                }
+              else
+                {
+                  /* Leave a symlink in place of the old data dir */
+                  if (!g_file_make_symbolic_link (previous_app_id_dir, app_ref_parts[1], cancellable, &local_error))
+                    {
+                      g_warning (_("Failed to create symlink while migrating %s: %s"),
+                                 flatpak_file_get_path_cached (previous_app_id_dir),
+                                 local_error->message);
+                    }
+                }
+            }
+
+          /* Give app access to this old dir */
+          g_ptr_array_add (previous_app_id_dirs, g_steal_pointer (&previous_app_id_dir));
+        }
+
+      if (!flatpak_ensure_data_dir (real_app_id_dir, cancellable, error))
         return FALSE;
 
       if (!sandboxed)
@@ -3342,7 +3492,8 @@ flatpak_run_app (const char     *app_ref,
     add_document_portal_args (bwrap, app_ref_parts[1], &doc_mount_path);
 
   if (!flatpak_run_add_environment_args (bwrap, app_info_path, flags,
-                                         app_ref_parts[1], app_context, app_id_dir, &exports, cancellable, error))
+                                         app_ref_parts[1], app_context, app_id_dir, previous_app_id_dirs,
+                                         &exports, cancellable, error))
     return FALSE;
 
   flatpak_run_add_journal_args (bwrap);

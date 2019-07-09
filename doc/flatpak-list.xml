@@ -190,6 +190,14 @@
 
         <variablelist>
             <varlistentry>
+                <term>name</term>
+
+                <listitem><para>
+                    Show the name
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term>description</term>
 
                 <listitem><para>
@@ -218,6 +226,14 @@
 
                 <listitem><para>
                     Show the branch
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>runtime</term>
+
+                <listitem><para>
+                    Show the used runtime
                 </para></listitem>
             </varlistentry>
 
@@ -319,7 +335,7 @@
 org.gnome.Builder
 org.freedesktop.glxgears
 org.gnome.MyApp
-org.gnome.GEdit
+org.gnome.gedit
 </programlisting>
 
     </refsect1>

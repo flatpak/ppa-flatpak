@@ -78,7 +78,7 @@ struct _FlatpakInstallationPrivate
      flatpak_installation_drop_caches(), so every user needs to keep its own reference alive until
      done. */
   FlatpakDir *dir_unlocked;
-  char *display_name;
+  char       *display_name;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (FlatpakInstallation, flatpak_installation, G_TYPE_OBJECT)
@@ -167,7 +167,7 @@ flatpak_installation_new_for_dir (FlatpakDir   *dir,
  */
 void
 flatpak_installation_set_no_interaction (FlatpakInstallation *self,
-                                         gboolean no_interaction)
+                                         gboolean             no_interaction)
 {
   FlatpakInstallationPrivate *priv = flatpak_installation_get_instance_private (self);
 
@@ -539,7 +539,7 @@ flatpak_installation_get_display_name (FlatpakInstallation *self)
   if (priv->display_name == NULL)
     priv->display_name = flatpak_dir_get_display_name (dir);
 
-  return (const char *)priv->display_name;
+  return (const char *) priv->display_name;
 }
 
 /**
@@ -1004,6 +1004,7 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
   g_auto(OstreeRepoFinderResultv) results = NULL;
   g_autoptr(GAsyncResult) result = NULL;
   g_autoptr(GPtrArray) collection_refs = NULL; /* (element-type OstreeCollectionRef) */
+  g_autoptr(GString) refs_str = NULL;
 
   remote_commits = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 
@@ -1078,6 +1079,7 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
 
   collection_refs = g_ptr_array_new ();
 
+  refs_str = g_string_new ("");
   for (i = 0; i < installed->len; i++)
     {
       FlatpakInstalledRef *installed_ref = g_ptr_array_index (installed, i);
@@ -1090,6 +1092,10 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
           g_autofree char *ref = flatpak_ref_format_ref (FLATPAK_REF (installed_ref));
           OstreeCollectionRef *c_r = ostree_collection_ref_new (collection_id, ref);
           g_ptr_array_add (collection_refs, c_r);
+
+          if (i != 0)
+            g_string_append (refs_str, ", ");
+          g_string_append_printf (refs_str, "(%s, %s)", collection_id, ref);
         }
     }
 
@@ -1121,6 +1127,12 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
 
       if (results == NULL)
         return NULL;
+
+      if (results[0] == NULL)
+        {
+          flatpak_fail (error, _("No remotes found which provide these refs: [%s]"), refs_str->str);
+          return NULL;
+        }
     }
 
   for (i = 0; i < installed->len; i++)
@@ -1203,7 +1215,6 @@ list_remotes_for_configured_remote (FlatpakInstallation *self,
   const OstreeCollectionRef *refs[3] = { NULL, };
   g_autofree gchar *appstream_ref = NULL;
   g_autofree gchar *appstream2_ref = NULL;
-
   g_auto(OstreeRepoFinderResultv) results = NULL;
   g_autoptr(GAsyncResult) result = NULL;
   g_autoptr(OstreeRepoFinder) finder_mount = NULL, finder_avahi = NULL;
@@ -1278,7 +1289,10 @@ list_remotes_for_configured_remote (FlatpakInstallation *self,
   if (types_filter[FLATPAK_REMOTE_TYPE_LAN])
     ostree_repo_finder_avahi_stop (OSTREE_REPO_FINDER_AVAHI (finder_avahi));
 
-  for (i = 0; results != NULL && results[i] != NULL; i++)
+  if (results == NULL)
+    return FALSE;
+
+  for (i = 0; results[i] != NULL; i++)
     {
       g_ptr_array_add (remotes,
                        flatpak_remote_new_from_ostree (results[i]->remote,
@@ -1316,9 +1330,8 @@ flatpak_installation_list_remotes_by_type (FlatpakInstallation     *self,
   const guint NUM_FLATPAK_REMOTE_TYPES = 3;
   gboolean types_filter[NUM_FLATPAK_REMOTE_TYPES];
   gsize i;
-#if OSTREE_CHECK_VERSION (2018, 9)
   const char * const *default_repo_finders = NULL;
-#endif
+  OstreeRepo *repo;
 
   remote_names = flatpak_dir_list_remotes (dir, cancellable, error);
   if (remote_names == NULL)
@@ -1330,11 +1343,9 @@ flatpak_installation_list_remotes_by_type (FlatpakInstallation     *self,
   if (!flatpak_dir_maybe_ensure_repo (dir_clone, cancellable, error))
     return NULL;
 
-#if OSTREE_CHECK_VERSION (2018, 9)
-  OstreeRepo *repo = flatpak_dir_get_repo (dir_clone);
+  repo = flatpak_dir_get_repo (dir_clone);
   if (repo != NULL)
     default_repo_finders = ostree_repo_get_default_repo_finders (repo);
-#endif
 
   /* If NULL or an empty array of types is passed then we use the default set
    * provided by ostree, or fall back to using all */
@@ -1342,19 +1353,13 @@ flatpak_installation_list_remotes_by_type (FlatpakInstallation     *self,
     {
       if (num_types != 0)
         types_filter[i] = FALSE;
-#if OSTREE_CHECK_VERSION (2018, 9)
       else if (default_repo_finders == NULL)
         types_filter[i] = TRUE;
-#else
-      else
-        types_filter[i] = TRUE;
-#endif
     }
 
-#if OSTREE_CHECK_VERSION (2018, 9)
   if (default_repo_finders != NULL && num_types == 0)
     {
-      g_autofree char *default_repo_finders_str = g_strjoinv (" ", (gchar **)default_repo_finders);
+      g_autofree char *default_repo_finders_str = g_strjoinv (" ", (gchar **) default_repo_finders);
       g_debug ("Using default repo finder list: %s", default_repo_finders_str);
 
       for (const char * const *iter = default_repo_finders; iter && *iter; iter++)
@@ -1373,7 +1378,6 @@ flatpak_installation_list_remotes_by_type (FlatpakInstallation     *self,
                      default_repo_finder);
         }
     }
-#endif
 
   for (i = 0; i < num_types; ++i)
     {
@@ -1455,6 +1459,68 @@ flatpak_installation_modify_remote (FlatpakInstallation *self,
 
   return TRUE;
 }
+
+
+/**
+ * flatpak_installation_add_remote:
+ * @self: a #FlatpakInstallation
+ * @remote: the new #FlatpakRemote
+ * @if_needed: if %TRUE, only add if it doesn't exists
+ * @cancellable: (nullable): a #GCancellable
+ * @error: return location for a #GError
+ *
+ * Adds a new @remote object to the set of remotes. This is similar
+ * to flatpak_installation_modify_remote() for non-existing remote
+ * names. However, if the named remote already exists then instead of
+ * modifying it it fails with %FLATPAK_ERROR_ALREADY_INSTALLED, or if
+ * @if_needed is true it silently succeeds without doing anything.
+ *
+ * As an exception to the last, if the local config has a filter defined,
+ * but the new remote unsets the filter (for example, it comes from an
+ * unfiltered .flatpakref via flatpak_remote_new_from_file()) the the local
+ * remote filter gets reset. This is to allow the setup where there is a
+ * default setup of a filtered remote, yet you can still use the standard
+ * flatpakref file to get the full contents without getting two remotes.
+ *
+ * Returns: %TRUE if the modifications have been committed successfully
+ * Since: 1.3.4
+ */
+gboolean
+flatpak_installation_add_remote (FlatpakInstallation *self,
+                                 FlatpakRemote       *remote,
+                                 gboolean             if_needed,
+                                 GCancellable        *cancellable,
+                                 GError             **error)
+{
+  g_autoptr(FlatpakDir) dir = flatpak_installation_get_dir_maybe_no_repo (self);
+  g_autoptr(FlatpakDir) dir_clone = NULL;
+
+  /* We clone the dir here to make sure we re-read the latest ostree repo config, in case
+     it has local changes */
+  dir_clone = flatpak_dir_clone (dir);
+  if (!flatpak_dir_maybe_ensure_repo (dir_clone, cancellable, error))
+    return FALSE;
+
+  if (flatpak_dir_has_remote (dir, flatpak_remote_get_name (remote), NULL))
+    {
+      if (!if_needed)
+        return flatpak_fail_error (error, FLATPAK_ERROR_ALREADY_INSTALLED, _("Remote '%s' already exists"), flatpak_remote_get_name (remote));
+
+      if (!flatpak_remote_commit_filter (remote, dir_clone, cancellable, error))
+        return FALSE;
+
+      return TRUE;
+    }
+
+  if (!flatpak_remote_commit (remote, dir_clone, cancellable, error))
+    return FALSE;
+
+  /* Make sure we pick up the new config */
+  flatpak_installation_drop_caches (self, NULL, NULL);
+
+  return TRUE;
+}
+
 
 /**
  * flatpak_installation_remove_remote:
@@ -1908,7 +1974,7 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_DEPLOY) != 0,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_STATIC_DELTAS) != 0,
                             FALSE, FALSE, state,
-                            ref, NULL, (const char **) subpaths,
+                            ref, NULL, (const char **) subpaths, NULL,
                             ostree_progress, cancellable, error))
     goto out;
 
@@ -2081,7 +2147,7 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
                            FALSE, FALSE, FALSE, state,
                            ref, target_commit,
                            (const OstreeRepoFinderResult * const *) check_results,
-                           (const char **) subpaths,
+                           (const char **) subpaths, NULL,
                            ostree_progress, cancellable, error))
     goto out;
 
@@ -2354,6 +2420,31 @@ flatpak_installation_list_remote_refs_sync (FlatpakInstallation *self,
                                             GCancellable        *cancellable,
                                             GError             **error)
 {
+  return flatpak_installation_list_remote_refs_sync_full (self, remote_or_uri, 0, cancellable, error);
+}
+
+/**
+ * flatpak_installation_list_remote_refs_sync_full:
+ * @self: a #FlatpakInstallation
+ * @remote_or_uri: the name or URI of the remote
+ * @flags: set of #FlatpakQueryFlags
+ * @cancellable: (nullable): a #GCancellable
+ * @error: return location for a #GError
+ *
+ * Lists all the applications and runtimes in a remote.
+ *
+ * Returns: (transfer container) (element-type FlatpakRemoteRef): a GPtrArray of
+ *   #FlatpakRemoteRef instances
+ *
+ * Since: 1.3.3
+ */
+GPtrArray *
+flatpak_installation_list_remote_refs_sync_full (FlatpakInstallation *self,
+                                                 const char          *remote_or_uri,
+                                                 FlatpakQueryFlags    flags,
+                                                 GCancellable        *cancellable,
+                                                 GError             **error)
+{
   g_autoptr(FlatpakDir) dir = NULL;
   g_autoptr(GPtrArray) refs = g_ptr_array_new_with_free_func (g_object_unref);
   g_autoptr(FlatpakRemoteState) state = NULL;
@@ -2366,7 +2457,7 @@ flatpak_installation_list_remote_refs_sync (FlatpakInstallation *self,
   if (dir == NULL)
     return NULL;
 
-  state = flatpak_dir_get_remote_state (dir, remote_or_uri, cancellable, error);
+  state = flatpak_dir_get_remote_state (dir, remote_or_uri, (flags & FLATPAK_QUERY_FLAGS_ONLY_CACHED) != 0, cancellable, error);
   if (state == NULL)
     return NULL;
 
@@ -2415,6 +2506,40 @@ flatpak_installation_fetch_remote_ref_sync (FlatpakInstallation *self,
                                             GCancellable        *cancellable,
                                             GError             **error)
 {
+  return flatpak_installation_fetch_remote_ref_sync_full (self, remote_name,
+                                                          kind, name, arch, branch, 0,
+                                                          cancellable, error);
+}
+
+/**
+ * flatpak_installation_fetch_remote_ref_sync_full:
+ * @self: a #FlatpakInstallation
+ * @remote_name: the name of the remote
+ * @kind: what this ref contains (an #FlatpakRefKind)
+ * @name: name of the app/runtime to fetch
+ * @arch: (nullable): which architecture to fetch (default: current architecture)
+ * @branch: (nullable): which branch to fetch (default: 'master')
+ * @flags: set of #FlatpakQueryFlags
+ * @cancellable: (nullable): a #GCancellable
+ * @error: return location for a #GError
+ *
+ * Gets the current remote branch of a ref in the remote.
+ *
+ * Returns: (transfer full): a #FlatpakRemoteRef instance, or %NULL
+ *
+ * Since: 1.3.3
+ */
+FlatpakRemoteRef *
+flatpak_installation_fetch_remote_ref_sync_full (FlatpakInstallation *self,
+                                                 const char          *remote_name,
+                                                 FlatpakRefKind       kind,
+                                                 const char          *name,
+                                                 const char          *arch,
+                                                 const char          *branch,
+                                                 FlatpakQueryFlags    flags,
+                                                 GCancellable        *cancellable,
+                                                 GError             **error)
+{
   g_autoptr(FlatpakDir) dir = NULL;
   g_autoptr(GHashTable) ht = NULL;
   g_autoptr(FlatpakRemoteState) state = NULL;
@@ -2430,7 +2555,7 @@ flatpak_installation_fetch_remote_ref_sync (FlatpakInstallation *self,
   if (dir == NULL)
     return NULL;
 
-  state = flatpak_dir_get_remote_state (dir, remote_name, cancellable, error);
+  state = flatpak_dir_get_remote_state (dir, remote_name, (flags & FLATPAK_QUERY_FLAGS_ONLY_CACHED) != 0, cancellable, error);
   if (state == NULL)
     return NULL;
 
@@ -2479,7 +2604,7 @@ flatpak_installation_fetch_remote_ref_sync (FlatpakInstallation *self,
   if (checksum != NULL)
     return flatpak_remote_ref_new (coll_ref, checksum, remote_name, state);
 
-  g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+  g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_REF_NOT_FOUND,
                "Reference %s doesn't exist in remote", ref);
   return NULL;
 }
@@ -2488,7 +2613,7 @@ flatpak_installation_fetch_remote_ref_sync (FlatpakInstallation *self,
  * flatpak_installation_update_appstream_sync:
  * @self: a #FlatpakInstallation
  * @remote_name: the name of the remote
- * @arch: Architecture to update, or %NULL for the local machine arch
+ * @arch: (nullable): Architecture to update, or %NULL for the local machine arch
  * @out_changed: (nullable): Set to %TRUE if the contents of the appstream changed, %FALSE if nothing changed
  * @cancellable: (nullable): a #GCancellable
  * @error: return location for a #GError
@@ -2509,14 +2634,13 @@ flatpak_installation_update_appstream_sync (FlatpakInstallation *self,
   return flatpak_installation_update_appstream_full_sync (self, remote_name, arch,
                                                           NULL, NULL, out_changed,
                                                           cancellable, error);
-
 }
 
 /**
  * flatpak_installation_update_appstream_full_sync:
  * @self: a #FlatpakInstallation
  * @remote_name: the name of the remote
- * @arch: Architecture to update, or %NULL for the local machine arch
+ * @arch: (nullable): Architecture to update, or %NULL for the local machine arch
  * @progress: (scope call) (nullable): progress callback
  * @progress_data: (closure progress) (nullable): user data passed to @progress
  * @out_changed: (nullable): Set to %TRUE if the contents of the appstream changed, %FALSE if nothing changed
@@ -2907,10 +3031,10 @@ find_used_refs (FlatpakDir *dir,
  * Since: 1.1.2
  */
 GPtrArray *
-flatpak_installation_list_unused_refs (FlatpakInstallation  *self,
-                                       const char           *arch,
-                                       GCancellable         *cancellable,
-                                       GError              **error)
+flatpak_installation_list_unused_refs (FlatpakInstallation *self,
+                                       const char          *arch,
+                                       GCancellable        *cancellable,
+                                       GError             **error)
 {
   FlatpakDir *dir;
   g_autoptr(GHashTable) refs_hash = NULL;
@@ -2968,34 +3092,33 @@ flatpak_installation_list_unused_refs (FlatpakInstallation  *self,
     }
 
   GLNX_HASH_TABLE_FOREACH (used_runtimes, const char *, runtime)
-    {
-      g_autofree char *runtime_ref = g_strconcat ("runtime/", runtime, NULL);
+  {
+    g_autofree char *runtime_ref = g_strconcat ("runtime/", runtime, NULL);
+    g_autoptr(FlatpakDeploy) deploy = NULL;
+    g_autofree char *origin = NULL;
+    g_autofree char *sdk = NULL;
+    g_autoptr(GKeyFile) metakey = NULL;
 
-      g_autoptr(FlatpakDeploy) deploy = NULL;
-      g_autofree char *origin = NULL;
-      g_autofree char *sdk = NULL;
-      g_autoptr(GKeyFile) metakey = NULL;
+    deploy = flatpak_dir_load_deployed (dir, runtime_ref, NULL, NULL, NULL);
+    if (deploy == NULL)
+      continue;
 
-      deploy = flatpak_dir_load_deployed (dir, runtime_ref, NULL, NULL, NULL);
-      if (deploy == NULL)
-        continue;
+    origin = flatpak_dir_get_origin (dir, runtime_ref, NULL, NULL);
+    if (origin == NULL)
+      continue;
 
-      origin = flatpak_dir_get_origin (dir, runtime_ref, NULL, NULL);
-      if (origin == NULL)
-        continue;
+    find_used_refs (dir, used_refs, runtime_ref, origin);
 
-      find_used_refs (dir, used_refs, runtime_ref, origin);
-
-      metakey = flatpak_deploy_get_metadata (deploy);
-      sdk = g_key_file_get_string (metakey, "Runtime", "sdk", NULL);
-      if (sdk)
-        {
-          g_autofree char *sdk_ref = g_strconcat ("runtime/", sdk, NULL);
-          g_autofree char *sdk_origin = flatpak_dir_get_origin (dir, sdk_ref, NULL, NULL);
-          if (sdk_origin)
-            find_used_refs (dir, used_refs, sdk_ref, sdk_origin);
-        }
-    }
+    metakey = flatpak_deploy_get_metadata (deploy);
+    sdk = g_key_file_get_string (metakey, "Runtime", "sdk", NULL);
+    if (sdk)
+      {
+        g_autofree char *sdk_ref = g_strconcat ("runtime/", sdk, NULL);
+        g_autofree char *sdk_origin = flatpak_dir_get_origin (dir, sdk_ref, NULL, NULL);
+        if (sdk_origin)
+          find_used_refs (dir, used_refs, sdk_ref, sdk_origin);
+      }
+  }
 
   for (i = 0; runtime_refs[i] != NULL; i++)
     {
@@ -3007,10 +3130,10 @@ flatpak_installation_list_unused_refs (FlatpakInstallation  *self,
 
       if (!g_hash_table_contains (used_refs, ref))
         {
-          if (g_hash_table_add (refs_hash, (gpointer)ref))
+          if (g_hash_table_add (refs_hash, (gpointer) ref))
             g_ptr_array_add (refs, get_ref (dir, ref, NULL, NULL));
         }
     }
 
-   return g_steal_pointer (&refs);
+  return g_steal_pointer (&refs);
 }

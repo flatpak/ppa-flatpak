@@ -76,9 +76,12 @@ TEST_DATA_DIR=`mktemp -d /tmp/test-flatpak-XXXXXX`
 mkdir -p ${TEST_DATA_DIR}/home
 mkdir -p ${TEST_DATA_DIR}/runtime
 mkdir -p ${TEST_DATA_DIR}/system
+mkdir -p ${TEST_DATA_DIR}/config
 export FLATPAK_SYSTEM_DIR=${TEST_DATA_DIR}/system
 export FLATPAK_SYSTEM_CACHE_DIR=${TEST_DATA_DIR}/system-cache
 export FLATPAK_SYSTEM_HELPER_ON_SESSION=1
+export FLATPAK_CONFIG_DIR=${TEST_DATA_DIR}/config
+export FLATPAK_FANCY_OUTPUT=0
 
 export HOME=${TEST_DATA_DIR}/home
 export XDG_CACHE_HOME=${TEST_DATA_DIR}/home/cache
@@ -180,6 +183,18 @@ assert_file_empty() {
     fi
 }
 
+assert_remote_has_config () {
+    ostree config --repo=$FL_DIR/repo get --group 'remote "'"$1"'"' "$2" > key-output
+    assert_file_has_content key-output "$3"
+}
+
+assert_remote_has_no_config () {
+    if ostree config --repo=$FL_DIR/repo get --group 'remote "'"$1"'"' "$2" > /dev/null; then
+        echo 1>&2 "Remote '$1' unexpectedly has key '$2'"
+        exit 1
+    fi
+}
+
 export FL_GPG_HOMEDIR=${TEST_DATA_DIR}/gpghome
 export FL_GPG_HOMEDIR2=${TEST_DATA_DIR}/gpghome2
 mkdir -p ${FL_GPG_HOMEDIR}
@@ -198,16 +213,18 @@ export FL_GPG_BASE642="mQENBFkSyx4BCACq/8XFcF+NTpJKfoo8F6YyR8RQXww6kCV47zN78Dt7a
 make_runtime () {
     REPONAME="$1"
     COLLECTION_ID="$2"
-    GPGARGS="$3"
+    BRANCH="$3"
+    GPGARGS="$4"
 
-    if [ -d ${test_builddir}/runtime-repo ]; then
+    RUNTIME_REF="runtime/org.test.Platform/$(flatpak --default-arch)/${BRANCH}"
+    if [ -f ${test_builddir}/runtime-repo/${RUNTIME_REF} ]; then
         RUNTIME_REPO=${test_builddir}/runtime-repo
     else
         RUNTIME_REPO=${TEST_DATA_DIR}/runtime-repo
         (
             flock -s 200
             if [ ! -d ${RUNTIME_REPO} ]; then
-                $(dirname $0)/make-test-runtime.sh ${RUNTIME_REPO} org.test.Platform "" > /dev/null
+                $(dirname $0)/make-test-runtime.sh ${RUNTIME_REPO} org.test.Platform ${BRANCH} "" > /dev/null
             fi
         ) 200>${TEST_DATA_DIR}/runtime-repo-lock
     fi
@@ -222,7 +239,7 @@ make_runtime () {
         ostree --repo=repos/${REPONAME} init --mode=archive-z2 ${collection_args}
     fi
 
-    flatpak build-commit-from --disable-fsync --src-repo=${RUNTIME_REPO} --force ${GPGARGS} repos/${REPONAME}  runtime/org.test.Platform/$(flatpak --default-arch)/master
+    flatpak build-commit-from --disable-fsync --src-repo=${RUNTIME_REPO} --force ${GPGARGS} repos/${REPONAME}  ${RUNTIME_REF}
 }
 
 setup_repo_no_add () {
@@ -232,9 +249,10 @@ setup_repo_no_add () {
     else
         COLLECTION_ID=
     fi
+    BRANCH=${3:-master}
 
-    make_runtime "${REPONAME}" "${COLLECTION_ID}" "${GPGARGS:-${FL_GPGARGS}}"
-    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" . $(dirname $0)/make-test-app.sh repos/${REPONAME} "" "${COLLECTION_ID}" > /dev/null
+    make_runtime "${REPONAME}" "${COLLECTION_ID}" "${BRANCH}" "${GPGARGS:-${FL_GPGARGS}}"
+    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" . $(dirname $0)/make-test-app.sh repos/${REPONAME} "" "${BRANCH}" "${COLLECTION_ID}" > /dev/null
     update_repo $REPONAME "${COLLECTION_ID}"
     if [ $REPONAME == "test" ]; then
         $(dirname $0)/test-webserver.sh repos
@@ -284,8 +302,9 @@ make_updated_app () {
     else
         COLLECTION_ID=""
     fi
+    BRANCH=${3:-master}
 
-    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" . $(dirname $0)/make-test-app.sh repos/${REPONAME} "" "${COLLECTION_ID}" ${3:-UPDATED} > /dev/null
+    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" . $(dirname $0)/make-test-app.sh repos/${REPONAME} "" "${BRANCH}" "${COLLECTION_ID}" ${4:-UPDATED} > /dev/null
     update_repo $REPONAME "${COLLECTION_ID}"
 }
 
@@ -296,20 +315,23 @@ setup_sdk_repo () {
     else
         COLLECTION_ID=""
     fi
+    BRANCH=${3:-master}
 
-    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" . $(dirname $0)/make-test-runtime.sh repos/${REPONAME} org.test.Sdk "${COLLECTION_ID}" make mkdir cp touch > /dev/null
+    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" . $(dirname $0)/make-test-runtime.sh repos/${REPONAME} org.test.Sdk "${BRANCH}" "${COLLECTION_ID}" make mkdir cp touch > /dev/null
     update_repo $REPONAME "${COLLECTION_ID}"
 }
 
 install_repo () {
     REPONAME=${1:-test}
-    ${FLATPAK} ${U} install -y ${REPONAME}-repo org.test.Platform master
-    ${FLATPAK} ${U} install -y ${REPONAME}-repo org.test.Hello master
+    BRANCH=${2:-master}
+    ${FLATPAK} ${U} install -y ${REPONAME}-repo org.test.Platform ${BRANCH}
+    ${FLATPAK} ${U} install -y ${REPONAME}-repo org.test.Hello ${BRANCH}
 }
 
 install_sdk_repo () {
     REPONAME=${1:-test}
-    ${FLATPAK} ${U} install -y ${REPONAME}-repo org.test.Sdk master
+    BRANCH=${2:-master}
+    ${FLATPAK} ${U} install -y ${REPONAME}-repo org.test.Sdk ${BRANCH}
 }
 
 run () {
@@ -318,7 +340,9 @@ run () {
 }
 
 run_sh () {
-    ${CMD_PREFIX} flatpak run --command=bash ${ARGS-} org.test.Hello -c "$*"
+    ID=${1:-org.test.Hello}
+    shift
+    ${CMD_PREFIX} flatpak run --command=bash ${ARGS-} ${ID} -c "$*"
 }
 
 # true, false, or empty for indeterminate
@@ -334,12 +358,18 @@ else
     _flatpak_bwrap_works=true
 fi
 
+# Use to skip all of these tests
+skip() {
+    echo "1..0 # SKIP" "$@"
+    exit 0
+}
+
 skip_without_bwrap () {
     if "${_flatpak_bwrap_works}"; then
         return 0
     else
         sed -e 's/^/# /' < bwrap-result
-        echo "1..0 # SKIP Cannot run bwrap"
+        skip "Cannot run bwrap"
         exit 0
     fi
 }
@@ -350,6 +380,43 @@ skip_one_without_bwrap () {
     else
         echo "ok $* # SKIP Cannot run bwrap"
         return 0
+    fi
+}
+
+skip_without_fuse () {
+    fusermount --version >/dev/null 2>&1 || skip "no fusermount"
+
+    capsh --print | grep -q 'Bounding set.*[^a-z]cap_sys_admin' || \
+        skip "No cap_sys_admin in bounding set, can't use FUSE"
+
+    [ -w /dev/fuse ] || skip "no write access to /dev/fuse"
+    [ -e /etc/mtab ] || skip "no /etc/mtab"
+}
+
+skip_revokefs_without_fuse () {
+    if [ "x${USE_SYSTEMDIR-}" = xyes ] && [ "x${FLATPAK_DISABLE_REVOKEFS-}" != xyes ]; then
+        skip_without_fuse
+    fi
+}
+
+skip_without_p2p () {
+    if [ x${USE_COLLECTIONS_IN_CLIENT-} == xyes ] ; then
+        return 0
+    else
+        skip "No P2P support enabled"
+    fi
+}
+
+# Usage: skip_without_ostree_version 2019 2
+skip_without_ostree_version () {
+    OSTREE_YEAR_VERSION=$(ostree --version | sed -n "s/^ Version: '\([0-9]\+\)\.[0-9]\+'$/\1/p")
+    OSTREE_RELEASE_VERSION=$(ostree --version | sed -n "s/^ Version: '[0-9]\+\.\([0-9]\+\)'$/\1/p")
+    if [ "$OSTREE_YEAR_VERSION" -gt "$1" ]; then
+        return 0
+    elif [ "$OSTREE_YEAR_VERSION" -eq "$1" ] && [ "$OSTREE_RELEASE_VERSION" -ge "$2" ]; then
+        return 0
+    else
+        skip "OSTree version requirement $1.$2 not met"
     fi
 }
 

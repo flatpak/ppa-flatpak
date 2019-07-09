@@ -41,6 +41,7 @@ flatpak_installation_update_appstream_sync
 flatpak_installation_install_bundle
 flatpak_installation_install_ref_file
 flatpak_installation_drop_caches
+flatpak_installation_add_remote
 flatpak_installation_modify_remote
 flatpak_installation_remove_remote
 flatpak_installation_update_remote_sync
@@ -150,6 +151,7 @@ flatpak_ref_get_type
 <TITLE>FlatpakRemote</TITLE>
 FlatpakRemote
 flatpak_remote_new
+flatpak_remote_new_from_file
 flatpak_remote_get_name
 flatpak_remote_get_appstream_dir
 flatpak_remote_get_appstream_timestamp
@@ -169,6 +171,14 @@ flatpak_remote_set_prio
 flatpak_remote_get_remote_type
 flatpak_remote_get_title
 flatpak_remote_set_title
+flatpak_remote_get_comment
+flatpak_remote_set_comment
+flatpak_remote_get_description
+flatpak_remote_set_description
+flatpak_remote_get_homepage
+flatpak_remote_set_homepage
+flatpak_remote_get_icon
+flatpak_remote_set_icon
 flatpak_remote_get_url
 flatpak_remote_set_url
 flatpak_remote_get_disabled

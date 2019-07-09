@@ -63,11 +63,16 @@ struct _FlatpakRemotePrivate
   char             *local_title;
   char             *local_default_branch;
   char             *local_main_ref;
+  char             *local_filter;
   gboolean          local_gpg_verify;
   gboolean          local_noenumerate;
   gboolean          local_nodeps;
   gboolean          local_disabled;
   int               local_prio;
+  char             *local_comment;
+  char             *local_description;
+  char             *local_homepage;
+  char             *local_icon;
   FlatpakRemoteType type;
 
   guint             local_url_set            : 1;
@@ -75,11 +80,16 @@ struct _FlatpakRemotePrivate
   guint             local_title_set          : 1;
   guint             local_default_branch_set : 1;
   guint             local_main_ref_set       : 1;
+  guint             local_filter_set         : 1;
   guint             local_gpg_verify_set     : 1;
   guint             local_noenumerate_set    : 1;
   guint             local_nodeps_set         : 1;
   guint             local_disabled_set       : 1;
   guint             local_prio_set           : 1;
+  guint             local_icon_set           : 1;
+  guint             local_comment_set        : 1;
+  guint             local_description_set    : 1;
+  guint             local_homepage_set       : 1;
 
   GBytes           *local_gpg_key;
 };
@@ -433,6 +443,246 @@ flatpak_remote_set_title (FlatpakRemote *self,
 }
 
 /**
+ * flatpak_remote_get_filter:
+ * @self: a #FlatpakRemote
+ *
+ * Returns the filter file of the remote.
+ *
+ * Returns: (transfer full): a pathname to a filter file
+ *
+ * Since: 1.4
+ */
+char *
+flatpak_remote_get_filter (FlatpakRemote *self)
+{
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
+
+  if (priv->local_filter_set)
+    return g_strdup (priv->local_filter);
+
+  if (priv->dir)
+    return flatpak_dir_get_remote_filter (priv->dir, priv->name);
+
+  return NULL;
+}
+
+/**
+ * flatpak_remote_set_filter:
+ * @self: a #FlatpakRemote
+ * @filter_path: The pathname of the new filter file
+ *
+ * Sets a filter for this remote.
+ *
+ * Note: This is a local modification of this object, you must commit changes
+ * using flatpak_installation_modify_remote() for the changes to take
+ * effect.
+ *
+ * Since: 1.4
+ */
+void
+flatpak_remote_set_filter (FlatpakRemote *self,
+                           const char    *filter_path)
+{
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
+
+  g_free (priv->local_filter);
+  priv->local_filter = g_strdup (filter_path);
+  priv->local_filter_set = TRUE;
+}
+
+/**
+ * flatpak_remote_get_comment:
+ * @self: a #FlatpakRemote
+ *
+ * Returns the comment of the remote.
+ *
+ * Returns: (transfer full): the comment
+ *
+ * Since: 1.4
+ */
+char *
+flatpak_remote_get_comment (FlatpakRemote *self)
+{
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
+
+  if (priv->local_comment_set)
+    return g_strdup (priv->local_comment);
+
+  if (priv->dir)
+    return flatpak_dir_get_remote_comment (priv->dir, priv->name);
+
+  return NULL;
+}
+
+/**
+ * flatpak_remote_set_comment:
+ * @self: a #FlatpakRemote
+ * @comment: The new comment 
+ *
+ * Sets the comment of this remote.
+ *
+ * Note: This is a local modification of this object, you must commit changes
+ * using flatpak_installation_modify_remote() for the changes to take
+ * effect.
+ *
+ * Since: 1.4
+ */
+void
+flatpak_remote_set_comment (FlatpakRemote *self,
+                            const char    *comment)
+{
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
+
+  g_free (priv->local_comment);
+  priv->local_comment = g_strdup (comment);
+  priv->local_comment_set = TRUE;
+}
+
+/**
+ * flatpak_remote_get_description:
+ * @self: a #FlatpakRemote
+ *
+ * Returns the description of the remote.
+ *
+ * Returns: (transfer full): the description 
+ *
+ * Since: 1.4
+ */
+char *
+flatpak_remote_get_description (FlatpakRemote *self)
+{
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
+
+  if (priv->local_description_set)
+    return g_strdup (priv->local_description);
+
+  if (priv->dir)
+    return flatpak_dir_get_remote_description (priv->dir, priv->name);
+
+  return NULL;
+}
+
+/**
+ * flatpak_remote_set_description:
+ * @self: a #FlatpakRemote
+ * @description: The new description
+ *
+ * Sets the description of this remote.
+ *
+ * Note: This is a local modification of this object, you must commit changes
+ * using flatpak_installation_modify_remote() for the changes to take
+ * effect.
+ *
+ * Since: 1.4
+ */
+void
+flatpak_remote_set_description (FlatpakRemote *self,
+                                const char    *description)
+{
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
+
+  g_free (priv->local_description);
+  priv->local_description = g_strdup (description);
+  priv->local_description_set = TRUE;
+}
+
+/**
+ * flatpak_remote_get_homepage:
+ * @self: a #FlatpakRemote
+ *
+ * Returns the homepage url of the remote.
+ *
+ * Returns: (transfer full): the homepage url
+ *
+ * Since: 1.4
+ */
+char *
+flatpak_remote_get_homepage (FlatpakRemote *self)
+{
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
+
+  if (priv->local_homepage_set)
+    return g_strdup (priv->local_homepage);
+
+  if (priv->dir)
+    return flatpak_dir_get_remote_homepage (priv->dir, priv->name);
+
+  return NULL;
+}
+
+/**
+ * flatpak_remote_set_homepage:
+ * @self: a #FlatpakRemote
+ * @homepage: The new homepage
+ *
+ * Sets the homepage of this remote.
+ *
+ * Note: This is a local modification of this object, you must commit changes
+ * using flatpak_installation_modify_remote() for the changes to take
+ * effect.
+ *
+ * Since: 1.4
+ */
+void
+flatpak_remote_set_homepage (FlatpakRemote *self,
+                             const char    *homepage)
+{
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
+
+  g_free (priv->local_homepage);
+  priv->local_homepage = g_strdup (homepage);
+  priv->local_homepage_set = TRUE;
+}
+
+/**
+ * flatpak_remote_get_icon:
+ * @self: a #FlatpakRemote
+ *
+ * Returns the icon url of the remote.
+ *
+ * Returns: (transfer full): the icon url
+ *
+ * Since: 1.4
+ */
+char *
+flatpak_remote_get_icon (FlatpakRemote *self)
+{
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
+
+  if (priv->local_icon_set)
+    return g_strdup (priv->local_icon);
+
+  if (priv->dir)
+    return flatpak_dir_get_remote_icon (priv->dir, priv->name);
+
+  return NULL;
+}
+
+/**
+ * flatpak_remote_set_icon:
+ * @self: a #FlatpakRemote
+ * @icon: The new homepage
+ *
+ * Sets the homepage of this remote.
+ *
+ * Note: This is a local modification of this object, you must commit changes
+ * using flatpak_installation_modify_remote() for the changes to take
+ * effect.
+ *
+ * Since: 1.4
+ */
+void
+flatpak_remote_set_icon (FlatpakRemote *self,
+                         const char    *icon)
+{
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
+
+  g_free (priv->local_icon);
+  priv->local_icon = g_strdup (icon);
+  priv->local_icon_set = TRUE;
+}
+
+/**
  * flatpak_remote_get_default_branch:
  * @self: a #FlatpakRemote
  *
@@ -521,7 +771,7 @@ flatpak_remote_get_main_ref (FlatpakRemote *self)
  */
 void
 flatpak_remote_set_main_ref (FlatpakRemote *self,
-                                   const char    *main_ref)
+                             const char    *main_ref)
 {
   FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
 
@@ -828,7 +1078,7 @@ flatpak_remote_new_from_ostree (OstreeRemote     *remote,
  * Returns a new remote object which can be used to configure a new remote.
  *
  * Note: This is a local configuration object, you must commit changes
- * using flatpak_installation_modify_remote() for the changes to take
+ * using flatpak_installation_modify_remote() or flatpak_installation_add_remote() for the changes to take
  * effect.
  *
  * Returns: (transfer full): a new #FlatpakRemote
@@ -837,6 +1087,90 @@ FlatpakRemote *
 flatpak_remote_new (const char *name)
 {
   return flatpak_remote_new_with_dir (name, NULL);
+}
+
+
+#define read_str_option(_key, _field) \
+  {                                                                     \
+    char *val = g_key_file_get_string (config, group, _key, NULL);      \
+    if (val != NULL) {                                                  \
+      priv->local_ ## _field = val;                                     \
+      priv->local_ ## _field ## _set = TRUE;                            \
+    }                                                                   \
+  }
+
+#define read_bool_option(_key, _field)                                  \
+  if (g_key_file_has_key (config, group, _key, NULL)) {                 \
+    priv->local_ ## _field = g_key_file_get_boolean (config, group, _key, NULL); \
+    priv->local_ ## _field ## _set = TRUE;                              \
+  }
+
+#define read_int_option(_key, _field)                                   \
+  if (g_key_file_has_key (config, group, _key, NULL)) {                 \
+    priv->local_ ## _field = g_key_file_get_integer (config, group, _key, NULL); \
+    priv->local_ ## _field ## _set = TRUE;                              \
+  }
+
+
+/**
+ * flatpak_remote_new_from_file:
+ * @name: a name
+ * @data: The content of a flatpakrepo file
+ * @error: return location for a #GError
+ *
+ * Returns a new pre-filled remote object which can be used to configure a new remote.
+ * The fields in the remote are filled in according to the values in the
+ * passed in flatpakrepo file.
+ *
+ * Note: This is a local configuration object, you must commit changes
+ * using flatpak_installation_modify_remote()  or flatpak_installation_add_remote() for the changes to take
+ * effect.
+ *
+ * Returns: (transfer full): a new #FlatpakRemote, or %NULL on error
+ *
+ * Since: 1.3.4
+ **/
+FlatpakRemote *
+flatpak_remote_new_from_file (const char *name, GBytes *data, GError **error)
+{
+  FlatpakRemote *remote = flatpak_remote_new (name);
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (remote);
+  g_autofree char *group = g_strdup_printf ("remote \"%s\"", name);
+  g_autoptr(GKeyFile) keyfile = g_key_file_new ();
+  g_autoptr(GKeyFile) config = NULL;
+  g_autoptr(GBytes) gpg_data = NULL;
+
+  if (!g_key_file_load_from_data (keyfile, g_bytes_get_data (data, NULL), g_bytes_get_size (data), 0, error))
+    return NULL;
+
+  config = flatpak_parse_repofile (name, FALSE, keyfile, &gpg_data, NULL, error);
+  if (config == NULL)
+    return NULL;
+
+  priv->local_gpg_key = g_steal_pointer (&gpg_data);
+
+  read_str_option("url", url);
+  read_str_option("collection-id", collection_id);
+  read_str_option("xa.title", title);
+  read_str_option("xa.filter", filter);
+  /* Canonicalize empty to null-but-is-set */
+  if (priv->local_filter && priv->local_filter[0] == 0)
+    g_free (g_steal_pointer (&priv->local_filter));
+  read_str_option("xa.comment", comment);
+  read_str_option("xa.description", description);
+  read_str_option("xa.homepage", homepage);
+  read_str_option("xa.icon", icon);
+  read_str_option("xa.default-branch", default_branch);
+  read_str_option("xa.main-ref", main_ref);
+
+  read_bool_option("xa.gpg-verify", gpg_verify);
+  read_bool_option("xa.noenumerate", noenumerate);
+  read_bool_option("xa.disable", disabled);
+  read_bool_option("xa.nodeps", nodeps);
+
+  read_int_option("xa.prio", prio);
+
+  return remote;
 }
 
 /* copied from GLib */
@@ -859,6 +1193,29 @@ g_key_file_is_group_name (const gchar *name)
 }
 
 gboolean
+flatpak_remote_commit_filter (FlatpakRemote *self,
+                              FlatpakDir    *dir,
+                              GCancellable  *cancellable,
+                              GError       **error)
+{
+  FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
+  g_autofree char *group = g_strdup_printf ("remote \"%s\"", priv->name);
+
+  if (priv->local_filter_set &&
+      !flatpak_dir_compare_remote_filter (dir, priv->name, priv->local_filter))
+    {
+      GKeyFile *config = ostree_repo_copy_config (flatpak_dir_get_repo (dir));
+
+      g_key_file_set_string (config, group, "xa.filter", priv->local_filter ? priv->local_filter : "");
+
+      if (!flatpak_dir_modify_remote (dir, priv->name, config, NULL, cancellable, error))
+        return FALSE;
+    }
+
+  return TRUE;
+}
+
+gboolean
 flatpak_remote_commit (FlatpakRemote *self,
                        FlatpakDir    *dir,
                        GCancellable  *cancellable,
@@ -867,14 +1224,13 @@ flatpak_remote_commit (FlatpakRemote *self,
   FlatpakRemotePrivate *priv = flatpak_remote_get_instance_private (self);
   OstreeRepo *repo;
   g_autofree char *url = NULL;
-
   g_autoptr(GKeyFile) config = NULL;
   g_autofree char *group = g_strdup_printf ("remote \"%s\"", priv->name);
 
   if (priv->name[0] == '\0' ||
       !g_key_file_is_group_name (group))
     return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Bad remote name: %s"), priv->name);
-    
+
   url = flatpak_remote_get_url (self);
   if (url == NULL || *url == 0)
     return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("No url specified"));
@@ -918,6 +1274,21 @@ flatpak_remote_commit (FlatpakRemote *self,
 
   if (priv->local_title_set)
     g_key_file_set_string (config, group, "xa.title", priv->local_title);
+
+  if (priv->local_filter_set)
+    g_key_file_set_string (config, group, "xa.filter", priv->local_filter ? priv->local_filter : "");
+
+  if (priv->local_comment_set)
+    g_key_file_set_string (config, group, "xa.comment", priv->local_comment);
+
+  if (priv->local_description_set)
+    g_key_file_set_string (config, group, "xa.description", priv->local_description);
+
+  if (priv->local_homepage_set)
+    g_key_file_set_string (config, group, "xa.homepage", priv->local_homepage);
+
+  if (priv->local_icon_set)
+    g_key_file_set_string (config, group, "xa.icon", priv->local_icon);
 
   if (priv->local_default_branch_set)
     g_key_file_set_string (config, group, "xa.default-branch", priv->local_default_branch);

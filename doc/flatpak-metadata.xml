@@ -142,7 +142,8 @@
                     <term><option>sockets</option> (list)</term>
                     <listitem><para>
                         List of well-known sockets to make available in the sandbox.
-                        Possible sockets: x11, wayland, fallback-x11, pulseaudio, session-bus, system-bus, ssh-auth.
+                        Possible sockets: x11, wayland, fallback-x11, pulseaudio, session-bus, system-bus,
+                        ssh-auth, pcsc.
                         When making a socket available, flatpak also sets
                         well-known environment variables like DISPLAY or
                         DBUS_SYSTEM_BUS_ADDRESS to let the application
@@ -498,7 +499,7 @@
                 <varlistentry>
                     <term><option>build</option> (boolean)</term>
                     <listitem><para>
-                        Whether this instance was created by flatpak build. 
+                        Whether this instance was created by flatpak build.
                     </para></listitem>
                 </varlistentry>
                 <varlistentry>
@@ -802,6 +803,15 @@
                     <listitem><para>
                         The ref of the runtime or application that this extension
                         belongs to. Available since 0.9.1.
+                    </para></listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><option>runtime</option> (string)</term>
+                    <listitem><para>
+                        The runtime this extension will be inside of. If it is an
+                        app extension, this is the app's runtime; otherwise, this
+                        is identical to ref, without the runtime/ prefix.
+                        Available since 1.5.0.
                     </para></listitem>
                 </varlistentry>
                 <varlistentry>

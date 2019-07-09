@@ -8,7 +8,7 @@
 <link rel="up" href="ch01.html" title="[Insert title here]">
 <link rel="prev" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation">
 <link rel="next" href="flatpak-Version-information.html" title="Version information">
-<meta name="generator" content="GTK-Doc V1.29.1 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.29 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -263,6 +263,11 @@
 <td class="signal_flags">Run Last</td>
 </tr>
 <tr>
+<td class="signal_type"><span class="returnvalue">gboolean</span></td>
+<td class="signal_name"><a class="link" href="FlatpakTransaction.html#FlatpakTransaction-end-of-lifed-with-rebase" title="The “end-of-lifed-with-rebase” signal">end-of-lifed-with-rebase</a></td>
+<td class="signal_flags">Run Last</td>
+</tr>
+<tr>
 <td class="signal_type"><span class="returnvalue">void</span></td>
 <td class="signal_name"><a class="link" href="FlatpakTransaction.html#FlatpakTransaction-new-operation" title="The “new-operation” signal">new-operation</a></td>
 <td class="signal_flags">Run Last</td>
@@ -357,6 +362,13 @@ completed operations are not rolled back.</p>
 <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-operation-done" title="The “operation-done” signal"><span class="type">“operation-done”</span></a> or <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-operation-error" title="The “operation-error” signal"><span class="type">“operation-error”</span></a>.</p>
 <p>The FlatpakTransaction API is threadsafe in the sense that it is safe to run two
 transactions at the same time, in different threads (or processes).</p>
+<p>Note: Transactions (or any other install/update operation) to a
+system installation rely on the ability to create files that are readable
+by other users. Some users set a umask that prohibits this. Unfortunately
+there is no good way to work around this in a threadsafe, local way, so
+such setups will break by default. The flatpak commandline app works
+around this by calling umask(022) in the early setup, and it is recommended
+that other apps using libflatpak do this too.</p>
 </div>
 <div class="refsect1">
 <a name="FlatpakTransaction.functions_details"></a><h2>Functions</h2>
@@ -683,7 +695,7 @@ flatpak_transaction_add_dependency_source
                                 <em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *installation</code></em>);</pre>
 <p>Adds an extra installation as a source for application dependencies.
 This means that applications can be installed in this transaction relying
-on runtimes from this additional installation (wheres it would normally
+on runtimes from this additional installation (whereas it would normally
 install required runtimes that are not installed in the installation
 the transaction works on).</p>
 <p>Also see <a class="link" href="FlatpakTransaction.html#flatpak-transaction-add-default-dependency-sources" title="flatpak_transaction_add_default_dependency_sources ()"><code class="function">flatpak_transaction_add_default_dependency_sources()</code></a>.</p>
@@ -718,7 +730,7 @@ flatpak_transaction_run (<em class="parameter"><code><a class="link" href="Flatp
                          <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
                          <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Executes the transaction.</p>
-<p>During the cause of the execution, various signal will get emitted.
+<p>During the cause of the execution, various signals will get emitted.
 The FlatpakTransaction::choose-remote-for-ref  and
 <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-add-new-remote" title="The “add-new-remote” signal"><span class="type">“add-new-remote”</span></a> signals may get emitted while
 resolving operations. <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-ready" title="The “ready” signal"><span class="type">“ready”</span></a> is emitted when
@@ -1463,6 +1475,77 @@ be marked as end-of-life during the execution of the transaction.</p>
 </div>
 <hr>
 <div class="refsect2">
+<a name="FlatpakTransaction-end-of-lifed-with-rebase"></a><h3>The <code class="literal">“end-of-lifed-with-rebase”</code> signal</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>
+user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
+               <span class="type">gchar</span>              *remote,
+               <span class="type">gchar</span>              *ref,
+               <span class="type">gchar</span>              *reason,
+               <span class="type">gchar</span>              *rebased_to_ref,
+               <span class="type">GStrv</span>               previous_ids,
+               <span class="type">gpointer</span>            user_data)</pre>
+<p>The ::end-of-lifed-with-rebase signal gets emitted when a ref is found
+to be marked as end-of-life before the transaction begins. Unlike
+<a class="link" href="FlatpakTransaction.html#FlatpakTransaction-end-of-lifed" title="The “end-of-lifed” signal"><span class="type">“end-of-lifed”</span></a>, this signal allows for the
+transaction to be modified in order to e.g. install the rebased
+ref.</p>
+<div class="refsect3">
+<a name="FlatpakTransaction-end-of-lifed-with-rebase.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>object</p></td>
+<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>remote</p></td>
+<td class="parameter_description"><p>The remote for the ref we are processing</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>ref</p></td>
+<td class="parameter_description"><p>The ref we are processing</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>reason</p></td>
+<td class="parameter_description"><p>The eol reason, or <code class="literal">NULL</code></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>rebased_to_ref</p></td>
+<td class="parameter_description"><p>The new name, if rebased, or <code class="literal">NULL</code></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>previous_ids</p></td>
+<td class="parameter_description"><p>The previous names for the rebased ref (if any), including the one from <em class="parameter"><code>ref</code></em>
+</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>user_data</p></td>
+<td class="parameter_description"><p>user data set when the signal handler was connected.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="FlatpakTransaction-end-of-lifed-with-rebase.returns"></a><h4>Returns</h4>
+<p> <code class="literal">TRUE</code> if the operation on this end-of-lifed ref should
+be skipped, <code class="literal">FALSE</code> if it should remain.</p>
+</div>
+<p>Flags: Run Last</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="FlatpakTransaction-new-operation"></a><h3>The <code class="literal">“new-operation”</code> signal</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a>          *object,
@@ -1651,6 +1734,6 @@ transaction.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.29.1</div>
+<hr>Generated by GTK-Doc V1.29</div>
 </body>
 </html>

@@ -33,7 +33,8 @@ void                flatpak_table_printer_set_column_title (FlatpakTablePrinter 
                                                             int                  column,
                                                             const char          *title);
 void                flatpak_table_printer_set_columns (FlatpakTablePrinter *printer,
-                                                       Column              *columns);
+                                                       Column              *columns,
+                                                       gboolean             defaults);
 void                flatpak_table_printer_add_column (FlatpakTablePrinter *printer,
                                                       const char          *text);
 void                flatpak_table_printer_add_aligned_column (FlatpakTablePrinter *printer,
@@ -51,29 +52,34 @@ void                flatpak_table_printer_append_with_comma (FlatpakTablePrinter
 void                flatpak_table_printer_append_with_comma_printf (FlatpakTablePrinter *printer,
                                                                     const char          *format,
                                                                     ...);
-void                flatpak_table_printer_set_key (FlatpakTablePrinter *printer, const char *key);
+void                flatpak_table_printer_set_key (FlatpakTablePrinter *printer,
+                                                   const char          *key);
 void                flatpak_table_printer_finish_row (FlatpakTablePrinter *printer);
-void                flatpak_table_printer_sort (FlatpakTablePrinter *printer, GCompareFunc cmp);
+void                flatpak_table_printer_sort (FlatpakTablePrinter *printer,
+                                                GCompareFunc         cmp);
 void                flatpak_table_printer_print (FlatpakTablePrinter *printer);
 void                flatpak_table_printer_print_full (FlatpakTablePrinter *printer,
-                                                      int skip,
-                                                      int columns,
-                                                      int *table_height,
-                                                      int *table_width);
+                                                      int                  skip,
+                                                      int                  columns,
+                                                      int                 *table_height,
+                                                      int                 *table_width);
 int                 flatpak_table_printer_get_current_row (FlatpakTablePrinter *printer);
 void                flatpak_table_printer_set_cell (FlatpakTablePrinter *printer,
-                                                    int row,
-                                                    int col,
-                                                    const char *cell);
+                                                    int                  row,
+                                                    int                  col,
+                                                    const char          *cell);
 void                flatpak_table_printer_set_decimal_cell (FlatpakTablePrinter *printer,
-                                                            int row,
-                                                            int col,
-                                                            const char *cell);
+                                                            int                  row,
+                                                            int                  col,
+                                                            const char          *cell);
 void               flatpak_table_printer_set_column_expand (FlatpakTablePrinter *printer,
-                                                            int col,
-                                                            gboolean expand);
+                                                            int                  col,
+                                                            gboolean             expand);
 void               flatpak_table_printer_set_column_ellipsize (FlatpakTablePrinter *printer,
-                                                               int col,
+                                                               int                  col,
                                                                FlatpakEllipsizeMode mode);
+void               flatpak_table_printer_set_column_skip_unique (FlatpakTablePrinter *printer,
+                                                                 int                  column,
+                                                                 gboolean             skip_unique);
 
 #endif /* __FLATPAK_TABLE_PRINTER_H__ */

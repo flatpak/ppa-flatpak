@@ -31,6 +31,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
@@ -70,6 +71,9 @@ static const GDBusErrorEntry flatpak_error_entries[] = {
   {FLATPAK_ERROR_REMOTE_USED,           "org.freedesktop.Flatpak.Error.RemoteUsed"}, /* Since: 1.0.3 */
   {FLATPAK_ERROR_RUNTIME_USED,          "org.freedesktop.Flatpak.Error.RuntimeUsed"}, /* Since: 1.0.3 */
   {FLATPAK_ERROR_INVALID_NAME,          "org.freedesktop.Flatpak.Error.InvalidName"}, /* Since: 1.0.3 */
+  {FLATPAK_ERROR_OUT_OF_SPACE,          "org.freedesktop.Flatpak.Error.OutOfSpace"}, /* Since: 1.2.0 */
+  {FLATPAK_ERROR_WRONG_USER,            "org.freedesktop.Flatpak.Error.WrongUser"}, /* Since: 1.2.0 */
+  {FLATPAK_ERROR_NOT_CACHED,            "org.freedesktop.Flatpak.Error.NotCached"}, /* Since: 1.3.3 */
 };
 
 typedef struct archive FlatpakAutoArchiveRead;
@@ -122,7 +126,6 @@ flatpak_debug2 (const char *format, ...)
           format, var_args);
   va_end (var_args);
 #pragma GCC diagnostic pop
-
 }
 
 gboolean
@@ -673,7 +676,7 @@ flatpak_get_timezone (void)
 
   /* Final fall-back is UTC */
   return g_strdup ("UTC");
- }
+}
 
 static gboolean
 is_valid_initial_name_character (gint c, gboolean allow_dash)
@@ -820,6 +823,22 @@ flatpak_is_valid_name (const char *string,
 
 out:
   return ret;
+}
+
+gboolean
+flatpak_has_name_prefix (const char *string,
+                         const char *name)
+{
+  const char *rest;
+
+  if (!g_str_has_prefix (string, name))
+    return FALSE;
+
+  rest = string + strlen (name);
+  return
+    *rest == 0 ||
+    *rest == '.' ||
+    !is_valid_name_character (*rest, FALSE);
 }
 
 gboolean
@@ -1003,7 +1022,7 @@ flatpak_is_valid_branch (const char *string,
   len = strlen (string);
   if (G_UNLIKELY (len == 0))
     {
-      flatpak_fail_error (error, FLATPAK_ERROR_INVALID_NAME, 
+      flatpak_fail_error (error, FLATPAK_ERROR_INVALID_NAME,
                           _("Branch can't be empty"));
       goto out;
     }
@@ -1013,7 +1032,7 @@ flatpak_is_valid_branch (const char *string,
   s = string;
   if (G_UNLIKELY (!is_valid_initial_branch_character (*s)))
     {
-      flatpak_fail_error (error, FLATPAK_ERROR_INVALID_NAME, 
+      flatpak_fail_error (error, FLATPAK_ERROR_INVALID_NAME,
                           _("Branch can't start with %c"), *s);
       goto out;
     }
@@ -1023,7 +1042,7 @@ flatpak_is_valid_branch (const char *string,
     {
       if (G_UNLIKELY (!is_valid_branch_character (*s)))
         {
-          flatpak_fail_error (error, FLATPAK_ERROR_INVALID_NAME, 
+          flatpak_fail_error (error, FLATPAK_ERROR_INVALID_NAME,
                               _("Branch can't contain %c"), *s);
           goto out;
         }
@@ -1088,8 +1107,9 @@ compare_segment (const char *s1, const char *s2)
       c1 = *s1;
       c2 = *s2;
       if (c1 != c2)
-        return (c1 - c2);
-      s1++; s2++;
+        return c1 - c2;
+      s1++;
+      s2++;
     }
 
   c1 = *s1;
@@ -1119,6 +1139,213 @@ flatpak_compare_ref (const char *ref1, const char *ref2)
         return res;
     }
   return 0;
+}
+
+static char *
+line_get_word (char **line)
+{
+  char *word = NULL;
+
+  while (g_ascii_isspace (**line))
+    (*line)++;
+
+  if (**line == 0)
+    return NULL;
+
+  word = *line;
+
+  while (**line && !g_ascii_isspace (**line))
+    (*line)++;
+
+  if (**line)
+    {
+      **line = 0;
+      (*line)++;
+    }
+
+  return word;
+}
+
+static char *
+glob_to_regexp (const char *glob, GError **error)
+{
+  g_autoptr(GString) regexp = g_string_new ("");
+  int parts = 1;
+
+  if (g_str_has_prefix (glob, "app/"))
+    {
+      glob += strlen ("app/");
+      g_string_append (regexp, "app/");
+    }
+  else if (g_str_has_prefix (glob, "runtime/"))
+    {
+      glob += strlen ("runtime/");
+      g_string_append (regexp, "runtime/");
+    }
+  else
+    g_string_append (regexp, "(app|runtime)/");
+
+  /* We really need an id part, the rest is optional */
+  if (*glob == 0)
+    {
+      flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Empty glob"));
+      return NULL;
+    }
+
+  while (*glob != 0)
+    {
+      char c = *glob;
+      glob++;
+
+      if (c == '/')
+        {
+          parts++;
+          g_string_append (regexp, "/");
+          if (parts > 3)
+            {
+              flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Too many segments in glob"));
+              return NULL;
+            }
+        }
+      else if (c == '*')
+        {
+          g_string_append (regexp, "[.\\-_a-zA-Z0-9]*");
+        }
+      else if (c == '.')
+        {
+          g_string_append (regexp, "\\.");
+        }
+      else if (g_ascii_isalnum (c) || c == '-' || c == '_')
+        {
+          g_string_append_c (regexp, c);
+        }
+      else
+        {
+          flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Invalid glob character '%c'"), c);
+          return NULL;
+        }
+    }
+
+  while (parts < 3)
+    {
+      parts++;
+      g_string_append (regexp, "/[.\\-_a-zA-Z0-9]*");
+    }
+
+  return g_string_free (g_steal_pointer (&regexp), FALSE);
+}
+
+gboolean
+flatpak_parse_filters (const char *data,
+                       GRegex **allow_refs_out,
+                       GRegex **deny_refs_out,
+                       GError **error)
+{
+  g_auto(GStrv) lines = NULL;
+  int i;
+  g_autoptr(GString) allow_regexp = g_string_new ("^(");
+  g_autoptr(GString) deny_regexp = g_string_new ("^(");
+  gboolean has_allow = FALSE;
+  gboolean has_deny = FALSE;
+  g_autoptr(GRegex) allow_refs = NULL;
+  g_autoptr(GRegex) deny_refs = NULL;
+
+  lines = g_strsplit (data, "\n", -1);
+  for (i = 0; lines[i] != NULL; i++)
+    {
+      char *line = lines[i];
+      char *comment, *command;
+
+      /* Ignore shell-style comments */
+      comment = strchr (line, '#');
+      if (comment != NULL)
+        *comment = 0;
+
+      command = line_get_word (&line);
+      /* Ignore empty lines */
+      if (command == NULL)
+        continue;
+
+      if (strcmp (command, "allow") == 0 || strcmp (command, "deny") == 0)
+        {
+          char *glob, *next, *ref_regexp;
+          GString *command_regexp;
+          gboolean *has_type = NULL;
+
+          glob = line_get_word (&line);
+          if (glob == NULL)
+            return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Missing glob on line %d"), i + 1);
+
+          next = line_get_word (&line);
+          if (next != NULL)
+            return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Trailing text on line %d"), i + 1);
+
+          ref_regexp = glob_to_regexp (glob, error);
+          if (ref_regexp == NULL)
+            return glnx_prefix_error (error, _("on line %d"), i + 1);
+
+          if (strcmp (command, "allow") == 0)
+            {
+              command_regexp = allow_regexp;
+              has_type = &has_allow;
+            }
+          else
+            {
+              command_regexp = deny_regexp;
+              has_type = &has_deny;
+            }
+
+          if (*has_type)
+            g_string_append (command_regexp, "|");
+          else
+            *has_type = TRUE;
+
+          g_string_append (command_regexp, ref_regexp);
+        }
+      else
+        {
+          return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Unexpected word '%s' on line %d"), command, i + 1);
+        }
+    }
+
+  g_string_append (allow_regexp, ")$");
+  g_string_append (deny_regexp, ")$");
+
+  if (allow_regexp)
+    {
+      allow_refs = g_regex_new (allow_regexp->str, G_REGEX_DOLLAR_ENDONLY|G_REGEX_RAW|G_REGEX_OPTIMIZE, G_REGEX_MATCH_ANCHORED, error);
+      if (allow_refs == NULL)
+        return FALSE;
+    }
+
+  if (deny_regexp)
+    {
+      deny_refs = g_regex_new (deny_regexp->str, G_REGEX_DOLLAR_ENDONLY|G_REGEX_RAW|G_REGEX_OPTIMIZE, G_REGEX_MATCH_ANCHORED, error);
+      if (deny_refs == NULL)
+        return FALSE;
+    }
+
+  *allow_refs_out = g_steal_pointer (&allow_refs);
+  *deny_refs_out = g_steal_pointer (&deny_refs);
+
+  return TRUE;
+}
+
+gboolean
+flatpak_filters_allow_ref (GRegex *allow_refs,
+                           GRegex *deny_refs,
+                           const char *ref)
+{
+  if (deny_refs == NULL)
+    return TRUE; /* All refs are allowed by default */
+
+  if (!g_regex_match (deny_refs, ref, G_REGEX_MATCH_ANCHORED, NULL))
+    return TRUE; /* Not denied */
+
+  if (allow_refs &&  g_regex_match (allow_refs, ref, G_REGEX_MATCH_ANCHORED, NULL))
+    return TRUE; /* Explicitly allowed */
+
+  return FALSE;
 }
 
 char **
@@ -1221,7 +1448,6 @@ _flatpak_split_partial_ref_arg (const char   *partial_ref,
   const char *branch_start = NULL;
   const char *branch_end = NULL;
   g_autofree char *branch = NULL;
-
   g_autoptr(GError) local_error = NULL;
   FlatpakKinds kinds = 0;
 
@@ -1395,7 +1621,6 @@ flatpak_list_deployed_refs (const char   *type,
                             GError      **error)
 {
   gchar **ret = NULL;
-
   g_autoptr(GPtrArray) names = NULL;
   g_autoptr(GHashTable) hash = NULL;
   g_autoptr(FlatpakDir) user_dir = NULL;
@@ -1448,7 +1673,6 @@ flatpak_list_unmaintained_refs (const char   *name_prefix,
                                 GError      **error)
 {
   gchar **ret = NULL;
-
   g_autoptr(GPtrArray) names = NULL;
   g_autoptr(GHashTable) hash = NULL;
   g_autoptr(FlatpakDir) user_dir = NULL;
@@ -1595,7 +1819,6 @@ flatpak_find_current_ref (const char   *app_id,
                           GError      **error)
 {
   g_autofree char *current_ref = NULL;
-
   g_autoptr(FlatpakDir) user_dir = flatpak_dir_get_user ();
   int i;
 
@@ -1638,7 +1861,7 @@ flatpak_find_deploy_for_ref_in (GPtrArray    *dirs,
   for (i = 0; deploy == NULL && i < dirs->len; i++)
     {
       FlatpakDir *dir = g_ptr_array_index (dirs, i);
- 
+
       flatpak_log_dir_access (dir);
       g_clear_error (&my_error);
       deploy = flatpak_dir_load_deployed (dir, ref, commit, cancellable, &my_error);
@@ -1675,7 +1898,6 @@ remove_dangling_symlinks (int           parent_fd,
 {
   gboolean ret = FALSE;
   struct dirent *dent;
-
   g_auto(GLnxDirFdIterator) iter = { 0 };
 
   if (!glnx_dirfd_iterator_init_at (parent_fd, name, FALSE, &iter, error))
@@ -1960,7 +2182,6 @@ flatpak_cp_a (GFile         *src,
   gboolean merge = (flags & FLATPAK_CP_FLAGS_MERGE) != 0;
   gboolean no_chown = (flags & FLATPAK_CP_FLAGS_NO_CHOWN) != 0;
   gboolean move = (flags & FLATPAK_CP_FLAGS_MOVE) != 0;
-
   g_autoptr(GFileInfo) child_info = NULL;
   GError *temp_error = NULL;
   int r;
@@ -2075,12 +2296,12 @@ out:
 }
 
 static gboolean
-_flatpak_canonicalize_permissions (int           parent_dfd,
-                                   const char   *rel_path,
-                                   gboolean      toplevel,
-                                   int           uid,
-                                   int           gid,
-                                   GError      **error)
+_flatpak_canonicalize_permissions (int         parent_dfd,
+                                   const char *rel_path,
+                                   gboolean    toplevel,
+                                   int         uid,
+                                   int         gid,
+                                   GError    **error)
 {
   struct stat stbuf;
   gboolean res = TRUE;
@@ -2150,9 +2371,9 @@ _flatpak_canonicalize_permissions (int           parent_dfd,
           res = FALSE;
         }
 
-        return res;
+      return res;
     }
-  else if (S_ISREG(stbuf.st_mode))
+  else if (S_ISREG (stbuf.st_mode))
     {
       mode_t mode;
 
@@ -2168,14 +2389,14 @@ _flatpak_canonicalize_permissions (int           parent_dfd,
           res = FALSE;
         }
     }
-  else if (S_ISLNK(stbuf.st_mode))
+  else if (S_ISLNK (stbuf.st_mode))
     {
       /* symlinks have no permissions */
     }
   else
     {
       /* some weird non-canonical type, lets delete it */
-      if (unlinkat(parent_dfd, rel_path, 0) != 0)
+      if (unlinkat (parent_dfd, rel_path, 0) != 0)
         {
           glnx_set_error_from_errno (error);
           res = FALSE;
@@ -2187,11 +2408,11 @@ _flatpak_canonicalize_permissions (int           parent_dfd,
 
 /* Canonicalizes files to the same permissions as bare-user-only checkouts */
 gboolean
-flatpak_canonicalize_permissions (int           parent_dfd,
-                                  const char   *rel_path,
-                                  int           uid,
-                                  int           gid,
-                                  GError      **error)
+flatpak_canonicalize_permissions (int         parent_dfd,
+                                  const char *rel_path,
+                                  int         uid,
+                                  int         gid,
+                                  GError    **error)
 {
   return _flatpak_canonicalize_permissions (parent_dfd, rel_path, TRUE, uid, gid, error);
 }
@@ -2224,18 +2445,7 @@ char *
 flatpak_readlink (const char *path,
                   GError    **error)
 {
-  char buf[PATH_MAX + 1];
-  ssize_t symlink_size;
-
-  symlink_size = readlink (path, buf, sizeof (buf) - 1);
-  if (symlink_size < 0)
-    {
-      glnx_set_error_from_errno (error);
-      return NULL;
-    }
-
-  buf[symlink_size] = 0;
-  return g_strdup (buf);
+  return glnx_readlinkat_malloc (-1, path, NULL, error);
 }
 
 char *
@@ -2586,6 +2796,155 @@ flatpak_summary_lookup_ref (GVariant   *summary,
   return TRUE;
 }
 
+GKeyFile *
+flatpak_parse_repofile (const char   *remote_name,
+                        gboolean      from_ref,
+                        GKeyFile     *keyfile,
+                        GBytes      **gpg_data_out,
+                        GCancellable *cancellable,
+                        GError      **error)
+{
+  g_autoptr(GBytes) gpg_data = NULL;
+  g_autofree char *uri = NULL;
+  g_autofree char *title = NULL;
+  g_autofree char *gpg_key = NULL;
+  g_autofree char *collection_id = NULL;
+  g_autofree char *default_branch = NULL;
+  g_autofree char *comment = NULL;
+  g_autofree char *description = NULL;
+  g_autofree char *icon = NULL;
+  g_autofree char *homepage = NULL;
+  g_autofree char *filter = NULL;
+  gboolean nodeps;
+  const char *source_group;
+  g_autofree char *version = NULL;
+
+  if (from_ref)
+    source_group = FLATPAK_REF_GROUP;
+  else
+    source_group = FLATPAK_REPO_GROUP;
+
+  GKeyFile *config = g_key_file_new ();
+  g_autofree char *group = g_strdup_printf ("remote \"%s\"", remote_name);
+
+  if (!g_key_file_has_group (keyfile, source_group))
+    {
+      flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Invalid %s: Missing group ‘%s’"),
+                          from_ref ? ".flatpakref" : ".flatpakrepo", source_group);
+      return NULL;
+    }
+
+  uri = g_key_file_get_string (keyfile, source_group,
+                               FLATPAK_REPO_URL_KEY, NULL);
+  if (uri == NULL)
+    {
+      flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Invalid %s: Missing key ‘%s’"),
+                          from_ref ? ".flatpakref" : ".flatpakrepo", FLATPAK_REPO_URL_KEY);
+      return NULL;
+    }
+
+  version = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                   FLATPAK_REPO_VERSION_KEY, NULL);
+  if (version != NULL && strcmp (version, "1") != 0)
+    {
+      flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA,
+                          _("Invalid version %s, only 1 supported"), version);
+      return NULL;
+    }
+
+  g_key_file_set_string (config, group, "url", uri);
+
+  title = g_key_file_get_locale_string (keyfile, source_group,
+                                        FLATPAK_REPO_TITLE_KEY, NULL, NULL);
+  if (title != NULL)
+    g_key_file_set_string (config, group, "xa.title", title);
+
+  default_branch = g_key_file_get_locale_string (keyfile, source_group,
+                                                 FLATPAK_REPO_DEFAULT_BRANCH_KEY, NULL, NULL);
+  if (default_branch != NULL)
+    g_key_file_set_string (config, group, "xa.default-branch", default_branch);
+
+  nodeps = g_key_file_get_boolean (keyfile, source_group,
+                                   FLATPAK_REPO_NODEPS_KEY, NULL);
+  if (nodeps)
+    g_key_file_set_boolean (config, group, "xa.nodeps", TRUE);
+
+  gpg_key = g_key_file_get_string (keyfile, source_group,
+                                   FLATPAK_REPO_GPGKEY_KEY, NULL);
+  if (gpg_key != NULL)
+    {
+      guchar *decoded;
+      gsize decoded_len;
+
+      gpg_key = g_strstrip (gpg_key);
+      decoded = g_base64_decode (gpg_key, &decoded_len);
+      if (decoded_len < 10) /* Check some minimal size so we don't get crap */
+        {
+          flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Invalid gpg key"));
+          return NULL;
+        }
+
+      gpg_data = g_bytes_new_take (decoded, decoded_len);
+      g_key_file_set_boolean (config, group, "gpg-verify", TRUE);
+    }
+  else
+    {
+      g_key_file_set_boolean (config, group, "gpg-verify", FALSE);
+    }
+
+  collection_id = g_key_file_get_string (keyfile, source_group,
+                                         FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY, NULL);
+  if (collection_id == NULL || *collection_id == '\0')
+    collection_id = g_key_file_get_string (keyfile, source_group,
+                                           FLATPAK_REPO_COLLECTION_ID_KEY, NULL);
+  if (collection_id != NULL)
+    {
+      if (gpg_key == NULL)
+        {
+          flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Collection ID requires GPG key to be provided"));
+          return NULL;
+        }
+
+      g_key_file_set_string (config, group, "collection-id", collection_id);
+    }
+
+  /* If a collection ID is set, refs are verified from commit metadata rather
+   * than the summary file. */
+  g_key_file_set_boolean (config, group, "gpg-verify-summary",
+                          (gpg_key != NULL && collection_id == NULL));
+
+  comment = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                   FLATPAK_REPO_COMMENT_KEY, NULL);
+  if (comment)
+    g_key_file_set_string (config, group, "xa.comment", comment);
+
+  description = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                       FLATPAK_REPO_DESCRIPTION_KEY, NULL);
+  if (description)
+    g_key_file_set_string (config, group, "xa.description", description);
+
+  icon = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                FLATPAK_REPO_ICON_KEY, NULL);
+  if (icon)
+    g_key_file_set_string (config, group, "xa.icon", icon);
+
+  homepage  = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                     FLATPAK_REPO_HOMEPAGE_KEY, NULL);
+  if (homepage)
+    g_key_file_set_string (config, group, "xa.homepage", homepage);
+
+  filter = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                   FLATPAK_REPO_FILTER_KEY, NULL);
+  if (filter)
+    g_key_file_set_string (config, group, "xa.filter", filter);
+  else
+    g_key_file_set_string (config, group, "xa.filter", ""); /* Default to override any pre-existing filters */
+
+  *gpg_data_out = g_steal_pointer (&gpg_data);
+
+  return g_steal_pointer (&config);
+}
+
 gboolean
 flatpak_repo_set_title (OstreeRepo *repo,
                         const char *title,
@@ -2599,6 +2958,87 @@ flatpak_repo_set_title (OstreeRepo *repo,
     g_key_file_set_string (config, "flatpak", "title", title);
   else
     g_key_file_remove_key (config, "flatpak", "title", NULL);
+
+  if (!ostree_repo_write_config (repo, config, error))
+    return FALSE;
+
+  return TRUE;
+}
+
+gboolean
+flatpak_repo_set_comment (OstreeRepo *repo,
+                          const char *comment,
+                          GError    **error)
+{
+  g_autoptr(GKeyFile) config = NULL;
+
+  config = ostree_repo_copy_config (repo);
+
+  if (comment)
+    g_key_file_set_string (config, "flatpak", "comment", comment);
+  else
+    g_key_file_remove_key (config, "flatpak", "comment", NULL);
+
+  if (!ostree_repo_write_config (repo, config, error))
+    return FALSE;
+
+  return TRUE;
+}
+
+gboolean
+flatpak_repo_set_description (OstreeRepo *repo,
+                              const char *description,
+                              GError    **error)
+{
+  g_autoptr(GKeyFile) config = NULL;
+
+  config = ostree_repo_copy_config (repo);
+
+  if (description)
+    g_key_file_set_string (config, "flatpak", "description", description);
+  else
+    g_key_file_remove_key (config, "flatpak", "description", NULL);
+
+  if (!ostree_repo_write_config (repo, config, error))
+    return FALSE;
+
+  return TRUE;
+}
+
+
+gboolean
+flatpak_repo_set_icon (OstreeRepo *repo,
+                       const char *icon,
+                       GError    **error)
+{
+  g_autoptr(GKeyFile) config = NULL;
+
+  config = ostree_repo_copy_config (repo);
+
+  if (icon)
+    g_key_file_set_string (config, "flatpak", "icon", icon);
+  else
+    g_key_file_remove_key (config, "flatpak", "icon", NULL);
+
+  if (!ostree_repo_write_config (repo, config, error))
+    return FALSE;
+
+  return TRUE;
+}
+
+gboolean
+flatpak_repo_set_homepage (OstreeRepo *repo,
+                           const char *homepage,
+                           GError    **error)
+{
+  g_autoptr(GKeyFile) config = NULL;
+
+  config = ostree_repo_copy_config (repo);
+
+  if (homepage)
+    g_key_file_set_string (config, "flatpak", "homepage", homepage);
+  else
+    g_key_file_remove_key (config, "flatpak", "homepage", NULL);
 
   if (!ostree_repo_write_config (repo, config, error))
     return FALSE;
@@ -2904,7 +3344,6 @@ flatpak_repo_load_summary (OstreeRepo *repo,
                            GError    **error)
 {
   glnx_autofd int fd = -1;
-
   g_autoptr(GMappedFile) mfile = NULL;
   g_autoptr(GBytes) bytes = NULL;
 
@@ -3031,10 +3470,13 @@ flatpak_repo_update (OstreeRepo   *repo,
   GVariantBuilder ref_sparse_data_builder;
   GKeyFile *config;
   g_autofree char *title = NULL;
+  g_autofree char *comment = NULL;
+  g_autofree char *description = NULL;
+  g_autofree char *homepage = NULL;
+  g_autofree char *icon = NULL;
   g_autofree char *redirect_url = NULL;
   g_autofree char *default_branch = NULL;
   g_autofree char *gpg_keys = NULL;
-
   g_autoptr(GVariant) old_summary = NULL;
   g_autoptr(GVariant) new_summary = NULL;
   g_autoptr(GHashTable) refs = NULL;
@@ -3055,6 +3497,10 @@ flatpak_repo_update (OstreeRepo   *repo,
   if (config)
     {
       title = g_key_file_get_string (config, "flatpak", "title", NULL);
+      comment = g_key_file_get_string (config, "flatpak", "comment", NULL);
+      description = g_key_file_get_string (config, "flatpak", "description", NULL);
+      homepage = g_key_file_get_string (config, "flatpak", "homepage", NULL);
+      icon = g_key_file_get_string (config, "flatpak", "icon", NULL);
       default_branch = g_key_file_get_string (config, "flatpak", "default-branch", NULL);
       gpg_keys = g_key_file_get_string (config, "flatpak", "gpg-keys", NULL);
       redirect_url = g_key_file_get_string (config, "flatpak", "redirect-url", NULL);
@@ -3066,6 +3512,22 @@ flatpak_repo_update (OstreeRepo   *repo,
   if (title)
     g_variant_builder_add (&builder, "{sv}", "xa.title",
                            g_variant_new_string (title));
+
+  if (comment)
+    g_variant_builder_add (&builder, "{sv}", "xa.comment",
+                           g_variant_new_string (comment));
+
+  if (description)
+    g_variant_builder_add (&builder, "{sv}", "xa.description",
+                           g_variant_new_string (description));
+
+  if (homepage)
+    g_variant_builder_add (&builder, "{sv}", "xa.homepage",
+                           g_variant_new_string (homepage));
+
+  if (icon)
+    g_variant_builder_add (&builder, "{sv}", "xa.icon",
+                           g_variant_new_string (icon));
 
   if (redirect_url)
     g_variant_builder_add (&builder, "{sv}", "xa.redirect-url",
@@ -3125,8 +3587,8 @@ flatpak_repo_update (OstreeRepo   *repo,
 
   old_summary = flatpak_repo_load_summary (repo, NULL);
 
-  if (!ostree_repo_resolve_rev (repo, OSTREE_REPO_METADATA_REF,
-                                TRUE, &old_ostree_metadata_checksum, error))
+  if (!flatpak_repo_resolve_rev (repo, collection_id, NULL, OSTREE_REPO_METADATA_REF,
+                                 TRUE, &old_ostree_metadata_checksum, cancellable, error))
     return FALSE;
 
   if (old_summary != NULL &&
@@ -3270,7 +3732,7 @@ flatpak_repo_update (OstreeRepo   *repo,
 
       /* Set up an empty mtree. */
       mtree = ostree_mutable_tree_new ();
-      if (!flatpak_mtree_create_root (repo, mtree, cancellable, error))
+      if (!flatpak_mtree_ensure_dir_metadata (repo, mtree, cancellable, error))
         goto out;
       if (!ostree_repo_write_mtree (repo, mtree, (GFile **) &repo_file, NULL, error))
         goto out;
@@ -3329,10 +3791,108 @@ out:
 }
 
 gboolean
-flatpak_mtree_create_root (OstreeRepo        *repo,
-                           OstreeMutableTree *mtree,
-                           GCancellable      *cancellable,
-                           GError           **error)
+flatpak_mtree_create_dir (OstreeRepo         *repo,
+                          OstreeMutableTree  *parent,
+                          const char         *name,
+                          OstreeMutableTree **dir_out,
+                          GError            **error)
+{
+  g_autoptr(OstreeMutableTree) dir = NULL;
+
+  if (!ostree_mutable_tree_ensure_dir (parent, name, &dir, error))
+    return FALSE;
+
+  if (!flatpak_mtree_ensure_dir_metadata (repo, dir, NULL, error))
+    return FALSE;
+
+  *dir_out = g_steal_pointer (&dir);
+  return TRUE;
+}
+
+gboolean
+flatpak_mtree_create_symlink (OstreeRepo         *repo,
+                              OstreeMutableTree  *parent,
+                              const char         *filename,
+                              const char         *target,
+                              GError            **error)
+{
+  g_autoptr(GFileInfo) file_info = g_file_info_new ();
+  g_autoptr(GInputStream) content_stream = NULL;
+  g_autofree guchar *raw_checksum = NULL;
+  g_autofree char *checksum = NULL;
+  guint64 length;
+
+  g_file_info_set_name (file_info, filename);
+  g_file_info_set_file_type (file_info, G_FILE_TYPE_SYMBOLIC_LINK);
+  g_file_info_set_attribute_uint32 (file_info, "unix::uid", 0);
+  g_file_info_set_attribute_uint32 (file_info, "unix::gid", 0);
+  g_file_info_set_attribute_uint32 (file_info, "unix::mode", S_IFLNK | 0777);
+
+  g_file_info_set_attribute_boolean (file_info, "standard::is-symlink", TRUE);
+  g_file_info_set_attribute_byte_string (file_info, "standard::symlink-target", target);
+
+  if (!ostree_raw_file_to_content_stream (NULL, file_info, NULL,
+                                          &content_stream, &length,
+                                          NULL, error))
+    return FALSE;
+
+  if (!ostree_repo_write_content (repo, NULL, content_stream, length,
+                                  &raw_checksum, NULL, error))
+    return FALSE;
+
+  checksum = ostree_checksum_from_bytes (raw_checksum);
+
+  if (!ostree_mutable_tree_replace_file (parent, filename, checksum, error))
+    return FALSE;
+
+  return TRUE;
+}
+
+gboolean
+flatpak_mtree_add_file_from_bytes (OstreeRepo *repo,
+                                   GBytes *bytes,
+                                   OstreeMutableTree *parent,
+                                   const char *filename,
+                                   GCancellable *cancellable,
+                                   GError      **error)
+{
+  g_autoptr(GFileInfo) info = g_file_info_new ();
+  g_autoptr(GInputStream) memstream = NULL;
+  g_autoptr(GInputStream) content_stream = NULL;
+  g_autofree guchar *raw_checksum = NULL;
+  g_autofree char *checksum = NULL;
+  guint64 length;
+
+  g_file_info_set_attribute_uint32 (info, "standard::type", G_FILE_TYPE_REGULAR);
+  g_file_info_set_attribute_uint64 (info, "standard::size", g_bytes_get_size (bytes));
+  g_file_info_set_attribute_uint32 (info, "unix::uid", 0);
+  g_file_info_set_attribute_uint32 (info, "unix::gid", 0);
+  g_file_info_set_attribute_uint32 (info, "unix::mode", S_IFREG | 0644);
+
+  memstream = g_memory_input_stream_new_from_bytes (bytes);
+
+  if (!ostree_raw_file_to_content_stream (memstream, info, NULL,
+                                          &content_stream, &length,
+                                          cancellable, error))
+    return FALSE;
+
+  if (!ostree_repo_write_content (repo, NULL, content_stream, length,
+                                  &raw_checksum, cancellable, error))
+    return FALSE;
+
+  checksum = ostree_checksum_from_bytes (raw_checksum);
+
+  if (!ostree_mutable_tree_replace_file (parent, filename, checksum, error))
+    return FALSE;
+
+  return TRUE;
+}
+
+gboolean
+flatpak_mtree_ensure_dir_metadata (OstreeRepo        *repo,
+                                   OstreeMutableTree *mtree,
+                                   GCancellable      *cancellable,
+                                   GError           **error)
 {
   g_autoptr(GVariant) dirmeta = NULL;
   g_autoptr(GFileInfo) file_info = g_file_info_new ();
@@ -3354,29 +3914,6 @@ flatpak_mtree_create_root (OstreeRepo        *repo,
   ostree_mutable_tree_set_metadata_checksum (mtree, checksum);
 
   return TRUE;
-}
-
-static OstreeRepoCommitFilterResult
-commit_filter (OstreeRepo *repo,
-               const char *path,
-               GFileInfo  *file_info,
-               gpointer    user_data)
-{
-  const char *ignore_filename = user_data;
-  guint current_mode;
-
-  if (g_strcmp0 (ignore_filename, g_file_info_get_name (file_info)) == 0)
-    return OSTREE_REPO_COMMIT_FILTER_SKIP;
-
-  /* No user info */
-  g_file_info_set_attribute_uint32 (file_info, "unix::uid", 0);
-  g_file_info_set_attribute_uint32 (file_info, "unix::gid", 0);
-
-  /* No setuid */
-  current_mode = g_file_info_get_attribute_uint32 (file_info, "unix::mode");
-  g_file_info_set_attribute_uint32 (file_info, "unix::mode", current_mode & ~07000);
-
-  return OSTREE_REPO_COMMIT_FILTER_ALLOW;
 }
 
 static gboolean
@@ -3473,7 +4010,6 @@ validate_component (FlatpakXml *component,
       text = flatpak_xml_new (NULL);
       text->text = g_strjoinv (",", tags);
       flatpak_xml_add (value, text);
-
     }
 
   return TRUE;
@@ -3491,7 +4027,6 @@ flatpak_appstream_xml_migrate (FlatpakXml *source,
   FlatpakXml *component;
   FlatpakXml *prev_component;
   gboolean migrated = FALSE;
-
   g_auto(GStrv) tags = NULL;
   g_autofree const char *runtime = NULL;
   g_autofree const char *sdk = NULL;
@@ -3540,53 +4075,26 @@ flatpak_appstream_xml_migrate (FlatpakXml *source,
 }
 
 static gboolean
-copy_icon (const char *id,
-           GFile      *root,
-           GFile      *dest,
-           const char *size,
-           GError    **error)
+copy_icon (const char        *id,
+           GFile             *icons_dir,
+           OstreeRepo        *repo,
+           OstreeMutableTree *size_mtree,
+           const char        *size,
+           GError           **error)
 {
   g_autofree char *icon_name = g_strconcat (id, ".png", NULL);
-
-  g_autoptr(GFile) icons_dir =
-    g_file_resolve_relative_path (root,
-                                  "files/share/app-info/icons/flatpak");
   g_autoptr(GFile) size_dir = g_file_get_child (icons_dir, size);
   g_autoptr(GFile) icon_file = g_file_get_child (size_dir, icon_name);
-  g_autoptr(GFile) dest_dir = g_file_get_child (dest, "icons");
-  g_autoptr(GFile) dest_size_dir = g_file_get_child (dest_dir, size);
-  g_autoptr(GFile) dest_file = g_file_get_child (dest_size_dir, icon_name);
-  g_autoptr(GInputStream) in = NULL;
-  g_autoptr(GOutputStream) out = NULL;
-  g_autoptr(GError) my_error = NULL;
-  gssize n_bytes_written;
+  const char *checksum;
 
-  in = (GInputStream *) g_file_read (icon_file, NULL, &my_error);
-  if (!in)
+  if (!ostree_repo_file_ensure_resolved (OSTREE_REPO_FILE(icon_file), NULL))
     {
-      if (g_error_matches (my_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
-        {
-          g_debug ("No icon at size %s", size);
-          return TRUE;
-        }
-
-      g_propagate_error (error, g_steal_pointer (&my_error));
-      return FALSE;
+      g_debug ("No icon at size %s for %s", size, id);
+      return TRUE;
     }
 
-  if (!flatpak_mkdir_p (dest_size_dir, NULL, error))
-    return FALSE;
-
-  out = (GOutputStream *) g_file_replace (dest_file, NULL, FALSE,
-                                          G_FILE_CREATE_REPLACE_DESTINATION,
-                                          NULL, error);
-  if (!out)
-    return FALSE;
-
-  n_bytes_written = g_output_stream_splice (out, in,
-                                            G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE,
-                                            NULL, error);
-  if (n_bytes_written < 0)
+  checksum = ostree_repo_file_get_checksum (OSTREE_REPO_FILE(icon_file));
+  if (!ostree_mutable_tree_replace_file (size_mtree, icon_name, checksum, error))
     return FALSE;
 
   return TRUE;
@@ -3597,12 +4105,15 @@ extract_appstream (OstreeRepo   *repo,
                    FlatpakXml   *appstream_root,
                    const char   *ref,
                    const char   *id,
-                   GFile        *dest,
+                   OstreeMutableTree *size1_mtree,
+                   OstreeMutableTree *size2_mtree,
                    GCancellable *cancellable,
                    GError      **error)
 {
   g_autoptr(GFile) root = NULL;
+  g_autoptr(GFile) app_info_dir = NULL;
   g_autoptr(GFile) xmls_dir = NULL;
+  g_autoptr(GFile) icons_dir = NULL;
   g_autoptr(GFile) appstream_file = NULL;
   g_autoptr(GFile) metadata = NULL;
   g_autofree char *appstream_basename = NULL;
@@ -3627,7 +4138,11 @@ extract_appstream (OstreeRepo   *repo,
         return FALSE;
     }
 
-  xmls_dir = g_file_resolve_relative_path (root, "files/share/app-info/xmls");
+  app_info_dir = g_file_resolve_relative_path (root, "files/share/app-info");
+
+  xmls_dir = g_file_resolve_relative_path (app_info_dir, "xmls");
+  icons_dir = g_file_resolve_relative_path (app_info_dir, "icons/flatpak");
+
   appstream_basename = g_strconcat (id, ".xml.gz", NULL);
   appstream_file = g_file_get_child (xmls_dir, appstream_basename);
 
@@ -3679,18 +4194,18 @@ extract_appstream (OstreeRepo   *repo,
           if (g_str_has_suffix (component_id_suffix, ".desktop"))
             component_id_suffix[strlen (component_id_suffix) - strlen (".desktop")] = 0;
 
-          g_print (_("Extracting icons for component %s\n"), component_id_text);
+          if (!copy_icon (component_id_text, icons_dir, repo, size1_mtree, "64x64", &my_error))
+            {
+              g_print (_("Error copying 64x64 icon for component %s: %s\n"), component_id_text, my_error->message);
+              g_clear_error (&my_error);
+            }
 
-          if (!copy_icon (component_id_text, root, dest, "64x64", &my_error))
-            {
-              g_print (_("Error copying 64x64 icon: %s\n"), my_error->message);
-              g_clear_error (&my_error);
-            }
-          if (!copy_icon (component_id_text, root, dest, "128x128", &my_error))
-            {
-              g_print (_("Error copying 128x128 icon: %s\n"), my_error->message);
-              g_clear_error (&my_error);
-            }
+          if (!copy_icon (component_id_text, icons_dir, repo, size2_mtree, "128x128", &my_error))
+             {
+               g_print (_("Error copying 128x128 icon for component %s: %s\n"), component_id_text, my_error->message);
+               g_clear_error (&my_error);
+             }
+
 
           /* We might match other prefixes, so keep on going */
           component = component->next_sibling;
@@ -3758,6 +4273,57 @@ flatpak_appstream_xml_root_to_data (FlatpakXml *appstream_root,
   return TRUE;
 }
 
+void
+flatpak_appstream_xml_filter (FlatpakXml *appstream,
+                              GRegex *allow_refs,
+                              GRegex *deny_refs)
+{
+  FlatpakXml *components;
+  FlatpakXml *component;
+  FlatpakXml *prev_component, *old;
+
+  for (components = appstream->first_child;
+       components != NULL;
+       components = components->next_sibling)
+    {
+      if (g_strcmp0 (components->element_name, "components") != 0)
+        continue;
+
+
+      prev_component = NULL;
+      component = components->first_child;
+      while (component != NULL)
+        {
+          FlatpakXml *bundle;
+          gboolean allow = FALSE;
+
+          if (g_strcmp0 (component->element_name, "component") == 0)
+            {
+              bundle = flatpak_xml_find (component, "bundle", NULL);
+              if (bundle && bundle->first_child && bundle->first_child->text)
+                allow = flatpak_filters_allow_ref (allow_refs, deny_refs, bundle->first_child->text);
+            }
+
+          if (allow)
+            {
+              prev_component = component;
+              component = component->next_sibling;
+            }
+          else
+            {
+              old = component;
+
+              /* prev_component is same as before */
+              component = component->next_sibling;
+
+              flatpak_xml_unlink (old, prev_component);
+              flatpak_xml_free (old);
+            }
+        }
+    }
+}
+
+
 gboolean
 flatpak_repo_generate_appstream (OstreeRepo   *repo,
                                  const char  **gpg_key_ids,
@@ -3814,31 +4380,44 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
 
   GLNX_HASH_TABLE_FOREACH (arches, const char *, arch)
   {
-    g_autofree char *tmpdir = g_strdup ("/tmp/flatpak-appstream-XXXXXX");
-
-    g_autoptr(FlatpakTempDir) tmpdir_file = NULL;
-    g_autoptr(GFile) appstream_file = NULL;
-    g_autoptr(GFile) appstream_gz_file = NULL;
     OstreeRepoTransactionStats stats;
     g_autoptr(FlatpakXml) appstream_root = NULL;
     g_autoptr(GBytes) xml_data = NULL;
     g_autoptr(GBytes) xml_gz_data = NULL;
+    g_autoptr(OstreeMutableTree) mtree = ostree_mutable_tree_new ();
+    g_autoptr(OstreeMutableTree) icons_mtree = NULL;
+    g_autoptr(OstreeMutableTree) icons_flatpak_mtree = NULL;
+    g_autoptr(OstreeMutableTree) size1_mtree = NULL;
+    g_autoptr(OstreeMutableTree) size2_mtree = NULL;
     const char *compat_arch;
     g_autoptr(FlatpakRepoTransaction) transaction = NULL;
     compat_arch = flatpak_get_compat_arch (arch);
-    struct
-    {
-      const char *ignore_filename;
-      const char *branch_prefix;
-    } branch_data[] = {
-      { "appstream.xml", "appstream" },
-      { "appstream.xml.gz", "appstream2" },
-    };
+    const char *branch_names[] = { "appstream", "appstream2" };
 
-    if (g_mkdtemp_full (tmpdir, 0755) == NULL)
-      return flatpak_fail (error, "Can't create temporary directory");
+    if (!flatpak_mtree_ensure_dir_metadata (repo, mtree, cancellable, error))
+      return FALSE;
 
-    tmpdir_file = g_file_new_for_path (tmpdir);
+    if (!flatpak_mtree_create_dir (repo, mtree, "icons", &icons_mtree, error))
+      return FALSE;
+
+    if (!flatpak_mtree_create_dir (repo, icons_mtree, "64x64", &size1_mtree, error))
+      return FALSE;
+
+    if (!flatpak_mtree_create_dir (repo, icons_mtree, "128x128", &size2_mtree, error))
+      return FALSE;
+
+    /* For compatibility with libappstream we create a $origin ("flatpak") subdirectory with symlinks
+     * to the size directories thus matching the standard merged appstream layout if we assume the
+     * appstream has origin=flatpak, which flatpak-builder creates.
+     *
+     * See https://github.com/ximion/appstream/pull/224 for details.
+     */
+    if (!flatpak_mtree_create_dir (repo, icons_mtree, "flatpak", &icons_flatpak_mtree, error))
+      return FALSE;
+    if (!flatpak_mtree_create_symlink (repo, icons_flatpak_mtree, "64x64", "../64x64", error))
+      return FALSE;
+    if (!flatpak_mtree_create_symlink (repo, icons_flatpak_mtree, "128x128", "../128x128", error))
+      return FALSE;
 
     appstream_root = flatpak_appstream_xml_new ();
 
@@ -3889,7 +4468,7 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
           }
 
         if (!extract_appstream (repo, appstream_root,
-                                ref, split[1], tmpdir_file,
+                                ref, split[1], size1_mtree, size2_mtree,
                                 cancellable, &my_error))
           {
             if (g_str_has_prefix (ref, "app/"))
@@ -3901,57 +4480,37 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
     if (!flatpak_appstream_xml_root_to_data (appstream_root, &xml_data, &xml_gz_data, error))
       return FALSE;
 
-    appstream_file = g_file_get_child (tmpdir_file, "appstream.xml");
-    if (!g_file_replace_contents (appstream_file,
-                                  g_bytes_get_data (xml_data, NULL),
-                                  g_bytes_get_size (xml_data),
-                                  NULL,
-                                  FALSE,
-                                  G_FILE_CREATE_NONE,
-                                  NULL,
-                                  cancellable,
-                                  error))
-      return FALSE;
-
-    appstream_gz_file = g_file_get_child (tmpdir_file, "appstream.xml.gz");
-    if (!g_file_replace_contents (appstream_gz_file,
-                                  g_bytes_get_data (xml_gz_data, NULL),
-                                  g_bytes_get_size (xml_gz_data),
-                                  NULL,
-                                  FALSE,
-                                  G_FILE_CREATE_NONE,
-                                  NULL,
-                                  cancellable,
-                                  error))
-      return FALSE;
-
     transaction = flatpak_repo_transaction_start (repo, cancellable, error);
     if (transaction == NULL)
       return FALSE;
 
-    for (i = 0; i < G_N_ELEMENTS (branch_data); i++)
+    for (i = 0; i < G_N_ELEMENTS (branch_names); i++)
       {
         gboolean skip_commit = FALSE;
-        const char *ignore_filename = branch_data[i].ignore_filename;
-        const char *branch_prefix = branch_data[i].branch_prefix;
-        g_autoptr(OstreeMutableTree) mtree = NULL;
+        const char *branch_prefix = branch_names[i];
         g_autoptr(GFile) root = NULL;
         g_autofree char *branch = NULL;
         g_autofree char *parent = NULL;
-        g_autoptr(OstreeRepoCommitModifier) modifier = NULL;
         g_autofree char *commit_checksum = NULL;
 
         branch = g_strdup_printf ("%s/%s", branch_prefix, arch);
-        if (!ostree_repo_resolve_rev (repo, branch, TRUE, &parent, error))
+        if (!flatpak_repo_resolve_rev (repo, collection_id, NULL, branch, TRUE,
+                                       &parent, cancellable, error))
           return FALSE;
 
-        mtree = ostree_mutable_tree_new ();
-        modifier = ostree_repo_commit_modifier_new (OSTREE_REPO_COMMIT_MODIFIER_FLAGS_SKIP_XATTRS |
-                                                    OSTREE_REPO_COMMIT_MODIFIER_FLAGS_CANONICAL_PERMISSIONS,
-                                                    (OstreeRepoCommitFilter) commit_filter, (gpointer) ignore_filename, NULL);
+        if (i == 0)
+          {
+            if (!flatpak_mtree_add_file_from_bytes (repo, xml_gz_data, mtree, "appstream.xml.gz", cancellable, error))
+              return FALSE;
+          }
+        else
+          {
+            if (!ostree_mutable_tree_remove (mtree, "appstream.xml.gz", TRUE, error))
+              return FALSE;
 
-        if (!ostree_repo_write_directory_to_mtree (repo, G_FILE (tmpdir_file), mtree, modifier, cancellable, error))
-          return FALSE;
+            if (!flatpak_mtree_add_file_from_bytes (repo, xml_data, mtree, "appstream.xml", cancellable, error))
+              return FALSE;
+          }
 
         if (!ostree_repo_write_mtree (repo, mtree, &root, cancellable, error))
           return FALSE;
@@ -4077,7 +4636,6 @@ flatpak_extension_new (const char *id,
                        gboolean    is_unmaintained)
 {
   FlatpakExtension *ext = g_new0 (FlatpakExtension, 1);
-
   g_autoptr(GVariant) deploy_data = NULL;
 
   ext->id = g_strdup (id);
@@ -4199,7 +4757,6 @@ add_extension (GKeyFile   *metakey,
   g_autofree char *add_ld_path = g_key_file_get_string (metakey, group,
                                                         FLATPAK_METADATA_KEY_ADD_LD_PATH,
                                                         NULL);
-
   g_auto(GStrv) merge_dirs = g_key_file_get_string_list (metakey, group,
                                                          FLATPAK_METADATA_KEY_MERGE_DIRS,
                                                          NULL, NULL);
@@ -4526,7 +5083,6 @@ flatpak_xml_to_string (FlatpakXml *node, GString *res)
           if (node->first_child != NULL)
             g_string_append_printf (res, "</%s>", node->element_name);
         }
-
     }
   else if (node->text)
     {
@@ -4650,7 +5206,6 @@ static guint64
 flatpak_bundle_get_installed_size (GVariant *bundle, gboolean byte_swap)
 {
   guint64 total_usize = 0;
-
   g_autoptr(GVariant) meta_entries = NULL;
   guint i, n_parts;
 
@@ -4809,7 +5364,6 @@ flatpak_pull_from_bundle (OstreeRepo   *repo,
 {
   g_autofree char *metadata_contents = NULL;
   g_autofree char *to_checksum = NULL;
-
   g_autoptr(GFile) root = NULL;
   g_autoptr(GFile) metadata_file = NULL;
   g_autoptr(GInputStream) in = NULL;
@@ -4831,7 +5385,7 @@ flatpak_pull_from_bundle (OstreeRepo   *repo,
   if (remote_collection_id != NULL && collection_id != NULL &&
       strcmp (remote_collection_id, collection_id) != 0)
     return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Collection ‘%s’ of bundle doesn’t match collection ‘%s’ of remote"),
-                         collection_id, remote_collection_id);
+                               collection_id, remote_collection_id);
 
   if (!ostree_repo_prepare_transaction (repo, NULL, cancellable, error))
     return FALSE;
@@ -4948,7 +5502,6 @@ flatpak_mirror_image_from_oci (FlatpakOciRegistry    *dst_registry,
                                GError               **error)
 {
   FlatpakOciPullProgressData progress_data = { progress_cb, progress_user_data };
-
   g_autoptr(FlatpakOciVersioned) versioned = NULL;
   FlatpakOciManifest *manifest = NULL;
   g_autoptr(FlatpakOciDescriptor) manifest_desc = NULL;
@@ -5193,7 +5746,6 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
   gboolean reusing_dir = FALSE;
   g_autofree char *tmpdir_name = NULL;
   glnx_autofd int tmpdir_fd = -1;
-
   g_auto(GLnxDirFdIterator) dfd_iter = { 0, };
 
   /* Look for existing tmpdir (with same prefix) to reuse */
@@ -5474,7 +6026,7 @@ flatpak_parse_numbers (const char *buf,
         }
       else if (is_number (parts[i]))
         {
-          int res = (int)strtol (parts[i], NULL, 10);
+          int res = (int) strtol (parts[i], NULL, 10);
           if (min <= res && res <= max)
             add_number (numbers, res);
           else
@@ -5538,7 +6090,7 @@ flatpak_numbers_prompt (gboolean default_yes, int min, int max, const char *prom
 
 void
 flatpak_format_choices (const char **choices,
-                        const char *prompt,
+                        const char  *prompt,
                         ...)
 {
   va_list var_args;
@@ -5551,8 +6103,40 @@ flatpak_format_choices (const char **choices,
 
   g_print ("%s\n\n", s);
   for (i = 0; choices[i]; i++)
-    g_print ("  %2d) %s\n", i+1, choices[i]);
+    g_print ("  %2d) %s\n", i + 1, choices[i]);
   g_print ("\n");
+}
+
+char **
+flatpak_strv_merge (char   **strv1,
+                    char   **strv2)
+{
+  GPtrArray *array;
+  int i;
+
+  /* Maybe either (or both) is unspecified */
+  if (strv1 == NULL)
+    return g_strdupv (strv2);
+  if (strv2 == NULL)
+    return g_strdupv (strv1);
+
+  /* Combine both */
+  array = g_ptr_array_new ();
+
+  for (i = 0; strv1[i] != NULL; i++)
+    {
+      if (!flatpak_g_ptr_array_contains_string (array, strv1[i]))
+        g_ptr_array_add (array, g_strdup (strv1[i]));
+    }
+
+  for (i = 0; strv2[i] != NULL; i++)
+    {
+      if (!flatpak_g_ptr_array_contains_string (array, strv2[i]))
+        g_ptr_array_add (array, g_strdup (strv2[i]));
+    }
+
+  g_ptr_array_add (array, NULL);
+  return (char **) g_ptr_array_free (array, FALSE);
 }
 
 /* In this NULL means don't care about these paths, while
@@ -5561,40 +6145,18 @@ char **
 flatpak_subpaths_merge (char **subpaths1,
                         char **subpaths2)
 {
-  GPtrArray *array;
-  int i;
+  char **res;
 
-  /* Maybe either (or both) is unspecified */
-  if (subpaths1 == NULL)
-    return g_strdupv (subpaths2);
-  if (subpaths2 == NULL)
+  if (subpaths1 != NULL && subpaths1[0] == NULL)
     return g_strdupv (subpaths1);
-
-  /* Check for any "everything" match */
-  if (subpaths1[0] == NULL)
-    return g_strdupv (subpaths1);
-  if (subpaths2[0] == NULL)
+  if (subpaths2 != NULL && subpaths2[0] == NULL)
     return g_strdupv (subpaths2);
 
-  /* Combine both */
-  array = g_ptr_array_new ();
+  res = flatpak_strv_merge (subpaths1, subpaths2);
+  if (res)
+    qsort (res, g_strv_length (res), sizeof (const char *), flatpak_strcmp0_ptr);
 
-  for (i = 0; subpaths1[i] != NULL; i++)
-    {
-      if (!flatpak_g_ptr_array_contains_string (array, subpaths1[i]))
-        g_ptr_array_add (array, g_strdup (subpaths1[i]));
-    }
-
-  for (i = 0; subpaths2[i] != NULL; i++)
-    {
-      if (!flatpak_g_ptr_array_contains_string (array, subpaths2[i]))
-        g_ptr_array_add (array, g_strdup (subpaths2[i]));
-    }
-
-  g_ptr_array_sort (array, flatpak_strcmp0_ptr);
-  g_ptr_array_add (array, NULL);
-
-  return (char **) g_ptr_array_free (array, FALSE);
+  return res;
 }
 
 char *
@@ -5717,7 +6279,7 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
    *   Fetches:
    *    - fetched: sum of content + metadata fetches
    *    - requested: sum of requested content and metadata fetches
-   *    - bytes_transferred: every and all tranferred data (in bytes)
+   *    - bytes_transferred: every and all transferred data (in bytes)
    *    - metadata_fetched: the number of fetched metadata objects
    *    - outstanding_fetches: missing fetches (metadata + content + deltas)
    *    - outstanding_delta_fetches: missing delta-only fetches
@@ -5839,7 +6401,6 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
           if (downloading_extra_data)
             {
               g_autofree gchar *formatted_bytes_total = g_format_size_full (total, 0);
-              ;
               g_string_append_printf (buf, _("Downloading extra data: %s/%s"),
                                       formatted_bytes_total_transferred,
                                       formatted_bytes_total);
@@ -5964,12 +6525,12 @@ str_has_hex_prefix (const gchar *str)
  * make sure to remove str_has_hex_prefix and str_has_sign helpers too.
  */
 gboolean
-flatpak_utils_ascii_string_to_unsigned (const gchar  *str,
-                                        guint         base,
-                                        guint64       min,
-                                        guint64       max,
-                                        guint64      *out_num,
-                                        GError      **error)
+flatpak_utils_ascii_string_to_unsigned (const gchar *str,
+                                        guint        base,
+                                        guint64      min,
+                                        guint64      max,
+                                        guint64     *out_num,
+                                        GError     **error)
 {
   guint64 number;
   const gchar *end_ptr = NULL;
@@ -5989,24 +6550,24 @@ flatpak_utils_ascii_string_to_unsigned (const gchar  *str,
     }
 
   errno = 0;
-  number = g_ascii_strtoull (str, (gchar **)&end_ptr, base);
+  number = g_ascii_strtoull (str, (gchar **) &end_ptr, base);
   saved_errno = errno;
 
   if (/* We do not allow leading whitespace, but g_ascii_strtoull
        * accepts it and just skips it, so we need to check for it
        * ourselves.
        */
-      g_ascii_isspace (str[0]) ||
-      /* Unsigned number should have no sign.
-       */
-      str_has_sign (str) ||
-      /* We don't support hexadecimal numbers prefixed with 0x or
-       * 0X.
-       */
-      (base == 16 && str_has_hex_prefix (str)) ||
-      (saved_errno != 0 && saved_errno != ERANGE) ||
-      end_ptr == NULL ||
-      *end_ptr != '\0')
+    g_ascii_isspace (str[0]) ||
+    /* Unsigned number should have no sign.
+     */
+    str_has_sign (str) ||
+    /* We don't support hexadecimal numbers prefixed with 0x or
+     * 0X.
+     */
+    (base == 16 && str_has_hex_prefix (str)) ||
+    (saved_errno != 0 && saved_errno != ERANGE) ||
+    end_ptr == NULL ||
+    *end_ptr != '\0')
     {
       g_set_error (error,
                    G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
@@ -6044,7 +6605,7 @@ dist (const char *s, int ls, const char *t, int lt, int i, int j, int *d)
   else if (j == lt)
     x = ls - i;
   else if (s[i] == t[j])
-    x = dist(s, ls, t, lt, i + 1, j + 1, d);
+    x = dist (s, ls, t, lt, i + 1, j + 1, d);
   else
     {
       x = dist (s, ls, t, lt, i + 1, j + 1, d);
@@ -6102,7 +6663,7 @@ flatpak_get_window_size (int *rows, int *cols)
 }
 
 gboolean
-flatpak_get_cursor_pos (int* row, int *col)
+flatpak_get_cursor_pos (int * row, int *col)
 {
   fd_set readset;
   struct timeval time;
@@ -6167,6 +6728,68 @@ flatpak_disable_raw_mode (void)
   tcsetattr (STDIN_FILENO, TCSAFLUSH, &raw);
 }
 
+/* Wrapper that uses ostree_repo_resolve_collection_ref() and on failure falls
+ * back to using ostree_repo_resolve_rev() for backwards compatibility. This
+ * means we support refs/heads/, refs/remotes/, and refs/mirrors/. */
+gboolean
+flatpak_repo_resolve_rev (OstreeRepo    *repo,
+                          const char    *collection_id, /* nullable */
+                          const char    *remote_name, /* nullable */
+                          const char    *ref_name,
+                          gboolean       allow_noent,
+                          char         **out_rev,
+                          GCancellable  *cancellable,
+                          GError       **error)
+{
+  g_autoptr(GError) local_error = NULL;
+
+  if (collection_id != NULL)
+    {
+      /* Do a version check to ensure we have these:
+       * https://github.com/ostreedev/ostree/pull/1821
+       * https://github.com/ostreedev/ostree/pull/1825 */
+#if OSTREE_CHECK_VERSION (2019, 2)
+      const OstreeCollectionRef c_r =
+        {
+          .collection_id = (char *) collection_id,
+          .ref_name = (char *) ref_name,
+        };
+      OstreeRepoResolveRevExtFlags flags = remote_name == NULL ?
+                                           OSTREE_REPO_RESOLVE_REV_EXT_LOCAL_ONLY :
+                                           OSTREE_REPO_RESOLVE_REV_EXT_NONE;
+      if (ostree_repo_resolve_collection_ref (repo, &c_r,
+                                              allow_noent,
+                                              flags,
+                                              out_rev,
+                                              cancellable, NULL))
+        return TRUE;
+#endif
+    }
+
+  /* There may be several remotes with the same branch (if we for
+   * instance changed the origin) so prepend the current origin to
+   * make sure we get the right one */
+  if (remote_name != NULL)
+    {
+      g_autofree char *refspec = g_strdup_printf ("%s:%s", remote_name, ref_name);
+      ostree_repo_resolve_rev (repo, refspec, allow_noent, out_rev, &local_error);
+    }
+  else
+    ostree_repo_resolve_rev_ext (repo, ref_name, allow_noent,
+                                 OSTREE_REPO_LIST_REFS_EXT_NONE, out_rev, &local_error);
+
+  if (local_error != NULL)
+    {
+      if (g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+        flatpak_fail_error (error, FLATPAK_ERROR_REF_NOT_FOUND, "%s", local_error->message);
+      else
+        g_propagate_error (error, g_steal_pointer (&local_error));
+
+      return FALSE;
+    }
+
+  return TRUE;
+}
 
 
 #if !GLIB_CHECK_VERSION (2, 56, 0)
@@ -6420,7 +7043,7 @@ parse_iso8601_timezone (const gchar *text, gsize length, gssize *tz_offset)
   tz_length = length - i;
 
   /* +hh:mm or -hh:mm */
-  if (tz_length == 6 && text[i+3] == ':')
+  if (tz_length == 6 && text[i + 3] == ':')
     {
       if (!get_iso8601_int (text + i + 1, 2, &offset_hours) ||
           !get_iso8601_int (text + i + 4, 2, &offset_minutes))
@@ -6513,8 +7136,64 @@ flatpak_g_date_time_new_from_iso8601 (const gchar *text, GTimeZone *default_tz)
   datetime = parse_iso8601_date (text, date_length, hour, minute, seconds, tz ? tz : default_tz);
 
 out:
-    if (tz != NULL)
-      g_time_zone_unref (tz);
-    return datetime;
+  if (tz != NULL)
+    g_time_zone_unref (tz);
+  return datetime;
 }
 #endif
+
+/* Convert an app id to a dconf path in the obvious way.
+ */
+char *
+flatpak_dconf_path_for_app_id (const char *app_id)
+{
+  GString *s;
+  const char *p;
+
+  s = g_string_new ("");
+
+  g_string_append_c (s, '/');
+  for (p = app_id; *p; p++)
+    {
+      if (*p == '.')
+        g_string_append_c (s, '/');
+      else
+        g_string_append_c (s, *p);
+    }
+  g_string_append_c (s, '/');
+
+  return g_string_free (s, FALSE);
+}
+
+/* Check if two dconf paths are 'similar enough', which
+ * for now is defined as equal except case differences
+ * and -/_
+ */
+gboolean
+flatpak_dconf_path_is_similar (const char *path1,
+                               const char *path2)
+{
+  int i;
+
+  for (i = 0; path1[i]; i++)
+    {
+      if (path2[i] == '\0')
+        return FALSE;
+
+      if (tolower (path1[i]) == tolower (path2[i]))
+        continue;
+
+      if ((path1[i] == '-' || path1[i] == '_') &&
+          (path2[i] == '-' || path2[i] == '_'))
+        continue;
+
+      return FALSE;
+    }
+
+  if (path2[i] != '\0')
+    return FALSE;
+
+  return TRUE;
+}
+
+

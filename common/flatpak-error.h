@@ -42,7 +42,7 @@ G_BEGIN_DECLS
  * @FLATPAK_ERROR_SKIPPED: The App/Runtime install was skipped due to earlier errors.
  * @FLATPAK_ERROR_NEED_NEW_FLATPAK: The App/Runtime needs a more recent version of flatpak.
  * @FLATPAK_ERROR_REMOTE_NOT_FOUND: The specified remote was not found.
- * @FLATPAK_ERROR_RUNTIME_NOT_FOUND: An runtime needed for the app was not found.
+ * @FLATPAK_ERROR_RUNTIME_NOT_FOUND: A runtime needed for the app was not found.
  * @FLATPAK_ERROR_DOWNGRADE: The pulled commit is a downgrade, and a downgrade wasn't
  *                           specifically allowed. (Since: 1.0)
  * @FLATPAK_ERROR_INVALID_REF: A ref could not be parsed. (Since: 1.0.3)
@@ -56,6 +56,8 @@ G_BEGIN_DECLS
  * @FLATPAK_ERROR_OUT_OF_SPACE: More disk space needed. (Since: 1.2.0)
  * @FLATPAK_ERROR_WRONG_USER: An operation is being attempted by the wrong user (such as
  *                            root operating on a user installation). (Since: 1.2.0)
+ * @FLATPAK_ERROR_NOT_CACHED: Cached data was requested, but it was not available. (Since: 1.4.0)
+ * @FLATPAK_ERROR_REF_NOT_FOUND: The specified ref was not found. (Since: 1.4.0)
  *
  * Error codes for library functions.
  */
@@ -80,6 +82,8 @@ typedef enum {
   FLATPAK_ERROR_INVALID_NAME,
   FLATPAK_ERROR_OUT_OF_SPACE,
   FLATPAK_ERROR_WRONG_USER,
+  FLATPAK_ERROR_NOT_CACHED,
+  FLATPAK_ERROR_REF_NOT_FOUND,
 } FlatpakError;
 
 /**

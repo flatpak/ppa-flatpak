@@ -1,3 +1,89 @@
+flatpak (1.4.2-1) experimental; urgency=medium
+
+  * New upstream release
+  * d/p/Don-t-register-polkit-agent-if-we-cannot-connect-to-syste.patch:
+    Add proposed patch to avoid crashing if the system bus is unavailable,
+    working around policykit-1 bug #923046
+  * d/salsa-ci.yml: Request standard CI on salsa.debian.org
+  * d/p/tests-Skip-tests-that-use-system-helper-if-uid-or-gid-is-.patch:
+    Avoid testing the system helper if uid or gid is zero.
+    The system helper refuses to run in test mode if it has privileges,
+    but some CI systems (currently including salsa-ci) run as uid or
+    gid 0 in a disposable container.
+  * d/test.sh: Don't run tests under linux32, even if reprotest did the
+    build under linux32
+  * d/test.sh: Don't output non-test logs (notably
+    debian/output/reprotest.log on salsa-ci) after running tests
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 02 Jul 2019 16:20:14 +0100
+
+flatpak (1.4.1-1) experimental; urgency=high
+
+  * New upstream stable release
+    - This reverts an unintended ABI break in 1.4.0.
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 13 Jun 2019 11:45:33 +0100
+
+flatpak (1.4.0-1) experimental; urgency=medium
+
+  * New upstream stable release
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 28 May 2019 14:46:34 +0100
+
+flatpak (1.3.4-1) experimental; urgency=medium
+
+  * New upstream development release
+    - Incompatible change: /etc/flatpak/remotes.d/*.conf are no longer
+      read, and are superseded by /etc/flatpak/remotes.d/*.flatpakrepo
+  * Require libostree 2019.2, for OSTREE_REPO_PULL_FLAGS_MIRROR
+  * Install flatpak-docker-seccomp.json to /u/s/d/flatpak/examples.
+    This seccomp profile can be used to configure a Docker container to
+    allow bubblewrap and Flatpak to be run, with some caveats:
+    - The host kernel must allow unprivileged user namespace creation
+      (for example Debian with sysctl kernel.unprivileged_userns_clone=1,
+      or recent Ubuntu in its default configuration)
+    - Use the seccomp profile
+      (docker run --security-opt seccomp=flatpak-docker-seccomp.json)
+    - Make the host system /proc visible in the container
+      (docker run -v=/proc:/host/proc)
+    - Run flatpak as an ordinary user in the container, not as root
+  * d/copyright: Update
+  * d/libflatpak0.symbols: Update
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 10 May 2019 13:44:59 +0100
+
+flatpak (1.3.3-1) experimental; urgency=medium
+
+  * New upstream development release
+    - Drop patches that were applied upstream
+    - d/libflatpak0.symbols: Update
+
+ -- Simon McVittie <smcv@debian.org>  Sat, 27 Apr 2019 20:35:43 +0100
+
+flatpak (1.3.2-1) experimental; urgency=medium
+
+  * New upstream development release
+  * d/watch: Watch for development (odd-numbered) versions
+  * d/gbp.conf: Branch to upstream/latest and debian/experimental
+  * Depend on adduser and create _flatpak user in postinst.
+    This is now required by the helper that installs apps and runtimes
+    system-wide.
+  * Disable SELinux module for now.
+    Advice from SELinux users/maintainers on whether/how this can fit
+    into Debian systems with the non-default SELinux LSM would be welcomed.
+  * Build-depend on libfuse-dev and install new revokefs-fuse helper
+  * d/libflatpak0.symbols: Update
+  * d/copyright: Update
+  * Build-depend on policykit-1 for tests
+  * Build-depend on fuse for tests
+  * d/p/Use-system-copy-of-xdg-dbus-proxy-for-build-time-tests-if.patch:
+    Use the correct system xdg-dbus-proxy for build-time tests
+  * d/p/Skip-some-tests-if-we-can-t-use-FUSE.patch:
+    Skip tests that rely on FUSE when built on a buildd, in a schroot
+    or in a Docker container. FUSE doesn't work in any of these places.
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 12 Apr 2019 19:07:09 +0100
+
 flatpak (1.2.4-2) UNRELEASED; urgency=medium
 
   * d/salsa-ci.yml: Request standard CI on salsa.debian.org

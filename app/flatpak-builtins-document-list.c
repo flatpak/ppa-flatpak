@@ -53,10 +53,10 @@ static Column all_columns[] = {
 };
 
 static gboolean
-print_documents (const char *app_id,
-                 Column *columns,
+print_documents (const char   *app_id,
+                 Column       *columns,
                  GCancellable *cancellable,
-                 GError **error)
+                 GError      **error)
 {
   g_autoptr(GDBusConnection) session_bus = NULL;
   XdpDbusDocuments *documents;
@@ -91,7 +91,7 @@ print_documents (const char *app_id,
     return FALSE;
 
   printer = flatpak_table_printer_new ();
-  flatpak_table_printer_set_columns (printer, columns);
+  flatpak_table_printer_set_columns (printer, columns, opt_cols == NULL);
   for (i = 0; columns[i].name; i++)
     {
       if (strcmp (columns[i].name, "permissions") == 0 ||
@@ -129,7 +129,7 @@ print_documents (const char *app_id,
                 {
                   g_autofree char *value = NULL;
                   if (perms)
-                    value = g_strjoinv (" ", (char **)perms);
+                    value = g_strjoinv (" ", (char **) perms);
                   flatpak_table_printer_add_column (printer, value);
                 }
               else if (just_perms)

@@ -58,10 +58,10 @@
             and <filename>app/</filename> subdirectories.
         </para>
 
-        <para>
+       <para>
             System-wide remotes can be statically preconfigured by dropping
-            config fragments into <filename>/etc/flatpak/remotes.d/</filename>.
-        </para>
+            flatpakref files into <filename>/etc/flatpak/remotes.d/</filename>.
+       </para>
 
         <para>
             In addition to the system-wide installation in <filename>$prefix/var/lib/flatpak/</filename>,
@@ -82,7 +82,7 @@
         </para>
 
         <para>
-            Basic commands for buiding flatpaks such as build-init, build and build-finish
+            Basic commands for building flatpaks such as build-init, build and build-finish
             are included in the flatpak utility. For higher-level build support, see
             the separate 
             <citerefentry><refentrytitle>flatpak-builder</refentrytitle><manvolnum>1</manvolnum></citerefentry> tool.
@@ -560,6 +560,18 @@
                       The location of the default system-wide installation. If this is not set,
                       <filename>/var/lib/flatpak</filename> is used (unless overridden at build
                       time by --localstatedir or --with-system-install-dir).
+                    </para></listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><envar>FLATPAK_SYSTEM_CACHE_DIR</envar></term>
+
+                    <listitem><para>
+                      The location where temporary child repositories will be created during pulls
+                      into the system-wide installation.  If this is not set, a directory in
+                      <filename>/var/tmp/</filename> is used. This is useful because it is more
+                      likely to be on the same filesystem as the system repository (thus increasing
+                      the chances for e.g. reflink copying), and we can avoid filling the user's
+                      home directory with temporary data.
                     </para></listitem>
                 </varlistentry>
                 <varlistentry>

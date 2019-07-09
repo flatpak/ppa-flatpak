@@ -35,9 +35,9 @@
 
 
 static gboolean
-ostree_repo_mode_to_string (OstreeRepoMode   mode,
-                            const char     **out_mode,
-                            GError         **error)
+ostree_repo_mode_to_string (OstreeRepoMode mode,
+                            const char   **out_mode,
+                            GError       **error)
 {
   const char *ret_mode;
 
@@ -46,16 +46,20 @@ ostree_repo_mode_to_string (OstreeRepoMode   mode,
     case OSTREE_REPO_MODE_BARE:
       ret_mode = "bare";
       break;
+
     case OSTREE_REPO_MODE_BARE_USER:
       ret_mode = "bare-user";
       break;
+
     case OSTREE_REPO_MODE_BARE_USER_ONLY:
       ret_mode = "bare-user-only";
       break;
+
     case OSTREE_REPO_MODE_ARCHIVE:
       /* Legacy alias */
-      ret_mode ="archive-z2";
+      ret_mode = "archive-z2";
       break;
+
     default:
       return glnx_throw (error, "Invalid mode '%d'", mode);
     }
@@ -66,10 +70,14 @@ ostree_repo_mode_to_string (OstreeRepoMode   mode,
 
 static void
 print_info (OstreeRepo *repo,
-            GVariant *meta)
+            GVariant   *meta)
 {
   g_autoptr(GVariant) cache = NULL;
   const char *title;
+  const char *comment;
+  const char *description;
+  const char *homepage;
+  const char *icon;
   const char *collection_id;
   const char *default_branch;
   const char *redirect_url;
@@ -84,6 +92,18 @@ print_info (OstreeRepo *repo,
 
   if (g_variant_lookup (meta, "xa.title", "&s", &title))
     g_print (_("Title: %s\n"), title);
+
+  if (g_variant_lookup (meta, "xa.comment", "&s", &comment))
+    g_print (_("Comment: %s\n"), comment);
+
+  if (g_variant_lookup (meta, "xa.description", "&s", &description))
+    g_print (_("Description: %s\n"), description);
+
+  if (g_variant_lookup (meta, "xa.homepage", "&s", &homepage))
+    g_print (_("Homepage: %s\n"), homepage);
+
+  if (g_variant_lookup (meta, "xa.icon", "&s", &icon))
+    g_print (_("Icon: %s\n"), icon);
 
   if (g_variant_lookup (meta, "collection-id", "&s", &collection_id))
     g_print (_("Collection ID: %s\n"), collection_id);
@@ -203,7 +223,7 @@ print_metadata (GVariant   *meta,
 static void
 dump_indented_lines (const gchar *data)
 {
-  const char* indent = "    ";
+  const char * indent = "    ";
   const gchar *pos;
 
   for (;;)
@@ -211,7 +231,7 @@ dump_indented_lines (const gchar *data)
       pos = strchr (data, '\n');
       if (pos)
         {
-          g_print ("%s%.*s", indent, (int)(pos + 1 - data), data);
+          g_print ("%s%.*s", indent, (int) (pos + 1 - data), data);
           data = pos + 1;
         }
       else
@@ -224,7 +244,7 @@ dump_indented_lines (const gchar *data)
 }
 
 static void
-dump_deltas_for_commit (GPtrArray *deltas,
+dump_deltas_for_commit (GPtrArray  *deltas,
                         const char *checksum)
 {
   int i;
@@ -245,7 +265,7 @@ dump_deltas_for_commit (GPtrArray *deltas,
               header_printed = TRUE;
             }
           g_print ("  from scratch\n");
-        } 
+        }
       else if (strchr (delta, '-'))
         {
           g_auto(GStrv) parts = g_strsplit (delta, "-", 0);
@@ -268,9 +288,9 @@ dump_deltas_for_commit (GPtrArray *deltas,
 
 static gboolean
 dump_commit (const char *commit,
-             GVariant *variant,
-             GPtrArray *deltas,
-             GError **error)
+             GVariant   *variant,
+             GPtrArray  *deltas,
+             GError    **error)
 {
   const gchar *subject;
   const gchar *body;
@@ -311,9 +331,9 @@ dump_commit (const char *commit,
 static gboolean
 log_commit (OstreeRepo *repo,
             const char *checksum,
-            gboolean is_recurse,
-            GPtrArray *deltas,
-            GError **error)
+            gboolean    is_recurse,
+            GPtrArray  *deltas,
+            GError    **error)
 {
   g_autoptr(GVariant) variant = NULL;
   g_autofree char *parent = NULL;
@@ -350,9 +370,11 @@ out:
 }
 
 static gboolean
-print_commits (OstreeRepo *repo,
-               const char *ref,
-               GError **error)
+print_commits (OstreeRepo   *repo,
+               const char   *collection_id,
+               const char   *ref,
+               GCancellable *cancellable,
+               GError      **error)
 {
   g_autofree char *checksum = NULL;
   g_autoptr(GPtrArray) deltas = NULL;
@@ -360,7 +382,8 @@ print_commits (OstreeRepo *repo,
   if (!ostree_repo_list_static_delta_names (repo, &deltas, NULL, error))
     return FALSE;
 
-  if (!ostree_repo_resolve_rev (repo, ref, FALSE, &checksum, error))
+  if (!flatpak_repo_resolve_rev (repo, collection_id, NULL, ref, FALSE, &checksum,
+                                 cancellable, error))
     return FALSE;
 
   if (!log_commit (repo, checksum, FALSE, deltas, error))
@@ -392,6 +415,7 @@ flatpak_builtin_repo (int argc, char **argv,
   g_autoptr(OstreeRepo) repo = NULL;
   const char *ostree_metadata_ref = NULL;
   g_autofree char *ostree_metadata_checksum = NULL;
+  const char *collection_id;
 
   context = g_option_context_new (_("LOCATION - Repository maintenance"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
@@ -407,11 +431,13 @@ flatpak_builtin_repo (int argc, char **argv,
   if (!ostree_repo_open (repo, cancellable, error))
     return FALSE;
 
+  collection_id = ostree_repo_get_collection_id (repo);
+
   /* Try loading the metadata from the ostree-metadata branch first. If that
    * fails, fall back to the summary file. */
   ostree_metadata_ref = OSTREE_REPO_METADATA_REF;
-  if (!ostree_repo_resolve_rev_ext (repo, ostree_metadata_ref,
-                                    TRUE, 0, &ostree_metadata_checksum, error))
+  if (!flatpak_repo_resolve_rev (repo, collection_id, NULL, ostree_metadata_ref,
+                                 TRUE, &ostree_metadata_checksum, cancellable, error))
     return FALSE;
 
   if (ostree_metadata_checksum != NULL)
@@ -456,7 +482,7 @@ flatpak_builtin_repo (int argc, char **argv,
 
   if (opt_commits_branch)
     {
-      if (!print_commits (repo, opt_commits_branch, error))
+      if (!print_commits (repo, collection_id, opt_commits_branch, cancellable, error))
         return FALSE;
     }
 

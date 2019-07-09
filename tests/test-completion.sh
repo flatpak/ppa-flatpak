@@ -22,6 +22,8 @@ set -euo pipefail
 #FLATPAK=flatpak
 . $(dirname $0)/libtest.sh
 
+skip_revokefs_without_fuse
+
 # This test looks for specific localized strings.
 export LC_ALL=C
 
@@ -183,9 +185,11 @@ description
 help
 installation
 latest
+name
 options
 origin
 ref
+runtime
 size
 version
 EOF
@@ -212,9 +216,11 @@ arch,branch
 arch,description
 arch,installation
 arch,latest
+arch,name
 arch,options
 arch,origin
 arch,ref
+arch,runtime
 arch,size
 arch,version
 EOF

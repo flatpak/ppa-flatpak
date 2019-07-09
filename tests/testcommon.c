@@ -34,7 +34,10 @@ test_path_match_prefix (void)
 static void
 test_fancy_output (void)
 {
-  g_assert_false (flatpak_fancy_output ()); // no tty
+  if (!isatty (STDOUT_FILENO))
+    g_assert_false (flatpak_fancy_output ()); // no tty
+  else
+    g_assert_true (flatpak_fancy_output ()); // a tty
   flatpak_enable_fancy_output ();
   g_assert_true (flatpak_fancy_output ());
   flatpak_disable_fancy_output ();
@@ -96,30 +99,30 @@ test_valid_name (void)
 typedef struct
 {
   const gchar *str;
-  guint base;
-  gint min;
-  gint max;
-  gint expected;
-  gboolean should_fail;
+  guint        base;
+  gint         min;
+  gint         max;
+  gint         expected;
+  gboolean     should_fail;
 } TestData;
 
 const TestData test_data[] = {
   /* typical cases for unsigned */
-  { "-1",10, 0, 2, 0, TRUE  },
+  { "-1", 10, 0, 2, 0, TRUE  },
   { "1", 10, 0, 2, 1, FALSE },
-  { "+1",10, 0, 2, 0, TRUE  },
+  { "+1", 10, 0, 2, 0, TRUE  },
   { "0", 10, 0, 2, 0, FALSE },
-  { "+0",10, 0, 2, 0, TRUE  },
-  { "-0",10, 0, 2, 0, TRUE  },
+  { "+0", 10, 0, 2, 0, TRUE  },
+  { "-0", 10, 0, 2, 0, TRUE  },
   { "2", 10, 0, 2, 2, FALSE },
-  { "+2",10, 0, 2, 0, TRUE  },
+  { "+2", 10, 0, 2, 0, TRUE  },
   { "3", 10, 0, 2, 0, TRUE  },
-  { "+3",10, 0, 2, 0, TRUE  },
+  { "+3", 10, 0, 2, 0, TRUE  },
 
   /* min == max cases for unsigned */
-  { "2",10, 2, 2, 2, FALSE  },
-  { "3",10, 2, 2, 0, TRUE   },
-  { "1",10, 2, 2, 0, TRUE   },
+  { "2", 10, 2, 2, 2, FALSE  },
+  { "3", 10, 2, 2, 0, TRUE   },
+  { "1", 10, 2, 2, 0, TRUE   },
 
   /* invalid inputs */
   { "",   10,  0,  2,  0, TRUE },
@@ -127,16 +130,16 @@ const TestData test_data[] = {
   { "1a", 10,  0,  2,  0, TRUE },
 
   /* leading/trailing whitespace */
-  { " 1",10,  0,  2,  0, TRUE },
-  { "1 ",10,  0,  2,  0, TRUE },
+  { " 1", 10,  0,  2,  0, TRUE },
+  { "1 ", 10,  0,  2,  0, TRUE },
 
   /* hexadecimal numbers */
   { "a",    16,   0, 15, 10, FALSE },
   { "0xa",  16,   0, 15,  0, TRUE  },
   { "-0xa", 16,   0, 15,  0, TRUE  },
   { "+0xa", 16,   0, 15,  0, TRUE  },
-  { "- 0xa",16,   0, 15,  0, TRUE  },
-  { "+ 0xa",16,   0, 15,  0, TRUE  },
+  { "- 0xa", 16,   0, 15,  0, TRUE  },
+  { "+ 0xa", 16,   0, 15,  0, TRUE  },
 };
 
 static void
@@ -175,10 +178,11 @@ test_string_to_unsigned (void)
     }
 }
 
-typedef struct {
+typedef struct
+{
   const char *a;
   const char *b;
-  int distance;
+  int         distance;
 } Levenshtein;
 
 static Levenshtein levenshtein_tests[] = {
@@ -343,18 +347,18 @@ test_parse_numbers (void)
   numbers = flatpak_parse_numbers ("1", 0, 10);
   assert_numbers (numbers, 1, 0);
   g_clear_pointer (&numbers, g_free);
-  
+
   numbers = flatpak_parse_numbers ("1 3 2", 0, 10);
   assert_numbers (numbers, 1, 3, 2, 0);
   g_clear_pointer (&numbers, g_free);
-  
+
   numbers = flatpak_parse_numbers ("1-3", 0, 10);
   assert_numbers (numbers, 1, 2, 3, 0);
   g_clear_pointer (&numbers, g_free);
-  
+
   numbers = flatpak_parse_numbers ("1", 2, 4);
   g_assert_null (numbers);
-  
+
   numbers = flatpak_parse_numbers ("2-6", 2, 4);
   g_assert_null (numbers);
 
@@ -394,25 +398,25 @@ test_subpaths_merge (void)
   g_auto(GStrv) res = NULL;
 
   res = flatpak_subpaths_merge (NULL, bla);
-  assert_strv_equal (res, bla);
+  assert_strv_equal (res, bla_sorted);
   g_clear_pointer (&res, g_strfreev);
-  
+
   res = flatpak_subpaths_merge (bla, NULL);
-  assert_strv_equal (res, bla);
+  assert_strv_equal (res, bla_sorted);
   g_clear_pointer (&res, g_strfreev);
-  
+
   res = flatpak_subpaths_merge (empty, bla);
   assert_strv_equal (res, empty);
   g_clear_pointer (&res, g_strfreev);
-  
+
   res = flatpak_subpaths_merge (bla, empty);
   assert_strv_equal (res, empty);
   g_clear_pointer (&res, g_strfreev);
-  
+
   res = flatpak_subpaths_merge (buba, bla);
   assert_strv_equal (res, bubabla);
   g_clear_pointer (&res, g_strfreev);
-  
+
   res = flatpak_subpaths_merge (bla, buba);
   assert_strv_equal (res, bubabla);
   g_clear_pointer (&res, g_strfreev);
@@ -485,7 +489,7 @@ test_parse_appdata (void)
   gboolean res;
   char *name;
   char *comment;
- 
+
   res = flatpak_parse_appdata (appdata1, "org.test.Hello", &names, &comments, &version, &license);
   g_assert_true (res);
   g_assert_cmpstr (version, ==, "0.0.1");
@@ -531,57 +535,57 @@ test_name_matching (void)
 
   res = flatpak_name_matches_one_wildcard_prefix ("org.sparkleshare.SparkleShare.Invites",
                                                   (const char *[]){"org.sparkleshare.SparkleShare.*", NULL},
-                                                   FALSE);
+                                                  FALSE);
   g_assert_true (res);
 
   res = flatpak_name_matches_one_wildcard_prefix ("org.sparkleshare.SparkleShare-symbolic",
                                                   (const char *[]){"org.sparkleshare.SparkleShare.*", NULL},
-                                                   FALSE);
+                                                  FALSE);
   g_assert_true (res);
 
   res = flatpak_name_matches_one_wildcard_prefix ("org.libreoffice.LibreOffice",
                                                   (const char *[]){"org.libreoffice.LibreOffice.*", NULL},
-                                                   FALSE);
+                                                  FALSE);
   g_assert_true (res);
 
   res = flatpak_name_matches_one_wildcard_prefix ("org.libreoffice.LibreOffice-impress",
                                                   (const char *[]){"org.libreoffice.LibreOffice.*", NULL},
-                                                   FALSE);
+                                                  FALSE);
   g_assert_true (res);
 
   res = flatpak_name_matches_one_wildcard_prefix ("org.libreoffice.LibreOffice-writer",
                                                   (const char *[]){"org.libreoffice.LibreOffice.*", NULL},
-                                                   FALSE);
+                                                  FALSE);
   g_assert_true (res);
 
   res = flatpak_name_matches_one_wildcard_prefix ("org.libreoffice.LibreOffice-calc",
                                                   (const char *[]){"org.libreoffice.LibreOffice.*", NULL},
-                                                   FALSE);
+                                                  FALSE);
   g_assert_true (res);
 
   res = flatpak_name_matches_one_wildcard_prefix ("com.github.bajoja.indicator-kdeconnect",
                                                   (const char *[]){"com.github.bajoja.indicator-kdeconnect.*", NULL},
-                                                   FALSE);
+                                                  FALSE);
   g_assert_true (res);
 
   res = flatpak_name_matches_one_wildcard_prefix ("com.github.bajoja.indicator-kdeconnect.settings",
                                                   (const char *[]){"com.github.bajoja.indicator-kdeconnect.*", NULL},
-                                                   FALSE);
+                                                  FALSE);
   g_assert_true (res);
 
   res = flatpak_name_matches_one_wildcard_prefix ("com.github.bajoja.indicator-kdeconnect.tablettrusted",
                                                   (const char *[]){"com.github.bajoja.indicator-kdeconnect.*", NULL},
-                                                   FALSE);
+                                                  FALSE);
   g_assert_true (res);
 
   res = flatpak_name_matches_one_wildcard_prefix ("org.gnome.Characters.BackgroundService",
                                                   (const char *[]){"org.gnome.Characters.*", NULL},
-                                                   TRUE);
+                                                  TRUE);
   g_assert_true (res);
 
   res = flatpak_name_matches_one_wildcard_prefix ("org.example.Example.Tracker1.Miner.Applications",
                                                   (const char *[]){"org.example.Example.*", NULL},
-                                                   TRUE);
+                                                  TRUE);
   g_assert_true (res);
 }
 
@@ -673,11 +677,12 @@ test_columns (void)
   g_clear_error (&error);
 }
 
-typedef struct {
-  const char *in;
-  int len;
+typedef struct
+{
+  const char          *in;
+  int                  len;
   FlatpakEllipsizeMode mode;
-  const char *out;
+  const char          *out;
 } EllipsizeData;
 
 static EllipsizeData ellipsize[] = {
@@ -871,7 +876,7 @@ test_table_shrink (void)
                    "Column1  Column2 Column3" FLATPAK_ANSI_BOLD_OFF "\n"
                    "a very … text2   long…too" "\n"
                    "short    short   short" "\n"
-                   "0123456789012345678902345");
+                                                                                                                         "0123456789012345678902345");
   g_string_truncate (g_print_buffer, 0);
 
   flatpak_table_printer_free (printer);
@@ -950,6 +955,189 @@ test_parse_datetime (void)
   g_assert_false (ret);
 }
 
+/* Test various syntax errors */
+static void
+test_filter_parser (void)
+{
+  struct {
+    char *filter;
+    guint expected_error;
+  } filters[] = {
+    {
+     "foobar",
+     FLATPAK_ERROR_INVALID_DATA
+    },
+    {
+     "foobar *",
+     FLATPAK_ERROR_INVALID_DATA
+    },
+    {
+     "deny",
+     FLATPAK_ERROR_INVALID_DATA
+    },
+    {
+     "deny 23+123",
+     FLATPAK_ERROR_INVALID_DATA
+    },
+    {
+     "deny *\n"
+     "allow",
+     FLATPAK_ERROR_INVALID_DATA
+    },
+    {
+     "deny *\n"
+     "allow org.foo.bar extra\n",
+     FLATPAK_ERROR_INVALID_DATA
+    }
+  };
+  gboolean ret;
+  int i;
+
+  for (i = 0; i < G_N_ELEMENTS(filters); i++)
+    {
+      g_autoptr(GError) error = NULL;
+      g_autoptr(GRegex) allow_refs = NULL;
+      g_autoptr(GRegex) deny_refs = NULL;
+
+      ret = flatpak_parse_filters (filters[i].filter, &allow_refs, &deny_refs, &error);
+      g_assert_error (error, FLATPAK_ERROR, filters[i].expected_error);
+      g_assert (ret == FALSE);
+      g_assert (allow_refs == NULL);
+      g_assert (deny_refs == NULL);
+    }
+}
+
+static void
+test_filter (void)
+{
+  GError *error = NULL;
+  g_autoptr(GRegex) allow_refs = NULL;
+  g_autoptr(GRegex) deny_refs = NULL;
+  gboolean ret;
+  int i;
+  char *filter =
+    " # This is a comment\n"
+    "\tallow\t org.foo.*#comment\n"
+    "  deny   org.*   # Comment\n"
+    "  deny   com.*   # Comment\n"
+    " # another comment\n"
+    "allow com.foo.bar\n"
+    "allow app/com.bar.foo*/*/stable\n"
+    "allow app/com.armed.foo*/arm\n"
+    "allow runtime/com.gazonk\n"
+    "allow runtime/com.gazonk.*\t#comment*a*"; /* Note: lack of last newline to test */
+  struct {
+    char *ref;
+    gboolean expected_result;
+  } filter_refs[] = {
+     /* General denies (org/com)*/
+     { "app/org.filter.this/x86_64/stable", FALSE },
+     { "app/com.filter.this/arm/stable", FALSE },
+     /* But net. not denied */
+     { "app/net.dont.filter.this/x86_64/stable", TRUE },
+     { "runtime/net.dont.filter.this/x86_64/1.0", TRUE },
+
+     /* Special allow overrides */
+
+     /* allow com.foo.bar */
+     { "app/com.foo.bar/x86_64/stable", TRUE },
+     { "app/com.foo.bar/arm/foo", TRUE },
+     { "runtime/com.foo.bar/x86_64/1.0", TRUE },
+
+     /* allow app/com.bar.foo* / * /stable */
+     { "app/com.bar.foo/x86_64/stable", TRUE },
+     { "app/com.bar.foo/arm/stable", TRUE },
+     { "app/com.bar.foobar/x86_64/stable", TRUE },
+     { "app/com.bar.foobar/arm/stable", TRUE },
+     { "app/com.bar.foo.bar/x86_64/stable", TRUE },
+     { "app/com.bar.foo.bar/arm/stable", TRUE },
+     { "app/com.bar.foo/x86_64/unstable", FALSE },
+     { "app/com.bar.foobar/x86_64/unstable", FALSE },
+     { "runtime/com.bar.foo/x86_64/stable", FALSE },
+
+     /* allow app/com.armed.foo* /arm */
+     { "app/com.armed.foo/arm/stable", TRUE },
+     { "app/com.armed.foo/arm/unstable", TRUE },
+     { "app/com.armed.foo/x86_64/stable", FALSE },
+     { "app/com.armed.foo/x86_64/unstable", FALSE },
+     { "app/com.armed.foobar/arm/stable", TRUE },
+     { "app/com.armed.foobar/arm/unstable", TRUE },
+     { "app/com.armed.foobar/x86_64/stable", FALSE },
+     { "app/com.armed.foobar/x86_64/unstable", FALSE },
+     { "runtime/com.armed.foo/arm/stable", FALSE },
+     { "runtime/com.armed.foobar/arm/stable", FALSE },
+     { "runtime/com.armed.foo/x86_64/stable", FALSE },
+     { "runtime/com.armed.foobar/x86_64/stable", FALSE },
+
+     /* allow runtime/com.gazonk */
+     /* allow runtime/com.gazonk.* */
+     { "runtime/com.gazonk/x86_64/1.0", TRUE },
+     { "runtime/com.gazonk.Locale/x86_64/1.0", TRUE },
+     { "runtime/com.gazonked/x86_64/1.0", FALSE },
+     { "runtime/com.gazonk/arm/1.0", TRUE },
+     { "runtime/com.gazonk.Locale/arm/1.0", TRUE },
+     { "app/com.gazonk/x86_64/stable", FALSE },
+     { "app/com.gazonk.Locale/x86_64/stable", FALSE },
+
+  };
+
+  ret = flatpak_parse_filters (filter, &allow_refs, &deny_refs, &error);
+  g_assert_no_error (error);
+  g_assert (ret == TRUE);
+
+  g_assert (allow_refs != NULL);
+  g_assert (deny_refs != NULL);
+
+  for (i = 0; i < G_N_ELEMENTS(filter_refs); i++)
+    g_assert_cmpint (flatpak_filters_allow_ref (allow_refs, deny_refs, filter_refs[i].ref), ==, filter_refs[i].expected_result);
+}
+
+static void
+test_dconf_app_id (void)
+{
+  struct {
+    const char *app_id;
+    const char *path;
+  } tests[] = {
+    { "org.gnome.Builder", "/org/gnome/Builder/" },
+    { "org.gnome.builder", "/org/gnome/builder/" },
+    { "org.gnome.builder-2", "/org/gnome/builder-2/" },
+  };
+  int i;
+
+  for (i = 0; i < G_N_ELEMENTS (tests); i++)
+    {
+      g_autofree char *path = NULL;
+
+      path = flatpak_dconf_path_for_app_id (tests[i].app_id);
+      g_assert_cmpstr (path, ==, tests[i].path);
+    }
+}
+
+static void
+test_dconf_paths (void)
+{
+  struct {
+    const char *path1;
+    const char *path2;
+    gboolean result;
+  } tests[] = {
+    { "/org/gnome/Builder/", "/org/gnome/builder/", 1 },
+    { "/org/gnome/Builder-2/", "/org/gnome/Builder_2/", 1 },
+    { "/org/gnome/Builder/", "/org/gnome/Builder", 0 },
+    { "/org/gnome/Builder/", "/org/gnome/Buildex/", 0 },
+  };
+  int i;
+
+  for (i = 0; i < G_N_ELEMENTS (tests); i++)
+    {
+      gboolean result;
+
+      result = flatpak_dconf_path_is_similar (tests[i].path1, tests[i].path2);
+      g_assert_cmpint (result, ==, tests[i].result);
+    }
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -973,6 +1161,10 @@ main (int argc, char *argv[])
   g_test_add_func ("/common/lang-from-locale", test_lang_from_locale);
   g_test_add_func ("/common/appdata", test_parse_appdata);
   g_test_add_func ("/common/name-matching", test_name_matching);
+  g_test_add_func ("/common/filter_parser", test_filter_parser);
+  g_test_add_func ("/common/filter", test_filter);
+  g_test_add_func ("/common/dconf-app-id", test_dconf_app_id);
+  g_test_add_func ("/common/dconf-paths", test_dconf_paths);
 
   g_test_add_func ("/app/looks-like-branch", test_looks_like_branch);
   g_test_add_func ("/app/columns", test_columns);

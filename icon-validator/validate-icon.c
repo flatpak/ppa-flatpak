@@ -20,6 +20,7 @@
 
 #include <gdk-pixbuf/gdk-pixbuf.h>
 #include <glib/gstdio.h>
+#include <errno.h>
 #include <unistd.h>
 
 static int
@@ -35,22 +36,8 @@ validate_icon (const char *arg_width,
   g_autoptr(GdkPixbuf) pixbuf = NULL;
   g_autoptr(GError) error = NULL;
 
-  max_width = g_ascii_strtoll (arg_width, NULL, 10);
-  if (max_width < 16 || max_width > 4096)
-    {
-      g_printerr ("Bad width limit: %s\n", arg_width);
-      return 1;
-    }
-
-  max_height = g_ascii_strtoll (arg_height, NULL, 10);
-  if (max_height < 16 || max_height > 4096)
-    {
-      g_printerr ("Bad height limit: %s\n", arg_height);
-      return 1;
-    }
-
   format = gdk_pixbuf_get_file_info (filename, &width, &height);
-  if (format == NULL) 
+  if (format == NULL)
     {
       g_printerr ("Format not recognized\n");
       return 1;
@@ -63,9 +50,31 @@ validate_icon (const char *arg_width,
       return 1;
     }
 
+  if (!g_str_equal (name, "svg"))
+    {
+      max_width = g_ascii_strtoll (arg_width, NULL, 10);
+      if (max_width < 16 || max_width > 4096)
+        {
+          g_printerr ("Bad width limit: %s\n", arg_width);
+          return 1;
+        }
+
+      max_height = g_ascii_strtoll (arg_height, NULL, 10);
+      if (max_height < 16 || max_height > 4096)
+        {
+          g_printerr ("Bad height limit: %s\n", arg_height);
+          return 1;
+        }
+    }
+  else
+    {
+      /* Sanity check for vector files */
+      max_height = max_width = 4096;
+    }
+
   if (width > max_width || height > max_height)
     {
-      g_printerr ("Image too large (%dx%d)\n", width, height);
+      g_printerr ("Image too large (%dx%d). Max. size %dx%d\n", width, height, max_width, max_height);
       return 1;
     }
 
@@ -79,6 +88,7 @@ validate_icon (const char *arg_width,
   return 0;
 }
 
+G_GNUC_NULL_TERMINATED
 static void
 add_args (GPtrArray *argv_array, ...)
 {
@@ -129,14 +139,11 @@ rerun_in_sandbox (const char *arg_width,
   const char * const usrmerged_dirs[] = { "bin", "lib64", "lib", "sbin" };
   int i;
   g_autoptr(GPtrArray) args = g_ptr_array_new_with_free_func (g_free);
-  g_autofree char *err = NULL;
-  int status;
-  g_autoptr(GError) error = NULL;
   char validate_icon[PATH_MAX + 1];
   ssize_t symlink_size;
 
   symlink_size = readlink ("/proc/self/exe", validate_icon, sizeof (validate_icon) - 1);
-  if (symlink_size < 0)
+  if (symlink_size < 0 || (size_t) symlink_size >= sizeof (validate_icon))
     {
       g_printerr ("Error: failed to read /proc/self/exe\n");
       return 1;
@@ -154,7 +161,7 @@ rerun_in_sandbox (const char *arg_width,
             "--ro-bind", validate_icon, validate_icon,
             NULL);
 
- /* These directories might be symlinks into /usr/... */
+  /* These directories might be symlinks into /usr/... */
   for (i = 0; i < G_N_ELEMENTS (usrmerged_dirs); i++)
     {
       g_autofree char *absolute_dir = g_strdup_printf ("/%s", usrmerged_dirs[i]);
@@ -198,23 +205,14 @@ rerun_in_sandbox (const char *arg_width,
   g_ptr_array_add (args, NULL);
 
   {
-    g_autofree char *cmdline = g_strjoinv (" ", (char **)args->pdata);
+    g_autofree char *cmdline = g_strjoinv (" ", (char **) args->pdata);
     g_debug ("Icon validation: Spawning %s", cmdline);
   }
 
-  if (execvpe (flatpak_get_bwrap (), (char **) args->pdata, NULL) == -1)
-    {
-      g_debug ("Icon validation: %s", error->message);
-      return 1;
-    }
-
-  if (!g_spawn_check_exit_status (status, NULL))
-    {
-      g_debug ("Icon validation: %s", err);
-      return 1;
-    }
-
-  return 0;
+  execvpe (flatpak_get_bwrap (), (char **) args->pdata, NULL);
+  /* If we get here, then execvpe() failed. */
+  g_printerr ("Icon validation: execvpe %s: %s\n", flatpak_get_bwrap (), g_strerror (errno));
+  return 1;
 }
 
 static gboolean opt_sandbox;

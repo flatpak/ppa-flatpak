@@ -26,18 +26,29 @@
 #include <gio/gio.h>
 #include <glib/gprintf.h>
 #include <polkit/polkit.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <gio/gunixfdlist.h>
+#include <sys/mount.h>
+#include <fcntl.h>
 
 #include "flatpak-dbus-generated.h"
 #include "flatpak-dir-private.h"
 #include "flatpak-oci-registry-private.h"
 #include "flatpak-error.h"
+#include "flatpak-utils-private.h"
 
 static PolkitAuthority *authority = NULL;
 static FlatpakSystemHelper *helper = NULL;
 static GMainLoop *main_loop = NULL;
 static guint name_owner_id = 0;
 
+G_LOCK_DEFINE (cache_dirs_in_use);
+static GHashTable *cache_dirs_in_use = NULL;
+
 static gboolean on_session_bus = FALSE;
+static gboolean disable_revokefs = FALSE;
 static gboolean no_idle_exit = FALSE;
 
 #define IDLE_TIMEOUT_SECS 10 * 60
@@ -51,6 +62,85 @@ typedef PolkitSubject             AutoPolkitSubject;
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (AutoPolkitAuthorizationResult, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (AutoPolkitDetails, g_object_unref)
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (AutoPolkitSubject, g_object_unref)
+
+typedef struct
+{
+  FlatpakSystemHelper *object;
+  GDBusMethodInvocation *invocation;
+  GCancellable *cancellable;
+  gboolean preserve_pull;     /* Whether to preserve partially pulled repo on pull failure */
+
+  guint watch_id;
+  uid_t uid;                  /* uid of the client initiating the pull */
+
+  gint client_socket;         /* fd that is send back to the client for spawning revoke-fuse */
+  gint backend_exit_socket;   /* write end of a pipe which helps terminating revokefs backend if
+                                 system helper exits abruptly */
+
+  gchar *src_dir;             /* source directory containing the actual child repo */
+  gchar *unique_name;
+
+  GSubprocess *revokefs_backend;
+} OngoingPull;
+
+static void
+terminate_revokefs_backend (OngoingPull *pull)
+{
+  /* Terminating will guarantee that all access to write operations are revoked. */
+  if (shutdown (pull->client_socket, SHUT_RDWR) == -1 ||
+      !g_subprocess_wait (pull->revokefs_backend, NULL, NULL))
+    {
+      g_warning ("Failed to shutdown client socket, killing backend writer process");
+      g_subprocess_force_exit (pull->revokefs_backend);
+    }
+
+  g_clear_object (&pull->revokefs_backend);
+}
+
+static gboolean
+remove_dir_from_cache_dirs_in_use (const char *src_dir)
+{
+  gboolean res;
+
+  G_LOCK (cache_dirs_in_use);
+  res = g_hash_table_remove (cache_dirs_in_use, src_dir);
+  G_UNLOCK (cache_dirs_in_use);
+
+  return res;
+}
+
+static void
+ongoing_pull_free (OngoingPull *pull)
+{
+  g_autoptr(GFile) src_dir_file = NULL;
+  g_autoptr(GError) local_error = NULL;
+
+  g_clear_handle_id (&pull->watch_id, g_bus_unwatch_name);
+
+  src_dir_file = g_file_new_for_path (pull->src_dir);
+
+  if (pull->revokefs_backend)
+    terminate_revokefs_backend (pull);
+
+  if (!pull->preserve_pull &&
+      !flatpak_rm_rf (src_dir_file, NULL, &local_error))
+    {
+      g_warning ("Unable to remove ongoing pull's src dir at %s: %s",
+                 pull->src_dir, local_error->message);
+      g_clear_error (&local_error);
+    }
+
+  remove_dir_from_cache_dirs_in_use (pull->src_dir);
+
+  g_clear_pointer (&pull->src_dir, g_free);
+  g_clear_pointer (&pull->unique_name, g_free);
+  close (pull->client_socket);
+  close (pull->backend_exit_socket);
+
+  g_slice_free (OngoingPull, pull);
+}
+
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (OngoingPull, ongoing_pull_free);
 
 static void
 skeleton_died_cb (gpointer data)
@@ -92,6 +182,12 @@ unref_skeleton_in_timeout (void)
 static gboolean
 idle_timeout_cb (gpointer user_data)
 {
+  G_LOCK (cache_dirs_in_use);
+  guint ongoing_pulls_len = g_hash_table_size (cache_dirs_in_use);
+  G_UNLOCK (cache_dirs_in_use);
+  if (ongoing_pulls_len != 0)
+    return G_SOURCE_CONTINUE;
+
   if (name_owner_id)
     {
       g_debug ("Idle - unowning name");
@@ -122,7 +218,7 @@ schedule_idle_callback (void)
 static FlatpakDir *
 dir_get_system (const char *installation,
                 pid_t       source_pid,
-                GError **error)
+                GError    **error)
 {
   FlatpakDir *system = NULL;
 
@@ -218,6 +314,62 @@ flatpak_invocation_return_error (GDBusMethodInvocation *invocation,
 }
 
 static gboolean
+get_connection_uid (GDBusMethodInvocation *invocation, uid_t *out_uid, GError **error)
+{
+  GDBusConnection *connection = g_dbus_method_invocation_get_connection (invocation);
+  const gchar *sender = g_dbus_method_invocation_get_sender (invocation);
+  g_autoptr(GVariant) dict = NULL;
+  g_autoptr(GVariant) credentials = NULL;
+
+  credentials = g_dbus_connection_call_sync (connection,
+                                             "org.freedesktop.DBus",
+                                             "/org/freedesktop/DBus",
+                                             "org.freedesktop.DBus",
+                                             "GetConnectionCredentials",
+                                             g_variant_new ("(s)", sender),
+                                             G_VARIANT_TYPE ("(a{sv})"), G_DBUS_CALL_FLAGS_NONE,
+                                             G_MAXINT, NULL, error);
+  if (credentials == NULL)
+    return FALSE;
+
+  dict = g_variant_get_child_value (credentials, 0);
+
+   if (!g_variant_lookup (dict, "UnixUserID", "u", out_uid))
+    {
+      g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                   "Failed to query UnixUserID for the bus name: %s", sender);
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+static OngoingPull *
+take_ongoing_pull_by_dir (const gchar *src_dir)
+{
+  OngoingPull *pull = NULL;
+  gpointer key, value;
+
+  G_LOCK (cache_dirs_in_use);
+  /* Keep src_dir key inside hashtable but remove its OngoingPull
+   * value and set it to NULL. This way src_dir is still marked
+   * as in-use (as Deploy or CancelPull might be executing on it,
+   * whereas OngoingPull ownership is transferred to respective
+   * callers. */
+  if (g_hash_table_steal_extended (cache_dirs_in_use, src_dir, &key, &value))
+    {
+      if (value)
+        {
+          g_hash_table_insert (cache_dirs_in_use, key, NULL);
+          pull = value;
+        }
+    }
+  G_UNLOCK (cache_dirs_in_use);
+
+  return pull;
+}
+
+static gboolean
 handle_deploy (FlatpakSystemHelper   *object,
                GDBusMethodInvocation *invocation,
                const gchar           *arg_repo_path,
@@ -225,6 +377,7 @@ handle_deploy (FlatpakSystemHelper   *object,
                const gchar           *arg_ref,
                const gchar           *arg_origin,
                const gchar *const    *arg_subpaths,
+               const gchar *const    *arg_previous_ids,
                const gchar           *arg_installation)
 {
   g_autoptr(FlatpakDir) system = NULL;
@@ -237,6 +390,8 @@ handle_deploy (FlatpakSystemHelper   *object,
   gboolean local_pull;
   gboolean reinstall;
   g_autofree char *url = NULL;
+  g_autoptr(OngoingPull) ongoing_pull = NULL;
+  g_autofree gchar *src_dir = NULL;
 
   g_debug ("Deploy %s %u %s %s %s", arg_repo_path, arg_flags, arg_ref, arg_origin, arg_installation);
 
@@ -245,6 +400,49 @@ handle_deploy (FlatpakSystemHelper   *object,
     {
       g_dbus_method_invocation_return_gerror (invocation, error);
       return TRUE;
+    }
+
+  src_dir = g_path_get_dirname (arg_repo_path);
+  ongoing_pull = take_ongoing_pull_by_dir (src_dir);
+  if (ongoing_pull != NULL)
+    {
+      g_autoptr(GError) local_error = NULL;
+      uid_t uid;
+
+      /* Ensure that pull's uid is same as the caller's uid */
+      if (!get_connection_uid (invocation, &uid, &local_error))
+        {
+          g_dbus_method_invocation_return_gerror (invocation, local_error);
+          return TRUE;
+        }
+      else
+        {
+          if (ongoing_pull->uid != uid)
+            {
+              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                                                     "Ongoing pull's uid(%d) does not match with peer uid(%d)",
+                                                     ongoing_pull->uid, uid);
+              return TRUE;
+            }
+        }
+
+      terminate_revokefs_backend (ongoing_pull);
+
+      if (!flatpak_canonicalize_permissions (AT_FDCWD,
+                                             arg_repo_path,
+                                             getuid() == 0 ? 0 : -1,
+                                             getuid() == 0 ? 0 : -1,
+                                             &local_error))
+        {
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                                                 "Failed to canonicalize permissions of repo %s: %s",
+                                                 arg_repo_path, local_error->message);
+          return TRUE;
+        }
+
+      /* At this point, the cache-dir's repo is owned by root. Hence, any failure
+       * from here on, should always cleanup the cache-dir and not preserve it to be re-used. */
+      ongoing_pull->preserve_pull = FALSE;
     }
 
   if ((arg_flags & ~FLATPAK_HELPER_DEPLOY_FLAGS_ALL) != 0)
@@ -347,7 +545,7 @@ handle_deploy (FlatpakSystemHelper   *object,
           return TRUE;
         }
 
-      state = flatpak_dir_get_remote_state (system, arg_origin, NULL, &error);
+      state = flatpak_dir_get_remote_state (system, arg_origin, FALSE, NULL, &error);
       if (state == NULL)
         {
           g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
@@ -419,7 +617,6 @@ handle_deploy (FlatpakSystemHelper   *object,
   else if (local_pull)
     {
       g_autoptr(GMainContextPopDefault) main_context = NULL;
-
       g_autoptr(FlatpakRemoteState) state = NULL;
       if (!ostree_repo_remote_get_url (flatpak_dir_get_repo (system),
                                        arg_origin,
@@ -465,8 +662,10 @@ handle_deploy (FlatpakSystemHelper   *object,
     {
       if (deploy_dir && !reinstall)
         {
-          if (!flatpak_dir_deploy_update (system, arg_ref,
-                                          NULL, (const char **) arg_subpaths, NULL, &error))
+          if (!flatpak_dir_deploy_update (system, arg_ref, NULL,
+                                          (const char **) arg_subpaths,
+                                          (const char **) arg_previous_ids,
+                                          NULL, &error))
             {
               flatpak_invocation_return_error (invocation, error, "Error deploying");
               return TRUE;
@@ -476,8 +675,8 @@ handle_deploy (FlatpakSystemHelper   *object,
         {
           if (!flatpak_dir_deploy_install (system, arg_ref, arg_origin,
                                            (const char **) arg_subpaths,
-                                           reinstall,
-                                           NULL, &error))
+                                           (const char **) arg_previous_ids,
+                                           reinstall, NULL, &error))
             {
               flatpak_invocation_return_error (invocation, error, "Error deploying");
               return TRUE;
@@ -487,6 +686,60 @@ handle_deploy (FlatpakSystemHelper   *object,
 
   flatpak_system_helper_complete_deploy (object, invocation);
 
+  return TRUE;
+}
+
+static gboolean
+handle_cancel_pull (FlatpakSystemHelper   *object,
+                    GDBusMethodInvocation *invocation,
+                    guint                  arg_flags,
+                    const gchar           *arg_installation,
+                    const gchar           *arg_src_dir)
+{
+  OngoingPull *ongoing_pull;
+  g_autoptr(FlatpakDir) system = NULL;
+  g_autoptr(GError) error = NULL;
+  uid_t uid;
+
+  g_debug ("CancelPull %s %u %s", arg_installation, arg_flags, arg_src_dir);
+
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
+  if (system == NULL)
+    {
+      g_dbus_method_invocation_return_gerror (invocation, error);
+      return TRUE;
+    }
+
+  ongoing_pull = take_ongoing_pull_by_dir (arg_src_dir);
+  if (ongoing_pull == NULL)
+    {
+      g_set_error (&error, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                   "Cannot find ongoing pull to cancel at %s", arg_src_dir);
+      g_dbus_method_invocation_return_gerror (invocation, error);
+      return TRUE;
+    }
+
+  /* Ensure that pull's uid is same as the caller's uid */
+  if (!get_connection_uid (invocation, &uid, &error))
+    {
+      g_dbus_method_invocation_return_gerror (invocation, error);
+      return TRUE;
+    }
+  else
+    {
+      if (ongoing_pull->uid != uid)
+        {
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                                                 "Ongoing pull's uid(%d) does not match with peer uid(%d)",
+                                                 ongoing_pull->uid, uid);
+          return TRUE;
+        }
+    }
+
+  ongoing_pull->preserve_pull = (arg_flags & FLATPAK_HELPER_CANCEL_PULL_FLAGS_PRESERVE_PULL) != 0;
+  ongoing_pull_free (ongoing_pull);
+
+  flatpak_system_helper_complete_cancel_pull (object, invocation);
   return TRUE;
 }
 
@@ -554,7 +807,7 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
                                          NULL,
                                          NULL,
                                          &error))
-        { 
+        {
           flatpak_invocation_return_error (invocation, error, "Error updating appstream");
           return TRUE;
         }
@@ -1152,6 +1405,345 @@ handle_run_triggers (FlatpakSystemHelper   *object,
 }
 
 static gboolean
+check_for_system_helper_user (struct passwd  *passwd,
+                              gchar         **passwd_buf,
+                              GError        **error)
+{
+  struct passwd *result = NULL;
+  g_autofree gchar *buf = NULL;
+  size_t bufsize;
+  int err;
+
+  bufsize = sysconf (_SC_GETPW_R_SIZE_MAX);
+  if (bufsize == -1)          /* Value was indeterminate */
+     bufsize = 16384;        /* Should be more than enough */
+
+  while (!result)
+    {
+      buf = g_malloc0 (bufsize);
+      err = getpwnam_r (SYSTEM_HELPER_USER, passwd, buf, bufsize, &result);
+      if (result == NULL)
+        {
+          if (err == ERANGE)     /* Insufficient buffer space */
+            {
+              g_free (buf);
+              bufsize *= 2;
+              continue;
+            }
+          else if (err == 0)     /* User SYSTEM_HELPER_USER 's record was not found*/
+            {
+              g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                           "User %s does not exist in password file entry", SYSTEM_HELPER_USER);
+              return FALSE;
+            }
+          else
+            {
+              g_set_error (error, G_IO_ERROR, g_io_error_from_errno (err),
+                           "Failed to query user %s from password file entry", SYSTEM_HELPER_USER);
+              return FALSE;
+            }
+        }
+    }
+
+  *passwd_buf = g_steal_pointer (&buf);
+
+  return TRUE;
+}
+
+static void
+revokefs_fuse_backend_child_setup (gpointer user_data)
+{
+  struct passwd *passwd = user_data;
+
+  if (setgid (passwd->pw_gid) == -1)
+    {
+      g_warning ("Failed to setgid(%d) for revokefs backend: %s",
+                 passwd->pw_gid, g_strerror (errno));
+      exit (1);
+    }
+
+  if (setuid (passwd->pw_uid) == -1)
+    {
+      g_warning ("Failed to setuid(%d) for revokefs backend: %s",
+                 passwd->pw_uid, g_strerror (errno));
+      exit (1);
+    }
+}
+
+static void
+name_vanished_cb (GDBusConnection *connection, const gchar *name, gpointer user_data)
+{
+  const gchar *unique_name = (const gchar *) user_data;
+  g_autoptr(GPtrArray) cleanup_pulls = NULL;
+  GHashTableIter iter;
+  gpointer value;
+
+  cleanup_pulls = g_ptr_array_new_with_free_func ((GDestroyNotify) ongoing_pull_free);
+
+  G_LOCK (cache_dirs_in_use);
+  g_hash_table_iter_init (&iter, cache_dirs_in_use);
+  while (g_hash_table_iter_next (&iter, NULL, &value))
+    {
+      OngoingPull *pull = (OngoingPull *) value;
+      if (g_strcmp0 (pull->unique_name, unique_name) == 0)
+        {
+          g_ptr_array_add (cleanup_pulls, pull);
+          g_hash_table_iter_remove (&iter);
+        }
+    }
+  G_UNLOCK (cache_dirs_in_use);
+}
+
+static OngoingPull *
+ongoing_pull_new (FlatpakSystemHelper   *object,
+                  GDBusMethodInvocation *invocation,
+                  struct passwd         *passwd,
+                  uid_t                  uid,
+                  const gchar           *src,
+                  GError               **error)
+{
+  GDBusConnection *connection = g_dbus_method_invocation_get_connection (invocation);
+  g_autoptr(OngoingPull) pull = NULL;
+  g_autoptr(GSubprocessLauncher) launcher = NULL;
+  int sockets[2], exit_sockets[2];
+  const char *revokefs_fuse_bin = LIBEXECDIR "/revokefs-fuse";
+
+  pull = g_slice_new0 (OngoingPull);
+  pull->object = object;
+  pull->invocation = invocation;
+  pull->src_dir = g_strdup (src);
+  pull->cancellable = g_cancellable_new ();
+  pull->uid = uid;
+  pull->preserve_pull = FALSE;
+  pull->unique_name = g_strdup (g_dbus_connection_get_unique_name (connection));
+
+  pull->watch_id = g_bus_watch_name_on_connection (connection,
+                                                   pull->unique_name,
+                                                   G_BUS_NAME_WATCHER_FLAGS_NONE, NULL,
+                                                   name_vanished_cb,
+                                                   g_strdup (g_dbus_connection_get_unique_name (connection)),
+                                                   g_free);
+
+  if (socketpair (AF_UNIX, SOCK_SEQPACKET, 0, sockets) == -1)
+    {
+      glnx_throw_errno_prefix (error, "Failed to get a socketpair");
+      return NULL;
+    }
+
+  if (pipe2 (exit_sockets, O_CLOEXEC) == -1)
+    {
+      glnx_throw_errno_prefix (error, "Failed to create a pipe");
+      close (sockets[0]);
+      close (sockets[1]);
+      return NULL;
+    }
+
+  launcher = g_subprocess_launcher_new (G_SUBPROCESS_FLAGS_NONE);
+  g_subprocess_launcher_set_child_setup (launcher, revokefs_fuse_backend_child_setup, passwd, NULL);
+  g_subprocess_launcher_take_fd (launcher, sockets[0], 3);
+  fcntl (sockets[1], F_SETFD, FD_CLOEXEC);
+  pull->client_socket = sockets[1];
+
+  g_subprocess_launcher_take_fd (launcher, exit_sockets[0], 4);
+  pull->backend_exit_socket = exit_sockets[1];
+
+  if (g_getenv ("FLATPAK_REVOKEFS_FUSE"))
+    revokefs_fuse_bin = g_getenv ("FLATPAK_REVOKEFS_FUSE");
+
+  pull->revokefs_backend = g_subprocess_launcher_spawn (launcher,
+                                                        error,
+                                                        revokefs_fuse_bin,
+                                                        "--backend",
+                                                        "--socket=3",
+                                                        "--exit-with-fd=4",
+                                                        src, NULL);
+  if (pull->revokefs_backend == NULL)
+    return NULL;
+
+  return g_steal_pointer (&pull);
+}
+
+static gboolean
+reuse_cache_dir_if_available (const gchar    *repo_tmp,
+                              gchar         **out_src_dir,
+                              struct passwd  *passwd)
+{
+  g_autoptr(GFileEnumerator) enumerator = NULL;
+  g_autoptr(GFile) repo_tmpfile = NULL;
+  GFileInfo *file_info = NULL;
+  g_autoptr(GError) error = NULL;
+  const gchar *name;
+  gboolean res = FALSE;
+
+  g_debug ("Checking for any temporary cache directory available to reuse");
+
+  repo_tmpfile = g_file_new_for_path (repo_tmp);
+  enumerator = g_file_enumerate_children (repo_tmpfile,
+                                          G_FILE_ATTRIBUTE_STANDARD_NAME ","
+                                          G_FILE_ATTRIBUTE_STANDARD_TYPE,
+                                          G_FILE_QUERY_INFO_NONE, NULL, &error);
+  if (enumerator == NULL)
+    {
+      g_warning ("Failed to enumerate %s: %s", repo_tmp, error->message);
+      return FALSE;
+    }
+
+  while (TRUE)
+    {
+      if (!g_file_enumerator_iterate (enumerator, &file_info, NULL, NULL, &error))
+        {
+          g_warning ("Error while iterating %s: %s", repo_tmp, error->message);
+          break;
+        }
+
+      if (file_info == NULL || res == TRUE)
+        break;
+
+      name = g_file_info_get_name (file_info);
+      if (g_file_info_get_file_type (file_info) == G_FILE_TYPE_DIRECTORY &&
+          g_str_has_prefix (name, "flatpak-cache-"))
+        {
+          g_autoptr(GFile) cache_dir_file = g_file_get_child (repo_tmpfile, name);
+          g_autofree gchar *cache_dir_name = g_file_get_path (cache_dir_file);
+
+          G_LOCK (cache_dirs_in_use);
+          if (!g_hash_table_contains (cache_dirs_in_use, cache_dir_name))
+            {
+              struct stat st_buf;
+
+              /* We are able to find a cache dir which is not in use. */
+              if (stat (cache_dir_name, &st_buf) == 0 &&
+                  st_buf.st_uid == passwd->pw_uid &&        /* should be owned by SYSTEM_HELPER_USER */
+                  (st_buf.st_mode & 0022) == 0)             /* should not be world-writeable */
+                {
+                  gboolean did_not_exist = g_hash_table_insert (cache_dirs_in_use,
+                                                                g_strdup (cache_dir_name),
+                                                                NULL);
+                  g_assert (did_not_exist);
+                  *out_src_dir = g_steal_pointer (&cache_dir_name);
+                  res = TRUE;
+                }
+            }
+          G_UNLOCK (cache_dirs_in_use);
+        }
+    }
+
+  return res;
+}
+
+static gboolean
+handle_get_revokefs_fd (FlatpakSystemHelper   *object,
+                        GDBusMethodInvocation *invocation,
+                        GUnixFDList           *arg_fdlist,
+                        guint                  arg_flags,
+                        const gchar           *arg_installation)
+{
+  g_autoptr(FlatpakDir) system = NULL;
+  g_autoptr(GUnixFDList) fd_list = NULL;
+  g_autoptr(GError) error = NULL;
+  g_autofree gchar *src_dir = NULL;
+  g_autofree gchar *flatpak_dir = NULL;
+  g_autofree gchar *repo_tmp = NULL;
+  g_autofree gchar *passwd_buf = NULL;
+  struct passwd passwd = { NULL };
+  OngoingPull *new_pull;
+  uid_t uid;
+  int fd_index = -1;
+
+  g_debug ("GetRevokefsFd %u %s", arg_flags, arg_installation);
+
+  if (disable_revokefs)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_NOT_SUPPORTED, "RevokeFS disabled");
+      return TRUE;
+    }
+
+  system = dir_get_system (arg_installation, get_sender_pid (invocation), &error);
+  if (system == NULL)
+    {
+      g_dbus_method_invocation_return_gerror (invocation, error);
+      return TRUE;
+    }
+
+  if ((arg_flags & ~FLATPAK_HELPER_GET_REVOKEFS_FD_FLAGS_ALL) != 0)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                             "Unsupported flags enabled: 0x%x", (arg_flags & ~FLATPAK_HELPER_GET_REVOKEFS_FD_FLAGS_ALL));
+      return TRUE;
+    }
+
+  if (on_session_bus)
+    {
+      passwd.pw_uid = getuid();
+      passwd.pw_gid = getgid();
+    }
+  else if (!check_for_system_helper_user (&passwd, &passwd_buf, &error))
+    {
+      g_dbus_method_invocation_return_gerror (invocation, error);
+      return TRUE;
+    }
+
+  if (!get_connection_uid (invocation, &uid, &error))
+    {
+      g_dbus_method_invocation_return_gerror (invocation, error);
+      return TRUE;
+    }
+
+  flatpak_dir = g_file_get_path (flatpak_dir_get_path (system));
+  repo_tmp = g_build_filename (flatpak_dir, "repo", "tmp", NULL);
+
+   if (reuse_cache_dir_if_available (repo_tmp, &src_dir, &passwd))
+     g_debug ("Cache dir %s can be reused", src_dir);
+  else
+    {
+      /* Create a new cache dir and add it to cache_dirs_in_use. Do all this under
+       * a lock, so that a different pull does not snatch this directory up using
+       * reuse_cache_dir_if_available. */
+      G_LOCK (cache_dirs_in_use);
+      src_dir = g_mkdtemp_full (g_build_filename (repo_tmp, "flatpak-cache-XXXXXX", NULL), 0755);
+      if (src_dir == NULL)
+        {
+          G_UNLOCK (cache_dirs_in_use);
+          glnx_throw_errno_prefix (&error, "Failed to create new cache-dir at %s", repo_tmp);
+          g_dbus_method_invocation_return_gerror (invocation, error);
+          return TRUE;
+        }
+      g_hash_table_insert (cache_dirs_in_use, g_strdup (src_dir), NULL);
+      G_UNLOCK (cache_dirs_in_use);
+
+      if (chown (src_dir, passwd.pw_uid, passwd.pw_gid) == -1)
+        {
+          remove_dir_from_cache_dirs_in_use (src_dir);
+          glnx_throw_errno_prefix (&error, "Failed to chown %s to user %s",
+                                   src_dir, passwd.pw_name);
+          g_dbus_method_invocation_return_gerror (invocation, error);
+          return TRUE;
+        }
+    }
+
+  new_pull = ongoing_pull_new (object, invocation, &passwd, uid, src_dir, &error);
+  if (error != NULL)
+    {
+      remove_dir_from_cache_dirs_in_use (src_dir);
+      g_dbus_method_invocation_return_gerror (invocation, error);
+      return TRUE;
+    }
+
+  G_LOCK (cache_dirs_in_use);
+  g_hash_table_insert (cache_dirs_in_use, g_strdup (src_dir), new_pull);
+  G_UNLOCK (cache_dirs_in_use);
+
+  fd_list = g_unix_fd_list_new ();
+  fd_index = g_unix_fd_list_append (fd_list, new_pull->client_socket, NULL);
+
+  flatpak_system_helper_complete_get_revokefs_fd (object, invocation,
+                                                  fd_list, g_variant_new_handle (fd_index),
+                                                  new_pull->src_dir);
+
+  return TRUE;
+}
+
+static gboolean
 handle_update_summary (FlatpakSystemHelper   *object,
                        GDBusMethodInvocation *invocation,
                        guint                  arg_flags,
@@ -1159,6 +1751,7 @@ handle_update_summary (FlatpakSystemHelper   *object,
 {
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
+  gboolean delete_summary;
 
   g_debug ("UpdateSummary %u %s", arg_flags, arg_installation);
 
@@ -1181,10 +1774,11 @@ handle_update_summary (FlatpakSystemHelper   *object,
       g_dbus_method_invocation_return_gerror (invocation, error);
       return TRUE;
     }
-
-  if (!flatpak_dir_update_summary (system, NULL, &error))
+  delete_summary = (arg_flags & FLATPAK_HELPER_UPDATE_SUMMARY_FLAGS_DELETE) != 0;
+  if (!flatpak_dir_update_summary (system, delete_summary, NULL, &error))
     {
-      flatpak_invocation_return_error (invocation, error, "Error updating summary");
+      flatpak_invocation_return_error (invocation, error, "Error %s summary",
+                                       delete_summary ? "deleting" : "updating");
       return TRUE;
     }
 
@@ -1202,6 +1796,7 @@ handle_generate_oci_summary (FlatpakSystemHelper   *object,
 {
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
+  gboolean only_cached;
   gboolean is_oci;
 
   g_debug ("GenerateOciSummary %u %s %s", arg_flags, arg_origin, arg_installation);
@@ -1220,6 +1815,8 @@ handle_generate_oci_summary (FlatpakSystemHelper   *object,
       return TRUE;
     }
 
+  only_cached = (arg_flags & FLATPAK_HELPER_GENERATE_OCI_SUMMARY_FLAGS_ONLY_CACHED) != 0;
+
   if (!flatpak_dir_ensure_repo (system, NULL, &error))
     {
       g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
@@ -1235,7 +1832,7 @@ handle_generate_oci_summary (FlatpakSystemHelper   *object,
       return TRUE;
     }
 
-  if (!flatpak_dir_remote_make_oci_summary (system, arg_origin, NULL, NULL, &error))
+  if (!flatpak_dir_remote_make_oci_summary (system, arg_origin, only_cached, NULL, NULL, &error))
     {
       flatpak_invocation_return_error (invocation, error, "Failed to update OCI summary");
       return TRUE;
@@ -1266,7 +1863,6 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
   const gchar *method_name = g_dbus_method_invocation_get_method_name (invocation);
   const gchar *sender = g_dbus_method_invocation_get_sender (invocation);
   GVariant *parameters = g_dbus_method_invocation_get_parameters (invocation);
-
   g_autoptr(AutoPolkitSubject) subject = polkit_system_bus_name_new (sender);
   g_autoptr(AutoPolkitDetails) details = polkit_details_new ();
   const gchar *action = NULL;
@@ -1294,7 +1890,7 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
       g_variant_get_child (parameters, 1, "u", &flags);
       g_variant_get_child (parameters, 2, "&s", &ref);
       g_variant_get_child (parameters, 3, "&s", &origin);
-      g_variant_get_child (parameters, 5, "&s", &installation);
+      g_variant_get_child (parameters, 6, "&s", &installation);
 
       /* For metadata updates, redirect to the metadata-update action which
        * should basically always be allowed */
@@ -1440,7 +2036,9 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
   else if (g_strcmp0 (method_name, "RemoveLocalRef") == 0 ||
            g_strcmp0 (method_name, "PruneLocalRepo") == 0 ||
            g_strcmp0 (method_name, "EnsureRepo") == 0 ||
-           g_strcmp0 (method_name, "RunTriggers") == 0)
+           g_strcmp0 (method_name, "RunTriggers") == 0 ||
+           g_strcmp0 (method_name, "GetRevokefsFd") == 0 ||
+           g_strcmp0 (method_name, "CancelPull") == 0)
     {
       guint32 flags;
 
@@ -1453,7 +2051,12 @@ flatpak_authorize_method_handler (GDBusInterfaceSkeleton *interface,
   else if (g_strcmp0 (method_name, "UpdateSummary") == 0 ||
            g_strcmp0 (method_name, "GenerateOciSummary") == 0)
     {
+      guint32 flags;
       action = "org.freedesktop.Flatpak.metadata-update";
+
+      /* all of these methods have flags as first argument, and 1 << 0 as 'no-interaction' */
+      g_variant_get_child (parameters, 0, "u", &flags);
+      no_interaction = (flags & (1 << 0)) != 0;
     }
 
   if (action)
@@ -1526,6 +2129,8 @@ on_bus_acquired (GDBusConnection *connection,
   g_signal_connect (helper, "handle-run-triggers", G_CALLBACK (handle_run_triggers), NULL);
   g_signal_connect (helper, "handle-update-summary", G_CALLBACK (handle_update_summary), NULL);
   g_signal_connect (helper, "handle-generate-oci-summary", G_CALLBACK (handle_generate_oci_summary), NULL);
+  g_signal_connect (helper, "handle-get-revokefs-fd", G_CALLBACK (handle_get_revokefs_fd), NULL);
+  g_signal_connect (helper, "handle-cancel-pull", G_CALLBACK (handle_cancel_pull), NULL);
 
   g_signal_connect (helper, "g-authorize-method",
                     G_CALLBACK (flatpak_authorize_method_handler),
@@ -1600,7 +2205,6 @@ main (int    argc,
   gboolean show_version;
   GBusNameOwnerFlags flags;
   GOptionContext *context;
-
   g_autoptr(GError) error = NULL;
   const GOptionEntry options[] = {
     { "replace", 'r', 0, G_OPTION_ARG_NONE, &replace,  "Replace old daemon.", NULL },
@@ -1611,9 +2215,20 @@ main (int    argc,
     { NULL }
   };
 
+  /* The child repo shared between the client process and the
+     system-helper really needs to support creating files that
+     are readable by others, so override the umask to 022
+     Ideally this should be set when needed, but umask is thread-unsafe
+     so there is really no local way to fix this.
+  */
+  umask(022);
+
   setlocale (LC_ALL, "");
 
   g_setenv ("GIO_USE_VFS", "local", TRUE);
+
+  if (g_getenv ("FLATPAK_DISABLE_REVOKEFS"))
+    disable_revokefs = TRUE;
 
   g_set_prgname (argv[0]);
 
@@ -1691,11 +2306,17 @@ main (int    argc,
                                   NULL,
                                   NULL);
 
+  cache_dirs_in_use = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+
   /* Ensure we don't idle exit */
   schedule_idle_callback ();
 
   main_loop = g_main_loop_new (NULL, FALSE);
   g_main_loop_run (main_loop);
+
+  G_LOCK (cache_dirs_in_use);
+  g_clear_pointer (&cache_dirs_in_use, g_hash_table_destroy);
+  G_UNLOCK (cache_dirs_in_use);
 
   return 0;
 }

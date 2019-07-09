@@ -101,6 +101,15 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--cached</option></term>
+
+                <listitem><para>
+                  Prefer to use locally cached information if possible, even though it
+                  may be out of date. This is faster, but risks returning stale information.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>-d</option></term>
                 <term><option>--show-details</option></term>
 
@@ -148,7 +157,7 @@
                 <term><option>--arch=ARCH</option></term>
 
                 <listitem><para>
-                    Show only those matching the specied architecture. By default, only
+                    Show only those matching the specified architecture. By default, only
                     supported architectures are shown. Use <option>--arch=*</option> to show all architectures.
                 </para></listitem>
             </varlistentry>
@@ -198,6 +207,14 @@
         <para>The following fields are understood by the <option>--columns</option> option:</para>
 
         <variablelist>
+            <varlistentry>
+                <term>name</term>
+
+                <listitem><para>
+                    Show the name
+                </para></listitem>
+            </varlistentry>
+
             <varlistentry>
                 <term>description</term>
 

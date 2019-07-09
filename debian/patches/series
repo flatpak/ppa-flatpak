@@ -1,2 +1,3 @@
+Don-t-register-polkit-agent-if-we-cannot-connect-to-syste.patch
 tests-Skip-tests-that-use-system-helper-if-uid-or-gid-is-.patch
 debian/Use-Python-3-for-test-web-server.patch

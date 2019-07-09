@@ -14,8 +14,8 @@ AC_PREREQ([2.63])
 # on the unstable (ie master), interface age = 0
 
 m4_define([flatpak_major_version], [1])
-m4_define([flatpak_minor_version], [2])
-m4_define([flatpak_micro_version], [4])
+m4_define([flatpak_minor_version], [4])
+m4_define([flatpak_micro_version], [2])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -236,6 +236,17 @@ AS_IF([ test x$have_gpgme = xno ], [
    AC_MSG_ERROR([Need GPGME_PTHREAD version $LIBGPGME_DEPENDENCY or later])
 ])
 
+AC_ARG_ENABLE(selinux-module,
+        [AS_HELP_STRING([--enable-selinux-module],[Enable selinux module for system-helper])],
+        enable_selinux_module=$enableval, enable_selinux_module=auto)
+if test x$enable_selinux_module = xauto ; then
+   AC_CHECK_FILE([/usr/share/selinux/devel/Makefile], [enable_selinux_module=yes],  [enable_selinux_module=no])
+fi
+if test x$enable_selinux_module = xyes ; then
+   AC_CHECK_FILE([/usr/share/selinux/devel/Makefile], [],  [AC_MSG_ERROR([selinux-policy-devel needed to build selinux module])])
+fi
+AM_CONDITIONAL(BUILD_SELINUX_MODULE, test x$enable_selinux_module = xyes)
+
 AC_ARG_ENABLE([system-helper],
               AC_HELP_STRING([--disable-system-helper],
                              [Disable system helper]),
@@ -247,6 +258,8 @@ if test "x$enable_system_helper" = "xyes"; then
   AC_DEFINE([USE_SYSTEM_HELPER], [1], [Define if using system-helper])
 fi
 AM_CONDITIONAL(BUILD_SYSTEM_HELPER, test x$enable_system_helper = xyes)
+
+PKG_CHECK_MODULES(FUSE, fuse >= 2.9.2)
 
 AC_ARG_ENABLE([xauth],
               AC_HELP_STRING([--disable-xauth],
@@ -309,6 +322,13 @@ AC_ARG_WITH(system-install-dir,
            [with_system_install_dir='$(localstatedir)/lib/flatpak'])
 SYSTEM_INSTALL_DIR=$with_system_install_dir
 AC_SUBST(SYSTEM_INSTALL_DIR)
+
+AC_ARG_WITH(system-helper-user,
+           [AS_HELP_STRING([--with-system-helper-user=USERNAME],
+                           [Name of the system helper user])],
+           with_system_helper_user="$withval", with_system_helper_user=flatpak)
+SYSTEM_HELPER_USER=$with_system_helper_user
+AC_SUBST(SYSTEM_HELPER_USER)
 
 AC_ARG_ENABLE(documentation,
               AC_HELP_STRING([--enable-documentation], [Build documentation]),,
@@ -497,6 +517,7 @@ echo "          Flatpak $FLATPAK_VERSION"
 echo "          ============="
 echo ""
 echo "          Build system helper:    $enable_system_helper"
+echo "          Build selinux module:   $enable_selinux_module"
 echo "          Build bubblewrap:       $build_bwrap"
 echo "          Build dbus-proxy:       $build_dbus_proxy"
 echo "          Use sandboxed triggers: $enable_sandboxed_triggers"

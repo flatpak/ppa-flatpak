@@ -118,9 +118,9 @@ uninstall_dir_ensure (GHashTable *uninstall_dirs,
 }
 
 static gboolean
-flatpak_delete_data (gboolean opt_yes,
+flatpak_delete_data (gboolean    opt_yes,
                      const char *app_id,
-                     GError **error)
+                     GError    **error)
 {
   g_autofree char *path = g_build_filename (g_get_home_dir (), ".var", "app", app_id, NULL);
   g_autoptr(GFile) file = g_file_new_for_path (path);
@@ -332,7 +332,7 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
 
           chosen_pairs = g_ptr_array_new ();
 
-          if (!flatpak_resolve_matching_installed_refs (opt_yes, ref_dir_pairs, id, chosen_pairs, error))
+          if (!flatpak_resolve_matching_installed_refs (opt_yes, FALSE, ref_dir_pairs, id, chosen_pairs, error))
             return FALSE;
 
           for (i = 0; i < chosen_pairs->len; i++)
@@ -373,10 +373,7 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
     if (!flatpak_transaction_run (transaction, cancellable, error))
       {
         if (g_error_matches (*error, FLATPAK_ERROR, FLATPAK_ERROR_ABORTED))
-          {
-            g_clear_error (error);
-            return TRUE;
-          }
+          g_clear_error (error); /* Don't report on stderr */
 
         return FALSE;
       }
@@ -428,7 +425,7 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
 
           if (!flatpak_delete_data (opt_yes, g_file_info_get_name (info), error))
             return FALSE;
-        } 
+        }
     }
 
   return TRUE;

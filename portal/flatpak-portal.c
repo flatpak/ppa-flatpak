@@ -114,9 +114,9 @@ schedule_idle_callback (void)
 
 typedef struct
 {
-  GPid  pid;
-  char *client;
-  guint child_watch;
+  GPid     pid;
+  char    *client;
+  guint    child_watch;
   gboolean watch_bus;
 } PidData;
 
@@ -133,7 +133,6 @@ child_watch_died (GPid     pid,
                   gpointer user_data)
 {
   PidData *pid_data = user_data;
-
   g_autoptr(GVariant) signal_variant = NULL;
 
   g_debug ("Client Pid %d died", pid_data->pid);
@@ -201,7 +200,7 @@ child_setup_func (gpointer user_data)
         }
     }
 
-  /* Second pass in case we needed an inbetween fd value to avoid conflicts */
+  /* Second pass in case we needed an in-between fd value to avoid conflicts */
   for (i = 0; i < data->fd_map_len; i++)
     {
       if (fd_map[i].to != fd_map[i].final)
@@ -236,7 +235,7 @@ child_setup_func (gpointer user_data)
 
 static gboolean
 is_valid_expose (const char *expose,
-                 GError **error)
+                 GError    **error)
 {
   /* No subdirs or absolute paths */
   if (expose[0] == '/')
@@ -850,7 +849,6 @@ main (int    argc,
   gboolean show_version;
   GOptionContext *context;
   GBusNameOwnerFlags flags;
-
   g_autoptr(GError) error = NULL;
   const GOptionEntry options[] = {
     { "replace", 'r', 0, G_OPTION_ARG_NONE, &replace,  "Replace old daemon.", NULL },
@@ -907,7 +905,7 @@ main (int    argc,
     }
 
   exe_path_len = readlink ("/proc/self/exe", exe_path, sizeof (exe_path) - 1);
-  if (exe_path_len > 0)
+  if (exe_path_len > 0 && (size_t) exe_path_len < sizeof (exe_path))
     {
       exe_path[exe_path_len] = 0;
       GFileMonitor *monitor;

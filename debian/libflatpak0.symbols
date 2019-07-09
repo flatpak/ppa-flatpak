@@ -15,11 +15,13 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_get_supported_arches@Base 0.6.6
  flatpak_get_system_installations@Base 0.8.0
  flatpak_install_flags_get_type@Base 0.6.5
+ flatpak_installation_add_remote@Base 1.3.4
  flatpak_installation_cleanup_local_refs_sync@Base 0.9.99
  flatpak_installation_create_monitor@Base 0.5.2
  flatpak_installation_drop_caches@Base 0.5.2+git20160516
  flatpak_installation_fetch_remote_metadata_sync@Base 0.5.2
  flatpak_installation_fetch_remote_ref_sync@Base 0.5.2
+ flatpak_installation_fetch_remote_ref_sync_full@Base 1.3.3
  flatpak_installation_fetch_remote_size_sync@Base 0.5.2
  flatpak_installation_get_config@Base 0.10.0
  flatpak_installation_get_current_installed_app@Base 0.5.2
@@ -45,6 +47,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_list_installed_refs_for_update@Base 0.5.2
  flatpak_installation_list_installed_related_refs_sync@Base 0.6.7
  flatpak_installation_list_remote_refs_sync@Base 0.5.2
+ flatpak_installation_list_remote_refs_sync_full@Base 1.3.3
  flatpak_installation_list_remote_related_refs_sync@Base 0.6.7
  flatpak_installation_list_remotes@Base 0.5.2
  flatpak_installation_list_remotes_by_type@Base 0.11.4
@@ -100,6 +103,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_oci_error_quark@Base 0.9.1
  flatpak_portal_error_get_type@Base 0.11.8
  flatpak_portal_error_quark@Base 0.5.2+git20160516
+ flatpak_query_flags_get_type@Base 1.3.3
  flatpak_ref_format_ref@Base 0.5.2
  flatpak_ref_get_arch@Base 0.5.2
  flatpak_ref_get_branch@Base 0.5.2
@@ -118,9 +122,14 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_remote_get_appstream_dir@Base 0.5.2
  flatpak_remote_get_appstream_timestamp@Base 0.5.2
  flatpak_remote_get_collection_id@Base 0.9.8
+ flatpak_remote_get_comment@Base 1.3.2
  flatpak_remote_get_default_branch@Base 0.6.12
+ flatpak_remote_get_description@Base 1.3.2
  flatpak_remote_get_disabled@Base 0.5.2+git20160516
+ flatpak_remote_get_filter@Base 1.3.4
  flatpak_remote_get_gpg_verify@Base 0.5.2
+ flatpak_remote_get_homepage@Base 1.3.2
+ flatpak_remote_get_icon@Base 1.3.2
  flatpak_remote_get_main_ref@Base 1.1.1
  flatpak_remote_get_name@Base 0.5.2
  flatpak_remote_get_nodeps@Base 0.6.13
@@ -131,6 +140,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_remote_get_type@Base 0.5.2
  flatpak_remote_get_url@Base 0.5.2
  flatpak_remote_new@Base 0.5.2+git20160516
+ flatpak_remote_new_from_file@Base 1.3.4
  flatpak_remote_ref_get_download_size@Base 0.11.4
  flatpak_remote_ref_get_eol@Base 0.11.4
  flatpak_remote_ref_get_eol_rebase@Base 0.11.4
@@ -139,10 +149,15 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_remote_ref_get_remote_name@Base 0.5.2
  flatpak_remote_ref_get_type@Base 0.5.2
  flatpak_remote_set_collection_id@Base 0.9.8
+ flatpak_remote_set_comment@Base 1.3.2
  flatpak_remote_set_default_branch@Base 0.6.12
+ flatpak_remote_set_description@Base 1.3.2
  flatpak_remote_set_disabled@Base 0.5.2+git20160516
+ flatpak_remote_set_filter@Base 1.3.4
  flatpak_remote_set_gpg_key@Base 0.5.2+git20160516
  flatpak_remote_set_gpg_verify@Base 0.5.2+git20160516
+ flatpak_remote_set_homepage@Base 1.3.2
+ flatpak_remote_set_icon@Base 1.3.2
  flatpak_remote_set_main_ref@Base 1.1.1
  flatpak_remote_set_nodeps@Base 0.6.13
  flatpak_remote_set_noenumerate@Base 0.5.2+git20160516
@@ -156,6 +171,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_transaction_add_install@Base 0.11.8
  flatpak_transaction_add_install_bundle@Base 0.11.8
  flatpak_transaction_add_install_flatpakref@Base 0.99.3
+ flatpak_transaction_add_rebase@Base 1.3.2
  flatpak_transaction_add_uninstall@Base 0.11.8
  flatpak_transaction_add_update@Base 0.11.8
  flatpak_transaction_error_details_get_type@Base 0.11.8

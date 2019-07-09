@@ -122,6 +122,22 @@ typedef enum {
 } FlatpakLaunchFlags;
 
 /**
+ * FlatpakQueryFlags:
+ * @FLATPAK_QUERY_FLAGS_NONE: Default
+ * @FLATPAK_QUERY_FLAGS_ONLY_CACHED: Don't do any network i/o, but only return cached data.
+ * This can return stale data, or a #FLATPAK_ERROR_NOT_CACHED error, however it is a
+ * lot more efficient if you're doing many requests.
+ *
+ * Flags to alter the behavior of e.g flatpak_installation_list_remote_refs_full().
+ *
+ * Since: 1.3.3
+ */
+typedef enum {
+  FLATPAK_QUERY_FLAGS_NONE        = 0,
+  FLATPAK_QUERY_FLAGS_ONLY_CACHED = (1 << 0),
+} FlatpakQueryFlags;
+
+/**
  * FlatpakStorageType:
  * @FLATPAK_STORAGE_TYPE_DEFAULT: default
  * @FLATPAK_STORAGE_TYPE_HARD_DISK: installation is on a hard disk
@@ -223,10 +239,10 @@ FLATPAK_EXTERN GPtrArray           *flatpak_installation_list_installed_refs_by_
 FLATPAK_EXTERN GPtrArray           *flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
                                                                                          GCancellable        *cancellable,
                                                                                          GError             **error);
-FLATPAK_EXTERN GPtrArray           *flatpak_installation_list_unused_refs (FlatpakInstallation  *self,
-                                                                           const char           *arch,
-                                                                           GCancellable         *cancellable,
-                                                                           GError              **error);
+FLATPAK_EXTERN GPtrArray           *flatpak_installation_list_unused_refs (FlatpakInstallation *self,
+                                                                           const char          *arch,
+                                                                           GCancellable        *cancellable,
+                                                                           GError             **error);
 FLATPAK_EXTERN FlatpakInstalledRef * flatpak_installation_get_installed_ref (FlatpakInstallation *self,
                                                                              FlatpakRefKind       kind,
                                                                              const char          *name,
@@ -251,6 +267,11 @@ FLATPAK_EXTERN FlatpakRemote        *flatpak_installation_get_remote_by_name (Fl
                                                                               const gchar         *name,
                                                                               GCancellable        *cancellable,
                                                                               GError             **error);
+FLATPAK_EXTERN gboolean              flatpak_installation_add_remote (FlatpakInstallation *self,
+                                                                      FlatpakRemote       *remote,
+                                                                      gboolean             if_needed,
+                                                                      GCancellable        *cancellable,
+                                                                      GError             **error);
 FLATPAK_EXTERN gboolean              flatpak_installation_modify_remote (FlatpakInstallation *self,
                                                                          FlatpakRemote       *remote,
                                                                          GCancellable        *cancellable,
@@ -369,6 +390,11 @@ FLATPAK_EXTERN GPtrArray    *    flatpak_installation_list_remote_refs_sync (Fla
                                                                              const char          *remote_or_uri,
                                                                              GCancellable        *cancellable,
                                                                              GError             **error);
+FLATPAK_EXTERN GPtrArray    *    flatpak_installation_list_remote_refs_sync_full (FlatpakInstallation *self,
+                                                                                  const char          *remote_or_uri,
+                                                                                  FlatpakQueryFlags    flags,
+                                                                                  GCancellable        *cancellable,
+                                                                                  GError             **error);
 FLATPAK_EXTERN FlatpakRemoteRef  *flatpak_installation_fetch_remote_ref_sync (FlatpakInstallation *self,
                                                                               const char          *remote_name,
                                                                               FlatpakRefKind       kind,
@@ -377,6 +403,15 @@ FLATPAK_EXTERN FlatpakRemoteRef  *flatpak_installation_fetch_remote_ref_sync (Fl
                                                                               const char          *branch,
                                                                               GCancellable        *cancellable,
                                                                               GError             **error);
+FLATPAK_EXTERN FlatpakRemoteRef  *flatpak_installation_fetch_remote_ref_sync_full (FlatpakInstallation *self,
+                                                                                   const char          *remote_name,
+                                                                                   FlatpakRefKind       kind,
+                                                                                   const char          *name,
+                                                                                   const char          *arch,
+                                                                                   const char          *branch,
+                                                                                   FlatpakQueryFlags    flags,
+                                                                                   GCancellable        *cancellable,
+                                                                                   GError             **error);
 FLATPAK_EXTERN gboolean          flatpak_installation_update_appstream_sync (FlatpakInstallation *self,
                                                                              const char          *remote_name,
                                                                              const char          *arch,

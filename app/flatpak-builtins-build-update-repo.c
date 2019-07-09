@@ -34,6 +34,10 @@
 #include "flatpak-builtins-utils.h"
 
 static char *opt_title;
+static char *opt_comment;
+static char *opt_description;
+static char *opt_homepage;
+static char *opt_icon;
 static char *opt_redirect_url;
 static char *opt_default_branch;
 static char *opt_collection_id = NULL;
@@ -46,12 +50,19 @@ static char *opt_gpg_homedir;
 static char **opt_gpg_key_ids;
 static gboolean opt_prune;
 static gboolean opt_generate_deltas;
+static gboolean opt_no_update_appstream;
+static gboolean opt_no_update_summary;
 static gint opt_prune_depth = -1;
 static gint opt_static_delta_jobs;
+static char **opt_static_delta_ignore_refs;
 
 static GOptionEntry options[] = {
   { "redirect-url", 0, 0, G_OPTION_ARG_STRING, &opt_redirect_url, N_("Redirect this repo to a new URL"), N_("URL") },
   { "title", 0, 0, G_OPTION_ARG_STRING, &opt_title, N_("A nice name to use for this repository"), N_("TITLE") },
+  { "comment", 0, 0, G_OPTION_ARG_STRING, &opt_comment, N_("A one-line comment for this repository"), N_("COMMENT") },
+  { "description", 0, 0, G_OPTION_ARG_STRING, &opt_description, N_("A full-paragraph description for this repository"), N_("DESCRIPTION") },
+  { "homepage", 0, 0, G_OPTION_ARG_STRING, &opt_homepage, N_("URL for a website for this repository"), N_("URL") },
+  { "icon", 0, 0, G_OPTION_ARG_STRING, &opt_icon, N_("URL for an icon for this repository"), N_("URL") },
   { "default-branch", 0, 0, G_OPTION_ARG_STRING, &opt_default_branch, N_("Default branch to use for this repository"), N_("BRANCH") },
   { "collection-id", 0, 0, G_OPTION_ARG_STRING, &opt_collection_id, N_("Collection ID"), N_("COLLECTION-ID") },
   { "deploy-collection-id", 0, 0, G_OPTION_ARG_NONE, &opt_deploy_collection_id, N_("Permanently deploy collection ID to client remote configurations"), NULL },
@@ -59,7 +70,10 @@ static GOptionEntry options[] = {
   { "gpg-sign", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_gpg_key_ids, N_("GPG Key ID to sign the summary with"), N_("KEY-ID") },
   { "gpg-homedir", 0, 0, G_OPTION_ARG_STRING, &opt_gpg_homedir, N_("GPG Homedir to use when looking for keyrings"), N_("HOMEDIR") },
   { "generate-static-deltas", 0, 0, G_OPTION_ARG_NONE, &opt_generate_deltas, N_("Generate delta files"), NULL },
+  { "no-update-summary", 0, 0, G_OPTION_ARG_NONE, &opt_no_update_summary, N_("Don't update the summary"), NULL },
+  { "no-update-appstream", 0, 0, G_OPTION_ARG_NONE, &opt_no_update_appstream, N_("Don't update the appstream branch"), NULL },
   { "static-delta-jobs", 0, 0, G_OPTION_ARG_INT, &opt_static_delta_jobs, N_("Max parallel jobs when creating deltas (default: NUMCPUs)"), N_("NUM-JOBS") },
+  { "static-delta-ignore-ref", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_static_delta_ignore_refs, N_("Don't create deltas matching refs"), N_("PATTERN") },
   { "prune", 0, 0, G_OPTION_ARG_NONE, &opt_prune, N_("Prune unused objects"), NULL },
   { "prune-depth", 0, 0, G_OPTION_ARG_INT, &opt_prune_depth, N_("Only traverse DEPTH parents for each commit (default: -1=infinite)"), N_("DEPTH") },
   { "generate-static-delta-from", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_STRING, &opt_generate_delta_from, NULL, NULL },
@@ -206,7 +220,6 @@ generate_one_delta (OstreeRepo   *repo,
         g_prefix_error (error, _("Failed to generate delta %s (%.10s-%.10s): "),
                         ref, from, to);
       return FALSE;
-
     }
 
   return TRUE;
@@ -224,14 +237,14 @@ delta_generation_done (GObject      *source_object,
 }
 
 static gboolean
-spawn_delete_generation (GMainContext *context,
-                         int          *n_spawned_delta_generate,
-                         OstreeRepo   *repo,
-                         GVariant     *params,
-                         const char   *ref,
-                         const char   *from,
-                         const char   *to,
-                         GError      **error)
+spawn_delta_generation (GMainContext *context,
+                        int          *n_spawned_delta_generate,
+                        OstreeRepo   *repo,
+                        GVariant     *params,
+                        const char   *ref,
+                        const char   *from,
+                        const char   *to,
+                        GError      **error)
 {
   g_autoptr(GSubprocessLauncher) launcher = g_subprocess_launcher_new (0);
   g_autoptr(GSubprocess) subprocess = NULL;
@@ -293,6 +306,7 @@ generate_all_deltas (OstreeRepo   *repo,
   g_autoptr(GVariant) params = NULL;
   int n_spawned_delta_generate = 0;
   g_autoptr(GMainContextPopDefault) context = NULL;
+  g_autoptr(GPtrArray) ignore_patterns = g_ptr_array_new_with_free_func ((GDestroyNotify)g_pattern_spec_free);
 
   g_print ("Generating static deltas\n");
 
@@ -320,6 +334,13 @@ generate_all_deltas (OstreeRepo   *repo,
 
   context = flatpak_main_context_new_default ();
 
+  if (opt_static_delta_ignore_refs != NULL)
+    {
+      for (i = 0; opt_static_delta_ignore_refs[i] != NULL; i++)
+        g_ptr_array_add (ignore_patterns,
+                         g_pattern_spec_new (opt_static_delta_ignore_refs[i]));
+    }
+
   g_hash_table_iter_init (&iter, all_refs);
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
@@ -329,6 +350,44 @@ generate_all_deltas (OstreeRepo   *repo,
       g_autoptr(GVariant) parent_variant = NULL;
       g_autofree char *parent_commit = NULL;
       g_autofree char *grandparent_commit = NULL;
+      gboolean ignore_ref = FALSE;
+
+      if (g_str_has_prefix (ref, "app/") || g_str_has_prefix (ref, "runtime/"))
+        {
+          g_auto(GStrv) parts = g_strsplit (ref, "/", 4);
+
+          for (i = 0; i < ignore_patterns->len; i++)
+            {
+              GPatternSpec *pattern = g_ptr_array_index(ignore_patterns, i);
+              if (g_pattern_match_string (pattern, parts[1]))
+                {
+                  ignore_ref = TRUE;
+                  break;
+                }
+            }
+
+        }
+      else if (g_str_has_prefix (ref, "appstream/"))
+        {
+          /* Old appstream branch deltas poorly, and most users handle the new format */
+          ignore_ref = TRUE;
+        }
+      else if (g_str_has_prefix (ref, "appstream2/"))
+        {
+          /* Always delta this */
+          ignore_ref = FALSE;
+        }
+      else
+        {
+          /* Ignore unknown ref types */
+          ignore_ref = FALSE;
+        }
+
+      if (ignore_ref)
+        {
+          g_debug ("Ignoring deltas for ref %s", ref);
+          continue;
+        }
 
       if (!ostree_repo_load_variant (repo, OSTREE_OBJECT_TYPE_COMMIT, commit,
                                      &variant, NULL))
@@ -340,9 +399,9 @@ generate_all_deltas (OstreeRepo   *repo,
       /* From empty */
       if (!g_hash_table_contains (all_deltas_hash, commit))
         {
-          if (!spawn_delete_generation (context, &n_spawned_delta_generate, repo, params,
-                                        ref, NULL, commit,
-                                        error))
+          if (!spawn_delta_generation (context, &n_spawned_delta_generate, repo, params,
+                                       ref, NULL, commit,
+                                       error))
             return FALSE;
         }
 
@@ -366,9 +425,9 @@ generate_all_deltas (OstreeRepo   *repo,
 
           if (!g_hash_table_contains (all_deltas_hash, from_parent))
             {
-              if (!spawn_delete_generation (context, &n_spawned_delta_generate, repo, params,
-                                            ref, parent_commit, commit,
-                                            error))
+              if (!spawn_delta_generation (context, &n_spawned_delta_generate, repo, params,
+                                           ref, parent_commit, commit,
+                                           error))
                 return FALSE;
             }
 
@@ -445,6 +504,22 @@ flatpak_builtin_build_update_repo (int argc, char **argv,
       !flatpak_repo_set_title (repo, opt_title[0] ? opt_title : NULL, error))
     return FALSE;
 
+  if (opt_comment &&
+      !flatpak_repo_set_comment (repo, opt_comment[0] ? opt_comment : NULL, error))
+    return FALSE;
+
+  if (opt_description &&
+      !flatpak_repo_set_description (repo, opt_description[0] ? opt_description : NULL, error))
+    return FALSE;
+
+  if (opt_homepage &&
+      !flatpak_repo_set_homepage (repo, opt_homepage[0] ? opt_homepage : NULL, error))
+    return FALSE;
+
+  if (opt_icon &&
+      !flatpak_repo_set_icon (repo, opt_icon[0] ? opt_icon : NULL, error))
+    return FALSE;
+
   if (opt_redirect_url &&
       !flatpak_repo_set_redirect_url (repo, opt_redirect_url[0] ? opt_redirect_url : NULL, error))
     return FALSE;
@@ -485,9 +560,12 @@ flatpak_builtin_build_update_repo (int argc, char **argv,
         return FALSE;
     }
 
-  g_print (_("Updating appstream branch\n"));
-  if (!flatpak_repo_generate_appstream (repo, (const char **) opt_gpg_key_ids, opt_gpg_homedir, 0, cancellable, error))
-    return FALSE;
+  if (!opt_no_update_appstream)
+    {
+      g_print (_("Updating appstream branch\n"));
+      if (!flatpak_repo_generate_appstream (repo, (const char **) opt_gpg_key_ids, opt_gpg_homedir, 0, cancellable, error))
+        return FALSE;
+    }
 
   if (opt_generate_deltas &&
       !generate_all_deltas (repo, &unwanted_deltas, cancellable, error))
@@ -506,9 +584,12 @@ flatpak_builtin_build_update_repo (int argc, char **argv,
         }
     }
 
-  g_print (_("Updating summary\n"));
-  if (!flatpak_repo_update (repo, (const char **) opt_gpg_key_ids, opt_gpg_homedir, cancellable, error))
-    return FALSE;
+  if (!opt_no_update_summary)
+    {
+      g_print (_("Updating summary\n"));
+      if (!flatpak_repo_update (repo, (const char **) opt_gpg_key_ids, opt_gpg_homedir, cancellable, error))
+        return FALSE;
+    }
 
   if (opt_prune)
     {

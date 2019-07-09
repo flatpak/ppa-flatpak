@@ -33,6 +33,26 @@
 # Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 # Boston, MA 02111-1307, USA.
 
+# Copyright (C) 2016 Colin Walters <walters@verbum.org>
+# Copyright (C) 2018 Alexander Larsson <alexl@redhat.com>
+#
+# SPDX-License-Identifier: LGPL-2.0+
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+# Boston, MA 02111-1307, USA.
+
 
 
 
@@ -113,11 +133,11 @@ build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = $(am__EXEEXT_1) flatpak$(EXEEXT) $(am__EXEEXT_1)
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_10) \
-	test-libflatpak$(EXEEXT)
+	test-libflatpak$(EXEEXT) revokefs-demo$(EXEEXT)
 libexec_PROGRAMS = $(am__EXEEXT_1) flatpak-session-helper$(EXEEXT) \
 	$(am__EXEEXT_1) flatpak-portal$(EXEEXT) $(am__EXEEXT_1) \
 	$(am__EXEEXT_8) flatpak-validate-icon$(EXEEXT) $(am__EXEEXT_1) \
-	$(am__EXEEXT_9)
+	revokefs-fuse$(EXEEXT) $(am__EXEEXT_9)
 TESTS = $(am__EXEEXT_2) $(am__EXEEXT_12) $(am__EXEEXT_14) \
 	$(am__EXEEXT_6)
 installed_test_PROGRAMS = $(am__EXEEXT_7)
@@ -162,23 +182,26 @@ check_PROGRAMS = $(am__EXEEXT_5) $(am__EXEEXT_6)
 @BUILD_SYSTEM_HELPER_TRUE@am__append_22 = system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/flatpak-system-helper.service.in
 @BUILD_SYSTEM_HELPER_TRUE@am__append_23 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service
-@WITH_SYSTEM_BWRAP_TRUE@am__append_24 = FLATPAK_BWRAP=$(BWRAP)
-@WITH_SYSTEM_BWRAP_FALSE@am__append_25 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
-@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_26 = flatpak-dbus-proxy
+@BUILD_SELINUX_MODULE_TRUE@am__append_24 = flatpak.pp.bz2
+@BUILD_SELINUX_MODULE_TRUE@am__append_25 = selinux/flatpak.if
+@WITH_SYSTEM_DBUS_PROXY_TRUE@am__append_26 = FLATPAK_DBUSPROXY=$(DBUS_PROXY)
+@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_27 = FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && pwd)/flatpak-dbus-proxy
+@WITH_SYSTEM_BWRAP_TRUE@am__append_28 = FLATPAK_BWRAP=$(BWRAP)
+@WITH_SYSTEM_BWRAP_FALSE@am__append_29 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
+@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_30 = flatpak-dbus-proxy
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_PROGRAMS = flatpak-bwrap$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/libglnx/libglnx.m4 \
 	$(top_srcdir)/m4/attributes.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/glibtests.m4 $(top_srcdir)/m4/gtk-doc.m4 \
-	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/intlmacosx.m4 \
-	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
-	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libtool.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/po.m4 \
-	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/glibtests.m4 $(top_srcdir)/m4/iconv.m4 \
+	$(top_srcdir)/m4/intlmacosx.m4 $(top_srcdir)/m4/lib-ld.m4 \
+	$(top_srcdir)/m4/lib-link.m4 $(top_srcdir)/m4/lib-prefix.m4 \
+	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/nls.m4 \
+	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
+	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
@@ -210,7 +233,9 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" \
 	"$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" \
 	"$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" \
-	"$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" \
+	"$(DESTDIR)$(profiledir)" "$(DESTDIR)$(selinux_develdir)" \
+	"$(DESTDIR)$(selinux_moduledir)" \
+	"$(DESTDIR)$(systemdsystemunitdir)" \
 	"$(DESTDIR)$(systemduserunitdir)" \
 	"$(DESTDIR)$(zshcompletiondir)" \
 	"$(DESTDIR)$(flatpakincludedir)" \
@@ -527,6 +552,20 @@ flatpak_validate_icon_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(flatpak_validate_icon_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_revokefs_demo_OBJECTS = revokefs/demo-demo.$(OBJEXT)
+revokefs_demo_OBJECTS = $(am_revokefs_demo_OBJECTS)
+revokefs_demo_DEPENDENCIES = $(am__DEPENDENCIES_1)
+revokefs_demo_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(revokefs_demo_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_revokefs_fuse_OBJECTS = revokefs/fuse-main.$(OBJEXT) \
+	revokefs/fuse-writer.$(OBJEXT)
+revokefs_fuse_OBJECTS = $(am_revokefs_fuse_OBJECTS)
+revokefs_fuse_DEPENDENCIES = libglnx.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+revokefs_fuse_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(revokefs_fuse_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_test_libflatpak_OBJECTS =  \
 	common/test_libflatpak-test-lib.$(OBJEXT) $(am__objects_1)
 test_libflatpak_OBJECTS = $(am_test_libflatpak_OBJECTS)
@@ -719,6 +758,9 @@ am__depfiles_remade =  \
 	portal/$(DEPDIR)/flatpak_portal-flatpak-portal-app-info.Po \
 	portal/$(DEPDIR)/flatpak_portal-flatpak-portal-dbus.Po \
 	portal/$(DEPDIR)/flatpak_portal-flatpak-portal.Po \
+	revokefs/$(DEPDIR)/demo-demo.Po \
+	revokefs/$(DEPDIR)/fuse-main.Po \
+	revokefs/$(DEPDIR)/fuse-writer.Po \
 	session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po \
 	system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po \
 	tests/$(DEPDIR)/httpcache-httpcache.Po \
@@ -753,7 +795,8 @@ SOURCES = $(libflatpak_app_la_SOURCES) \
 	$(flatpak_portal_SOURCES) $(nodist_flatpak_portal_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
 	$(flatpak_system_helper_SOURCES) \
-	$(flatpak_validate_icon_SOURCES) $(test_libflatpak_SOURCES) \
+	$(flatpak_validate_icon_SOURCES) $(revokefs_demo_SOURCES) \
+	$(revokefs_fuse_SOURCES) $(test_libflatpak_SOURCES) \
 	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
 	$(test_libglnx_macros_SOURCES) $(test_libglnx_shutil_SOURCES) \
 	$(test_libglnx_xattrs_SOURCES) $(testcommon_SOURCES) \
@@ -765,7 +808,8 @@ DIST_SOURCES = $(libflatpak_app_la_SOURCES) \
 	$(am__flatpak_dbus_proxy_SOURCES_DIST) \
 	$(flatpak_portal_SOURCES) $(flatpak_session_helper_SOURCES) \
 	$(am__flatpak_system_helper_SOURCES_DIST) \
-	$(flatpak_validate_icon_SOURCES) $(test_libflatpak_SOURCES) \
+	$(flatpak_validate_icon_SOURCES) $(revokefs_demo_SOURCES) \
+	$(revokefs_fuse_SOURCES) $(test_libflatpak_SOURCES) \
 	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
 	$(test_libglnx_macros_SOURCES) $(test_libglnx_shutil_SOURCES) \
 	$(test_libglnx_xattrs_SOURCES) $(testcommon_SOURCES) \
@@ -798,8 +842,9 @@ DATA = $(bashcompletion_DATA) $(dbus_service_DATA) \
 	$(introspection_DATA) $(nobase_installed_test_DATA) \
 	$(nodist_gir_DATA) $(nodist_typelib_DATA) $(noinst_DATA) \
 	$(pkgconfig_DATA) $(polkit_policy_DATA) $(polkit_rules_DATA) \
-	$(profile_DATA) $(systemdsystemunit_DATA) \
-	$(systemduserunit_DATA) $(zshcompletion_DATA)
+	$(profile_DATA) $(selinux_devel_DATA) $(selinux_module_DATA) \
+	$(systemdsystemunit_DATA) $(systemduserunit_DATA) \
+	$(zshcompletion_DATA)
 HEADERS = $(flatpakinclude_HEADERS) $(nodist_flatpakinclude_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
@@ -990,18 +1035,27 @@ RECHECK_LOGS = $(TEST_LOGS)
 am__EXEEXT_11 = tests/test-run@user,nodeltas.wrap \
 	tests/test-run@user,deltas.wrap \
 	tests/test-run@system,nodeltas.wrap \
-	tests/test-run@system,deltas.wrap tests/test-info@user.wrap \
-	tests/test-info@system.wrap tests/test-repo@user.wrap \
-	tests/test-repo@system.wrap tests/test-repo@collections.wrap \
+	tests/test-run@system,deltas.wrap \
+	tests/test-run@system-norevokefs,nodeltas.wrap \
+	tests/test-run@system-norevokefs,deltas.wrap \
+	tests/test-info@user.wrap tests/test-info@system.wrap \
+	tests/test-repo@user.wrap tests/test-repo@system.wrap \
+	tests/test-repo@system-norevokefs.wrap \
+	tests/test-repo@collections.wrap \
 	tests/test-repo@collections-server-only.wrap \
 	tests/test-bundle@user.wrap tests/test-bundle@system.wrap \
+	tests/test-bundle@system-norevokefs.wrap \
 	tests/test-oci-registry@user.wrap \
-	tests/test-oci-registry@system.wrap $(am__EXEEXT_1)
+	tests/test-oci-registry@system.wrap \
+	tests/test-p2p-security@user,collections.wrap \
+	tests/test-p2p-security@system,collections.wrap \
+	$(am__EXEEXT_1)
 am__EXEEXT_12 = $(am__EXEEXT_11)
 am__EXEEXT_13 = tests/test-basic.sh tests/test-completion.sh \
 	tests/test-config.sh tests/test-build-update-repo.sh \
-	tests/test-http-utils.sh tests/test-extensions.sh \
-	tests/test-oci.sh tests/test-unsigned-summaries.sh \
+	tests/test-http-utils.sh tests/test-default-remotes.sh \
+	tests/test-extensions.sh tests/test-oci.sh \
+	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	tests/test-override.sh $(am__EXEEXT_1)
 am__EXEEXT_14 = $(am__EXEEXT_13)
@@ -1032,6 +1086,8 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/app/Makefile.am.inc \
 	$(srcdir)/icon-validator/Makefile.am.inc \
 	$(srcdir)/libglnx/Makefile-libglnx.am.inc \
 	$(srcdir)/portal/Makefile.am.inc \
+	$(srcdir)/revokefs/Makefile.am.inc \
+	$(srcdir)/selinux/Makefile.am.inc \
 	$(srcdir)/session-helper/Makefile.am.inc \
 	$(srcdir)/system-helper/Makefile.am.inc \
 	$(srcdir)/tests/Makefile-test-matrix.am.inc \
@@ -1125,6 +1181,8 @@ FLATPAK_MAJOR_VERSION = @FLATPAK_MAJOR_VERSION@
 FLATPAK_MICRO_VERSION = @FLATPAK_MICRO_VERSION@
 FLATPAK_MINOR_VERSION = @FLATPAK_MINOR_VERSION@
 FLATPAK_VERSION = @FLATPAK_VERSION@
+FUSE_CFLAGS = @FUSE_CFLAGS@
+FUSE_LIBS = @FUSE_LIBS@
 GDBUS_CODEGEN = @GDBUS_CODEGEN@
 GDK_PIXBUF_CFLAGS = @GDK_PIXBUF_CFLAGS@
 GDK_PIXBUF_LIBS = @GDK_PIXBUF_LIBS@
@@ -1224,6 +1282,7 @@ SYSTEMD_CFLAGS = @SYSTEMD_CFLAGS@
 SYSTEMD_LIBS = @SYSTEMD_LIBS@
 SYSTEM_FONTS_DIR = @SYSTEM_FONTS_DIR@
 SYSTEM_FONT_CACHE_DIRS = @SYSTEM_FONT_CACHE_DIRS@
+SYSTEM_HELPER_USER = @SYSTEM_HELPER_USER@
 SYSTEM_INSTALL_DIR = @SYSTEM_INSTALL_DIR@
 USE_NLS = @USE_NLS@
 VALGRIND = @VALGRIND@
@@ -1305,9 +1364,8 @@ dist_installed_test_extra_scripts = $(NULL) buildutil/tap-driver.sh \
 	tests/http-utils-test-server.py tests/oci-registry-server.py \
 	tests/oci-registry-client.py \
 	tests/make-multi-collection-id-repo.sh tests/make-test-app.sh \
-	tests/make-test-runtime.sh tests/make-test-bundles.sh \
-	tests/test-webserver.sh tests/test-wrapper.sh $(NULL) \
-	${TEST_MATRIX_EXTRA_DIST}
+	tests/make-test-runtime.sh tests/test-webserver.sh \
+	tests/test-wrapper.sh $(NULL) ${TEST_MATRIX_EXTRA_DIST}
 noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common.la libflatpak-app.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
@@ -1315,7 +1373,7 @@ CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
 	$(am__append_20) app/parse-datetime.c \
 	$(flatpak_dbus_built_sources) $(nodist_flatpak_portal_SOURCES)
 MAINTAINERCLEANFILES = $(NULL)
-DISTCLEANFILES = $(NULL) $(am__append_23) \
+DISTCLEANFILES = $(NULL) $(am__append_23) flatpak.pp.bz2 \
 	tests/services/org.freedesktop.Flatpak.service \
 	tests/services/org.freedesktop.Flatpak.SystemHelper.service \
 	tests/package_version.txt $(NULL) flatpak.env
@@ -1331,14 +1389,15 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	data/org.freedesktop.impl.portal.PermissionStore.xml \
 	data/org.freedesktop.systemd1.xml \
 	data/org.freedesktop.Flatpak.xml \
-	data/org.freedesktop.portal.Flatpak.xml $(NULL) \
-	app/parse-datetime.y \
+	data/org.freedesktop.portal.Flatpak.xml \
+	data/flatpak-docker-seccomp.json $(NULL) app/parse-datetime.y \
 	system-helper/org.freedesktop.Flatpak.policy.in \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.conf \
 	system-helper/org.freedesktop.Flatpak.rules.in \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
 	system-helper/flatpak-system-helper.service.in \
-	tests/flatpak.supp tests/glib.supp \
+	selinux/flatpak.te selinux/flatpak.fc selinux/flatpak.if \
+	$(NULL) tests/flatpak.supp tests/glib.supp \
 	tests/Makefile-test-matrix.am.inc tests/expand-test-matrix.sh \
 	tests/test-wrapper.sh $(bashcompletion_DATA) \
 	$(zshcompletion_DATA) $(profile_DATA) env.d/flatpak.env.in \
@@ -1409,6 +1468,7 @@ AM_CPPFLAGS = -DFLATPAK_BINDIR=\"$(FLATPAK_BINDIR)\" \
 	-DFLATPAK_BASEDIR=\"$(pkgdatadir)\" \
 	-DFLATPAK_TRIGGERDIR=\"$(pkgdatadir)/triggers\" \
 	-DSYSTEM_FONTS_DIR=\"$(SYSTEM_FONTS_DIR)\" \
+	-DSYSTEM_HELPER_USER=\"$(SYSTEM_HELPER_USER)\" \
 	-DSYSTEM_FONT_CACHE_DIRS=\"$(SYSTEM_FONT_CACHE_DIRS)\" \
 	-DG_LOG_DOMAIN=\"flatpak\" -I$(srcdir)/libglnx \
 	-I$(srcdir)/common -I$(builddir)/common -include "config.h" \
@@ -1577,6 +1637,7 @@ libflatpak_common_la_CFLAGS = \
 	$(INTERNAL_GPGME_CFLAGS) \
 	$(SYSTEMD_CFLAGS) \
 	$(DCONF_CFLAGS) \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-I$(srcdir)/dbus-proxy \
 	$(NULL)
 
@@ -1821,7 +1882,7 @@ flatpak_portal_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/portal
 @BUILD_SYSTEM_HELPER_TRUE@	$(NULL)
 
 @BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(JSON_LIBS) $(POLKIT_LIBS) libflatpak-common.la
-@BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(POLKIT_CFLAGS) -DFLATPAK_COMPILATION
+@BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_CFLAGS = $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(POLKIT_CFLAGS) -DFLATPAK_COMPILATION -DLIBEXECDIR=\"$(libexecdir)\"
 @BUILD_SYSTEM_HELPER_TRUE@polkit_rulesdir = $(datadir)/polkit-1/rules.d
 @BUILD_SYSTEM_HELPER_TRUE@polkit_rules_DATA = \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/org.freedesktop.Flatpak.rules
@@ -1833,17 +1894,27 @@ flatpak_portal_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/portal
 flatpak_validate_icon_SOURCES = icon-validator/validate-icon.c
 flatpak_validate_icon_LDADD = $(GDK_PIXBUF_LIBS)
 flatpak_validate_icon_CFLAGS = $(GDK_PIXBUF_CFLAGS) -DLIBEXECDIR=\"$(libexecdir)\"
+revokefs_fuse_SOURCES = revokefs/main.c revokefs/writer.c revokefs/writer.h
+revokefs_fuse_CFLAGS = $(BASE_CFLAGS) -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 $(FUSE_CFLAGS) -I$(srcdir)/libglnx
+revokefs_fuse_LDADD = libglnx.la $(BASE_LIBS) $(FUSE_LIBS)
+revokefs_demo_SOURCES = revokefs/demo.c
+revokefs_demo_CFLAGS = $(BASE_CFLAGS)
+revokefs_demo_LDADD = $(BASE_LIBS)
+selinux_moduledir = ${datadir}/selinux/packages
+selinux_module_DATA = $(NULL) $(am__append_24)
+selinux_develdir = ${datadir}/selinux/devel/include/contrib
+selinux_devel_DATA = $(NULL) $(am__append_25)
 AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 \
 	FLATPAK_CONFIG_DIR=/dev/null FLATPAK_TRIGGERSDIR=$$(cd \
 	$(top_srcdir) && pwd)/triggers FLATPAK_VALIDATE_ICON=$$(cd \
 	$(top_builddir) && pwd)/flatpak-validate-icon \
-	FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && \
-	pwd)/flatpak-dbus-proxy GI_TYPELIB_PATH=$$(cd $(top_builddir) \
-	&& pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
+	FLATPAK_REVOKEFS_FUSE=$$(cd $(top_builddir) && \
+	pwd)/revokefs-fuse GI_TYPELIB_PATH=$$(cd $(top_builddir) && \
+	pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
 	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && \
 	pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} PATH=$$(cd \
-	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_24) \
-	$(am__append_25)
+	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_26) \
+	$(am__append_27) $(am__append_28) $(am__append_29)
 testlibrary_CFLAGS = \
 	$(AM_CFLAGS) \
 	$(BASE_CFLAGS) \
@@ -1897,6 +1968,7 @@ dist_installed_test_data = \
 	tests/org.test.Hello.png \
 	tests/package_version.txt \
 	tests/session.conf.in \
+	tests/test.filter \
 	$(NULL)
 
 installed_test_keyringdir = $(installed_testdir)/test-keyring
@@ -1921,16 +1993,18 @@ TEST_MATRIX_SOURCE = \
 	tests/test-config.sh \
 	tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh \
-	tests/test-run.sh{{user+system},{nodeltas+deltas}} \
+	tests/test-run.sh{{user+system+system-norevokefs},{nodeltas+deltas}} \
 	tests/test-info.sh{user+system} \
-	tests/test-repo.sh{user+system+collections+collections-server-only} \
+	tests/test-repo.sh{user+system+system-norevokefs+collections+collections-server-only} \
+	tests/test-default-remotes.sh \
 	tests/test-extensions.sh \
-	tests/test-bundle.sh{user+system} \
+	tests/test-bundle.sh{user+system+system-norevokefs} \
 	tests/test-oci.sh \
 	tests/test-oci-registry.sh{user+system} \
 	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	tests/test-override.sh \
+	tests/test-p2p-security.sh{user,collections+system,collections} \
 	$(NULL)
 
 
@@ -1940,16 +2014,22 @@ TEST_MATRIX = \
 	tests/test-run@user,deltas.wrap \
 	tests/test-run@system,nodeltas.wrap \
 	tests/test-run@system,deltas.wrap \
+	tests/test-run@system-norevokefs,nodeltas.wrap \
+	tests/test-run@system-norevokefs,deltas.wrap \
 	tests/test-info@user.wrap \
 	tests/test-info@system.wrap \
 	tests/test-repo@user.wrap \
 	tests/test-repo@system.wrap \
+	tests/test-repo@system-norevokefs.wrap \
 	tests/test-repo@collections.wrap \
 	tests/test-repo@collections-server-only.wrap \
 	tests/test-bundle@user.wrap \
 	tests/test-bundle@system.wrap \
+	tests/test-bundle@system-norevokefs.wrap \
 	tests/test-oci-registry@user.wrap \
 	tests/test-oci-registry@system.wrap \
+	tests/test-p2p-security@user,collections.wrap \
+	tests/test-p2p-security@system,collections.wrap \
 	$(NULL)
 
 TEST_MATRIX_DIST = \
@@ -1958,6 +2038,7 @@ TEST_MATRIX_DIST = \
 	tests/test-config.sh \
 	tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh \
+	tests/test-default-remotes.sh \
 	tests/test-extensions.sh \
 	tests/test-oci.sh \
 	tests/test-unsigned-summaries.sh \
@@ -1971,6 +2052,7 @@ TEST_MATRIX_EXTRA_DIST = \
 	tests/test-repo.sh \
 	tests/test-bundle.sh \
 	tests/test-oci-registry.sh \
+	tests/test-p2p-security.sh \
 	$(NULL)
 
 test_scripts = ${TEST_MATRIX}
@@ -2029,7 +2111,7 @@ all: $(BUILT_SOURCES) config.h
 .SUFFIXES: .c .lo .log .o .obj .test .test$(EXEEXT) .trs
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/icon-validator/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/tests/Makefile-test-matrix.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/icon-validator/Makefile.am.inc $(srcdir)/revokefs/Makefile.am.inc $(srcdir)/selinux/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/tests/Makefile-test-matrix.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -2051,7 +2133,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles);; \
 	esac;
-$(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/icon-validator/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/tests/Makefile-test-matrix.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__empty):
+$(top_srcdir)/buildutil/glib-tap.mk $(srcdir)/libglnx/Makefile-libglnx.am.inc $(srcdir)/common/Makefile.am.inc $(srcdir)/data/Makefile.am.inc $(srcdir)/app/Makefile.am.inc $(srcdir)/session-helper/Makefile.am.inc $(srcdir)/portal/Makefile.am.inc $(srcdir)/system-helper/Makefile.am.inc $(srcdir)/icon-validator/Makefile.am.inc $(srcdir)/revokefs/Makefile.am.inc $(srcdir)/selinux/Makefile.am.inc $(srcdir)/tests/Makefile.am.inc $(srcdir)/tests/Makefile-test-matrix.am.inc $(srcdir)/bubblewrap/Makefile-bwrap.am.inc $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -2686,6 +2768,26 @@ icon-validator/flatpak_validate_icon-validate-icon.$(OBJEXT):  \
 flatpak-validate-icon$(EXEEXT): $(flatpak_validate_icon_OBJECTS) $(flatpak_validate_icon_DEPENDENCIES) $(EXTRA_flatpak_validate_icon_DEPENDENCIES) 
 	@rm -f flatpak-validate-icon$(EXEEXT)
 	$(AM_V_CCLD)$(flatpak_validate_icon_LINK) $(flatpak_validate_icon_OBJECTS) $(flatpak_validate_icon_LDADD) $(LIBS)
+revokefs/$(am__dirstamp):
+	@$(MKDIR_P) revokefs
+	@: > revokefs/$(am__dirstamp)
+revokefs/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) revokefs/$(DEPDIR)
+	@: > revokefs/$(DEPDIR)/$(am__dirstamp)
+revokefs/demo-demo.$(OBJEXT): revokefs/$(am__dirstamp) \
+	revokefs/$(DEPDIR)/$(am__dirstamp)
+
+revokefs-demo$(EXEEXT): $(revokefs_demo_OBJECTS) $(revokefs_demo_DEPENDENCIES) $(EXTRA_revokefs_demo_DEPENDENCIES) 
+	@rm -f revokefs-demo$(EXEEXT)
+	$(AM_V_CCLD)$(revokefs_demo_LINK) $(revokefs_demo_OBJECTS) $(revokefs_demo_LDADD) $(LIBS)
+revokefs/fuse-main.$(OBJEXT): revokefs/$(am__dirstamp) \
+	revokefs/$(DEPDIR)/$(am__dirstamp)
+revokefs/fuse-writer.$(OBJEXT): revokefs/$(am__dirstamp) \
+	revokefs/$(DEPDIR)/$(am__dirstamp)
+
+revokefs-fuse$(EXEEXT): $(revokefs_fuse_OBJECTS) $(revokefs_fuse_DEPENDENCIES) $(EXTRA_revokefs_fuse_DEPENDENCIES) 
+	@rm -f revokefs-fuse$(EXEEXT)
+	$(AM_V_CCLD)$(revokefs_fuse_LINK) $(revokefs_fuse_OBJECTS) $(revokefs_fuse_LDADD) $(LIBS)
 common/test_libflatpak-test-lib.$(OBJEXT): common/$(am__dirstamp) \
 	common/$(DEPDIR)/$(am__dirstamp)
 
@@ -2911,6 +3013,7 @@ mostlyclean-compile:
 	-rm -f libglnx/*.lo
 	-rm -f libglnx/tests/*.$(OBJEXT)
 	-rm -f portal/*.$(OBJEXT)
+	-rm -f revokefs/*.$(OBJEXT)
 	-rm -f session-helper/*.$(OBJEXT)
 	-rm -f system-helper/*.$(OBJEXT)
 	-rm -f tests/*.$(OBJEXT)
@@ -3021,6 +3124,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@portal/$(DEPDIR)/flatpak_portal-flatpak-portal-app-info.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@portal/$(DEPDIR)/flatpak_portal-flatpak-portal-dbus.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@portal/$(DEPDIR)/flatpak_portal-flatpak-portal.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@revokefs/$(DEPDIR)/demo-demo.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@revokefs/$(DEPDIR)/fuse-main.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@revokefs/$(DEPDIR)/fuse-writer.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/httpcache-httpcache.Po@am__quote@ # am--include-marker
@@ -4163,6 +4269,48 @@ icon-validator/flatpak_validate_icon-validate-icon.obj: icon-validator/validate-
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_validate_icon_CFLAGS) $(CFLAGS) -c -o icon-validator/flatpak_validate_icon-validate-icon.obj `if test -f 'icon-validator/validate-icon.c'; then $(CYGPATH_W) 'icon-validator/validate-icon.c'; else $(CYGPATH_W) '$(srcdir)/icon-validator/validate-icon.c'; fi`
 
+revokefs/demo-demo.o: revokefs/demo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(revokefs_demo_CFLAGS) $(CFLAGS) -MT revokefs/demo-demo.o -MD -MP -MF revokefs/$(DEPDIR)/demo-demo.Tpo -c -o revokefs/demo-demo.o `test -f 'revokefs/demo.c' || echo '$(srcdir)/'`revokefs/demo.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) revokefs/$(DEPDIR)/demo-demo.Tpo revokefs/$(DEPDIR)/demo-demo.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='revokefs/demo.c' object='revokefs/demo-demo.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(revokefs_demo_CFLAGS) $(CFLAGS) -c -o revokefs/demo-demo.o `test -f 'revokefs/demo.c' || echo '$(srcdir)/'`revokefs/demo.c
+
+revokefs/demo-demo.obj: revokefs/demo.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(revokefs_demo_CFLAGS) $(CFLAGS) -MT revokefs/demo-demo.obj -MD -MP -MF revokefs/$(DEPDIR)/demo-demo.Tpo -c -o revokefs/demo-demo.obj `if test -f 'revokefs/demo.c'; then $(CYGPATH_W) 'revokefs/demo.c'; else $(CYGPATH_W) '$(srcdir)/revokefs/demo.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) revokefs/$(DEPDIR)/demo-demo.Tpo revokefs/$(DEPDIR)/demo-demo.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='revokefs/demo.c' object='revokefs/demo-demo.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(revokefs_demo_CFLAGS) $(CFLAGS) -c -o revokefs/demo-demo.obj `if test -f 'revokefs/demo.c'; then $(CYGPATH_W) 'revokefs/demo.c'; else $(CYGPATH_W) '$(srcdir)/revokefs/demo.c'; fi`
+
+revokefs/fuse-main.o: revokefs/main.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(revokefs_fuse_CFLAGS) $(CFLAGS) -MT revokefs/fuse-main.o -MD -MP -MF revokefs/$(DEPDIR)/fuse-main.Tpo -c -o revokefs/fuse-main.o `test -f 'revokefs/main.c' || echo '$(srcdir)/'`revokefs/main.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) revokefs/$(DEPDIR)/fuse-main.Tpo revokefs/$(DEPDIR)/fuse-main.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='revokefs/main.c' object='revokefs/fuse-main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(revokefs_fuse_CFLAGS) $(CFLAGS) -c -o revokefs/fuse-main.o `test -f 'revokefs/main.c' || echo '$(srcdir)/'`revokefs/main.c
+
+revokefs/fuse-main.obj: revokefs/main.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(revokefs_fuse_CFLAGS) $(CFLAGS) -MT revokefs/fuse-main.obj -MD -MP -MF revokefs/$(DEPDIR)/fuse-main.Tpo -c -o revokefs/fuse-main.obj `if test -f 'revokefs/main.c'; then $(CYGPATH_W) 'revokefs/main.c'; else $(CYGPATH_W) '$(srcdir)/revokefs/main.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) revokefs/$(DEPDIR)/fuse-main.Tpo revokefs/$(DEPDIR)/fuse-main.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='revokefs/main.c' object='revokefs/fuse-main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(revokefs_fuse_CFLAGS) $(CFLAGS) -c -o revokefs/fuse-main.obj `if test -f 'revokefs/main.c'; then $(CYGPATH_W) 'revokefs/main.c'; else $(CYGPATH_W) '$(srcdir)/revokefs/main.c'; fi`
+
+revokefs/fuse-writer.o: revokefs/writer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(revokefs_fuse_CFLAGS) $(CFLAGS) -MT revokefs/fuse-writer.o -MD -MP -MF revokefs/$(DEPDIR)/fuse-writer.Tpo -c -o revokefs/fuse-writer.o `test -f 'revokefs/writer.c' || echo '$(srcdir)/'`revokefs/writer.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) revokefs/$(DEPDIR)/fuse-writer.Tpo revokefs/$(DEPDIR)/fuse-writer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='revokefs/writer.c' object='revokefs/fuse-writer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(revokefs_fuse_CFLAGS) $(CFLAGS) -c -o revokefs/fuse-writer.o `test -f 'revokefs/writer.c' || echo '$(srcdir)/'`revokefs/writer.c
+
+revokefs/fuse-writer.obj: revokefs/writer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(revokefs_fuse_CFLAGS) $(CFLAGS) -MT revokefs/fuse-writer.obj -MD -MP -MF revokefs/$(DEPDIR)/fuse-writer.Tpo -c -o revokefs/fuse-writer.obj `if test -f 'revokefs/writer.c'; then $(CYGPATH_W) 'revokefs/writer.c'; else $(CYGPATH_W) '$(srcdir)/revokefs/writer.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) revokefs/$(DEPDIR)/fuse-writer.Tpo revokefs/$(DEPDIR)/fuse-writer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='revokefs/writer.c' object='revokefs/fuse-writer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(revokefs_fuse_CFLAGS) $(CFLAGS) -c -o revokefs/fuse-writer.obj `if test -f 'revokefs/writer.c'; then $(CYGPATH_W) 'revokefs/writer.c'; else $(CYGPATH_W) '$(srcdir)/revokefs/writer.c'; fi`
+
 common/test_libflatpak-test-lib.o: common/test-lib.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libflatpak_CFLAGS) $(CFLAGS) -MT common/test_libflatpak-test-lib.o -MD -MP -MF common/$(DEPDIR)/test_libflatpak-test-lib.Tpo -c -o common/test_libflatpak-test-lib.o `test -f 'common/test-lib.c' || echo '$(srcdir)/'`common/test-lib.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/test_libflatpak-test-lib.Tpo common/$(DEPDIR)/test_libflatpak-test-lib.Po
@@ -4661,6 +4809,48 @@ uninstall-profileDATA:
 	@list='$(profile_DATA)'; test -n "$(profiledir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(profiledir)'; $(am__uninstall_files_from_dir)
+install-selinux_develDATA: $(selinux_devel_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(selinux_devel_DATA)'; test -n "$(selinux_develdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(selinux_develdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(selinux_develdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(selinux_develdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(selinux_develdir)" || exit $$?; \
+	done
+
+uninstall-selinux_develDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(selinux_devel_DATA)'; test -n "$(selinux_develdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(selinux_develdir)'; $(am__uninstall_files_from_dir)
+install-selinux_moduleDATA: $(selinux_module_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(selinux_module_DATA)'; test -n "$(selinux_moduledir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(selinux_moduledir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(selinux_moduledir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(selinux_moduledir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(selinux_moduledir)" || exit $$?; \
+	done
+
+uninstall-selinux_moduleDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(selinux_module_DATA)'; test -n "$(selinux_moduledir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(selinux_moduledir)'; $(am__uninstall_files_from_dir)
 install-systemdsystemunitDATA: $(systemdsystemunit_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(systemdsystemunit_DATA)'; test -n "$(systemdsystemunitdir)" || list=; \
@@ -5056,6 +5246,20 @@ tests/test-run@system,deltas.wrap.log: tests/test-run@system,deltas.wrap
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-run@system-norevokefs,nodeltas.wrap.log: tests/test-run@system-norevokefs,nodeltas.wrap
+	@p='tests/test-run@system-norevokefs,nodeltas.wrap'; \
+	b='tests/test-run@system-norevokefs,nodeltas.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-run@system-norevokefs,deltas.wrap.log: tests/test-run@system-norevokefs,deltas.wrap
+	@p='tests/test-run@system-norevokefs,deltas.wrap'; \
+	b='tests/test-run@system-norevokefs,deltas.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 tests/test-info@user.wrap.log: tests/test-info@user.wrap
 	@p='tests/test-info@user.wrap'; \
 	b='tests/test-info@user.wrap'; \
@@ -5080,6 +5284,13 @@ tests/test-repo@user.wrap.log: tests/test-repo@user.wrap
 tests/test-repo@system.wrap.log: tests/test-repo@system.wrap
 	@p='tests/test-repo@system.wrap'; \
 	b='tests/test-repo@system.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-repo@system-norevokefs.wrap.log: tests/test-repo@system-norevokefs.wrap
+	@p='tests/test-repo@system-norevokefs.wrap'; \
+	b='tests/test-repo@system-norevokefs.wrap'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5112,6 +5323,13 @@ tests/test-bundle@system.wrap.log: tests/test-bundle@system.wrap
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-bundle@system-norevokefs.wrap.log: tests/test-bundle@system-norevokefs.wrap
+	@p='tests/test-bundle@system-norevokefs.wrap'; \
+	b='tests/test-bundle@system-norevokefs.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 tests/test-oci-registry@user.wrap.log: tests/test-oci-registry@user.wrap
 	@p='tests/test-oci-registry@user.wrap'; \
 	b='tests/test-oci-registry@user.wrap'; \
@@ -5122,6 +5340,20 @@ tests/test-oci-registry@user.wrap.log: tests/test-oci-registry@user.wrap
 tests/test-oci-registry@system.wrap.log: tests/test-oci-registry@system.wrap
 	@p='tests/test-oci-registry@system.wrap'; \
 	b='tests/test-oci-registry@system.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-p2p-security@user,collections.wrap.log: tests/test-p2p-security@user,collections.wrap
+	@p='tests/test-p2p-security@user,collections.wrap'; \
+	b='tests/test-p2p-security@user,collections.wrap'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-p2p-security@system,collections.wrap.log: tests/test-p2p-security@system,collections.wrap
+	@p='tests/test-p2p-security@system,collections.wrap'; \
+	b='tests/test-p2p-security@system,collections.wrap'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5157,6 +5389,13 @@ tests/test-build-update-repo.sh.log: tests/test-build-update-repo.sh
 tests/test-http-utils.sh.log: tests/test-http-utils.sh
 	@p='tests/test-http-utils.sh'; \
 	b='tests/test-http-utils.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-default-remotes.sh.log: tests/test-default-remotes.sh
+	@p='tests/test-default-remotes.sh'; \
+	b='tests/test-default-remotes.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5448,7 +5687,7 @@ install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(envgendir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(zshcompletiondir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(envgendir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(selinux_develdir)" "$(DESTDIR)$(selinux_moduledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(zshcompletiondir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -5498,6 +5737,8 @@ distclean-generic:
 	-rm -f libglnx/tests/$(am__dirstamp)
 	-rm -f portal/$(DEPDIR)/$(am__dirstamp)
 	-rm -f portal/$(am__dirstamp)
+	-rm -f revokefs/$(DEPDIR)/$(am__dirstamp)
+	-rm -f revokefs/$(am__dirstamp)
 	-rm -f session-helper/$(DEPDIR)/$(am__dirstamp)
 	-rm -f session-helper/$(am__dirstamp)
 	-rm -f system-helper/$(DEPDIR)/$(am__dirstamp)
@@ -5624,6 +5865,9 @@ distclean: distclean-recursive
 	-rm -f portal/$(DEPDIR)/flatpak_portal-flatpak-portal-app-info.Po
 	-rm -f portal/$(DEPDIR)/flatpak_portal-flatpak-portal-dbus.Po
 	-rm -f portal/$(DEPDIR)/flatpak_portal-flatpak-portal.Po
+	-rm -f revokefs/$(DEPDIR)/demo-demo.Po
+	-rm -f revokefs/$(DEPDIR)/fuse-main.Po
+	-rm -f revokefs/$(DEPDIR)/fuse-writer.Po
 	-rm -f session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po
 	-rm -f system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po
 	-rm -f tests/$(DEPDIR)/httpcache-httpcache.Po
@@ -5660,6 +5904,7 @@ install-data-am: install-bashcompletionDATA install-bwrapPROGRAMS \
 	install-nodist_typelibDATA install-pkgconfigDATA \
 	install-polkit_policyDATA install-polkit_rulesDATA \
 	install-profileDATA install-scriptsSCRIPTS \
+	install-selinux_develDATA install-selinux_moduleDATA \
 	install-systemdsystemunitDATA install-systemduserunitDATA \
 	install-zshcompletionDATA
 	@$(NORMAL_INSTALL)
@@ -5797,6 +6042,9 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f portal/$(DEPDIR)/flatpak_portal-flatpak-portal-app-info.Po
 	-rm -f portal/$(DEPDIR)/flatpak_portal-flatpak-portal-dbus.Po
 	-rm -f portal/$(DEPDIR)/flatpak_portal-flatpak-portal.Po
+	-rm -f revokefs/$(DEPDIR)/demo-demo.Po
+	-rm -f revokefs/$(DEPDIR)/fuse-main.Po
+	-rm -f revokefs/$(DEPDIR)/fuse-writer.Po
 	-rm -f session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po
 	-rm -f system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po
 	-rm -f tests/$(DEPDIR)/httpcache-httpcache.Po
@@ -5836,7 +6084,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	uninstall-nodist_girDATA uninstall-nodist_typelibDATA \
 	uninstall-pkgconfigDATA uninstall-polkit_policyDATA \
 	uninstall-polkit_rulesDATA uninstall-profileDATA \
-	uninstall-scriptsSCRIPTS uninstall-systemdsystemunitDATA \
+	uninstall-scriptsSCRIPTS uninstall-selinux_develDATA \
+	uninstall-selinux_moduleDATA uninstall-systemdsystemunitDATA \
 	uninstall-systemduserunitDATA uninstall-zshcompletionDATA
 
 .MAKE: $(am__recursive_targets) all check check-am install install-am \
@@ -5874,7 +6123,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	install-nodist_typelibDATA install-pdf install-pdf-am \
 	install-pkgconfigDATA install-polkit_policyDATA \
 	install-polkit_rulesDATA install-profileDATA install-ps \
-	install-ps-am install-scriptsSCRIPTS install-strip \
+	install-ps-am install-scriptsSCRIPTS install-selinux_develDATA \
+	install-selinux_moduleDATA install-strip \
 	install-systemdsystemunitDATA install-systemduserunitDATA \
 	install-zshcompletionDATA installcheck installcheck-am \
 	installdirs installdirs-am maintainer-clean \
@@ -5899,7 +6149,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	uninstall-nodist_girDATA uninstall-nodist_typelibDATA \
 	uninstall-pkgconfigDATA uninstall-polkit_policyDATA \
 	uninstall-polkit_rulesDATA uninstall-profileDATA \
-	uninstall-scriptsSCRIPTS uninstall-systemdsystemunitDATA \
+	uninstall-scriptsSCRIPTS uninstall-selinux_develDATA \
+	uninstall-selinux_moduleDATA uninstall-systemdsystemunitDATA \
 	uninstall-systemduserunitDATA uninstall-zshcompletionDATA
 
 .PRECIOUS: Makefile
@@ -5996,6 +6247,14 @@ portal/%-dbus.h: portal/%-dbus.c
 @BUILD_SYSTEM_HELPER_TRUE@%.policy: %.policy.in
 @BUILD_SYSTEM_HELPER_TRUE@	$(AM_V_GEN) $(MSGFMT) --xml -d $(top_srcdir)/po --template $< -o $@ || cp $< $@
 
+flatpak.pp.bz2: selinux/flatpak.te selinux/flatpak.fc
+	$(eval TMP := $(shell mktemp -d selinux-build-XXXXXX))
+	cp $^ $(TMP)/
+	cd $(TMP) && make -f /usr/share/selinux/devel/Makefile flatpak.pp
+	bzip2 -9 $(TMP)/flatpak.pp
+	cp $(TMP)/flatpak.pp.bz2 .
+	rm -rf $(TMP)
+
 tests/services/org.freedesktop.Flatpak.service: session-helper/org.freedesktop.Flatpak.service.in
 	mkdir -p tests/services
 	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(abs_top_builddir)|" $< > $@
@@ -6024,7 +6283,7 @@ tests/test-%.wrap:
 
 tests/runtime-repo: tests/make-test-runtime.sh flatpak
 	rm -rf tests/runtime-repo
-	PATH=$(abs_top_builddir):$${PATH} $(top_srcdir)/tests/make-test-runtime.sh tests/runtime-repo org.test.Platform ""
+	PATH=$(abs_top_builddir):$${PATH} $(top_srcdir)/tests/make-test-runtime.sh tests/runtime-repo org.test.Platform master ""
 
 distclean-local:
 	rm -rf tests/runtime-repo

@@ -172,6 +172,14 @@
             </varlistentry>
 
             <varlistentry>
+                <term>filter</term>
+
+                <listitem><para>
+                    Show the path to the client-side filter of the remote.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term>collection</term>
 
                 <listitem><para>
@@ -192,6 +200,38 @@
 
                 <listitem><para>
                     Show options
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>comment</term>
+
+                <listitem><para>
+                    Show comment
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>description</term>
+
+                <listitem><para>
+                    Show description
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>homepage</term>
+
+                <listitem><para>
+                    Show homepage
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term>icon</term>
+
+                <listitem><para>
+                    Show icon
                 </para></listitem>
             </varlistentry>
 

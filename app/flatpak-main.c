@@ -35,7 +35,7 @@
 #include "flatpak-polkit-agent-text-listener.h"
 
 /* Work with polkit before and after autoptr support was added */
-typedef PolkitSubject             AutoPolkitSubject;
+typedef PolkitSubject AutoPolkitSubject;
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (AutoPolkitSubject, g_object_unref)
 #endif
 
@@ -182,6 +182,14 @@ message_handler (const gchar   *log_domain,
   g_printerr ("F: %s\n", message);
 }
 
+static void
+no_message_handler (const char     *log_domain,
+                    GLogLevelFlags  log_level,
+                    const char     *message,
+                    gpointer        user_data)
+{
+}
+
 static GOptionContext *
 flatpak_option_context_new_with_commands (FlatpakCommand *commands)
 {
@@ -246,10 +254,20 @@ check_environment (void)
   dirs = g_get_system_data_dirs ();
   for (i = 0; dirs[i]; i++)
     {
-       if (g_str_has_prefix (dirs[i], system_exports))
-         has_system = TRUE;
-       if (g_str_has_prefix (dirs[i], user_exports))
-         has_user = TRUE;
+      /* There should never be a relative path but just in case we don't want
+       * g_file_new_for_path() to take the current directory into account.
+       */
+      if (!g_str_has_prefix (dirs[i], "/"))
+        continue;
+
+      /* Normalize the path using GFile to e.g. replace // with / */
+      g_autoptr(GFile) dir_file = g_file_new_for_path (dirs[i]);
+      g_autofree char *dir_path = g_file_get_path (dir_file);
+
+      if (g_str_has_prefix (dir_path, system_exports))
+        has_system = TRUE;
+      if (g_str_has_prefix (dir_path, user_exports))
+        has_user = TRUE;
     }
 
   flatpak_get_window_size (&rows, &cols);
@@ -267,7 +285,7 @@ check_environment (void)
                        "set by the XDG_DATA_DIRS environment variable, so applications "
                        "installed by Flatpak may not appear on your desktop until the "
                        "session is restarted."),
-                       missing);
+                     missing);
       g_print ("\n");
     }
   else if (!has_system || !has_user)
@@ -281,7 +299,7 @@ check_environment (void)
                        "set by the XDG_DATA_DIRS environment variable, so applications "
                        "installed by Flatpak may not appear on your desktop until the "
                        "session is restarted."),
-                       missing);
+                     missing);
       g_print ("\n");
     }
 }
@@ -302,7 +320,7 @@ flatpak_option_context_parse (GOptionContext     *context,
                                    FLATPAK_BUILTIN_FLAG_ONE_DIR |
                                    FLATPAK_BUILTIN_FLAG_STANDARD_DIRS |
                                    FLATPAK_BUILTIN_FLAG_ALL_DIRS)) != 1)
-     g_assert_not_reached ();
+    g_assert_not_reached ();
 
   if (!(flags & FLATPAK_BUILTIN_FLAG_NO_DIR))
     g_option_context_add_main_entries (context, user_entries, NULL);
@@ -320,7 +338,11 @@ flatpak_option_context_parse (GOptionContext     *context,
     return FALSE;
 
   /* We never want verbose output in the complete case, that breaks completion */
-  if (!is_in_complete)
+  if (is_in_complete)
+    {
+      g_log_set_default_handler (no_message_handler, NULL);
+    }
+  else
     {
       if (opt_verbose > 0)
         g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, message_handler, NULL);
@@ -590,6 +612,7 @@ flatpak_run (int      argc,
   g_autofree char *prgname = NULL;
   gboolean success = FALSE;
   const char *command_name = NULL;
+
   __attribute__((cleanup (uninstall_polkit_agent))) gpointer polkit_agent = NULL;
 
   command = extract_command (&argc, argv, &command_name);
@@ -697,14 +720,15 @@ flatpak_run (int      argc,
 
   success = TRUE;
 out:
-  g_assert (success || error);
+  /* Note: We allow failures with NULL error (it means don't print anything), useful when e.g. the user aborted */
+  g_assert (!success || error == NULL);
 
   if (error)
     {
       g_propagate_error (res_error, error);
-      return 1;
     }
-  return 0;
+
+  return success ? 0 : 1;
 }
 
 static int
@@ -763,10 +787,18 @@ int
 main (int    argc,
       char **argv)
 {
-  GError *error = NULL;
+  g_autoptr(GError) error = NULL;
   g_autofree const char *old_env = NULL;
   int ret;
   struct sigaction action;
+
+  /* The child repo shared between the client process and the
+     system-helper really needs to support creating files that
+     are readable by others, so override the umask to 022.
+     Ideally this should be set when needed, but umask is thread-unsafe
+     so there is really no local way to fix this.
+  */
+  umask(022);
 
   memset (&action, 0, sizeof (struct sigaction));
   action.sa_handler = handle_sigterm;
@@ -811,7 +843,6 @@ main (int    argc,
         }
       g_dbus_error_strip_remote_error (error);
       g_printerr ("%s%s %s%s\n", prefix, _("error:"), suffix, error->message);
-      g_error_free (error);
     }
 
   return ret;
