@@ -1,10 +1,11 @@
-flatpak (1.4.2-2) UNRELEASED; urgency=medium
+flatpak (1.4.2-2) unstable; urgency=medium
 
+  * Upload to unstable
   * d/gbp.conf: Return to debian/master branch
   * Use debhelper-compat 12
   * Standards-Version: 4.4.0 (no changes required)
 
- -- Simon McVittie <smcv@debian.org>  Tue, 09 Jul 2019 17:58:06 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 09 Jul 2019 17:59:57 +0100
 
 flatpak (1.4.2-1) experimental; urgency=medium
 
