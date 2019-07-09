@@ -1,6 +1,7 @@
 flatpak (1.4.2-2) UNRELEASED; urgency=medium
 
   * d/gbp.conf: Return to debian/master branch
+  * Use debhelper-compat 12
 
  -- Simon McVittie <smcv@debian.org>  Tue, 09 Jul 2019 17:58:06 +0100
 
