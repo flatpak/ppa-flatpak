@@ -1,5 +1,9 @@
-flatpak (1.4.2-3) UNRELEASED; urgency=medium
+flatpak (1.4.3-1) UNRELEASED; urgency=medium
 
+  * New upstream stable release
+    - d/p/Don-t-register-polkit-agent-if-we-cannot-connect-to-syste.patch,
+      d/p/tests-Skip-tests-that-use-system-helper-if-uid-or-gid-is-.patch:
+      drop patches, applied upstream
   * Remove redundant --libexecdir, no longer needed with compat level 12
 
  -- Simon McVittie <smcv@debian.org>  Tue, 09 Jul 2019 22:46:49 +0100
