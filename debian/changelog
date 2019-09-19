@@ -1,4 +1,4 @@
-flatpak (1.4.3-1) UNRELEASED; urgency=medium
+flatpak (1.4.3-1) unstable; urgency=medium
 
   * New upstream stable release
     - d/p/Don-t-register-polkit-agent-if-we-cannot-connect-to-syste.patch,
@@ -6,7 +6,7 @@ flatpak (1.4.3-1) UNRELEASED; urgency=medium
       drop patches, applied upstream
   * Remove redundant --libexecdir, no longer needed with compat level 12
 
- -- Simon McVittie <smcv@debian.org>  Tue, 09 Jul 2019 22:46:49 +0100
+ -- Simon McVittie <smcv@debian.org>  Thu, 19 Sep 2019 16:13:57 +0100
 
 flatpak (1.4.2-2) unstable; urgency=medium
 
