@@ -24,7 +24,7 @@ set -euo pipefail
 skip_without_bwrap
 skip_revokefs_without_fuse
 
-echo "1..32"
+echo "1..34"
 
 #Regular repo
 setup_repo
@@ -178,6 +178,44 @@ assert_file_has_content install-error-log "Server returned status 404: Not Found
 
 echo "ok install fails gracefully for 404 URLs"
 
+# Use a new remote so we can be sure it doesn't match any existing one's URL
+setup_repo_no_add flatpakref org.test.Collection.Flatpakref
+
+cat << EOF > repos/flatpakref/flatpakref-repo.flatpakrepo
+[Flatpak Repo]
+Version=1
+Url=http://127.0.0.1:$(cat httpd-port-main)/flatpakref/
+Title=The Title
+GPGKey=${FL_GPG_BASE64}
+EOF
+
+if [ x${USE_COLLECTIONS_IN_CLIENT-} == xyes ]; then
+    echo "DeployCollectionID=org.test.Collection.Flatpakref" >> repos/flatpakref/flatpakref-repo.flatpakrepo
+fi
+
+cat << EOF > org.test.Hello.flatpakref
+[Flatpak Ref]
+Name=org.test.Hello
+Branch=master
+Url=http://127.0.0.1:$(cat httpd-port-main)/flatpakref
+GPGKey=${FL_GPG_BASE64}
+RuntimeRepo=http://127.0.0.1:$(cat httpd-port-main)/flatpakref/flatpakref-repo.flatpakrepo
+EOF
+
+${FLATPAK} ${U} uninstall -y org.test.Platform org.test.Hello
+
+# Ensure that only one remote is added even though the URL in the flatpakref
+# does not have a trailing slash and the URL in the flatpakrepo file does
+NUM_REMOTES_BEFORE=$(flatpak remotes | wc -l)
+${FLATPAK} ${U} install -y org.test.Hello.flatpakref
+NUM_REMOTES_AFTER=$(flatpak remotes | wc -l)
+
+if [ $NUM_REMOTES_AFTER -ne $((NUM_REMOTES_BEFORE + 1)) ]; then
+    assert_not_reached "install of flatpakref should only add one remote"
+fi
+
+echo "ok install flatpakref normalizes remote URL trailing slash"
+
 ${FLATPAK} ${U} uninstall -y org.test.Platform org.test.Hello
 
 if ${FLATPAK} ${U} install -y test-missing-gpg-repo org.test.Platform 2> install-error-log; then
@@ -204,6 +242,69 @@ fi
 assert_file_has_content install-error-log "GPG signatures found, but none are in trusted keyring"
 
 echo "ok fail with wrong gpg key"
+
+make_required_version_app () {
+    APP_ID=${1}
+    VERSION=${2}
+    if [ x${USE_COLLECTIONS_IN_SERVER-} == xyes ] ; then
+        CID=org.test.Collection.test
+    else
+        CID=""
+    fi
+
+    REQUIRED_VERSION="${VERSION}" GPGARGS="${FL_GPGARGS}" $(dirname $0)/make-test-app.sh repos/test ${APP_ID} master "${CID}" > /dev/null
+}
+
+CURRENT_VERSION=`cat "$test_builddir/package_version.txt"`
+V=( ${CURRENT_VERSION//./ } )  # Split parts to array
+
+make_required_version_app org.test.SameVersion "${V[0]}.${V[1]}.${V[2]}"
+make_required_version_app org.test.NeedNewerMicro "${V[0]}.${V[1]}.$(expr ${V[2]} + 1)"
+make_required_version_app org.test.NeedNewerMinor "${V[0]}.$(expr ${V[1]} + 1).${V[2]}"
+make_required_version_app org.test.NeedNewerMaster "$(expr ${V[0]} + 1).${V[1]}.${V[2]}"
+make_required_version_app org.test.NeedOlderMinor "${V[0]}.$(expr ${V[1]} - 1).${V[2]}"
+make_required_version_app org.test.MultiVersionFallback "${V[0]}.${V[1]}.${V[2]};1.0.0;"
+make_required_version_app org.test.MultiVersionFallbackFail "${V[0]}.$(expr ${V[1]} + 1).${V[2]};1.0.0;"
+make_required_version_app org.test.MultiVersionOk "${V[0]}.$(expr ${V[1]} + 1).0;${V[0]}.${V[1]}.${V[2]};"
+make_required_version_app org.test.MultiVersionNotOk "${V[0]}.$(expr ${V[1]} + 1).0;${V[0]}.${V[1]}.$(expr ${V[2]} + 1);"
+
+update_repo $REPONAME "${COLLECTION_ID}"
+
+${FLATPAK} ${U} install -y test-repo org.test.SameVersion
+${FLATPAK} ${U} install -y test-repo org.test.NeedOlderMinor
+
+if ${FLATPAK} ${U} install -y test-repo org.test.NeedNewerMicro 2> install-error-log; then
+    assert_not_reached "Should not be able to install with wrong micro version"
+fi
+assert_file_has_content install-error-log "needs a later flatpak version"
+
+if ${FLATPAK} ${U} install -y test-repo org.test.NeedNewerMinor 2> install-error-log; then
+    assert_not_reached "Should not be able to install with wrong minor version"
+fi
+assert_file_has_content install-error-log "needs a later flatpak version"
+
+if ${FLATPAK} ${U} install -y test-repo org.test.NeedNewerMajor 2> install-error-log; then
+    assert_not_reached "Should not be able to install with wrong micro version"
+fi
+assert_file_has_content install-error-log "needs a later flatpak version"
+
+${FLATPAK} ${U} install -y test-repo org.test.MultiVersionFallback
+
+if ${FLATPAK} ${U} install -y test-repo org.test.MultiVersionFallbackFail 2> install-error-log; then
+    assert_not_reached "Should not be able to install with wrong fallback version"
+fi
+assert_file_has_content install-error-log "needs a later flatpak version"
+
+${FLATPAK} ${U} install -y test-repo org.test.MultiVersionOk
+
+if ${FLATPAK} ${U} install -y test-repo org.test.MultiVersionNotOk 2> install-error-log; then
+    assert_not_reached "Should not be able to install with wrong multi version"
+fi
+assert_file_has_content install-error-log "needs a later flatpak version"
+
+${FLATPAK} ${U} uninstall -y --all
+
+echo "ok handles version requirements"
 
 ${FLATPAK} ${U} remotes -d | grep ^test-repo > repo-info
 assert_not_file_has_content repo-info "new-title"

@@ -48,21 +48,25 @@
     <title>Index of new API in 0.6.13</title>
     <xi:include href="xml/api-index-0.6.13.xml"><xi:fallback /></xi:include>
   </index>
-  <index id="api-index-1-1-2" role="1.1.2">
-    <title>Index of new API in 1.1.2</title>
-    <xi:include href="xml/api-index-1.1.2.xml"><xi:fallback /></xi:include>
+  <index id="api-index-1-0-3" role="1.0.3">
+    <title>Index of new API in 1.0.3</title>
+    <xi:include href="xml/api-index-1.0.3.xml"><xi:fallback /></xi:include>
   </index>
-  <index id="api-index-1-3-3-" role="1.3.3.">
-    <title>Index of new API in 1.3.3.</title>
-    <xi:include href="xml/api-index-1.3.3..xml"><xi:fallback /></xi:include>
+  <index id="api-index-2-26" role="2.26">
+    <title>Index of new API in 2.26</title>
+    <xi:include href="xml/api-index-2.26.xml"><xi:fallback /></xi:include>
   </index>
-  <index id="api-index-0-6-15" role="0.6.15">
-    <title>Index of new API in 0.6.15</title>
-    <xi:include href="xml/api-index-0.6.15.xml"><xi:fallback /></xi:include>
+  <index id="api-index-1-1" role="1.1">
+    <title>Index of new API in 1.1</title>
+    <xi:include href="xml/api-index-1.1.xml"><xi:fallback /></xi:include>
   </index>
-  <index id="api-index-0-11-8" role="0.11.8">
-    <title>Index of new API in 0.11.8</title>
-    <xi:include href="xml/api-index-0.11.8.xml"><xi:fallback /></xi:include>
+  <index id="api-index-1-1-1" role="1.1.1">
+    <title>Index of new API in 1.1.1</title>
+    <xi:include href="xml/api-index-1.1.1.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-0-9-8" role="0.9.8">
+    <title>Index of new API in 0.9.8</title>
+    <xi:include href="xml/api-index-0.9.8.xml"><xi:fallback /></xi:include>
   </index>
   <index id="api-index-0-6-12" role="0.6.12">
     <title>Index of new API in 0.6.12</title>
@@ -72,53 +76,49 @@
     <title>Index of new API in 0.8</title>
     <xi:include href="xml/api-index-0.8.xml"><xi:fallback /></xi:include>
   </index>
-  <index id="api-index-0-6-7" role="0.6.7">
-    <title>Index of new API in 0.6.7</title>
-    <xi:include href="xml/api-index-0.6.7.xml"><xi:fallback /></xi:include>
+  <index id="api-index-0-10-0" role="0.10.0">
+    <title>Index of new API in 0.10.0</title>
+    <xi:include href="xml/api-index-0.10.0.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-0-11-8" role="0.11.8">
+    <title>Index of new API in 0.11.8</title>
+    <xi:include href="xml/api-index-0.11.8.xml"><xi:fallback /></xi:include>
   </index>
   <index id="api-index-0-6-10" role="0.6.10">
     <title>Index of new API in 0.6.10</title>
     <xi:include href="xml/api-index-0.6.10.xml"><xi:fallback /></xi:include>
   </index>
-  <index id="api-index-1-4" role="1.4">
-    <title>Index of new API in 1.4</title>
-    <xi:include href="xml/api-index-1.4.xml"><xi:fallback /></xi:include>
-  </index>
-  <index id="api-index-1-1-1" role="1.1.1">
-    <title>Index of new API in 1.1.1</title>
-    <xi:include href="xml/api-index-1.1.1.xml"><xi:fallback /></xi:include>
-  </index>
-  <index id="api-index-2-26" role="2.26">
-    <title>Index of new API in 2.26</title>
-    <xi:include href="xml/api-index-2.26.xml"><xi:fallback /></xi:include>
-  </index>
   <index id="api-index-0-8-0" role="0.8.0">
     <title>Index of new API in 0.8.0</title>
     <xi:include href="xml/api-index-0.8.0.xml"><xi:fallback /></xi:include>
   </index>
-  <index id="api-index-1-1" role="1.1">
-    <title>Index of new API in 1.1</title>
-    <xi:include href="xml/api-index-1.1.xml"><xi:fallback /></xi:include>
+  <index id="api-index-0-6-15" role="0.6.15">
+    <title>Index of new API in 0.6.15</title>
+    <xi:include href="xml/api-index-0.6.15.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-0-6-7" role="0.6.7">
+    <title>Index of new API in 0.6.7</title>
+    <xi:include href="xml/api-index-0.6.7.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-1-1-2" role="1.1.2">
+    <title>Index of new API in 1.1.2</title>
+    <xi:include href="xml/api-index-1.1.2.xml"><xi:fallback /></xi:include>
   </index>
   <index id="api-index-1-3-4" role="1.3.4">
     <title>Index of new API in 1.3.4</title>
     <xi:include href="xml/api-index-1.3.4.xml"><xi:fallback /></xi:include>
   </index>
+  <index id="api-index-1-3-3-" role="1.3.3.">
+    <title>Index of new API in 1.3.3.</title>
+    <xi:include href="xml/api-index-1.3.3..xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-1-4" role="1.4">
+    <title>Index of new API in 1.4</title>
+    <xi:include href="xml/api-index-1.4.xml"><xi:fallback /></xi:include>
+  </index>
   <index id="api-index-1-3-3" role="1.3.3">
     <title>Index of new API in 1.3.3</title>
     <xi:include href="xml/api-index-1.3.3.xml"><xi:fallback /></xi:include>
-  </index>
-  <index id="api-index-0-10-0" role="0.10.0">
-    <title>Index of new API in 0.10.0</title>
-    <xi:include href="xml/api-index-0.10.0.xml"><xi:fallback /></xi:include>
-  </index>
-  <index id="api-index-1-0-3" role="1.0.3">
-    <title>Index of new API in 1.0.3</title>
-    <xi:include href="xml/api-index-1.0.3.xml"><xi:fallback /></xi:include>
-  </index>
-  <index id="api-index-0-9-8" role="0.9.8">
-    <title>Index of new API in 0.9.8</title>
-    <xi:include href="xml/api-index-0.9.8.xml"><xi:fallback /></xi:include>
   </index>
   <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>
 </book>

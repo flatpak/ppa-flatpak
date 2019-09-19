@@ -1,3 +1,9 @@
+flatpak (1.4.3-flatpak1~bionic) bionic; urgency=medium
+
+  * Update to 1.4.3
+
+ -- Alexander Larsson <alexl@redhat.com>  Thu, 19 Sep 2019 15:26:21 +0200
+
 flatpak (1.4.2-flatpak1~cosmic) cosmic; urgency=medium
 
   * Rebuild for cosmic
