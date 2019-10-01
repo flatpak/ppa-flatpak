@@ -56,7 +56,7 @@ Build-Depends:
 Build-Depends-Indep:
  libglib2.0-doc,
  libostree-doc,
-Standards-Version: 4.4.0
+Standards-Version: 4.4.1
 Homepage: http://flatpak.org/
 Vcs-Git: https://salsa.debian.org/debian/flatpak.git
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
