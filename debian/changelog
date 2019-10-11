@@ -3,6 +3,7 @@ flatpak (1.5.0-1) UNRELEASED; urgency=medium
   * New upstream development release
   * Standards-Version: 4.4.1 (no changes required)
   * Set packaging branch to debian/experimental
+  * tests: Depend on socat
 
  -- Simon McVittie <smcv@debian.org>  Tue, 01 Oct 2019 09:54:13 +0100
 

@@ -50,6 +50,7 @@ Build-Depends:
  procps,
  python3 <!nocheck>,
  shared-mime-info <!nocheck>,
+ socat <!nocheck>,
  xdg-dbus-proxy (>= 0.1.0),
  xmlto <!nodoc>,
  xsltproc <!nodoc>,
@@ -117,6 +118,7 @@ Depends:
  hicolor-icon-theme,
  ostree (>= 2019.2),
  shared-mime-info,
+ socat,
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
