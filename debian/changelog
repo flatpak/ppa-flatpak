@@ -1,5 +1,6 @@
-flatpak (1.4.3-2) UNRELEASED; urgency=medium
+flatpak (1.5.0-1) UNRELEASED; urgency=medium
 
+  * New upstream development release
   * Standards-Version: 4.4.1 (no changes required)
   * Set packaging branch to debian/experimental
 
