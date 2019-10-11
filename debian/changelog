@@ -10,6 +10,11 @@ flatpak (1.7.0~git20200325-1) experimental; urgency=medium
   * Update symbols file
   * d/patches: Add patches proposed upstream to formalize deprecations
     and fix rebuild of generated files
+  * d/control: Add spurious Build-Conflicts on elogind packages.
+    As in 1.5.0-1, this works around a build-dependency resolver failure
+    when using the same aspcud resolution behaviour as official Debian
+    experimental buildds, and can safely be reverted in distributions
+    that only have elogind, such as Devuan.
 
  -- Simon McVittie <smcv@debian.org>  Wed, 25 Mar 2020 13:44:31 +0000
 
