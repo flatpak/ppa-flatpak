@@ -57,6 +57,10 @@ Build-Depends:
 Build-Depends-Indep:
  libglib2.0-doc,
  libostree-doc,
+Build-Conflicts:
+ elogind,
+ libelogind0,
+ libpam-elogind,
 Standards-Version: 4.4.1
 Homepage: http://flatpak.org/
 Vcs-Git: https://salsa.debian.org/debian/flatpak.git

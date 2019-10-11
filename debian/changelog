@@ -4,6 +4,10 @@ flatpak (1.5.0-1) UNRELEASED; urgency=medium
   * Standards-Version: 4.4.1 (no changes required)
   * Set packaging branch to debian/experimental
   * tests: Depend on socat
+  * d/control: Add spurious Build-Conflicts on elogind packages.
+    This works around a build-dependency resolver failure when using
+    the same aspcud resolution behaviour as official Debian experimental
+    buildds, which for some reason tries to co-install systemd and elogind.
 
  -- Simon McVittie <smcv@debian.org>  Tue, 01 Oct 2019 09:54:13 +0100
 
