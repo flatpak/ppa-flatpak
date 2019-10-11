@@ -2,12 +2,12 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>FlatpakTransaction: Flatpak Reference Manual</title>
+<title>FlatpakTransaction: Flatpak Library Reference Manual</title>
 <meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
-<link rel="home" href="index.html" title="Flatpak Reference Manual">
-<link rel="up" href="ch01.html" title="[Insert title here]">
-<link rel="prev" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation">
-<link rel="next" href="flatpak-Version-information.html" title="Version information">
+<link rel="home" href="index.html" title="Flatpak Library Reference Manual">
+<link rel="up" href="ch01.html" title="Flatpak">
+<link rel="prev" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress">
+<link rel="next" href="FlatpakRef.html" title="FlatpakRef">
 <meta name="generator" content="GTK-Doc V1.32.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
@@ -23,8 +23,8 @@
 </td>
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
-<td><a accesskey="p" href="FlatpakTransactionOperation.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="flatpak-Version-information.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="p" href="FlatpakTransactionProgress.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="FlatpakRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="FlatpakTransaction"></a><div class="titlepage"></div>
@@ -335,7 +335,7 @@ FlatpakTransaction implements
 </div>
 <div class="refsect1">
 <a name="FlatpakTransaction.description"></a><h2>Description</h2>
-<p>FlatpakTransaction is an object representing an install/update
+<p>FlatpakTransaction is an object representing an install/update/uninstall
 transaction. You create an object like this using <a class="link" href="FlatpakTransaction.html#flatpak-transaction-new-for-installation" title="flatpak_transaction_new_for_installation ()"><code class="function">flatpak_transaction_new_for_installation()</code></a>
 and then you add all the operations (installs, updates, etc) you wish to do. Then
 you start the transaction with <a class="link" href="FlatpakTransaction.html#flatpak-transaction-run" title="flatpak_transaction_run ()"><code class="function">flatpak_transaction_run()</code></a> which will resolve all kinds
@@ -730,7 +730,7 @@ flatpak_transaction_run (<em class="parameter"><code><a class="link" href="Flatp
                          <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
                          <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Executes the transaction.</p>
-<p>During the cause of the execution, various signals will get emitted.
+<p>During the course of the execution, various signals will get emitted.
 The FlatpakTransaction::choose-remote-for-ref  and
 <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-add-new-remote" title="The “add-new-remote” signal"><span class="type">“add-new-remote”</span></a> signals may get emitted while
 resolving operations. <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-ready" title="The “ready” signal"><span class="type">“ready”</span></a> is emitted when
@@ -1338,8 +1338,8 @@ described in <em class="parameter"><code>reason</code></em>
 </tr>
 <tr>
 <td class="parameter_name"><p>reason</p></td>
-<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html#FlatpakTransactionRemoteReason" title="enum FlatpakTransactionRemoteReason"><span class="type">FlatpakTransactionRemoteReason</span></a> for this suggestion</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html#FlatpakTransactionRemoteReason" title="enum FlatpakTransactionRemoteReason"><span class="type">FlatpakTransactionRemoteReason</span></a> for this suggestion. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> FlatpakTransactionRemoteReason]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>from_id</p></td>
@@ -1627,8 +1627,8 @@ the transaction when an operation is finished.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>result</p></td>
-<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html#FlatpakTransactionResult" title="enum FlatpakTransactionResult"><span class="type">FlatpakTransactionResult</span></a> giving details about the result</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html#FlatpakTransactionResult" title="enum FlatpakTransactionResult"><span class="type">FlatpakTransactionResult</span></a> giving details about the result. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> FlatpakTransactionResult]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
@@ -1677,8 +1677,8 @@ execution of the transaction.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>details</p></td>
-<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html#FlatpakTransactionErrorDetails" title="enum FlatpakTransactionErrorDetails"><span class="type">FlatpakTransactionErrorDetails</span></a> with details about the error</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html#FlatpakTransactionErrorDetails" title="enum FlatpakTransactionErrorDetails"><span class="type">FlatpakTransactionErrorDetails</span></a> with details about the error. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> FlatpakTransactionErrorDetails]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>

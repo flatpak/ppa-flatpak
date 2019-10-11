@@ -2,12 +2,12 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>FlatpakInstallation: Flatpak Reference Manual</title>
+<title>FlatpakInstallation: Flatpak Library Reference Manual</title>
 <meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
-<link rel="home" href="index.html" title="Flatpak Reference Manual">
-<link rel="up" href="ch01.html" title="[Insert title here]">
-<link rel="prev" href="ch01.html" title="[Insert title here]">
-<link rel="next" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef">
+<link rel="home" href="index.html" title="Flatpak Library Reference Manual">
+<link rel="up" href="ch01.html" title="Flatpak">
+<link rel="prev" href="ch01.html" title="Flatpak">
+<link rel="next" href="FlatpakRemote.html" title="FlatpakRemote">
 <meta name="generator" content="GTK-Doc V1.32.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
@@ -21,7 +21,7 @@
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
 <td><a accesskey="p" href="ch01.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="FlatpakInstalledRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="n" href="FlatpakRemote.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="FlatpakInstallation"></a><div class="titlepage"></div>
@@ -400,6 +400,14 @@
 </tr>
 <tr>
 <td class="function_type">
+<span class="returnvalue">char</span> **
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstallation.html#flatpak-installation-get-default-languages" title="flatpak_installation_get_default_languages ()">flatpak_installation_get_default_languages</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
 <span class="returnvalue">gboolean</span>
 </td>
 <td class="function_name">
@@ -606,7 +614,7 @@ flatpak_installation_new_system_with_id
 <p>a new <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-8.html#api-index-0.8">0.8</a></p>
+<p class="since">Since: 0.8</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1328,7 +1336,7 @@ if <code class="literal">NULL</code>, <code class="literal">master</code> is ass
 <a name="flatpak-installation-uninstall-full.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-11-8.html#api-index-0.11.8">0.11.8</a></p>
+<p class="since">Since: 0.11.8</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1483,7 +1491,7 @@ to launch. </p></td>
 <a name="flatpak-installation-launch-full.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code>, unless an error occurred</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+<p class="since">Since: 1.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1565,7 +1573,7 @@ does not have a display name.</p>
 <p>a string with the installation's display name. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-8.html#api-index-0.8">0.8</a></p>
+<p class="since">Since: 0.8</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1596,7 +1604,7 @@ The ID for the user installation is "user".</p>
 <p>a string with the installation's ID. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-8.html#api-index-0.8">0.8</a></p>
+<p class="since">Since: 0.8</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1708,7 +1716,7 @@ pull operation will fail due to running out of disk space.</p>
 <a name="flatpak-installation-get-min-free-space-bytes.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success, or <code class="literal">FALSE</code> on error.</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+<p class="since">Since: 1.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1736,7 +1744,7 @@ flatpak_installation_get_priority (<em class="parameter"><code><a class="link" h
 <a name="flatpak-installation-get-priority.returns"></a><h4>Returns</h4>
 <p> an integer with the configured priority value</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-8.html#api-index-0.8">0.8</a></p>
+<p class="since">Since: 0.8</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1764,7 +1772,7 @@ flatpak_installation_get_storage_type (<em class="parameter"><code><a class="lin
 <a name="flatpak-installation-get-storage-type.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="FlatpakInstallation.html#FlatpakStorageType" title="enum FlatpakStorageType"><span class="type">FlatpakStorageType</span></a></p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-8.html#api-index-0.8">0.8</a></p>
+<p class="since">Since: 0.8</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1969,7 +1977,7 @@ FLATPAK_UPDATE_FLAGS_NO_PULL to install previously pulled refs.</p>
 <a class="link" href="FlatpakRelatedRef.html" title="FlatpakRelatedRef"><span class="type">FlatpakRelatedRef</span></a> instances. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakRelatedRef]</span></p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-6-7.html#api-index-0.6.7">0.6.7</a></p>
+<p class="since">Since: 0.6.7</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -2145,7 +2153,7 @@ non-<code class="literal">NULL</code>.</p>
 <a class="link" href="FlatpakRelatedRef.html" title="FlatpakRelatedRef"><span class="type">FlatpakRelatedRef</span></a> instances. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakRelatedRef]</span></p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-6-7.html#api-index-0.6.7">0.6.7</a></p>
+<p class="since">Since: 0.6.7</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -2185,7 +2193,7 @@ priority, an earlier added remote comes before a later added one.</p>
 </div>
 <div class="refsect3">
 <a name="flatpak-installation-list-remotes.returns"></a><h4>Returns</h4>
-<p>an GPtrArray of
+<p>a GPtrArray of
 <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> instances. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakRemote]</span></p>
 </div>
@@ -2234,7 +2242,8 @@ flatpak_installation_get_remote_by_name
 </div>
 <div class="refsect3">
 <a name="flatpak-installation-get-remote-by-name.returns"></a><h4>Returns</h4>
-<p>a <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> instances, or <code class="literal">NULL</code> error. </p>
+<p>a <a class="link" href="FlatpakRemote.html" title="FlatpakRemote"><span class="type">FlatpakRemote</span></a> instance, or <code class="literal">NULL</code> with <em class="parameter"><code>error</code></em>
+set. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -2664,7 +2673,7 @@ explicitly with <a class="link" href="FlatpakInstallation.html#flatpak-installat
 on error. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-6-10.html#api-index-0.6.10">0.6.10</a></p>
+<p class="since">Since: 0.6.10</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -2770,7 +2779,7 @@ flatpakref file to get the full contents without getting two remotes.</p>
 <a name="flatpak-installation-add-remote.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> if the modifications have been committed successfully</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-3-4.html#api-index-1.3.4">1.3.4</a></p>
+<p class="since">Since: 1.3.4</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -2913,7 +2922,7 @@ repository and committing the changes to the local installation.</p>
 <a name="flatpak-installation-update-remote-sync.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> if the remote has been updated successfully</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-6-13.html#api-index-0.6.13">0.6.13</a></p>
+<p class="since">Since: 0.6.13</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -2964,7 +2973,7 @@ referred to by <em class="parameter"><code>ref</code></em>
 <a name="flatpak-installation-cleanup-local-refs-sync.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-10-0.html#api-index-0.10.0">0.10.0</a></p>
+<p class="since">Since: 0.10.0</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -3015,6 +3024,46 @@ flatpak_installation_get_config (<em class="parameter"><code><a class="link" hre
 </div>
 <hr>
 <div class="refsect2">
+<a name="flatpak-installation-get-default-languages"></a><h3>flatpak_installation_get_default_languages ()</h3>
+<pre class="programlisting"><span class="returnvalue">char</span> **
+flatpak_installation_get_default_languages
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>Get the default languages used by the installation to decide which
+subpaths to install of locale extensions. This list may also be used
+by frontends like GNOME Software to decide which language-specific apps
+to display. An empty array means that all languages should be installed.</p>
+<div class="refsect3">
+<a name="flatpak-installation-get-default-languages.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <span class="type">GError</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installation-get-default-languages.returns"></a><h4>Returns</h4>
+<p>A possibly empty array of locale strings, or <code class="literal">NULL</code> on error. </p>
+<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> utf8][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 1.5.0</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="flatpak-installation-prune-local-repo"></a><h3>flatpak_installation_prune_local_repo ()</h3>
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
 flatpak_installation_prune_local_repo (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>,
@@ -3054,7 +3103,7 @@ flatpak_installation_prune_local_repo (<em class="parameter"><code><a class="lin
 <a name="flatpak-installation-prune-local-repo.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-10-0.html#api-index-0.10.0">0.10.0</a></p>
+<p class="since">Since: 0.10.0</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -3119,7 +3168,7 @@ referred to by <em class="parameter"><code>ref</code></em>
 <a name="flatpak-installation-remove-local-ref-sync.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-10-0.html#api-index-0.10.0">0.10.0</a></p>
+<p class="since">Since: 0.10.0</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -3293,7 +3342,7 @@ flags set.</p>
 <a name="flatpak-installation-run-triggers.returns"></a><h4>Returns</h4>
 <p> <code class="literal">TRUE</code> on success</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-0-3.html#api-index-1.0.3">1.0.3</a></p>
+<p class="since">Since: 1.0.3</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -3354,7 +3403,7 @@ availability (e.g. doesn't return a configured installation if not reachable).</
 <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> instances. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakInstallation]</span></p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-8.html#api-index-0.8">0.8</a></p>
+<p class="since">Since: 0.8</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -3563,7 +3612,7 @@ the exported file. (Since: 1.0.3)</p>
 </tbody>
 </table></div>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-11-8.html#api-index-0.11.8">0.11.8</a></p>
+<p class="since">Since: 0.11.8</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -3648,7 +3697,7 @@ for the child with <code class="function">g_child_watch_add()</code>. (Snce: 1.1
 </tbody>
 </table></div>
 </div>
-<p class="since">Since: <a class="link" href="api-index-0-6-15.html#api-index-0.6.15">0.6.15</a></p>
+<p class="since">Since: 0.6.15</p>
 </div>
 </div>
 <div class="refsect1">

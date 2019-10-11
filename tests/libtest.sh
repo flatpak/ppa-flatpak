@@ -57,10 +57,6 @@ export G_DEBUG=fatal-warnings
 # tarballs are predictable, except we don't want this in our tests.
 unset TAR_OPTIONS
 
-if test -n "${FLATPAK_TESTS_DEBUG:-}"; then
-    set -x
-fi
-
 if test -n "${FLATPAK_TESTS_VALGRIND:-}"; then
     CMD_PREFIX="env G_SLICE=always-malloc valgrind -q --leak-check=no --error-exitcode=1 --gen-suppressions=all --num-callers=30 --suppressions=${test_srcdir}/flatpak.supp --suppressions=${test_srcdir}/glib.supp"
 elif test -n "${FLATPAK_TESTS_VALGRIND_LEAKS:-}"; then
@@ -88,6 +84,9 @@ export XDG_CACHE_HOME=${TEST_DATA_DIR}/home/cache
 export XDG_CONFIG_HOME=${TEST_DATA_DIR}/home/config
 export XDG_DATA_HOME=${TEST_DATA_DIR}/home/share
 export XDG_RUNTIME_DIR=${TEST_DATA_DIR}/runtime
+
+export XDG_DESKTOP_PORTAL_DIR=${test_builddir}/share/xdg-desktop-portal/portals
+export XDG_CURRENT_DESKTOP=test
 
 export USERDIR=${TEST_DATA_DIR}/home/share/flatpak
 export SYSTEMDIR=${TEST_DATA_DIR}/system
@@ -252,7 +251,7 @@ setup_repo_no_add () {
     BRANCH=${3:-master}
 
     make_runtime "${REPONAME}" "${COLLECTION_ID}" "${BRANCH}" "${GPGARGS:-${FL_GPGARGS}}"
-    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" . $(dirname $0)/make-test-app.sh repos/${REPONAME} "" "${BRANCH}" "${COLLECTION_ID}" > /dev/null
+    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" $(dirname $0)/make-test-app.sh repos/${REPONAME} "" "${BRANCH}" "${COLLECTION_ID}" > /dev/null
     update_repo $REPONAME "${COLLECTION_ID}"
     if [ $REPONAME == "test" ]; then
         $(dirname $0)/test-webserver.sh repos
@@ -304,7 +303,7 @@ make_updated_app () {
     fi
     BRANCH=${3:-master}
 
-    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" . $(dirname $0)/make-test-app.sh repos/${REPONAME} "" "${BRANCH}" "${COLLECTION_ID}" ${4:-UPDATED} > /dev/null
+    GPGARGS="${GPGARGS:-${FL_GPGARGS}}" $(dirname $0)/make-test-app.sh repos/${REPONAME} "" "${BRANCH}" "${COLLECTION_ID}" ${4:-UPDATED} > /dev/null
     update_repo $REPONAME "${COLLECTION_ID}"
 }
 
@@ -339,6 +338,14 @@ run () {
 
 }
 
+run_with_sandboxed_bus () {
+    BUSSOCK=$(mktemp ${test_tmpdir}/bus.XXXXXX)
+    rm -rf ${BUSSOCK}
+    run --command=socat --filesystem=${test_tmpdir} org.test.Hello unix-listen:${BUSSOCK} unix-connect:/run/user/`id -u`/bus &
+    while [ ! -e ${BUSSOCK} ]; do sleep 1; done
+    DBUS_SESSION_BUS_ADDRESS="unix:path=${BUSSOCK}" "$@"
+}
+
 run_sh () {
     ID=${1:-org.test.Hello}
     shift
@@ -370,7 +377,6 @@ skip_without_bwrap () {
     else
         sed -e 's/^/# /' < bwrap-result
         skip "Cannot run bwrap"
-        exit 0
     fi
 }
 
@@ -441,3 +447,7 @@ cleanup () {
     fi
 }
 trap cleanup EXIT
+
+if test -n "${FLATPAK_TESTS_DEBUG:-}"; then
+    set -x
+fi
