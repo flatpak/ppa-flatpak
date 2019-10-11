@@ -24,7 +24,7 @@ set -euo pipefail
 skip_without_bwrap
 skip_revokefs_without_fuse
 
-echo "1..34"
+echo "1..36"
 
 #Regular repo
 setup_repo
@@ -261,14 +261,14 @@ V=( ${CURRENT_VERSION//./ } )  # Split parts to array
 make_required_version_app org.test.SameVersion "${V[0]}.${V[1]}.${V[2]}"
 make_required_version_app org.test.NeedNewerMicro "${V[0]}.${V[1]}.$(expr ${V[2]} + 1)"
 make_required_version_app org.test.NeedNewerMinor "${V[0]}.$(expr ${V[1]} + 1).${V[2]}"
-make_required_version_app org.test.NeedNewerMaster "$(expr ${V[0]} + 1).${V[1]}.${V[2]}"
+make_required_version_app org.test.NeedNewerMajor "$(expr ${V[0]} + 1).${V[1]}.${V[2]}"
 make_required_version_app org.test.NeedOlderMinor "${V[0]}.$(expr ${V[1]} - 1).${V[2]}"
 make_required_version_app org.test.MultiVersionFallback "${V[0]}.${V[1]}.${V[2]};1.0.0;"
 make_required_version_app org.test.MultiVersionFallbackFail "${V[0]}.$(expr ${V[1]} + 1).${V[2]};1.0.0;"
 make_required_version_app org.test.MultiVersionOk "${V[0]}.$(expr ${V[1]} + 1).0;${V[0]}.${V[1]}.${V[2]};"
 make_required_version_app org.test.MultiVersionNotOk "${V[0]}.$(expr ${V[1]} + 1).0;${V[0]}.${V[1]}.$(expr ${V[2]} + 1);"
 
-update_repo $REPONAME "${COLLECTION_ID}"
+update_repo
 
 ${FLATPAK} ${U} install -y test-repo org.test.SameVersion
 ${FLATPAK} ${U} install -y test-repo org.test.NeedOlderMinor
@@ -284,7 +284,7 @@ fi
 assert_file_has_content install-error-log "needs a later flatpak version"
 
 if ${FLATPAK} ${U} install -y test-repo org.test.NeedNewerMajor 2> install-error-log; then
-    assert_not_reached "Should not be able to install with wrong micro version"
+    assert_not_reached "Should not be able to install with wrong major version"
 fi
 assert_file_has_content install-error-log "needs a later flatpak version"
 
@@ -506,12 +506,12 @@ assert_not_file_has_content list-log "org\.test\.Platform"
 
 # Disable the remote to make sure we don't do i/o
 port=$(cat httpd-port-main)
-${FLATPAK}  ${U} remote-modify --url="http://127.0.0.1:${port}/disable-test" test-repo
+${FLATPAK} ${U} remote-modify --url="http://127.0.0.1:${port}/disable-test" test-repo
 
 ${FLATPAK} ${U} install -y --no-pull test-repo org.test.Hello
 
 # re-enable remote
-${FLATPAK}  ${U} remote-modify --url="http://127.0.0.1:${port}/test" test-repo
+${FLATPAK} ${U} remote-modify --url="http://127.0.0.1:${port}/test" test-repo
 
 ${FLATPAK} ${U} list -d > list-log
 assert_file_has_content list-log "org\.test\.Hello"
@@ -529,13 +529,13 @@ assert_not_file_has_content list-log "org\.test\.Platform"
 
 # Disable the remote to make sure we don't do i/o
 port=$(cat httpd-port-main)
-${FLATPAK}  ${U} remote-modify --url="http://127.0.0.1:${port}/disable-test" test-repo
+${FLATPAK} ${U} remote-modify --url="http://127.0.0.1:${port}/disable-test" test-repo
 
 # Note: The partial ref is only auto-corrected without user interaction because we're using -y
 ${FLATPAK} ${U} install -y --no-pull test-repo hello
 
 # re-enable remote
-${FLATPAK}  ${U} remote-modify --url="http://127.0.0.1:${port}/test" test-repo
+${FLATPAK} ${U} remote-modify --url="http://127.0.0.1:${port}/test" test-repo
 
 ${FLATPAK} ${U} list -d > list-log
 assert_file_has_content list-log "org\.test\.Hello"
@@ -550,6 +550,33 @@ assert_not_file_has_content list-log "org\.test\.Hello"
 assert_not_file_has_content list-log "org\.test\.Platform"
 
 echo "ok uninstall --all"
+
+${FLATPAK} ${U} install -y test-repo org.test.Hello
+
+${FLATPAK} ${U} list -a --columns=application > list-log
+assert_file_has_content list-log "org\.test\.Hello"
+assert_file_has_content list-log "org\.test\.Hello\.Locale"
+
+${FLATPAK} ${U} remote-delete --force test-repo
+${FLATPAK} ${U} uninstall -y org.test.Hello
+
+${FLATPAK} ${U} list -a --columns=application > list-log
+assert_not_file_has_content list-log "org\.test\.Hello"
+assert_not_file_has_content list-log "org\.test\.Hello\.Locale"
+
+setup_repo
+
+echo "ok uninstall with missing remote"
+
+${FLATPAK} ${U} list -a --columns=application > list-log
+assert_file_has_content list-log "org\.test\.Platform"
+
+${FLATPAK} ${U} uninstall -y --unused
+
+${FLATPAK} ${U} list -a --columns=application > list-log
+assert_not_file_has_content list-log "org\.test\.Platform"
+
+echo "ok uninstall --unused"
 
 # Test that remote-ls works in all of the following cases:
 # * system remote, and --system is used
@@ -732,7 +759,7 @@ assert_not_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
 assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
 
 if ${FLATPAK}  ${U} remote-info test-repo org.test.Hello > remote-ref-info; then
-        assert_not_reached "flatpak remote-info test-repo org.test.Hello should fail due to filter"
+    assert_not_reached "flatpak remote-info test-repo org.test.Hello should fail due to filter"
 fi
 
 if ${FLATPAK} ${U} install -y test-repo org.test.Hello; then
@@ -749,7 +776,7 @@ assert_not_file_has_content remote-ls-log "app/org\.test\.Hello"
 assert_not_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
 assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
 if ${FLATPAK}  ${U} remote-info test-repo org.test.Hello > remote-ref-info; then
-        assert_not_reached "flatpak remote-info test-repo org.test.Hello should fail due to filter"
+    assert_not_reached "flatpak remote-info test-repo org.test.Hello should fail due to filter"
 fi
 if ${FLATPAK} ${U} install -y test-repo org.test.Hello; then
     assert_not_reached "should not be able to install org.test.Hello should fail due to filter"
@@ -769,7 +796,7 @@ assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
 
 echo "ok filter"
 
-# Try installing it from a flatpakref file. Don’t uninstall afterwards because
+# Try installing it from a flatpakrepo file. Don’t uninstall afterwards because
 # we need it for the next test.
 cat << EOF > test.flatpakrepo
 [Flatpak Repo]

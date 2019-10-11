@@ -36,6 +36,7 @@ struct _FlatpakCliTransaction
 
   gboolean             disable_interaction;
   gboolean             stop_on_first_error;
+  gboolean             non_default_arch;
   GError              *first_operation_error;
 
   int                  rows;
@@ -247,7 +248,7 @@ progress_changed_cb (FlatpakTransactionProgress *progress,
 {
   FlatpakCliTransaction *cli = data;
   FlatpakTransaction *self = FLATPAK_TRANSACTION (cli);
-  FlatpakTransactionOperation *op = flatpak_transaction_get_current_operation (self);
+  g_autoptr(FlatpakTransactionOperation) op = flatpak_transaction_get_current_operation (self);
   g_autoptr(GString) str = g_string_new ("");
   int i;
   int n_full, partial;
@@ -520,7 +521,7 @@ end_of_lifed_with_rebase (FlatpakTransaction *transaction,
   if (rebased_to_ref && remote)
     {
       if (self->disable_interaction ||
-          flatpak_yes_no_prompt (FALSE, _("Replace it with %s?"), flatpak_ref_get_name (rref)))
+          flatpak_yes_no_prompt (TRUE, _("Replace it with %s?"), rebased_to_ref))
         {
           g_autoptr(GError) error = NULL;
 
@@ -873,12 +874,18 @@ transaction_ready (FlatpakTransaction *transaction)
 
   printer = self->printer = flatpak_table_printer_new ();
   i = 0;
+
   flatpak_table_printer_set_column_title (printer, i++, "   ");
   flatpak_table_printer_set_column_title (printer, i++, "   ");
+
   flatpak_table_printer_set_column_expand (printer, i, TRUE);
   flatpak_table_printer_set_column_title (printer, i++, _("ID"));
+
   flatpak_table_printer_set_column_expand (printer, i, TRUE);
+  if (!self->non_default_arch)
+    flatpak_table_printer_set_column_skip_unique (printer, i, TRUE);
   flatpak_table_printer_set_column_title (printer, i++, _("Arch"));
+
   flatpak_table_printer_set_column_expand (printer, i, TRUE);
   flatpak_table_printer_set_column_title (printer, i++, _("Branch"));
 
@@ -963,7 +970,7 @@ transaction_ready (FlatpakTransaction *transaction)
 
   if (!self->disable_interaction)
     {
-      FlatpakInstallation *installation = flatpak_transaction_get_installation (transaction);
+      g_autoptr(FlatpakInstallation) installation = flatpak_transaction_get_installation (transaction);
       const char *name;
       const char *id;
       gboolean ret;
@@ -975,7 +982,7 @@ transaction_ready (FlatpakTransaction *transaction)
 
       if (flatpak_installation_get_is_user (installation))
         ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the user installation?"));
-      else if (g_strcmp0 (id, "default") == 0)
+      else if (g_strcmp0 (id, SYSTEM_DIR_DEFAULT_ID) == 0)
         ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the system installation?"));
       else
         ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the %s?"), name);
@@ -1060,6 +1067,7 @@ FlatpakTransaction *
 flatpak_cli_transaction_new (FlatpakDir *dir,
                              gboolean    disable_interaction,
                              gboolean    stop_on_first_error,
+                             gboolean    non_default_arch,
                              GError    **error)
 {
   g_autoptr(FlatpakInstallation) installation = NULL;
@@ -1080,6 +1088,7 @@ flatpak_cli_transaction_new (FlatpakDir *dir,
 
   self->disable_interaction = disable_interaction;
   self->stop_on_first_error = stop_on_first_error;
+  self->non_default_arch = non_default_arch;
 
   flatpak_transaction_add_default_dependency_sources (FLATPAK_TRANSACTION (self));
 
