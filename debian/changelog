@@ -1,4 +1,4 @@
-flatpak (1.5.0-1) UNRELEASED; urgency=medium
+flatpak (1.5.0-1) experimental; urgency=medium
 
   * New upstream development release
     - Update d/libflatpak0.symbols
@@ -13,7 +13,7 @@ flatpak (1.5.0-1) UNRELEASED; urgency=medium
     (This can safely be reverted in distributions that only have elogind,
     such as Devuan.)
 
- -- Simon McVittie <smcv@debian.org>  Mon, 21 Oct 2019 12:39:25 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 21 Oct 2019 13:14:19 +0100
 
 flatpak (1.4.3-1) unstable; urgency=medium
 
