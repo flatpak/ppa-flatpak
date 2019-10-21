@@ -1,6 +1,7 @@
 flatpak (1.5.0-1) UNRELEASED; urgency=medium
 
   * New upstream development release
+    - Update d/libflatpak0.symbols
   * Standards-Version: 4.4.1 (no changes required)
   * Set packaging branch to debian/experimental
   * tests: Depend on socat
