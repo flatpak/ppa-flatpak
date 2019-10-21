@@ -33,7 +33,7 @@ index 2312a99..06db4cc 100644
  from __future__ import print_function
  
 diff --git a/tests/oci-registry-server.py b/tests/oci-registry-server.py
-index f123edc..1e4a80b 100644
+index b8b33ca..363fb4c 100644
 --- a/tests/oci-registry-server.py
 +++ b/tests/oci-registry-server.py
 @@ -1,4 +1,4 @@
@@ -56,10 +56,10 @@ index c4107ea..2247d2b 100755
  mv httpd-port httpd-port-main
  port=$(cat httpd-port-main)
 diff --git a/tests/test-oci-registry.sh b/tests/test-oci-registry.sh
-index 87021d9..55c1828 100755
+index ee345c6..9f21481 100755
 --- a/tests/test-oci-registry.sh
 +++ b/tests/test-oci-registry.sh
-@@ -27,11 +27,11 @@ echo "1..14"
+@@ -35,11 +35,11 @@ fi
  
  # Start the fake registry server
  
