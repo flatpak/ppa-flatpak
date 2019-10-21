@@ -7,9 +7,12 @@ flatpak (1.5.0-1) UNRELEASED; urgency=medium
   * d/control: Add spurious Build-Conflicts on elogind packages.
     This works around a build-dependency resolver failure when using
     the same aspcud resolution behaviour as official Debian experimental
-    buildds, which for some reason tries to co-install systemd and elogind.
+    buildds, which for some reason tries to co-install systemd and elogind,
+    causing failure to install build-dependencies.
+    (This can safely be reverted in distributions that only have elogind,
+    such as Devuan.)
 
- -- Simon McVittie <smcv@debian.org>  Tue, 01 Oct 2019 09:54:13 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 21 Oct 2019 12:39:25 +0100
 
 flatpak (1.4.3-1) unstable; urgency=medium
 
