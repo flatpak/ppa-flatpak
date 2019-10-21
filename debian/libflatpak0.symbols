@@ -25,6 +25,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_fetch_remote_size_sync@Base 0.5.2
  flatpak_installation_get_config@Base 0.10.0
  flatpak_installation_get_current_installed_app@Base 0.5.2
+ flatpak_installation_get_default_languages@Base 1.5.0
  flatpak_installation_get_display_name@Base 0.8.0
  flatpak_installation_get_id@Base 0.8.0
  flatpak_installation_get_installed_ref@Base 0.5.2
