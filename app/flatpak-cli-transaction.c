@@ -494,12 +494,56 @@ operation_error (FlatpakTransaction            *transaction,
       redraw (self);
     }
   else
-    g_print ("\r%-*s\n", self->table_width, text);
+    g_printerr ("\r%-*s\n", self->table_width, text);
 
   if (!non_fatal && self->stop_on_first_error)
     return FALSE;
 
   return TRUE; /* Continue */
+}
+
+static gboolean
+webflow_start (FlatpakTransaction *transaction,
+               const char         *remote,
+               const char         *url,
+               guint               id)
+{
+  FlatpakCliTransaction *self = FLATPAK_CLI_TRANSACTION (transaction);
+  const char *browser;
+  g_autoptr(GError) local_error = NULL;
+  const char *args[3] = { NULL, url, NULL };
+
+  if (!self->disable_interaction)
+    {
+      g_print (_("Authentication required for remote '%s'\n"), remote);
+      if (!flatpak_yes_no_prompt (TRUE, _("Open browser?")))
+        return FALSE;
+    }
+
+  browser = g_getenv ("BROWSER");
+  if (browser == NULL)
+    browser = "xdg-open";
+
+  /* TODO: Use better way to find default browser */
+
+  args[0] = browser;
+  if (!g_spawn_async (NULL, (char **)args, NULL, G_SPAWN_SEARCH_PATH,
+                      NULL, NULL, NULL, &local_error))
+    {
+      g_printerr ("Failed to spawn browser %s: %s\n", browser, local_error->message);
+      return FALSE;
+    }
+
+  g_print ("Waiting for browser...\n");
+
+  return TRUE;
+}
+
+static void
+webflow_done (FlatpakTransaction *transaction,
+              guint               id)
+{
+  g_print ("Browser done\n");
 }
 
 static gboolean
@@ -514,7 +558,7 @@ end_of_lifed_with_rebase (FlatpakTransaction *transaction,
   g_autoptr(FlatpakRef) rref = flatpak_ref_parse (ref, NULL);
 
   if (rebased_to_ref)
-    g_print (_("Info: %s is end-of-life, in preference of %s\n"), flatpak_ref_get_name (rref), rebased_to_ref);
+    g_print (_("Info: %s is end-of-life, in favor of %s\n"), flatpak_ref_get_name (rref), rebased_to_ref);
   else if (reason)
     g_print (_("Info: %s is end-of-life, with reason: %s\n"), flatpak_ref_get_name (rref), reason);
 
@@ -889,12 +933,9 @@ transaction_ready (FlatpakTransaction *transaction)
   flatpak_table_printer_set_column_expand (printer, i, TRUE);
   flatpak_table_printer_set_column_title (printer, i++, _("Branch"));
 
-  if (self->installing + self->updating + self->uninstalling > 1)
-    {
-      flatpak_table_printer_set_column_expand (printer, i, TRUE);
-      /* translators: This is short for operation, the title of a one-char column */
-      flatpak_table_printer_set_column_title (printer, i++, _("Op"));
-    }
+  flatpak_table_printer_set_column_expand (printer, i, TRUE);
+  /* translators: This is short for operation, the title of a one-char column */
+  flatpak_table_printer_set_column_title (printer, i++, _("Op"));
 
   if (self->installing || self->updating)
     {
@@ -931,9 +972,7 @@ transaction_ready (FlatpakTransaction *transaction)
       flatpak_table_printer_add_column (printer, parts[1]);
       flatpak_table_printer_add_column (printer, parts[2]);
       flatpak_table_printer_add_column (printer, parts[3]);
-
-      if (self->installing + self->updating + self->uninstalling > 1)
-        flatpak_table_printer_add_column (printer, op_shorthand[type]);
+      flatpak_table_printer_add_column (printer, op_shorthand[type]);
 
       if (type == FLATPAK_TRANSACTION_OPERATION_INSTALL ||
           type == FLATPAK_TRANSACTION_OPERATION_INSTALL_BUNDLE ||
@@ -1061,6 +1100,8 @@ flatpak_cli_transaction_class_init (FlatpakCliTransactionClass *klass)
   transaction_class->choose_remote_for_ref = choose_remote_for_ref;
   transaction_class->end_of_lifed_with_rebase = end_of_lifed_with_rebase;
   transaction_class->run = flatpak_cli_transaction_run;
+  transaction_class->webflow_start = webflow_start;
+  transaction_class->webflow_done = webflow_done;
 }
 
 FlatpakTransaction *

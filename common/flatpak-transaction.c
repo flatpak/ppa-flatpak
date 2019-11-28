@@ -28,6 +28,7 @@
 #include "flatpak-installation-private.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-error.h"
+#include "flatpak-auth-private.h"
 
 /**
  * SECTION:flatpak-transaction
@@ -111,10 +112,13 @@ struct _FlatpakTransactionOperation
   GKeyFile                       *resolved_metakey;
   GBytes                         *resolved_old_metadata;
   GKeyFile                       *resolved_old_metakey;
+  char                           *resolved_token;
+  gboolean                        requested_token; /* TRUE if we requested a token. value in resolved_token, but may be NULL if token not needed. */
   guint64                         download_size;
   guint64                         installed_size;
   char                           *eol;
   char                           *eol_rebase;
+  gint32                          token_type;
   int                             run_after_count;
   int                             run_after_prio; /* Higher => run later (when it becomes runnable). Used to run related ops (runtime extensions) before deps (apps using the runtime) */
   GList                          *run_before_ops;
@@ -131,6 +135,15 @@ struct _BundleData
   GBytes *gpg_data;
 };
 
+typedef struct {
+  FlatpakTransaction *transaction;
+  const char *remote;
+  FlatpakAuthenticatorRequest *request;
+  gboolean done;
+  guint response;
+  GVariant *results;
+} RequestData;
+
 struct _FlatpakTransactionPrivate
 {
   GObject                      parent;
@@ -146,8 +159,13 @@ struct _FlatpakTransactionPrivate
   GList                       *flatpakrefs; /* GKeyFiles */
   GList                       *bundles; /* BundleData */
 
+  guint                        next_webflow_id;
+  guint                        active_webflow_id;
+  RequestData                 *active_webflow;
+
   FlatpakTransactionOperation *current_op;
 
+  char                        *parent_window;
   gboolean                     no_pull;
   gboolean                     no_deploy;
   gboolean                     disable_static_deltas;
@@ -172,6 +190,8 @@ enum {
   END_OF_LIFED_WITH_REBASE,
   READY,
   ADD_NEW_REMOTE,
+  WEBFLOW_START,
+  WEBFLOW_DONE,
   LAST_SIGNAL
 };
 
@@ -198,6 +218,12 @@ enum {
   CHANGED,
   LAST_PROGRESS_SIGNAL
 };
+
+static gboolean request_required_tokens (FlatpakTransaction *self,
+                                         const char         *optional_remote,
+                                         GCancellable       *cancellable,
+                                         GError            **error);
+
 
 static BundleData *
 bundle_data_new (GFile  *file,
@@ -567,6 +593,7 @@ flatpak_transaction_operation_finalize (GObject *object)
     g_bytes_unref (self->resolved_old_metadata);
   if (self->resolved_old_metakey)
     g_key_file_unref (self->resolved_old_metakey);
+  g_free (self->resolved_token);
   g_list_free (self->run_before_ops);
 
   G_OBJECT_CLASS (flatpak_transaction_operation_parent_class)->finalize (object);
@@ -826,6 +853,7 @@ flatpak_transaction_finalize (GObject *object)
 
   g_clear_object (&priv->installation);
 
+  g_free (priv->parent_window);
   g_list_free_full (priv->flatpakrefs, (GDestroyNotify) g_key_file_unref);
   g_list_free_full (priv->bundles, (GDestroyNotify) bundle_data_free);
   g_free (priv->default_arch);
@@ -1112,6 +1140,53 @@ flatpak_transaction_class_init (FlatpakTransactionClass *klass)
                   g_signal_accumulator_first_wins, NULL,
                   NULL,
                   G_TYPE_BOOLEAN, 4, G_TYPE_INT, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+
+  /**
+   * FlatpakTransaction::webflow-start:
+   * @object: A #FlatpakTransaction
+   * @remote: The remote we're authenticating with
+   * @url: The url to show
+   * @id: The id of the operation, can be used to cancel it
+   *
+   * The ::webflow-start signal gets emitted when some kind of user authentication is needed
+   * during the operation. If the caller handles this it should show the url in a webbrowser
+   * and return TRUE. This will eventually cause the webbrowser to finish the authentication
+   * operation and operation will continue, as signaled by the webflow-done being emitted.
+   *
+   * If the client does not support webflow then return FALSE from this signal (or don't
+   * implement it). This will abort the authentication and likely result in the transaction
+   * failing (unless the authentication was somehow optional).
+   *
+   * During the time between webflow-start and webflow-done the client can call flatpak_transaction_abort_webflow()
+   * to manually abort the authentication. This is useful if the user aborted the authentication
+   * operation some way, like e.g. closing the browser window.
+   */
+  signals[WEBFLOW_START] =
+    g_signal_new ("webflow-start",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  G_STRUCT_OFFSET (FlatpakTransactionClass, webflow_start),
+                  NULL, NULL,
+                  NULL,
+                  G_TYPE_BOOLEAN, 3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT);
+  /**
+   * FlatpakTransaction::webflow-done:
+   * @object: A #FlatpakTransaction
+   * @id: The id of the operation
+   *
+   * The ::webflow-done signal gets emitted when the authentication
+   * finished the webflow, independent of the reason and results.  If
+   * you for were showing a web-browser window it can now be closed.
+   */
+  signals[WEBFLOW_DONE] =
+    g_signal_new ("webflow-done",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  G_STRUCT_OFFSET (FlatpakTransactionClass, webflow_done),
+                  NULL, NULL,
+                  NULL,
+                  G_TYPE_NONE, 1, G_TYPE_INT);
+
 }
 
 static void
@@ -1197,6 +1272,74 @@ flatpak_transaction_set_no_pull (FlatpakTransaction *self,
 }
 
 /**
+ * flatpak_transaction_get_no_pull:
+ * @self: a #FlatpakTransaction
+ *
+ * Gets whether the transaction should operate only on locally
+ * available data.
+ *
+ * Returns: %TRUE if no_pull is set, %FALSE otherwise
+ *
+ * Since: 1.5.1
+ */
+gboolean
+flatpak_transaction_get_no_pull (FlatpakTransaction *self)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+
+  return priv->no_pull;
+}
+
+/**
+ * flatpak_transaction_set_parent_window:
+ * @self: a #FlatpakTransaction
+ * @parent_window: whether to avoid pulls
+ *
+ * Sets the parent window (if any) to use for any UI show by this transaction.
+ * This is used by authenticators if they need to interact with the user during
+ * authentication.
+ *
+ * The format of this string depends on the display system in use, and is the
+ * same as used by xdg-desktop-portal.
+ *
+ * On X11 it should be of the form x11:$xid where $xid is the hex
+ * version of the xwindows id.
+ *
+ * On wayland is should be wayland:$handle where handle is gotten by
+ * using the export call of the xdg-foreign-unstable wayland extension.
+ *
+ * Since: 1.5.1
+ */
+void
+flatpak_transaction_set_parent_window (FlatpakTransaction *self,
+                                       const char *parent_window)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+
+  g_free (priv->parent_window);
+  priv->parent_window = g_strdup (parent_window);
+}
+
+/**
+ * flatpak_transaction_get_parent_window:
+ * @self: a #FlatpakTransaction
+ *
+ * Gets the parent window set for this transaction, or %NULL if unset. See
+ * flatpak_transaction_get_parent_window().
+ *
+ * Returns: (transfer none): a window name, or %NULL
+ *
+ * Since: 1.5.1
+ */
+const char *
+flatpak_transaction_get_parent_window (FlatpakTransaction *self)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+
+  return priv->parent_window;
+}
+
+/**
  * flatpak_transaction_set_no_deploy:
  * @self: a #FlatpakTransaction
  * @no_deploy: whether to avoid deploying
@@ -1211,6 +1354,25 @@ flatpak_transaction_set_no_deploy (FlatpakTransaction *self,
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
 
   priv->no_deploy = no_deploy;
+}
+
+/**
+ * flatpak_transaction_get_no_deploy:
+ * @self: a #FlatpakTransaction
+ *
+ * Gets whether the transaction is only downloading updates,
+ * and not deploying them.
+ *
+ * Returns: %TRUE if no_deploy is set, %FALSE otherwise
+ *
+ * Since: 1.5.1
+ */
+gboolean
+flatpak_transaction_get_no_deploy (FlatpakTransaction *self)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+
+  return priv->no_deploy;
 }
 
 /**
@@ -1581,7 +1743,7 @@ add_related (FlatpakTransaction          *self,
                                                    FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE);
           related_op->non_fatal = TRUE;
           related_op->fail_if_op_fails = op;
-          run_operation_before (op, related_op, 1);
+          run_operation_before (related_op, op, 1);
         }
     }
 
@@ -1648,9 +1810,13 @@ add_deps (FlatpakTransaction          *self,
   if (!op->resolved_metakey)
     return TRUE;
 
+  /* Generally only app needs runtimes dependencies, not dependencies because you don't run extensions directly.
+     However if the extension has extra data (and doesn't define NoRuntime) its also needed so we can run the
+     apply-extra script. */
   if (g_str_has_prefix (op->ref, "app/"))
     runtime_ref = g_key_file_get_string (op->resolved_metakey, "Application", "runtime", NULL);
-  else
+  else if (g_key_file_has_group (op->resolved_metakey, "Extra Data") &&
+           !g_key_file_get_boolean (op->resolved_metakey, "Extra Data", "NoRuntime", NULL))
     runtime_ref = g_key_file_get_string (op->resolved_metakey, "ExtensionOf", "runtime", NULL);
 
   if (runtime_ref == NULL)
@@ -2167,6 +2333,98 @@ mark_op_resolved (FlatpakTransactionOperation *op,
     }
 }
 
+static void
+resolve_op_end (FlatpakTransaction *self,
+                FlatpakTransactionOperation *op,
+                const char *checksum,
+                GBytes *metadata_bytes)
+{
+  g_autoptr(GBytes) old_metadata_bytes = NULL;
+
+  old_metadata_bytes = load_deployed_metadata (self, op->ref, NULL);
+  mark_op_resolved (op, checksum, metadata_bytes, old_metadata_bytes);
+  emit_eol_and_maybe_skip (self, op);
+ }
+
+
+static void
+resolve_op_from_commit (FlatpakTransaction *self,
+                        FlatpakTransactionOperation *op,
+                        const char *checksum,
+                        GVariant *commit_data)
+{
+  g_autoptr(GBytes) metadata_bytes = NULL;
+  g_autoptr(GVariant) commit_metadata = NULL;
+  const char *xa_metadata = NULL;
+  guint64 download_size = 0;
+  guint64 installed_size = 0;
+
+  commit_metadata = g_variant_get_child_value (commit_data, 0);
+  g_variant_lookup (commit_metadata, "xa.metadata", "&s", &xa_metadata);
+  if (xa_metadata == NULL)
+    g_message ("Warning: No xa.metadata in local commit %s ref %s", checksum, op->ref);
+  else
+    metadata_bytes = g_bytes_new (xa_metadata, strlen (xa_metadata) + 1);
+
+  if (g_variant_lookup (commit_metadata, "xa.download-size", "t", &download_size))
+    op->download_size = GUINT64_FROM_BE (download_size);
+  if (g_variant_lookup (commit_metadata, "xa.installed-size", "t", &installed_size))
+    op->installed_size = GUINT64_FROM_BE (installed_size);
+
+  g_variant_lookup (commit_metadata, OSTREE_COMMIT_META_KEY_ENDOFLIFE, "s", &op->eol);
+  g_variant_lookup (commit_metadata, OSTREE_COMMIT_META_KEY_ENDOFLIFE_REBASE, "s", &op->eol_rebase);
+
+  resolve_op_end (self, op, checksum, metadata_bytes);
+}
+
+static void
+resolve_op_from_metadata (FlatpakTransaction *self,
+                          FlatpakTransactionOperation *op,
+                          const char *checksum,
+                          FlatpakRemoteState *state)
+{
+  g_autoptr(GBytes) metadata_bytes = NULL;
+  guint64 download_size = 0;
+  guint64 installed_size = 0;
+  const char *metadata = NULL;
+  g_autoptr(GVariant) sparse_cache = NULL;
+  g_autoptr(GError) local_error = NULL;
+
+  if (!flatpak_remote_state_lookup_cache (state, op->ref, &download_size, &installed_size, &metadata, NULL, &local_error))
+    {
+      g_message (_("Warning: Can't find %s metadata for dependencies: %s"), op->ref, local_error->message);
+      g_clear_error (&local_error);
+    }
+  else
+    metadata_bytes = g_bytes_new (metadata, strlen (metadata) + 1);
+
+  op->installed_size = installed_size;
+  op->download_size = download_size;
+
+  if (state->metadata)
+    g_variant_lookup (state->metadata, "xa.default-token-type", "i", &op->token_type);
+
+  sparse_cache = flatpak_remote_state_lookup_sparse_cache (state, op->ref, NULL);
+  if (sparse_cache)
+    {
+      g_variant_lookup (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE, "s", &op->eol);
+      g_variant_lookup (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE, "s", &op->eol_rebase);
+      g_variant_lookup (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_TOKEN_TYPE, "i", &op->token_type);
+    }
+
+  resolve_op_end (self, op, checksum, metadata_bytes);
+}
+
+static gboolean
+op_may_need_token (FlatpakTransactionOperation *op)
+{
+  return
+    !op->skip &&
+    (op->kind == FLATPAK_TRANSACTION_OPERATION_INSTALL ||
+     op->kind == FLATPAK_TRANSACTION_OPERATION_UPDATE  ||
+     op->kind == FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE);
+}
+
 static gboolean
 resolve_p2p_ops (FlatpakTransaction *self,
                  GList              *p2p_ops,
@@ -2175,6 +2433,8 @@ resolve_p2p_ops (FlatpakTransaction *self,
 {
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
   g_autoptr(GPtrArray) resolves = g_ptr_array_new_with_free_func ((GDestroyNotify) flatpak_dir_resolve_free);
+  g_autoptr(FlatpakDirP2PState) state = NULL;
+  gboolean got_new_need_token;
   GList *l;
   int i;
 
@@ -2195,25 +2455,138 @@ resolve_p2p_ops (FlatpakTransaction *self,
 
   g_ptr_array_add (resolves, NULL);
 
-  if (!flatpak_dir_resolve_p2p_refs (priv->dir, (FlatpakDirResolve **) resolves->pdata,
-                                     cancellable, error))
+  /* This does the metadata checks and resolving of no-op updates. */
+  state = flatpak_dir_prepare_resolve_p2p_refs (priv->dir, (FlatpakDirResolve **) resolves->pdata,
+                                                cancellable, error);
+  if (state == NULL)
     return FALSE;
+
+  /* Resolve any ops that we can resolve from the ostree-metadata info */
+  for (i = 0, l = p2p_ops; l != NULL; i++, l = l->next)
+    {
+      FlatpakTransactionOperation *op = l->data;
+      FlatpakDirResolve *resolve = g_ptr_array_index (resolves, i);
+
+      if (resolve->resolved_commit == NULL)
+        {
+          g_autoptr(FlatpakRemoteState) state = flatpak_transaction_ensure_remote_state (self, op->kind, op->remote, NULL);
+          if (state != NULL)
+            flatpak_dir_resolve_maybe_resolve_from_metadata (resolve, state);
+        }
+    }
+
+  /* We now pre-resolved all p2p operations, which is all we can do without full access
+     to the commit objects. To get the commit objects we might need a token, but the information
+     about whether we need a token or not is in the commit object. This is a catch-22, which we
+     break by using the extracted commit info in the ostree-metadata branch. There is a minor
+     risk that this is out-of-sync with the exact information in the commit if using a p2p mirror
+     with an old version of the app, but the latest ostree-metadata version. The need-token info
+     is unlikely to change though, and the worst case issue here is some permission error during
+     download, so this is not *unsafe*, just kinda iffy.
+  */
+  got_new_need_token = FALSE;
+  for (i = 0, l = p2p_ops; l != NULL; i++, l = l->next)
+    {
+      FlatpakTransactionOperation *op = l->data;
+      FlatpakDirResolve *resolve = g_ptr_array_index (resolves, i);
+
+      if (resolve->resolved_commit != NULL)
+        continue; /* Already resolved this (as no-op) */
+
+      if (op_may_need_token (op))
+        {
+          g_autoptr(FlatpakRemoteState) state = NULL;
+          g_autoptr(GVariant) sparse_cache = NULL;
+          gint32 token_type = 0;
+
+          state = flatpak_transaction_ensure_remote_state (self, op->kind, op->remote, error);
+          if (state == NULL)
+            return FALSE;
+
+          if (state->metadata)
+            g_variant_lookup (state->metadata, "xa.default-token-type", "i", &token_type);
+
+          sparse_cache = flatpak_remote_state_lookup_sparse_cache (state, op->ref, NULL);
+          if (sparse_cache)
+            g_variant_lookup (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_TOKEN_TYPE, "i", &token_type);
+
+          if (token_type > 0)
+            {
+              /* We set op->need_token here from the ostree-repo
+                 so we query a token for this, later we'll
+                 override it with the resolved value */
+              op->token_type = token_type;
+              got_new_need_token = TRUE;
+            }
+        }
+    }
+
+  if (got_new_need_token)
+    {
+      if (!request_required_tokens (self, NULL, cancellable, error))
+        return FALSE;
+    }
+
+  /* We can't get all the resolve commit objects in one pull request,
+     because the token can be different for each ref, so we need to
+     split things up by token.*/
+
+  g_autoptr(GPtrArray) non_token_resolves = g_ptr_array_new ();
+  g_autoptr(GHashTable) token_resolves_ht = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_ptr_array_unref);
 
   for (i = 0, l = p2p_ops; l != NULL; i++, l = l->next)
     {
       FlatpakTransactionOperation *op = l->data;
       FlatpakDirResolve *resolve = g_ptr_array_index (resolves, i);
-      g_autoptr(GBytes) old_metadata_bytes = NULL;
+
+      if (resolve->resolved_commit != NULL)
+        continue; /* Already resolved this (as no-op) */
+
+      if (op->resolved_token)
+        {
+          GPtrArray *token_resolves = g_hash_table_lookup (token_resolves_ht, op->resolved_token);
+          if (token_resolves == NULL)
+            {
+              token_resolves = g_ptr_array_new ();
+              g_hash_table_insert (token_resolves_ht, op->resolved_token, token_resolves);
+            }
+          g_ptr_array_add (token_resolves, resolve);
+        }
+      else
+        {
+          g_ptr_array_add (non_token_resolves, resolve);
+        }
+    }
+
+  /* This does the downloads of the actual commit objects that are needed. */
+
+  /* First refs that need no token */
+  g_ptr_array_add (non_token_resolves, NULL); // NULL terminate
+  if (!flatpak_dir_finish_resolve_p2p_refs (priv->dir, (FlatpakDirResolve **) non_token_resolves->pdata, NULL,
+                                            state, cancellable, error))
+    return FALSE;
+
+  /* Then once per token */
+  GLNX_HASH_TABLE_FOREACH_KV(token_resolves_ht, const char *, token, GPtrArray *, token_resolves)
+    {
+      g_ptr_array_add (token_resolves, NULL); // NULL terminate
+      if (!flatpak_dir_finish_resolve_p2p_refs (priv->dir, (FlatpakDirResolve **) token_resolves->pdata, token,
+                                                state, cancellable, error))
+        return FALSE;
+    }
+
+  for (i = 0, l = p2p_ops; l != NULL; i++, l = l->next)
+    {
+      FlatpakTransactionOperation *op = l->data;
+      FlatpakDirResolve *resolve = g_ptr_array_index (resolves, i);
 
       op->download_size = resolve->download_size;
       op->installed_size = resolve->installed_size;
       op->eol = g_strdup (resolve->eol);
       op->eol_rebase = g_strdup (resolve->eol_rebase);
+      op->token_type = resolve->token_type;
 
-      old_metadata_bytes = load_deployed_metadata (self, op->ref, NULL);
-      mark_op_resolved (op, resolve->resolved_commit, resolve->resolved_metadata, old_metadata_bytes);
-
-      emit_eol_and_maybe_skip (self, op);
+      resolve_op_end (self, op, resolve->resolved_commit, resolve->resolved_metadata);
     }
 
   return TRUE;
@@ -2231,18 +2604,13 @@ resolve_ops (FlatpakTransaction *self,
   GList *l;
   g_autoptr(GList) collection_id_ops = NULL;
 
-
   for (l = priv->ops; l != NULL; l = l->next)
     {
       FlatpakTransactionOperation *op = l->data;
       g_autoptr(FlatpakRemoteState) state = NULL;
       g_autofree char *checksum = NULL;
       g_autoptr(GVariant) commit_data = NULL;
-      g_autoptr(GVariant) commit_metadata = NULL;
       g_autoptr(GBytes) metadata_bytes = NULL;
-      g_autoptr(GBytes) old_metadata_bytes = NULL;
-      guint64 download_size = 0;
-      guint64 installed_size = 0;
 
       if (op->resolved)
         continue;
@@ -2285,35 +2653,14 @@ resolve_ops (FlatpakTransaction *self,
       /* Should we use local state */
       if (transaction_is_local_only (self, op->kind))
         {
-          const char *xa_metadata = NULL;
           commit_data = flatpak_dir_read_latest_commit (priv->dir, op->remote, op->ref, &checksum, NULL, error);
           if (commit_data == NULL)
             return FALSE;
 
-          commit_metadata = g_variant_get_child_value (commit_data, 0);
-          g_variant_lookup (commit_metadata, "xa.metadata", "&s", &xa_metadata);
-          if (xa_metadata == NULL)
-            g_message ("Warning: No xa.metadata in local commit %s ref %s", checksum, op->ref);
-          else
-            metadata_bytes = g_bytes_new (xa_metadata, strlen (xa_metadata) + 1);
-
-          if (g_variant_lookup (commit_metadata, "xa.download-size", "t", &download_size))
-            op->download_size = GUINT64_FROM_BE (download_size);
-          if (g_variant_lookup (commit_metadata, "xa.installed-size", "t", &installed_size))
-            op->installed_size = GUINT64_FROM_BE (installed_size);
-
-          g_variant_lookup (commit_metadata, OSTREE_COMMIT_META_KEY_ENDOFLIFE, "s", &op->eol);
-          g_variant_lookup (commit_metadata, OSTREE_COMMIT_META_KEY_ENDOFLIFE_REBASE, "s", &op->eol_rebase);
-
-          old_metadata_bytes = load_deployed_metadata (self, op->ref, NULL);
-          mark_op_resolved (op, checksum, metadata_bytes, old_metadata_bytes);
-
-          emit_eol_and_maybe_skip (self, op);
+          resolve_op_from_commit (self, op, checksum, commit_data);
         }
       else if (state->collection_id == NULL) /* In the non-p2p case we have all the info available in the summary, so use it */
         {
-          const char *metadata = NULL;
-          g_autoptr(GVariant) sparse_cache = NULL;
           g_autoptr(GError) local_error = NULL;
 
           if (op->commit != NULL)
@@ -2338,33 +2685,11 @@ resolve_ops (FlatpakTransaction *self,
 
           /* TODO: This only gets the metadata for the latest only, we need to handle the case
              where the user specified a commit, or p2p doesn't have the latest commit available */
-          if (!flatpak_remote_state_lookup_cache (state, op->ref, &download_size, &installed_size, &metadata, &local_error))
-            {
-              g_message (_("Warning: Can't find %s metadata for dependencies: %s"), op->ref, local_error->message);
-              g_clear_error (&local_error);
-            }
-          else
-            metadata_bytes = g_bytes_new (metadata, strlen (metadata) + 1);
-
-          op->installed_size = installed_size;
-          op->download_size = download_size;
-
-          sparse_cache = flatpak_remote_state_lookup_sparse_cache (state, op->ref, NULL);
-          if (sparse_cache)
-            {
-              g_variant_lookup (sparse_cache, "eol", "s", &op->eol);
-              g_variant_lookup (sparse_cache, "eolr", "s", &op->eol_rebase);
-            }
-
-          old_metadata_bytes = load_deployed_metadata (self, op->ref, NULL);
-          mark_op_resolved (op, checksum, metadata_bytes, old_metadata_bytes);
-
-          emit_eol_and_maybe_skip (self, op);
+          resolve_op_from_metadata (self, op, checksum, state);
         }
       else
         {
           /* This is a (potential) p2p operation, so rather than do these individually we queue them up in an operation later */
-
           collection_id_ops = g_list_prepend (collection_id_ops, op);
         }
     }
@@ -2387,6 +2712,262 @@ resolve_all_ops (FlatpakTransaction *self,
     {
       priv->needs_resolve = FALSE;
       if (!resolve_ops (self, cancellable, error))
+        return FALSE;
+    }
+
+  return TRUE;
+}
+
+static void
+request_tokens_response (FlatpakAuthenticatorRequest *object,
+                         guint response,
+                         GVariant *results,
+                         RequestData *data)
+{
+  FlatpakTransaction *transaction = data->transaction;
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (transaction);
+
+  if (data->done)
+    return; /* Don't respond twice */
+
+  g_assert (priv->active_webflow_id == 0); /* It should have reported done */
+
+  data->response = response;
+  data->results = g_variant_ref (results);
+  data->done = TRUE;
+  g_main_context_wakeup (g_main_context_get_thread_default ());
+}
+
+static void
+request_tokens_webflow (FlatpakAuthenticatorRequest *object,
+                        const gchar *arg_uri,
+                        RequestData *data)
+{
+  g_autoptr(FlatpakTransaction) transaction = g_object_ref (data->transaction);
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (transaction);
+  gboolean retval = FALSE;
+
+  if (data->done)
+    return; /* Don't respond twice */
+
+  g_assert (priv->active_webflow_id == 0);
+  priv->active_webflow_id = ++priv->next_webflow_id;
+
+  g_debug ("Webflow start %s", arg_uri);
+  g_signal_emit (transaction, signals[WEBFLOW_START], 0, data->remote, arg_uri, priv->active_webflow_id, &retval);
+  if (!retval)
+    {
+      g_autoptr(GError) local_error = NULL;
+
+      priv->active_webflow_id = 0;
+
+      /* We didn't handle the uri, cancel the auth op. */
+      if (!flatpak_authenticator_request_call_close_sync (data->request, NULL, &local_error))
+        g_debug ("Failed to close auth request: %s", local_error->message);
+    }
+}
+
+static void
+request_tokens_webflow_done (FlatpakAuthenticatorRequest *object,
+                             RequestData *data)
+{
+  g_autoptr(FlatpakTransaction) transaction = g_object_ref (data->transaction);
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (transaction);
+  guint id;
+
+  if (data->done)
+    return; /* Don't respond twice */
+
+  g_assert (priv->active_webflow_id != 0);
+  id = priv->active_webflow_id;
+  priv->active_webflow_id = 0;
+
+  g_debug ("Webflow done");
+  g_signal_emit (transaction, signals[WEBFLOW_DONE], 0, id);
+}
+
+/**
+ * flatpak_transaction_abort_webflow:
+ * @self: a #FlatpakTransaction
+ * @id: The webflow id, as passed into the webflow-start signal
+ *
+ * Cancel an ongoing webflow authentication request. This can be call
+ * in the time between FlatpakTransaction::webflow-start returned
+ * TRUE, and FlatpakTransaction::webflow-done is emitted. It will
+ * cancel the ongoing authentication operation.
+ *
+ * This is useful for example if you're showing an authenticaion
+ * window with a browser, but the user closed it before it was finished.
+ */
+void
+flatpak_transaction_abort_webflow (FlatpakTransaction *self,
+                                   guint id)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+  g_autoptr(GError) local_error = NULL;
+
+  if (priv->active_webflow_id == id)
+    {
+      RequestData *data = priv->active_webflow;
+
+      g_assert (data != NULL);
+      priv->active_webflow_id = 0;
+
+      if (!data->done)
+        {
+          if (!flatpak_authenticator_request_call_close_sync (data->request, NULL, &local_error))
+            g_debug ("Failed to close auth request: %s", local_error->message);
+        }
+    }
+}
+
+static gboolean
+request_tokens_for_remote (FlatpakTransaction *self,
+                           const char         *remote,
+                           GList              *ops,
+                           GCancellable       *cancellable,
+                           GError            **error)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+  g_autoptr(GString) refs_as_str = g_string_new ("");
+  GList *l;
+  g_autoptr(AutoFlatpakAuthenticatorRequest) request = NULL;
+  g_autoptr(AutoFlatpakAuthenticator) authenticator = NULL;
+  g_autoptr(GMainContextPopDefault) context = NULL;
+  RequestData data = { self, remote };
+  g_autoptr(GVariant) tokens = NULL;
+  g_autoptr(GVariant) results = NULL;
+  g_autoptr(GVariant) refs = NULL;
+  GVariantBuilder refs_builder;
+
+  g_variant_builder_init (&refs_builder, G_VARIANT_TYPE ("a(si)"));
+
+  for (l = ops; l != NULL; l = l->next)
+    {
+      FlatpakTransactionOperation *op = l->data;
+      g_variant_builder_add (&refs_builder, "(si)", op->ref, (gint32)op->token_type);
+      g_string_append_printf (refs_as_str, "(%s, %d)", op->ref, op->token_type);
+      if (l->next != NULL)
+        g_string_append (refs_as_str, ", ");
+    }
+
+  g_debug ("Requesting tokens for remote %s: %s", remote, refs_as_str->str);
+  refs = g_variant_ref_sink (g_variant_builder_end (&refs_builder));
+
+  context = flatpak_main_context_new_default ();
+
+  authenticator = flatpak_auth_new_for_remote (priv->dir, remote, cancellable, error);
+  if (authenticator == NULL)
+    return FALSE;
+
+  request = flatpak_auth_create_request (authenticator, cancellable, error);
+  if (request == NULL)
+    return FALSE;
+
+  g_signal_connect (request, "webflow", (GCallback)request_tokens_webflow, &data);
+  g_signal_connect (request, "webflow-done", (GCallback)request_tokens_webflow_done, &data);
+  g_signal_connect (request, "response", (GCallback)request_tokens_response, &data);
+
+  priv->active_webflow = &data;
+
+  data.request = request;
+  if (!flatpak_auth_request_ref_tokens (authenticator, request, remote, refs, priv->parent_window, cancellable, error))
+    return FALSE;
+
+  while (!data.done)
+    g_main_context_iteration (context, TRUE);
+
+  g_assert (priv->active_webflow_id == 0); /* No outstanding webflows */
+  priv->active_webflow = NULL;
+
+  results = data.results; /* Make sure its freed as needed */
+
+  {
+    g_autofree char *results_str = results != NULL ? g_variant_print (results, FALSE) : g_strdup ("NULL");
+    g_debug ("Response from request_tokens: %d - %s\n", data.response, results_str);
+  }
+
+  if (data.response == FLATPAK_AUTH_RESPONSE_CANCELLED)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED,
+                   "User cancelled authentication request");
+      return FALSE;
+    }
+
+  if (data.response != FLATPAK_AUTH_RESPONSE_OK)
+    {
+      const char *error_message = NULL;
+      if (g_variant_lookup (results, "error-message", "&s", &error_message))
+        return flatpak_fail (error, "Failed to get tokens for ref: %s", error_message);
+      else
+        return flatpak_fail (error, "Failed to get tokens for ref");
+    }
+
+  tokens = g_variant_lookup_value (results, "tokens", G_VARIANT_TYPE ("a{sas}"));
+  if (tokens == NULL)
+    return flatpak_fail (error, "Authenticator didn't send requested tokens");
+
+  for (l = ops; l != NULL; l = l->next)
+    {
+      FlatpakTransactionOperation *op = l->data;
+      GVariantIter iter;
+      const char *token = NULL;
+      const char *token_for_refs;
+      g_autofree const char **refs;
+
+      g_variant_iter_init (&iter, tokens);
+      while (g_variant_iter_next (&iter, "{&s^a&s}", &token_for_refs, &refs))
+        {
+          if (g_strv_contains (refs, op->ref))
+            {
+              token = token_for_refs;
+              break;
+            }
+        }
+
+      if (token == NULL)
+        return flatpak_fail (error, "Authenticator didn't send tokens for ref");
+
+      /* Allow sending empty tokens to mean no token needed */
+
+      op->resolved_token = *token == 0 ? NULL : g_strdup (token);
+      op->requested_token = TRUE;
+    }
+
+  return TRUE;
+}
+
+static gboolean
+request_required_tokens (FlatpakTransaction *self,
+                         const char         *optional_remote, /* else all remotes */
+                         GCancellable       *cancellable,
+                         GError            **error)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+  GList *l;
+  g_autoptr(GHashTable) need_token_ht = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_list_free); /* remote name -> list of op */
+
+  for (l = priv->ops; l != NULL; l = l->next)
+    {
+      FlatpakTransactionOperation *op = l->data;
+      GList *old;
+
+      if (!op_may_need_token (op) || op->token_type == 0 || op->requested_token)
+        continue;
+
+      if (optional_remote != NULL && g_strcmp0 (op->remote, optional_remote) != 0)
+        continue;
+
+      old = g_hash_table_lookup (need_token_ht, op->remote);
+      if (old == NULL)
+        g_hash_table_insert (need_token_ht, op->remote, g_list_append (NULL, op));
+      else
+        old = g_list_append (old, op);
+    }
+
+  GLNX_HASH_TABLE_FOREACH_KV(need_token_ht, const char *, remote, GList *, remote_ops)
+    {
+      if (!request_tokens_for_remote (self, remote, remote_ops, cancellable, error))
         return FALSE;
     }
 
@@ -2930,6 +3511,7 @@ _run_op_kind (FlatpakTransaction           *self,
                                    remote_state, op->ref, op->resolved_commit,
                                    (const char **) op->subpaths,
                                    (const char **) op->previous_ids,
+                                   op->resolved_token,
                                    progress->ostree_progress,
                                    cancellable, error);
 
@@ -2979,6 +3561,7 @@ _run_op_kind (FlatpakTransaction           *self,
                                       NULL,
                                       (const char **) op->subpaths,
                                       (const char **) op->previous_ids,
+                                      op->resolved_token,
                                       progress->ostree_progress,
                                       cancellable, &local_error);
           flatpak_transaction_progress_done (progress);
@@ -3137,6 +3720,10 @@ flatpak_transaction_real_run (FlatpakTransaction *self,
 
   /* Resolve new ops */
   if (!resolve_all_ops (self, cancellable, error))
+    return FALSE;
+
+  /* Ensure we have all required tokens */
+  if (!request_required_tokens (self, NULL, cancellable, error))
     return FALSE;
 
   sort_ops (self);

@@ -1878,6 +1878,10 @@ flatpak_installation_list_installed_refs_for_update
 locally available. However, even though an app is not returned by this
 it can have local updates available that has not been deployed. Look
 at commit vs latest_commit on installed apps for this.</p>
+<p>This also checks if any of <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> has a missing <a class="link" href="FlatpakRelatedRef.html" title="FlatpakRelatedRef"><span class="type">FlatpakRelatedRef</span></a>
+(which has <code class="literal">should-download</code> set to <code class="literal">TRUE</code>) or runtime. If so, it adds the
+ref to the returning <span class="type">GPtrArray</span> to pull in the <a class="link" href="FlatpakRelatedRef.html" title="FlatpakRelatedRef"><span class="type">FlatpakRelatedRef</span></a> or runtime
+again via an update operation in <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a>.</p>
 <div class="refsect3">
 <a name="flatpak-installation-list-installed-refs-for-update.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">

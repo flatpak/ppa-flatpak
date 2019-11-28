@@ -332,6 +332,8 @@ LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 LT_VERSION_INFO = @LT_VERSION_INFO@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
+MALCONTENT_CFLAGS = @MALCONTENT_CFLAGS@
+MALCONTENT_LIBS = @MALCONTENT_LIBS@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 MSGFMT = @MSGFMT@
@@ -491,6 +493,7 @@ man1 = \
 	flatpak-permissions.1		\
 	flatpak-permission-show.1	\
 	flatpak-permission-reset.1	\
+	flatpak-permission-set.1	\
 	flatpak-build-init.1		\
 	flatpak-build.1			\
 	flatpak-build-bundle.1		\

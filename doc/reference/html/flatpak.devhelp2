@@ -152,7 +152,9 @@
     <keyword type="function" name="flatpak_transaction_set_disable_related ()" link="FlatpakTransaction.html#flatpak-transaction-set-disable-related"/>
     <keyword type="function" name="flatpak_transaction_set_disable_static_deltas ()" link="FlatpakTransaction.html#flatpak-transaction-set-disable-static-deltas"/>
     <keyword type="function" name="flatpak_transaction_set_no_deploy ()" link="FlatpakTransaction.html#flatpak-transaction-set-no-deploy"/>
+    <keyword type="function" name="flatpak_transaction_get_no_deploy ()" link="FlatpakTransaction.html#flatpak-transaction-get-no-deploy" since="1.5.1"/>
     <keyword type="function" name="flatpak_transaction_set_no_pull ()" link="FlatpakTransaction.html#flatpak-transaction-set-no-pull"/>
+    <keyword type="function" name="flatpak_transaction_get_no_pull ()" link="FlatpakTransaction.html#flatpak-transaction-get-no-pull" since="1.5.1"/>
     <keyword type="function" name="flatpak_transaction_set_reinstall ()" link="FlatpakTransaction.html#flatpak-transaction-set-reinstall"/>
     <keyword type="function" name="flatpak_transaction_set_force_uninstall ()" link="FlatpakTransaction.html#flatpak-transaction-set-force-uninstall"/>
     <keyword type="function" name="flatpak_transaction_set_default_arch ()" link="FlatpakTransaction.html#flatpak-transaction-set-default-arch"/>
@@ -170,6 +172,8 @@
     <keyword type="signal" name="The “operation-done” signal" link="FlatpakTransaction.html#FlatpakTransaction-operation-done"/>
     <keyword type="signal" name="The “operation-error” signal" link="FlatpakTransaction.html#FlatpakTransaction-operation-error"/>
     <keyword type="signal" name="The “ready” signal" link="FlatpakTransaction.html#FlatpakTransaction-ready"/>
+    <keyword type="signal" name="The “webflow-done” signal" link="FlatpakTransaction.html#FlatpakTransaction-webflow-done"/>
+    <keyword type="signal" name="The “webflow-start” signal" link="FlatpakTransaction.html#FlatpakTransaction-webflow-start"/>
     <keyword type="function" name="flatpak_ref_format_ref ()" link="FlatpakRef.html#flatpak-ref-format-ref"/>
     <keyword type="function" name="flatpak_ref_get_arch ()" link="FlatpakRef.html#flatpak-ref-get-arch"/>
     <keyword type="function" name="flatpak_ref_get_branch ()" link="FlatpakRef.html#flatpak-ref-get-branch"/>
@@ -201,6 +205,8 @@
     <keyword type="function" name="flatpak_installed_ref_get_eol ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-eol"/>
     <keyword type="function" name="flatpak_installed_ref_get_eol_rebase ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-eol-rebase"/>
     <keyword type="struct" name="struct FlatpakInstalledRef" link="FlatpakInstalledRef.html#FlatpakInstalledRef-struct"/>
+    <keyword type="property" name="The “appdata-content-rating” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-content-rating"/>
+    <keyword type="property" name="The “appdata-content-rating-type” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-content-rating-type"/>
     <keyword type="property" name="The “appdata-license” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-license"/>
     <keyword type="property" name="The “appdata-name” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-name"/>
     <keyword type="property" name="The “appdata-summary” property" link="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-summary"/>
@@ -324,6 +330,7 @@
     <keyword type="constant" name="FLATPAK_ERROR_WRONG_USER" link="flatpak-Error-codes.html#FLATPAK-ERROR-WRONG-USER:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_NOT_CACHED" link="flatpak-Error-codes.html#FLATPAK-ERROR-NOT-CACHED:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_REF_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-ERROR-REF-NOT-FOUND:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_PERMISSION_DENIED" link="flatpak-Error-codes.html#FLATPAK-ERROR-PERMISSION-DENIED:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_FAILED" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-FAILED:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-INVALID-ARGUMENT:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-NOT-FOUND:CAPS"/>

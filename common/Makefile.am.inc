@@ -37,13 +37,14 @@ common/flatpak-enum-types.c: $(flatpakinclude_HEADERS) common/flatpak-enum-types
 
 EXTRA_DIST += common/flatpak-enum-types.c.template common/flatpak-enum-types.h.template
 
-common/flatpak-dbus-generated.c: data/org.freedesktop.Flatpak.xml Makefile
+common/flatpak-dbus-generated.c: data/org.freedesktop.Flatpak.xml data/org.freedesktop.Flatpak.Authenticator.xml Makefile
 	mkdir -p $(builddir)/common
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.Flatpak.	\
 		--c-namespace Flatpak				\
 		--generate-c-code $(builddir)/common/flatpak-dbus-generated	\
 		$(srcdir)/data/org.freedesktop.Flatpak.xml  \
+		$(srcdir)/data/org.freedesktop.Flatpak.Authenticator.xml  \
 		$(NULL)
 
 common/flatpak-document-dbus-generated.c: data/org.freedesktop.portal.Documents.xml Makefile
@@ -104,6 +105,8 @@ libflatpak_common_la_SOURCES = \
 	common/flatpak-common-types-private.h \
 	common/flatpak-appdata.c \
 	common/flatpak-appdata-private.h \
+	common/flatpak-auth.c \
+	common/flatpak-auth-private.h \
 	common/flatpak-bwrap.c \
 	common/flatpak-bwrap-private.h \
 	common/flatpak-dir.c \
@@ -149,25 +152,49 @@ libflatpak_common_la_SOURCES = \
 	common/valgrind-private.h \
 	$(NULL)
 
+if HAVE_LIBMALCONTENT
+libflatpak_common_la_SOURCES += \
+	common/flatpak-parental-controls.c \
+	common/flatpak-parental-controls-private.h \
+	$(NULL)
+endif
+
 libflatpak_common_la_CFLAGS = \
 	-DFLATPAK_COMPILATION \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
+	-I$(srcdir)/dbus-proxy \
 	$(AM_CFLAGS) \
 	$(ARCHIVE_CFLAGS) \
 	$(BASE_CFLAGS) \
+	$(DCONF_CFLAGS) \
 	$(HIDDEN_VISIBILITY_CFLAGS) \
-	$(OSTREE_CFLAGS) \
-	$(SOUP_CFLAGS) \
+	$(INTERNAL_GPGME_CFLAGS) \
 	$(JSON_CFLAGS) \
+	$(LIBSECCOMP_CFLAGS) \
+	$(MALCONTENT_CFLAGS) \
+	$(OSTREE_CFLAGS) \
+	$(POLKIT_CFLAGS) \
+	$(SOUP_CFLAGS) \
+	$(SYSTEMD_CFLAGS) \
 	$(XAUTH_CFLAGS) \
 	$(XML_CFLAGS) \
-	$(LIBSECCOMP_CFLAGS) \
-	$(INTERNAL_GPGME_CFLAGS) \
-	$(SYSTEMD_CFLAGS) \
-	$(DCONF_CFLAGS) \
-	-DLIBEXECDIR=\"$(libexecdir)\" \
-	-I$(srcdir)/dbus-proxy \
 	$(NULL)
-libflatpak_common_la_LIBADD = $(AM_LIBADD) $(ARCHIVE_LIBS) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(XAUTH_LIBS) $(XML_LIBS) $(LIBSECCOMP_LIBS) $(INTERNAL_GPGME_LIBS) $(SYSTEMD_LIBS) $(DCONF_LIBS)
+libflatpak_common_la_LIBADD = \
+	$(AM_LIBADD) \
+	$(ARCHIVE_LIBS) \
+	$(BASE_LIBS) \
+	$(DCONF_LIBS) \
+	$(INTERNAL_GPGME_LIBS) \
+	$(JSON_LIBS) \
+	$(LIBSECCOMP_LIBS) \
+	$(MALCONTENT_LIBS) \
+	$(OSTREE_LIBS) \
+	$(POLKIT_LIBS) \
+	$(SOUP_LIBS) \
+	$(SYSTEMD_LIBS) \
+	$(XAUTH_LIBS) \
+	$(XML_LIBS) \
+	$(NULL)
 
 
 libflatpak_la_SOURCES = \

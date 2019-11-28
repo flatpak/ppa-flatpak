@@ -695,6 +695,7 @@ flatpak_installation_launch_full (FlatpakInstallation *self,
                         app_deploy,
                         NULL, NULL,
                         NULL, NULL,
+                        0,
                         run_flags,
                         NULL,
                         NULL,
@@ -772,7 +773,9 @@ get_ref (FlatpakDir   *dir,
                                     flatpak_deploy_data_get_appdata_name (deploy_data),
                                     flatpak_deploy_data_get_appdata_summary (deploy_data),
                                     flatpak_deploy_data_get_appdata_version (deploy_data),
-                                    flatpak_deploy_data_get_appdata_license (deploy_data));
+                                    flatpak_deploy_data_get_appdata_license (deploy_data),
+                                    flatpak_deploy_data_get_appdata_content_rating_type (deploy_data),
+                                    flatpak_deploy_data_get_appdata_content_rating (deploy_data));
 }
 
 /**
@@ -1000,6 +1003,11 @@ _ostree_collection_ref_free0 (OstreeCollectionRef *ref)
  * it can have local updates available that has not been deployed. Look
  * at commit vs latest_commit on installed apps for this.
  *
+ * This also checks if any of #FlatpakInstalledRef has a missing #FlatpakRelatedRef
+ * (which has `should-download` set to %TRUE) or runtime. If so, it adds the
+ * ref to the returning #GPtrArray to pull in the #FlatpakRelatedRef or runtime
+ * again via an update operation in #FlatpakTransaction.
+ *
  * Returns: (transfer container) (element-type FlatpakInstalledRef): a GPtrArray of
  *   #FlatpakInstalledRef instances, or %NULL on error
  */
@@ -1077,6 +1085,7 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
 
   for (i = 0; i < installed->len; i++)
     {
+      g_autoptr(FlatpakRemoteState) state = NULL;
       FlatpakInstalledRef *installed_ref = g_ptr_array_index (installed, i);
       const char *remote_name = flatpak_installed_ref_get_origin (installed_ref);
       g_autofree char *full_ref = flatpak_ref_format_ref (FLATPAK_REF (installed_ref));
@@ -1090,7 +1099,59 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
       /* Note: local_commit may be NULL here */
       if (remote_commit != NULL &&
           g_strcmp0 (remote_commit, local_commit) != 0)
-        g_ptr_array_add (updates, g_object_ref (installed_ref));
+        {
+          g_ptr_array_add (updates, g_object_ref (installed_ref));
+
+          /* Don't check further, as we already added the installed_ref to @updates. */
+          continue;
+        }
+
+      /* Check if all "should-download" related refs for the ref are installed.
+       * If not, add the ref in @updates array so that it can be installed via
+       * FlatpakTransaction's update-op.
+       *
+       * This makes sure that the ref (maybe an app or runtime) remains in usable
+       * state and fixes itself through an update.
+       */
+      state = flatpak_dir_get_remote_state_optional (dir, remote_name, FALSE, cancellable, error);
+      if (state == NULL)
+        continue;
+
+      if (flatpak_dir_check_installed_ref_missing_related_ref (dir, state, full_ref, cancellable))
+        {
+          g_ptr_array_add (updates, g_object_ref (installed_ref));
+
+          /* Don't check for runtime, if we already added the installed_ref to @updates. */
+          continue;
+        }
+
+      if (flatpak_ref_get_kind (FLATPAK_REF (installed_ref)) == FLATPAK_REF_KIND_APP)
+        {
+          g_autoptr(GVariant) deploy_data = NULL;
+
+          /* This checks if an already installed app has a missing runtime.
+           * If so, return that installed ref in the updates list, so that FlatpakTransaction
+           * can resolve one of its operation to install the runtime instead.
+           *
+           * Runtime of an app can go missing if an app upgrade makes an app dependent on a new runtime
+           * entirely. We had couple of cases like that in the past, for example, before it was updated
+           * to use FlatpakTransaction, updating an app in GNOME Software to a version which needs a
+           * different runtime would not install that new runtime, leaving the app unusable.
+           */
+          deploy_data = flatpak_dir_get_deploy_data (dir, full_ref, FLATPAK_DEPLOY_VERSION_CURRENT, cancellable, NULL);
+          if (deploy_data != NULL)
+            {
+              g_autoptr(GFile) deploy_dir = NULL;
+              const gchar *runtime = NULL;
+              g_autofree gchar *full_runtime_ref = NULL;
+
+              runtime = flatpak_deploy_data_get_runtime (deploy_data);
+              full_runtime_ref = g_strconcat ("runtime/", runtime, NULL);
+              deploy_dir = flatpak_dir_get_if_deployed (dir, full_runtime_ref, NULL, cancellable);
+              if (deploy_dir == NULL)
+                g_ptr_array_add (updates, g_object_ref (installed_ref));
+            }
+        }
     }
 
   collection_refs = g_ptr_array_new_with_free_func ((GDestroyNotify) _ostree_collection_ref_free0);
@@ -1681,6 +1742,35 @@ flatpak_installation_get_default_languages (FlatpakInstallation  *self,
 }
 
 /**
+ * flatpak_installation_get_default_locales:
+ * @self: a #FlatpakInstallation
+ * @error: return location for a #GError
+ *
+ * Like flatpak_installation_get_default_languages() but includes territory
+ * information (e.g. `en_US` rather than `en`) which may be included in the
+ * `xa.extra-languages` configuration.
+ *
+ * Strings returned by this function are in the format specified by
+ * [`setlocale()`](man:setlocale): `language[_territory][.codeset][@modifier]`.
+ *
+ * Returns: (array zero-terminated=1) (element-type utf8) (transfer full):
+ *   A possibly empty array of locale strings, or %NULL on error.
+ * Since: 1.5.1
+ */
+char **
+flatpak_installation_get_default_locales (FlatpakInstallation  *self,
+                                          GError              **error)
+{
+  g_autoptr(FlatpakDir) dir = NULL;
+
+  dir = flatpak_installation_get_dir (self, error);
+  if (dir == NULL)
+    return NULL;
+
+  return flatpak_dir_get_locales (dir);
+}
+
+/**
  * flatpak_installation_get_min_free_space_bytes:
  * @self: a #FlatpakInstallation
  * @out_bytes: (out): Location to store the result
@@ -2023,7 +2113,7 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_DEPLOY) != 0,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_STATIC_DELTAS) != 0,
                             FALSE, FALSE, state,
-                            ref, NULL, (const char **) subpaths, NULL,
+                            ref, NULL, (const char **) subpaths, NULL, NULL,
                             ostree_progress, cancellable, error))
     goto out;
 
@@ -2196,7 +2286,7 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
                            FALSE, FALSE, FALSE, state,
                            ref, target_commit,
                            (const OstreeRepoFinderResult * const *) check_results,
-                           (const char **) subpaths, NULL,
+                           (const char **) subpaths, NULL, NULL,
                            ostree_progress, cancellable, error))
     goto out;
 
@@ -2404,7 +2494,7 @@ flatpak_installation_fetch_remote_size_sync (FlatpakInstallation *self,
 
   return flatpak_remote_state_lookup_cache (state, full_ref,
                                             download_size, installed_size, NULL,
-                                            error);
+                                            NULL, error);
 }
 
 /**
@@ -2445,7 +2535,7 @@ flatpak_installation_fetch_remote_metadata_sync (FlatpakInstallation *self,
 
   if (!flatpak_remote_state_lookup_cache (state, full_ref,
                                           NULL, NULL, &res,
-                                          error))
+                                          NULL, error))
     return NULL;
 
   return g_bytes_new (res, strlen (res));
