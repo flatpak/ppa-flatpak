@@ -1,3 +1,11 @@
+flatpak (1.5.1-1) UNRELEASED; urgency=medium
+
+  * New upstream development release
+    - d/copyright: Update
+    - d/control: Depend on bubblewrap 0.4.0
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 28 Nov 2019 09:10:55 +0000
+
 flatpak (1.5.0-1) experimental; urgency=medium
 
   * New upstream development release
