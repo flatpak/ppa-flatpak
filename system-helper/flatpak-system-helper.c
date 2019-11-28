@@ -388,6 +388,7 @@ handle_deploy (FlatpakSystemHelper   *object,
   g_autoptr(GFile) deploy_dir = NULL;
   g_autoptr(OstreeAsyncProgress) ostree_progress = NULL;
   gboolean is_oci;
+  gboolean is_update;
   gboolean no_deploy;
   gboolean local_pull;
   gboolean reinstall;
@@ -467,7 +468,8 @@ handle_deploy (FlatpakSystemHelper   *object,
 
   deploy_dir = flatpak_dir_get_if_deployed (system, arg_ref, NULL, NULL);
 
-  if (deploy_dir && !reinstall)
+  is_update = (deploy_dir && !reinstall);
+  if (is_update)
     {
       g_autofree char *real_origin = NULL;
       real_origin = flatpak_dir_get_origin (system, arg_ref, NULL, NULL);
@@ -486,6 +488,19 @@ handle_deploy (FlatpakSystemHelper   *object,
     }
 
   is_oci = flatpak_dir_get_remote_oci (system, arg_origin);
+
+  if (is_update && !is_oci)
+    {
+      /* Take this opportunity to clean up refs/mirrors/ since a prune will happen
+       * after this update operation. See
+       * https://github.com/flatpak/flatpak/issues/3222
+       */
+      if (!flatpak_dir_delete_mirror_refs (system, FALSE, NULL, &error))
+        {
+          flatpak_invocation_return_error (invocation, error, "Can't delete mirror refs");
+          return TRUE;
+        }
+    }
 
   if (strlen (arg_repo_path) > 0 && is_oci)
     {
@@ -659,7 +674,7 @@ handle_deploy (FlatpakSystemHelper   *object,
 
       ostree_progress = ostree_async_progress_new_and_connect (no_progress_cb, NULL);
 
-      if (!flatpak_dir_pull (system, state, arg_ref, NULL, NULL, (const char **) arg_subpaths, NULL,
+      if (!flatpak_dir_pull (system, state, arg_ref, NULL, NULL, (const char **) arg_subpaths, NULL, NULL,
                              FLATPAK_PULL_FLAGS_NONE, OSTREE_REPO_PULL_FLAGS_UNTRUSTED, ostree_progress,
                              NULL, &error))
         {
@@ -899,11 +914,11 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
 
       ostree_progress = ostree_async_progress_new_and_connect (no_progress_cb, NULL);
 
-      if (!flatpak_dir_pull (system, state, new_branch, NULL, NULL, NULL, NULL,
+      if (!flatpak_dir_pull (system, state, new_branch, NULL, NULL, NULL, NULL, NULL,
                              FLATPAK_PULL_FLAGS_NONE, OSTREE_REPO_PULL_FLAGS_UNTRUSTED, ostree_progress,
                              NULL, &first_error))
         {
-          if (!flatpak_dir_pull (system, state, old_branch, NULL, NULL, NULL, NULL,
+          if (!flatpak_dir_pull (system, state, old_branch, NULL, NULL, NULL, NULL, NULL,
                                  FLATPAK_PULL_FLAGS_NONE, OSTREE_REPO_PULL_FLAGS_UNTRUSTED, ostree_progress,
                                  NULL, &second_error))
             {
@@ -1467,9 +1482,10 @@ revokefs_fuse_backend_child_setup (gpointer user_data)
 {
   struct passwd *passwd = user_data;
 
-  /* We use 4 instead of 3 here, because fd 3 is the inerited socket
-     and got dup2() into place before this by GSubprocess */
-  flatpak_close_fds_workaround (4);
+  /* We use 5 instead of 3 here, because fd 3 is the inherited SOCK_SEQPACKET
+   * socket and fd 4 is the --close-with-fd pipe; both were dup2()'d into place
+   * before this by GSubprocess */
+  flatpak_close_fds_workaround (5);
 
   if (setgid (passwd->pw_gid) == -1)
     {

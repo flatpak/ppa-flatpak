@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [1])
 m4_define([flatpak_minor_version], [5])
-m4_define([flatpak_micro_version], [0])
+m4_define([flatpak_micro_version], [1])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -30,7 +30,7 @@ AC_INIT([Flatpak],
         [http://flatpak.org/])
 
 GLIB_REQS=2.44
-SYSTEM_BWRAP_REQS=0.2.1
+SYSTEM_BWRAP_REQS=0.4.0
 SYSTEM_DBUS_PROXY_REQS=0.1.0
 OSTREE_REQS=2018.9
 
@@ -222,6 +222,11 @@ PKG_CHECK_MODULES(SYSTEMD, [libsystemd], [have_libsystemd=yes], [have_libsystemd
 if test $have_libsystemd = yes; then
   AC_DEFINE(HAVE_LIBSYSTEMD, 1, [Define if libsystemd is available])
 fi
+PKG_CHECK_MODULES([MALCONTENT], [malcontent-0 >= 0.4.0], [have_libmalcontent=yes], [have_libmalcontent=no])
+AS_IF([test "$have_libmalcontent" = "yes"],[
+  AC_DEFINE([HAVE_LIBMALCONTENT], [1], [Define if libmalcontent is available])
+])
+AM_CONDITIONAL([HAVE_LIBMALCONTENT],[test "$have_libmalcontent" = "yes"])
 
 PKG_CHECK_MODULES(GLIB260, glib-2.0 >= 2.60,
                   [AC_DEFINE(GLIB_VERSION_MIN_REQUIRED, GLIB_VERSION_2_60, [Ignore massive GTimeVal deprecation warnings in 2.62])],
@@ -532,4 +537,5 @@ echo "          Privileged group:       $PRIVILEGED_GROUP"
 echo "          Privilege mode:         $with_priv_mode"
 echo "          Use dconf:              $have_dconf"
 echo "          Use libsystemd:         $have_libsystemd"
+echo "          Use libmalcontent:      $have_libmalcontent"
 echo ""

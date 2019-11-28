@@ -172,21 +172,26 @@ check_PROGRAMS = $(am__EXEEXT_5) $(am__EXEEXT_6)
 @WITH_SYSTEM_BWRAP_FALSE@am__append_16 = -DHELPER=\"$(libexecdir)/flatpak-bwrap\"
 @WITH_SYSTEM_DBUS_PROXY_TRUE@am__append_17 = -DDBUSPROXY=\"$(DBUS_PROXY)\"
 @WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_18 = -DDBUSPROXY=\"$(libexecdir)/flatpak-dbus-proxy\"
-@HAVE_INTROSPECTION_TRUE@am__append_19 = Flatpak-1.0.gir
-@HAVE_INTROSPECTION_TRUE@am__append_20 = $(nodist_gir_DATA) \
+@HAVE_LIBMALCONTENT_TRUE@am__append_19 = \
+@HAVE_LIBMALCONTENT_TRUE@	common/flatpak-parental-controls.c \
+@HAVE_LIBMALCONTENT_TRUE@	common/flatpak-parental-controls-private.h \
+@HAVE_LIBMALCONTENT_TRUE@	$(NULL)
+
+@HAVE_INTROSPECTION_TRUE@am__append_20 = Flatpak-1.0.gir
+@HAVE_INTROSPECTION_TRUE@am__append_21 = $(nodist_gir_DATA) \
 @HAVE_INTROSPECTION_TRUE@	$(nodist_typelib_DATA)
-@BUILD_SYSTEM_HELPER_TRUE@am__append_21 = \
+@BUILD_SYSTEM_HELPER_TRUE@am__append_22 = \
 @BUILD_SYSTEM_HELPER_TRUE@	flatpak-system-helper \
 @BUILD_SYSTEM_HELPER_TRUE@	$(NULL)
 
-@BUILD_SYSTEM_HELPER_TRUE@am__append_22 = system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
+@BUILD_SYSTEM_HELPER_TRUE@am__append_23 = system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/flatpak-system-helper.service.in
-@BUILD_SYSTEM_HELPER_TRUE@am__append_23 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service
-@WITH_SYSTEM_DBUS_PROXY_TRUE@am__append_24 = FLATPAK_DBUSPROXY=$(DBUS_PROXY)
-@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_25 = FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && pwd)/flatpak-dbus-proxy
-@WITH_SYSTEM_BWRAP_TRUE@am__append_26 = FLATPAK_BWRAP=$(BWRAP)
-@WITH_SYSTEM_BWRAP_FALSE@am__append_27 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
-@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_28 = flatpak-dbus-proxy
+@BUILD_SYSTEM_HELPER_TRUE@am__append_24 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service
+@WITH_SYSTEM_DBUS_PROXY_TRUE@am__append_25 = FLATPAK_DBUSPROXY=$(DBUS_PROXY)
+@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_26 = FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && pwd)/flatpak-dbus-proxy
+@WITH_SYSTEM_BWRAP_TRUE@am__append_27 = FLATPAK_BWRAP=$(BWRAP)
+@WITH_SYSTEM_BWRAP_FALSE@am__append_28 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
+@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_29 = flatpak-dbus-proxy
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_PROGRAMS = flatpak-bwrap$(EXEEXT)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -242,7 +247,8 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" \
 am__EXEEXT_2 = testlibrary$(EXEEXT) testcommon$(EXEEXT)
 am__EXEEXT_3 = tests/httpcache$(EXEEXT) \
 	tests/test-update-portal$(EXEEXT) \
-	tests/test-portal-impl$(EXEEXT)
+	tests/test-portal-impl$(EXEEXT) \
+	tests/test-authenticator$(EXEEXT)
 am__EXEEXT_4 = $(am__EXEEXT_2) $(am__EXEEXT_3)
 @ENABLE_ALWAYS_BUILD_TESTS_FALSE@am__EXEEXT_5 = $(am__EXEEXT_4)
 am__EXEEXT_6 = test-libglnx-xattrs$(EXEEXT) test-libglnx-fdio$(EXEEXT) \
@@ -331,13 +337,56 @@ libflatpak_common_base_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 libflatpak_common_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
+am__libflatpak_common_la_SOURCES_DIST = common/flatpak.h \
+	common/flatpak-ref.h common/flatpak-error.h \
+	common/flatpak-installed-ref.h common/flatpak-remote-ref.h \
+	common/flatpak-related-ref.h common/flatpak-bundle-ref.h \
+	common/flatpak-installation.h common/flatpak-remote.h \
+	common/flatpak-version-macros.h common/flatpak-portal-error.h \
+	common/flatpak-transaction.h common/flatpak-instance.h \
+	common/flatpak-common-types-private.h common/flatpak-appdata.c \
+	common/flatpak-appdata-private.h common/flatpak-auth.c \
+	common/flatpak-auth-private.h common/flatpak-bwrap.c \
+	common/flatpak-bwrap-private.h common/flatpak-dir.c \
+	common/flatpak-dir-private.h common/flatpak-run.c \
+	common/flatpak-run-private.h common/flatpak-context.c \
+	common/flatpak-context-private.h common/flatpak-exports.c \
+	common/flatpak-exports-private.h \
+	common/flatpak-transaction-private.h \
+	common/flatpak-transaction.c common/flatpak-utils.c \
+	common/flatpak-utils-http.c \
+	common/flatpak-utils-http-private.h \
+	common/flatpak-utils-private.h \
+	common/flatpak-chain-input-stream.c \
+	common/flatpak-chain-input-stream-private.h \
+	common/flatpak-portal-error.c common/flatpak-json.c \
+	common/flatpak-json-private.h common/flatpak-json-oci.c \
+	common/flatpak-json-oci-private.h \
+	common/flatpak-oci-registry.c \
+	common/flatpak-oci-registry-private.h common/flatpak-ref.c \
+	common/flatpak-installed-ref.c \
+	common/flatpak-installed-ref-private.h \
+	common/flatpak-instance-private.h common/flatpak-remote-ref.c \
+	common/flatpak-remote-ref-private.h \
+	common/flatpak-bundle-ref.c common/flatpak-related-ref.c \
+	common/flatpak-related-ref-private.h \
+	common/flatpak-remote-private.h common/flatpak-remote.c \
+	common/flatpak-error.c common/flatpak-installation-private.h \
+	common/flatpak-installation.c common/flatpak-instance.c \
+	common/valgrind-private.h common/flatpak-parental-controls.c \
+	common/flatpak-parental-controls-private.h
 am__objects_3 = $(am__objects_1)
+@HAVE_LIBMALCONTENT_TRUE@am__objects_4 = common/libflatpak_common_la-flatpak-parental-controls.lo \
+@HAVE_LIBMALCONTENT_TRUE@	$(am__objects_1)
 am_libflatpak_common_la_OBJECTS = $(am__objects_3) \
 	common/libflatpak_common_la-flatpak-appdata.lo \
+	common/libflatpak_common_la-flatpak-auth.lo \
 	common/libflatpak_common_la-flatpak-bwrap.lo \
 	common/libflatpak_common_la-flatpak-dir.lo \
 	common/libflatpak_common_la-flatpak-run.lo \
@@ -360,11 +409,11 @@ am_libflatpak_common_la_OBJECTS = $(am__objects_3) \
 	common/libflatpak_common_la-flatpak-error.lo \
 	common/libflatpak_common_la-flatpak-installation.lo \
 	common/libflatpak_common_la-flatpak-instance.lo \
-	$(am__objects_1)
-am__objects_4 =  \
+	$(am__objects_1) $(am__objects_4)
+am__objects_5 =  \
 	common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo
 nodist_libflatpak_common_la_OBJECTS = $(am__objects_3) \
-	$(am__objects_4) \
+	$(am__objects_5) \
 	common/libflatpak_common_la-flatpak-enum-types.lo \
 	$(am__objects_1)
 libflatpak_common_la_OBJECTS = $(am_libflatpak_common_la_OBJECTS) \
@@ -423,6 +472,7 @@ am__flatpak_SOURCES_DIST = app/flatpak-main.c app/flatpak-builtins.h \
 	app/flatpak-builtins-document-info.c \
 	app/flatpak-builtins-document-list.c \
 	app/flatpak-builtins-permission-remove.c \
+	app/flatpak-builtins-permission-set.c \
 	app/flatpak-builtins-permission-list.c \
 	app/flatpak-builtins-permission-show.c \
 	app/flatpak-builtins-permission-reset.c \
@@ -434,7 +484,7 @@ am__flatpak_SOURCES_DIST = app/flatpak-main.c app/flatpak-builtins.h \
 	app/flatpak-quiet-transaction.h app/parse-datetime.h \
 	app/flatpak-polkit-agent-text-listener.h \
 	app/flatpak-polkit-agent-text-listener.c
-@BUILD_SYSTEM_HELPER_TRUE@am__objects_5 = app/flatpak-flatpak-polkit-agent-text-listener.$(OBJEXT) \
+@BUILD_SYSTEM_HELPER_TRUE@am__objects_6 = app/flatpak-flatpak-polkit-agent-text-listener.$(OBJEXT) \
 @BUILD_SYSTEM_HELPER_TRUE@	$(am__objects_1)
 am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-remote-add.$(OBJEXT) \
@@ -470,6 +520,7 @@ am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-info.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-document-list.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-permission-remove.$(OBJEXT) \
+	app/flatpak-flatpak-builtins-permission-set.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-permission-list.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-permission-show.$(OBJEXT) \
 	app/flatpak-flatpak-builtins-permission-reset.$(OBJEXT) \
@@ -481,10 +532,10 @@ am_flatpak_OBJECTS = app/flatpak-flatpak-main.$(OBJEXT) \
 	app/flatpak-flatpak-complete.$(OBJEXT) \
 	app/flatpak-flatpak-cli-transaction.$(OBJEXT) \
 	app/flatpak-flatpak-quiet-transaction.$(OBJEXT) \
-	$(am__objects_5) $(am__objects_1)
-am__objects_6 =  \
+	$(am__objects_6) $(am__objects_1)
+am__objects_7 =  \
 	app/flatpak-flatpak-permission-dbus-generated.$(OBJEXT)
-nodist_flatpak_OBJECTS = $(am__objects_6) $(am__objects_1)
+nodist_flatpak_OBJECTS = $(am__objects_7) $(am__objects_1)
 flatpak_OBJECTS = $(am_flatpak_OBJECTS) $(nodist_flatpak_OBJECTS)
 flatpak_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -499,12 +550,12 @@ am__flatpak_bwrap_SOURCES_DIST = bubblewrap/bubblewrap.c \
 	bubblewrap/bind-mount.h bubblewrap/bind-mount.c \
 	bubblewrap/network.h bubblewrap/network.c bubblewrap/utils.h \
 	bubblewrap/utils.c
-@WITH_SYSTEM_BWRAP_FALSE@am__objects_7 = bubblewrap/flatpak_bwrap-bubblewrap.$(OBJEXT) \
+@WITH_SYSTEM_BWRAP_FALSE@am__objects_8 = bubblewrap/flatpak_bwrap-bubblewrap.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-bind-mount.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-network.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	bubblewrap/flatpak_bwrap-utils.$(OBJEXT) \
 @WITH_SYSTEM_BWRAP_FALSE@	$(am__objects_1)
-@WITH_SYSTEM_BWRAP_FALSE@am_flatpak_bwrap_OBJECTS = $(am__objects_7)
+@WITH_SYSTEM_BWRAP_FALSE@am_flatpak_bwrap_OBJECTS = $(am__objects_8)
 flatpak_bwrap_OBJECTS = $(am_flatpak_bwrap_OBJECTS)
 @WITH_SYSTEM_BWRAP_FALSE@flatpak_bwrap_DEPENDENCIES =  \
 @WITH_SYSTEM_BWRAP_FALSE@	$(am__DEPENDENCIES_1) \
@@ -662,6 +713,16 @@ tests_httpcache_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(tests_httpcache_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
+am_tests_test_authenticator_OBJECTS =  \
+	tests/test_authenticator-test-authenticator.$(OBJEXT)
+tests_test_authenticator_OBJECTS =  \
+	$(am_tests_test_authenticator_OBJECTS)
+tests_test_authenticator_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+	libflatpak-common.la libflatpak-common-base.la libglnx.la
+tests_test_authenticator_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(tests_test_authenticator_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_tests_test_portal_impl_OBJECTS =  \
 	tests/test_portal_impl-test-portal-impl.$(OBJEXT)
 tests_test_portal_impl_OBJECTS = $(am_tests_test_portal_impl_OBJECTS)
@@ -671,10 +732,12 @@ tests_test_portal_impl_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(tests_test_portal_impl_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_tests_test_update_portal_OBJECTS =  \
-	tests/test_update_portal-test-update-portal.$(OBJEXT) \
+	tests/test_update_portal-test-update-portal.$(OBJEXT)
+nodist_tests_test_update_portal_OBJECTS =  \
 	portal/tests_test_update_portal-flatpak-portal-dbus.$(OBJEXT)
 tests_test_update_portal_OBJECTS =  \
-	$(am_tests_test_update_portal_OBJECTS)
+	$(am_tests_test_update_portal_OBJECTS) \
+	$(nodist_tests_test_update_portal_OBJECTS)
 tests_test_update_portal_DEPENDENCIES = $(am__DEPENDENCIES_1)
 tests_test_update_portal_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
@@ -725,6 +788,7 @@ am__depfiles_remade =  \
 	app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Po \
 	app/$(DEPDIR)/flatpak-flatpak-builtins-permission-remove.Po \
 	app/$(DEPDIR)/flatpak-flatpak-builtins-permission-reset.Po \
+	app/$(DEPDIR)/flatpak-flatpak-builtins-permission-set.Po \
 	app/$(DEPDIR)/flatpak-flatpak-builtins-permission-show.Po \
 	app/$(DEPDIR)/flatpak-flatpak-builtins-ps.Po \
 	app/$(DEPDIR)/flatpak-flatpak-builtins-remote-add.Po \
@@ -757,6 +821,7 @@ am__depfiles_remade =  \
 	common/$(DEPDIR)/libflatpak_common_base_la-flatpak-document-dbus-generated.Plo \
 	common/$(DEPDIR)/libflatpak_common_base_la-flatpak-utils-base.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-appdata.Plo \
+	common/$(DEPDIR)/libflatpak_common_la-flatpak-auth.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-bundle-ref.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-bwrap.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-chain-input-stream.Plo \
@@ -771,6 +836,7 @@ am__depfiles_remade =  \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-json-oci.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-json.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo \
+	common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo \
@@ -812,6 +878,7 @@ am__depfiles_remade =  \
 	session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po \
 	system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po \
 	tests/$(DEPDIR)/httpcache-httpcache.Po \
+	tests/$(DEPDIR)/test_authenticator-test-authenticator.Po \
 	tests/$(DEPDIR)/test_portal_impl-test-portal-impl.Po \
 	tests/$(DEPDIR)/test_update_portal-test-update-portal.Po \
 	tests/$(DEPDIR)/testcommon-testcommon.Po \
@@ -853,13 +920,15 @@ SOURCES = $(libflatpak_app_la_SOURCES) \
 	$(test_libglnx_macros_SOURCES) $(test_libglnx_shutil_SOURCES) \
 	$(test_libglnx_xattrs_SOURCES) $(testcommon_SOURCES) \
 	$(testlibrary_SOURCES) tests/httpcache.c \
+	$(tests_test_authenticator_SOURCES) \
 	$(tests_test_portal_impl_SOURCES) \
-	$(tests_test_update_portal_SOURCES)
+	$(tests_test_update_portal_SOURCES) \
+	$(nodist_tests_test_update_portal_SOURCES)
 DIST_SOURCES = $(libflatpak_app_la_SOURCES) \
 	$(libflatpak_common_base_la_SOURCES) \
-	$(libflatpak_common_la_SOURCES) $(libflatpak_la_SOURCES) \
-	$(libglnx_la_SOURCES) $(am__flatpak_SOURCES_DIST) \
-	$(am__flatpak_bwrap_SOURCES_DIST) \
+	$(am__libflatpak_common_la_SOURCES_DIST) \
+	$(libflatpak_la_SOURCES) $(libglnx_la_SOURCES) \
+	$(am__flatpak_SOURCES_DIST) $(am__flatpak_bwrap_SOURCES_DIST) \
 	$(am__flatpak_dbus_proxy_SOURCES_DIST) \
 	$(flatpak_portal_SOURCES) $(flatpak_session_helper_SOURCES) \
 	$(am__flatpak_system_helper_SOURCES_DIST) \
@@ -869,6 +938,7 @@ DIST_SOURCES = $(libflatpak_app_la_SOURCES) \
 	$(test_libglnx_macros_SOURCES) $(test_libglnx_shutil_SOURCES) \
 	$(test_libglnx_xattrs_SOURCES) $(testcommon_SOURCES) \
 	$(testlibrary_SOURCES) tests/httpcache.c \
+	$(tests_test_authenticator_SOURCES) \
 	$(tests_test_portal_impl_SOURCES) \
 	$(tests_test_update_portal_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
@@ -1106,9 +1176,8 @@ am__EXEEXT_11 = tests/test-run@user,nodeltas.wrap \
 	tests/test-oci-registry@user,labels.wrap \
 	tests/test-oci-registry@system,annotations.wrap \
 	tests/test-oci-registry@system,labels.wrap \
-	tests/test-p2p-security@user,collections.wrap \
-	tests/test-p2p-security@system,collections.wrap \
-	$(am__EXEEXT_1)
+	tests/test-auth@nocollections.wrap \
+	tests/test-auth@collections.wrap $(am__EXEEXT_1)
 am__EXEEXT_12 = $(am__EXEEXT_11)
 am__EXEEXT_13 = tests/test-basic.sh tests/test-completion.sh \
 	tests/test-config.sh tests/test-build-update-repo.sh \
@@ -1305,6 +1374,8 @@ LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 LT_VERSION_INFO = @LT_VERSION_INFO@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
+MALCONTENT_CFLAGS = @MALCONTENT_CFLAGS@
+MALCONTENT_LIBS = @MALCONTENT_LIBS@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 MSGFMT = @MSGFMT@
@@ -1431,22 +1502,24 @@ dist_installed_test_extra_scripts = $(NULL) buildutil/tap-driver.sh \
 	tests/oci-registry-client.py \
 	tests/make-multi-collection-id-repo.sh tests/make-test-app.sh \
 	tests/make-test-runtime.sh tests/test-webserver.sh \
-	tests/test-wrapper.sh $(NULL) ${TEST_MATRIX_EXTRA_DIST}
+	tests/test-wrapper.sh tests/web-server.py $(NULL) \
+	${TEST_MATRIX_EXTRA_DIST}
 noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common-base.la libflatpak-common.la \
 	libflatpak-app.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
 	$(systemduserunit_DATA) \
 	$(nodist_libflatpak_common_base_la_SOURCES) \
-	$(nodist_libflatpak_common_la_SOURCES) $(am__append_20) \
+	$(nodist_libflatpak_common_la_SOURCES) $(am__append_21) \
 	app/parse-datetime.c $(flatpak_dbus_built_sources) \
 	$(nodist_flatpak_portal_SOURCES)
 MAINTAINERCLEANFILES = $(NULL)
-DISTCLEANFILES = $(NULL) $(am__append_23) flatpak.pp.bz2 \
+DISTCLEANFILES = $(NULL) $(am__append_24) flatpak.pp.bz2 \
 	tests/services/org.freedesktop.Flatpak.service \
 	tests/services/org.freedesktop.Flatpak.SystemHelper.service \
 	tests/services/org.freedesktop.portal.Flatpak.service \
 	tests/services/org.freedesktop.impl.portal.desktop.test.service \
+	tests/services/org.flatpak.Authenticator.test.service \
 	tests/share/xdg-desktop-portal/portals/test.portal \
 	tests/package_version.txt $(NULL) flatpak.env
 BUILT_SOURCES = $(NULL) $(nodist_libflatpak_common_base_la_SOURCES) \
@@ -1462,6 +1535,7 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	data/org.freedesktop.impl.portal.PermissionStore.xml \
 	data/org.freedesktop.systemd1.xml \
 	data/org.freedesktop.Flatpak.xml \
+	data/org.freedesktop.Flatpak.Authenticator.xml \
 	data/org.freedesktop.portal.Flatpak.xml \
 	data/flatpak-docker-seccomp.json $(NULL) app/parse-datetime.y \
 	system-helper/org.freedesktop.Flatpak.policy.in \
@@ -1526,7 +1600,7 @@ service_in_files = $(NULL) \
 	session-helper/org.freedesktop.Flatpak.service.in \
 	portal/flatpak-portal.service.in \
 	portal/org.freedesktop.portal.Flatpak.service.in \
-	$(am__append_22)
+	$(am__append_23)
 dbus_service_DATA = $(NULL) \
 	session-helper/org.freedesktop.Flatpak.service \
 	portal/org.freedesktop.portal.Flatpak.service
@@ -1664,76 +1738,75 @@ nodist_libflatpak_common_la_SOURCES = \
 	common/flatpak-enum-types.c \
 	$(NULL)
 
-libflatpak_common_la_SOURCES = \
-	$(flatpakinclude_HEADERS) \
-	common/flatpak-common-types-private.h \
-	common/flatpak-appdata.c \
-	common/flatpak-appdata-private.h \
-	common/flatpak-bwrap.c \
-	common/flatpak-bwrap-private.h \
-	common/flatpak-dir.c \
-	common/flatpak-dir-private.h \
-	common/flatpak-run.c \
-	common/flatpak-run-private.h \
-	common/flatpak-context.c \
-	common/flatpak-context-private.h \
-	common/flatpak-exports.c \
+libflatpak_common_la_SOURCES = $(flatpakinclude_HEADERS) \
+	common/flatpak-common-types-private.h common/flatpak-appdata.c \
+	common/flatpak-appdata-private.h common/flatpak-auth.c \
+	common/flatpak-auth-private.h common/flatpak-bwrap.c \
+	common/flatpak-bwrap-private.h common/flatpak-dir.c \
+	common/flatpak-dir-private.h common/flatpak-run.c \
+	common/flatpak-run-private.h common/flatpak-context.c \
+	common/flatpak-context-private.h common/flatpak-exports.c \
 	common/flatpak-exports-private.h \
 	common/flatpak-transaction-private.h \
-	common/flatpak-transaction.h \
-	common/flatpak-transaction.c \
-	common/flatpak-utils.c \
-	common/flatpak-utils-http.c \
+	common/flatpak-transaction.h common/flatpak-transaction.c \
+	common/flatpak-utils.c common/flatpak-utils-http.c \
 	common/flatpak-utils-http-private.h \
 	common/flatpak-utils-private.h \
 	common/flatpak-chain-input-stream.c \
 	common/flatpak-chain-input-stream-private.h \
-	common/flatpak-portal-error.c \
-	common/flatpak-portal-error.h \
-	common/flatpak-json.c \
-	common/flatpak-json-private.h \
-	common/flatpak-json-oci.c \
-	common/flatpak-json-oci-private.h \
+	common/flatpak-portal-error.c common/flatpak-portal-error.h \
+	common/flatpak-json.c common/flatpak-json-private.h \
+	common/flatpak-json-oci.c common/flatpak-json-oci-private.h \
 	common/flatpak-oci-registry.c \
-	common/flatpak-oci-registry-private.h \
-	common/flatpak-ref.c \
+	common/flatpak-oci-registry-private.h common/flatpak-ref.c \
 	common/flatpak-installed-ref.c \
 	common/flatpak-installed-ref-private.h \
-	common/flatpak-instance-private.h \
-	common/flatpak-remote-ref.c \
+	common/flatpak-instance-private.h common/flatpak-remote-ref.c \
 	common/flatpak-remote-ref-private.h \
-	common/flatpak-bundle-ref.c \
-	common/flatpak-related-ref.c \
+	common/flatpak-bundle-ref.c common/flatpak-related-ref.c \
 	common/flatpak-related-ref-private.h \
-	common/flatpak-remote-private.h \
-	common/flatpak-remote.c \
-	common/flatpak-error.c \
-	common/flatpak-installation-private.h \
-	common/flatpak-installation.c \
-	common/flatpak-instance.c \
-	common/valgrind-private.h \
-	$(NULL)
-
+	common/flatpak-remote-private.h common/flatpak-remote.c \
+	common/flatpak-error.c common/flatpak-installation-private.h \
+	common/flatpak-installation.c common/flatpak-instance.c \
+	common/valgrind-private.h $(NULL) $(am__append_19)
 libflatpak_common_la_CFLAGS = \
 	-DFLATPAK_COMPILATION \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
+	-I$(srcdir)/dbus-proxy \
 	$(AM_CFLAGS) \
 	$(ARCHIVE_CFLAGS) \
 	$(BASE_CFLAGS) \
+	$(DCONF_CFLAGS) \
 	$(HIDDEN_VISIBILITY_CFLAGS) \
-	$(OSTREE_CFLAGS) \
-	$(SOUP_CFLAGS) \
+	$(INTERNAL_GPGME_CFLAGS) \
 	$(JSON_CFLAGS) \
+	$(LIBSECCOMP_CFLAGS) \
+	$(MALCONTENT_CFLAGS) \
+	$(OSTREE_CFLAGS) \
+	$(POLKIT_CFLAGS) \
+	$(SOUP_CFLAGS) \
+	$(SYSTEMD_CFLAGS) \
 	$(XAUTH_CFLAGS) \
 	$(XML_CFLAGS) \
-	$(LIBSECCOMP_CFLAGS) \
-	$(INTERNAL_GPGME_CFLAGS) \
-	$(SYSTEMD_CFLAGS) \
-	$(DCONF_CFLAGS) \
-	-DLIBEXECDIR=\"$(libexecdir)\" \
-	-I$(srcdir)/dbus-proxy \
 	$(NULL)
 
-libflatpak_common_la_LIBADD = $(AM_LIBADD) $(ARCHIVE_LIBS) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(XAUTH_LIBS) $(XML_LIBS) $(LIBSECCOMP_LIBS) $(INTERNAL_GPGME_LIBS) $(SYSTEMD_LIBS) $(DCONF_LIBS)
+libflatpak_common_la_LIBADD = \
+	$(AM_LIBADD) \
+	$(ARCHIVE_LIBS) \
+	$(BASE_LIBS) \
+	$(DCONF_LIBS) \
+	$(INTERNAL_GPGME_LIBS) \
+	$(JSON_LIBS) \
+	$(LIBSECCOMP_LIBS) \
+	$(MALCONTENT_LIBS) \
+	$(OSTREE_LIBS) \
+	$(POLKIT_LIBS) \
+	$(SOUP_LIBS) \
+	$(SYSTEMD_LIBS) \
+	$(XAUTH_LIBS) \
+	$(XML_LIBS) \
+	$(NULL)
+
 libflatpak_la_SOURCES = \
 	common/flatpak.c \
 	$(NULL)
@@ -1786,7 +1859,7 @@ test_libflatpak_LDADD = \
 	$(NULL)
 
 sources = $(libflatpak_common_la_SOURCES) $(libflatpak_la_SOURCES)
-INTROSPECTION_GIRS = $(am__append_19)
+INTROSPECTION_GIRS = $(am__append_20)
 @HAVE_INTROSPECTION_TRUE@introspected_headers = \
 @HAVE_INTROSPECTION_TRUE@	$(flatpakinclude_HEADERS) \
 @HAVE_INTROSPECTION_TRUE@	$(nodist_flatpakinclude_HEADERS) \
@@ -1811,6 +1884,7 @@ INTROSPECTION_GIRS = $(am__append_19)
 introspectiondir = $(datadir)/dbus-1/interfaces
 introspection_DATA = \
 	data/org.freedesktop.Flatpak.xml \
+	data/org.freedesktop.Flatpak.Authenticator.xml \
 	data/org.freedesktop.portal.Flatpak.xml \
 	$(NULL)
 
@@ -1894,6 +1968,7 @@ flatpak_SOURCES = \
 	app/flatpak-builtins-document-info.c \
 	app/flatpak-builtins-document-list.c \
 	app/flatpak-builtins-permission-remove.c \
+	app/flatpak-builtins-permission-set.c \
 	app/flatpak-builtins-permission-list.c \
 	app/flatpak-builtins-permission-show.c \
 	app/flatpak-builtins-permission-reset.c \
@@ -2026,8 +2101,8 @@ AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 \
 	pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
 	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && \
 	pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} PATH=$$(cd \
-	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_24) \
-	$(am__append_25) $(am__append_26) $(am__append_27)
+	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_25) \
+	$(am__append_26) $(am__append_27) $(am__append_28)
 testlibrary_CFLAGS = \
 	$(AM_CFLAGS) \
 	$(BASE_CFLAGS) \
@@ -2082,24 +2157,29 @@ tests_test_update_portal_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) \
 	-DLOCALEDIR=\"$(localedir)\"
 
 tests_test_update_portal_LDADD = $(AM_LDADD) $(BASE_LIBS)
-tests_test_update_portal_SOURCES = \
-	tests/test-update-portal.c \
-	portal/flatpak-portal-dbus.c
-
+tests_test_update_portal_SOURCES = tests/test-update-portal.c
+nodist_tests_test_update_portal_SOURCES = portal/flatpak-portal-dbus.c
 tests_test_portal_impl_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) \
 	-DFLATPAK_COMPILATION \
 	-DLOCALEDIR=\"$(localedir)\"
 
 tests_test_portal_impl_LDADD = $(AM_LDADD) $(BASE_LIBS)
 tests_test_portal_impl_SOURCES = tests/test-portal-impl.c
+tests_test_authenticator_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) \
+	-DFLATPAK_COMPILATION \
+	-DLOCALEDIR=\"$(localedir)\"
+
+tests_test_authenticator_LDADD = $(AM_LDADD) $(BASE_LIBS) libflatpak-common.la libflatpak-common-base.la libglnx.la
+tests_test_authenticator_SOURCES = tests/test-authenticator.c
 dist_installed_test_data = \
 	tests/libtest.sh \
 	tests/org.test.Hello.png \
 	tests/package_version.txt \
 	tests/session.conf.in \
 	tests/test.filter \
-        tests/test.portal.in \
-        tests/org.freedesktop.impl.portal.desktop.test.service.in \
+	tests/test.portal.in \
+	tests/org.freedesktop.impl.portal.desktop.test.service.in \
+	tests/org.flatpak.Authenticator.test.service.in \
 	$(NULL)
 
 installed_test_keyringdir = $(installed_testdir)/test-keyring
@@ -2135,8 +2215,8 @@ TEST_MATRIX_SOURCE = \
 	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	tests/test-override.sh \
-	tests/test-p2p-security.sh{user,collections+system,collections} \
 	tests/test-update-portal.sh \
+	tests/test-auth.sh{nocollections+collections} \
 	$(NULL)
 
 
@@ -2162,8 +2242,8 @@ TEST_MATRIX = \
 	tests/test-oci-registry@user,labels.wrap \
 	tests/test-oci-registry@system,annotations.wrap \
 	tests/test-oci-registry@system,labels.wrap \
-	tests/test-p2p-security@user,collections.wrap \
-	tests/test-p2p-security@system,collections.wrap \
+	tests/test-auth@nocollections.wrap \
+	tests/test-auth@collections.wrap \
 	$(NULL)
 
 TEST_MATRIX_DIST = \
@@ -2187,13 +2267,13 @@ TEST_MATRIX_EXTRA_DIST = \
 	tests/test-repo.sh \
 	tests/test-bundle.sh \
 	tests/test-oci-registry.sh \
-	tests/test-p2p-security.sh \
+	tests/test-auth.sh \
 	$(NULL)
 
 test_scripts = ${TEST_MATRIX}
 dist_test_scripts = ${TEST_MATRIX_DIST}
 test_programs = testlibrary testcommon
-test_extra_programs = tests/httpcache tests/test-update-portal tests/test-portal-impl
+test_extra_programs = tests/httpcache tests/test-update-portal tests/test-portal-impl tests/test-authenticator
 VALGRIND_SUPPRESSIONS_FILES = tests/flatpak.supp tests/glib.supp
 @WITH_SYSTEM_DBUS_PROXY_FALSE@flatpak_dbus_proxy_SOURCES = \
 @WITH_SYSTEM_DBUS_PROXY_FALSE@	dbus-proxy/flatpak-proxy.c	\
@@ -2635,6 +2715,8 @@ libflatpak-common-base.la: $(libflatpak_common_base_la_OBJECTS) $(libflatpak_com
 	$(AM_V_CCLD)$(libflatpak_common_base_la_LINK)  $(libflatpak_common_base_la_OBJECTS) $(libflatpak_common_base_la_LIBADD) $(LIBS)
 common/libflatpak_common_la-flatpak-appdata.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-auth.lo: common/$(am__dirstamp) \
+	common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-bwrap.lo: common/$(am__dirstamp) \
 	common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-dir.lo: common/$(am__dirstamp) \
@@ -2678,6 +2760,8 @@ common/libflatpak_common_la-flatpak-error.lo: common/$(am__dirstamp) \
 common/libflatpak_common_la-flatpak-installation.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-instance.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-parental-controls.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
@@ -2785,6 +2869,8 @@ app/flatpak-flatpak-builtins-document-info.$(OBJEXT):  \
 app/flatpak-flatpak-builtins-document-list.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-permission-remove.$(OBJEXT):  \
+	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
+app/flatpak-flatpak-builtins-permission-set.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-permission-list.$(OBJEXT):  \
 	app/$(am__dirstamp) app/$(DEPDIR)/$(am__dirstamp)
@@ -3005,6 +3091,12 @@ tests/httpcache-httpcache.$(OBJEXT): tests/$(am__dirstamp) \
 tests/httpcache$(EXEEXT): $(tests_httpcache_OBJECTS) $(tests_httpcache_DEPENDENCIES) $(EXTRA_tests_httpcache_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/httpcache$(EXEEXT)
 	$(AM_V_CCLD)$(tests_httpcache_LINK) $(tests_httpcache_OBJECTS) $(tests_httpcache_LDADD) $(LIBS)
+tests/test_authenticator-test-authenticator.$(OBJEXT):  \
+	tests/$(am__dirstamp) tests/$(DEPDIR)/$(am__dirstamp)
+
+tests/test-authenticator$(EXEEXT): $(tests_test_authenticator_OBJECTS) $(tests_test_authenticator_DEPENDENCIES) $(EXTRA_tests_test_authenticator_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/test-authenticator$(EXEEXT)
+	$(AM_V_CCLD)$(tests_test_authenticator_LINK) $(tests_test_authenticator_OBJECTS) $(tests_test_authenticator_LDADD) $(LIBS)
 tests/test_portal_impl-test-portal-impl.$(OBJEXT):  \
 	tests/$(am__dirstamp) tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -3208,6 +3300,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-remove.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-reset.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-set.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-permission-show.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-ps.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@app/$(DEPDIR)/flatpak-flatpak-builtins-remote-add.Po@am__quote@ # am--include-marker
@@ -3240,6 +3333,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_base_la-flatpak-document-dbus-generated.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_base_la-flatpak-utils-base.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-appdata.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-auth.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-bundle-ref.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-bwrap.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-chain-input-stream.Plo@am__quote@ # am--include-marker
@@ -3254,6 +3348,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-json-oci.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-json.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo@am__quote@ # am--include-marker
@@ -3295,6 +3390,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/httpcache-httpcache.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_authenticator-test-authenticator.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_portal_impl-test-portal-impl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_update_portal-test-update-portal.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/testcommon-testcommon.Po@am__quote@ # am--include-marker
@@ -3378,6 +3474,13 @@ common/libflatpak_common_la-flatpak-appdata.lo: common/flatpak-appdata.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-appdata.c' object='common/libflatpak_common_la-flatpak-appdata.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-appdata.lo `test -f 'common/flatpak-appdata.c' || echo '$(srcdir)/'`common/flatpak-appdata.c
+
+common/libflatpak_common_la-flatpak-auth.lo: common/flatpak-auth.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-auth.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-auth.Tpo -c -o common/libflatpak_common_la-flatpak-auth.lo `test -f 'common/flatpak-auth.c' || echo '$(srcdir)/'`common/flatpak-auth.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-auth.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-auth.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-auth.c' object='common/libflatpak_common_la-flatpak-auth.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-auth.lo `test -f 'common/flatpak-auth.c' || echo '$(srcdir)/'`common/flatpak-auth.c
 
 common/libflatpak_common_la-flatpak-bwrap.lo: common/flatpak-bwrap.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-bwrap.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-bwrap.Tpo -c -o common/libflatpak_common_la-flatpak-bwrap.lo `test -f 'common/flatpak-bwrap.c' || echo '$(srcdir)/'`common/flatpak-bwrap.c
@@ -3532,6 +3635,13 @@ common/libflatpak_common_la-flatpak-instance.lo: common/flatpak-instance.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-instance.c' object='common/libflatpak_common_la-flatpak-instance.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-instance.lo `test -f 'common/flatpak-instance.c' || echo '$(srcdir)/'`common/flatpak-instance.c
+
+common/libflatpak_common_la-flatpak-parental-controls.lo: common/flatpak-parental-controls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-parental-controls.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Tpo -c -o common/libflatpak_common_la-flatpak-parental-controls.lo `test -f 'common/flatpak-parental-controls.c' || echo '$(srcdir)/'`common/flatpak-parental-controls.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-parental-controls.c' object='common/libflatpak_common_la-flatpak-parental-controls.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-parental-controls.lo `test -f 'common/flatpak-parental-controls.c' || echo '$(srcdir)/'`common/flatpak-parental-controls.c
 
 common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo: common/flatpak-systemd-dbus-generated.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-systemd-dbus-generated.Tpo -c -o common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo `test -f 'common/flatpak-systemd-dbus-generated.c' || echo '$(srcdir)/'`common/flatpak-systemd-dbus-generated.c
@@ -4093,6 +4203,20 @@ app/flatpak-flatpak-builtins-permission-remove.obj: app/flatpak-builtins-permiss
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-permission-remove.obj `if test -f 'app/flatpak-builtins-permission-remove.c'; then $(CYGPATH_W) 'app/flatpak-builtins-permission-remove.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-permission-remove.c'; fi`
 
+app/flatpak-flatpak-builtins-permission-set.o: app/flatpak-builtins-permission-set.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-permission-set.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-permission-set.Tpo -c -o app/flatpak-flatpak-builtins-permission-set.o `test -f 'app/flatpak-builtins-permission-set.c' || echo '$(srcdir)/'`app/flatpak-builtins-permission-set.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-permission-set.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-permission-set.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-permission-set.c' object='app/flatpak-flatpak-builtins-permission-set.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-permission-set.o `test -f 'app/flatpak-builtins-permission-set.c' || echo '$(srcdir)/'`app/flatpak-builtins-permission-set.c
+
+app/flatpak-flatpak-builtins-permission-set.obj: app/flatpak-builtins-permission-set.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-permission-set.obj -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-permission-set.Tpo -c -o app/flatpak-flatpak-builtins-permission-set.obj `if test -f 'app/flatpak-builtins-permission-set.c'; then $(CYGPATH_W) 'app/flatpak-builtins-permission-set.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-permission-set.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-permission-set.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-permission-set.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='app/flatpak-builtins-permission-set.c' object='app/flatpak-flatpak-builtins-permission-set.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -c -o app/flatpak-flatpak-builtins-permission-set.obj `if test -f 'app/flatpak-builtins-permission-set.c'; then $(CYGPATH_W) 'app/flatpak-builtins-permission-set.c'; else $(CYGPATH_W) '$(srcdir)/app/flatpak-builtins-permission-set.c'; fi`
+
 app/flatpak-flatpak-builtins-permission-list.o: app/flatpak-builtins-permission-list.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(flatpak_CFLAGS) $(CFLAGS) -MT app/flatpak-flatpak-builtins-permission-list.o -MD -MP -MF app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Tpo -c -o app/flatpak-flatpak-builtins-permission-list.o `test -f 'app/flatpak-builtins-permission-list.c' || echo '$(srcdir)/'`app/flatpak-builtins-permission-list.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Tpo app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Po
@@ -4652,6 +4776,20 @@ tests/httpcache-httpcache.obj: tests/httpcache.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/httpcache.c' object='tests/httpcache-httpcache.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_httpcache_CFLAGS) $(CFLAGS) -c -o tests/httpcache-httpcache.obj `if test -f 'tests/httpcache.c'; then $(CYGPATH_W) 'tests/httpcache.c'; else $(CYGPATH_W) '$(srcdir)/tests/httpcache.c'; fi`
+
+tests/test_authenticator-test-authenticator.o: tests/test-authenticator.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_test_authenticator_CFLAGS) $(CFLAGS) -MT tests/test_authenticator-test-authenticator.o -MD -MP -MF tests/$(DEPDIR)/test_authenticator-test-authenticator.Tpo -c -o tests/test_authenticator-test-authenticator.o `test -f 'tests/test-authenticator.c' || echo '$(srcdir)/'`tests/test-authenticator.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/test_authenticator-test-authenticator.Tpo tests/$(DEPDIR)/test_authenticator-test-authenticator.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/test-authenticator.c' object='tests/test_authenticator-test-authenticator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_test_authenticator_CFLAGS) $(CFLAGS) -c -o tests/test_authenticator-test-authenticator.o `test -f 'tests/test-authenticator.c' || echo '$(srcdir)/'`tests/test-authenticator.c
+
+tests/test_authenticator-test-authenticator.obj: tests/test-authenticator.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_test_authenticator_CFLAGS) $(CFLAGS) -MT tests/test_authenticator-test-authenticator.obj -MD -MP -MF tests/$(DEPDIR)/test_authenticator-test-authenticator.Tpo -c -o tests/test_authenticator-test-authenticator.obj `if test -f 'tests/test-authenticator.c'; then $(CYGPATH_W) 'tests/test-authenticator.c'; else $(CYGPATH_W) '$(srcdir)/tests/test-authenticator.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/test_authenticator-test-authenticator.Tpo tests/$(DEPDIR)/test_authenticator-test-authenticator.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/test-authenticator.c' object='tests/test_authenticator-test-authenticator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_test_authenticator_CFLAGS) $(CFLAGS) -c -o tests/test_authenticator-test-authenticator.obj `if test -f 'tests/test-authenticator.c'; then $(CYGPATH_W) 'tests/test-authenticator.c'; else $(CYGPATH_W) '$(srcdir)/tests/test-authenticator.c'; fi`
 
 tests/test_portal_impl-test-portal-impl.o: tests/test-portal-impl.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_test_portal_impl_CFLAGS) $(CFLAGS) -MT tests/test_portal_impl-test-portal-impl.o -MD -MP -MF tests/$(DEPDIR)/test_portal_impl-test-portal-impl.Tpo -c -o tests/test_portal_impl-test-portal-impl.o `test -f 'tests/test-portal-impl.c' || echo '$(srcdir)/'`tests/test-portal-impl.c
@@ -5616,16 +5754,16 @@ tests/test-oci-registry@system,labels.wrap.log: tests/test-oci-registry@system,l
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-p2p-security@user,collections.wrap.log: tests/test-p2p-security@user,collections.wrap
-	@p='tests/test-p2p-security@user,collections.wrap'; \
-	b='tests/test-p2p-security@user,collections.wrap'; \
+tests/test-auth@nocollections.wrap.log: tests/test-auth@nocollections.wrap
+	@p='tests/test-auth@nocollections.wrap'; \
+	b='tests/test-auth@nocollections.wrap'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-p2p-security@system,collections.wrap.log: tests/test-p2p-security@system,collections.wrap
-	@p='tests/test-p2p-security@system,collections.wrap'; \
-	b='tests/test-p2p-security@system,collections.wrap'; \
+tests/test-auth@collections.wrap.log: tests/test-auth@collections.wrap
+	@p='tests/test-auth@collections.wrap'; \
+	b='tests/test-auth@collections.wrap'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -6068,6 +6206,7 @@ distclean: distclean-recursive
 	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Po
 	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-permission-remove.Po
 	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-permission-reset.Po
+	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-permission-set.Po
 	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-permission-show.Po
 	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-ps.Po
 	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-remote-add.Po
@@ -6100,6 +6239,7 @@ distclean: distclean-recursive
 	-rm -f common/$(DEPDIR)/libflatpak_common_base_la-flatpak-document-dbus-generated.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_base_la-flatpak-utils-base.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-appdata.Plo
+	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-auth.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-bundle-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-bwrap.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-chain-input-stream.Plo
@@ -6114,6 +6254,7 @@ distclean: distclean-recursive
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-json-oci.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-json.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo
+	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo
@@ -6155,6 +6296,7 @@ distclean: distclean-recursive
 	-rm -f session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po
 	-rm -f system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po
 	-rm -f tests/$(DEPDIR)/httpcache-httpcache.Po
+	-rm -f tests/$(DEPDIR)/test_authenticator-test-authenticator.Po
 	-rm -f tests/$(DEPDIR)/test_portal_impl-test-portal-impl.Po
 	-rm -f tests/$(DEPDIR)/test_update_portal-test-update-portal.Po
 	-rm -f tests/$(DEPDIR)/testcommon-testcommon.Po
@@ -6252,6 +6394,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-permission-list.Po
 	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-permission-remove.Po
 	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-permission-reset.Po
+	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-permission-set.Po
 	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-permission-show.Po
 	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-ps.Po
 	-rm -f app/$(DEPDIR)/flatpak-flatpak-builtins-remote-add.Po
@@ -6284,6 +6427,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f common/$(DEPDIR)/libflatpak_common_base_la-flatpak-document-dbus-generated.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_base_la-flatpak-utils-base.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-appdata.Plo
+	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-auth.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-bundle-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-bwrap.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-chain-input-stream.Plo
@@ -6298,6 +6442,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-json-oci.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-json.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo
+	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo
@@ -6339,6 +6484,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po
 	-rm -f system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po
 	-rm -f tests/$(DEPDIR)/httpcache-httpcache.Po
+	-rm -f tests/$(DEPDIR)/test_authenticator-test-authenticator.Po
 	-rm -f tests/$(DEPDIR)/test_portal_impl-test-portal-impl.Po
 	-rm -f tests/$(DEPDIR)/test_update_portal-test-update-portal.Po
 	-rm -f tests/$(DEPDIR)/testcommon-testcommon.Po
@@ -6472,13 +6618,14 @@ common/flatpak-enum-types.c: $(flatpakinclude_HEADERS) common/flatpak-enum-types
 	$(AM_V_GEN) $(GLIB_MKENUMS) --template $(filter %.template,$^) $(filter-out %.template,$^) > \
 	    common/flatpak-enum-types.c.tmp && mv common/flatpak-enum-types.c.tmp common/flatpak-enum-types.c
 
-common/flatpak-dbus-generated.c: data/org.freedesktop.Flatpak.xml Makefile
+common/flatpak-dbus-generated.c: data/org.freedesktop.Flatpak.xml data/org.freedesktop.Flatpak.Authenticator.xml Makefile
 	mkdir -p $(builddir)/common
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.Flatpak.	\
 		--c-namespace Flatpak				\
 		--generate-c-code $(builddir)/common/flatpak-dbus-generated	\
 		$(srcdir)/data/org.freedesktop.Flatpak.xml  \
+		$(srcdir)/data/org.freedesktop.Flatpak.Authenticator.xml  \
 		$(NULL)
 
 common/flatpak-document-dbus-generated.c: data/org.freedesktop.portal.Documents.xml Makefile
@@ -6573,20 +6720,25 @@ tests/services/org.freedesktop.impl.portal.desktop.test.service: tests/org.freed
 	mkdir -p tests/services
 	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(abs_top_builddir)/tests|" $< > $@
 
+tests/services/org.flatpak.Authenticator.test.service: tests/org.flatpak.Authenticator.test.service.in
+	mkdir -p tests/services
+	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(abs_top_builddir)/tests|" $< > $@
+
 tests/share/xdg-desktop-portal/portals/test.portal: tests/test.portal.in
 	mkdir -p tests/share/xdg-desktop-portal/portals
-	$(AM_V_GEN) install $< $@
+	$(AM_V_GEN) install -m644 $< $@
 
-tests/libtest.sh: tests/services/org.freedesktop.Flatpak.service tests/services/org.freedesktop.Flatpak.SystemHelper.service tests/services/org.freedesktop.portal.Flatpak.service tests/share/xdg-desktop-portal/portals/test.portal tests/services/org.freedesktop.impl.portal.desktop.test.service
+tests/libtest.sh: tests/services/org.freedesktop.Flatpak.service tests/services/org.freedesktop.Flatpak.SystemHelper.service tests/services/org.freedesktop.portal.Flatpak.service tests/share/xdg-desktop-portal/portals/test.portal tests/services/org.freedesktop.impl.portal.desktop.test.service tests/services/org.flatpak.Authenticator.test.service
 
 install-test-data-hook:
 @ENABLE_INSTALLED_TESTS_TRUE@	mkdir -p $(DESTDIR)$(installed_testdir)/services
 @ENABLE_INSTALLED_TESTS_TRUE@	ln -sf $(dbus_servicedir)/org.freedesktop.Flatpak.service $(DESTDIR)$(installed_testdir)/services/
 @ENABLE_INSTALLED_TESTS_TRUE@	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(libexecdir)|" -e "s|\@extraargs\@| --poll-timeout=1|" $(top_srcdir)/portal/org.freedesktop.portal.Flatpak.service.in > $(DESTDIR)$(installed_testdir)/services/org.freedesktop.portal.Flatpak.service
 @ENABLE_INSTALLED_TESTS_TRUE@	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(libexecdir)|" -e "s|\@extraargs\@| --session --no-idle-exit|" $(top_srcdir)/system-helper/org.freedesktop.Flatpak.SystemHelper.service.in > $(DESTDIR)$(installed_testdir)/services/org.freedesktop.Flatpak.SystemHelper.service
-@ENABLE_INSTALLED_TESTS_TRUE@	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(installed_testdir)|" tests/org.freedesktop.impl.portal.desktop.test.service.in > $(DESTDIR)$(installed_testdir)/services/org.freedesktop.impl.portal.desktop.test.service
+@ENABLE_INSTALLED_TESTS_TRUE@	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(installed_testdir)|" $(top_srcdir)/tests/org.freedesktop.impl.portal.desktop.test.service.in > $(DESTDIR)$(installed_testdir)/services/org.freedesktop.impl.portal.desktop.test.service
+@ENABLE_INSTALLED_TESTS_TRUE@	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(installed_testdir)|" $(top_srcdir)/tests/org.flatpak.Authenticator.test.service.in > $(DESTDIR)$(installed_testdir)/services/org.flatpak.Authenticator.test.service.service
 @ENABLE_INSTALLED_TESTS_TRUE@	mkdir -p $(DESTDIR)$(installed_testdir)/share/xdg-desktop-portal/portals
-@ENABLE_INSTALLED_TESTS_TRUE@	install tests/test.portal.in $(DESTDIR)$(installed_testdir)/share/xdg-desktop-portal/portals/test.portal
+@ENABLE_INSTALLED_TESTS_TRUE@	install -m644 $(top_srcdir)/tests/test.portal.in $(DESTDIR)$(installed_testdir)/share/xdg-desktop-portal/portals/test.portal
 
 tests/package_version.txt: Makefile
 	echo $(PACKAGE_VERSION) > tests/package_version.txt

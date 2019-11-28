@@ -75,6 +75,8 @@ static const GDBusErrorEntry flatpak_error_entries[] = {
   {FLATPAK_ERROR_OUT_OF_SPACE,          "org.freedesktop.Flatpak.Error.OutOfSpace"}, /* Since: 1.2.0 */
   {FLATPAK_ERROR_WRONG_USER,            "org.freedesktop.Flatpak.Error.WrongUser"}, /* Since: 1.2.0 */
   {FLATPAK_ERROR_NOT_CACHED,            "org.freedesktop.Flatpak.Error.NotCached"}, /* Since: 1.3.3 */
+  {FLATPAK_ERROR_REF_NOT_FOUND,         "org.freedesktop.Flatpak.Error.RefNotFound"}, /* Since: 1.4.0 */
+  {FLATPAK_ERROR_PERMISSION_DENIED,     "org.freedesktop.Flatpak.Error.PermissionDenied"}, /* Since: 1.5.1 */
 };
 
 typedef struct archive FlatpakAutoArchiveRead;
@@ -3404,6 +3406,7 @@ flatpak_repo_update (OstreeRepo   *repo,
                      GError      **error)
 {
   GVariantBuilder builder;
+  GVariantBuilder commits_builder;
   GVariantBuilder ref_data_builder;
   GVariantBuilder ref_sparse_data_builder;
   GKeyFile *config;
@@ -3496,6 +3499,7 @@ flatpak_repo_update (OstreeRepo   *repo,
 
   g_variant_builder_init (&ref_data_builder, G_VARIANT_TYPE ("a{s(tts)}"));
   g_variant_builder_init (&ref_sparse_data_builder, G_VARIANT_TYPE ("a{sa{sv}}"));
+  g_variant_builder_init (&commits_builder, G_VARIANT_TYPE ("aay"));
 
   /* Only operate on flatpak relevant refs */
   refs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
@@ -3561,6 +3565,7 @@ flatpak_repo_update (OstreeRepo   *repo,
       CommitData *rev_data;
       const char *eol = NULL;
       const char *eol_rebase = NULL;
+      int token_type = -1;
 
       /* See if we already have the info on this revision */
       if (g_hash_table_lookup (commit_data_cache, rev))
@@ -3601,14 +3606,17 @@ flatpak_repo_update (OstreeRepo   *repo,
 
       g_variant_lookup (commit_metadata, OSTREE_COMMIT_META_KEY_ENDOFLIFE, "&s", &eol);
       g_variant_lookup (commit_metadata, OSTREE_COMMIT_META_KEY_ENDOFLIFE_REBASE, "&s", &eol_rebase);
-      if (eol || eol_rebase)
+      g_variant_lookup (commit_metadata, "xa.token-type", "i", &token_type);
+      if (eol || eol_rebase || token_type >= 0)
         {
           g_auto(GVariantBuilder) sparse_builder = FLATPAK_VARIANT_BUILDER_INITIALIZER;
           g_variant_builder_init (&sparse_builder, G_VARIANT_TYPE_VARDICT);
           if (eol)
-            g_variant_builder_add (&sparse_builder, "{sv}", "eol", g_variant_new_string (eol));
+            g_variant_builder_add (&sparse_builder, "{sv}", FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE, g_variant_new_string (eol));
           if (eol_rebase)
-            g_variant_builder_add (&sparse_builder, "{sv}", "eolr", g_variant_new_string (eol_rebase));
+            g_variant_builder_add (&sparse_builder, "{sv}", FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE, g_variant_new_string (eol_rebase));
+          if (token_type >= 0)
+            g_variant_builder_add (&sparse_builder, "{sv}", FLATPAK_SPARSE_CACHE_KEY_TOKEN_TYPE, g_variant_new_int32 (token_type));
 
           rev_data->sparse_data = g_variant_ref_sink (g_variant_builder_end (&sparse_builder));
         }
@@ -3631,6 +3639,7 @@ flatpak_repo_update (OstreeRepo   *repo,
       if (rev_data->sparse_data)
         g_variant_builder_add (&ref_sparse_data_builder, "{s@a{sv}}",
                                ref, rev_data->sparse_data);
+      g_variant_builder_add (&commits_builder, "@ay", ostree_checksum_to_bytes_v (rev));
     }
 
   /* Note: xa.cache doesn’t need to support collection IDs for the refs listed
@@ -3659,6 +3668,8 @@ flatpak_repo_update (OstreeRepo   *repo,
 
       /* Add bindings to the metadata. */
       new_summary_commit_dict = g_variant_dict_new (new_summary);
+      g_variant_dict_insert_value (new_summary_commit_dict, "xa.commits",
+                                   g_variant_builder_end (&commits_builder));
       g_variant_dict_insert (new_summary_commit_dict, "ostree.collection-binding",
                              "s", collection_ref.collection_id);
       g_variant_dict_insert_value (new_summary_commit_dict, "ostree.ref-binding",
@@ -6185,7 +6196,7 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
   guint64 bytes_transferred;
   guint64 fetched_delta_part_size;
   guint64 total_delta_part_size;
-  guint outstanding_extra_data;
+  guint64 outstanding_extra_data;
   guint64 total_extra_data_bytes;
   guint64 transferred_extra_data_bytes;
   guint64 total = 0;
@@ -6206,11 +6217,13 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
   guint64 total_transferred;
   g_autofree gchar *formatted_bytes_total_transferred = NULL;
   g_autoptr(GVariant) outstanding_fetchesv = NULL;
+  g_autoptr(GVariant) outstanding_extra_datav = NULL;
 
   /* We get some extra calls before we've really started due to the initialization of the
      extra data, so ignore those */
   outstanding_fetchesv = ostree_async_progress_get_variant (progress, "outstanding-fetches");
-  if (outstanding_fetchesv == NULL)
+  outstanding_extra_datav = ostree_async_progress_get_variant (progress, "outstanding-extra-data");
+  if (outstanding_fetchesv == NULL || outstanding_extra_datav == NULL)
     return;
 
   buf = g_string_new ("");
@@ -6269,7 +6282,7 @@ progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
                              "requested", "u", &requested,
                              "start-time", "t", &start_time,
                              "status", "s", &status,
-                             "outstanding-extra-data", "u", &outstanding_extra_data,
+                             "outstanding-extra-data", "t", &outstanding_extra_data,
                              "total-extra-data-bytes", "t", &total_extra_data_bytes,
                              "transferred-extra-data-bytes", "t", &transferred_extra_data_bytes,
                              "downloading-extra-data", "u", &downloading_extra_data,
@@ -6400,10 +6413,122 @@ flatpak_progress_new (FlatpakProgressCallback progress,
                                            progress_data);
 
   g_object_set_data (G_OBJECT (ostree_progress), "callback", progress);
+  g_object_set_data (G_OBJECT (ostree_progress), "callback_data", progress_data);
   g_object_set_data (G_OBJECT (ostree_progress), "last_progress", GUINT_TO_POINTER (0));
   g_object_set_data (G_OBJECT (ostree_progress), "last_total", GUINT_TO_POINTER (0));
+  g_object_set_data (G_OBJECT (ostree_progress), "chained_from", NULL);
 
   return ostree_progress;
+}
+
+#if OSTREE_CHECK_VERSION (2019, 6)
+static void
+handle_chained_progress (OstreeAsyncProgress *chained_progress,
+                         gpointer             user_data)
+{
+  OstreeAsyncProgress *original_progress = (OstreeAsyncProgress *) user_data;
+
+  /* Sync the chained progress's state back to the original instance, to take
+   * into account any updates received while a different GMainContext was
+   * active */
+  ostree_async_progress_copy_state (chained_progress, original_progress);
+
+  OstreeAsyncProgress *chained_from =
+    OSTREE_ASYNC_PROGRESS (g_object_get_data (G_OBJECT (original_progress), "chained_from"));
+  FlatpakProgressCallback chained_callback =
+    g_object_get_data (G_OBJECT (original_progress), "callback");
+
+  if (chained_from != NULL)
+    {
+      /* It's possible we chained to an already-chained progress object. */
+      handle_chained_progress (original_progress, chained_from);
+    }
+  else if (chained_callback != NULL)
+    {
+      /* The normal case; we chained to a progress object created by
+       * flatpak_progress_new(). */
+      gpointer original_data = g_object_get_data (G_OBJECT (original_progress), "callback_data");
+      progress_cb (original_progress, original_data);
+    }
+  else
+    {
+      /* Do nothing. It's possible we chained to a progress object without the
+       * GObject data, that was not created by flatpak_progress_new().
+       * Unfortunately it doesn't seem possible to call the callback in this
+       * case. */
+    }
+}
+#endif  /* libostree ≥ 2019.6 */
+
+/*
+ * This is necessary when pushing a temporary GMainContext to be the thread
+ * default with flatpak_main_context_new_default() in order to call an async
+ * operation as if it were sync, if you have an OstreeAsyncProgress object that
+ * would otherwise be forwarded into the async operation.
+ *
+ * This is because the original OstreeAsyncProgress object won't receive any
+ * signals while the temporary GMainContext is active, since the GMainContext it
+ * was created with won't be iterated.
+ *
+ * Note that this should only be done when the two GMainContexts are in the same
+ * thread. If they are in different threads, then the progress's update callback
+ * will be called from the wrong thread.
+ *
+ * tl;dr instead of this:
+ *
+ *     my_operation (OstreeAsyncProgress *progress)
+ *     {
+ *       g_autoptr(GMainContextPopDefault) context = NULL;
+ *       context = flatpak_main_context_new_default ();
+ *       ostree_some_async_op (progress, some_callback_setting_some_flag, data);
+ *       while (wait_for_flag)
+ *         g_main_context_iteration (context, TRUE);
+ *     }
+ *
+ * do this:
+ *
+ *     my_operation (OstreeAsyncProgress *progress)
+ *     {
+ *       g_autoptr(GMainContextPopDefault) context = NULL;
+ *       g_autoptr(FlatpakAsyncProgressChained) chained_progress = NULL;
+ *       context = flatpak_main_context_new_default ();
+ *       chained_progress = flatpak_progress_chain (progress);
+ *       ostree_some_async_op (chained_progress,
+ *                             some_callback_setting_some_flag, data);
+ *       while (wait_for_flag)
+ *         g_main_context_iteration (context, TRUE);
+ *     }
+ *
+ * This is a no-op, preserving the current behaviour where progress events are
+ * not fired, if the libostree version isn't new enough.
+ */
+OstreeAsyncProgress *
+flatpak_progress_chain (OstreeAsyncProgress *progress)
+{
+#if OSTREE_CHECK_VERSION (2019, 6)
+  if (progress == NULL)
+    return NULL;
+
+  OstreeAsyncProgress *chained_progress = ostree_async_progress_new ();
+
+  /* Copy the OstreeAsyncProgress's state to the chained instance */
+  ostree_async_progress_copy_state (progress, chained_progress);
+
+  g_signal_connect (chained_progress, "changed",
+                    G_CALLBACK (handle_chained_progress), progress);
+
+  /* Now initialize the expected FlatpakProgress state on the chained instance */
+
+  g_object_set_data (G_OBJECT (chained_progress), "callback", NULL);
+  g_object_set_data (G_OBJECT (chained_progress), "callback_data", NULL);
+  g_object_set_data (G_OBJECT (chained_progress), "last_progress", GUINT_TO_POINTER (0));
+  g_object_set_data (G_OBJECT (chained_progress), "last_total", GUINT_TO_POINTER (0));
+  g_object_set_data (G_OBJECT (chained_progress), "chained_from", progress);
+
+  return chained_progress;
+#else
+  return progress;
+#endif  /* libostree ≥ 2019.6 */
 }
 
 void

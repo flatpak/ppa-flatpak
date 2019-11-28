@@ -43,6 +43,7 @@
 #include "flatpak-utils-private.h"
 #include "flatpak-transaction.h"
 #include "flatpak-installation-private.h"
+#include "flatpak-instance-private.h"
 #include "flatpak-portal-app-info.h"
 #include "flatpak-portal-error.h"
 #include "flatpak-utils-base-private.h"
@@ -59,6 +60,7 @@ static GMainLoop *main_loop;
 static PortalFlatpak *portal;
 static gboolean opt_verbose;
 static int opt_poll_timeout;
+static FlatpakSpawnSupportFlags supports = 0;
 
 G_LOCK_DEFINE (update_monitors); /* This protects the three variables below */
 static GHashTable *update_monitors;
@@ -328,6 +330,28 @@ is_valid_expose (const char *expose,
 }
 
 static char *
+filesystem_arg (const char *path,
+                gboolean    readonly)
+{
+  g_autoptr(GString) s = g_string_new ("--filesystem=");
+  const char *p;
+
+  for (p = path; *p != 0; p++)
+    {
+      if (*p == ':')
+        g_string_append (s, "\\:");
+      else
+        g_string_append_c (s, *p);
+    }
+
+  if (readonly)
+    g_string_append (s, ":ro");
+
+  return g_string_free (g_steal_pointer (&s), FALSE);
+}
+
+
+static char *
 filesystem_sandbox_arg (const char *path,
                         const char *sandbox,
                         gboolean    readonly)
@@ -359,6 +383,114 @@ filesystem_sandbox_arg (const char *path,
   return g_string_free (g_steal_pointer (&s), FALSE);
 }
 
+static char *
+bubblewrap_remap_path (const char *path)
+{
+  if (g_str_has_prefix (path, "/newroot/"))
+    path = path + strlen ("/newroot");
+  return g_strdup (path);
+}
+
+static char *
+verify_proc_self_fd (const char *proc_path)
+{
+  char path_buffer[PATH_MAX + 1];
+  ssize_t symlink_size;
+
+  symlink_size = readlink (proc_path, path_buffer, PATH_MAX);
+  if (symlink_size < 0)
+    return NULL;
+
+  path_buffer[symlink_size] = 0;
+
+  /* All normal paths start with /, but some weird things
+     don't, such as socket:[27345] or anon_inode:[eventfd].
+     We don't support any of these */
+  if (path_buffer[0] != '/')
+    return NULL;
+
+  /* File descriptors to actually deleted files have " (deleted)"
+     appended to them. This also happens to some fake fd types
+     like shmem which are "/<name> (deleted)". All such
+     files are considered invalid. Unfortunatelly this also
+     matches files with filenames that actually end in " (deleted)",
+     but there is not much to do about this. */
+  if (g_str_has_suffix (path_buffer, " (deleted)"))
+    return NULL;
+
+  /* remap from sandbox to host if needed */
+  return bubblewrap_remap_path (path_buffer);
+}
+
+static char *
+get_path_for_fd (int fd, gboolean *writable_out)
+{
+  g_autofree char *proc_path = NULL;
+  int fd_flags;
+  struct stat st_buf;
+  struct stat real_st_buf;
+  g_autofree char *path = NULL;
+  gboolean writable = FALSE;
+  int read_access_mode;
+
+  /* Must be able to get fd flags */
+  fd_flags = fcntl (fd, F_GETFL);
+  if (fd_flags == -1)
+    return NULL;
+
+  /* Must be O_PATH */
+  if ((fd_flags & O_PATH) != O_PATH)
+    return NULL;
+
+  /* We don't want to allow exposing symlinks, because if they are
+   * under the callers control they could be changed between now and
+   * starting the child allowing it to point anywhere, so enforce NOFOLLOW.
+   * and verify that stat is not a link.
+   */
+  if ((fd_flags & O_NOFOLLOW) != O_NOFOLLOW)
+    return NULL;
+
+  /* Must be able to fstat */
+  if (fstat (fd, &st_buf) < 0)
+    return NULL;
+
+  /* As per above, no symlinks */
+  if (S_ISLNK (st_buf.st_mode))
+    return NULL;
+
+  proc_path = g_strdup_printf ("/proc/self/fd/%d", fd);
+
+  /* Must be able to read valid path from /proc/self/fd */
+  /* This is an absolute and (at least at open time) symlink-expanded path */
+  path = verify_proc_self_fd (proc_path);
+  if (path == NULL)
+    return NULL;
+
+  /* Verify that this is the same file as the app opened */
+  if (stat (path, &real_st_buf) < 0 ||
+      st_buf.st_dev != real_st_buf.st_dev ||
+      st_buf.st_ino != real_st_buf.st_ino)
+    {
+      /* Different files on the inside and the outside, reject the request */
+      return NULL;
+    }
+
+  read_access_mode = R_OK;
+  if (S_ISDIR (st_buf.st_mode))
+    read_access_mode |= X_OK;
+
+  /* Must be able to access the path via the sandbox supplied O_PATH fd,
+     which applies the sandbox side mount options (like readonly). */
+  if (access (proc_path, read_access_mode) != 0)
+    return NULL;
+
+  if (access (proc_path, W_OK) == 0)
+    writable = TRUE;
+
+  *writable_out = writable;
+  return g_steal_pointer (&path);
+}
+
 static gboolean
 handle_spawn (PortalFlatpak         *object,
               GDBusMethodInvocation *invocation,
@@ -375,7 +507,8 @@ handle_spawn (PortalFlatpak         *object,
   GPid pid;
   PidData *pid_data;
   gsize i, j, n_fds, n_envs;
-  const gint *fds;
+  const gint *fds = NULL;
+  gint fds_len = 0;
   g_autofree FdMapEntry *fd_map = NULL;
   gchar **env;
   gint32 max_fd;
@@ -391,10 +524,19 @@ handle_spawn (PortalFlatpak         *object,
   g_autofree char *instance_path = NULL;
   g_auto(GStrv) extra_args = NULL;
   g_auto(GStrv) shares = NULL;
+  g_auto(GStrv) sockets = NULL;
+  g_auto(GStrv) devices = NULL;
   g_auto(GStrv) sandbox_expose = NULL;
   g_auto(GStrv) sandbox_expose_ro = NULL;
+  g_autoptr(GVariant) sandbox_expose_fd = NULL;
+  g_autoptr(GVariant) sandbox_expose_fd_ro = NULL;
+  guint sandbox_flags = 0;
   gboolean sandboxed;
   gboolean devel;
+  gboolean expose_pids;
+
+  if (fd_list != NULL)
+    fds = g_unix_fd_list_peek_fds (fd_list, &fds_len);
 
   app_info = g_object_get_data (G_OBJECT (invocation), "app-info");
   g_assert (app_info != NULL);
@@ -412,7 +554,6 @@ handle_spawn (PortalFlatpak         *object,
                                              "org.freedesktop.portal.Flatpak.Spawn only works in a flatpak");
       return TRUE;
     }
-
 
   if (*arg_cwd_path == 0)
     arg_cwd_path = NULL;
@@ -464,12 +605,26 @@ handle_spawn (PortalFlatpak         *object,
                                           FLATPAK_METADATA_KEY_RUNTIME_COMMIT, NULL);
   shares = g_key_file_get_string_list (app_info, FLATPAK_METADATA_GROUP_CONTEXT,
                                        FLATPAK_METADATA_KEY_SHARED, NULL, NULL);
+  sockets = g_key_file_get_string_list (app_info, FLATPAK_METADATA_GROUP_CONTEXT,
+                                       FLATPAK_METADATA_KEY_SOCKETS, NULL, NULL);
+  devices = g_key_file_get_string_list (app_info, FLATPAK_METADATA_GROUP_CONTEXT,
+                                        FLATPAK_METADATA_KEY_DEVICES, NULL, NULL);
 
   devel = g_key_file_get_boolean (app_info, FLATPAK_METADATA_GROUP_INSTANCE,
                                   FLATPAK_METADATA_KEY_DEVEL, NULL);
 
   g_variant_lookup (arg_options, "sandbox-expose", "^as", &sandbox_expose);
   g_variant_lookup (arg_options, "sandbox-expose-ro", "^as", &sandbox_expose_ro);
+  g_variant_lookup (arg_options, "sandbox-flags", "u", &sandbox_flags);
+  sandbox_expose_fd = g_variant_lookup_value (arg_options, "sandbox-expose-fd", G_VARIANT_TYPE ("ah"));
+  sandbox_expose_fd_ro = g_variant_lookup_value (arg_options, "sandbox-expose-fd-ro", G_VARIANT_TYPE ("ah"));
+
+  if ((sandbox_flags & ~FLATPAK_SPAWN_SANDBOX_FLAGS_ALL) != 0)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                             "Unsupported sandbox flags enabled: 0x%x", arg_flags & ~FLATPAK_SPAWN_SANDBOX_FLAGS_ALL);
+      return TRUE;
+    }
 
   if (instance_path == NULL &&
       ((sandbox_expose != NULL && sandbox_expose[0] != NULL) ||
@@ -507,12 +662,8 @@ handle_spawn (PortalFlatpak         *object,
   g_debug ("Running spawn command %s", arg_argv[0]);
 
   n_fds = 0;
-  fds = NULL;
-  if (fd_list != NULL)
-    {
-      n_fds = g_variant_n_children (arg_fds);
-      fds = g_unix_fd_list_peek_fds (fd_list, NULL);
-    }
+  if (fds != NULL)
+    n_fds = g_variant_n_children (arg_fds);
   fd_map = g_new0 (FdMapEntry, n_fds);
 
   child_setup_data.fd_map = fd_map;
@@ -521,20 +672,26 @@ handle_spawn (PortalFlatpak         *object,
   max_fd = -1;
   for (i = 0; i < n_fds; i++)
     {
-      gint32 handle, fd;
-      g_variant_get_child (arg_fds, i, "{uh}", &fd, &handle);
-      fd_map[i].to = fd;
-      fd_map[i].from = fds[i];
+      gint32 handle, dest_fd;
+      int handle_fd;
+
+      g_variant_get_child (arg_fds, i, "{uh}", &dest_fd, &handle);
+      if (handle >= fds_len)
+        continue;
+      handle_fd = fds[handle];
+
+      fd_map[i].to = dest_fd;
+      fd_map[i].from = handle_fd;
       fd_map[i].final = fd_map[i].to;
 
       /* If stdin/out/err is a tty we try to set it as the controlling
          tty for the app, this way we can use this to run in a terminal. */
-      if ((fd == 0 || fd == 1 || fd == 2) &&
+      if ((dest_fd == 0 || dest_fd == 1 || dest_fd == 2) &&
           !child_setup_data.set_tty &&
-          isatty (fds[i]))
+          isatty (handle_fd))
         {
           child_setup_data.set_tty = TRUE;
-          child_setup_data.tty = fds[i];
+          child_setup_data.tty = handle_fd;
         }
 
       max_fd = MAX (max_fd, fd_map[i].to);
@@ -593,11 +750,77 @@ handle_spawn (PortalFlatpak         *object,
   sandboxed = (arg_flags & FLATPAK_SPAWN_FLAGS_SANDBOX) != 0;
 
   if (sandboxed)
-    g_ptr_array_add (flatpak_argv, g_strdup ("--sandbox"));
+    {
+      g_ptr_array_add (flatpak_argv, g_strdup ("--sandbox"));
+
+      if (sandbox_flags & FLATPAK_SPAWN_SANDBOX_FLAGS_SHARE_DISPLAY)
+        {
+          if (sockets != NULL && g_strv_contains ((const char * const *) sockets, "wayland"))
+            g_ptr_array_add (flatpak_argv, g_strdup ("--socket=wayland"));
+          if (sockets != NULL && g_strv_contains ((const char * const *) sockets, "fallback-x11"))
+            g_ptr_array_add (flatpak_argv, g_strdup ("--socket=fallback-x11"));
+          if (sockets != NULL && g_strv_contains ((const char * const *) sockets, "x11"))
+            g_ptr_array_add (flatpak_argv, g_strdup ("--socket=x11"));
+          if (shares != NULL && g_strv_contains ((const char * const *) shares, "ipc") &&
+              sockets != NULL && (g_strv_contains ((const char * const *) sockets, "fallback-x11") ||
+                                  g_strv_contains ((const char * const *) sockets, "x11")))
+            g_ptr_array_add (flatpak_argv, g_strdup ("--share=ipc"));
+        }
+      if (sandbox_flags & FLATPAK_SPAWN_SANDBOX_FLAGS_SHARE_SOUND)
+        {
+          if (sockets != NULL && g_strv_contains ((const char * const *) sockets, "pulseaudio"))
+            g_ptr_array_add (flatpak_argv, g_strdup ("--socket=pulseaudio"));
+        }
+      if (sandbox_flags & FLATPAK_SPAWN_SANDBOX_FLAGS_SHARE_GPU)
+        {
+          if (devices != NULL && g_strv_contains ((const char * const *) devices, "dri"))
+            g_ptr_array_add (flatpak_argv, g_strdup ("--device=dri"));
+        }
+      if (sandbox_flags & FLATPAK_SPAWN_SANDBOX_FLAGS_ALLOW_DBUS)
+        g_ptr_array_add (flatpak_argv, g_strdup ("--session-bus"));
+      if (sandbox_flags & FLATPAK_SPAWN_SANDBOX_FLAGS_ALLOW_A11Y)
+        g_ptr_array_add (flatpak_argv, g_strdup ("--a11y-bus"));
+    }
   else
     {
       for (i = 0; extra_args != NULL && extra_args[i] != NULL; i++)
         g_ptr_array_add (flatpak_argv, g_strdup (extra_args[i]));
+    }
+
+  expose_pids = (arg_flags & FLATPAK_SPAWN_FLAGS_EXPOSE_PIDS) != 0;
+  if (expose_pids)
+    {
+      g_autofree char *instance_id = NULL;
+      int sender_pid1 = 0;
+
+      if (!(supports & FLATPAK_SPAWN_SUPPORT_FLAGS_EXPOSE_PIDS))
+        {
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                                 G_DBUS_ERROR_NOT_SUPPORTED,
+                                                 "Expose pids not supported");
+          return TRUE;
+        }
+
+      instance_id = g_key_file_get_string (app_info,
+                                           FLATPAK_METADATA_GROUP_INSTANCE,
+                                           FLATPAK_METADATA_KEY_INSTANCE_ID, NULL);
+
+      if (instance_id)
+        {
+          g_autoptr(FlatpakInstance) instance = flatpak_instance_new_for_id (instance_id);
+          sender_pid1 = flatpak_instance_get_child_pid (instance);
+        }
+
+      if (sender_pid1 == 0)
+        {
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                                 G_DBUS_ERROR_INVALID_ARGS,
+                                                 "Could not find requesting pid");
+          return TRUE;
+        }
+
+      g_ptr_array_add (flatpak_argv, g_strdup_printf ("--parent-pid=%d", sender_pid1));
+      g_ptr_array_add (flatpak_argv, g_strdup ("--parent-expose-pids"));
     }
 
   if (devel)
@@ -610,6 +833,7 @@ handle_spawn (PortalFlatpak         *object,
     g_ptr_array_add (flatpak_argv, g_strdup ("--share=network"));
   else
     g_ptr_array_add (flatpak_argv, g_strdup ("--unshare=network"));
+
 
   if (instance_path)
     {
@@ -625,6 +849,46 @@ handle_spawn (PortalFlatpak         *object,
     {
       const char *expose = sandbox_expose_ro[i];
       g_debug ("exposing %s", expose);
+    }
+
+  if (fds && sandbox_expose_fd != NULL)
+    {
+      gsize len = g_variant_n_children (sandbox_expose_fd);
+      for (i = 0; i < len; i++)
+        {
+          gint32 handle;
+          g_variant_get_child (sandbox_expose_fd, i, "h", &handle);
+          if (handle < fds_len)
+            {
+              int handle_fd = fds[handle];
+              g_autofree char *path = NULL;
+              gboolean writable = FALSE;
+
+              path = get_path_for_fd (handle_fd, &writable);
+              if (path)
+                g_ptr_array_add (flatpak_argv, filesystem_arg (path, !writable));
+            }
+        }
+    }
+
+  if (fds && sandbox_expose_fd_ro != NULL)
+    {
+      gsize len = g_variant_n_children (sandbox_expose_fd_ro);
+      for (i = 0; i < len; i++)
+        {
+          gint32 handle;
+          g_variant_get_child (sandbox_expose_fd_ro, i, "h", &handle);
+          if (handle < fds_len)
+            {
+              int handle_fd = fds[handle];
+              g_autofree char *path = NULL;
+              gboolean writable = FALSE;
+
+              path = get_path_for_fd (handle_fd, &writable);
+              if (path)
+                g_ptr_array_add (flatpak_argv, filesystem_arg (path, TRUE));
+            }
+        }
     }
 
   g_ptr_array_add (flatpak_argv, g_strdup_printf ("--runtime=%s", runtime_parts[1]));
@@ -2035,6 +2299,19 @@ name_owner_changed (GDBusConnection *connection,
 #define DBUS_INTERFACE_DBUS DBUS_NAME_DBUS
 #define DBUS_PATH_DBUS "/org/freedesktop/DBus"
 
+static gboolean
+supports_expose_pids (void)
+{
+  const char *path = g_find_program_in_path (flatpak_get_bwrap ());
+  struct stat st;
+
+  /* This is supported only if bwrap exists and is not setuid */
+  return
+    path != NULL &&
+    stat (path, &st) == 0 &&
+    (st.st_mode & S_ISUID) == 0;
+}
+
 static void
 on_bus_acquired (GDBusConnection *connection,
                  const gchar     *name,
@@ -2071,7 +2348,9 @@ on_bus_acquired (GDBusConnection *connection,
   g_dbus_interface_skeleton_set_flags (G_DBUS_INTERFACE_SKELETON (portal),
                                        G_DBUS_INTERFACE_SKELETON_FLAGS_HANDLE_METHOD_INVOCATIONS_IN_THREAD);
 
-  portal_flatpak_set_version (PORTAL_FLATPAK (portal), 2);
+  portal_flatpak_set_version (PORTAL_FLATPAK (portal), 3);
+  portal_flatpak_set_supports (PORTAL_FLATPAK (portal), supports);
+
   g_signal_connect (portal, "handle-spawn", G_CALLBACK (handle_spawn), NULL);
   g_signal_connect (portal, "handle-spawn-signal", G_CALLBACK (handle_spawn_signal), NULL);
   g_signal_connect (portal, "handle-create-update-monitor", G_CALLBACK (handle_create_update_monitor), NULL);
@@ -2232,6 +2511,9 @@ main (int    argc,
     }
 
   flatpak_connection_track_name_owners (session_bus);
+
+  if (supports_expose_pids ())
+    supports |= FLATPAK_SPAWN_SUPPORT_FLAGS_EXPOSE_PIDS;
 
   flags = G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT;
   if (replace)
