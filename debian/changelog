@@ -16,6 +16,7 @@ flatpak (1.5.2-1) UNRELEASED; urgency=medium
     released together and some features will need it.
   * d/tests/build: Use correct compiler for proposed autopkgtest
     cross-architecture testing support
+  * Make autopkgtests shellcheck-clean
 
  -- Simon McVittie <smcv@debian.org>  Thu, 28 Nov 2019 09:10:55 +0000
 
