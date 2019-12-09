@@ -6,6 +6,10 @@ flatpak (1.5.1-1) UNRELEASED; urgency=medium
   * d/tests/build: Use correct compiler for proposed autopkgtest
     cross-architecture testing support
   * Make autopkgtests shellcheck-clean
+  * d/p/debian/Use-Python-3-for-test-web-server.patch:
+    Drop patch, no longer needed.
+    The tests now require Python 3 upstream, and no longer support
+    Python 2.
 
  -- Simon McVittie <smcv@debian.org>  Thu, 28 Nov 2019 09:10:55 +0000
 
