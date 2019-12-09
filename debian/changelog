@@ -5,6 +5,7 @@ flatpak (1.5.1-1) UNRELEASED; urgency=medium
     - d/control: Depend on bubblewrap 0.4.0
   * d/tests/build: Use correct compiler for proposed autopkgtest
     cross-architecture testing support
+  * Make autopkgtests shellcheck-clean
 
  -- Simon McVittie <smcv@debian.org>  Thu, 28 Nov 2019 09:10:55 +0000
 
