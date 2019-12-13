@@ -27,19 +27,19 @@
 #include <ostree.h>
 #include <ostree-repo-finder-avahi.h>
 
+#include "flatpak-dir-private.h"
+#include "flatpak-enum-types.h"
+#include "flatpak-error.h"
 #include "flatpak-installation-private.h"
-#include "flatpak-utils-private.h"
 #include "flatpak-installation.h"
 #include "flatpak-installed-ref-private.h"
-#include "flatpak-transaction-private.h"
+#include "flatpak-instance-private.h"
 #include "flatpak-related-ref-private.h"
 #include "flatpak-remote-private.h"
 #include "flatpak-remote-ref-private.h"
-#include "flatpak-enum-types.h"
-#include "flatpak-dir-private.h"
 #include "flatpak-run-private.h"
-#include "flatpak-instance-private.h"
-#include "flatpak-error.h"
+#include "flatpak-transaction-private.h"
+#include "flatpak-utils-private.h"
 
 /**
  * SECTION:flatpak-installation
@@ -174,6 +174,16 @@ flatpak_installation_set_no_interaction (FlatpakInstallation *self,
   flatpak_dir_set_no_interaction (priv->dir_unlocked, no_interaction);
 }
 
+/**
+ * flatpak_installation_get_no_interaction:
+ * @self: a #FlatpakTransaction
+ *
+ * Returns the value set with flatpak_installation_set_no_interaction().
+ *
+ * Returns: %TRUE if interactive authorization dialogs are not allowed
+ *
+ * Since: 1.1.1
+ */
 gboolean
 flatpak_installation_get_no_interaction (FlatpakInstallation *self)
 {
@@ -1020,6 +1030,7 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
   g_autoptr(GPtrArray) installed = NULL; /* (element-type FlatpakInstalledRef) */
   g_autoptr(GPtrArray) remotes = NULL; /* (element-type FlatpakRemote) */
   g_autoptr(GHashTable) remote_commits = NULL; /* (element-type utf8 utf8) */
+  g_autoptr(GHashTable) remote_states = NULL; /* (element-type utf8 FlatpakRemoteState) */
   int i, j;
   g_autoptr(FlatpakDir) dir = NULL;
   g_auto(OstreeRepoFinderResultv) results = NULL;
@@ -1083,15 +1094,18 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
   if (dir == NULL)
     return NULL;
 
+  remote_states = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify) flatpak_remote_state_unref);
+
   for (i = 0; i < installed->len; i++)
     {
-      g_autoptr(FlatpakRemoteState) state = NULL;
+      FlatpakRemoteState *state;
       FlatpakInstalledRef *installed_ref = g_ptr_array_index (installed, i);
       const char *remote_name = flatpak_installed_ref_get_origin (installed_ref);
       g_autofree char *full_ref = flatpak_ref_format_ref (FLATPAK_REF (installed_ref));
       g_autofree char *key = g_strdup_printf ("%s:%s", remote_name, full_ref);
       const char *remote_commit = g_hash_table_lookup (remote_commits, key);
       const char *local_commit = flatpak_installed_ref_get_latest_commit (installed_ref);
+      g_autoptr(GError) local_error = NULL;
 
       if (flatpak_dir_ref_is_masked (dir, full_ref))
         continue;
@@ -1113,9 +1127,20 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
        * This makes sure that the ref (maybe an app or runtime) remains in usable
        * state and fixes itself through an update.
        */
-      state = flatpak_dir_get_remote_state_optional (dir, remote_name, FALSE, cancellable, error);
+      state = g_hash_table_lookup (remote_states, remote_name);
       if (state == NULL)
-        continue;
+        {
+
+          state = flatpak_dir_get_remote_state_optional (dir, remote_name, FALSE, cancellable, &local_error);
+          if (state == NULL)
+            {
+              g_debug ("Update: Failed to get remote state for %s: %s",
+                       remote_name, local_error->message);
+              continue;
+            }
+
+          g_hash_table_insert (remote_states, g_strdup (remote_name), state);
+        }
 
       if (flatpak_dir_check_installed_ref_missing_related_ref (dir, state, full_ref, cancellable))
         {
@@ -1653,8 +1678,10 @@ flatpak_installation_remove_remote (FlatpakInstallation *self,
  * @error: return location for a #GError
  *
  * Set a global configuration option for the installation, currently
- * the only supported key is "languages", which is a comman-separated
- * list of langue codes like "sv;en;pl", or "" to mean all languages.
+ * the only supported keys are `languages`, which is a semicolon-separated
+ * list of language codes like `"sv;en;pl"`, or `""` to mean all languages,
+ * and `extra-languages`, which is a semicolon-separated list of locale
+ * identifiers like `"en;en_DK;zh_HK.big5hkscs;uz_UZ.utf8@cyrillic"`.
  *
  * Returns: %TRUE if the option was set correctly
  */
@@ -1725,7 +1752,7 @@ flatpak_installation_get_config (FlatpakInstallation *self,
  * to display. An empty array means that all languages should be installed.
  *
  * Returns: (array zero-terminated=1) (element-type utf8) (transfer full):
- *   A possibly empty array of locale strings, or %NULL on error.
+ *   A possibly empty array of strings, or %NULL on error.
  * Since: 1.5.0
  */
 char **
@@ -1748,7 +1775,7 @@ flatpak_installation_get_default_languages (FlatpakInstallation  *self,
  *
  * Like flatpak_installation_get_default_languages() but includes territory
  * information (e.g. `en_US` rather than `en`) which may be included in the
- * `xa.extra-languages` configuration.
+ * `extra-languages` configuration.
  *
  * Strings returned by this function are in the format specified by
  * [`setlocale()`](man:setlocale): `language[_territory][.codeset][@modifier]`.
@@ -2950,13 +2977,13 @@ flatpak_installation_create_monitor (FlatpakInstallation *self,
  * @ref. For instance, locale data or debug information.
  *
  * The returned list contains all available related refs, but not
- * everyone should always be installed. For example,
- * flatpak_related_ref_should_download () returns TRUE if the
+ * every one should always be installed. For example,
+ * flatpak_related_ref_should_download() returns %TRUE if the
  * reference should be installed/updated with the app, and
- * flatpak_related_ref_should_delete () returns TRUE if it
+ * flatpak_related_ref_should_delete() returns %TRUE if it
  * should be uninstalled with the main ref.
  *
- * The commit property of each FlatpakRelatedRef is not guaranteed to be
+ * The commit property of each #FlatpakRelatedRef is not guaranteed to be
  * non-%NULL.
  *
  * Returns: (transfer container) (element-type FlatpakRelatedRef): a GPtrArray of

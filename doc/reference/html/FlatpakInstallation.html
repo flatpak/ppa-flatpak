@@ -216,6 +216,22 @@
 </tr>
 <tr>
 <td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstallation.html#flatpak-installation-set-no-interaction" title="flatpak_installation_set_no_interaction ()">flatpak_installation_set_no_interaction</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">gboolean</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstallation.html#flatpak-installation-get-no-interaction" title="flatpak_installation_get_no_interaction ()">flatpak_installation_get_no_interaction</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
 <span class="returnvalue">GPtrArray</span> *
 </td>
 <td class="function_name">
@@ -251,7 +267,23 @@
 <span class="returnvalue">GPtrArray</span> *
 </td>
 <td class="function_name">
+<a class="link" href="FlatpakInstallation.html#flatpak-installation-list-unused-refs" title="flatpak_installation_list_unused_refs ()">flatpak_installation_list_unused_refs</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">GPtrArray</span> *
+</td>
+<td class="function_name">
 <a class="link" href="FlatpakInstallation.html#flatpak-installation-list-remote-refs-sync" title="flatpak_installation_list_remote_refs_sync ()">flatpak_installation_list_remote_refs_sync</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">GPtrArray</span> *
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstallation.html#flatpak-installation-list-remote-refs-sync-full" title="flatpak_installation_list_remote_refs_sync_full ()">flatpak_installation_list_remote_refs_sync_full</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
@@ -300,6 +332,14 @@
 </td>
 <td class="function_name">
 <a class="link" href="FlatpakInstallation.html#flatpak-installation-fetch-remote-ref-sync" title="flatpak_installation_fetch_remote_ref_sync ()">flatpak_installation_fetch_remote_ref_sync</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="returnvalue">FlatpakRemoteRef</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstallation.html#flatpak-installation-fetch-remote-ref-sync-full" title="flatpak_installation_fetch_remote_ref_sync_full ()">flatpak_installation_fetch_remote_ref_sync_full</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
@@ -408,6 +448,14 @@
 </tr>
 <tr>
 <td class="function_type">
+<span class="returnvalue">char</span> **
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstallation.html#flatpak-installation-get-default-locales" title="flatpak_installation_get_default_locales ()">flatpak_installation_get_default_locales</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
 <span class="returnvalue">gboolean</span>
 </td>
 <td class="function_name">
@@ -490,6 +538,10 @@
 <tr>
 <td class="datatype_keyword">struct</td>
 <td class="function_name"><a class="link" href="FlatpakInstallation.html#FlatpakInstallation-struct" title="struct FlatpakInstallation">FlatpakInstallation</a></td>
+</tr>
+<tr>
+<td class="datatype_keyword">enum</td>
+<td class="function_name"><a class="link" href="FlatpakInstallation.html#FlatpakQueryFlags" title="enum FlatpakQueryFlags">FlatpakQueryFlags</a></td>
 </tr>
 <tr>
 <td class="datatype_keyword">enum</td>
@@ -1776,6 +1828,70 @@ flatpak_installation_get_storage_type (<em class="parameter"><code><a class="lin
 </div>
 <hr>
 <div class="refsect2">
+<a name="flatpak-installation-set-no-interaction"></a><h3>flatpak_installation_set_no_interaction ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+flatpak_installation_set_no_interaction
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code><span class="type">gboolean</span> no_interaction</code></em>);</pre>
+<p>This method can be used to prevent interactive authorization dialogs to appear
+for operations on <em class="parameter"><code>self</code></em>
+. This is useful for background operations that are not
+directly triggered by a user action.</p>
+<p>By default, interaction is allowed.</p>
+<div class="refsect3">
+<a name="flatpak-installation-set-no-interaction.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>no_interaction</p></td>
+<td class="parameter_description"><p>Whether to disallow interactive authorization for operations</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.1.1</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-installation-get-no-interaction"></a><h3>flatpak_installation_get_no_interaction ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>
+flatpak_installation_get_no_interaction
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>);</pre>
+<p>Returns the value set with <a class="link" href="FlatpakInstallation.html#flatpak-installation-set-no-interaction" title="flatpak_installation_set_no_interaction ()"><code class="function">flatpak_installation_set_no_interaction()</code></a>.</p>
+<div class="refsect3">
+<a name="flatpak-installation-get-no-interaction.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installation-get-no-interaction.returns"></a><h4>Returns</h4>
+<p> <code class="literal">TRUE</code> if interactive authorization dialogs are not allowed</p>
+</div>
+<p class="since">Since: 1.1.1</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="flatpak-installation-list-installed-refs"></a><h3>flatpak_installation_list_installed_refs ()</h3>
 <pre class="programlisting"><span class="returnvalue">GPtrArray</span> *
 flatpak_installation_list_installed_refs
@@ -1985,6 +2101,57 @@ FLATPAK_UPDATE_FLAGS_NO_PULL to install previously pulled refs.</p>
 </div>
 <hr>
 <div class="refsect2">
+<a name="flatpak-installation-list-unused-refs"></a><h3>flatpak_installation_list_unused_refs ()</h3>
+<pre class="programlisting"><span class="returnvalue">GPtrArray</span> *
+flatpak_installation_list_unused_refs (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>,
+                                       <em class="parameter"><code>const <span class="type">char</span> *arch</code></em>,
+                                       <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
+                                       <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>Lists the installed references that are not 'used'.</p>
+<p>A reference is used if it is either an application, or an sdk,
+or the runtime of a used ref, or an extension of a used ref.</p>
+<div class="refsect3">
+<a name="flatpak-installation-list-unused-refs.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>arch</p></td>
+<td class="parameter_description"><p>if non-<code class="literal">NULL</code>, the architecture of refs to collect. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <span class="type">GError</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installation-list-unused-refs.returns"></a><h4>Returns</h4>
+<p>a GPtrArray of
+<a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> instances. </p>
+<p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakInstalledRef]</span></p>
+</div>
+<p class="since">Since: 1.1.2</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="flatpak-installation-list-remote-refs-sync"></a><h3>flatpak_installation_list_remote_refs_sync ()</h3>
 <pre class="programlisting"><span class="returnvalue">GPtrArray</span> *
 flatpak_installation_list_remote_refs_sync
@@ -2031,6 +2198,62 @@ flatpak_installation_list_remote_refs_sync
 <a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="type">FlatpakRemoteRef</span></a> instances. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakRemoteRef]</span></p>
 </div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-installation-list-remote-refs-sync-full"></a><h3>flatpak_installation_list_remote_refs_sync_full ()</h3>
+<pre class="programlisting"><span class="returnvalue">GPtrArray</span> *
+flatpak_installation_list_remote_refs_sync_full
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *remote_or_uri</code></em>,
+                                <em class="parameter"><code><a class="link" href="FlatpakInstallation.html#FlatpakQueryFlags" title="enum FlatpakQueryFlags"><span class="type">FlatpakQueryFlags</span></a> flags</code></em>,
+                                <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
+                                <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>Lists all the applications and runtimes in a remote.</p>
+<div class="refsect3">
+<a name="flatpak-installation-list-remote-refs-sync-full.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>remote_or_uri</p></td>
+<td class="parameter_description"><p>the name or URI of the remote</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>flags</p></td>
+<td class="parameter_description"><p>set of <a class="link" href="FlatpakInstallation.html#FlatpakQueryFlags" title="enum FlatpakQueryFlags"><span class="type">FlatpakQueryFlags</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <span class="type">GError</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installation-list-remote-refs-sync-full.returns"></a><h4>Returns</h4>
+<p>a GPtrArray of
+<a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="type">FlatpakRemoteRef</span></a> instances. </p>
+<p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakRemoteRef]</span></p>
+</div>
+<p class="since">Since: 1.3.3</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -2107,12 +2330,12 @@ interesting to install, update, or uninstall together with
 <em class="parameter"><code>ref</code></em>
 . For instance, locale data or debug information.</p>
 <p>The returned list contains all available related refs, but not
-everyone should always be installed. For example,
-<a class="link" href="FlatpakRelatedRef.html#flatpak-related-ref-should-download" title="flatpak_related_ref_should_download ()"><code class="function">flatpak_related_ref_should_download()</code></a> returns TRUE if the
+every one should always be installed. For example,
+<a class="link" href="FlatpakRelatedRef.html#flatpak-related-ref-should-download" title="flatpak_related_ref_should_download ()"><code class="function">flatpak_related_ref_should_download()</code></a> returns <code class="literal">TRUE</code> if the
 reference should be installed/updated with the app, and
-<a class="link" href="FlatpakRelatedRef.html#flatpak-related-ref-should-delete" title="flatpak_related_ref_should_delete ()"><code class="function">flatpak_related_ref_should_delete()</code></a> returns TRUE if it
+<a class="link" href="FlatpakRelatedRef.html#flatpak-related-ref-should-delete" title="flatpak_related_ref_should_delete ()"><code class="function">flatpak_related_ref_should_delete()</code></a> returns <code class="literal">TRUE</code> if it
 should be uninstalled with the main ref.</p>
-<p>The commit property of each FlatpakRelatedRef is not guaranteed to be
+<p>The commit property of each <a class="link" href="FlatpakRelatedRef.html" title="FlatpakRelatedRef"><span class="type">FlatpakRelatedRef</span></a> is not guaranteed to be
 non-<code class="literal">NULL</code>.</p>
 <div class="refsect3">
 <a name="flatpak-installation-list-remote-related-refs-sync.parameters"></a><h4>Parameters</h4>
@@ -2379,6 +2602,85 @@ flatpak_installation_fetch_remote_ref_sync
 <p>a <a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="type">FlatpakRemoteRef</span></a> instance, or <code class="literal">NULL</code>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-installation-fetch-remote-ref-sync-full"></a><h3>flatpak_installation_fetch_remote_ref_sync_full ()</h3>
+<pre class="programlisting"><a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="returnvalue">FlatpakRemoteRef</span></a> *
+flatpak_installation_fetch_remote_ref_sync_full
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *remote_name</code></em>,
+                                <em class="parameter"><code><a class="link" href="FlatpakRef.html#FlatpakRefKind" title="enum FlatpakRefKind"><span class="type">FlatpakRefKind</span></a> kind</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *name</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *arch</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *branch</code></em>,
+                                <em class="parameter"><code><a class="link" href="FlatpakInstallation.html#FlatpakQueryFlags" title="enum FlatpakQueryFlags"><span class="type">FlatpakQueryFlags</span></a> flags</code></em>,
+                                <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
+                                <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>Gets the current remote branch of a ref in the remote.</p>
+<div class="refsect3">
+<a name="flatpak-installation-fetch-remote-ref-sync-full.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>remote_name</p></td>
+<td class="parameter_description"><p>the name of the remote</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>kind</p></td>
+<td class="parameter_description"><p>what this ref contains (an <a class="link" href="FlatpakRef.html#FlatpakRefKind" title="enum FlatpakRefKind"><span class="type">FlatpakRefKind</span></a>)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>name</p></td>
+<td class="parameter_description"><p>name of the app/runtime to fetch</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>arch</p></td>
+<td class="parameter_description"><p>which architecture to fetch (default: current architecture). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>branch</p></td>
+<td class="parameter_description"><p>which branch to fetch (default: 'master'). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>flags</p></td>
+<td class="parameter_description"><p>set of <a class="link" href="FlatpakInstallation.html#FlatpakQueryFlags" title="enum FlatpakQueryFlags"><span class="type">FlatpakQueryFlags</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <span class="type">GError</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installation-fetch-remote-ref-sync-full.returns"></a><h4>Returns</h4>
+<p>a <a class="link" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef"><span class="type">FlatpakRemoteRef</span></a> instance, or <code class="literal">NULL</code>. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 1.3.3</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -3061,10 +3363,51 @@ to display. An empty array means that all languages should be installed.</p>
 </div>
 <div class="refsect3">
 <a name="flatpak-installation-get-default-languages.returns"></a><h4>Returns</h4>
-<p>A possibly empty array of locale strings, or <code class="literal">NULL</code> on error. </p>
+<p>A possibly empty array of strings, or <code class="literal">NULL</code> on error. </p>
 <p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> utf8][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: 1.5.0</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-installation-get-default-locales"></a><h3>flatpak_installation_get_default_locales ()</h3>
+<pre class="programlisting"><span class="returnvalue">char</span> **
+flatpak_installation_get_default_locales
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *self</code></em>,
+                                <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>Like <a class="link" href="FlatpakInstallation.html#flatpak-installation-get-default-languages" title="flatpak_installation_get_default_languages ()"><code class="function">flatpak_installation_get_default_languages()</code></a> but includes territory
+information (e.g. <code class="literal">en_US</code> rather than <code class="literal">en</code>) which may be included in the
+<code class="literal">extra-languages</code> configuration.</p>
+<p>Strings returned by this function are in the format specified by
+<a class="ulink" href="man:setlocale" target="_top"><code class="function">setlocale()</code></a>: <code class="literal">language[_territory][.codeset][@modifier]</code>.</p>
+<div class="refsect3">
+<a name="flatpak-installation-get-default-locales.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <span class="type">GError</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installation-get-default-locales.returns"></a><h4>Returns</h4>
+<p>A possibly empty array of locale strings, or <code class="literal">NULL</code> on error. </p>
+<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> utf8][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 1.5.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -3184,8 +3527,10 @@ flatpak_installation_set_config_sync (<em class="parameter"><code><a class="link
                                       <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
                                       <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Set a global configuration option for the installation, currently
-the only supported key is "languages", which is a comman-separated
-list of langue codes like "sv;en;pl", or "" to mean all languages.</p>
+the only supported keys are <code class="literal">languages</code>, which is a semicolon-separated
+list of language codes like <code class="literal">"sv;en;pl"</code>, or <code class="literal">""</code> to mean all languages,
+and <code class="literal">extra-languages</code>, which is a semicolon-separated list of locale
+identifiers like <code class="literal">"en;en_DK;zh_HK.big5hkscs;uz_UZ.utf8@cyrillic"</code>.</p>
 <div class="refsect3">
 <a name="flatpak-installation-set-config-sync.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -3464,6 +3809,40 @@ is just an estimate</p></td>
 </div>
 <hr>
 <div class="refsect2">
+<a name="FlatpakQueryFlags"></a><h3>enum FlatpakQueryFlags</h3>
+<p>Flags to alter the behavior of e.g <a class="link" href="FlatpakInstallation.html#flatpak-installation-list-remote-refs-sync-full" title="flatpak_installation_list_remote_refs_sync_full ()"><code class="function">flatpak_installation_list_remote_refs_sync_full()</code></a>.</p>
+<div class="refsect3">
+<a name="FlatpakQueryFlags.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="300px" class="enum_members_name">
+<col class="enum_members_description">
+<col width="200px" class="enum_members_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-QUERY-FLAGS-NONE:CAPS"></a>FLATPAK_QUERY_FLAGS_NONE</p></td>
+<td class="enum_member_description">
+<p>Default</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="FLATPAK-QUERY-FLAGS-ONLY-CACHED:CAPS"></a>FLATPAK_QUERY_FLAGS_ONLY_CACHED</p></td>
+<td class="enum_member_description">
+<p>Don't do any network i/o, but only return cached data.
+This can return stale data, or a <a class="link" href="flatpak-Error-codes.html#FLATPAK-ERROR-NOT-CACHED:CAPS"><span class="type">FLATPAK_ERROR_NOT_CACHED</span></a> error, however it is a
+lot more efficient if you're doing many requests.</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.3.3</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="FlatpakUpdateFlags"></a><h3>enum FlatpakUpdateFlags</h3>
 <p>Flags to alter the behavior of <a class="link" href="FlatpakInstallation.html#flatpak-installation-update" title="flatpak_installation_update ()"><code class="function">flatpak_installation_update()</code></a>.</p>
 <div class="refsect3">
@@ -3653,7 +4032,7 @@ for the child with <code class="function">g_child_watch_add()</code>. (Snce: 1.1
 <hr>
 <div class="refsect2">
 <a name="FlatpakStorageType"></a><h3>enum FlatpakStorageType</h3>
-<p>Flags to alter the behavior of <a class="link" href="FlatpakInstallation.html#flatpak-installation-install-full" title="flatpak_installation_install_full ()"><code class="function">flatpak_installation_install_full()</code></a>.</p>
+<p>Information about the storage of an installation.</p>
 <div class="refsect3">
 <a name="FlatpakStorageType.members"></a><h4>Members</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">

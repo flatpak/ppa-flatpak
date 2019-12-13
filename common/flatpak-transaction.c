@@ -24,11 +24,11 @@
 #include <glib/gi18n-lib.h>
 #include <libsoup/soup.h>
 
-#include "flatpak-transaction-private.h"
-#include "flatpak-installation-private.h"
-#include "flatpak-utils-private.h"
-#include "flatpak-error.h"
 #include "flatpak-auth-private.h"
+#include "flatpak-error.h"
+#include "flatpak-installation-private.h"
+#include "flatpak-transaction-private.h"
+#include "flatpak-utils-private.h"
 
 /**
  * SECTION:flatpak-transaction
@@ -119,6 +119,7 @@ struct _FlatpakTransactionOperation
   char                           *eol;
   char                           *eol_rebase;
   gint32                          token_type;
+  GVariant                       *summary_metadata; /* Additional metadatafield for commit from summary */
   int                             run_after_count;
   int                             run_after_prio; /* Higher => run later (when it becomes runnable). Used to run related ops (runtime extensions) before deps (apps using the runtime) */
   GList                          *run_before_ops;
@@ -159,9 +160,9 @@ struct _FlatpakTransactionPrivate
   GList                       *flatpakrefs; /* GKeyFiles */
   GList                       *bundles; /* BundleData */
 
-  guint                        next_webflow_id;
-  guint                        active_webflow_id;
-  RequestData                 *active_webflow;
+  guint                        next_request_id;
+  guint                        active_request_id;
+  RequestData                 *active_request;
 
   FlatpakTransactionOperation *current_op;
 
@@ -192,6 +193,7 @@ enum {
   ADD_NEW_REMOTE,
   WEBFLOW_START,
   WEBFLOW_DONE,
+  BASIC_AUTH_START,
   LAST_SIGNAL
 };
 
@@ -263,15 +265,15 @@ G_DEFINE_TYPE (FlatpakTransactionProgress, flatpak_transaction_progress, G_TYPE_
 /**
  * flatpak_transaction_progress_set_update_frequency:
  * @self: a #FlatpakTransactionProgress
- * @update_frequency: the update frequency, in milliseconds
+ * @update_interval: the update interval, in milliseconds
  *
  * Sets how often progress should be updated.
  */
 void
 flatpak_transaction_progress_set_update_frequency (FlatpakTransactionProgress *self,
-                                                   guint                       update_frequency)
+                                                   guint                       update_interval)
 {
-  g_object_set_data (G_OBJECT (self->ostree_progress), "update-frequency", GUINT_TO_POINTER (update_frequency));
+  g_object_set_data (G_OBJECT (self->ostree_progress), "update-interval", GUINT_TO_POINTER (update_interval));
 }
 
 /**
@@ -280,7 +282,7 @@ flatpak_transaction_progress_set_update_frequency (FlatpakTransactionProgress *s
  *
  * Gets the current status string
  *
- * Returns: (transfer none): the current status
+ * Returns: (transfer full): the current status
  */
 char *
 flatpak_transaction_progress_get_status (FlatpakTransactionProgress *self)
@@ -595,6 +597,8 @@ flatpak_transaction_operation_finalize (GObject *object)
     g_key_file_unref (self->resolved_old_metakey);
   g_free (self->resolved_token);
   g_list_free (self->run_before_ops);
+  if (self->summary_metadata)
+    g_variant_unref (self->summary_metadata);
 
   G_OBJECT_CLASS (flatpak_transaction_operation_parent_class)->finalize (object);
 }
@@ -1146,20 +1150,26 @@ flatpak_transaction_class_init (FlatpakTransactionClass *klass)
    * @object: A #FlatpakTransaction
    * @remote: The remote we're authenticating with
    * @url: The url to show
+   * @options: Extra options, currently unused
    * @id: The id of the operation, can be used to cancel it
    *
-   * The ::webflow-start signal gets emitted when some kind of user authentication is needed
-   * during the operation. If the caller handles this it should show the url in a webbrowser
-   * and return TRUE. This will eventually cause the webbrowser to finish the authentication
-   * operation and operation will continue, as signaled by the webflow-done being emitted.
+   * The ::webflow-start signal gets emitted when some kind of user
+   * authentication is needed during the operation. If the caller handles this
+   * it should show the url in a webbrowser and return %TRUE. This will
+   * eventually cause the webbrowser to finish the authentication operation and
+   * operation will continue, as signaled by the webflow-done being emitted.
    *
-   * If the client does not support webflow then return FALSE from this signal (or don't
-   * implement it). This will abort the authentication and likely result in the transaction
-   * failing (unless the authentication was somehow optional).
+   * If the client does not support webflow then return %FALSE from this signal
+   * (or don't implement it). This will abort the authentication and likely
+   * result in the transaction failing (unless the authentication was somehow
+   * optional).
    *
-   * During the time between webflow-start and webflow-done the client can call flatpak_transaction_abort_webflow()
-   * to manually abort the authentication. This is useful if the user aborted the authentication
-   * operation some way, like e.g. closing the browser window.
+   * During the time between webflow-start and webflow-done the client can call
+   * flatpak_transaction_abort_webflow() to manually abort the authentication.
+   * This is useful if the user aborted the authentication operation some way,
+   * like e.g. closing the browser window.
+   *
+   * Since: 1.5.1
    */
   signals[WEBFLOW_START] =
     g_signal_new ("webflow-start",
@@ -1168,15 +1178,18 @@ flatpak_transaction_class_init (FlatpakTransactionClass *klass)
                   G_STRUCT_OFFSET (FlatpakTransactionClass, webflow_start),
                   NULL, NULL,
                   NULL,
-                  G_TYPE_BOOLEAN, 3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INT);
+                  G_TYPE_BOOLEAN, 4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_VARIANT, G_TYPE_INT);
   /**
    * FlatpakTransaction::webflow-done:
    * @object: A #FlatpakTransaction
+   * @options: Extra options, currently unused
    * @id: The id of the operation
    *
    * The ::webflow-done signal gets emitted when the authentication
    * finished the webflow, independent of the reason and results.  If
    * you for were showing a web-browser window it can now be closed.
+   *
+   * Since: 1.5.1
    */
   signals[WEBFLOW_DONE] =
     g_signal_new ("webflow-done",
@@ -1185,7 +1198,36 @@ flatpak_transaction_class_init (FlatpakTransactionClass *klass)
                   G_STRUCT_OFFSET (FlatpakTransactionClass, webflow_done),
                   NULL, NULL,
                   NULL,
-                  G_TYPE_NONE, 1, G_TYPE_INT);
+                  G_TYPE_NONE, 2, G_TYPE_VARIANT, G_TYPE_INT);
+  /**
+   * FlatpakTransaction::basic-auth-start:
+   * @object: A #FlatpakTransaction
+   * @remote: The remote we're authenticating with
+   * @realm: The url to show
+   * @options: Extra options, currently unused
+   * @id: The id of the operation, can be used to finish it
+   *
+   * The ::basic-auth-start signal gets emitted when a basic user/password
+   * authentication is needed during the operation. If the caller handles this
+   * it should ask the user for the user and password and return %TRUE. Once
+   * the information is gathered call flatpak_transaction_complete_basic_auth()
+   * with it.
+   *
+   * If the client does not support basic auth then return %FALSE from this signal
+   * (or don't implement it). This will abort the authentication and likely
+   * result in the transaction failing (unless the authentication was somehow
+   * optional).
+   *
+   * Since: 1.5.2
+   */
+  signals[BASIC_AUTH_START] =
+    g_signal_new ("basic-auth-start",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  G_STRUCT_OFFSET (FlatpakTransactionClass, basic_auth_start),
+                  NULL, NULL,
+                  NULL,
+                  G_TYPE_BOOLEAN, 4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_VARIANT, G_TYPE_INT);
 
 }
 
@@ -2029,15 +2071,16 @@ flatpak_transaction_add_install (FlatpakTransaction *self,
  * @self: a #FlatpakTransaction
  * @remote: the name of the remote
  * @ref: the ref
+ * @subpaths: (nullable): the subpaths to include, or %NULL to install the complete ref
  * @previous_ids: (nullable) (array zero-terminated=1): Previous ids to add to the
- * given ref. These should simply be the ids, not the full ref names (e.g. org.foo.Bar,
- * not org.foo.Bar/x86_64/master).
+ *     given ref. These should simply be the ids, not the full ref names (e.g. org.foo.Bar,
+ *     not org.foo.Bar/x86_64/master).
  * @error: return location for a #GError
  *
- * Adds updating the previous-ids of the given ref to this transaction, via either
+ * Adds updating the @previous_ids of the given ref to this transaction, via either
  * installing the @ref if it was not already present. The will treat @ref as the
  * result of following an eol-rebase, and data migration from the refs in
- * @previous-ids will be set up.
+ * @previous_ids will be set up.
  *
  * See flatpak_transaction_add_install() for a description of @remote.
  *
@@ -2389,6 +2432,7 @@ resolve_op_from_metadata (FlatpakTransaction *self,
   const char *metadata = NULL;
   g_autoptr(GVariant) sparse_cache = NULL;
   g_autoptr(GError) local_error = NULL;
+  g_autoptr(GVariant) summary_metadata = NULL;
 
   if (!flatpak_remote_state_lookup_cache (state, op->ref, &download_size, &installed_size, &metadata, NULL, &local_error))
     {
@@ -2398,11 +2442,14 @@ resolve_op_from_metadata (FlatpakTransaction *self,
   else
     metadata_bytes = g_bytes_new (metadata, strlen (metadata) + 1);
 
+  flatpak_remote_state_lookup_ref (state, op->ref, NULL, &summary_metadata, NULL);
+  if (summary_metadata)
+    op->summary_metadata = g_variant_get_child_value (summary_metadata, 2);
+
   op->installed_size = installed_size;
   op->download_size = download_size;
 
-  if (state->metadata)
-    g_variant_lookup (state->metadata, "xa.default-token-type", "i", &op->token_type);
+  op->token_type = state->default_token_type;
 
   sparse_cache = flatpak_remote_state_lookup_sparse_cache (state, op->ref, NULL);
   if (sparse_cache)
@@ -2497,14 +2544,13 @@ resolve_p2p_ops (FlatpakTransaction *self,
         {
           g_autoptr(FlatpakRemoteState) state = NULL;
           g_autoptr(GVariant) sparse_cache = NULL;
-          gint32 token_type = 0;
+          gint32 token_type;
 
           state = flatpak_transaction_ensure_remote_state (self, op->kind, op->remote, error);
           if (state == NULL)
             return FALSE;
 
-          if (state->metadata)
-            g_variant_lookup (state->metadata, "xa.default-token-type", "i", &token_type);
+          token_type = state->default_token_type;
 
           sparse_cache = flatpak_remote_state_lookup_sparse_cache (state, op->ref, NULL);
           if (sparse_cache)
@@ -2730,7 +2776,7 @@ request_tokens_response (FlatpakAuthenticatorRequest *object,
   if (data->done)
     return; /* Don't respond twice */
 
-  g_assert (priv->active_webflow_id == 0); /* It should have reported done */
+  g_assert (priv->active_request_id == 0); /* It should have reported done */
 
   data->response = response;
   data->results = g_variant_ref (results);
@@ -2741,6 +2787,7 @@ request_tokens_response (FlatpakAuthenticatorRequest *object,
 static void
 request_tokens_webflow (FlatpakAuthenticatorRequest *object,
                         const gchar *arg_uri,
+                        GVariant *options,
                         RequestData *data)
 {
   g_autoptr(FlatpakTransaction) transaction = g_object_ref (data->transaction);
@@ -2750,16 +2797,16 @@ request_tokens_webflow (FlatpakAuthenticatorRequest *object,
   if (data->done)
     return; /* Don't respond twice */
 
-  g_assert (priv->active_webflow_id == 0);
-  priv->active_webflow_id = ++priv->next_webflow_id;
+  g_assert (priv->active_request_id == 0);
+  priv->active_request_id = ++priv->next_request_id;
 
   g_debug ("Webflow start %s", arg_uri);
-  g_signal_emit (transaction, signals[WEBFLOW_START], 0, data->remote, arg_uri, priv->active_webflow_id, &retval);
+  g_signal_emit (transaction, signals[WEBFLOW_START], 0, data->remote, arg_uri, options, priv->active_request_id, &retval);
   if (!retval)
     {
       g_autoptr(GError) local_error = NULL;
 
-      priv->active_webflow_id = 0;
+      priv->active_request_id = 0;
 
       /* We didn't handle the uri, cancel the auth op. */
       if (!flatpak_authenticator_request_call_close_sync (data->request, NULL, &local_error))
@@ -2769,6 +2816,7 @@ request_tokens_webflow (FlatpakAuthenticatorRequest *object,
 
 static void
 request_tokens_webflow_done (FlatpakAuthenticatorRequest *object,
+                             GVariant *options,
                              RequestData *data)
 {
   g_autoptr(FlatpakTransaction) transaction = g_object_ref (data->transaction);
@@ -2778,12 +2826,43 @@ request_tokens_webflow_done (FlatpakAuthenticatorRequest *object,
   if (data->done)
     return; /* Don't respond twice */
 
-  g_assert (priv->active_webflow_id != 0);
-  id = priv->active_webflow_id;
-  priv->active_webflow_id = 0;
+  g_assert (priv->active_request_id != 0);
+  id = priv->active_request_id;
+  priv->active_request_id = 0;
 
   g_debug ("Webflow done");
-  g_signal_emit (transaction, signals[WEBFLOW_DONE], 0, id);
+  g_signal_emit (transaction, signals[WEBFLOW_DONE], 0, options, id);
+}
+
+static void
+request_tokens_basic_auth (FlatpakAuthenticatorRequest *object,
+                           const gchar *arg_realm,
+                           GVariant *options,
+                           RequestData *data)
+{
+  g_autoptr(FlatpakTransaction) transaction = g_object_ref (data->transaction);
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (transaction);
+  gboolean retval = FALSE;
+
+  if (data->done)
+    return; /* Don't respond twice */
+
+  g_assert (priv->active_request_id == 0);
+  priv->active_request_id = ++priv->next_request_id;
+
+  g_debug ("BasicAuth start %s", arg_realm);
+  g_signal_emit (transaction, signals[BASIC_AUTH_START], 0, data->remote, arg_realm, options, priv->active_request_id, &retval);
+  if (!retval)
+    {
+      g_autoptr(GError) local_error = NULL;
+
+      priv->active_request_id = 0;
+
+      /* We didn't handle the request, cancel the auth op. */
+      if (!flatpak_authenticator_request_call_close_sync (data->request, NULL, &local_error))
+        g_debug ("Failed to close auth request: %s", local_error->message);
+    }
+
 }
 
 /**
@@ -2792,12 +2871,14 @@ request_tokens_webflow_done (FlatpakAuthenticatorRequest *object,
  * @id: The webflow id, as passed into the webflow-start signal
  *
  * Cancel an ongoing webflow authentication request. This can be call
- * in the time between FlatpakTransaction::webflow-start returned
- * TRUE, and FlatpakTransaction::webflow-done is emitted. It will
+ * in the time between #FlatpakTransaction::webflow-start returned
+ * %TRUE, and #FlatpakTransaction::webflow-done is emitted. It will
  * cancel the ongoing authentication operation.
  *
  * This is useful for example if you're showing an authenticaion
  * window with a browser, but the user closed it before it was finished.
+ *
+ * Since: 1.5.1
  */
 void
 flatpak_transaction_abort_webflow (FlatpakTransaction *self,
@@ -2806,12 +2887,12 @@ flatpak_transaction_abort_webflow (FlatpakTransaction *self,
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
   g_autoptr(GError) local_error = NULL;
 
-  if (priv->active_webflow_id == id)
+  if (priv->active_request_id == id)
     {
-      RequestData *data = priv->active_webflow;
+      RequestData *data = priv->active_request;
 
       g_assert (data != NULL);
-      priv->active_webflow_id = 0;
+      priv->active_request_id = 0;
 
       if (!data->done)
         {
@@ -2820,6 +2901,70 @@ flatpak_transaction_abort_webflow (FlatpakTransaction *self,
         }
     }
 }
+
+/**
+ * flatpak_transaction_complete_basic_auth:
+ * @self: a #FlatpakTransaction
+ * @id: The webflow id, as passed into the webflow-start signal
+ * @user: The user name, or %NULL if aborting request
+ * @password: The password
+ * @options: Extra a{sv] variant with options (or %NULL), currently unused.
+ *
+ * Finishes (or aborts) an ongoing basic auth request.
+ *
+ * Since: 1.5.2
+ */
+void
+flatpak_transaction_complete_basic_auth (FlatpakTransaction *self,
+                                         guint id,
+                                         const char *user,
+                                         const char *password,
+                                         GVariant *options)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+  g_autoptr(GError) local_error = NULL;
+  g_autoptr(GVariant) default_options = NULL;
+
+  if (options == NULL)
+    {
+      default_options = g_variant_ref_sink (g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0));
+      options = default_options;
+    }
+
+  if (priv->active_request_id == id)
+    {
+      RequestData *data = priv->active_request;
+
+      g_assert (data != NULL);
+      priv->active_request_id = 0;
+
+      if (user == NULL)
+        {
+          if (!flatpak_authenticator_request_call_close_sync (data->request, NULL, &local_error))
+            g_debug ("Failed to abort basic auth request: %s", local_error->message);
+        }
+      else
+        {
+          if (!flatpak_authenticator_request_call_basic_auth_reply_sync (data->request,
+                                                                         user, password,
+                                                                         options,
+                                                                         NULL, &local_error))
+            g_debug ("Failed to reply to basic auth request: %s", local_error->message);
+        }
+    }
+}
+
+static void
+copy_summary_data (GVariantBuilder *builder, GVariant *summary, const char *key)
+{
+  g_autoptr(GVariant) extensions = g_variant_get_child_value (summary, 1);
+  g_autoptr(GVariant) value = NULL;
+
+  value = g_variant_lookup_value (extensions, key, NULL);
+  if (value)
+    g_variant_builder_add (builder, "{s@v}", key, g_variant_new_variant (value));
+}
+
 
 static gboolean
 request_tokens_for_remote (FlatpakTransaction *self,
@@ -2839,20 +2984,52 @@ request_tokens_for_remote (FlatpakTransaction *self,
   g_autoptr(GVariant) results = NULL;
   g_autoptr(GVariant) refs = NULL;
   GVariantBuilder refs_builder;
+  g_autofree char *remote_url = NULL;
+  g_autoptr(GVariantBuilder) extra_builder = NULL;
+  FlatpakRemoteState *state;
 
-  g_variant_builder_init (&refs_builder, G_VARIANT_TYPE ("a(si)"));
+  if (!ostree_repo_remote_get_url (flatpak_dir_get_repo (priv->dir), remote, &remote_url, error))
+    return FALSE;
+
+  g_variant_builder_init (&refs_builder, G_VARIANT_TYPE ("a(ssia{sv})"));
 
   for (l = ops; l != NULL; l = l->next)
     {
       FlatpakTransactionOperation *op = l->data;
-      g_variant_builder_add (&refs_builder, "(si)", op->ref, (gint32)op->token_type);
-      g_string_append_printf (refs_as_str, "(%s, %d)", op->ref, op->token_type);
+      g_autoptr(GVariantBuilder) metadata_builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
+
+      if (op->summary_metadata)
+        {
+          const int n = g_variant_n_children (op->summary_metadata);
+          for (int i = 0; i < n; i++)
+            {
+              const char *key;
+              g_autofree char *new_key = NULL;
+              GVariant *value = NULL;
+
+              g_variant_get_child (op->summary_metadata, i, "{&s@v}", &key, &value);
+
+              new_key = g_strconcat ("summary.", key, NULL);
+              g_variant_builder_add (metadata_builder, "{s@v}", new_key, value);
+            }
+        }
+
+      g_variant_builder_add (&refs_builder, "(ssi@a{sv})", op->ref, op->resolved_commit ? op->resolved_commit : "", (gint32)op->token_type, g_variant_builder_end (metadata_builder));
+      g_string_append_printf (refs_as_str, "(%s, %s %d)", op->ref, op->resolved_commit ? op->resolved_commit : "", op->token_type);
       if (l->next != NULL)
         g_string_append (refs_as_str, ", ");
     }
 
   g_debug ("Requesting tokens for remote %s: %s", remote, refs_as_str->str);
   refs = g_variant_ref_sink (g_variant_builder_end (&refs_builder));
+
+  extra_builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
+
+  state = g_hash_table_lookup (priv->remote_states, remote);
+  if (state && state->summary)
+    {
+      copy_summary_data (extra_builder, state->summary, "xa.oci-registry-uri");
+    }
 
   context = flatpak_main_context_new_default ();
 
@@ -2867,18 +3044,20 @@ request_tokens_for_remote (FlatpakTransaction *self,
   g_signal_connect (request, "webflow", (GCallback)request_tokens_webflow, &data);
   g_signal_connect (request, "webflow-done", (GCallback)request_tokens_webflow_done, &data);
   g_signal_connect (request, "response", (GCallback)request_tokens_response, &data);
+  g_signal_connect (request, "basic-auth", (GCallback)request_tokens_basic_auth, &data);
 
-  priv->active_webflow = &data;
+  priv->active_request = &data;
 
   data.request = request;
-  if (!flatpak_auth_request_ref_tokens (authenticator, request, remote, refs, priv->parent_window, cancellable, error))
+  if (!flatpak_auth_request_ref_tokens (authenticator, request, remote, remote_url, refs, g_variant_builder_end (extra_builder),
+                                        priv->parent_window, cancellable, error))
     return FALSE;
 
   while (!data.done)
     g_main_context_iteration (context, TRUE);
 
-  g_assert (priv->active_webflow_id == 0); /* No outstanding webflows */
-  priv->active_webflow = NULL;
+  g_assert (priv->active_request_id == 0); /* No outstanding requests */
+  priv->active_request = NULL;
 
   results = data.results; /* Make sure its freed as needed */
 
@@ -3239,7 +3418,7 @@ handle_runtime_repo_deps (FlatpakTransaction *self,
         return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Flatpakrepo URL %s not HTTP or HTTPS"), dep_url);
 
       soup_session = flatpak_create_soup_session (PACKAGE_STRING);
-      dep_data = flatpak_load_http_uri (soup_session, dep_url, 0, NULL, NULL, cancellable, error);
+      dep_data = flatpak_load_http_uri (soup_session, dep_url, 0, NULL, NULL, NULL, cancellable, error);
       if (dep_data == NULL)
         {
           g_prefix_error (error, _("Can't load dependent file %s: "), dep_url);

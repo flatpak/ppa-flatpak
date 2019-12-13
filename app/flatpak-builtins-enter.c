@@ -84,7 +84,7 @@ flatpak_builtin_enter (int           argc,
   g_autoptr(GPtrArray) instances = NULL;
   int j;
 
-  context = g_option_context_new (_("INSTANCE [COMMAND [ARGUMENT…]] - Run a command inside a running sandbox"));
+  context = g_option_context_new (_("INSTANCE COMMAND [ARGUMENT…] - Run a command inside a running sandbox"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   rest_argc = 0;
@@ -129,7 +129,7 @@ flatpak_builtin_enter (int           argc,
     }
 
   if (pid <= 0)
-    return flatpak_fail (error, _("%s is neither a pid nor an application or instance ID, or sudo -E"), pid_s);
+    return flatpak_fail (error, _("%s is neither a pid nor an application or instance ID"), pid_s);
 
   stat_path = g_strdup_printf ("/proc/%d/root", pid);
   if (stat (stat_path, &stat_buf))

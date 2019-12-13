@@ -345,7 +345,7 @@ progress_changed_cb (FlatpakTransactionProgress *progress,
         g_print ("\r%s", str->str); /* redraw failed, just update the progress */
     }
   else
-    g_print ("\r%s", str->str);
+    g_print ("\n%s", str->str);
 }
 
 static void
@@ -409,7 +409,7 @@ new_operation (FlatpakTransaction          *transaction,
   self->progress_msg = g_steal_pointer (&text);
 
   g_signal_connect (progress, "changed", G_CALLBACK (progress_changed_cb), self);
-  flatpak_transaction_progress_set_update_frequency (progress, FLATPAK_CLI_UPDATE_FREQUENCY);
+  flatpak_transaction_progress_set_update_frequency (progress, FLATPAK_CLI_UPDATE_INTERVAL_MS);
 }
 
 static void
@@ -506,6 +506,7 @@ static gboolean
 webflow_start (FlatpakTransaction *transaction,
                const char         *remote,
                const char         *url,
+               GVariant           *options,
                guint               id)
 {
   FlatpakCliTransaction *self = FLATPAK_CLI_TRANSACTION (transaction);
@@ -520,18 +521,25 @@ webflow_start (FlatpakTransaction *transaction,
         return FALSE;
     }
 
+  /* Allow hard overrides with $BROWSER */
   browser = g_getenv ("BROWSER");
-  if (browser == NULL)
-    browser = "xdg-open";
-
-  /* TODO: Use better way to find default browser */
-
-  args[0] = browser;
-  if (!g_spawn_async (NULL, (char **)args, NULL, G_SPAWN_SEARCH_PATH,
-                      NULL, NULL, NULL, &local_error))
+  if (browser != NULL)
     {
-      g_printerr ("Failed to spawn browser %s: %s\n", browser, local_error->message);
-      return FALSE;
+      args[0] = browser;
+      if (!g_spawn_async (NULL, (char **)args, NULL, G_SPAWN_SEARCH_PATH,
+                          NULL, NULL, NULL, &local_error))
+        {
+          g_printerr ("Failed to start browser %s: %s\n", browser, local_error->message);
+          return FALSE;
+        }
+    }
+  else
+    {
+      if (!g_app_info_launch_default_for_uri (url, NULL, &local_error))
+        {
+          g_printerr ("Failed to show url: %s\n", local_error->message);
+          return FALSE;
+        }
     }
 
   g_print ("Waiting for browser...\n");
@@ -541,10 +549,38 @@ webflow_start (FlatpakTransaction *transaction,
 
 static void
 webflow_done (FlatpakTransaction *transaction,
+              GVariant           *options,
               guint               id)
 {
   g_print ("Browser done\n");
 }
+
+static gboolean
+basic_auth_start (FlatpakTransaction *transaction,
+                  const char         *remote,
+                  const char         *realm,
+                  GVariant           *options,
+                  guint               id)
+{
+  FlatpakCliTransaction *self = FLATPAK_CLI_TRANSACTION (transaction);
+  char *user, *password;
+
+  if (self->disable_interaction)
+    return FALSE;
+
+  g_print (_("Login required remote %s (realm %s)\n"), remote, realm);
+  user = flatpak_prompt (FALSE, _("User"));
+  if (user == NULL)
+    return FALSE;
+
+  password = flatpak_password_prompt (_("Password"));
+  if (password == NULL)
+    return FALSE;
+
+  flatpak_transaction_complete_basic_auth (transaction, id, user, password, NULL);
+  return TRUE;
+}
+
 
 static gboolean
 end_of_lifed_with_rebase (FlatpakTransaction *transaction,
@@ -1102,6 +1138,7 @@ flatpak_cli_transaction_class_init (FlatpakCliTransactionClass *klass)
   transaction_class->run = flatpak_cli_transaction_run;
   transaction_class->webflow_start = webflow_start;
   transaction_class->webflow_done = webflow_done;
+  transaction_class->basic_auth_start = basic_auth_start;
 }
 
 FlatpakTransaction *

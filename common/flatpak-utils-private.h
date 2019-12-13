@@ -52,6 +52,7 @@
 #define FLATPAK_ANSI_ROW_N "\x1b[%d;1H"
 #define FLATPAK_ANSI_CLEAR "\x1b[0J"
 
+gboolean flatpak_set_tty_echo (gboolean echo);
 void flatpak_get_window_size (int *rows,
                               int *cols);
 gboolean flatpak_get_cursor_pos (int *row,
@@ -670,6 +671,7 @@ flatpak_repo_transaction_cleanup (void *p)
       g_autoptr(GError) error = NULL;
       if (!ostree_repo_abort_transaction (repo, NULL, &error))
         g_warning ("Error aborting ostree transaction: %s", error->message);
+      g_object_unref (repo);
     }
 }
 
@@ -680,7 +682,7 @@ flatpak_repo_transaction_start (OstreeRepo   *repo,
 {
   if (!ostree_repo_prepare_transaction (repo, NULL, cancellable, error))
     return NULL;
-  return (FlatpakRepoTransaction *) repo;
+  return (FlatpakRepoTransaction *) g_object_ref (repo);
 }
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakRepoTransaction, flatpak_repo_transaction_cleanup)
 
@@ -781,6 +783,13 @@ gboolean flatpak_allocate_tmpdir (int           tmpdir_dfd,
                                   GCancellable *cancellable,
                                   GError      **error);
 
+
+char * flatpak_prompt (gboolean allow_empty,
+                       const char *prompt,
+                       ...) G_GNUC_PRINTF (2, 3);
+
+char * flatpak_password_prompt (const char *prompt,
+                                ...) G_GNUC_PRINTF (1, 2);
 
 gboolean flatpak_yes_no_prompt (gboolean    default_yes,
                                 const char *prompt,

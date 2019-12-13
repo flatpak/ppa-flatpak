@@ -70,7 +70,14 @@
                     Show help options and exit.
                 </para></listitem>
             </varlistentry>
+            <varlistentry>
+                <term><option>--data=DATA</option></term>
 
+                <listitem><para>
+                    Associate <arg choice="plain">DATA</arg> with the entry.
+                    The data must be a serialized GVariant.
+                </para></listitem>
+            </varlistentry>
             <varlistentry>
                 <term><option>-v</option></term>
                 <term><option>--verbose</option></term>
@@ -91,12 +98,23 @@
     </refsect1>
 
     <refsect1>
+        <title>Examples</title>
+
+        <para>
+            <command>$ flatpak permission-set --data "{'always-ask':&lt;true&gt;}" desktop-used-apps text/plain org.mozilla.Firefox org.gnome.gedit 0 3</command>
+        </para>
+
+    </refsect1>
+
+    <refsect1>
         <title>See also</title>
 
         <para>
             <citerefentry><refentrytitle>flatpak</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
             <citerefentry><refentrytitle>flatpak-permissions</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
-            <citerefentry><refentrytitle>flatpak-permission-add</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+            <citerefentry><refentrytitle>flatpak-permission-remove</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+            <citerefentry><refentrytitle>flatpak-permission-reset</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+            <citerefentry><refentrytitle>flatpak-permission-show</refentrytitle><manvolnum>1</manvolnum></citerefentry>
         </para>
 
     </refsect1>
