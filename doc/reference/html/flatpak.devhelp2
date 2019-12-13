@@ -43,17 +43,22 @@
     <keyword type="function" name="flatpak_installation_get_min_free_space_bytes ()" link="FlatpakInstallation.html#flatpak-installation-get-min-free-space-bytes" since="1.1"/>
     <keyword type="function" name="flatpak_installation_get_priority ()" link="FlatpakInstallation.html#flatpak-installation-get-priority" since="0.8"/>
     <keyword type="function" name="flatpak_installation_get_storage_type ()" link="FlatpakInstallation.html#flatpak-installation-get-storage-type" since="0.8"/>
+    <keyword type="function" name="flatpak_installation_set_no_interaction ()" link="FlatpakInstallation.html#flatpak-installation-set-no-interaction" since="1.1.1"/>
+    <keyword type="function" name="flatpak_installation_get_no_interaction ()" link="FlatpakInstallation.html#flatpak-installation-get-no-interaction" since="1.1.1"/>
     <keyword type="function" name="flatpak_installation_list_installed_refs ()" link="FlatpakInstallation.html#flatpak-installation-list-installed-refs"/>
     <keyword type="function" name="flatpak_installation_list_installed_refs_by_kind ()" link="FlatpakInstallation.html#flatpak-installation-list-installed-refs-by-kind"/>
     <keyword type="function" name="flatpak_installation_list_installed_refs_for_update ()" link="FlatpakInstallation.html#flatpak-installation-list-installed-refs-for-update"/>
     <keyword type="function" name="flatpak_installation_list_installed_related_refs_sync ()" link="FlatpakInstallation.html#flatpak-installation-list-installed-related-refs-sync" since="0.6.7"/>
+    <keyword type="function" name="flatpak_installation_list_unused_refs ()" link="FlatpakInstallation.html#flatpak-installation-list-unused-refs" since="1.1.2"/>
     <keyword type="function" name="flatpak_installation_list_remote_refs_sync ()" link="FlatpakInstallation.html#flatpak-installation-list-remote-refs-sync"/>
+    <keyword type="function" name="flatpak_installation_list_remote_refs_sync_full ()" link="FlatpakInstallation.html#flatpak-installation-list-remote-refs-sync-full" since="1.3.3"/>
     <keyword type="function" name="flatpak_installation_list_remotes_by_type ()" link="FlatpakInstallation.html#flatpak-installation-list-remotes-by-type"/>
     <keyword type="function" name="flatpak_installation_list_remote_related_refs_sync ()" link="FlatpakInstallation.html#flatpak-installation-list-remote-related-refs-sync" since="0.6.7"/>
     <keyword type="function" name="flatpak_installation_list_remotes ()" link="FlatpakInstallation.html#flatpak-installation-list-remotes"/>
     <keyword type="function" name="flatpak_installation_get_remote_by_name ()" link="FlatpakInstallation.html#flatpak-installation-get-remote-by-name"/>
     <keyword type="function" name="flatpak_installation_fetch_remote_metadata_sync ()" link="FlatpakInstallation.html#flatpak-installation-fetch-remote-metadata-sync"/>
     <keyword type="function" name="flatpak_installation_fetch_remote_ref_sync ()" link="FlatpakInstallation.html#flatpak-installation-fetch-remote-ref-sync"/>
+    <keyword type="function" name="flatpak_installation_fetch_remote_ref_sync_full ()" link="FlatpakInstallation.html#flatpak-installation-fetch-remote-ref-sync-full" since="1.3.3"/>
     <keyword type="function" name="flatpak_installation_fetch_remote_size_sync ()" link="FlatpakInstallation.html#flatpak-installation-fetch-remote-size-sync"/>
     <keyword type="function" name="flatpak_installation_load_app_overrides ()" link="FlatpakInstallation.html#flatpak-installation-load-app-overrides"/>
     <keyword type="function" name="flatpak_installation_update_appstream_sync ()" link="FlatpakInstallation.html#flatpak-installation-update-appstream-sync"/>
@@ -67,6 +72,7 @@
     <keyword type="function" name="flatpak_installation_cleanup_local_refs_sync ()" link="FlatpakInstallation.html#flatpak-installation-cleanup-local-refs-sync" since="0.10.0"/>
     <keyword type="function" name="flatpak_installation_get_config ()" link="FlatpakInstallation.html#flatpak-installation-get-config"/>
     <keyword type="function" name="flatpak_installation_get_default_languages ()" link="FlatpakInstallation.html#flatpak-installation-get-default-languages" since="1.5.0"/>
+    <keyword type="function" name="flatpak_installation_get_default_locales ()" link="FlatpakInstallation.html#flatpak-installation-get-default-locales" since="1.5.1"/>
     <keyword type="function" name="flatpak_installation_prune_local_repo ()" link="FlatpakInstallation.html#flatpak-installation-prune-local-repo" since="0.10.0"/>
     <keyword type="function" name="flatpak_installation_remove_local_ref_sync ()" link="FlatpakInstallation.html#flatpak-installation-remove-local-ref-sync" since="0.10.0"/>
     <keyword type="function" name="flatpak_installation_set_config_sync ()" link="FlatpakInstallation.html#flatpak-installation-set-config-sync"/>
@@ -77,6 +83,7 @@
     <keyword type="function" name="flatpak_get_system_installations ()" link="FlatpakInstallation.html#flatpak-get-system-installations" since="0.8"/>
     <keyword type="function" name="FlatpakProgressCallback ()" link="FlatpakInstallation.html#FlatpakProgressCallback"/>
     <keyword type="struct" name="struct FlatpakInstallation" link="FlatpakInstallation.html#FlatpakInstallation-struct"/>
+    <keyword type="enum" name="enum FlatpakQueryFlags" link="FlatpakInstallation.html#FlatpakQueryFlags" since="1.3.3"/>
     <keyword type="enum" name="enum FlatpakUpdateFlags" link="FlatpakInstallation.html#FlatpakUpdateFlags"/>
     <keyword type="enum" name="enum FlatpakInstallFlags" link="FlatpakInstallation.html#FlatpakInstallFlags"/>
     <keyword type="enum" name="enum FlatpakUninstallFlags" link="FlatpakInstallation.html#FlatpakUninstallFlags" since="0.11.8"/>
@@ -115,6 +122,10 @@
     <keyword type="function" name="flatpak_remote_set_url ()" link="FlatpakRemote.html#flatpak-remote-set-url"/>
     <keyword type="function" name="flatpak_remote_get_disabled ()" link="FlatpakRemote.html#flatpak-remote-get-disabled"/>
     <keyword type="function" name="flatpak_remote_set_disabled ()" link="FlatpakRemote.html#flatpak-remote-set-disabled"/>
+    <keyword type="function" name="flatpak_remote_get_filter ()" link="FlatpakRemote.html#flatpak-remote-get-filter" since="1.4"/>
+    <keyword type="function" name="flatpak_remote_set_filter ()" link="FlatpakRemote.html#flatpak-remote-set-filter" since="1.4"/>
+    <keyword type="function" name="flatpak_remote_get_main_ref ()" link="FlatpakRemote.html#flatpak-remote-get-main-ref" since="1.1.1"/>
+    <keyword type="function" name="flatpak_remote_set_main_ref ()" link="FlatpakRemote.html#flatpak-remote-set-main-ref" since="1.1.1"/>
     <keyword type="struct" name="struct FlatpakRemote" link="FlatpakRemote.html#FlatpakRemote-struct"/>
     <keyword type="enum" name="enum FlatpakRemoteType" link="FlatpakRemote.html#FlatpakRemoteType"/>
     <keyword type="property" name="The “name” property" link="FlatpakRemote.html#FlatpakRemote--name"/>
@@ -126,18 +137,23 @@
     <keyword type="function" name="flatpak_transaction_operation_get_remote ()" link="FlatpakTransactionOperation.html#flatpak-transaction-operation-get-remote"/>
     <keyword type="function" name="flatpak_transaction_operation_get_metadata ()" link="FlatpakTransactionOperation.html#flatpak-transaction-operation-get-metadata"/>
     <keyword type="function" name="flatpak_transaction_operation_get_old_metadata ()" link="FlatpakTransactionOperation.html#flatpak-transaction-operation-get-old-metadata"/>
+    <keyword type="function" name="flatpak_transaction_operation_get_download_size ()" link="FlatpakTransactionOperation.html#flatpak-transaction-operation-get-download-size" since="1.1.2"/>
+    <keyword type="function" name="flatpak_transaction_operation_get_installed_size ()" link="FlatpakTransactionOperation.html#flatpak-transaction-operation-get-installed-size" since="1.1.2"/>
     <keyword type="function" name="flatpak_transaction_operation_type_to_string ()" link="FlatpakTransactionOperation.html#flatpak-transaction-operation-type-to-string"/>
     <keyword type="struct" name="FlatpakTransactionOperation" link="FlatpakTransactionOperation.html#FlatpakTransactionOperation-struct"/>
     <keyword type="function" name="flatpak_transaction_progress_get_is_estimating ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-get-is-estimating"/>
     <keyword type="function" name="flatpak_transaction_progress_get_progress ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-get-progress"/>
     <keyword type="function" name="flatpak_transaction_progress_get_status ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-get-status"/>
     <keyword type="function" name="flatpak_transaction_progress_set_update_frequency ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-set-update-frequency"/>
+    <keyword type="function" name="flatpak_transaction_progress_get_bytes_transferred ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-get-bytes-transferred" since="1.1.2"/>
+    <keyword type="function" name="flatpak_transaction_progress_get_start_time ()" link="FlatpakTransactionProgress.html#flatpak-transaction-progress-get-start-time" since="1.1.2"/>
     <keyword type="struct" name="FlatpakTransactionProgress" link="FlatpakTransactionProgress.html#FlatpakTransactionProgress-struct"/>
     <keyword type="signal" name="The “changed” signal" link="FlatpakTransactionProgress.html#FlatpakTransactionProgress-changed"/>
     <keyword type="function" name="flatpak_transaction_new_for_installation ()" link="FlatpakTransaction.html#flatpak-transaction-new-for-installation"/>
     <keyword type="function" name="flatpak_transaction_add_install ()" link="FlatpakTransaction.html#flatpak-transaction-add-install"/>
     <keyword type="function" name="flatpak_transaction_add_install_bundle ()" link="FlatpakTransaction.html#flatpak-transaction-add-install-bundle"/>
     <keyword type="function" name="flatpak_transaction_add_install_flatpakref ()" link="FlatpakTransaction.html#flatpak-transaction-add-install-flatpakref"/>
+    <keyword type="function" name="flatpak_transaction_add_rebase ()" link="FlatpakTransaction.html#flatpak-transaction-add-rebase" since="1.3.3."/>
     <keyword type="function" name="flatpak_transaction_add_update ()" link="FlatpakTransaction.html#flatpak-transaction-add-update"/>
     <keyword type="function" name="flatpak_transaction_add_uninstall ()" link="FlatpakTransaction.html#flatpak-transaction-add-uninstall"/>
     <keyword type="function" name="flatpak_transaction_add_default_dependency_sources ()" link="FlatpakTransaction.html#flatpak-transaction-add-default-dependency-sources"/>
@@ -158,6 +174,9 @@
     <keyword type="function" name="flatpak_transaction_set_reinstall ()" link="FlatpakTransaction.html#flatpak-transaction-set-reinstall"/>
     <keyword type="function" name="flatpak_transaction_set_force_uninstall ()" link="FlatpakTransaction.html#flatpak-transaction-set-force-uninstall"/>
     <keyword type="function" name="flatpak_transaction_set_default_arch ()" link="FlatpakTransaction.html#flatpak-transaction-set-default-arch"/>
+    <keyword type="function" name="flatpak_transaction_set_parent_window ()" link="FlatpakTransaction.html#flatpak-transaction-set-parent-window" since="1.5.1"/>
+    <keyword type="function" name="flatpak_transaction_get_parent_window ()" link="FlatpakTransaction.html#flatpak-transaction-get-parent-window" since="1.5.1"/>
+    <keyword type="function" name="flatpak_transaction_abort_webflow ()" link="FlatpakTransaction.html#flatpak-transaction-abort-webflow" since="1.5.1"/>
     <keyword type="struct" name="FlatpakTransaction" link="FlatpakTransaction.html#FlatpakTransaction-struct"/>
     <keyword type="enum" name="enum FlatpakTransactionOperationType" link="FlatpakTransaction.html#FlatpakTransactionOperationType"/>
     <keyword type="enum" name="enum FlatpakTransactionErrorDetails" link="FlatpakTransaction.html#FlatpakTransactionErrorDetails"/>
@@ -165,6 +184,7 @@
     <keyword type="enum" name="enum FlatpakTransactionResult" link="FlatpakTransaction.html#FlatpakTransactionResult"/>
     <keyword type="property" name="The “installation” property" link="FlatpakTransaction.html#FlatpakTransaction--installation"/>
     <keyword type="signal" name="The “add-new-remote” signal" link="FlatpakTransaction.html#FlatpakTransaction-add-new-remote"/>
+    <keyword type="signal" name="The “basic-auth-start” signal" link="FlatpakTransaction.html#FlatpakTransaction-basic-auth-start"/>
     <keyword type="signal" name="The “choose-remote-for-ref” signal" link="FlatpakTransaction.html#FlatpakTransaction-choose-remote-for-ref"/>
     <keyword type="signal" name="The “end-of-lifed” signal" link="FlatpakTransaction.html#FlatpakTransaction-end-of-lifed"/>
     <keyword type="signal" name="The “end-of-lifed-with-rebase” signal" link="FlatpakTransaction.html#FlatpakTransaction-end-of-lifed-with-rebase"/>
@@ -201,6 +221,8 @@
     <keyword type="function" name="flatpak_installed_ref_get_appdata_name ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-appdata-name" since="1.1.2"/>
     <keyword type="function" name="flatpak_installed_ref_get_appdata_summary ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-appdata-summary" since="1.1.2"/>
     <keyword type="function" name="flatpak_installed_ref_get_appdata_version ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-appdata-version" since="1.1.2"/>
+    <keyword type="function" name="flatpak_installed_ref_get_appdata_content_rating ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-appdata-content-rating" since="1.4.2"/>
+    <keyword type="function" name="flatpak_installed_ref_get_appdata_content_rating_type ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-appdata-content-rating-type" since="1.4.2"/>
     <keyword type="function" name="flatpak_installed_ref_get_subpaths ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-subpaths"/>
     <keyword type="function" name="flatpak_installed_ref_get_eol ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-eol"/>
     <keyword type="function" name="flatpak_installed_ref_get_eol_rebase ()" link="FlatpakInstalledRef.html#flatpak-installed-ref-get-eol-rebase"/>
@@ -273,6 +295,8 @@
     <keyword type="macro" name="FLATPAK_MAJOR_VERSION" link="flatpak-Version-information.html#FLATPAK-MAJOR-VERSION:CAPS"/>
     <keyword type="macro" name="FLATPAK_MINOR_VERSION" link="flatpak-Version-information.html#FLATPAK-MINOR-VERSION:CAPS"/>
     <keyword type="macro" name="FLATPAK_MICRO_VERSION" link="flatpak-Version-information.html#FLATPAK-MICRO-VERSION:CAPS"/>
+    <keyword type="constant" name="FLATPAK_QUERY_FLAGS_NONE" link="FlatpakInstallation.html#FLATPAK-QUERY-FLAGS-NONE:CAPS"/>
+    <keyword type="constant" name="FLATPAK_QUERY_FLAGS_ONLY_CACHED" link="FlatpakInstallation.html#FLATPAK-QUERY-FLAGS-ONLY-CACHED:CAPS"/>
     <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NONE" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NONE:CAPS"/>
     <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NO_DEPLOY" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NO-DEPLOY:CAPS"/>
     <keyword type="constant" name="FLATPAK_UPDATE_FLAGS_NO_PULL" link="FlatpakInstallation.html#FLATPAK-UPDATE-FLAGS-NO-PULL:CAPS"/>

@@ -28,7 +28,7 @@
 #define FLATPAK_AUTHENTICATOR_REQUEST_OBJECT_PATH_PREFIX "/org/freedesktop/Flatpak/Authenticator/request/"
 
 #define FLATPAK_REMOTE_CONFIG_AUTHENTICATOR_NAME "xa.authenticator-name"
-#define FLATPAK_REMOTE_CONFIG_AUTHENTICATOR_OPTIONS "xa.authenticator-options"
+#define FLATPAK_REMOTE_CONFIG_AUTHENTICATOR_OPTIONS_PREFIX "xa.authenticator-options."
 
 enum {
       FLATPAK_AUTH_RESPONSE_OK,
@@ -52,7 +52,9 @@ FlatpakAuthenticatorRequest *flatpak_auth_create_request            (FlatpakAuth
 gboolean                     flatpak_auth_request_ref_tokens        (FlatpakAuthenticator         *authenticator,
                                                                      FlatpakAuthenticatorRequest  *request,
                                                                      const char                   *remote,
+                                                                     const char                   *remote_uri,
                                                                      GVariant                     *refs,
+                                                                     GVariant                     *options,
                                                                      const char                   *parent_window,
                                                                      GCancellable                 *cancellable,
                                                                      GError                      **error);
@@ -65,8 +67,14 @@ void                         flatpak_auth_request_emit_response     (FlatpakAuth
                                                                      GVariant                     *arg_results);
 void                         flatpak_auth_request_emit_webflow      (FlatpakAuthenticatorRequest  *request,
                                                                      const gchar                  *destination_bus_name,
-                                                                     const char                   *arg_uri);
+                                                                     const char                   *arg_uri,
+                                                                     GVariant                      *options);
 void                         flatpak_auth_request_emit_webflow_done (FlatpakAuthenticatorRequest  *request,
-                                                                     const gchar                  *destination_bus_name);
+                                                                     const gchar                  *destination_bus_name,
+                                                                     GVariant                      *options);
+void                         flatpak_auth_request_emit_basic_auth   (FlatpakAuthenticatorRequest  *request,
+                                                                     const char                   *destination_bus_name,
+                                                                     const char                   *arg_realm,
+                                                                     GVariant                      *options);
 
 #endif /* __FLATPAK_AUTH_H__ */

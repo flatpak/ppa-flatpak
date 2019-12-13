@@ -23,12 +23,13 @@
 
 #include "config.h"
 
-#include <string.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <string.h>
 #include <sys/file.h>
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <utime.h>
 
 #include <glib/gi18n-lib.h>
@@ -39,22 +40,20 @@
 
 #include <gio/gio.h>
 #include <gio/gunixsocketaddress.h>
-#include "libglnx/libglnx.h"
-#include "flatpak-error.h"
 #include <ostree.h>
 
 #ifdef USE_SYSTEM_HELPER
 #include <polkit/polkit.h>
 #endif
 
+#include "flatpak-appdata-private.h"
 #include "flatpak-dir-private.h"
-#include "flatpak-utils-base-private.h"
+#include "flatpak-error.h"
 #include "flatpak-oci-registry-private.h"
 #include "flatpak-ref.h"
 #include "flatpak-run-private.h"
-#include "flatpak-appdata-private.h"
-
-#include "errno.h"
+#include "flatpak-utils-base-private.h"
+#include "libglnx/libglnx.h"
 
 #ifdef HAVE_LIBMALCONTENT
 #include <libmalcontent/malcontent.h>
@@ -110,6 +109,7 @@ static gboolean flatpak_dir_mirror_oci (FlatpakDir          *self,
                                         FlatpakRemoteState  *state,
                                         const char          *ref,
                                         const char          *skip_if_current_is,
+                                        const char          *token,
                                         OstreeAsyncProgress *progress,
                                         GCancellable        *cancellable,
                                         GError             **error);
@@ -4617,7 +4617,7 @@ get_common_pull_options (GVariantBuilder     *builder,
                          OstreeRepoPullFlags  flags,
                          OstreeAsyncProgress *progress)
 {
-  guint32 update_freq = 0;
+  guint32 update_interval = 0;
   GVariantBuilder hdr_builder;
 
   if (dirs_to_pull)
@@ -4655,12 +4655,12 @@ get_common_pull_options (GVariantBuilder     *builder,
                          g_variant_new_variant (g_variant_new_string ("flatpak/" PACKAGE_VERSION)));
 
   if (progress != NULL)
-    update_freq = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (progress), "update-frequency"));
-  if (update_freq == 0)
-    update_freq = FLATPAK_DEFAULT_UPDATE_FREQUENCY;
+    update_interval = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (progress), "update-interval"));
+  if (update_interval == 0)
+    update_interval = FLATPAK_DEFAULT_UPDATE_INTERVAL_MS;
 
   g_variant_builder_add (builder, "{s@v}", "update-frequency",
-                         g_variant_new_variant (g_variant_new_uint32 (update_freq)));
+                         g_variant_new_variant (g_variant_new_uint32 (update_interval)));
 }
 
 static gboolean
@@ -4729,7 +4729,7 @@ repo_pull (OstreeRepo                           *self,
       g_auto(OstreeRepoFinderResultv) results = NULL;
       OstreeCollectionRef collection_ref;
       OstreeCollectionRef *collection_refs_to_fetch[2];
-      guint32 update_freq = 0;
+      guint32 update_interval = 0;
       g_autoptr(GMainContextPopDefault) context = NULL;
       g_autoptr(FlatpakAsyncProgressChained) chained_progress = NULL;
 
@@ -4757,12 +4757,12 @@ repo_pull (OstreeRepo                           *self,
           collection_refs_to_fetch[1] = NULL;
 
           if (progress != NULL)
-            update_freq = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (progress), "update-frequency"));
-          if (update_freq == 0)
-            update_freq = FLATPAK_DEFAULT_UPDATE_FREQUENCY;
+            update_interval = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (progress), "update-interval"));
+          if (update_interval == 0)
+            update_interval = FLATPAK_DEFAULT_UPDATE_INTERVAL_MS;
 
           g_variant_builder_add (&find_builder, "{s@v}", "update-frequency",
-                                 g_variant_new_variant (g_variant_new_uint32 (update_freq)));
+                                 g_variant_new_variant (g_variant_new_uint32 (update_interval)));
 
           if (rev_to_fetch != NULL)
             {
@@ -5103,7 +5103,7 @@ flatpak_dir_pull_extra_data (FlatpakDir          *self,
       else
         {
           ensure_soup_session (self);
-          bytes = flatpak_load_http_uri (self->soup_session, extra_data_uri, 0,
+          bytes = flatpak_load_http_uri (self->soup_session, extra_data_uri, 0, NULL,
                                          extra_data_progress_report, &extra_data_progress,
                                          cancellable, error);
         }
@@ -5262,6 +5262,7 @@ flatpak_dir_mirror_oci (FlatpakDir          *self,
                         FlatpakRemoteState  *state,
                         const char          *ref,
                         const char          *skip_if_current_is,
+                        const char          *token,
                         OstreeAsyncProgress *progress,
                         GCancellable        *cancellable,
                         GError             **error)
@@ -5303,6 +5304,8 @@ flatpak_dir_mirror_oci (FlatpakDir          *self,
   if (registry == NULL)
     return FALSE;
 
+  flatpak_oci_registry_set_token (registry, token);
+
   g_assert (progress != NULL);
   oci_pull_init_progress (progress);
 
@@ -5327,6 +5330,7 @@ flatpak_dir_pull_oci (FlatpakDir          *self,
                       OstreeRepo          *repo,
                       FlatpakPullFlags     flatpak_flags,
                       OstreeRepoPullFlags  flags,
+                      const char          *token,
                       OstreeAsyncProgress *progress,
                       GCancellable        *cancellable,
                       GError             **error)
@@ -5371,6 +5375,8 @@ flatpak_dir_pull_oci (FlatpakDir          *self,
   registry = flatpak_oci_registry_new (registry_uri, FALSE, -1, NULL, error);
   if (registry == NULL)
     return FALSE;
+
+  flatpak_oci_registry_set_token (registry, token);
 
   versioned = flatpak_oci_registry_load_versioned (registry, oci_repository, oci_digest,
                                                    NULL, cancellable, error);
@@ -5464,7 +5470,7 @@ flatpak_dir_pull (FlatpakDir                           *self,
 
   if (flatpak_dir_get_remote_oci (self, state->remote_name))
     return flatpak_dir_pull_oci (self, state, ref, repo, flatpak_flags,
-                                 flags, progress, cancellable, error);
+                                 flags, token, progress, cancellable, error);
 
   if (!ostree_repo_remote_get_url (self->repo,
                                    state->remote_name,
@@ -5495,7 +5501,7 @@ flatpak_dir_pull (FlatpakDir                           *self,
           OstreeCollectionRef collection_ref;
           OstreeCollectionRef *collection_refs_to_fetch[2];
           gboolean force_disable_deltas = (flatpak_flags & FLATPAK_PULL_FLAGS_NO_STATIC_DELTAS) != 0;
-          guint update_freq = 0;
+          guint update_interval = 0;
           gsize i;
           g_autoptr(GMainContextPopDefault) context = NULL;
           g_autoptr(FlatpakAsyncProgressChained) chained_progress = NULL;
@@ -5519,12 +5525,12 @@ flatpak_dir_pull (FlatpakDir                           *self,
           collection_refs_to_fetch[1] = NULL;
 
           if (progress != NULL)
-            update_freq = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (progress), "update-frequency"));
-          if (update_freq == 0)
-            update_freq = FLATPAK_DEFAULT_UPDATE_FREQUENCY;
+            update_interval = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (progress), "update-interval"));
+          if (update_interval == 0)
+            update_interval = FLATPAK_DEFAULT_UPDATE_INTERVAL_MS;
 
           g_variant_builder_add (&find_builder, "{s@v}", "update-frequency",
-                                 g_variant_new_variant (g_variant_new_uint32 (update_freq)));
+                                 g_variant_new_variant (g_variant_new_uint32 (update_interval)));
 
           find_options = g_variant_ref_sink (g_variant_builder_end (&find_builder));
 
@@ -5719,7 +5725,7 @@ repo_pull_local_untrusted (FlatpakDir          *self,
   g_variant_builder_add (&builder, "{s@v}", "inherit-transaction",
                          g_variant_new_variant (g_variant_new_boolean (TRUE)));
   g_variant_builder_add (&builder, "{s@v}", "update-frequency",
-                         g_variant_new_variant (g_variant_new_uint32 (FLATPAK_DEFAULT_UPDATE_FREQUENCY)));
+                         g_variant_new_variant (g_variant_new_uint32 (FLATPAK_DEFAULT_UPDATE_INTERVAL_MS)));
 
   if (dirs_to_pull)
     {
@@ -8925,7 +8931,7 @@ flatpak_dir_install (FlatpakDir          *self,
 
           child_repo_path = g_file_get_path (registry_file);
 
-          if (!flatpak_dir_mirror_oci (self, registry, state, ref, NULL, progress, cancellable, error))
+          if (!flatpak_dir_mirror_oci (self, registry, state, ref, NULL, token, progress, cancellable, error))
             return FALSE;
         }
       else if ((!gpg_verify_summary && state->collection_id == NULL) || !gpg_verify)
@@ -9637,7 +9643,7 @@ flatpak_dir_update (FlatpakDir                           *self,
 
           child_repo_path = g_file_get_path (registry_file);
 
-          if (!flatpak_dir_mirror_oci (self, registry, state, ref, NULL, progress, cancellable, error))
+          if (!flatpak_dir_mirror_oci (self, registry, state, ref, NULL, token, progress, cancellable, error))
             return FALSE;
         }
       else if ((!gpg_verify_summary && state->collection_id == NULL) || !gpg_verify)
@@ -11141,6 +11147,8 @@ _flatpak_dir_get_remote_state (FlatpakDir   *self,
         return NULL;
       if (!flatpak_dir_lookup_remote_filter (self, remote_or_uri, FALSE, NULL, &state->allow_refs, &state->deny_refs, error))
         return NULL;
+
+      state->default_token_type = flatpak_dir_get_remote_default_token_type (self, remote_or_uri);
     }
 
   if (local_only)
@@ -11260,6 +11268,13 @@ _flatpak_dir_get_remote_state (FlatpakDir   *self,
 
           state->metadata = g_variant_get_child_value (commit_v, 0);
         }
+    }
+
+  if (state->metadata)
+    {
+      gint32 token_type;
+      if (g_variant_lookup (state->metadata, "xa.default-token-type", "i", &token_type))
+        state->default_token_type = token_type;
     }
 
   return g_steal_pointer (&state);
@@ -12323,6 +12338,19 @@ flatpak_dir_get_repo_config (FlatpakDir *self)
   return ostree_repo_get_config (self->repo);
 }
 
+char **
+flatpak_dir_list_remote_config_keys (FlatpakDir *self,
+                                     const char *remote_name)
+{
+  GKeyFile *config = flatpak_dir_get_repo_config (self);
+  g_autofree char *group = get_group (remote_name);
+
+  if (config)
+    return g_key_file_get_keys (config, group, NULL, NULL);
+
+  return NULL;
+}
+
 char *
 flatpak_dir_get_remote_title (FlatpakDir *self,
                               const char *remote_name)
@@ -12439,6 +12467,19 @@ flatpak_dir_get_remote_oci (FlatpakDir *self,
     return FALSE;
 
   return url && g_str_has_prefix (url, "oci+");
+}
+
+gint32
+flatpak_dir_get_remote_default_token_type (FlatpakDir *self,
+                                           const char *remote_name)
+{
+  GKeyFile *config = flatpak_dir_get_repo_config (self);
+  g_autofree char *group = get_group (remote_name);
+
+  if (config)
+    return (gint32)g_key_file_get_integer (config, group, "xa.default-token-type", NULL);
+
+  return 0;
 }
 
 char *
@@ -13841,7 +13882,7 @@ flatpak_dir_fetch_remote_object (FlatpakDir   *self,
 
   object_url = g_build_filename (base_url, "objects", part1, part2, NULL);
 
-  bytes = flatpak_load_http_uri (self->soup_session, object_url, 0,
+  bytes = flatpak_load_http_uri (self->soup_session, object_url, 0, NULL,
                                  NULL, NULL,
                                  cancellable, error);
   if (bytes == NULL)

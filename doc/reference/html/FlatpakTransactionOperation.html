@@ -94,6 +94,22 @@
 </td>
 </tr>
 <tr>
+<td class="function_type">
+<span class="returnvalue">guint64</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakTransactionOperation.html#flatpak-transaction-operation-get-download-size" title="flatpak_transaction_operation_get_download_size ()">flatpak_transaction_operation_get_download_size</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">guint64</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakTransactionOperation.html#flatpak-transaction-operation-get-installed-size" title="flatpak_transaction_operation_get_installed_size ()">flatpak_transaction_operation_get_installed_size</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
 <td class="function_type">const <span class="returnvalue">char</span> *
 </td>
 <td class="function_name">
@@ -334,6 +350,74 @@ i.e. when <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-ready
 <p>the old metadata <span class="type">GKeyFile</span>. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-transaction-operation-get-download-size"></a><h3>flatpak_transaction_operation_get_download_size ()</h3>
+<pre class="programlisting"><span class="returnvalue">guint64</span>
+flatpak_transaction_operation_get_download_size
+                               (<em class="parameter"><code><a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> *self</code></em>);</pre>
+<p>Gets the maximum download size for the operation.</p>
+<p>Note that this does not include the size of dependencies, and
+the actual download may be smaller, if some of the data is already
+available locally.</p>
+<p>For uninstall operations, this returns 0.</p>
+<p>This information is available when the transaction is resolved,
+i.e. when <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-ready" title="The “ready” signal"><span class="type">“ready”</span></a> is emitted.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-download-size.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <span class="type">flatpakTransactionOperation</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-download-size.returns"></a><h4>Returns</h4>
+<p> the download size</p>
+</div>
+<p class="since">Since: 1.1.2</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-transaction-operation-get-installed-size"></a><h3>flatpak_transaction_operation_get_installed_size ()</h3>
+<pre class="programlisting"><span class="returnvalue">guint64</span>
+flatpak_transaction_operation_get_installed_size
+                               (<em class="parameter"><code><a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> *self</code></em>);</pre>
+<p>Gets the installed size for the operation.</p>
+<p>Note that even for a new install, the extra space required on
+disk may be smaller than this number, if some of the data is already
+available locally.</p>
+<p>For uninstall operations, this returns 0.</p>
+<p>This information is available when the transaction is resolved,
+i.e. when <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-ready" title="The “ready” signal"><span class="type">“ready”</span></a> is emitted.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-installed-size.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <span class="type">flatpakTransactionOperation</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-operation-get-installed-size.returns"></a><h4>Returns</h4>
+<p> the installed size</p>
+</div>
+<p class="since">Since: 1.1.2</p>
 </div>
 <hr>
 <div class="refsect2">

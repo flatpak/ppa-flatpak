@@ -75,21 +75,33 @@
               more information about the @handle.
         @authenticator_options: Data from the xa.authenticator-options key in the configuration for the remote, it is up to the authenticator to interpret this how it wants.
         @remote: The name of the remote we're pulling from.
-        @refs: An array of refs that flatpak wants to pull and the token-type for each ref.
+        @remote_uri: The uri of the remote we're pulling from.
+        @refs: An array of ref that flatpak wants to pull and info about each ref.
+        @options: An extensible  dict with extra options.
         @parent_window: Identifier for the application window, see <link linkend="https://flatpak.github.io/xdg-desktop-portal/portal-docs.html#parent_window">xdg-desktop-portal docs</link> for details on its format.
         @handle: Object path for the #org.freedesktop.Flatpak.AuthenticatorRequest object representing this call.
 
-        Starts a request for resolving the tokens to use for @refs from the @remote. This is not a regular dbus call that blocks until the result is done, instead
-        it creates a org.freedesktop.Flatpak.AuthenticatorRequest object representing the ongoing operation and returns an object path @handle to it. When
-        the operation succeds the Response signal is emitted on the request with a response status and a dict with details.
+        Starts a request for resolving the tokens to use for @refs from the @remote (with uri @remote_uri).
+
+        This is not a regular dbus call that blocks until the result is done, instead it creates
+        a org.freedesktop.Flatpak.AuthenticatorRequest object representing the ongoing operation and
+        returns an object path @handle to it. When the operation succeds the Response signal is emitted
+        on the request with a response status and a dict with details.
+
+        The @refs array elements are of type (ssia{sv}) where the items are:
+        <simplelist>
+          <member>s: The ref being pulled</member>
+          <member>s: The exact commit being pulled</member>
+          <member>i: The token-type of the commit</member>
+          <member>a{sv}: Extra per-ref metadata, currenlty only has summary.* fields which are copied from the summary per-commit metadata.</member>
+        </simplelist>
 
         On success (response 0) the returned details should have:
         <variablelist>
           <varlistentry>
             <term>tokens a{sas}</term>
             <listitem><para>
-              A list of tokens (the first element of the struct), and the refs that it applies to (the second element of the struct).
-              The returned token may be the empty string, to signal that flatpak doesn't need to use a token for these refs.
+              A list of tokens (the first element of the struct), and the refs (the second).
             </para></listitem>
           </varlistentry>
         </variablelist>
@@ -107,13 +119,30 @@
         Alternatively, if the interaction is web-based, then rather than showing a web browser itself it can emit
         the WebFlow signal on the request object, which lets the flatpak client show a webview embedded in its ui in a
         way that works best with its user interface.
+
+        For simple user/password authentication (such as http basic authentication systems) there is also a BasicAuth signal
+        that can be used to get the user to interactively authenticate. This kind of authentication is quite limited, but
+        if used it can allow nice interactive authentication even in the command line case.
+
+        Currently used keys in the @options argument:
+        <variablelist>
+          <varlistentry>
+            <term>xa.oci-registry-uri s</term>
+            <listitem><para>
+              For OCI remotes this is extracted from the summary file and contains the uri to the OCI registry that
+              contains the images.
+            </para></listitem>
+          </varlistentry>
+        </variablelist>
     -->
     <method name="RequestRefTokens">
       <arg type='s' name='handle_token' direction='in'/>
       <arg type='a{sv}' name='authenticator_options' direction='in'/>
       <arg type='s' name='remote' direction='in'/>
+      <arg type='s' name='remote_uri' direction='in'/>
       <!-- This is the ref and its token-type -->
-      <arg type='a(si)' name='refs' direction='in'/>
+      <arg type='a(ssia{sv})' name='refs' direction='in'/>
+      <arg type='a{sv}' name='options' direction='in'/>
       <arg type='s' name='parent_window' direction='in'/>
       <arg type='o' name='handle' direction='out'/>
     </method>
@@ -158,6 +187,8 @@
     </method>
     <!--
         Webflow:
+        @uri: The uri to show
+        @options: An extensible dict with extra options.
 
         Emitted by the authenticator when it needs to do web-based interaction. The
         client handles this by showing the URI in a graphical web view. Typically the uri
@@ -171,15 +202,45 @@
     -->
     <signal name="Webflow">
       <arg type="s" name="uri"/>
+      <arg type="a{sv}" name="options" direction="in"/>
     </signal>
     <!--
         WebflowDone:
+        @options: An extensible dict with extra options.
 
         Emitted by the authenticator when the web view is done, at this point the client
         can close the WebView.
     -->
     <signal name="WebflowDone">
+      <arg type="a{sv}" name="options" direction="in"/>
     </signal>
+    <!--
+        BasicAuth:
+        @realm: String showing what the auth is for, similar to http basic auth realm.
+        @options: An extensible dict with extra options.
+
+        Emitted by the authenticator when it needs to do a simple user + password authentication.
+        This is only useful for very simple authentication interaction, but this is still used (for
+        instance for http basic access authentication), and for those cases this allows a nicely
+        integrated UI and CLI experience.
+    -->
+    <signal name="BasicAuth">
+      <arg type="s" name="realm"/>
+      <arg type="a{sv}" name="options" direction="in"/>
+    </signal>
+    <!--
+        BasicAuthReply:
+        @user: The user
+        @password: The password
+        @options: An extensible dict with extra options.
+
+        Call to finish the request started with the BasicAuth signal.
+    -->
+    <method name="BasicAuthReply">
+      <arg type="s" name="user"/>
+      <arg type="s" name="password"/>
+      <arg type="a{sv}" name="options" direction="in"/>
+    </method>
     <!--
         Response:
         @response: Numeric response

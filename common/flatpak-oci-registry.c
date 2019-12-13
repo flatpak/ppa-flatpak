@@ -30,6 +30,7 @@
 #include <libsoup/soup.h>
 #include "flatpak-oci-registry-private.h"
 #include "flatpak-utils-private.h"
+#include "flatpak-dir-private.h"
 
 G_DEFINE_QUARK (flatpak_oci_error, flatpak_oci_error)
 
@@ -60,6 +61,7 @@ struct FlatpakOciRegistry
   gboolean is_docker;
   char    *uri;
   int      tmp_dfd;
+  char    *token;
 
   /* Local repos */
   int dfd;
@@ -97,6 +99,7 @@ flatpak_oci_registry_finalize (GObject *object)
   g_clear_object (&self->soup_session);
   g_clear_pointer (&self->base_uri, soup_uri_free);
   g_free (self->uri);
+  g_free (self->token);
 
   G_OBJECT_CLASS (flatpak_oci_registry_parent_class)->finalize (object);
 }
@@ -208,6 +211,14 @@ flatpak_oci_registry_get_uri (FlatpakOciRegistry *self)
   return self->uri;
 }
 
+void
+flatpak_oci_registry_set_token (FlatpakOciRegistry *self,
+                                const char *token)
+{
+  g_free (self->token);
+  self->token = g_strdup (token);
+}
+
 FlatpakOciRegistry *
 flatpak_oci_registry_new (const char   *uri,
                           gboolean      for_write,
@@ -290,6 +301,7 @@ static GBytes *
 remote_load_file (SoupSession  *soup_session,
                   SoupURI      *base,
                   const char   *subpath,
+                  const char   *token,
                   GCancellable *cancellable,
                   GError      **error)
 {
@@ -308,6 +320,7 @@ remote_load_file (SoupSession  *soup_session,
   uri_s = soup_uri_to_string (uri, FALSE);
   bytes = flatpak_load_http_uri (soup_session,
                                  uri_s, FLATPAK_HTTP_FLAGS_ACCEPT_OCI,
+                                 token,
                                  NULL, NULL,
                                  cancellable, error);
   if (bytes == NULL)
@@ -325,7 +338,7 @@ flatpak_oci_registry_load_file (FlatpakOciRegistry *self,
   if (self->dfd != -1)
     return local_load_file (self->dfd, subpath, cancellable, error);
   else
-    return remote_load_file (self->soup_session, self->base_uri, subpath, cancellable, error);
+    return remote_load_file (self->soup_session, self->base_uri, subpath, self->token, cancellable, error);
 }
 
 static JsonNode *
@@ -738,6 +751,7 @@ flatpak_oci_registry_download_blob (FlatpakOciRegistry    *self,
       if (!flatpak_download_http_uri (self->soup_session, uri_s,
                                       FLATPAK_HTTP_FLAGS_ACCEPT_OCI,
                                       out_stream,
+                                      self->token,
                                       progress_cb, user_data,
                                       cancellable, error))
         return -1;
@@ -835,6 +849,7 @@ flatpak_oci_registry_mirror_blob (FlatpakOciRegistry    *self,
       uri_s = soup_uri_to_string (uri, FALSE);
       if (!flatpak_download_http_uri (source_registry->soup_session, uri_s,
                                       FLATPAK_HTTP_FLAGS_ACCEPT_OCI, out_stream,
+                                      self->token,
                                       progress_cb, user_data,
                                       cancellable, error))
         return FALSE;
@@ -863,6 +878,163 @@ flatpak_oci_registry_mirror_blob (FlatpakOciRegistry    *self,
     return FALSE;
 
   return TRUE;
+}
+
+static const char *
+object_get_string_member_with_default (JsonNode *json,
+                                       const char *member_name,
+                                       const char *default_value)
+{
+  JsonNode *node;
+
+  if (json == NULL || !JSON_NODE_HOLDS_OBJECT(json))
+    return default_value;
+
+  node = json_object_get_member (json_node_get_object (json), member_name);
+
+  if (node == NULL || JSON_NODE_HOLDS_NULL (node) || JSON_NODE_TYPE (node) != JSON_NODE_VALUE)
+    return default_value;
+
+  return json_node_get_string (node);
+}
+
+
+static char *
+get_token_for_www_auth (FlatpakOciRegistry *self,
+                        const char    *www_authenticate,
+                        const char    *auth,
+                        GCancellable  *cancellable,
+                        GError        **error)
+{
+  g_autoptr(GInputStream) auth_stream = NULL;
+  g_autoptr(SoupMessage) auth_msg = NULL;
+  g_autoptr(GHashTable) params = NULL;
+  g_autoptr(GHashTable) args = NULL;
+  const char *realm, *service, *scope, *token;
+  g_autoptr(SoupURI) auth_uri = NULL;
+  g_autoptr(GBytes) body = NULL;
+  g_autoptr(JsonNode) json = NULL;
+
+  if (g_ascii_strncasecmp (www_authenticate, "Bearer ", strlen ("Bearer ")) != 0)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "Only Bearer authentication supported");
+      return NULL;
+    }
+
+  params = soup_header_parse_param_list (www_authenticate + strlen ("Bearer "));
+
+  realm = g_hash_table_lookup (params, "realm");
+  if (realm == NULL)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "Only realm in authentication request");
+      return NULL;
+    }
+
+  auth_uri = soup_uri_new (realm);
+  if (auth_uri == NULL)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "Invalid realm in authentication request");
+      return NULL;
+    }
+
+  args = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, NULL);
+  service = g_hash_table_lookup (params, "service");
+  if (service)
+    g_hash_table_insert (args, "service", (char *)service);
+  scope = g_hash_table_lookup (params, "scope");
+  if (scope)
+    g_hash_table_insert (args, "scope", (char *)scope);
+
+  soup_uri_set_query_from_form (auth_uri, args);
+
+  auth_msg = soup_message_new_from_uri ("GET", auth_uri);
+
+  g_autofree char *basic_auth = g_strdup_printf ("Basic %s", auth);
+  soup_message_headers_replace (auth_msg->request_headers, "Authorization", basic_auth);
+
+  auth_stream = soup_session_send (self->soup_session, auth_msg, NULL, error);
+  if (auth_stream == NULL)
+    return NULL;
+
+  body = flatpak_read_stream (auth_stream, TRUE, error);
+  if (body == NULL)
+    return NULL;
+
+  json = json_from_string ((char *)g_bytes_get_data (body, NULL), error);
+  if (json == NULL)
+    return NULL;
+
+  token = object_get_string_member_with_default (json, "token", NULL);
+  if (token == NULL)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "Invalid authentication request response");
+      return NULL;
+    }
+
+  return g_strdup (token);
+}
+
+char *
+flatpak_oci_registry_get_token (FlatpakOciRegistry *self,
+                                const char         *repository,
+                                const char         *digest,
+                                const char         *basic_auth,
+                                GCancellable       *cancellable,
+                                GError            **error)
+{
+  g_autofree char *subpath = NULL;
+  g_autoptr(SoupURI) uri = NULL;
+  g_autoptr(GInputStream) stream = NULL;
+  g_autoptr(SoupMessage) msg = NULL;
+  g_autofree char *www_authenticate = NULL;
+  g_autofree char *token = NULL;
+
+  g_assert (self->valid);
+
+  subpath = get_digest_subpath (self, repository, TRUE, digest, error);
+  if (subpath == NULL)
+    return NULL;
+
+  if (self->dfd != -1)
+    return g_strdup (""); // No tokens for local repos
+
+  uri = soup_uri_new_with_base (self->base_uri, subpath);
+  if (uri == NULL)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
+                   "Invalid relative url %s", subpath);
+      return NULL;
+    }
+
+  msg = soup_message_new_from_uri ("HEAD", uri);
+
+  stream = soup_session_send (self->soup_session, msg, NULL, error);
+  if (stream == NULL)
+    return NULL;
+
+  if (SOUP_STATUS_IS_SUCCESSFUL (msg->status_code))
+    {
+      return g_strdup ("");
+    }
+  else if (msg->status_code != SOUP_STATUS_UNAUTHORIZED)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "Unexpected response status %d from repo", msg->status_code);
+      return NULL;
+    }
+
+  /* Need www-authenticated header */
+  www_authenticate = g_strdup (soup_message_headers_get_one (msg->response_headers, "WWW-Authenticate"));
+  if (www_authenticate == NULL)
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "Now WWW-Authenticate header from repo");
+      return NULL;
+    }
+
+  token = get_token_for_www_auth (self, www_authenticate, basic_auth, cancellable, error);
+  if (token == NULL)
+    return NULL;
+
+  return g_steal_pointer (&token);
 }
 
 GBytes *
@@ -2093,6 +2265,21 @@ load_oci_index (GFile        *index,
   return (FlatpakOciIndexResponse *) g_steal_pointer (&json);
 }
 
+static GVariant *
+maybe_variant_from_base64 (const char *base64)
+{
+  guchar *bin;
+  gsize bin_len;
+
+  if (base64 == NULL)
+    return NULL;
+
+  bin = g_base64_decode (base64, &bin_len);
+  return g_variant_ref_sink (g_variant_new_from_data (G_VARIANT_TYPE ("v"),
+                                                      bin, bin_len, FALSE,
+                                                      g_free, bin));
+}
+
 GVariant *
 flatpak_oci_index_make_summary (GFile        *index,
                                 const char   *index_uri,
@@ -2106,6 +2293,7 @@ flatpak_oci_index_make_summary (GFile        *index,
   g_autoptr(GArray) images = g_array_new (FALSE, TRUE, sizeof (ImageInfo));
   g_autoptr(GVariantBuilder) refs_builder = NULL;
   g_autoptr(GVariantBuilder) additional_metadata_builder = NULL;
+  g_autoptr(GVariantBuilder) ref_sparse_data_builder = NULL;
   g_autoptr(GVariantBuilder) summary_builder = NULL;
   g_autoptr(GVariant) summary = NULL;
   g_autoptr(GVariantBuilder) ref_data_builder = NULL;
@@ -2147,6 +2335,7 @@ flatpak_oci_index_make_summary (GFile        *index,
   refs_builder = g_variant_builder_new (G_VARIANT_TYPE ("a(s(taya{sv}))"));
   ref_data_builder = g_variant_builder_new (G_VARIANT_TYPE ("a{s(tts)}"));
   additional_metadata_builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
+  ref_sparse_data_builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sa{sv}}"));
 
   /* The summary has to be sorted by ref */
   g_array_sort (images, (GCompareFunc) compare_image_by_ref);
@@ -2161,8 +2350,14 @@ flatpak_oci_index_make_summary (GFile        *index,
       guint64 download_size = 0;
       const char *installed_size_str;
       const char *download_size_str;
+      const char *token_type_base64;
+      const char *endoflife_base64;
+      const char *endoflife_rebase_base64 = NULL;
       const char *metadata_contents = NULL;
       g_autoptr(GVariantBuilder) ref_metadata_builder = NULL;
+      g_autoptr(GVariant) token_type_v = NULL;
+      g_autoptr(GVariant) endoflife_v = NULL;
+      g_autoptr(GVariant) endoflife_rebase_v = NULL;
 
       if (ref == NULL)
         continue;
@@ -2202,10 +2397,36 @@ flatpak_oci_index_make_summary (GFile        *index,
                              GUINT64_TO_BE (installed_size),
                              GUINT64_TO_BE (download_size),
                              metadata_contents ? metadata_contents : "");
+
+      token_type_base64 = get_image_metadata (image, "org.flatpak.commit-metadata.xa.token-type");
+      token_type_v = maybe_variant_from_base64 (token_type_base64);
+      endoflife_base64 = get_image_metadata (image, "org.flatpak.commit-metadata.ostree.endoflife");
+      endoflife_v = maybe_variant_from_base64 (endoflife_base64);
+      endoflife_rebase_base64 = get_image_metadata (image, "org.flatpak.commit-metadata.ostree.endoflife-rebase");
+      endoflife_rebase_v = maybe_variant_from_base64 (endoflife_rebase_base64);
+
+      if (token_type_v != NULL ||
+          endoflife_v != NULL ||
+          endoflife_rebase_v != NULL)
+        {
+          g_autoptr(GVariantBuilder) sparse_builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
+
+          if (token_type_v != NULL)
+            g_variant_builder_add (sparse_builder, "{s@v}", FLATPAK_SPARSE_CACHE_KEY_TOKEN_TYPE, token_type_v);
+          if (endoflife_v != NULL)
+            g_variant_builder_add (sparse_builder, "{s@v}", FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE, endoflife_v);
+          if (endoflife_rebase_v != NULL)
+            g_variant_builder_add (sparse_builder, "{s@v}", FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE, endoflife_rebase_v);
+
+          g_variant_builder_add (ref_sparse_data_builder, "{s@a{sv}}",
+                                 ref, g_variant_builder_end (sparse_builder));
+        }
     }
 
   g_variant_builder_add (additional_metadata_builder, "{sv}", "xa.cache",
                          g_variant_new_variant (g_variant_builder_end (ref_data_builder)));
+  g_variant_builder_add (additional_metadata_builder, "{sv}", "xa.sparse-cache",
+                         g_variant_builder_end (ref_sparse_data_builder));
   g_variant_builder_add (additional_metadata_builder, "{sv}", "xa.oci-registry-uri",
                          g_variant_new_string (registry_uri_s));
 

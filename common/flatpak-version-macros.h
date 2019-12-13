@@ -25,6 +25,7 @@
 #ifndef __FLATPAK_VERSION_MACROS_H__
 #define __FLATPAK_VERSION_MACROS_H__
 
+
 /**
  * FLATPAK_MAJOR_VERSION:
  *
@@ -44,7 +45,7 @@
  *
  * The micro version.
  */
-#define FLATPAK_MICRO_VERSION (1)
+#define FLATPAK_MICRO_VERSION (2)
 
 /**
  * FLATPAK_CHECK_VERSION:
@@ -67,6 +68,8 @@
 /**
  * SECTION:flatpak-version-macros
  * @Title: Version information
+ *
+ * These macros can be used to check the library version in use.
  */
 
 #endif /* __FLATPAK_VERSION_MACROS_H__ */

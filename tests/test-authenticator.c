@@ -125,7 +125,7 @@ http_incoming (GSocketService    *service,
   g_debug ("handling incomming http request for %s", data->sender);
 
   g_debug ("emiting webflow done");
-  flatpak_auth_request_emit_webflow_done (data->request, data->sender);
+  flatpak_auth_request_emit_webflow_done (data->request, data->sender, NULL);
 
   finish_request_ref_tokens (data);
 
@@ -173,7 +173,10 @@ handle_request_ref_tokens (FlatpakAuthenticator *authenticator,
                            const gchar *arg_handle_token,
                            GVariant *arg_authenticator_option,
                            const gchar *arg_remote,
-                           GVariant *arg_refs)
+                           const gchar *arg_remote_uri,
+                           GVariant *arg_refs,
+                           GVariant *arg_options,
+                           const gchar *arg_parent_window)
 {
   g_autoptr(GError) error = NULL;
   g_autoptr(GSocketService) server = NULL;
@@ -219,9 +222,12 @@ handle_request_ref_tokens (FlatpakAuthenticator *authenticator,
   n_refs = g_variant_n_children (arg_refs);
   for (i = 0; i < n_refs; i++)
     {
-      const char *ref;
+      const char *ref, *commit;
       gint32 token_type;
-      g_variant_get_child (arg_refs, i, "(&si)", &ref, &token_type);
+      g_autoptr(GVariant) data = NULL;
+
+      g_variant_get_child (arg_refs, i, "(&s&si@a{sv})", &ref, &commit, &token_type, &data);
+
       g_ptr_array_add (refs, g_strdup (ref));
     }
   g_ptr_array_add (refs, NULL);
@@ -237,7 +243,7 @@ handle_request_ref_tokens (FlatpakAuthenticator *authenticator,
     {
       uri = g_strdup_printf ("http://localhost:%d", (int)port);
       g_debug ("Requesting webflow %s", uri);
-      flatpak_auth_request_emit_webflow (request, g_dbus_method_invocation_get_sender (invocation), uri);
+      flatpak_auth_request_emit_webflow (request, g_dbus_method_invocation_get_sender (invocation), uri, NULL);
     }
   else
     {

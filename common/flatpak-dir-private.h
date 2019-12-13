@@ -23,10 +23,9 @@
 
 #include <ostree.h>
 
+#include "flatpak-common-types-private.h"
+#include "flatpak-context-private.h"
 #include "libglnx/libglnx.h"
-#include <flatpak-common-types-private.h>
-#include <flatpak-context-private.h>
-
 
 /* Version history:
  * The version field was added in flatpak 1.2, anything before is 0.
@@ -82,8 +81,8 @@ GType flatpak_deploy_get_type (void);
 #define FLATPAK_REPO_COLLECTION_ID_KEY "CollectionID"
 #define FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY "DeployCollectionID"
 
-#define FLATPAK_DEFAULT_UPDATE_FREQUENCY 100
-#define FLATPAK_CLI_UPDATE_FREQUENCY 300
+#define FLATPAK_DEFAULT_UPDATE_INTERVAL_MS 100
+#define FLATPAK_CLI_UPDATE_INTERVAL_MS 300
 
 #define FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE "eol"
 #define FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE "eolr"
@@ -120,6 +119,7 @@ typedef struct
   GRegex   *allow_refs;
   GRegex   *deny_refs;
   int       refcount;
+  gint32    default_token_type;
 } FlatpakRemoteState;
 
 FlatpakRemoteState *flatpak_remote_state_ref (FlatpakRemoteState *remote_state);
@@ -820,12 +820,16 @@ gboolean   flatpak_dir_remove_remote (FlatpakDir   *self,
                                       const char   *remote_name,
                                       GCancellable *cancellable,
                                       GError      **error);
+char **   flatpak_dir_list_remote_config_keys (FlatpakDir *self,
+                                               const char *remote_name);
 char      *flatpak_dir_get_remote_title (FlatpakDir *self,
                                          const char *remote_name);
 char      *flatpak_dir_get_remote_comment (FlatpakDir *self,
                                            const char *remote_name);
 char      *flatpak_dir_get_remote_description (FlatpakDir *self,
                                                const char *remote_name);
+gint32     flatpak_dir_get_remote_default_token_type (FlatpakDir *self,
+                                                      const char *remote_name);
 char      *flatpak_dir_get_remote_homepage (FlatpakDir *self,
                                             const char *remote_name);
 char      *flatpak_dir_get_remote_icon (FlatpakDir *self,
