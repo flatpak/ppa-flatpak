@@ -10,6 +10,9 @@ flatpak (1.5.2-1) UNRELEASED; urgency=medium
     Drop patch, no longer needed.
     The tests now require Python 3 upstream, and no longer support
     Python 2.
+  * Depend on xdg-desktop-portal 1.5.4.
+    This is probably not strictly required, but they are likely to be
+    released together and some features will need it.
 
  -- Simon McVittie <smcv@debian.org>  Thu, 28 Nov 2019 09:10:55 +0000
 

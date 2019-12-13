@@ -73,7 +73,7 @@ Depends:
  adduser,
  bubblewrap (>= 0.4.0),
  xdg-dbus-proxy (>= 0.1.0),
- xdg-desktop-portal (>= 0.10),
+ xdg-desktop-portal (>= 1.5.4),
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
