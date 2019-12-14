@@ -3,6 +3,7 @@ flatpak (1.5.2-1) UNRELEASED; urgency=medium
   * New upstream development release
     - d/copyright: Update
     - d/control: Depend on bubblewrap 0.4.0
+    - Update d/libflatpak0.symbols
   * d/tests/build: Use correct compiler for proposed autopkgtest
     cross-architecture testing support
   * Make autopkgtests shellcheck-clean
