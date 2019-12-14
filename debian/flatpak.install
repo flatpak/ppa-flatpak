@@ -6,8 +6,10 @@ etc/profile.d/
 lib/systemd/system/flatpak-system-helper.service
 usr/bin/flatpak
 usr/lib/systemd/user-environment-generators
+usr/lib/systemd/user/flatpak-oci-authenticator.service
 usr/lib/systemd/user/flatpak-portal.service
 usr/lib/systemd/user/flatpak-session-helper.service
+usr/libexec/flatpak-oci-authenticator
 usr/libexec/flatpak-portal
 usr/libexec/flatpak-session-helper
 usr/libexec/flatpak-system-helper
