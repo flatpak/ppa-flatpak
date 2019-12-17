@@ -1,0 +1,40 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Tue, 17 Dec 2019 10:40:09 +0000
+Subject: dir: Don't leak result of flatpak_get_current_locale_langs()
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/3311
+---
+ common/flatpak-dir.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/common/flatpak-dir.c b/common/flatpak-dir.c
+index 071547b..635d410 100644
+--- a/common/flatpak-dir.c
++++ b/common/flatpak-dir.c
+@@ -14804,7 +14804,11 @@ flatpak_dir_get_default_locales (FlatpakDir *self)
+   extra_languages = flatpak_dir_get_config_strv (self, "xa.extra-languages");
+ 
+   if (flatpak_dir_is_user (self))
+-    return sort_strv (flatpak_strv_merge (extra_languages, flatpak_get_current_locale_langs ()));
++    {
++      g_auto(GStrv) locale_langs = flatpak_get_current_locale_langs ();
++
++      return sort_strv (flatpak_strv_merge (extra_languages, locale_langs));
++    }
+ 
+   /* Then get the system default locales */
+   get_system_locales (self, langs);
+@@ -14829,7 +14833,11 @@ flatpak_dir_get_default_locale_languages (FlatpakDir *self)
+     }
+ 
+   if (flatpak_dir_is_user (self))
+-    return sort_strv (flatpak_strv_merge (extra_languages, flatpak_get_current_locale_langs ()));
++    {
++      g_auto(GStrv) locale_langs = flatpak_get_current_locale_langs ();
++
++      return sort_strv (flatpak_strv_merge (extra_languages, locale_langs));
++    }
+ 
+   /* Then get the system default locales */
+   get_system_locales (self, langs);

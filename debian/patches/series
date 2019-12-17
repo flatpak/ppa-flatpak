@@ -9,3 +9,6 @@ dir-Fix-leak.patch
 dir-Actually-free-the-main-memory-chunk-in-flatpak_dir_p2.patch
 dir-Fix-leak-in-flatpak_dir_p2p_state_free.patch
 dir-Fix-leak-in-flatpak_remote_state_lookup_cache.patch
+testlibrary-Fix-some-leaks-in-the-test-itself.patch
+dir-Don-t-leak-result-of-flatpak_get_current_locale_langs.patch
+flatpak.supp-Silence-GFile-leak-in-flatpak_get_user_base_.patch
