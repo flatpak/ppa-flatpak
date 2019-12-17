@@ -17,6 +17,8 @@ flatpak (1.5.2-1) UNRELEASED; urgency=medium
   * d/tests/build: Use correct compiler for proposed autopkgtest
     cross-architecture testing support
   * Make autopkgtests shellcheck-clean
+  * d/patches:
+    Add proposed patches from upstream PR 3307 to fix memory and fd leaks
 
  -- Simon McVittie <smcv@debian.org>  Thu, 28 Nov 2019 09:10:55 +0000
 
