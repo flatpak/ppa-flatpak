@@ -12,3 +12,4 @@ dir-Fix-leak-in-flatpak_remote_state_lookup_cache.patch
 testlibrary-Fix-some-leaks-in-the-test-itself.patch
 dir-Don-t-leak-result-of-flatpak_get_current_locale_langs.patch
 flatpak.supp-Silence-GFile-leak-in-flatpak_get_user_base_.patch
+testlibrary-Don-t-assert-that-progress-is-signalled.patch
