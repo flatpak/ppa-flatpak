@@ -1238,7 +1238,8 @@ flatpak_parse_filters (const char *data,
 
       if (strcmp (command, "allow") == 0 || strcmp (command, "deny") == 0)
         {
-          char *glob, *next, *ref_regexp;
+          char *glob, *next;
+          g_autofree char *ref_regexp = NULL;
           GString *command_regexp;
           gboolean *has_type = NULL;
 
@@ -2754,6 +2755,7 @@ flatpak_parse_repofile (const char   *remote_name,
   g_autofree char *icon = NULL;
   g_autofree char *homepage = NULL;
   g_autofree char *filter = NULL;
+  g_autofree char *authenticator_name = NULL;
   gboolean nodeps;
   const char *source_group;
   g_autofree char *version = NULL;
@@ -2851,6 +2853,18 @@ flatpak_parse_repofile (const char   *remote_name,
    * than the summary file. */
   g_key_file_set_boolean (config, group, "gpg-verify-summary",
                           (gpg_key != NULL && collection_id == NULL));
+
+  authenticator_name = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
+                                              FLATPAK_REPO_AUTHENTICATOR_NAME_KEY, NULL);
+  if (authenticator_name)
+    g_key_file_set_string (config, group, "xa.authenticator-name", authenticator_name);
+
+  if (g_key_file_has_key (keyfile, FLATPAK_REPO_GROUP, FLATPAK_REPO_AUTHENTICATOR_INSTALL_KEY, NULL))
+    {
+      gboolean authenticator_install = g_key_file_get_boolean (keyfile, FLATPAK_REPO_GROUP,
+                                                               FLATPAK_REPO_AUTHENTICATOR_INSTALL_KEY, NULL);
+      g_key_file_set_boolean (config, group, "xa.authenticator-install", authenticator_install);
+    }
 
   comment = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
                                    FLATPAK_REPO_COMMENT_KEY, NULL);
@@ -2998,6 +3012,65 @@ flatpak_repo_set_redirect_url (OstreeRepo *repo,
     g_key_file_set_string (config, "flatpak", "redirect-url", redirect_url);
   else
     g_key_file_remove_key (config, "flatpak", "redirect-url", NULL);
+
+  if (!ostree_repo_write_config (repo, config, error))
+    return FALSE;
+
+  return TRUE;
+}
+
+gboolean
+flatpak_repo_set_authenticator_name (OstreeRepo *repo,
+                                     const char *authenticator_name,
+                                     GError    **error)
+{
+  g_autoptr(GKeyFile) config = NULL;
+
+  config = ostree_repo_copy_config (repo);
+
+  if (authenticator_name)
+    g_key_file_set_string (config, "flatpak", "authenticator-name", authenticator_name);
+  else
+    g_key_file_remove_key (config, "flatpak", "authenticator-name", NULL);
+
+  if (!ostree_repo_write_config (repo, config, error))
+    return FALSE;
+
+  return TRUE;
+}
+
+gboolean
+flatpak_repo_set_authenticator_install (OstreeRepo *repo,
+                                        gboolean authenticator_install,
+                                        GError    **error)
+{
+  g_autoptr(GKeyFile) config = NULL;
+
+  config = ostree_repo_copy_config (repo);
+
+  g_key_file_set_boolean (config, "flatpak", "authenticator-install", authenticator_install);
+
+  if (!ostree_repo_write_config (repo, config, error))
+    return FALSE;
+
+  return TRUE;
+}
+
+gboolean
+flatpak_repo_set_authenticator_option (OstreeRepo *repo,
+                                       const char *key,
+                                       const char *value,
+                                       GError    **error)
+{
+  g_autoptr(GKeyFile) config = NULL;
+  g_autofree char *full_key = g_strdup_printf ("authenticator-options.%s", key);
+
+  config = ostree_repo_copy_config (repo);
+
+  if (value)
+    g_key_file_set_string (config, "flatpak", full_key, value);
+  else
+    g_key_file_remove_key (config, "flatpak", full_key, NULL);
 
   if (!ostree_repo_write_config (repo, config, error))
     return FALSE;
@@ -3404,10 +3477,10 @@ flatpak_repo_update (OstreeRepo   *repo,
                      GCancellable *cancellable,
                      GError      **error)
 {
-  GVariantBuilder builder;
-  GVariantBuilder commits_builder;
-  GVariantBuilder ref_data_builder;
-  GVariantBuilder ref_sparse_data_builder;
+  g_auto(GVariantBuilder) builder = G_VARIANT_BUILDER_INIT (G_VARIANT_TYPE_VARDICT);
+  g_auto(GVariantBuilder) commits_builder = G_VARIANT_BUILDER_INIT (G_VARIANT_TYPE ("aay"));
+  g_auto(GVariantBuilder) ref_data_builder = G_VARIANT_BUILDER_INIT (G_VARIANT_TYPE ("a{s(tts)}"));
+  g_auto(GVariantBuilder) ref_sparse_data_builder = G_VARIANT_BUILDER_INIT (G_VARIANT_TYPE ("a{sa{sv}}"));
   GKeyFile *config;
   g_autofree char *title = NULL;
   g_autofree char *comment = NULL;
@@ -3416,7 +3489,10 @@ flatpak_repo_update (OstreeRepo   *repo,
   g_autofree char *icon = NULL;
   g_autofree char *redirect_url = NULL;
   g_autofree char *default_branch = NULL;
+  g_autofree char *authenticator_name = NULL;
   g_autofree char *gpg_keys = NULL;
+  g_auto(GStrv) config_keys = NULL;
+  int authenticator_install = -1;
   g_autoptr(GVariant) old_summary = NULL;
   g_autoptr(GVariant) new_summary = NULL;
   g_autoptr(GHashTable) refs = NULL;
@@ -3429,8 +3505,6 @@ flatpak_repo_update (OstreeRepo   *repo,
   g_autofree char *old_ostree_metadata_checksum = NULL;
   g_autoptr(GVariant) old_ostree_metadata_v = NULL;
   gboolean deploy_collection_id = FALSE;
-
-  g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
 
   config = ostree_repo_get_config (repo);
 
@@ -3445,6 +3519,11 @@ flatpak_repo_update (OstreeRepo   *repo,
       gpg_keys = g_key_file_get_string (config, "flatpak", "gpg-keys", NULL);
       redirect_url = g_key_file_get_string (config, "flatpak", "redirect-url", NULL);
       deploy_collection_id = g_key_file_get_boolean (config, "flatpak", "deploy-collection-id", NULL);
+      authenticator_name = g_key_file_get_string (config, "flatpak", "authenticator-name", NULL);
+      if (g_key_file_has_key (config, "flatpak", "authenticator-install", NULL))
+        authenticator_install = g_key_file_get_boolean (config, "flatpak", "authenticator-install", NULL);
+
+      config_keys = g_key_file_get_keys (config, "flatpak", NULL, NULL);
     }
 
   collection_id = ostree_repo_get_collection_id (repo);
@@ -3483,6 +3562,35 @@ flatpak_repo_update (OstreeRepo   *repo,
   else if (deploy_collection_id)
     g_debug ("Ignoring deploy-collection-id=true because no collection ID is set.");
 
+  if (authenticator_name)
+    g_variant_builder_add (&builder, "{sv}", "xa.authenticator-name",
+                           g_variant_new_string (authenticator_name));
+
+  if (authenticator_install != -1)
+    g_variant_builder_add (&builder, "{sv}", "xa.authenticator-install",
+                           g_variant_new_boolean (authenticator_install));
+
+  if (config_keys != NULL)
+    {
+      for (int i = 0; config_keys[i] != NULL; i++)
+        {
+          const char *key = config_keys[i];
+          g_autofree char *xa_key = NULL;
+          g_autofree char *value = NULL;
+
+          if (!g_str_has_prefix (key, "authenticator-options."))
+            continue;
+
+          value = g_key_file_get_string (config, "flatpak", key, NULL);
+          if (value == NULL)
+            continue;
+
+          xa_key = g_strconcat ("xa.", key, NULL);
+          g_variant_builder_add (&builder, "{sv}", xa_key,
+                                 g_variant_new_string (value));
+        }
+    }
+
   if (gpg_keys)
     {
       guchar *decoded;
@@ -3495,10 +3603,6 @@ flatpak_repo_update (OstreeRepo   *repo,
                              g_variant_new_from_data (G_VARIANT_TYPE ("ay"), decoded, decoded_len,
                                                       TRUE, (GDestroyNotify) g_free, decoded));
     }
-
-  g_variant_builder_init (&ref_data_builder, G_VARIANT_TYPE ("a{s(tts)}"));
-  g_variant_builder_init (&ref_sparse_data_builder, G_VARIANT_TYPE ("a{sa{sv}}"));
-  g_variant_builder_init (&commits_builder, G_VARIANT_TYPE ("aay"));
 
   /* Only operate on flatpak relevant refs */
   refs = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
@@ -5508,8 +5612,6 @@ flatpak_mirror_image_from_oci (FlatpakOciRegistry    *dst_registry,
 
   manifest_desc = flatpak_oci_descriptor_new (versioned->mediatype, digest, versioned_size);
 
-  flatpak_oci_export_annotations (manifest->annotations, manifest_desc->annotations);
-
   flatpak_oci_index_add_manifest (index, ref, manifest_desc);
 
   if (!flatpak_oci_registry_save_index (dst_registry, index, cancellable, error))
@@ -5545,27 +5647,18 @@ flatpak_pull_from_oci (OstreeRepo            *repo,
   FlatpakOciPullProgressData progress_data = { progress_cb, progress_user_data };
   g_autoptr(GVariantBuilder) metadata_builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
   g_autoptr(GVariant) metadata = NULL;
-  GHashTable *annotations, *labels;
+  GHashTable *labels;
   int i;
 
   g_assert (ref != NULL);
   g_assert (g_str_has_prefix (digest, "sha256:"));
 
-  annotations = flatpak_oci_manifest_get_annotations (manifest);
-  if (annotations)
-    flatpak_oci_parse_commit_annotations (annotations, &timestamp,
-                                          &subject, &body,
-                                          &manifest_ref, NULL, NULL,
-                                          metadata_builder);
-  if (manifest_ref == NULL)
-    {
-      labels = flatpak_oci_image_get_labels (image_config);
-      if (labels)
-        flatpak_oci_parse_commit_annotations (labels, &timestamp,
-                                              &subject, &body,
-                                              &manifest_ref, NULL, NULL,
-                                              metadata_builder);
-    }
+  labels = flatpak_oci_image_get_labels (image_config);
+  if (labels)
+    flatpak_oci_parse_commit_labels (labels, &timestamp,
+                                     &subject, &body,
+                                     &manifest_ref, NULL, NULL,
+                                     metadata_builder);
 
   if (manifest_ref == NULL)
     {
@@ -6495,7 +6588,17 @@ flatpak_progress_new (FlatpakProgressCallback progress,
   return ostree_progress;
 }
 
-#if OSTREE_CHECK_VERSION (2019, 6)
+#ifdef FLATPAK_DO_CHAIN_PROGRESS
+static void
+progress_trigger_change (OstreeAsyncProgress *progress)
+{
+  guint chain_count;
+
+  /* Trigger changed signal in original progress by changing *something* */
+  chain_count = ostree_async_progress_get_uint (progress, "flatpak-chain-count");
+  ostree_async_progress_set_uint (progress, "flatpak-chain-count", chain_count + 1);
+}
+
 static void
 handle_chained_progress (OstreeAsyncProgress *chained_progress,
                          gpointer             user_data)
@@ -6506,33 +6609,33 @@ handle_chained_progress (OstreeAsyncProgress *chained_progress,
    * into account any updates received while a different GMainContext was
    * active */
   ostree_async_progress_copy_state (chained_progress, original_progress);
+  progress_trigger_change (original_progress);
 
-  OstreeAsyncProgress *chained_from =
-    OSTREE_ASYNC_PROGRESS (g_object_get_data (G_OBJECT (original_progress), "chained_from"));
-  FlatpakProgressCallback chained_callback =
-    g_object_get_data (G_OBJECT (original_progress), "callback");
-
-  if (chained_from != NULL)
-    {
-      /* It's possible we chained to an already-chained progress object. */
-      handle_chained_progress (original_progress, chained_from);
-    }
-  else if (chained_callback != NULL)
-    {
-      /* The normal case; we chained to a progress object created by
-       * flatpak_progress_new(). */
-      gpointer original_data = g_object_get_data (G_OBJECT (original_progress), "callback_data");
-      progress_cb (original_progress, original_data);
-    }
-  else
-    {
-      /* Do nothing. It's possible we chained to a progress object without the
-       * GObject data, that was not created by flatpak_progress_new().
-       * Unfortunately it doesn't seem possible to call the callback in this
-       * case. */
-    }
 }
-#endif  /* libostree ≥ 2019.6 */
+
+void
+flatpak_chained_progress_finish (OstreeAsyncProgress *progress)
+{
+  /* At this point there might be outstanding idle events with changes in
+   * the chained progress, so we need to call ostree_async_progress_finish() to
+   * emit the changed signal which will call handle_chained_progress,
+   * copying the data to the original progress.
+   *
+   * Unfortunately it will first mark the chained progress dead
+   * which makes ostree_async_progress_copy_state() not actually copy
+   * anything. So, to fix this we do a copy ahead of time in case it
+   * was needed.
+   *
+   * We still need to call the regular finish() though to avoid some
+   * idle callback hanging around unresolved forever (and to cause
+   * the changed signal to be emitted).
+   */
+  OstreeAsyncProgress *original_progress = OSTREE_ASYNC_PROGRESS (g_object_get_data (G_OBJECT (progress), "chained-from"));
+
+  ostree_async_progress_copy_state (progress, original_progress);
+  ostree_async_progress_finish (progress);
+}
+#endif  /* FLATPAK_DO_CHAIN_PROGRESS */
 
 /*
  * This is necessary when pushing a temporary GMainContext to be the thread
@@ -6576,10 +6679,10 @@ handle_chained_progress (OstreeAsyncProgress *chained_progress,
  * This is a no-op, preserving the current behaviour where progress events are
  * not fired, if the libostree version isn't new enough.
  */
-OstreeAsyncProgress *
+FlatpakAsyncProgressChained *
 flatpak_progress_chain (OstreeAsyncProgress *progress)
 {
-#if OSTREE_CHECK_VERSION (2019, 6)
+#ifdef FLATPAK_DO_CHAIN_PROGRESS
   if (progress == NULL)
     return NULL;
 
@@ -6588,21 +6691,16 @@ flatpak_progress_chain (OstreeAsyncProgress *progress)
   /* Copy the OstreeAsyncProgress's state to the chained instance */
   ostree_async_progress_copy_state (progress, chained_progress);
 
-  g_signal_connect (chained_progress, "changed",
-                    G_CALLBACK (handle_chained_progress), progress);
+  g_object_set_data (G_OBJECT (chained_progress), "chained-from", progress);
 
-  /* Now initialize the expected FlatpakProgress state on the chained instance */
-
-  g_object_set_data (G_OBJECT (chained_progress), "callback", NULL);
-  g_object_set_data (G_OBJECT (chained_progress), "callback_data", NULL);
-  g_object_set_data (G_OBJECT (chained_progress), "last_progress", GUINT_TO_POINTER (0));
-  g_object_set_data (G_OBJECT (chained_progress), "last_total", GUINT_TO_POINTER (0));
-  g_object_set_data (G_OBJECT (chained_progress), "chained_from", progress);
+  g_signal_connect_data (chained_progress, "changed",
+                         G_CALLBACK (handle_chained_progress),
+                         g_object_ref (progress), (GClosureNotify)g_object_unref, 0);
 
   return chained_progress;
-#else
+#else /* !FLATPAK_DO_CHAIN_PROGRESS */
   return progress;
-#endif  /* libostree ≥ 2019.6 */
+#endif
 }
 
 void

@@ -77,6 +77,8 @@ GType flatpak_deploy_get_type (void);
 #define FLATPAK_REPO_HOMEPAGE_KEY "Homepage"
 #define FLATPAK_REPO_ICON_KEY "Icon"
 #define FLATPAK_REPO_FILTER_KEY "Filter"
+#define FLATPAK_REPO_AUTHENTICATOR_NAME_KEY "AuthenticatorName"
+#define FLATPAK_REPO_AUTHENTICATOR_INSTALL_KEY "AuthenticatorInstall"
 
 #define FLATPAK_REPO_COLLECTION_ID_KEY "CollectionID"
 #define FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY "DeployCollectionID"
@@ -874,6 +876,8 @@ GVariant * flatpak_dir_fetch_remote_commit (FlatpakDir   *self,
                                             GError      **error);
 gboolean flatpak_dir_update_remote_configuration (FlatpakDir   *self,
                                                   const char   *remote,
+                                                  FlatpakRemoteState *optional_remote_state,
+                                                  gboolean     *changed_out,
                                                   GCancellable *cancellable,
                                                   GError      **error);
 gboolean flatpak_dir_update_remote_configuration_for_state (FlatpakDir         *self,
@@ -944,6 +948,8 @@ gboolean flatpak_dir_find_latest_rev (FlatpakDir               *self,
                                       OstreeRepoFinderResult ***out_results,
                                       GCancellable             *cancellable,
                                       GError                  **error);
+GPtrArray * flatpak_dir_find_remote_auto_install_refs (FlatpakDir         *self,
+                                                       const char         *remote_name);
 
 typedef struct
 {

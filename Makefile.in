@@ -1187,10 +1187,8 @@ am__EXEEXT_11 = tests/test-run@user,nodeltas.wrap \
 	tests/test-repo@collections-server-only.wrap \
 	tests/test-bundle@user.wrap tests/test-bundle@system.wrap \
 	tests/test-bundle@system-norevokefs.wrap \
-	tests/test-oci-registry@user,annotations.wrap \
-	tests/test-oci-registry@user,labels.wrap \
-	tests/test-oci-registry@system,annotations.wrap \
-	tests/test-oci-registry@system,labels.wrap \
+	tests/test-oci-registry@user.wrap \
+	tests/test-oci-registry@system.wrap \
 	tests/test-auth@nocollections.wrap \
 	tests/test-auth@collections.wrap $(am__EXEEXT_1)
 am__EXEEXT_12 = $(am__EXEEXT_11)
@@ -2250,7 +2248,7 @@ TEST_MATRIX_SOURCE = \
 	tests/test-extensions.sh \
 	tests/test-bundle.sh{user+system+system-norevokefs} \
 	tests/test-oci.sh \
-	tests/test-oci-registry.sh{{user+system},{annotations+labels}} \
+	tests/test-oci-registry.sh{{user+system} \
 	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	tests/test-override.sh \
@@ -2277,10 +2275,8 @@ TEST_MATRIX = \
 	tests/test-bundle@user.wrap \
 	tests/test-bundle@system.wrap \
 	tests/test-bundle@system-norevokefs.wrap \
-	tests/test-oci-registry@user,annotations.wrap \
-	tests/test-oci-registry@user,labels.wrap \
-	tests/test-oci-registry@system,annotations.wrap \
-	tests/test-oci-registry@system,labels.wrap \
+	tests/test-oci-registry@user.wrap \
+	tests/test-oci-registry@system.wrap \
 	tests/test-auth@nocollections.wrap \
 	tests/test-auth@collections.wrap \
 	$(NULL)
@@ -5794,30 +5790,16 @@ tests/test-bundle@system-norevokefs.wrap.log: tests/test-bundle@system-norevokef
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-oci-registry@user,annotations.wrap.log: tests/test-oci-registry@user,annotations.wrap
-	@p='tests/test-oci-registry@user,annotations.wrap'; \
-	b='tests/test-oci-registry@user,annotations.wrap'; \
+tests/test-oci-registry@user.wrap.log: tests/test-oci-registry@user.wrap
+	@p='tests/test-oci-registry@user.wrap'; \
+	b='tests/test-oci-registry@user.wrap'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-oci-registry@user,labels.wrap.log: tests/test-oci-registry@user,labels.wrap
-	@p='tests/test-oci-registry@user,labels.wrap'; \
-	b='tests/test-oci-registry@user,labels.wrap'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-oci-registry@system,annotations.wrap.log: tests/test-oci-registry@system,annotations.wrap
-	@p='tests/test-oci-registry@system,annotations.wrap'; \
-	b='tests/test-oci-registry@system,annotations.wrap'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-oci-registry@system,labels.wrap.log: tests/test-oci-registry@system,labels.wrap
-	@p='tests/test-oci-registry@system,labels.wrap'; \
-	b='tests/test-oci-registry@system,labels.wrap'; \
+tests/test-oci-registry@system.wrap.log: tests/test-oci-registry@system.wrap
+	@p='tests/test-oci-registry@system.wrap'; \
+	b='tests/test-oci-registry@system.wrap'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

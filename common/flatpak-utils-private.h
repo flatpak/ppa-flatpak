@@ -428,6 +428,16 @@ gboolean flatpak_repo_set_homepage (OstreeRepo *repo,
 gboolean flatpak_repo_set_redirect_url (OstreeRepo *repo,
                                         const char *redirect_url,
                                         GError    **error);
+gboolean flatpak_repo_set_authenticator_name (OstreeRepo *repo,
+                                              const char *authenticator_name,
+                                              GError    **error);
+gboolean flatpak_repo_set_authenticator_install (OstreeRepo *repo,
+                                                 gboolean authenticator_install,
+                                                 GError    **error);
+gboolean flatpak_repo_set_authenticator_option (OstreeRepo *repo,
+                                                const char *key,
+                                                const char *value,
+                                                GError    **error);
 gboolean flatpak_repo_set_default_branch (OstreeRepo *repo,
                                           const char *branch,
                                           GError    **error);
@@ -645,7 +655,10 @@ flatpak_main_context_pop_default_destroy (void *p)
   GMainContext *main_context = p;
 
   if (main_context)
-    g_main_context_pop_thread_default (main_context);
+    {
+      g_main_context_pop_thread_default (main_context);
+      g_main_context_unref (main_context);
+    }
 }
 
 static inline GMainContextPopDefault *
@@ -821,19 +834,44 @@ typedef void (*FlatpakProgressCallback)(const char *status,
 OstreeAsyncProgress *flatpak_progress_new (FlatpakProgressCallback progress,
                                            gpointer                progress_data);
 
-OstreeAsyncProgress *flatpak_progress_chain (OstreeAsyncProgress *progress);
+#if OSTREE_CHECK_VERSION (2019, 6)
+#define FLATPAK_DO_CHAIN_PROGRESS 1
+#endif
+
+#ifdef FLATPAK_DO_CHAIN_PROGRESS
+void flatpak_chained_progress_finish (OstreeAsyncProgress *progress);
+#endif
 
 static inline void
 flatpak_progress_unchain (OstreeAsyncProgress *chained_progress)
 {
-#if OSTREE_CHECK_VERSION (2019, 6)
+#ifdef FLATPAK_DO_CHAIN_PROGRESS
   if (chained_progress != NULL)
-    ostree_async_progress_finish (chained_progress);
+    {
+      flatpak_chained_progress_finish (chained_progress);
+      g_object_unref (chained_progress);
+    }
 #endif
 }
 
 typedef OstreeAsyncProgress FlatpakAsyncProgressChained;
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakAsyncProgressChained, flatpak_progress_unchain);
+
+FlatpakAsyncProgressChained *flatpak_progress_chain (OstreeAsyncProgress *progress);
+
+static inline void
+flatpak_ostree_progress_finish (OstreeAsyncProgress *progress)
+{
+  if (progress != NULL)
+    {
+      ostree_async_progress_finish (progress);
+      g_object_unref (progress);
+    }
+}
+
+typedef OstreeAsyncProgress OstreeAsyncProgressFinish;
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (OstreeAsyncProgressFinish, flatpak_ostree_progress_finish);
+
 
 void flatpak_log_dir_access (FlatpakDir *dir);
 

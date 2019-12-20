@@ -54,7 +54,8 @@ static char *opt_collection_id = NULL;
 static gboolean opt_from;
 static char **opt_gpg_import;
 static char *opt_authenticator_name = NULL;
-static char *opt_authenticator_options = NULL;
+static char **opt_authenticator_options = NULL;
+static gboolean opt_authenticator_install = -1;
 
 static GOptionEntry add_options[] = {
   { "if-not-exists", 0, 0, G_OPTION_ARG_NONE, &opt_if_not_exists, N_("Do nothing if the provided remote exists"), NULL },
@@ -78,7 +79,9 @@ static GOptionEntry common_options[] = {
   { "filter", 0, 0, G_OPTION_ARG_FILENAME, &opt_filter, N_("Set path to local filter FILE"), N_("FILE") },
   { "disable", 0, 0, G_OPTION_ARG_NONE, &opt_disable, N_("Disable the remote"), NULL },
   { "authenticator-name", 0, 0, G_OPTION_ARG_STRING, &opt_authenticator_name, N_("Name of authenticator"), N_("NAME") },
-  { "authenticator-options", 0, 0, G_OPTION_ARG_STRING, &opt_authenticator_options, N_("Authenticator options"), N_("OPTIONS") },
+  { "authenticator-option", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_authenticator_options, N_("Authenticator option"), N_("KEY=VALUE") },
+  { "authenticator-install", 0, 0, G_OPTION_ARG_NONE, &opt_authenticator_install, N_("Autoinstall authenticator"), NULL },
+  { "no-authenticator-install", 0, G_OPTION_FLAG_REVERSE, G_OPTION_ARG_NONE, &opt_authenticator_install, N_("Don't autoinstall authenticator"), NULL },
   { NULL }
 };
 
@@ -186,10 +189,30 @@ get_config_from_opts (GKeyFile *config,
     }
 
   if (opt_authenticator_name)
-    g_key_file_set_string (config, group, "xa.authenticator-name", opt_authenticator_name);
+    {
+      g_key_file_set_string (config, group, "xa.authenticator-name", opt_authenticator_name);
+      g_key_file_set_boolean (config, group, "xa.authenticator-name-is-set", TRUE);
+    }
+
+  if (opt_authenticator_install != -1)
+    {
+      g_key_file_set_boolean (config, group, "xa.authenticator-install", opt_authenticator_install);
+      g_key_file_set_boolean (config, group, "xa.authenticator-install-is-set", TRUE);
+    }
 
   if (opt_authenticator_options)
-    g_key_file_set_string (config, group, "xa.authenticator-options", opt_authenticator_options);
+    {
+      for (int i = 0; opt_authenticator_options[i] != NULL; i++)
+        {
+          g_auto(GStrv) split = g_strsplit (opt_authenticator_options[i], "=", 2);
+          g_autofree char *key = g_strdup_printf ("xa.authenticator-options.%s", split[0]);
+
+          if (split[0] == NULL || split[1] == NULL || *split[1] == 0)
+            g_key_file_remove_key (config, group, key, NULL);
+          else
+            g_key_file_set_string (config, group, key, split[1]);
+        }
+    }
 
   return TRUE;
 }
@@ -338,7 +361,7 @@ flatpak_builtin_remote_add (int argc, char **argv,
 
           if (!flatpak_dir_compare_remote_filter (dir, remote_name, new_filter))
             {
-              GKeyFile *config = ostree_repo_copy_config (flatpak_dir_get_repo (dir));
+              g_autoptr(GKeyFile) config = ostree_repo_copy_config (flatpak_dir_get_repo (dir));
 
               g_key_file_set_string (config, group, "xa.filter", new_filter ? new_filter : "");
 
@@ -363,18 +386,6 @@ flatpak_builtin_remote_add (int argc, char **argv,
   if (opt_authenticator_name && !g_dbus_is_name (opt_authenticator_name))
     return flatpak_fail (error, _("Invalid authenticator name %s"), opt_authenticator_name);
 
-  if (opt_authenticator_options)
-    {
-      g_autoptr(GVariant) v =
-        g_variant_parse (G_VARIANT_TYPE("a{sv}"), opt_authenticator_options, NULL, NULL, error);
-
-      if (v == NULL)
-        {
-          g_prefix_error (error, _("Invalid authenticator options: "));
-          return FALSE;
-        }
-    }
-
   if (!flatpak_dir_modify_remote (dir, remote_name, config, gpg_data, cancellable, error))
     return FALSE;
 
@@ -386,7 +397,7 @@ flatpak_builtin_remote_add (int argc, char **argv,
      ostree_repo_remote_fetch_summary() works with the repository's name, not its URL.
      Don't propagate IO failed errors here because we might just be offline - the
      remote should already be usable. */
-  if (!flatpak_dir_update_remote_configuration (dir, remote_name, cancellable, &local_error))
+  if (!flatpak_dir_update_remote_configuration (dir, remote_name, NULL, NULL, cancellable, &local_error))
     {
       if (local_error->domain == G_RESOLVER_ERROR || local_error->domain == G_IO_ERROR)
         {

@@ -2225,6 +2225,7 @@ flatpak_transaction_update_metadata (FlatpakTransaction *self,
   g_auto(GStrv) remotes = NULL;
   int i;
   GList *l;
+  gboolean some_updated;
   g_autoptr(GHashTable) ht = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
   /* Collect all dir+remotes used in this transaction */
@@ -2241,21 +2242,85 @@ flatpak_transaction_update_metadata (FlatpakTransaction *self,
   for (i = 0; remotes[i] != NULL; i++)
     {
       char *remote = remotes[i];
+      gboolean updated = FALSE;
       g_autoptr(GError) my_error = NULL;
+      g_autoptr(FlatpakRemoteState) state = flatpak_transaction_ensure_remote_state (self, FLATPAK_TRANSACTION_OPERATION_UPDATE, remote, NULL);
 
-      g_debug ("Updating remote metadata for %s", remote);
-      if (!flatpak_dir_update_remote_configuration (priv->dir, remote, cancellable, &my_error))
-        g_message (_("Error updating remote metadata for '%s': %s"), remote, my_error->message);
+      g_debug ("Looking for remote metadata updates for %s", remote);
+      if (!flatpak_dir_update_remote_configuration (priv->dir, remote, state, &updated, cancellable, &my_error))
+        g_debug (_("Error updating remote metadata for '%s': %s"), remote, my_error->message);
+
+      if (updated)
+        {
+          g_debug ("Got updatedo metadata for %s", remote);
+          some_updated = TRUE;
+        }
     }
 
-  /* Reload changed configuration */
-  if (!flatpak_dir_recreate_repo (priv->dir, cancellable, error))
+  if (some_updated)
+    {
+      /* Reload changed configuration */
+      if (!flatpak_dir_recreate_repo (priv->dir, cancellable, error))
+        return FALSE;
+
+      flatpak_installation_drop_caches (priv->installation, NULL, NULL);
+
+      /* These are potentially out of date now */
+      g_hash_table_remove_all (priv->remote_states);
+    }
+
+  return TRUE;
+}
+
+static gboolean
+flatpak_transaction_add_auto_install (FlatpakTransaction *self,
+                                      GCancellable       *cancellable,
+                                      GError            **error)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+  g_auto(GStrv) remotes = NULL;
+
+  remotes = flatpak_dir_list_remotes (priv->dir, cancellable, error);
+  if (remotes == NULL)
     return FALSE;
 
-  flatpak_installation_drop_caches (priv->installation, NULL, NULL);
+  /* Auto-add auto-download apps that are not already installed.
+   * Try to avoid doing network i/o until we know its needed, as this
+   * iterates over all configured remotes.
+   */
+  for (int i = 0; remotes[i] != NULL; i++)
+    {
+      char *remote = remotes[i];
+      g_autoptr(GPtrArray) auto_install_refs = NULL;
 
-  /* These are potentially out of date now */
-  g_hash_table_remove_all (priv->remote_states);
+      if (flatpak_dir_get_remote_disabled (priv->dir, remote))
+        continue;
+
+      auto_install_refs = flatpak_dir_find_remote_auto_install_refs (priv->dir, remote);
+      for (int i = 0; i < auto_install_refs->len; i++)
+        {
+          const char *ref = g_ptr_array_index (auto_install_refs, i);
+          g_autoptr(GError) local_error = NULL;
+          g_autoptr(GFile) deploy = NULL;
+
+          deploy = flatpak_dir_get_if_deployed (priv->dir, ref, NULL, cancellable);
+          if (deploy == NULL)
+            {
+              g_autoptr(FlatpakRemoteState) state = flatpak_transaction_ensure_remote_state (self, FLATPAK_TRANSACTION_OPERATION_UPDATE, remote, NULL);
+
+              if (state != NULL &&
+                  flatpak_remote_state_lookup_ref (state, ref, NULL, NULL, NULL))
+                {
+                  g_debug ("Auto adding install of %s from remote %s", ref, remote);
+                  if (!flatpak_transaction_add_ref (self, remote, ref, NULL, NULL, NULL,
+                                                    FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE,
+                                                    NULL, NULL,
+                                                    &local_error))
+                    g_debug ("Failed to add auto-install ref %s: %s", ref, local_error->message);
+                }
+            }
+        }
+    }
 
   return TRUE;
 }
@@ -3005,7 +3070,7 @@ request_tokens_for_remote (FlatpakTransaction *self,
             {
               const char *key;
               g_autofree char *new_key = NULL;
-              GVariant *value = NULL;
+              g_autoptr(GVariant) value = NULL;
 
               g_variant_get_child (op->summary_metadata, i, "{&s@v}", &key, &value);
 
@@ -3030,6 +3095,12 @@ request_tokens_for_remote (FlatpakTransaction *self,
     {
       copy_summary_data (extra_builder, state->summary, "xa.oci-registry-uri");
     }
+
+  if (state->collection_id)
+    g_variant_builder_add (extra_builder, "{sv}", "collection-id", g_variant_new_string (state->collection_id));
+
+  if (flatpak_dir_get_no_interaction (priv->dir))
+    g_variant_builder_add (extra_builder, "{sv}", "no-interaction", g_variant_new_boolean (TRUE));
 
   context = flatpak_main_context_new_default ();
 
@@ -3864,6 +3935,9 @@ flatpak_transaction_real_run (FlatpakTransaction *self,
 
   /* Work around ostree-pull spinning the default main context for the sync calls */
   main_context = flatpak_main_context_new_default ();
+
+  if (!flatpak_transaction_add_auto_install (self, cancellable, error))
+    return FALSE;
 
   if (!flatpak_transaction_resolve_flatpakrefs (self, cancellable, error))
     return FALSE;
