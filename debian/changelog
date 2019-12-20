@@ -1,3 +1,9 @@
+flatpak (1.6.0-flatpak1~bionic) bionic; urgency=medium
+
+  * Update to 1.6.0
+
+ -- Alexander Larsson <alexl@redhat.com>  Fri, 20 Dec 2019 12:14:49 +0100
+
 flatpak (1.4.3-flatpak1~disco) disco; urgency=medium
 
   * Rebuild for disco

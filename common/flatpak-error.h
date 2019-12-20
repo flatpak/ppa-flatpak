@@ -38,7 +38,7 @@ G_BEGIN_DECLS
  * @FLATPAK_ERROR_ONLY_PULLED: App/runtime was only pulled into the local
  *                             repository but not installed.
  * @FLATPAK_ERROR_DIFFERENT_REMOTE: The App/Runtime is already installed, but from a different remote.
- * @FLATPAK_ERROR_ABORTED: The transaction was aborted (returned TRUE in operation-error signal).
+ * @FLATPAK_ERROR_ABORTED: The transaction was aborted (returned %TRUE in operation-error signal).
  * @FLATPAK_ERROR_SKIPPED: The App/Runtime install was skipped due to earlier errors.
  * @FLATPAK_ERROR_NEED_NEW_FLATPAK: The App/Runtime needs a more recent version of flatpak.
  * @FLATPAK_ERROR_REMOTE_NOT_FOUND: The specified remote was not found.
@@ -58,6 +58,9 @@ G_BEGIN_DECLS
  *                            root operating on a user installation). (Since: 1.2.0)
  * @FLATPAK_ERROR_NOT_CACHED: Cached data was requested, but it was not available. (Since: 1.4.0)
  * @FLATPAK_ERROR_REF_NOT_FOUND: The specified ref was not found. (Since: 1.4.0)
+ * @FLATPAK_ERROR_PERMISSION_DENIED: An operation was not allowed by the administrative policy.
+ *                                   For example, an app is not allowed to be installed due
+ *                                   to not complying with the parental controls policy. (Since: 1.5.1)
  *
  * Error codes for library functions.
  */
@@ -84,6 +87,7 @@ typedef enum {
   FLATPAK_ERROR_WRONG_USER,
   FLATPAK_ERROR_NOT_CACHED,
   FLATPAK_ERROR_REF_NOT_FOUND,
+  FLATPAK_ERROR_PERMISSION_DENIED,
 } FlatpakError;
 
 /**

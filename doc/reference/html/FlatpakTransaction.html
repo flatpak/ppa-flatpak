@@ -2,12 +2,12 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>FlatpakTransaction: Flatpak Reference Manual</title>
+<title>FlatpakTransaction: Flatpak Library Reference Manual</title>
 <meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
-<link rel="home" href="index.html" title="Flatpak Reference Manual">
-<link rel="up" href="ch01.html" title="[Insert title here]">
-<link rel="prev" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation">
-<link rel="next" href="flatpak-Version-information.html" title="Version information">
+<link rel="home" href="index.html" title="Flatpak Library Reference Manual">
+<link rel="up" href="ch01.html" title="Flatpak">
+<link rel="prev" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress">
+<link rel="next" href="FlatpakRef.html" title="FlatpakRef">
 <meta name="generator" content="GTK-Doc V1.32.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
@@ -23,8 +23,8 @@
 </td>
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
-<td><a accesskey="p" href="FlatpakTransactionOperation.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="flatpak-Version-information.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="p" href="FlatpakTransactionProgress.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="FlatpakRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="FlatpakTransaction"></a><div class="titlepage"></div>
@@ -73,6 +73,14 @@
 </td>
 <td class="function_name">
 <a class="link" href="FlatpakTransaction.html#flatpak-transaction-add-install-flatpakref" title="flatpak_transaction_add_install_flatpakref ()">flatpak_transaction_add_install_flatpakref</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">gboolean</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakTransaction.html#flatpak-transaction-add-rebase" title="flatpak_transaction_add_rebase ()">flatpak_transaction_add_rebase</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
@@ -189,10 +197,26 @@
 </tr>
 <tr>
 <td class="function_type">
+<span class="returnvalue">gboolean</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakTransaction.html#flatpak-transaction-get-no-deploy" title="flatpak_transaction_get_no_deploy ()">flatpak_transaction_get_no_deploy</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
 <span class="returnvalue">void</span>
 </td>
 <td class="function_name">
 <a class="link" href="FlatpakTransaction.html#flatpak-transaction-set-no-pull" title="flatpak_transaction_set_no_pull ()">flatpak_transaction_set_no_pull</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">gboolean</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakTransaction.html#flatpak-transaction-get-no-pull" title="flatpak_transaction_get_no_pull ()">flatpak_transaction_get_no_pull</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
@@ -217,6 +241,29 @@
 </td>
 <td class="function_name">
 <a class="link" href="FlatpakTransaction.html#flatpak-transaction-set-default-arch" title="flatpak_transaction_set_default_arch ()">flatpak_transaction_set_default_arch</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakTransaction.html#flatpak-transaction-set-parent-window" title="flatpak_transaction_set_parent_window ()">flatpak_transaction_set_parent_window</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">const <span class="returnvalue">char</span> *
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakTransaction.html#flatpak-transaction-get-parent-window" title="flatpak_transaction_get_parent_window ()">flatpak_transaction_get_parent_window</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakTransaction.html#flatpak-transaction-abort-webflow" title="flatpak_transaction_abort_webflow ()">flatpak_transaction_abort_webflow</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 </tbody>
@@ -253,6 +300,11 @@
 <td class="signal_flags">Run Last</td>
 </tr>
 <tr>
+<td class="signal_type"><span class="returnvalue">gboolean</span></td>
+<td class="signal_name"><a class="link" href="FlatpakTransaction.html#FlatpakTransaction-basic-auth-start" title="The “basic-auth-start” signal">basic-auth-start</a></td>
+<td class="signal_flags">Run Last</td>
+</tr>
+<tr>
 <td class="signal_type"><span class="returnvalue">gint</span></td>
 <td class="signal_name"><a class="link" href="FlatpakTransaction.html#FlatpakTransaction-choose-remote-for-ref" title="The “choose-remote-for-ref” signal">choose-remote-for-ref</a></td>
 <td class="signal_flags">Run Last</td>
@@ -285,6 +337,16 @@
 <tr>
 <td class="signal_type"><span class="returnvalue">gboolean</span></td>
 <td class="signal_name"><a class="link" href="FlatpakTransaction.html#FlatpakTransaction-ready" title="The “ready” signal">ready</a></td>
+<td class="signal_flags">Run Last</td>
+</tr>
+<tr>
+<td class="signal_type"><span class="returnvalue">void</span></td>
+<td class="signal_name"><a class="link" href="FlatpakTransaction.html#FlatpakTransaction-webflow-done" title="The “webflow-done” signal">webflow-done</a></td>
+<td class="signal_flags">Run Last</td>
+</tr>
+<tr>
+<td class="signal_type"><span class="returnvalue">gboolean</span></td>
+<td class="signal_name"><a class="link" href="FlatpakTransaction.html#FlatpakTransaction-webflow-start" title="The “webflow-start” signal">webflow-start</a></td>
 <td class="signal_flags">Run Last</td>
 </tr>
 </tbody>
@@ -335,7 +397,7 @@ FlatpakTransaction implements
 </div>
 <div class="refsect1">
 <a name="FlatpakTransaction.description"></a><h2>Description</h2>
-<p>FlatpakTransaction is an object representing an install/update
+<p>FlatpakTransaction is an object representing an install/update/uninstall
 transaction. You create an object like this using <a class="link" href="FlatpakTransaction.html#flatpak-transaction-new-for-installation" title="flatpak_transaction_new_for_installation ()"><code class="function">flatpak_transaction_new_for_installation()</code></a>
 and then you add all the operations (installs, updates, etc) you wish to do. Then
 you start the transaction with <a class="link" href="FlatpakTransaction.html#flatpak-transaction-run" title="flatpak_transaction_run ()"><code class="function">flatpak_transaction_run()</code></a> which will resolve all kinds
@@ -568,6 +630,77 @@ set on failure.</p>
 </div>
 <hr>
 <div class="refsect2">
+<a name="flatpak-transaction-add-rebase"></a><h3>flatpak_transaction_add_rebase ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>
+flatpak_transaction_add_rebase (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *remote</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> *ref</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> **subpaths</code></em>,
+                                <em class="parameter"><code>const <span class="type">char</span> **previous_ids</code></em>,
+                                <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>Adds updating the <em class="parameter"><code>previous_ids</code></em>
+ of the given ref to this transaction, via either
+installing the <em class="parameter"><code>ref</code></em>
+ if it was not already present. The will treat <em class="parameter"><code>ref</code></em>
+ as the
+result of following an eol-rebase, and data migration from the refs in
+<em class="parameter"><code>previous_ids</code></em>
+ will be set up.</p>
+<p>See <a class="link" href="FlatpakTransaction.html#flatpak-transaction-add-install" title="flatpak_transaction_add_install ()"><code class="function">flatpak_transaction_add_install()</code></a> for a description of <em class="parameter"><code>remote</code></em>
+.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-add-rebase.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>remote</p></td>
+<td class="parameter_description"><p>the name of the remote</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>ref</p></td>
+<td class="parameter_description"><p>the ref</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>subpaths</p></td>
+<td class="parameter_description"><p>the subpaths to include, or <code class="literal">NULL</code> to install the complete ref. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>previous_ids</p></td>
+<td class="parameter_description"><p>Previous ids to add to the
+given ref. These should simply be the ids, not the full ref names (e.g. org.foo.Bar,
+not org.foo.Bar/x86_64/master). </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>return location for a <span class="type">GError</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-add-rebase.returns"></a><h4>Returns</h4>
+<p> <code class="literal">TRUE</code> on success; <code class="literal">FALSE</code> with <em class="parameter"><code>error</code></em>
+set on failure.</p>
+</div>
+<p class="since">Since: 1.3.3.</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="flatpak-transaction-add-update"></a><h3>flatpak_transaction_add_update ()</h3>
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
 flatpak_transaction_add_update (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
@@ -730,7 +863,7 @@ flatpak_transaction_run (<em class="parameter"><code><a class="link" href="Flatp
                          <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
                          <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
 <p>Executes the transaction.</p>
-<p>During the cause of the execution, various signals will get emitted.
+<p>During the course of the execution, various signals will get emitted.
 The FlatpakTransaction::choose-remote-for-ref  and
 <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-add-new-remote" title="The “add-new-remote” signal"><span class="type">“add-new-remote”</span></a> signals may get emitted while
 resolving operations. <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-ready" title="The “ready” signal"><span class="type">“ready”</span></a> is emitted when
@@ -1040,6 +1173,34 @@ not deploy them.</p>
 </div>
 <hr>
 <div class="refsect2">
+<a name="flatpak-transaction-get-no-deploy"></a><h3>flatpak_transaction_get_no_deploy ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>
+flatpak_transaction_get_no_deploy (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>);</pre>
+<p>Gets whether the transaction is only downloading updates,
+and not deploying them.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-get-no-deploy.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-get-no-deploy.returns"></a><h4>Returns</h4>
+<p> <code class="literal">TRUE</code> if no_deploy is set, <code class="literal">FALSE</code> otherwise</p>
+</div>
+<p class="since">Since: 1.5.1</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="flatpak-transaction-set-no-pull"></a><h3>flatpak_transaction_set_no_pull ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 flatpak_transaction_set_no_pull (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
@@ -1068,6 +1229,34 @@ available data.</p>
 </tbody>
 </table></div>
 </div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-transaction-get-no-pull"></a><h3>flatpak_transaction_get_no_pull ()</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>
+flatpak_transaction_get_no_pull (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>);</pre>
+<p>Gets whether the transaction should operate only on locally
+available data.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-get-no-pull.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-get-no-pull.returns"></a><h4>Returns</h4>
+<p> <code class="literal">TRUE</code> if no_pull is set, <code class="literal">FALSE</code> otherwise</p>
+</div>
+<p class="since">Since: 1.5.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1161,6 +1350,110 @@ flatpak_transaction_set_default_arch (<em class="parameter"><code><a class="link
 </tbody>
 </table></div>
 </div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-transaction-set-parent-window"></a><h3>flatpak_transaction_set_parent_window ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+flatpak_transaction_set_parent_window (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
+                                       <em class="parameter"><code>const <span class="type">char</span> *parent_window</code></em>);</pre>
+<p>Sets the parent window (if any) to use for any UI show by this transaction.
+This is used by authenticators if they need to interact with the user during
+authentication.</p>
+<p>The format of this string depends on the display system in use, and is the
+same as used by xdg-desktop-portal.</p>
+<p>On X11 it should be of the form x11:$xid where $xid is the hex
+version of the xwindows id.</p>
+<p>On wayland is should be wayland:$handle where handle is gotten by
+using the export call of the xdg-foreign-unstable wayland extension.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-set-parent-window.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>parent_window</p></td>
+<td class="parameter_description"><p>whether to avoid pulls</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.5.1</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-transaction-get-parent-window"></a><h3>flatpak_transaction_get_parent_window ()</h3>
+<pre class="programlisting">const <span class="returnvalue">char</span> *
+flatpak_transaction_get_parent_window (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>);</pre>
+<p>Gets the parent window set for this transaction, or <code class="literal">NULL</code> if unset. See
+<a class="link" href="FlatpakTransaction.html#flatpak-transaction-get-parent-window" title="flatpak_transaction_get_parent_window ()"><code class="function">flatpak_transaction_get_parent_window()</code></a>.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-get-parent-window.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-transaction-get-parent-window.returns"></a><h4>Returns</h4>
+<p>a window name, or <code class="literal">NULL</code>. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 1.5.1</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-transaction-abort-webflow"></a><h3>flatpak_transaction_abort_webflow ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+flatpak_transaction_abort_webflow (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
+                                   <em class="parameter"><code><span class="type">guint</span> id</code></em>);</pre>
+<p>Cancel an ongoing webflow authentication request. This can be call
+in the time between <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-webflow-start" title="The “webflow-start” signal"><span class="type">“webflow-start”</span></a> returned
+<code class="literal">TRUE</code>, and <a class="link" href="FlatpakTransaction.html#FlatpakTransaction-webflow-done" title="The “webflow-done” signal"><span class="type">“webflow-done”</span></a> is emitted. It will
+cancel the ongoing authentication operation.</p>
+<p>This is useful for example if you're showing an authenticaion
+window with a browser, but the user closed it before it was finished.</p>
+<div class="refsect3">
+<a name="flatpak-transaction-abort-webflow.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>id</p></td>
+<td class="parameter_description"><p>The webflow id, as passed into the webflow-start signal</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 1.5.1</p>
 </div>
 </div>
 <div class="refsect1">
@@ -1338,8 +1631,8 @@ described in <em class="parameter"><code>reason</code></em>
 </tr>
 <tr>
 <td class="parameter_name"><p>reason</p></td>
-<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html#FlatpakTransactionRemoteReason" title="enum FlatpakTransactionRemoteReason"><span class="type">FlatpakTransactionRemoteReason</span></a> for this suggestion</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html#FlatpakTransactionRemoteReason" title="enum FlatpakTransactionRemoteReason"><span class="type">FlatpakTransactionRemoteReason</span></a> for this suggestion. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> FlatpakTransactionRemoteReason]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>from_id</p></td>
@@ -1369,6 +1662,70 @@ described in <em class="parameter"><code>reason</code></em>
 <p> <code class="literal">TRUE</code> to add the remote</p>
 </div>
 <p>Flags: Run Last</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakTransaction-basic-auth-start"></a><h3>The <code class="literal">“basic-auth-start”</code> signal</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>
+user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
+               <span class="type">gchar</span>              *remote,
+               <span class="type">gchar</span>              *realm,
+               <span class="type">GVariant</span>           *options,
+               <span class="type">gint</span>                id,
+               <span class="type">gpointer</span>            user_data)</pre>
+<p>The ::basic-auth-start signal gets emitted when a basic user/password
+authentication is needed during the operation. If the caller handles this
+it should ask the user for the user and password and return <code class="literal">TRUE</code>. Once
+the information is gathered call <code class="function">flatpak_transaction_complete_basic_auth()</code>
+with it.</p>
+<p>If the client does not support basic auth then return <code class="literal">FALSE</code> from this signal
+(or don't implement it). This will abort the authentication and likely
+result in the transaction failing (unless the authentication was somehow
+optional).</p>
+<div class="refsect3">
+<a name="FlatpakTransaction-basic-auth-start.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>object</p></td>
+<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>remote</p></td>
+<td class="parameter_description"><p>The remote we're authenticating with</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>realm</p></td>
+<td class="parameter_description"><p>The url to show</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>options</p></td>
+<td class="parameter_description"><p>Extra options, currently unused</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>id</p></td>
+<td class="parameter_description"><p>The id of the operation, can be used to finish it</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>user_data</p></td>
+<td class="parameter_description"><p>user data set when the signal handler was connected.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p>Flags: Run Last</p>
+<p class="since">Since: 1.5.2</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1627,8 +1984,8 @@ the transaction when an operation is finished.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>result</p></td>
-<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html#FlatpakTransactionResult" title="enum FlatpakTransactionResult"><span class="type">FlatpakTransactionResult</span></a> giving details about the result</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html#FlatpakTransactionResult" title="enum FlatpakTransactionResult"><span class="type">FlatpakTransactionResult</span></a> giving details about the result. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> FlatpakTransactionResult]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
@@ -1677,8 +2034,8 @@ execution of the transaction.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>details</p></td>
-<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html#FlatpakTransactionErrorDetails" title="enum FlatpakTransactionErrorDetails"><span class="type">FlatpakTransactionErrorDetails</span></a> with details about the error</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html#FlatpakTransactionErrorDetails" title="enum FlatpakTransactionErrorDetails"><span class="type">FlatpakTransactionErrorDetails</span></a> with details about the error. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> FlatpakTransactionErrorDetails]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
@@ -1731,6 +2088,120 @@ transaction.</p>
 <p> <code class="literal">TRUE</code> to carry on with the transaction, <code class="literal">FALSE</code> to abort</p>
 </div>
 <p>Flags: Run Last</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakTransaction-webflow-done"></a><h3>The <code class="literal">“webflow-done”</code> signal</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
+               <span class="type">GVariant</span>           *options,
+               <span class="type">gint</span>                id,
+               <span class="type">gpointer</span>            user_data)</pre>
+<p>The ::webflow-done signal gets emitted when the authentication
+finished the webflow, independent of the reason and results.  If
+you for were showing a web-browser window it can now be closed.</p>
+<div class="refsect3">
+<a name="FlatpakTransaction-webflow-done.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>object</p></td>
+<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>options</p></td>
+<td class="parameter_description"><p>Extra options, currently unused</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>id</p></td>
+<td class="parameter_description"><p>The id of the operation</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>user_data</p></td>
+<td class="parameter_description"><p>user data set when the signal handler was connected.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p>Flags: Run Last</p>
+<p class="since">Since: 1.5.1</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakTransaction-webflow-start"></a><h3>The <code class="literal">“webflow-start”</code> signal</h3>
+<pre class="programlisting"><span class="returnvalue">gboolean</span>
+user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
+               <span class="type">gchar</span>              *remote,
+               <span class="type">gchar</span>              *url,
+               <span class="type">GVariant</span>           *options,
+               <span class="type">gint</span>                id,
+               <span class="type">gpointer</span>            user_data)</pre>
+<p>The ::webflow-start signal gets emitted when some kind of user
+authentication is needed during the operation. If the caller handles this
+it should show the url in a webbrowser and return <code class="literal">TRUE</code>. This will
+eventually cause the webbrowser to finish the authentication operation and
+operation will continue, as signaled by the webflow-done being emitted.</p>
+<p>If the client does not support webflow then return <code class="literal">FALSE</code> from this signal
+(or don't implement it). This will abort the authentication and likely
+result in the transaction failing (unless the authentication was somehow
+optional).</p>
+<p>During the time between webflow-start and webflow-done the client can call
+<a class="link" href="FlatpakTransaction.html#flatpak-transaction-abort-webflow" title="flatpak_transaction_abort_webflow ()"><code class="function">flatpak_transaction_abort_webflow()</code></a> to manually abort the authentication.
+This is useful if the user aborted the authentication operation some way,
+like e.g. closing the browser window.</p>
+<div class="refsect3">
+<a name="FlatpakTransaction-webflow-start.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>object</p></td>
+<td class="parameter_description"><p>A <a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>remote</p></td>
+<td class="parameter_description"><p>The remote we're authenticating with</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>url</p></td>
+<td class="parameter_description"><p>The url to show</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>options</p></td>
+<td class="parameter_description"><p>Extra options, currently unused</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>id</p></td>
+<td class="parameter_description"><p>The id of the operation, can be used to cancel it</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>user_data</p></td>
+<td class="parameter_description"><p>user data set when the signal handler was connected.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p>Flags: Run Last</p>
+<p class="since">Since: 1.5.1</p>
 </div>
 </div>
 </div>

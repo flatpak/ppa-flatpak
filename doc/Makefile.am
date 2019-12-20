@@ -29,6 +29,7 @@ man1 = \
 	flatpak-config.1		\
 	flatpak-update.1		\
 	flatpak-uninstall.1		\
+	flatpak-mask.1			\
 	flatpak-list.1			\
 	flatpak-info.1			\
 	flatpak-make-current.1		\
@@ -44,6 +45,7 @@ man1 = \
 	flatpak-permissions.1		\
 	flatpak-permission-show.1	\
 	flatpak-permission-reset.1	\
+	flatpak-permission-set.1	\
 	flatpak-build-init.1		\
 	flatpak-build.1			\
 	flatpak-build-bundle.1		\

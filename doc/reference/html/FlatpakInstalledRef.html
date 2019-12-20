@@ -2,12 +2,12 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>FlatpakInstalledRef: Flatpak Reference Manual</title>
+<title>FlatpakInstalledRef: Flatpak Library Reference Manual</title>
 <meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
-<link rel="home" href="index.html" title="Flatpak Reference Manual">
-<link rel="up" href="ch01.html" title="[Insert title here]">
-<link rel="prev" href="FlatpakInstallation.html" title="FlatpakInstallation">
-<link rel="next" href="FlatpakRemoteRef.html" title="FlatpakRemoteRef">
+<link rel="home" href="index.html" title="Flatpak Library Reference Manual">
+<link rel="up" href="ch01.html" title="Flatpak">
+<link rel="prev" href="FlatpakRef.html" title="FlatpakRef">
+<link rel="next" href="FlatpakRelatedRef.html" title="FlatpakRelatedRef">
 <meta name="generator" content="GTK-Doc V1.32.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
@@ -21,8 +21,8 @@
 </td>
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
-<td><a accesskey="p" href="FlatpakInstallation.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="FlatpakRemoteRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="p" href="FlatpakRef.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
+<td><a accesskey="n" href="FlatpakRelatedRef.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="FlatpakInstalledRef"></a><div class="titlepage"></div>
@@ -83,7 +83,58 @@
 <span class="returnvalue">GBytes</span> *
 </td>
 <td class="function_name">
+<a class="link" href="FlatpakInstalledRef.html#flatpak-installed-ref-load-appdata" title="flatpak_installed_ref_load_appdata ()">flatpak_installed_ref_load_appdata</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">GBytes</span> *
+</td>
+<td class="function_name">
 <a class="link" href="FlatpakInstalledRef.html#flatpak-installed-ref-load-metadata" title="flatpak_installed_ref_load_metadata ()">flatpak_installed_ref_load_metadata</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">const <span class="returnvalue">char</span> *
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstalledRef.html#flatpak-installed-ref-get-appdata-license" title="flatpak_installed_ref_get_appdata_license ()">flatpak_installed_ref_get_appdata_license</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">const <span class="returnvalue">char</span> *
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstalledRef.html#flatpak-installed-ref-get-appdata-name" title="flatpak_installed_ref_get_appdata_name ()">flatpak_installed_ref_get_appdata_name</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">const <span class="returnvalue">char</span> *
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstalledRef.html#flatpak-installed-ref-get-appdata-summary" title="flatpak_installed_ref_get_appdata_summary ()">flatpak_installed_ref_get_appdata_summary</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">const <span class="returnvalue">char</span> *
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstalledRef.html#flatpak-installed-ref-get-appdata-version" title="flatpak_installed_ref_get_appdata_version ()">flatpak_installed_ref_get_appdata_version</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">GHashTable</span> *
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstalledRef.html#flatpak-installed-ref-get-appdata-content-rating" title="flatpak_installed_ref_get_appdata_content_rating ()">flatpak_installed_ref_get_appdata_content_rating</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">const <span class="returnvalue">char</span> *
+</td>
+<td class="function_name">
+<a class="link" href="FlatpakInstalledRef.html#flatpak-installed-ref-get-appdata-content-rating-type" title="flatpak_installed_ref_get_appdata_content_rating_type ()">flatpak_installed_ref_get_appdata_content_rating_type</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
@@ -119,6 +170,18 @@
 <col width="200px" class="properties_flags">
 </colgroup>
 <tbody>
+<tr>
+<td class="property_type">
+<span class="type">GHashTable</span> *</td>
+<td class="property_name"><a class="link" href="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-content-rating" title="The “appdata-content-rating” property">appdata-content-rating</a></td>
+<td class="property_flags">Read / Write / Construct Only</td>
+</tr>
+<tr>
+<td class="property_type">
+<span class="type">gchar</span> *</td>
+<td class="property_name"><a class="link" href="FlatpakInstalledRef.html#FlatpakInstalledRef--appdata-content-rating-type" title="The “appdata-content-rating-type” property">appdata-content-rating-type</a></td>
+<td class="property_flags">Read / Write / Construct Only</td>
+</tr>
 <tr>
 <td class="property_type">
 <span class="type">gchar</span> *</td>
@@ -355,6 +418,49 @@ flatpak_installed_ref_get_origin (<em class="parameter"><code><a class="link" hr
 </div>
 <hr>
 <div class="refsect2">
+<a name="flatpak-installed-ref-load-appdata"></a><h3>flatpak_installed_ref_load_appdata ()</h3>
+<pre class="programlisting"><span class="returnvalue">GBytes</span> *
+flatpak_installed_ref_load_appdata (<em class="parameter"><code><a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> *self</code></em>,
+                                    <em class="parameter"><code><span class="type">GCancellable</span> *cancellable</code></em>,
+                                    <em class="parameter"><code><span class="type">GError</span> **error</code></em>);</pre>
+<p>Loads the compressed xml appdata for this ref (if it exists).</p>
+<div class="refsect3">
+<a name="flatpak-installed-ref-load-appdata.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p>a <span class="type">GCancellable</span>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>a return location for a <span class="type">GError</span></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installed-ref-load-appdata.returns"></a><h4>Returns</h4>
+<p>a <span class="type">GBytes</span> containing the compressed appdata file,
+or <code class="literal">NULL</code> if an error occurred. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 1.1.2</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="flatpak-installed-ref-load-metadata"></a><h3>flatpak_installed_ref_load_metadata ()</h3>
 <pre class="programlisting"><span class="returnvalue">GBytes</span> *
 flatpak_installed_ref_load_metadata (<em class="parameter"><code><a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> *self</code></em>,
@@ -394,6 +500,186 @@ flatpak_installed_ref_load_metadata (<em class="parameter"><code><a class="link"
 or <code class="literal">NULL</code> if an error occurred. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-installed-ref-get-appdata-license"></a><h3>flatpak_installed_ref_get_appdata_license ()</h3>
+<pre class="programlisting">const <span class="returnvalue">char</span> *
+flatpak_installed_ref_get_appdata_license
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> *self</code></em>);</pre>
+<p>Returns the license field from the appdata.</p>
+<div class="refsect3">
+<a name="flatpak-installed-ref-get-appdata-license.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installed-ref-get-appdata-license.returns"></a><h4>Returns</h4>
+<p>the license or <code class="literal">NULL</code>. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 1.1.2</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-installed-ref-get-appdata-name"></a><h3>flatpak_installed_ref_get_appdata_name ()</h3>
+<pre class="programlisting">const <span class="returnvalue">char</span> *
+flatpak_installed_ref_get_appdata_name
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> *self</code></em>);</pre>
+<p>Returns the name field from the appdata.</p>
+<p>The returned string is localized.</p>
+<div class="refsect3">
+<a name="flatpak-installed-ref-get-appdata-name.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installed-ref-get-appdata-name.returns"></a><h4>Returns</h4>
+<p>the name or <code class="literal">NULL</code>. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 1.1.2</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-installed-ref-get-appdata-summary"></a><h3>flatpak_installed_ref_get_appdata_summary ()</h3>
+<pre class="programlisting">const <span class="returnvalue">char</span> *
+flatpak_installed_ref_get_appdata_summary
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> *self</code></em>);</pre>
+<p>Returns the summary field from the appdata.</p>
+<p>The returned string is localized.</p>
+<div class="refsect3">
+<a name="flatpak-installed-ref-get-appdata-summary.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installed-ref-get-appdata-summary.returns"></a><h4>Returns</h4>
+<p>the summary or <code class="literal">NULL</code>. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 1.1.2</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-installed-ref-get-appdata-version"></a><h3>flatpak_installed_ref_get_appdata_version ()</h3>
+<pre class="programlisting">const <span class="returnvalue">char</span> *
+flatpak_installed_ref_get_appdata_version
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> *self</code></em>);</pre>
+<p>Returns the default version field from the appdata.</p>
+<div class="refsect3">
+<a name="flatpak-installed-ref-get-appdata-version.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installed-ref-get-appdata-version.returns"></a><h4>Returns</h4>
+<p>the version or <code class="literal">NULL</code>. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 1.1.2</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-installed-ref-get-appdata-content-rating"></a><h3>flatpak_installed_ref_get_appdata_content_rating ()</h3>
+<pre class="programlisting"><span class="returnvalue">GHashTable</span> *
+flatpak_installed_ref_get_appdata_content_rating
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> *self</code></em>);</pre>
+<p>Returns the content rating field from the appdata. This is a potentially
+empty mapping of content rating attribute IDs to values, to be interpreted
+by the semantics of the content rating type (see
+<a class="link" href="FlatpakInstalledRef.html#flatpak-installed-ref-get-appdata-content-rating-type" title="flatpak_installed_ref_get_appdata_content_rating_type ()"><code class="function">flatpak_installed_ref_get_appdata_content_rating_type()</code></a>).</p>
+<div class="refsect3">
+<a name="flatpak-installed-ref-get-appdata-content-rating.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installed-ref-get-appdata-content-rating.returns"></a><h4>Returns</h4>
+<p>the content rating or <code class="literal">NULL</code>. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 1.4.2</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="flatpak-installed-ref-get-appdata-content-rating-type"></a><h3>flatpak_installed_ref_get_appdata_content_rating_type ()</h3>
+<pre class="programlisting">const <span class="returnvalue">char</span> *
+flatpak_installed_ref_get_appdata_content_rating_type
+                               (<em class="parameter"><code><a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a> *self</code></em>);</pre>
+<p>Returns the content rating type from the appdata. For example, <code class="literal">oars-1.0</code> or
+<code class="literal">oars-1.1</code>.</p>
+<div class="refsect3">
+<a name="flatpak-installed-ref-get-appdata-content-rating-type.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>self</p></td>
+<td class="parameter_description"><p>a <a class="link" href="FlatpakInstalledRef.html" title="FlatpakInstalledRef"><span class="type">FlatpakInstalledRef</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="flatpak-installed-ref-get-appdata-content-rating-type.returns"></a><h4>Returns</h4>
+<p>the content rating type or <code class="literal">NULL</code>. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 1.4.2</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -488,6 +774,23 @@ ref is not end-of-lifed.</p>
 </div>
 <div class="refsect1">
 <a name="FlatpakInstalledRef.property-details"></a><h2>Property Details</h2>
+<div class="refsect2">
+<a name="FlatpakInstalledRef--appdata-content-rating"></a><h3>The <code class="literal">“appdata-content-rating”</code> property</h3>
+<pre class="programlisting">  “appdata-content-rating”   <span class="type">GHashTable</span> *</pre>
+<p>The content rating data from the appdata.</p>
+<p>Owner: FlatpakInstalledRef</p>
+<p>Flags: Read / Write / Construct Only</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakInstalledRef--appdata-content-rating-type"></a><h3>The <code class="literal">“appdata-content-rating-type”</code> property</h3>
+<pre class="programlisting">  “appdata-content-rating-type” <span class="type">gchar</span> *</pre>
+<p>The type of the content rating data from the appdata.</p>
+<p>Owner: FlatpakInstalledRef</p>
+<p>Flags: Read / Write / Construct Only</p>
+<p>Default value: NULL</p>
+</div>
+<hr>
 <div class="refsect2">
 <a name="FlatpakInstalledRef--appdata-license"></a><h3>The <code class="literal">“appdata-license”</code> property</h3>
 <pre class="programlisting">  “appdata-license”          <span class="type">gchar</span> *</pre>
