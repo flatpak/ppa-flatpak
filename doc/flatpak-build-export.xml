@@ -127,7 +127,9 @@
                 <term><option>--arch=ARCH</option></term>
 
                 <listitem><para>
-                    Specify the architecture component of the branch to export. Only host compatible architectures can be specified.
+                    Specify the architecture component of the branch to export. Only
+                    host compatible architectures can be specified; see
+                    <command>flatpak --supported-arches</command> for valid values.
                 </para></listitem>
             </varlistentry>
 
@@ -191,7 +193,7 @@
 
                 <listitem><para>
                     Mark the build as end-of-life. Unlike <option>--end-of-life</option>,
-                    this one takes an ID that supercedes the current one. By the user's
+                    this one takes an ID that supersedes the current one. By the user's
                     request, the application data may be preserved for the new application.
                 </para></listitem>
             </varlistentry>

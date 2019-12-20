@@ -32,11 +32,13 @@
 #include <gio/gunixfdlist.h>
 #include <sys/mount.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #include "flatpak-dbus-generated.h"
 #include "flatpak-dir-private.h"
-#include "flatpak-oci-registry-private.h"
 #include "flatpak-error.h"
+#include "flatpak-oci-registry-private.h"
+#include "flatpak-utils-base-private.h"
 #include "flatpak-utils-private.h"
 
 static PolkitAuthority *authority = NULL;
@@ -384,8 +386,9 @@ handle_deploy (FlatpakSystemHelper   *object,
   g_autoptr(GFile) repo_file = g_file_new_for_path (arg_repo_path);
   g_autoptr(GError) error = NULL;
   g_autoptr(GFile) deploy_dir = NULL;
-  g_autoptr(OstreeAsyncProgress) ostree_progress = NULL;
+  g_autoptr(OstreeAsyncProgressFinish) ostree_progress = NULL;
   gboolean is_oci;
+  gboolean is_update;
   gboolean no_deploy;
   gboolean local_pull;
   gboolean reinstall;
@@ -465,7 +468,8 @@ handle_deploy (FlatpakSystemHelper   *object,
 
   deploy_dir = flatpak_dir_get_if_deployed (system, arg_ref, NULL, NULL);
 
-  if (deploy_dir && !reinstall)
+  is_update = (deploy_dir && !reinstall);
+  if (is_update)
     {
       g_autofree char *real_origin = NULL;
       real_origin = flatpak_dir_get_origin (system, arg_ref, NULL, NULL);
@@ -485,6 +489,19 @@ handle_deploy (FlatpakSystemHelper   *object,
 
   is_oci = flatpak_dir_get_remote_oci (system, arg_origin);
 
+  if (is_update && !is_oci)
+    {
+      /* Take this opportunity to clean up refs/mirrors/ since a prune will happen
+       * after this update operation. See
+       * https://github.com/flatpak/flatpak/issues/3222
+       */
+      if (!flatpak_dir_delete_mirror_refs (system, FALSE, NULL, &error))
+        {
+          flatpak_invocation_return_error (invocation, error, "Can't delete mirror refs");
+          return TRUE;
+        }
+    }
+
   if (strlen (arg_repo_path) > 0 && is_oci)
     {
       g_autoptr(GFile) registry_file = g_file_new_for_path (arg_repo_path);
@@ -493,6 +510,7 @@ handle_deploy (FlatpakSystemHelper   *object,
       g_autoptr(FlatpakOciIndex) index = NULL;
       const FlatpakOciManifestDescriptor *desc;
       g_autoptr(FlatpakOciVersioned) versioned = NULL;
+      g_autoptr(FlatpakOciImage) image_config = NULL;
       g_autoptr(FlatpakRemoteState) state = NULL;
       FlatpakCollectionRef collection_ref;
       g_autoptr(GHashTable) remote_refs = NULL;
@@ -545,6 +563,16 @@ handle_deploy (FlatpakSystemHelper   *object,
           return TRUE;
         }
 
+      image_config = flatpak_oci_registry_load_image_config (registry, NULL,
+                                                             FLATPAK_OCI_MANIFEST (versioned)->config.digest,
+                                                             NULL, NULL, &error);
+      if (image_config == NULL)
+        {
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                                                 "Can't open child image config");
+          return TRUE;
+        }
+
       state = flatpak_dir_get_remote_state (system, arg_origin, FALSE, NULL, &error);
       if (state == NULL)
         {
@@ -582,7 +610,7 @@ handle_deploy (FlatpakSystemHelper   *object,
           return TRUE;
         }
 
-      checksum = flatpak_pull_from_oci (flatpak_dir_get_repo (system), registry, NULL, desc->parent.digest, FLATPAK_OCI_MANIFEST (versioned),
+      checksum = flatpak_pull_from_oci (flatpak_dir_get_repo (system), registry, NULL, desc->parent.digest, FLATPAK_OCI_MANIFEST (versioned), image_config,
                                         arg_origin, arg_ref, NULL, NULL, NULL, &error);
       if (checksum == NULL)
         {
@@ -610,9 +638,6 @@ handle_deploy (FlatpakSystemHelper   *object,
           flatpak_invocation_return_error (invocation, error, "Error pulling from repo");
           return TRUE;
         }
-
-      if (ostree_progress)
-        ostree_async_progress_finish (ostree_progress);
     }
   else if (local_pull)
     {
@@ -634,7 +659,7 @@ handle_deploy (FlatpakSystemHelper   *object,
           return TRUE;
         }
 
-      state = flatpak_dir_get_remote_state_optional (system, arg_origin, NULL, &error);
+      state = flatpak_dir_get_remote_state_optional (system, arg_origin, FALSE, NULL, &error);
       if (state == NULL)
         {
           flatpak_invocation_return_error (invocation, error, "Error getting remote state");
@@ -646,16 +671,13 @@ handle_deploy (FlatpakSystemHelper   *object,
 
       ostree_progress = ostree_async_progress_new_and_connect (no_progress_cb, NULL);
 
-      if (!flatpak_dir_pull (system, state, arg_ref, NULL, NULL, (const char **) arg_subpaths, NULL,
+      if (!flatpak_dir_pull (system, state, arg_ref, NULL, NULL, (const char **) arg_subpaths, NULL, NULL,
                              FLATPAK_PULL_FLAGS_NONE, OSTREE_REPO_PULL_FLAGS_UNTRUSTED, ostree_progress,
                              NULL, &error))
         {
           flatpak_invocation_return_error (invocation, error, "Error pulling from repo");
           return TRUE;
         }
-
-      if (ostree_progress)
-        ostree_async_progress_finish (ostree_progress);
     }
 
   if (!no_deploy)
@@ -820,7 +842,7 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
       g_autoptr(GError) first_error = NULL;
       g_autoptr(GError) second_error = NULL;
       g_autoptr(GMainContextPopDefault) main_context = NULL;
-      g_autoptr(OstreeAsyncProgress) ostree_progress = NULL;
+      g_autoptr(OstreeAsyncProgressFinish) ostree_progress = NULL;
 
       /* Work around ostree-pull spinning the default main context for the sync calls */
       main_context = flatpak_main_context_new_default ();
@@ -852,7 +874,7 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
   else /* empty path == local pull */
     {
       g_autoptr(FlatpakRemoteState) state = NULL;
-      g_autoptr(OstreeAsyncProgress) ostree_progress = NULL;
+      g_autoptr(OstreeAsyncProgressFinish) ostree_progress = NULL;
       g_autoptr(GError) first_error = NULL;
       g_autoptr(GError) second_error = NULL;
       g_autofree char *url = NULL;
@@ -874,7 +896,7 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
           return TRUE;
         }
 
-      state = flatpak_dir_get_remote_state_optional (system, arg_origin, NULL, &error);
+      state = flatpak_dir_get_remote_state_optional (system, arg_origin, FALSE, NULL, &error);
       if (state == NULL)
         {
           flatpak_invocation_return_error (invocation, error, "Error getting remote state");
@@ -886,11 +908,11 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
 
       ostree_progress = ostree_async_progress_new_and_connect (no_progress_cb, NULL);
 
-      if (!flatpak_dir_pull (system, state, new_branch, NULL, NULL, NULL, NULL,
+      if (!flatpak_dir_pull (system, state, new_branch, NULL, NULL, NULL, NULL, NULL,
                              FLATPAK_PULL_FLAGS_NONE, OSTREE_REPO_PULL_FLAGS_UNTRUSTED, ostree_progress,
                              NULL, &first_error))
         {
-          if (!flatpak_dir_pull (system, state, old_branch, NULL, NULL, NULL, NULL,
+          if (!flatpak_dir_pull (system, state, old_branch, NULL, NULL, NULL, NULL, NULL,
                                  FLATPAK_PULL_FLAGS_NONE, OSTREE_REPO_PULL_FLAGS_UNTRUSTED, ostree_progress,
                                  NULL, &second_error))
             {
@@ -901,9 +923,6 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
               return TRUE;
             }
         }
-
-      if (ostree_progress)
-        ostree_async_progress_finish (ostree_progress);
     }
 
   if (!flatpak_dir_deploy_appstream (system,
@@ -1120,8 +1139,7 @@ handle_configure (FlatpakSystemHelper   *object,
       return TRUE;
     }
 
-  /* We only support this for now */
-  if (strcmp (arg_key, "languages") != 0)
+  if ((strcmp (arg_key, "languages") != 0) && (strcmp (arg_key, "extra-languages") != 0))
     {
       g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
                                              "Unsupported key: %s", arg_key);
@@ -1455,6 +1473,11 @@ revokefs_fuse_backend_child_setup (gpointer user_data)
 {
   struct passwd *passwd = user_data;
 
+  /* We use 5 instead of 3 here, because fd 3 is the inherited SOCK_SEQPACKET
+   * socket and fd 4 is the --close-with-fd pipe; both were dup2()'d into place
+   * before this by GSubprocess */
+  flatpak_close_fds_workaround (5);
+
   if (setgid (passwd->pw_gid) == -1)
     {
       g_warning ("Failed to setgid(%d) for revokefs backend: %s",
@@ -1538,7 +1561,8 @@ ongoing_pull_new (FlatpakSystemHelper   *object,
       return NULL;
     }
 
-  launcher = g_subprocess_launcher_new (G_SUBPROCESS_FLAGS_NONE);
+  /* We use INHERIT_FDS to work around dead-lock, see flatpak_close_fds_workaround */
+  launcher = g_subprocess_launcher_new (G_SUBPROCESS_FLAGS_INHERIT_FDS);
   g_subprocess_launcher_set_child_setup (launcher, revokefs_fuse_backend_child_setup, passwd, NULL);
   g_subprocess_launcher_take_fd (launcher, sockets[0], 3);
   fcntl (sockets[1], F_SETFD, FD_CLOEXEC);

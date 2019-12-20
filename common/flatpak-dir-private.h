@@ -23,22 +23,27 @@
 
 #include <ostree.h>
 
+#include "flatpak-common-types-private.h"
+#include "flatpak-context-private.h"
 #include "libglnx/libglnx.h"
-#include <flatpak-common-types-private.h>
-#include <flatpak-context-private.h>
-
 
 /* Version history:
  * The version field was added in flatpak 1.2, anything before is 0.
  *
  * Version 1 added appdata-name/summary/version/license
+ * Version 2 added extension-of/appdata-content-rating
  */
-#define FLATPAK_DEPLOY_VERSION_CURRENT 1
+#define FLATPAK_DEPLOY_VERSION_CURRENT 2
 #define FLATPAK_DEPLOY_VERSION_ANY 0
 
 #define FLATPAK_TYPE_DIR flatpak_dir_get_type ()
 #define FLATPAK_DIR(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), FLATPAK_TYPE_DIR, FlatpakDir))
 #define FLATPAK_IS_DIR(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), FLATPAK_TYPE_DIR))
+
+#define SYSTEM_DIR_DEFAULT_ID "default"
+#define SYSTEM_DIR_DEFAULT_DISPLAY_NAME _("Default system installation")
+#define SYSTEM_DIR_DEFAULT_STORAGE_TYPE FLATPAK_DIR_STORAGE_TYPE_DEFAULT
+#define SYSTEM_DIR_DEFAULT_PRIORITY 0
 
 #define FLATPAK_TYPE_DEPLOY flatpak_deploy_get_type ()
 #define FLATPAK_DEPLOY(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), FLATPAK_TYPE_DEPLOY, FlatpakDeploy))
@@ -72,12 +77,18 @@ GType flatpak_deploy_get_type (void);
 #define FLATPAK_REPO_HOMEPAGE_KEY "Homepage"
 #define FLATPAK_REPO_ICON_KEY "Icon"
 #define FLATPAK_REPO_FILTER_KEY "Filter"
+#define FLATPAK_REPO_AUTHENTICATOR_NAME_KEY "AuthenticatorName"
+#define FLATPAK_REPO_AUTHENTICATOR_INSTALL_KEY "AuthenticatorInstall"
 
 #define FLATPAK_REPO_COLLECTION_ID_KEY "CollectionID"
 #define FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY "DeployCollectionID"
 
-#define FLATPAK_DEFAULT_UPDATE_FREQUENCY 100
-#define FLATPAK_CLI_UPDATE_FREQUENCY 300
+#define FLATPAK_DEFAULT_UPDATE_INTERVAL_MS 100
+#define FLATPAK_CLI_UPDATE_INTERVAL_MS 300
+
+#define FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE "eol"
+#define FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE "eolr"
+#define FLATPAK_SPARSE_CACHE_KEY_TOKEN_TYPE "tokt"
 
 typedef struct
 {
@@ -110,6 +121,7 @@ typedef struct
   GRegex   *allow_refs;
   GRegex   *deny_refs;
   int       refcount;
+  gint32    default_token_type;
 } FlatpakRemoteState;
 
 FlatpakRemoteState *flatpak_remote_state_ref (FlatpakRemoteState *remote_state);
@@ -136,6 +148,7 @@ gboolean flatpak_remote_state_lookup_cache (FlatpakRemoteState *self,
                                             guint64            *download_size,
                                             guint64            *installed_size,
                                             const char        **metadata,
+                                            GVariant          **maybe_commit,
                                             GError            **error);
 GVariant *flatpak_remote_state_lookup_sparse_cache (FlatpakRemoteState *self,
                                                     const char         *ref,
@@ -351,12 +364,15 @@ gboolean       flatpak_remove_override_keyfile (const char *app_id,
 int                 flatpak_deploy_data_get_version (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_origin (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_commit (GVariant *deploy_data);
+const char *        flatpak_deploy_data_get_appdata_content_rating_type (GVariant *deploy_data);
+GHashTable *        flatpak_deploy_data_get_appdata_content_rating (GVariant *deploy_data);
 const char **       flatpak_deploy_data_get_subpaths (GVariant *deploy_data);
 guint64             flatpak_deploy_data_get_installed_size (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_alt_id (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_eol (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_eol_rebase (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_runtime (GVariant *deploy_data);
+const char *        flatpak_deploy_data_get_extension_of (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_appdata_name (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_appdata_summary (GVariant *deploy_data);
 const char *        flatpak_deploy_data_get_appdata_version (GVariant *deploy_data);
@@ -389,6 +405,7 @@ GPtrArray   *flatpak_dir_get_system_list (GCancellable *cancellable,
 FlatpakDir  *flatpak_dir_get_system_by_id (const char   *id,
                                            GCancellable *cancellable,
                                            GError      **error);
+FlatpakDir *flatpak_dir_get_by_path (GFile *path);
 gboolean    flatpak_dir_is_user (FlatpakDir *self);
 void        flatpak_dir_set_no_system_helper (FlatpakDir *self,
                                               gboolean    no_system_helper);
@@ -441,6 +458,8 @@ char **     flatpak_dir_search_for_dependency (FlatpakDir   *self,
                                                const char   *runtime_ref,
                                                GCancellable *cancellable,
                                                GError      **error);
+gboolean    flatpak_dir_ref_is_masked (FlatpakDir *self,
+                                       const char *ref);
 char *      flatpak_dir_find_remote_ref (FlatpakDir   *self,
                                          const char   *remote,
                                          const char   *name,
@@ -544,6 +563,7 @@ gboolean    flatpak_dir_pull (FlatpakDir                           *self,
                               const char                           *opt_rev,
                               const OstreeRepoFinderResult * const *results,
                               const char                          **subpaths,
+                              const char                           *token,
                               OstreeRepo                           *repo,
                               FlatpakPullFlags                      flatpak_flags,
                               OstreeRepoPullFlags                   flags,
@@ -648,6 +668,7 @@ gboolean   flatpak_dir_install (FlatpakDir          *self,
                                 const char          *opt_commit,
                                 const char         **subpaths,
                                 const char         **previous_ids,
+                                const char          *token,
                                 OstreeAsyncProgress *progress,
                                 GCancellable        *cancellable,
                                 GError             **error);
@@ -693,6 +714,7 @@ gboolean   flatpak_dir_update (FlatpakDir                           *self,
                                const OstreeRepoFinderResult * const *results,
                                const char                          **opt_subpaths,
                                const char                          **opt_previous_ids,
+                               const char                           *token,
                                OstreeAsyncProgress                  *progress,
                                GCancellable                         *cancellable,
                                GError                              **error);
@@ -742,8 +764,8 @@ gboolean    flatpak_dir_cleanup_undeployed_refs (FlatpakDir   *self,
 gboolean    flatpak_dir_collect_deployed_refs (FlatpakDir   *self,
                                                const char   *type,
                                                const char   *name_prefix,
-                                               const char   *branch,
                                                const char   *arch,
+                                               const char   *branch,
                                                GHashTable   *hash,
                                                GCancellable *cancellable,
                                                GError      **error);
@@ -800,12 +822,16 @@ gboolean   flatpak_dir_remove_remote (FlatpakDir   *self,
                                       const char   *remote_name,
                                       GCancellable *cancellable,
                                       GError      **error);
+char **   flatpak_dir_list_remote_config_keys (FlatpakDir *self,
+                                               const char *remote_name);
 char      *flatpak_dir_get_remote_title (FlatpakDir *self,
                                          const char *remote_name);
 char      *flatpak_dir_get_remote_comment (FlatpakDir *self,
                                            const char *remote_name);
 char      *flatpak_dir_get_remote_description (FlatpakDir *self,
                                                const char *remote_name);
+gint32     flatpak_dir_get_remote_default_token_type (FlatpakDir *self,
+                                                      const char *remote_name);
 char      *flatpak_dir_get_remote_homepage (FlatpakDir *self,
                                             const char *remote_name);
 char      *flatpak_dir_get_remote_icon (FlatpakDir *self,
@@ -850,6 +876,8 @@ GVariant * flatpak_dir_fetch_remote_commit (FlatpakDir   *self,
                                             GError      **error);
 gboolean flatpak_dir_update_remote_configuration (FlatpakDir   *self,
                                                   const char   *remote,
+                                                  FlatpakRemoteState *optional_remote_state,
+                                                  gboolean     *changed_out,
                                                   GCancellable *cancellable,
                                                   GError      **error);
 gboolean flatpak_dir_update_remote_configuration_for_state (FlatpakDir         *self,
@@ -877,6 +905,7 @@ gboolean flatpak_dir_remote_make_oci_summary (FlatpakDir   *self,
                                               GError      **error);
 FlatpakRemoteState * flatpak_dir_get_remote_state_optional (FlatpakDir   *self,
                                                             const char   *remote,
+                                                            gboolean      only_cached,
                                                             GCancellable *cancellable,
                                                             GError      **error);
 FlatpakRemoteState * flatpak_dir_get_remote_state_local_only (FlatpakDir   *self,
@@ -889,6 +918,10 @@ GPtrArray * flatpak_dir_find_remote_related_for_metadata (FlatpakDir         *se
                                                           GKeyFile           *metakey,
                                                           GCancellable       *cancellable,
                                                           GError            **error);
+gboolean    flatpak_dir_check_installed_ref_missing_related_ref (FlatpakDir          *self,
+                                                                 FlatpakRemoteState  *state,
+                                                                 const gchar         *full_ref,
+                                                                 GCancellable        *cancellable);
 GPtrArray * flatpak_dir_find_remote_related (FlatpakDir         *dir,
                                              FlatpakRemoteState *state,
                                              const char         *ref,
@@ -896,6 +929,7 @@ GPtrArray * flatpak_dir_find_remote_related (FlatpakDir         *dir,
                                              GError            **error);
 GPtrArray * flatpak_dir_find_local_related_for_metadata (FlatpakDir   *self,
                                                          const char   *ref,
+                                                         const char   *commit,
                                                          const char   *remote_name,
                                                          GKeyFile     *metakey,
                                                          GCancellable *cancellable,
@@ -914,6 +948,8 @@ gboolean flatpak_dir_find_latest_rev (FlatpakDir               *self,
                                       OstreeRepoFinderResult ***out_results,
                                       GCancellable             *cancellable,
                                       GError                  **error);
+GPtrArray * flatpak_dir_find_remote_auto_install_refs (FlatpakDir         *self,
+                                                       const char         *remote_name);
 
 typedef struct
 {
@@ -922,6 +958,11 @@ typedef struct
   char *ref;
   char *opt_commit;
 
+  /* Used during p2p resolve */
+  OstreeCollectionRef collection_ref; /* owns the collection_id member only, ref_name is from above */
+  char               *local_commit;
+  char               *latest_remote_commit;
+
   /* out */
   char   *resolved_commit;
   GBytes *resolved_metadata;
@@ -929,24 +970,46 @@ typedef struct
   guint64 installed_size;
   char   *eol;
   char   *eol_rebase;
+  gint32  token_type;
 } FlatpakDirResolve;
 
-FlatpakDirResolve *flatpak_dir_resolve_new (const char *remote,
-                                            const char *ref,
-                                            const char *opt_commit);
-void               flatpak_dir_resolve_free (FlatpakDirResolve *resolve);
-gboolean           flatpak_dir_resolve_p2p_refs (FlatpakDir         *self,
-                                                 FlatpakDirResolve **resolves,
-                                                 GCancellable       *cancellable,
-                                                 GError            **error);
 
+FlatpakDirResolve  *flatpak_dir_resolve_new  (const char        *remote,
+                                              const char        *ref,
+                                              const char        *opt_commit);
+void                flatpak_dir_resolve_free (FlatpakDirResolve *resolve);
 
+gboolean flatpak_dir_resolve_maybe_resolve_from_metadata (FlatpakDirResolve *resolve,
+                                                          FlatpakRemoteState *state);
+
+typedef struct _FlatpakDirP2PState FlatpakDirP2PState;
+void flatpak_dir_p2p_state_free (FlatpakDirP2PState *state);
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakDirP2PState, flatpak_dir_p2p_state_free)
+
+FlatpakDirP2PState *flatpak_dir_prepare_resolve_p2p_refs (FlatpakDir          *self,
+                                                          FlatpakDirResolve  **resolves,
+                                                          GCancellable        *cancellable,
+                                                          GError             **error);
+gboolean            flatpak_dir_finish_resolve_p2p_refs  (FlatpakDir          *self,
+                                                          FlatpakDirResolve  **resolves,
+                                                          const char          *token,
+                                                          FlatpakDirP2PState  *state,
+                                                          GCancellable        *cancellable,
+                                                          GError             **error);
+
+char ** flatpak_dir_get_default_locales (FlatpakDir *self);
 char ** flatpak_dir_get_default_locale_languages (FlatpakDir *self);
+char ** flatpak_dir_get_locales (FlatpakDir *self);
 char ** flatpak_dir_get_locale_languages (FlatpakDir *self);
 char ** flatpak_dir_get_locale_subpaths (FlatpakDir *self);
 
 void flatpak_dir_set_source_pid (FlatpakDir *self,
                                  pid_t       pid);
 pid_t flatpak_dir_get_source_pid (FlatpakDir *self);
+
+gboolean flatpak_dir_delete_mirror_refs (FlatpakDir    *self,
+                                         gboolean       dry_run,
+                                         GCancellable  *cancellable,
+                                         GError       **error);
 
 #endif /* __FLATPAK_DIR_H__ */

@@ -352,7 +352,7 @@ load_uri_read_cb (GObject *source, GAsyncResult *res, gpointer user_data)
 {
   LoadUriData *data = user_data;
   GInputStream *stream = G_INPUT_STREAM (source);
-  gsize nread;
+  gssize nread;
 
   nread = g_input_stream_read_finish (stream, res, &data->error);
   if (nread == -1 || nread == 0)
@@ -514,6 +514,7 @@ GBytes *
 flatpak_load_http_uri (SoupSession           *soup_session,
                        const char            *uri,
                        FlatpakHTTPFlags       flags,
+                       const char            *token,
                        FlatpakLoadUriProgress progress,
                        gpointer               user_data,
                        GCancellable          *cancellable,
@@ -548,7 +549,14 @@ flatpak_load_http_uri (SoupSession           *soup_session,
 
   if (flags & FLATPAK_HTTP_FLAGS_ACCEPT_OCI)
     soup_message_headers_replace (m->request_headers, "Accept",
-                                  "application/vnd.oci.image.manifest.v1+json");
+                                  FLATPAK_OCI_MEDIA_TYPE_IMAGE_MANIFEST ", " FLATPAK_DOCKER_MEDIA_TYPE_IMAGE_MANIFEST2);
+
+
+  if (token)
+    {
+      g_autofree char *bearer_token = g_strdup_printf ("Bearer %s", token);
+      soup_message_headers_replace (m->request_headers, "Authorization", bearer_token);
+    }
 
   soup_request_send_async (SOUP_REQUEST (request),
                            cancellable,
@@ -573,6 +581,7 @@ flatpak_download_http_uri (SoupSession           *soup_session,
                            const char            *uri,
                            FlatpakHTTPFlags       flags,
                            GOutputStream         *out,
+                           const char            *token,
                            FlatpakLoadUriProgress progress,
                            gpointer               user_data,
                            GCancellable          *cancellable,
@@ -604,7 +613,13 @@ flatpak_download_http_uri (SoupSession           *soup_session,
   m = soup_request_http_get_message (request);
   if (flags & FLATPAK_HTTP_FLAGS_ACCEPT_OCI)
     soup_message_headers_replace (m->request_headers, "Accept",
-                                  "application/vnd.oci.image.manifest.v1+json");
+                                  FLATPAK_OCI_MEDIA_TYPE_IMAGE_MANIFEST ", " FLATPAK_DOCKER_MEDIA_TYPE_IMAGE_MANIFEST2);
+
+  if (token)
+    {
+      g_autofree char *bearer_token = g_strdup_printf ("Bearer %s", token);
+      soup_message_headers_replace (m->request_headers, "Authorization", bearer_token);
+    }
 
   soup_request_send_async (SOUP_REQUEST (request),
                            cancellable,
@@ -744,7 +759,7 @@ flatpak_cache_http_uri (SoupSession           *soup_session,
 
   if (flags & FLATPAK_HTTP_FLAGS_ACCEPT_OCI)
     soup_message_headers_replace (m->request_headers, "Accept",
-                                  "application/vnd.oci.image.manifest.v1+json");
+                                  FLATPAK_OCI_MEDIA_TYPE_IMAGE_MANIFEST ", " FLATPAK_DOCKER_MEDIA_TYPE_IMAGE_MANIFEST2);
 
   if (flags & FLATPAK_HTTP_FLAGS_STORE_COMPRESSED)
     {

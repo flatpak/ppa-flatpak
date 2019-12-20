@@ -36,12 +36,20 @@
 #include "flatpak-dbus-generated.h"
 #include "flatpak-run-private.h"
 #include "flatpak-instance.h"
-
+#include <sys/capability.h>
 
 static GOptionEntry options[] = {
   { NULL }
 };
 
+static void
+drop_all_caps (void)
+{
+  struct __user_cap_header_struct hdr = { _LINUX_CAPABILITY_VERSION_3, 0 };
+  struct __user_cap_data_struct data[2] = { { 0 } };
+
+  capset (&hdr, data);
+}
 
 gboolean
 flatpak_builtin_enter (int           argc,
@@ -51,10 +59,8 @@ flatpak_builtin_enter (int           argc,
 {
   g_autoptr(GOptionContext) context = NULL;
   int rest_argv_start, rest_argc;
-  const char *ns_name[] = { "ipc", "net", "pid", "mnt", "user" };
+  const char *ns_name[] = { "user_base", "ipc", "net", "pid", "mnt", "user" };
   int ns_fd[G_N_ELEMENTS (ns_name)];
-  g_autofree char *pid_ns = NULL;
-  g_autofree char *self_ns = NULL;
   char *pid_s;
   int pid, i;
   g_autofree char *environment_path = NULL;
@@ -78,7 +84,7 @@ flatpak_builtin_enter (int           argc,
   g_autoptr(GPtrArray) instances = NULL;
   int j;
 
-  context = g_option_context_new (_("INSTANCE [COMMAND [ARGUMENT…]] - Run a command inside a running sandbox"));
+  context = g_option_context_new (_("INSTANCE COMMAND [ARGUMENT…] - Run a command inside a running sandbox"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
   rest_argc = 0;
@@ -103,23 +109,21 @@ flatpak_builtin_enter (int           argc,
       return FALSE;
     }
 
-  /* Before further checks, warn if we are not already root */
-  if (geteuid () != 0)
-    g_printerr ("%s\n", _("Not running as root, may be unable to enter namespace"));
-
-  pid = 0;
   pid_s = argv[rest_argv_start];
-  i = atoi (pid_s);
+  pid = atoi (pid_s);
+
+  /* Check to see if it matches some running instance, otherwise use
+     as pid if it looks as a number. */
   instances = flatpak_instance_get_all ();
   for (j = 0; j < instances->len; j++)
     {
       FlatpakInstance *instance = (FlatpakInstance *) g_ptr_array_index (instances, j);
 
-      if (i == flatpak_instance_get_pid (instance) ||
+      if (pid == flatpak_instance_get_pid (instance) ||
           strcmp (pid_s, flatpak_instance_get_app (instance)) == 0 ||
           strcmp (pid_s, flatpak_instance_get_id (instance)) == 0)
         {
-          pid = flatpak_instance_get_pid (instance);
+          pid = flatpak_instance_get_child_pid (instance);
           break;
         }
     }
@@ -129,7 +133,11 @@ flatpak_builtin_enter (int           argc,
 
   stat_path = g_strdup_printf ("/proc/%d/root", pid);
   if (stat (stat_path, &stat_buf))
-    return flatpak_fail (error, _("No such pid %s"), pid_s);
+    {
+      if (errno == EACCES)
+        return flatpak_fail (error, _("entering not supported (need unprivileged user namespaces, or sudo -E)"));
+      return flatpak_fail (error, _("No such pid %s"), pid_s);
+    }
 
   uid = stat_buf.st_uid;
   gid = stat_buf.st_gid;
@@ -150,28 +158,46 @@ flatpak_builtin_enter (int           argc,
 
   for (i = 0; i < G_N_ELEMENTS (ns_name); i++)
     {
-      g_autofree char *path = g_strdup_printf ("/proc/%d/ns/%s", pid, ns_name[i]);
-      g_autofree char *self_path = g_strdup_printf ("/proc/self/ns/%s", ns_name[i]);
+      g_autofree char *path = NULL;
+      g_autofree char *self_path = NULL;
+      struct stat path_stat, self_path_stat;
 
-      pid_ns = glnx_readlinkat_malloc (-1, path, NULL, error);
-      if (pid_ns == NULL)
-        return glnx_prefix_error (error, _("Invalid %s namespace for pid %d"), ns_name[i], pid);
-
-      self_ns = glnx_readlinkat_malloc (-1, self_path, NULL, error);
-      if (self_ns == NULL)
-        return glnx_prefix_error (error, _("Invalid %s namespace for self"), ns_name[i]);
-
-      if (strcmp (self_ns, pid_ns) == 0)
+      if (strcmp (ns_name[i], "user_base") == 0)
         {
-          /* No need to setns to the same namespace, it will only fail */
-          ns_fd[i] = -1;
+          /* We could use the NS_GET_USERNS ioctl instead of the .userns bind hack, but that would require >= 4.9 kernel */
+          path = g_strdup_printf ("%s/run/.userns", root_path);
+          self_path = g_strdup ("/proc/self/ns/user");
         }
       else
         {
-          ns_fd[i] = open (path, O_RDONLY);
-          if (ns_fd[i] == -1)
-            return flatpak_fail (error, _("Can't open %s namespace: %s"), ns_name[i], g_strerror (errno));
+          path = g_strdup_printf ("/proc/%d/ns/%s", pid, ns_name[i]);
+          self_path = g_strdup_printf ("/proc/self/ns/%s", ns_name[i]);
         }
+
+      if (stat (path, &path_stat) != 0)
+        {
+          if (errno == ENOENT)
+            {
+              /* If for whatever reason the namespace doesn't exist, skip it */
+              ns_fd[i] = -1;
+              continue;
+            }
+          return glnx_prefix_error (error, _("Invalid %s namespace for pid %d"), ns_name[i], pid);
+        }
+
+      if (stat (self_path, &self_path_stat) != 0)
+        return glnx_prefix_error (error, _("Invalid %s namespace for self"), ns_name[i]);
+
+      if (self_path_stat.st_ino == path_stat.st_ino)
+        {
+          /* No need to setns to the same namespace, it will only fail */
+          ns_fd[i] = -1;
+          continue;
+        }
+
+      ns_fd[i] = open (path, O_RDONLY);
+      if (ns_fd[i] == -1)
+        return flatpak_fail (error, _("Can't open %s namespace: %s"), ns_name[i], g_strerror (errno));
     }
 
   for (i = 0; i < G_N_ELEMENTS (ns_fd); i++)
@@ -179,7 +205,11 @@ flatpak_builtin_enter (int           argc,
       if (ns_fd[i] != -1)
         {
           if (setns (ns_fd[i], 0) == -1)
-            return flatpak_fail (error, _("Can't enter %s namespace: %s"), ns_name[i], g_strerror (errno));
+            {
+              if (errno == EPERM)
+                return flatpak_fail (error, _("entering not supported (need unprivileged user namespaces)"));
+              return flatpak_fail (error, _("Can't enter %s namespace: %s"), ns_name[i], g_strerror (errno));
+            }
           close (ns_fd[i]);
         }
     }
@@ -189,6 +219,14 @@ flatpak_builtin_enter (int           argc,
 
   if (chroot (root_link))
     return flatpak_fail (error, _("Can't chroot"));
+
+  if (setgid (gid))
+    return flatpak_fail (error, _("Can't switch gid"));
+
+  if (setuid (uid))
+    return flatpak_fail (error, _("Can't switch uid"));
+
+  drop_all_caps ();
 
   envp_array = g_ptr_array_new_with_free_func (g_free);
   for (e = environment; e < environment + environment_len; e = e + strlen (e) + 1)
@@ -233,12 +271,6 @@ flatpak_builtin_enter (int           argc,
   for (i = 1; i < rest_argc; i++)
     g_ptr_array_add (argv_array, g_strdup (argv[rest_argv_start + i]));
   g_ptr_array_add (argv_array, NULL);
-
-  if (setgid (gid))
-    return flatpak_fail (error, _("Can't switch gid"));
-
-  if (setuid (uid))
-    return flatpak_fail (error, _("Can't switch uid"));
 
   if (!g_spawn_sync (NULL, (char **) argv_array->pdata, (char **) envp_array->pdata,
                      G_SPAWN_SEARCH_PATH_FROM_ENVP | G_SPAWN_CHILD_INHERITS_STDIN,

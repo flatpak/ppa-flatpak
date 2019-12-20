@@ -2,12 +2,12 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>FlatpakInstance: Flatpak Reference Manual</title>
+<title>FlatpakInstance: Flatpak Library Reference Manual</title>
 <meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
-<link rel="home" href="index.html" title="Flatpak Reference Manual">
-<link rel="up" href="ch01.html" title="[Insert title here]">
+<link rel="home" href="index.html" title="Flatpak Library Reference Manual">
+<link rel="up" href="ch01.html" title="Flatpak">
 <link rel="prev" href="FlatpakBundleRef.html" title="FlatpakBundleRef">
-<link rel="next" href="object-tree.html" title="Object Hierarchy">
+<link rel="next" href="flatpak-Error-codes.html" title="Error codes">
 <meta name="generator" content="GTK-Doc V1.32.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
@@ -21,7 +21,7 @@
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="ch01.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
 <td><a accesskey="p" href="FlatpakBundleRef.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="object-tree.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="n" href="flatpak-Error-codes.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="FlatpakInstance"></a><div class="titlepage"></div>
@@ -178,7 +178,7 @@ flatpak_instance_get_all (<em class="parameter"><code><span class="type">void</s
 <a class="link" href="FlatpakInstance.html" title="FlatpakInstance"><span class="type">FlatpakInstance</span></a> objects. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> FlatpakInstance]</span></p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+<p class="since">Since: 1.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -206,7 +206,7 @@ purposes and has no further relevance.</p>
 <a name="flatpak-instance-get-id.returns"></a><h4>Returns</h4>
 <p> the instance ID</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+<p class="since">Since: 1.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -234,7 +234,7 @@ flatpak_instance_get_app (<em class="parameter"><code><a class="link" href="Flat
 <a name="flatpak-instance-get-app.returns"></a><h4>Returns</h4>
 <p> the application ID</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+<p class="since">Since: 1.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -261,7 +261,7 @@ flatpak_instance_get_arch (<em class="parameter"><code><a class="link" href="Fla
 <a name="flatpak-instance-get-arch.returns"></a><h4>Returns</h4>
 <p> the architecture</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+<p class="since">Since: 1.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -288,7 +288,7 @@ flatpak_instance_get_branch (<em class="parameter"><code><a class="link" href="F
 <a name="flatpak-instance-get-branch.returns"></a><h4>Returns</h4>
 <p> the architecture</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+<p class="since">Since: 1.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -315,7 +315,7 @@ flatpak_instance_get_commit (<em class="parameter"><code><a class="link" href="F
 <a name="flatpak-instance-get-commit.returns"></a><h4>Returns</h4>
 <p> the commit</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+<p class="since">Since: 1.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -342,7 +342,7 @@ flatpak_instance_get_runtime (<em class="parameter"><code><a class="link" href="
 <a name="flatpak-instance-get-runtime.returns"></a><h4>Returns</h4>
 <p> the runtime ref</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+<p class="since">Since: 1.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -369,7 +369,7 @@ flatpak_instance_get_runtime_commit (<em class="parameter"><code><a class="link"
 <a name="flatpak-instance-get-runtime-commit.returns"></a><h4>Returns</h4>
 <p> the runtime commit</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+<p class="since">Since: 1.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -398,7 +398,7 @@ application process itself, but a bubblewrap 'babysitter' process.</p>
 <a name="flatpak-instance-get-pid.returns"></a><h4>Returns</h4>
 <p> the outermost process PID</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+<p class="since">Since: 1.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -428,7 +428,7 @@ a sandbox, for a short amount of time.</p>
 <a name="flatpak-instance-get-child-pid.returns"></a><h4>Returns</h4>
 <p> the application process PID</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+<p class="since">Since: 1.1</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -458,7 +458,7 @@ but there may be more information in the keyfile.</p>
 <a name="flatpak-instance-get-info.returns"></a><h4>Returns</h4>
 <p> the flatpak-info keyfile</p>
 </div>
-<p class="since">Since: <a class="link" href="api-index-1-1.html#api-index-1.1">1.1</a></p>
+<p class="since">Since: 1.1</p>
 </div>
 <hr>
 <div class="refsect2">

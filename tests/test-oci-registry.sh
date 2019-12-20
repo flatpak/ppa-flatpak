@@ -27,11 +27,9 @@ echo "1..14"
 
 # Start the fake registry server
 
-$(dirname $0)/test-webserver.sh "" "python $test_srcdir/oci-registry-server.py 0"
-FLATPAK_HTTP_PID=$(cat httpd-pid)
-mv httpd-port httpd-port-main
-port=$(cat httpd-port-main)
-client="python $test_srcdir/oci-registry-client.py 127.0.0.1:$port"
+httpd oci-registry-server.py .
+port=$(cat httpd-port)
+client="python3 $test_srcdir/oci-registry-client.py 127.0.0.1:$port"
 
 setup_repo_no_add oci
 
@@ -104,6 +102,7 @@ echo "ok install"
 make_updated_app oci
 
 ${FLATPAK} build-bundle --oci $FL_GPGARGS repos/oci oci/app-image org.test.Hello
+
 $client add hello latest $(pwd)/oci/app-image
 
 OLD_COMMIT=`${FLATPAK} ${U} info --show-commit org.test.Hello`
