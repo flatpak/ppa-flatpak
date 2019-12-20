@@ -1,6 +1,9 @@
 flatpak (1.6.0-1) UNRELEASED; urgency=medium
 
   * New upstream stable release
+    - d/p/testlibrary-Don-t-assert-that-progress-is-signalled.patch:
+      Drop workaround, the leaks that broke this test have been fixed
+    - Drop other patches, applied upstream
   * d/watch: Only watch for stable releases
   * Set upstream branch to upstream/1.6.x
 
