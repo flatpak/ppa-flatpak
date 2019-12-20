@@ -106,10 +106,13 @@ FlatpakRunFlags flatpak_context_get_run_flags (FlatpakContext *context);
 void           flatpak_context_add_bus_filters (FlatpakContext *context,
                                                 const char     *app_id,
                                                 gboolean        session_bus,
+                                                gboolean        sandboxed,
                                                 FlatpakBwrap   *bwrap);
 
 gboolean       flatpak_context_get_needs_session_bus_proxy (FlatpakContext *context);
 gboolean       flatpak_context_get_needs_system_bus_proxy (FlatpakContext *context);
+gboolean       flatpak_context_adds_permissions (FlatpakContext *old_context,
+                                                 FlatpakContext *new_context);
 
 void           flatpak_context_reset_permissions (FlatpakContext *context);
 void           flatpak_context_reset_non_permissions (FlatpakContext *context);

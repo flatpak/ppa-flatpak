@@ -2,6 +2,9 @@
 
 set -e
 
+# Don't inherit the -x from the testsuite
+set +x
+
 DIR=`mktemp -d`
 
 REPO=$1
@@ -73,6 +76,15 @@ MimeType=x-test/Hello;
 X-Flatpak-RenamedFrom=hello-again.desktop;
 EOF
 
+mkdir -p ${DIR}/files/share/gnome-shell/search-providers
+cat > ${DIR}/files/share/gnome-shell/search-providers/org.test.Hello.search-provider.ini <<EOF
+[Shell Search Provider]
+DesktopId=org.test.Hello.desktop
+BusName=org.test.Hello.SearchProvider
+ObjectPath=/org/test/Hello/SearchProvider
+Version=2
+EOF
+
 mkdir -p ${DIR}/files/share/icons/hicolor/64x64/apps
 cp $(dirname $0)/org.test.Hello.png ${DIR}/files/share/icons/hicolor/64x64/apps/${APP_ID}.png
 cp $(dirname $0)/org.test.Hello.png ${DIR}/files/share/icons/hicolor/64x64/apps/dont-export.png
@@ -114,7 +126,7 @@ ln -s -t ${DIR}/files/share/locale ../../share/runtime/locale/de/share/de
 mkdir -p ${DIR}/files/share/runtime/locale/fr
 ln -s -t ${DIR}/files/share/locale ../../share/runtime/locale/fr/share/fr
 
-flatpak build-finish --command=hello.sh ${DIR}
+flatpak build-finish ${BUILD_FINISH_ARGS-} --command=hello.sh ${DIR}
 mkdir -p repos
 flatpak build-export --disable-sandbox ${collection_args} ${GPGARGS-} ${EXPORT_ARGS-} ${REPO} ${DIR} ${BRANCH}
 rm -rf ${DIR}

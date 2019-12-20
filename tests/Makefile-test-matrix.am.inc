@@ -16,10 +16,12 @@ TEST_MATRIX= \
 	tests/test-bundle@user.wrap \
 	tests/test-bundle@system.wrap \
 	tests/test-bundle@system-norevokefs.wrap \
-	tests/test-oci-registry@user.wrap \
-	tests/test-oci-registry@system.wrap \
-	tests/test-p2p-security@user,collections.wrap \
-	tests/test-p2p-security@system,collections.wrap \
+	tests/test-oci-registry@user,annotations.wrap \
+	tests/test-oci-registry@user,labels.wrap \
+	tests/test-oci-registry@system,annotations.wrap \
+	tests/test-oci-registry@system,labels.wrap \
+	tests/test-auth@nocollections.wrap \
+	tests/test-auth@collections.wrap \
 	$(NULL)
 TEST_MATRIX_DIST= \
 	tests/test-basic.sh \
@@ -33,6 +35,7 @@ TEST_MATRIX_DIST= \
 	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	tests/test-override.sh \
+	tests/test-update-portal.sh \
 	$(NULL)
 TEST_MATRIX_EXTRA_DIST= \
 	tests/test-run.sh \
@@ -40,5 +43,5 @@ TEST_MATRIX_EXTRA_DIST= \
 	tests/test-repo.sh \
 	tests/test-bundle.sh \
 	tests/test-oci-registry.sh \
-	tests/test-p2p-security.sh \
+	tests/test-auth.sh \
 	$(NULL)

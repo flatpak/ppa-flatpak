@@ -1,10 +1,55 @@
-flatpak (1.4.3-2) UNRELEASED; urgency=medium
+flatpak (1.6.0-1) UNRELEASED; urgency=medium
 
-  * Standards-Version: 4.4.1 (no changes required)
   * d/watch: Only watch for stable releases
-  * Set upstream branch to upstream/1.4.x
+  * Set upstream branch to upstream/1.6.x
 
  -- Simon McVittie <smcv@debian.org>  Tue, 01 Oct 2019 09:54:13 +0100
+
+flatpak (1.5.2-1) experimental; urgency=medium
+
+  * New upstream development release
+    - d/copyright: Update
+    - d/control: Depend on bubblewrap 0.4.0
+    - Update d/libflatpak0.symbols
+  * d/tests/build: Use correct compiler for proposed autopkgtest
+    cross-architecture testing support
+  * Make autopkgtests shellcheck-clean
+  * d/p/debian/Use-Python-3-for-test-web-server.patch:
+    Drop patch, no longer needed.
+    The tests now require Python 3 upstream, and no longer support
+    Python 2.
+  * Depend on xdg-desktop-portal 1.5.4.
+    This is probably not strictly required, but they are likely to be
+    released together and some features will need it.
+  * d/tests/build: Use correct compiler for proposed autopkgtest
+    cross-architecture testing support
+  * Make autopkgtests shellcheck-clean
+  * d/patches:
+    Add proposed patches from upstream PR 3307 to fix memory and fd leaks
+  * d/patches:
+    Add proposed patches from upstream PR 3310, 3311, 3312 to fix some
+    minor memory leaks
+  * d/p/testlibrary-Don-t-assert-that-progress-is-signalled.patch:
+    Remove problematic assertions while the failure is investigated
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 17 Dec 2019 11:34:34 +0000
+
+flatpak (1.5.0-1) experimental; urgency=medium
+
+  * New upstream development release
+    - Update d/libflatpak0.symbols
+  * Standards-Version: 4.4.1 (no changes required)
+  * Set packaging branch to debian/experimental
+  * tests: Depend on socat
+  * d/control: Add spurious Build-Conflicts on elogind packages.
+    This works around a build-dependency resolver failure when using
+    the same aspcud resolution behaviour as official Debian experimental
+    buildds, which for some reason tries to co-install systemd and elogind,
+    causing failure to install build-dependencies.
+    (This can safely be reverted in distributions that only have elogind,
+    such as Devuan.)
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 21 Oct 2019 13:14:19 +0100
 
 flatpak (1.4.3-1) unstable; urgency=medium
 

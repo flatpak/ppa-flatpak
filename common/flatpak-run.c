@@ -1,5 +1,5 @@
 /*
- * Copyright © 2014 Red Hat, Inc
+ * Copyright © 2014-2019 Red Hat, Inc
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <gio/gdesktopappinfo.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/utsname.h>
@@ -35,6 +36,9 @@
 #include <gio/gunixfdlist.h>
 #ifdef HAVE_DCONF
 #include <dconf/dconf.h>
+#endif
+#ifdef HAVE_LIBMALCONTENT
+#include <libmalcontent/malcontent.h>
 #endif
 
 #ifdef ENABLE_SECCOMP
@@ -52,7 +56,7 @@
 
 #include "flatpak-run-private.h"
 #include "flatpak-proxy.h"
-#include "flatpak-utils-private.h"
+#include "flatpak-utils-base-private.h"
 #include "flatpak-dir-private.h"
 #include "flatpak-systemd-dbus-generated.h"
 #include "flatpak-document-dbus-generated.h"
@@ -199,7 +203,7 @@ flatpak_run_add_x11_args (FlatpakBwrap *bwrap,
 #ifdef ENABLE_XAUTH
       g_auto(GLnxTmpfile) xauth_tmpf  = { 0, };
 
-      if (glnx_open_anonymous_tmpfile (O_RDWR | O_CLOEXEC, &xauth_tmpf, NULL))
+      if (glnx_open_anonymous_tmpfile_full (O_RDWR | O_CLOEXEC, "/tmp", &xauth_tmpf, NULL))
         {
           FILE *output = fdopen (xauth_tmpf.fd, "wb");
           if (output != NULL)
@@ -548,7 +552,7 @@ flatpak_run_add_system_dbus_args (FlatpakBwrap   *app_bwrap,
       flatpak_bwrap_add_args (proxy_arg_bwrap, real_dbus_address, proxy_socket, NULL);
 
       if (!unrestricted)
-        flatpak_context_add_bus_filters (context, NULL, FALSE, proxy_arg_bwrap);
+        flatpak_context_add_bus_filters (context, NULL, FALSE, flags & FLATPAK_RUN_FLAG_SANDBOX, proxy_arg_bwrap);
 
       if ((flags & FLATPAK_RUN_FLAG_LOG_SYSTEM_BUS) != 0)
         flatpak_bwrap_add_args (proxy_arg_bwrap, "--log", NULL);
@@ -620,7 +624,7 @@ flatpak_run_add_session_dbus_args (FlatpakBwrap   *app_bwrap,
 
       if (!unrestricted)
         {
-          flatpak_context_add_bus_filters (context, app_id, TRUE, proxy_arg_bwrap);
+          flatpak_context_add_bus_filters (context, app_id, TRUE, flags & FLATPAK_RUN_FLAG_SANDBOX, proxy_arg_bwrap);
 
           /* Allow calling any interface+method on all portals, but only receive broadcasts under /org/desktop/portal */
           flatpak_bwrap_add_arg (proxy_arg_bwrap,
@@ -851,10 +855,11 @@ start_dbus_proxy (FlatpakBwrap *app_bwrap,
   commandline = flatpak_quote_argv ((const char **) proxy_bwrap->argv->pdata, -1);
   g_debug ("Running '%s'", commandline);
 
+  /* We use LEAVE_DESCRIPTORS_OPEN to work around dead-lock, see flatpak_close_fds_workaround */
   if (!g_spawn_async (NULL,
                       (char **) proxy_bwrap->argv->pdata,
                       NULL,
-                      G_SPAWN_SEARCH_PATH,
+                      G_SPAWN_SEARCH_PATH | G_SPAWN_LEAVE_DESCRIPTORS_OPEN,
                       flatpak_bwrap_child_setup_cb, proxy_bwrap->fds,
                       NULL, error))
     return FALSE;
@@ -1581,6 +1586,16 @@ add_font_path_args (FlatpakBwrap *bwrap)
                               SYSTEM_FONTS_DIR);
     }
 
+  if (g_file_test ("/usr/local/share/fonts", G_FILE_TEST_EXISTS))
+    {
+      flatpak_bwrap_add_args (bwrap,
+                              "--ro-bind", "/usr/local/share/fonts", "/run/host/local-fonts",
+                              NULL);
+      g_string_append_printf (xml_snippet,
+                              "\t<remap-dir as-path=\"%s\">/run/host/local-fonts</remap-dir>\n",
+                              "/usr/local/share/fonts");
+    }
+
   system_cache_dirs = g_strsplit (SYSTEM_FONT_CACHE_DIRS, ":", 0);
   for (i = 0; system_cache_dirs[i] != NULL; i++)
     {
@@ -1654,10 +1669,22 @@ add_font_path_args (FlatpakBwrap *bwrap)
 static void
 add_icon_path_args (FlatpakBwrap *bwrap)
 {
+  g_autoptr(GFile) home = NULL;
+  g_autoptr(GFile) user_icons = NULL;
+
   if (g_file_test ("/usr/share/icons", G_FILE_TEST_IS_DIR))
     {
       flatpak_bwrap_add_args (bwrap,
                               "--ro-bind", "/usr/share/icons", "/run/host/share/icons",
+                              NULL);
+    }
+
+  home = g_file_new_for_path (g_get_home_dir ());
+  user_icons = g_file_resolve_relative_path (home, ".local/share/icons");
+  if (g_file_query_exists (user_icons, NULL))
+    {
+      flatpak_bwrap_add_args (bwrap,
+                              "--ro-bind", flatpak_file_get_path_cached (user_icons), "/run/host/user-share/icons",
                               NULL);
     }
 }
@@ -2615,7 +2642,7 @@ setup_seccomp (FlatpakBwrap   *bwrap,
   /* Blacklist the rest */
   seccomp_rule_add_exact (seccomp, SCMP_ACT_ERRNO (EAFNOSUPPORT), SCMP_SYS (socket), 1, SCMP_A0 (SCMP_CMP_GE, last_allowed_family + 1));
 
-  if (!glnx_open_anonymous_tmpfile (O_RDWR | O_CLOEXEC, &seccomp_tmpf, error))
+  if (!glnx_open_anonymous_tmpfile_full (O_RDWR | O_CLOEXEC, "/tmp", &seccomp_tmpf, error))
     return FALSE;
 
   if (seccomp_export_bpf (seccomp, seccomp_tmpf.fd) != 0)
@@ -2713,6 +2740,7 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
                           "--ro-bind", "/sys/class", "/sys/class",
                           "--ro-bind", "/sys/dev", "/sys/dev",
                           "--ro-bind", "/sys/devices", "/sys/devices",
+                          "--ro-bind-try", "/proc/self/ns/user", "/run/.userns",
                           /* glib uses this like /etc/timezone */
                           "--symlink", "/etc/timezone", "/var/db/zoneinfo",
                           NULL);
@@ -3112,10 +3140,11 @@ regenerate_ld_cache (GPtrArray    *base_argv_array,
   g_array_append_vals (combined_fd_array, base_fd_array->data, base_fd_array->len);
   g_array_append_vals (combined_fd_array, bwrap->fds->data, bwrap->fds->len);
 
+  /* We use LEAVE_DESCRIPTORS_OPEN to work around dead-lock, see flatpak_close_fds_workaround */
   if (!g_spawn_sync (NULL,
                      (char **) bwrap->argv->pdata,
                      bwrap->envp,
-                     G_SPAWN_SEARCH_PATH,
+                     G_SPAWN_SEARCH_PATH | G_SPAWN_LEAVE_DESCRIPTORS_OPEN,
                      flatpak_bwrap_child_setup_cb, combined_fd_array,
                      NULL, NULL,
                      &exit_status,
@@ -3155,6 +3184,110 @@ regenerate_ld_cache (GPtrArray    *base_argv_array,
   return glnx_steal_fd (&ld_so_fd);
 }
 
+/* Check that this user is actually allowed to run this app. When running
+ * from the gnome-initial-setup session, an app filter might not be available. */
+static gboolean
+check_parental_controls (const char     *app_ref,
+                         FlatpakDeploy  *deploy,
+                         GCancellable   *cancellable,
+                         GError        **error)
+{
+#ifdef HAVE_LIBMALCONTENT
+  g_auto(GStrv) app_ref_parts = NULL;
+  g_autoptr(MctManager) manager = NULL;
+  g_autoptr(MctAppFilter) app_filter = NULL;
+  g_autoptr(GAsyncResult) app_filter_result = NULL;
+  g_autoptr(GDBusConnection) system_bus = NULL;
+  g_autoptr(GError) local_error = NULL;
+  g_autoptr(GDesktopAppInfo) app_info = NULL;
+  gboolean allowed = FALSE;
+
+  app_ref_parts = flatpak_decompose_ref (app_ref, error);
+  if (app_ref_parts == NULL)
+    return FALSE;
+
+  system_bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, error);
+  if (system_bus == NULL)
+    return FALSE;
+
+  manager = mct_manager_new (system_bus);
+  app_filter = mct_manager_get_app_filter (manager, getuid (),
+                                           MCT_GET_APP_FILTER_FLAGS_INTERACTIVE,
+                                           cancellable, &local_error);
+  if (g_error_matches (local_error, MCT_APP_FILTER_ERROR, MCT_APP_FILTER_ERROR_DISABLED))
+    {
+      g_debug ("Skipping parental controls check for %s since parental "
+               "controls are disabled globally", app_ref);
+      return TRUE;
+    }
+  else if (local_error != NULL)
+    {
+      g_propagate_error (error, g_steal_pointer (&local_error));
+      return FALSE;
+    }
+
+  /* Always filter by app ID. Additionally, filter by app info (which runs
+   * multiple checks, including whether the app ID, executable path and
+   * content types are allowed) if available. If the flatpak contains
+   * multiple .desktop files, we use the main one. The app ID check is
+   * always done, as the binary executed by `flatpak run` isn’t necessarily
+   * extracted from a .desktop file. */
+  allowed = mct_app_filter_is_flatpak_ref_allowed (app_filter, app_ref);
+
+  /* Look up the app’s main .desktop file. */
+  if (deploy != NULL && allowed)
+    {
+      g_autoptr(GFile) deploy_dir = NULL;
+      const char *deploy_path;
+      g_autofree char *desktop_file_name = NULL;
+      g_autofree char *desktop_file_path = NULL;
+
+      deploy_dir = flatpak_deploy_get_dir (deploy);
+      deploy_path = flatpak_file_get_path_cached (deploy_dir);
+
+      desktop_file_name = g_strconcat (app_ref_parts[1], ".desktop", NULL);
+      desktop_file_path = g_build_path (G_DIR_SEPARATOR_S,
+                                        deploy_path,
+                                        "export",
+                                        "share",
+                                        "applications",
+                                        desktop_file_name,
+                                        NULL);
+      app_info = g_desktop_app_info_new_from_filename (desktop_file_path);
+    }
+
+  if (app_info != NULL)
+    allowed = allowed && mct_app_filter_is_appinfo_allowed (app_filter,
+                                                            G_APP_INFO (app_info));
+
+  if (!allowed)
+    return flatpak_fail_error (error, FLATPAK_ERROR_PERMISSION_DENIED,
+                               /* Translators: The placeholder is for an app ref. */
+                               _("Running %s is not allowed by the policy set by your administrator"),
+                               app_ref);
+#endif  /* HAVE_LIBMALCONTENT */
+
+  return TRUE;
+}
+
+static int
+open_namespace_fd_if_needed (const char *path, const char *type)
+{
+  g_autofree char *self_path = g_strdup_printf ("/proc/self/ns/%s", type);
+  struct stat s, self_s;
+
+  if (stat (path, &s) != 0)
+    return -1; /* No such namespace, ignore */
+
+  if (stat (self_path, &self_s) != 0)
+    return -1; /* No such namespace, ignore */
+
+  if (s.st_ino != self_s.st_ino)
+    return open (path, O_RDONLY|O_CLOEXEC);
+
+  return -1;
+}
+
 gboolean
 flatpak_run_app (const char     *app_ref,
                  FlatpakDeploy  *app_deploy,
@@ -3162,6 +3295,7 @@ flatpak_run_app (const char     *app_ref,
                  const char     *custom_runtime,
                  const char     *custom_runtime_version,
                  const char     *custom_runtime_commit,
+                 int             parent_pid,
                  FlatpakRunFlags flags,
                  const char     *cwd,
                  const char     *custom_command,
@@ -3206,6 +3340,7 @@ flatpak_run_app (const char     *app_ref,
   gboolean generate_ld_so_conf = TRUE;
   gboolean use_ld_so_cache = TRUE;
   gboolean sandboxed = (flags & FLATPAK_RUN_FLAG_SANDBOX) != 0;
+  gboolean parent_expose_pids = (flags & FLATPAK_RUN_FLAG_PARENT_EXPOSE_PIDS) != 0;
 
   struct stat s;
 
@@ -3213,6 +3348,11 @@ flatpak_run_app (const char     *app_ref,
   if (app_ref_parts == NULL)
     return FALSE;
 
+  /* Check the user is allowed to run this flatpak. */
+  if (!check_parental_controls (app_ref, app_deploy, cancellable, error))
+    return FALSE;
+
+  /* Construct the bwrap context. */
   bwrap = flatpak_bwrap_new (NULL);
   flatpak_bwrap_add_arg (bwrap, flatpak_get_bwrap ());
 
@@ -3298,13 +3438,7 @@ flatpak_run_app (const char     *app_ref,
     }
 
   if (sandboxed)
-    {
-      flatpak_context_make_sandboxed (app_context);
-      flags |=
-        FLATPAK_RUN_FLAG_NO_SESSION_BUS_PROXY |
-        FLATPAK_RUN_FLAG_NO_SYSTEM_BUS_PROXY |
-        FLATPAK_RUN_FLAG_NO_A11Y_BUS_PROXY;
-    }
+    flatpak_context_make_sandboxed (app_context);
 
   if (extra_context)
     flatpak_context_merge (app_context, extra_context);
@@ -3509,6 +3643,35 @@ flatpak_run_app (const char     *app_ref,
   if (cwd)
     flatpak_bwrap_add_args (bwrap, "--chdir", cwd, NULL);
 
+  if (parent_expose_pids)
+    {
+      g_autofree char *userns_path = NULL;
+      g_autofree char *pidns_path = NULL;
+      g_autofree char *userns2_path = NULL;
+      int userns_fd, userns2_fd, pidns_fd;
+
+      if (parent_pid == 0)
+        return flatpak_fail (error, "No parent pid specified");
+
+      userns_path = g_strdup_printf ("/proc/%d/root/run/.userns", parent_pid);
+
+      userns_fd = open_namespace_fd_if_needed (userns_path, "user");
+      if (userns_fd != -1)
+        {
+          flatpak_bwrap_add_args_data_fd (bwrap, "--userns", userns_fd, NULL);
+
+          userns2_path = g_strdup_printf ("/proc/%d/ns/user", parent_pid);
+          userns2_fd = open (userns2_path, O_RDONLY|O_CLOEXEC);
+          if (userns2_fd != -1)
+            flatpak_bwrap_add_args_data_fd (bwrap, "--userns2", userns2_fd, NULL);
+        }
+
+      pidns_path = g_strdup_printf ("/proc/%d/ns/pid", parent_pid);
+      pidns_fd = open (pidns_path, O_RDONLY|O_CLOEXEC);
+      if (pidns_fd != -1)
+        flatpak_bwrap_add_args_data_fd (bwrap, "--pidns", pidns_fd, NULL);
+    }
+
   if (custom_command)
     {
       command = custom_command;
@@ -3554,6 +3717,9 @@ flatpak_run_app (const char     *app_ref,
       if (flags & FLATPAK_RUN_FLAG_DO_NOT_REAP)
         spawn_flags |= G_SPAWN_DO_NOT_REAP_CHILD;
 
+      /* We use LEAVE_DESCRIPTORS_OPEN to work around dead-lock, see flatpak_close_fds_workaround */
+      spawn_flags |= G_SPAWN_LEAVE_DESCRIPTORS_OPEN;
+
       if (!g_spawn_async (NULL,
                           (char **) bwrap->argv->pdata,
                           bwrap->envp,
@@ -3576,8 +3742,11 @@ flatpak_run_app (const char     *app_ref,
       pid_path = g_build_filename (instance_id_host_dir, "pid", NULL);
       g_file_set_contents (pid_path, pid_str, -1, NULL);
 
-      /* Ensure we unset O_CLOEXEC */
-      flatpak_bwrap_child_setup_cb (bwrap->fds);
+      /* Ensure we unset O_CLOEXEC for marked fds and rewind fds as needed.
+       * Note that this does not close fds that are not already marked O_CLOEXEC, because
+       * we do want to allow inheriting fds into flatpak run. */
+      flatpak_bwrap_child_setup (bwrap->fds, FALSE);
+
       if (execvpe (flatpak_get_bwrap (), (char **) bwrap->argv->pdata, bwrap->envp) == -1)
         {
           g_set_error_literal (error, G_IO_ERROR, g_io_error_from_errno (errno),

@@ -1,0 +1,105 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Mon, 16 Dec 2019 10:56:11 +0100
+Subject: FlatpakAsyncProgressChained: Don't leak chained progress
+
+If we're using a chained progress, it will be unchained
+in the destroy notifier. However, it was newly constructed so we
+need to also unref it or we'll leak it.
+
+This also makes some minor cleanups:
+
+1) Centralize version checks to one place and replace users
+   with #ifdef FLATPAK_DO_CHAIN_PROGRESS which makes it
+   easier to read and to test the fallback.
+
+2) Make flatpak_progress_chain return a FlatpakAsyncProgressChained
+   to make it clear the two needs to be paired.
+
+Origin: https://github.com/flatpak/flatpak/pull/3307
+---
+ common/flatpak-utils-private.h | 13 ++++++++++---
+ common/flatpak-utils.c         | 12 ++++++------
+ 2 files changed, 16 insertions(+), 9 deletions(-)
+
+diff --git a/common/flatpak-utils-private.h b/common/flatpak-utils-private.h
+index f13d82f..19ad6de 100644
+--- a/common/flatpak-utils-private.h
++++ b/common/flatpak-utils-private.h
+@@ -824,20 +824,27 @@ typedef void (*FlatpakProgressCallback)(const char *status,
+ OstreeAsyncProgress *flatpak_progress_new (FlatpakProgressCallback progress,
+                                            gpointer                progress_data);
+ 
+-OstreeAsyncProgress *flatpak_progress_chain (OstreeAsyncProgress *progress);
++#if OSTREE_CHECK_VERSION (2019, 6)
++#define FLATPAK_DO_CHAIN_PROGRESS 1
++#endif
+ 
+ static inline void
+ flatpak_progress_unchain (OstreeAsyncProgress *chained_progress)
+ {
+-#if OSTREE_CHECK_VERSION (2019, 6)
++#ifdef FLATPAK_DO_CHAIN_PROGRESS
+   if (chained_progress != NULL)
+-    ostree_async_progress_finish (chained_progress);
++    {
++      ostree_async_progress_finish (chained_progress);
++      g_object_unref (chained_progress);
++    }
+ #endif
+ }
+ 
+ typedef OstreeAsyncProgress FlatpakAsyncProgressChained;
+ G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakAsyncProgressChained, flatpak_progress_unchain);
+ 
++FlatpakAsyncProgressChained *flatpak_progress_chain (OstreeAsyncProgress *progress);
++
+ void flatpak_log_dir_access (FlatpakDir *dir);
+ 
+ gboolean flatpak_check_required_version (const char *ref,
+diff --git a/common/flatpak-utils.c b/common/flatpak-utils.c
+index 101f17f..770e2ae 100644
+--- a/common/flatpak-utils.c
++++ b/common/flatpak-utils.c
+@@ -6495,7 +6495,7 @@ flatpak_progress_new (FlatpakProgressCallback progress,
+   return ostree_progress;
+ }
+ 
+-#if OSTREE_CHECK_VERSION (2019, 6)
++#ifdef FLATPAK_DO_CHAIN_PROGRESS
+ static void
+ handle_chained_progress (OstreeAsyncProgress *chained_progress,
+                          gpointer             user_data)
+@@ -6532,7 +6532,7 @@ handle_chained_progress (OstreeAsyncProgress *chained_progress,
+        * case. */
+     }
+ }
+-#endif  /* libostree ≥ 2019.6 */
++#endif  /* FLATPAK_DO_CHAIN_PROGRESS */
+ 
+ /*
+  * This is necessary when pushing a temporary GMainContext to be the thread
+@@ -6576,10 +6576,10 @@ handle_chained_progress (OstreeAsyncProgress *chained_progress,
+  * This is a no-op, preserving the current behaviour where progress events are
+  * not fired, if the libostree version isn't new enough.
+  */
+-OstreeAsyncProgress *
++FlatpakAsyncProgressChained *
+ flatpak_progress_chain (OstreeAsyncProgress *progress)
+ {
+-#if OSTREE_CHECK_VERSION (2019, 6)
++#ifdef FLATPAK_DO_CHAIN_PROGRESS
+   if (progress == NULL)
+     return NULL;
+ 
+@@ -6600,9 +6600,9 @@ flatpak_progress_chain (OstreeAsyncProgress *progress)
+   g_object_set_data (G_OBJECT (chained_progress), "chained_from", progress);
+ 
+   return chained_progress;
+-#else
++#else /* !FLATPAK_DO_CHAIN_PROGRESS */
+   return progress;
+-#endif  /* libostree ≥ 2019.6 */
++#endif
+ }
+ 
+ void

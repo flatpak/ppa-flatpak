@@ -36,6 +36,7 @@ struct _FlatpakCliTransaction
 
   gboolean             disable_interaction;
   gboolean             stop_on_first_error;
+  gboolean             non_default_arch;
   GError              *first_operation_error;
 
   int                  rows;
@@ -247,7 +248,7 @@ progress_changed_cb (FlatpakTransactionProgress *progress,
 {
   FlatpakCliTransaction *cli = data;
   FlatpakTransaction *self = FLATPAK_TRANSACTION (cli);
-  FlatpakTransactionOperation *op = flatpak_transaction_get_current_operation (self);
+  g_autoptr(FlatpakTransactionOperation) op = flatpak_transaction_get_current_operation (self);
   g_autoptr(GString) str = g_string_new ("");
   int i;
   int n_full, partial;
@@ -344,7 +345,7 @@ progress_changed_cb (FlatpakTransactionProgress *progress,
         g_print ("\r%s", str->str); /* redraw failed, just update the progress */
     }
   else
-    g_print ("\r%s", str->str);
+    g_print ("\n%s", str->str);
 }
 
 static void
@@ -408,7 +409,7 @@ new_operation (FlatpakTransaction          *transaction,
   self->progress_msg = g_steal_pointer (&text);
 
   g_signal_connect (progress, "changed", G_CALLBACK (progress_changed_cb), self);
-  flatpak_transaction_progress_set_update_frequency (progress, FLATPAK_CLI_UPDATE_FREQUENCY);
+  flatpak_transaction_progress_set_update_frequency (progress, FLATPAK_CLI_UPDATE_INTERVAL_MS);
 }
 
 static void
@@ -493,13 +494,93 @@ operation_error (FlatpakTransaction            *transaction,
       redraw (self);
     }
   else
-    g_print ("\r%-*s\n", self->table_width, text);
+    g_printerr ("\r%-*s\n", self->table_width, text);
 
   if (!non_fatal && self->stop_on_first_error)
     return FALSE;
 
   return TRUE; /* Continue */
 }
+
+static gboolean
+webflow_start (FlatpakTransaction *transaction,
+               const char         *remote,
+               const char         *url,
+               GVariant           *options,
+               guint               id)
+{
+  FlatpakCliTransaction *self = FLATPAK_CLI_TRANSACTION (transaction);
+  const char *browser;
+  g_autoptr(GError) local_error = NULL;
+  const char *args[3] = { NULL, url, NULL };
+
+  if (!self->disable_interaction)
+    {
+      g_print (_("Authentication required for remote '%s'\n"), remote);
+      if (!flatpak_yes_no_prompt (TRUE, _("Open browser?")))
+        return FALSE;
+    }
+
+  /* Allow hard overrides with $BROWSER */
+  browser = g_getenv ("BROWSER");
+  if (browser != NULL)
+    {
+      args[0] = browser;
+      if (!g_spawn_async (NULL, (char **)args, NULL, G_SPAWN_SEARCH_PATH,
+                          NULL, NULL, NULL, &local_error))
+        {
+          g_printerr ("Failed to start browser %s: %s\n", browser, local_error->message);
+          return FALSE;
+        }
+    }
+  else
+    {
+      if (!g_app_info_launch_default_for_uri (url, NULL, &local_error))
+        {
+          g_printerr ("Failed to show url: %s\n", local_error->message);
+          return FALSE;
+        }
+    }
+
+  g_print ("Waiting for browser...\n");
+
+  return TRUE;
+}
+
+static void
+webflow_done (FlatpakTransaction *transaction,
+              GVariant           *options,
+              guint               id)
+{
+  g_print ("Browser done\n");
+}
+
+static gboolean
+basic_auth_start (FlatpakTransaction *transaction,
+                  const char         *remote,
+                  const char         *realm,
+                  GVariant           *options,
+                  guint               id)
+{
+  FlatpakCliTransaction *self = FLATPAK_CLI_TRANSACTION (transaction);
+  char *user, *password;
+
+  if (self->disable_interaction)
+    return FALSE;
+
+  g_print (_("Login required remote %s (realm %s)\n"), remote, realm);
+  user = flatpak_prompt (FALSE, _("User"));
+  if (user == NULL)
+    return FALSE;
+
+  password = flatpak_password_prompt (_("Password"));
+  if (password == NULL)
+    return FALSE;
+
+  flatpak_transaction_complete_basic_auth (transaction, id, user, password, NULL);
+  return TRUE;
+}
+
 
 static gboolean
 end_of_lifed_with_rebase (FlatpakTransaction *transaction,
@@ -513,14 +594,14 @@ end_of_lifed_with_rebase (FlatpakTransaction *transaction,
   g_autoptr(FlatpakRef) rref = flatpak_ref_parse (ref, NULL);
 
   if (rebased_to_ref)
-    g_print (_("Info: %s is end-of-life, in preference of %s\n"), flatpak_ref_get_name (rref), rebased_to_ref);
+    g_print (_("Info: %s is end-of-life, in favor of %s\n"), flatpak_ref_get_name (rref), rebased_to_ref);
   else if (reason)
     g_print (_("Info: %s is end-of-life, with reason: %s\n"), flatpak_ref_get_name (rref), reason);
 
   if (rebased_to_ref && remote)
     {
       if (self->disable_interaction ||
-          flatpak_yes_no_prompt (FALSE, _("Replace it with %s?"), flatpak_ref_get_name (rref)))
+          flatpak_yes_no_prompt (TRUE, _("Replace it with %s?"), rebased_to_ref))
         {
           g_autoptr(GError) error = NULL;
 
@@ -873,21 +954,24 @@ transaction_ready (FlatpakTransaction *transaction)
 
   printer = self->printer = flatpak_table_printer_new ();
   i = 0;
+
   flatpak_table_printer_set_column_title (printer, i++, "   ");
   flatpak_table_printer_set_column_title (printer, i++, "   ");
+
   flatpak_table_printer_set_column_expand (printer, i, TRUE);
   flatpak_table_printer_set_column_title (printer, i++, _("ID"));
+
   flatpak_table_printer_set_column_expand (printer, i, TRUE);
+  if (!self->non_default_arch)
+    flatpak_table_printer_set_column_skip_unique (printer, i, TRUE);
   flatpak_table_printer_set_column_title (printer, i++, _("Arch"));
+
   flatpak_table_printer_set_column_expand (printer, i, TRUE);
   flatpak_table_printer_set_column_title (printer, i++, _("Branch"));
 
-  if (self->installing + self->updating + self->uninstalling > 1)
-    {
-      flatpak_table_printer_set_column_expand (printer, i, TRUE);
-      /* translators: This is short for operation, the title of a one-char column */
-      flatpak_table_printer_set_column_title (printer, i++, _("Op"));
-    }
+  flatpak_table_printer_set_column_expand (printer, i, TRUE);
+  /* translators: This is short for operation, the title of a one-char column */
+  flatpak_table_printer_set_column_title (printer, i++, _("Op"));
 
   if (self->installing || self->updating)
     {
@@ -924,9 +1008,7 @@ transaction_ready (FlatpakTransaction *transaction)
       flatpak_table_printer_add_column (printer, parts[1]);
       flatpak_table_printer_add_column (printer, parts[2]);
       flatpak_table_printer_add_column (printer, parts[3]);
-
-      if (self->installing + self->updating + self->uninstalling > 1)
-        flatpak_table_printer_add_column (printer, op_shorthand[type]);
+      flatpak_table_printer_add_column (printer, op_shorthand[type]);
 
       if (type == FLATPAK_TRANSACTION_OPERATION_INSTALL ||
           type == FLATPAK_TRANSACTION_OPERATION_INSTALL_BUNDLE ||
@@ -963,7 +1045,7 @@ transaction_ready (FlatpakTransaction *transaction)
 
   if (!self->disable_interaction)
     {
-      FlatpakInstallation *installation = flatpak_transaction_get_installation (transaction);
+      g_autoptr(FlatpakInstallation) installation = flatpak_transaction_get_installation (transaction);
       const char *name;
       const char *id;
       gboolean ret;
@@ -975,7 +1057,7 @@ transaction_ready (FlatpakTransaction *transaction)
 
       if (flatpak_installation_get_is_user (installation))
         ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the user installation?"));
-      else if (g_strcmp0 (id, "default") == 0)
+      else if (g_strcmp0 (id, SYSTEM_DIR_DEFAULT_ID) == 0)
         ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the system installation?"));
       else
         ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the %s?"), name);
@@ -1054,12 +1136,16 @@ flatpak_cli_transaction_class_init (FlatpakCliTransactionClass *klass)
   transaction_class->choose_remote_for_ref = choose_remote_for_ref;
   transaction_class->end_of_lifed_with_rebase = end_of_lifed_with_rebase;
   transaction_class->run = flatpak_cli_transaction_run;
+  transaction_class->webflow_start = webflow_start;
+  transaction_class->webflow_done = webflow_done;
+  transaction_class->basic_auth_start = basic_auth_start;
 }
 
 FlatpakTransaction *
 flatpak_cli_transaction_new (FlatpakDir *dir,
                              gboolean    disable_interaction,
                              gboolean    stop_on_first_error,
+                             gboolean    non_default_arch,
                              GError    **error)
 {
   g_autoptr(FlatpakInstallation) installation = NULL;
@@ -1080,6 +1166,7 @@ flatpak_cli_transaction_new (FlatpakDir *dir,
 
   self->disable_interaction = disable_interaction;
   self->stop_on_first_error = stop_on_first_error;
+  self->non_default_arch = non_default_arch;
 
   flatpak_transaction_add_default_dependency_sources (FLATPAK_TRANSACTION (self));
 

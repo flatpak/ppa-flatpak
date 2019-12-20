@@ -1,0 +1,73 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Mon, 16 Dec 2019 09:52:14 +0100
+Subject: test: Fix leak of OstreeRepo cachedir fd
+
+It turns out ostree_repo_open() overwrites custom cachedir_fd we've
+set for the system using installation in case the object dir is
+writable. Normally this is not a problem, because it is not writable,
+but in the testsuite is *is*, which means the initial cachedir fd is
+leaked, as well as using the wrong dir for summary caches during the
+tests.
+
+We work around this by setting the cache_dir after a successful
+ostree_repo_open().
+
+Bug: https://github.com/flatpak/flatpak/issues/3303
+Origin: https://github.com/flatpak/flatpak/pull/3307
+---
+ common/flatpak-dir.c | 35 ++++++++++++++++++++---------------
+ 1 file changed, 20 insertions(+), 15 deletions(-)
+
+diff --git a/common/flatpak-dir.c b/common/flatpak-dir.c
+index 86fd121..50e1546 100644
+--- a/common/flatpak-dir.c
++++ b/common/flatpak-dir.c
+@@ -3033,21 +3033,6 @@ _flatpak_dir_ensure_repo (FlatpakDir   *self,
+ 
+   repo = ostree_repo_new (repodir);
+ 
+-  if (flatpak_dir_use_system_helper (self, NULL))
+-    {
+-      g_autofree char *cache_path = NULL;
+-
+-      cache_dir = flatpak_ensure_user_cache_dir_location (error);
+-      if (cache_dir == NULL)
+-        return FALSE;
+-
+-      cache_path = g_file_get_path (cache_dir);
+-      if (!ostree_repo_set_cache_dir (repo,
+-                                      AT_FDCWD, cache_path,
+-                                      cancellable, error))
+-        return FALSE;
+-    }
+-
+   if (!g_file_query_exists (repodir, cancellable))
+     {
+       /* We always use bare-user-only these days, except old installations
+@@ -3084,6 +3069,26 @@ _flatpak_dir_ensure_repo (FlatpakDir   *self,
+         }
+     }
+ 
++  /* In the system-helper case we're directly using the global repo, and we can't write any
++   * caches for summaries there, so we need to set a custom dir for this. Note, as per #3303
++   * this has to be called after ostree_repo_open() in order to the custom cachedir being
++   * overridden if the system dir is writable (like in the testsuite).
++   */
++  if (flatpak_dir_use_system_helper (self, NULL))
++    {
++      g_autofree char *cache_path = NULL;
++
++      cache_dir = flatpak_ensure_user_cache_dir_location (error);
++      if (cache_dir == NULL)
++        return FALSE;
++
++      cache_path = g_file_get_path (cache_dir);
++      if (!ostree_repo_set_cache_dir (repo,
++                                      AT_FDCWD, cache_path,
++                                      cancellable, error))
++        return FALSE;
++    }
++
+   /* Earlier flatpak used to reset min-free-space-percent to 0 every time, but now we
+    * favor min-free-space-size instead of it (See below).
+    */

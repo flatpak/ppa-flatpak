@@ -27,12 +27,33 @@ typedef enum {
   FLATPAK_SPAWN_FLAGS_SANDBOX = 1 << 2,
   FLATPAK_SPAWN_FLAGS_NO_NETWORK = 1 << 3,
   FLATPAK_SPAWN_FLAGS_WATCH_BUS = 1 << 4,
+  FLATPAK_SPAWN_FLAGS_EXPOSE_PIDS = 1 << 5,
 } FlatpakSpawnFlags;
+
+typedef enum {
+  FLATPAK_SPAWN_SANDBOX_FLAGS_SHARE_DISPLAY = 1 << 0,
+  FLATPAK_SPAWN_SANDBOX_FLAGS_SHARE_SOUND = 1 << 1,
+  FLATPAK_SPAWN_SANDBOX_FLAGS_SHARE_GPU = 1 << 2,
+  FLATPAK_SPAWN_SANDBOX_FLAGS_ALLOW_DBUS = 1 << 3,
+  FLATPAK_SPAWN_SANDBOX_FLAGS_ALLOW_A11Y = 1 << 4,
+} FlatpakSpawnSandboxFlags;
+
+
+typedef enum {
+  FLATPAK_SPAWN_SUPPORT_FLAGS_EXPOSE_PIDS = 1 << 0,
+} FlatpakSpawnSupportFlags;
 
 #define FLATPAK_SPAWN_FLAGS_ALL (FLATPAK_SPAWN_FLAGS_CLEAR_ENV | \
                                  FLATPAK_SPAWN_FLAGS_LATEST_VERSION | \
                                  FLATPAK_SPAWN_FLAGS_SANDBOX | \
                                  FLATPAK_SPAWN_FLAGS_NO_NETWORK | \
-                                 FLATPAK_SPAWN_FLAGS_WATCH_BUS)
+                                 FLATPAK_SPAWN_FLAGS_WATCH_BUS | \
+                                 FLATPAK_SPAWN_FLAGS_EXPOSE_PIDS)
+
+#define FLATPAK_SPAWN_SANDBOX_FLAGS_ALL (FLATPAK_SPAWN_SANDBOX_FLAGS_SHARE_DISPLAY | \
+                                         FLATPAK_SPAWN_SANDBOX_FLAGS_SHARE_SOUND | \
+                                         FLATPAK_SPAWN_SANDBOX_FLAGS_SHARE_GPU | \
+                                         FLATPAK_SPAWN_SANDBOX_FLAGS_ALLOW_DBUS | \
+                                         FLATPAK_SPAWN_SANDBOX_FLAGS_ALLOW_A11Y)
 
 #endif /* __FLATPAK_PORTAL_H__ */

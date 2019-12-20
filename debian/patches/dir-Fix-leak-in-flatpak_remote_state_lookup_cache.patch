@@ -1,0 +1,25 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Mon, 16 Dec 2019 21:26:20 +0100
+Subject: dir: Fix leak in flatpak_remote_state_lookup_cache()
+
+For some reason we're assigning refdata the same thing twice, leaking
+the first copy.
+
+Origin: https://github.com/flatpak/flatpak/pull/3307
+---
+ common/flatpak-dir.c | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/common/flatpak-dir.c b/common/flatpak-dir.c
+index 8756bd3..071547b 100644
+--- a/common/flatpak-dir.c
++++ b/common/flatpak-dir.c
+@@ -500,8 +500,6 @@ flatpak_remote_state_lookup_cache (FlatpakRemoteState *self,
+     g_variant_get_child (res, 2, "&s", metadata);
+ 
+ 
+-  refdata = g_variant_get_child_value (cache, pos);
+-
+   if (maybe_commit)
+     {
+       if (commits)
