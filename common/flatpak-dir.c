@@ -500,8 +500,6 @@ flatpak_remote_state_lookup_cache (FlatpakRemoteState *self,
     g_variant_get_child (res, 2, "&s", metadata);
 
 
-  refdata = g_variant_get_child_value (cache, pos);
-
   if (maybe_commit)
     {
       if (commits)
@@ -2804,6 +2802,9 @@ flatpak_dir_recreate_repo (FlatpakDir   *self,
   gboolean res;
   OstreeRepo *old_repo = g_steal_pointer (&self->repo);
 
+  /* This is also set by ensure repo, so clear it too */
+  g_clear_object (&self->cache_dir);
+
   res = flatpak_dir_ensure_repo (self, cancellable, error);
   g_clear_object (&old_repo);
 
@@ -3033,21 +3034,6 @@ _flatpak_dir_ensure_repo (FlatpakDir   *self,
 
   repo = ostree_repo_new (repodir);
 
-  if (flatpak_dir_use_system_helper (self, NULL))
-    {
-      g_autofree char *cache_path = NULL;
-
-      cache_dir = flatpak_ensure_user_cache_dir_location (error);
-      if (cache_dir == NULL)
-        return FALSE;
-
-      cache_path = g_file_get_path (cache_dir);
-      if (!ostree_repo_set_cache_dir (repo,
-                                      AT_FDCWD, cache_path,
-                                      cancellable, error))
-        return FALSE;
-    }
-
   if (!g_file_query_exists (repodir, cancellable))
     {
       /* We always use bare-user-only these days, except old installations
@@ -3082,6 +3068,26 @@ _flatpak_dir_ensure_repo (FlatpakDir   *self,
           g_prefix_error (error, _("While opening repository %s: "), repopath);
           return FALSE;
         }
+    }
+
+  /* In the system-helper case we're directly using the global repo, and we can't write any
+   * caches for summaries there, so we need to set a custom dir for this. Note, as per #3303
+   * this has to be called after ostree_repo_open() in order to the custom cachedir being
+   * overridden if the system dir is writable (like in the testsuite).
+   */
+  if (flatpak_dir_use_system_helper (self, NULL))
+    {
+      g_autofree char *cache_path = NULL;
+
+      cache_dir = flatpak_ensure_user_cache_dir_location (error);
+      if (cache_dir == NULL)
+        return FALSE;
+
+      cache_path = g_file_get_path (cache_dir);
+      if (!ostree_repo_set_cache_dir (repo,
+                                      AT_FDCWD, cache_path,
+                                      cancellable, error))
+        return FALSE;
     }
 
   /* Earlier flatpak used to reset min-free-space-percent to 0 every time, but now we
@@ -3856,6 +3862,11 @@ flatpak_dir_p2p_state_free (FlatpakDirP2PState *state)
 
   if (state->results)
     g_ptr_array_unref (state->results);
+
+  if (state->results_refs)
+    g_ptr_array_unref (state->results_refs);
+
+  g_free (state);
 }
 
 static void
@@ -5314,9 +5325,6 @@ flatpak_dir_mirror_oci (FlatpakDir          *self,
   res = flatpak_mirror_image_from_oci (dst_registry, registry, oci_repository, oci_digest, ref, oci_pull_progress_cb,
                                        progress, cancellable, error);
 
-  if (progress)
-    ostree_async_progress_finish (progress);
-
   if (!res)
     return FALSE;
 
@@ -5404,9 +5412,6 @@ flatpak_dir_pull_oci (FlatpakDir          *self,
 
   checksum = flatpak_pull_from_oci (repo, registry, oci_repository, oci_digest, FLATPAK_OCI_MANIFEST (versioned), image_config,
                                     state->remote_name, ref, oci_pull_progress_cb, progress, cancellable, error);
-
-  if (progress)
-    ostree_async_progress_finish (progress);
 
   if (checksum == NULL)
     return FALSE;
@@ -5656,9 +5661,6 @@ out:
       g_assert (error == NULL || *error != NULL);
     }
 
-  if (progress)
-    ostree_async_progress_finish (progress);
-
   return ret;
 }
 
@@ -5740,9 +5742,6 @@ repo_pull_local_untrusted (FlatpakDir          *self,
                                        progress, cancellable, error);
   if (!res)
     translate_ostree_repo_pull_errors (error);
-
-  if (progress)
-    ostree_async_progress_finish (progress);
 
   return res;
 }
@@ -6002,9 +6001,6 @@ flatpak_dir_pull_untrusted_local (FlatpakDir          *self,
 out:
   if (!ret)
     ostree_repo_abort_transaction (self->repo, cancellable, NULL);
-
-  if (progress)
-    ostree_async_progress_finish (progress);
 
   return ret;
 }
@@ -10695,7 +10691,7 @@ static RemoteFilter *
 remote_filter_load (GFile *path, GError **error)
 {
   RemoteFilter *filter;
-  char *data = NULL;
+  g_autofree char *data = NULL;
   gsize data_size;
   GTimeVal mtime;
   g_autoptr(GRegex) allow_refs = NULL;
@@ -10743,7 +10739,7 @@ flatpak_dir_lookup_remote_filter (FlatpakDir *self,
                                   GError **error)
 {
   RemoteFilter *filter = NULL;
-  const char *filter_path;
+  g_autofree char *filter_path = NULL;
   gboolean handled_fallback = FALSE;
   g_autoptr(GFile) filter_file = NULL;
 
@@ -10778,7 +10774,7 @@ flatpak_dir_lookup_remote_filter (FlatpakDir *self,
           handled_fallback = TRUE;
           if (!g_file_query_exists (filter_file, NULL))
             {
-              char *basename = g_strconcat (name, ".filter", NULL);
+              g_autofree char *basename = g_strconcat (name, ".filter", NULL);
               g_object_unref (filter_file);
               filter_file = flatpak_build_file (self->basedir, "repo", basename, NULL);
             }
@@ -10809,7 +10805,7 @@ flatpak_dir_lookup_remote_filter (FlatpakDir *self,
   /* Fall back to backup copy if remote filter disappears */
   if (!handled_fallback && !g_file_query_exists (filter_file, NULL))
     {
-      char *basename = g_strconcat (name, ".filter", NULL);
+      g_autofree char *basename = g_strconcat (name, ".filter", NULL);
       g_object_unref (filter_file);
       filter_file = flatpak_build_file (self->basedir, "repo", basename, NULL);
     }
@@ -11193,7 +11189,7 @@ _flatpak_dir_get_remote_state (FlatpakDir   *self,
         }
       else
         {
-          if (optional)
+          if (optional && !g_cancellable_is_cancelled (cancellable))
             {
               state->summary_fetch_error = g_steal_pointer (&local_error);
               g_debug ("Failed to download optional summary");
@@ -11222,7 +11218,7 @@ _flatpak_dir_get_remote_state (FlatpakDir   *self,
       if (!_flatpak_dir_fetch_remote_state_metadata_branch (self, state, only_cached, cancellable, &local_error) &&
           !g_error_matches (local_error, FLATPAK_ERROR, FLATPAK_ERROR_DOWNGRADE))
         {
-          if (optional)
+          if (optional && !g_cancellable_is_cancelled (cancellable))
             {
               /* This happens for instance in the case where a p2p remote is invalid (wrong signature)
                  and we should just silently fail to update to it. */
@@ -12566,6 +12562,20 @@ flatpak_dir_get_remote_disabled (FlatpakDir *self,
   return FALSE;
 }
 
+static char *
+flatpak_dir_get_remote_install_authenticator_name (FlatpakDir *self,
+                                                   const char *remote_name)
+{
+  GKeyFile *config = flatpak_dir_get_repo_config (self);
+  g_autofree char *group = get_group (remote_name);
+
+  if (config == NULL ||
+      !g_key_file_get_boolean (config, group, "xa.authenticator-install", NULL))
+    return NULL;
+
+  return g_key_file_get_string (config, group, "xa.authenticator-name", NULL);
+}
+
 gboolean
 flatpak_dir_remote_has_deploys (FlatpakDir *self,
                                 const char *remote)
@@ -13386,7 +13396,7 @@ flatpak_dir_modify_remote (FlatpakDir   *self,
   if (filter_path && *filter_path && g_file_test (filter_path, G_FILE_TEST_EXISTS))
     {
       /* Make a backup filter copy in case it goes away later */
-      char *filter_name = g_strconcat (remote_name, ".filter", NULL);
+      g_autofree char *filter_name = g_strconcat (remote_name, ".filter", NULL);
       g_autoptr(GFile) filter_file = g_file_new_for_path (filter_path);
       g_autoptr(GFile) filter_copy = flatpak_build_file (self->basedir, "repo", filter_name, NULL);
       g_autoptr(GError) local_error = NULL;
@@ -13490,7 +13500,7 @@ _flatpak_dir_fetch_remote_state_metadata_branch (FlatpakDir         *self,
                                                  GCancellable       *cancellable,
                                                  GError            **error)
 {
-  g_autoptr(OstreeAsyncProgress) progress = ostree_async_progress_new ();
+  g_autoptr(OstreeAsyncProgressFinish) progress = ostree_async_progress_new ();
   FlatpakPullFlags flatpak_flags;
   gboolean gpg_verify;
   g_autofree char *checksum_from_summary = NULL;
@@ -13626,6 +13636,22 @@ _flatpak_dir_fetch_remote_state_metadata_branch (FlatpakDir         *self,
   return TRUE;
 }
 
+static gboolean
+strv_contains_prefix (const gchar * const *strv,
+                      const gchar         *str)
+{
+  g_return_val_if_fail (strv != NULL, FALSE);
+  g_return_val_if_fail (str != NULL, FALSE);
+
+  for (; *strv != NULL; strv++)
+    {
+      if (g_str_has_prefix (str, *strv))
+        return TRUE;
+    }
+
+  return FALSE;
+}
+
 gboolean
 flatpak_dir_update_remote_configuration_for_state (FlatpakDir         *self,
                                                    FlatpakRemoteState *remote_state,
@@ -13646,7 +13672,13 @@ flatpak_dir_update_remote_configuration_for_state (FlatpakDir         *self,
     "xa.default-branch",
     "xa.gpg-keys",
     "xa.redirect-url",
+    "xa.authenticator-name",
+    "xa.authenticator-install",
     OSTREE_META_KEY_DEPLOY_COLLECTION_ID,
+    NULL
+  };
+  static const char *const supported_param_prefixes[] = {
+    "xa.authenticator-options.",
     NULL
   };
   g_autoptr(GPtrArray) updated_params = NULL;
@@ -13654,6 +13686,9 @@ flatpak_dir_update_remote_configuration_for_state (FlatpakDir         *self,
   g_autoptr(GBytes) gpg_keys = NULL;
 
   updated_params = g_ptr_array_new_with_free_func (g_free);
+
+  if (!flatpak_remote_state_ensure_metadata (remote_state, error))
+    return FALSE;
 
   g_variant_iter_init (&iter, remote_state->metadata);
   if (g_variant_iter_n_children (&iter) > 0)
@@ -13663,7 +13698,8 @@ flatpak_dir_update_remote_configuration_for_state (FlatpakDir         *self,
 
       while (g_variant_iter_next (&iter, "{sv}", &key, &value_var))
         {
-          if (g_strv_contains (supported_params, key))
+          if (g_strv_contains (supported_params, key) ||
+              strv_contains_prefix (supported_param_prefixes, key))
             {
               if (strcmp (key, "xa.gpg-keys") == 0)
                 {
@@ -13694,6 +13730,15 @@ flatpak_dir_update_remote_configuration_for_state (FlatpakDir         *self,
                         g_ptr_array_add (updated_params, g_strdup (key));
                       g_ptr_array_add (updated_params, g_strdup (value));
                     }
+                }
+              else if (g_variant_is_of_type (value_var, G_VARIANT_TYPE_BOOLEAN))
+                {
+                  gboolean value = g_variant_get_boolean (value_var);
+                  g_ptr_array_add (updated_params, g_strdup (key));
+                  if (value)
+                    g_ptr_array_add (updated_params, g_strdup ("true"));
+                  else
+                    g_ptr_array_add (updated_params, g_strdup ("false"));
                 }
             }
 
@@ -13770,11 +13815,18 @@ flatpak_dir_update_remote_configuration_for_state (FlatpakDir         *self,
 gboolean
 flatpak_dir_update_remote_configuration (FlatpakDir   *self,
                                          const char   *remote,
+                                         FlatpakRemoteState *optional_remote_state,
+                                         gboolean     *updated_out,
                                          GCancellable *cancellable,
                                          GError      **error)
 {
   gboolean is_oci;
-  g_autoptr(FlatpakRemoteState) state = NULL;
+  g_autoptr(FlatpakRemoteState) local_state = NULL;
+  FlatpakRemoteState *state;
+
+  /* Initialize if we exit early */
+  if (updated_out)
+    *updated_out = FALSE;
 
   if (flatpak_dir_get_remote_disabled (self, remote))
     return TRUE;
@@ -13783,9 +13835,15 @@ flatpak_dir_update_remote_configuration (FlatpakDir   *self,
   if (is_oci)
     return TRUE;
 
-  state = flatpak_dir_get_remote_state (self, remote, FALSE, cancellable, error);
-  if (state == NULL)
-    return FALSE;
+  if (optional_remote_state)
+    state = optional_remote_state;
+  else
+    {
+      local_state = flatpak_dir_get_remote_state (self, remote, FALSE, cancellable, error);
+      if (local_state == NULL)
+        return FALSE;
+      state = local_state;
+    }
 
   if (flatpak_dir_use_system_helper (self, NULL))
     {
@@ -13849,12 +13907,15 @@ flatpak_dir_update_remote_configuration (FlatpakDir   *self,
           unlink (summary_path);
           if (summary_sig_path)
             unlink (summary_sig_path);
+
+          if (updated_out)
+            *updated_out = TRUE;
         }
 
       return TRUE;
     }
 
-  return flatpak_dir_update_remote_configuration_for_state (self, state, FALSE, NULL, cancellable, error);
+  return flatpak_dir_update_remote_configuration_for_state (self, state, FALSE, updated_out, cancellable, error);
 }
 
 
@@ -14616,6 +14677,25 @@ flatpak_dir_find_local_related (FlatpakDir   *self,
   return g_steal_pointer (&related);
 }
 
+GPtrArray *
+flatpak_dir_find_remote_auto_install_refs (FlatpakDir         *self,
+                                           const char         *remote_name)
+{
+  GPtrArray *auto_install_refs = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
+  g_autofree char *authenticator_name = NULL;
+  g_autofree char *authenticator_ref = NULL;
+
+  authenticator_name = flatpak_dir_get_remote_install_authenticator_name (self, remote_name);
+  if (authenticator_name != NULL)
+    authenticator_ref = g_strdup_printf ("app/%s/%s/autoinstall", authenticator_name, flatpak_get_arch ());
+
+  if (authenticator_ref)
+    g_ptr_array_add (auto_install_refs, g_steal_pointer (&authenticator_ref));
+
+  return auto_install_refs;
+}
+
+
 static GDBusProxy *
 get_localed_dbus_proxy (void)
 {
@@ -14808,7 +14888,11 @@ flatpak_dir_get_default_locales (FlatpakDir *self)
   extra_languages = flatpak_dir_get_config_strv (self, "xa.extra-languages");
 
   if (flatpak_dir_is_user (self))
-    return sort_strv (flatpak_strv_merge (extra_languages, flatpak_get_current_locale_langs ()));
+    {
+      g_auto(GStrv) locale_langs = flatpak_get_current_locale_langs ();
+
+      return sort_strv (flatpak_strv_merge (extra_languages, locale_langs));
+    }
 
   /* Then get the system default locales */
   get_system_locales (self, langs);
@@ -14833,7 +14917,11 @@ flatpak_dir_get_default_locale_languages (FlatpakDir *self)
     }
 
   if (flatpak_dir_is_user (self))
-    return sort_strv (flatpak_strv_merge (extra_languages, flatpak_get_current_locale_langs ()));
+    {
+      g_auto(GStrv) locale_langs = flatpak_get_current_locale_langs ();
+
+      return sort_strv (flatpak_strv_merge (extra_languages, locale_langs));
+    }
 
   /* Then get the system default locales */
   get_system_locales (self, langs);
