@@ -88,7 +88,8 @@
                 <term><option>--arch=ARCH</option></term>
 
                 <listitem><para>
-                    The arch to create a bundle for.
+                    The arch to create a bundle for. See <command>flatpak --supported-arches</command>
+                    for architectures supported by the host.
                 </para></listitem>
             </varlistentry>
 
@@ -170,6 +171,9 @@
 
         <para>
             <command>$ flatpak build-bundle /var/lib/flatpak/repo gnome-calculator.flatpak org.gnome.Calculator stable</command>
+        </para>
+        <para>
+            <command>$ flatpak build-bundle ~/.local/share/flatpak/repo gnome-calculator.flatpak org.gnome.Calculator stable</command>
         </para>
 
     </refsect1>

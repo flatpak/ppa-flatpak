@@ -261,7 +261,7 @@ ostree_create_usb (GOptionContext *context,
                    GCancellable   *cancellable,
                    GError        **error)
 {
-  g_autoptr(OstreeAsyncProgress) progress = NULL;
+  g_autoptr(OstreeAsyncProgressFinish) progress = NULL;
   g_auto(GLnxConsoleRef) console = { 0, };
   guint num_refs = 0;
 
@@ -347,9 +347,6 @@ ostree_create_usb (GOptionContext *context,
         ostree_repo_abort_transaction (dest_repo, cancellable, NULL);
         return FALSE;
       }
-
-    if (progress != NULL)
-      ostree_async_progress_finish (progress);
 
     glnx_console_unlock (&console);
   }
@@ -664,7 +661,7 @@ flatpak_builtin_create_usb (int argc, char **argv, GCancellable *cancellable, GE
 
     /* Try to update the repo metadata by creating a FlatpakRemoteState object,
      * but don't fail on error because we want this to work offline. */
-    state = flatpak_dir_get_remote_state_optional (dir, remote_name, cancellable, &local_error);
+    state = flatpak_dir_get_remote_state_optional (dir, remote_name, FALSE, cancellable, &local_error);
     if (state == NULL)
       {
         g_printerr (_("Warning: Couldn't update repo metadata for remote ‘%s’: %s\n"),

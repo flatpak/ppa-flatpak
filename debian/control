@@ -49,6 +49,7 @@ Build-Depends:
  procps,
  python3 <!nocheck>,
  shared-mime-info <!nocheck>,
+ socat <!nocheck>,
  xmlto <!nodoc>,
  xsltproc <!nodoc>,
 Build-Depends-Indep:
@@ -112,6 +113,7 @@ Depends:
  hicolor-icon-theme,
  ostree (>= 2018.9),
  shared-mime-info,
+ socat,
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:

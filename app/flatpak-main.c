@@ -77,6 +77,7 @@ static FlatpakCommand commands[] = {
   { "uninstall", N_("Uninstall an installed application or runtime"), flatpak_builtin_uninstall, flatpak_complete_uninstall },
   /* Alias remove to uninstall to help users of yum/dnf/apt */
   { "remove", NULL, flatpak_builtin_uninstall, flatpak_complete_uninstall, TRUE },
+  { "mask", N_("Mask out updates and automatic installation"), flatpak_builtin_mask, flatpak_complete_mask },
   { "list", N_("List installed apps and/or runtimes"), flatpak_builtin_list, flatpak_complete_list },
   { "info", N_("Show info for installed app or runtime"), flatpak_builtin_info, flatpak_complete_info },
   { "history", N_("Show history"), flatpak_builtin_history, flatpak_complete_history },
@@ -110,6 +111,7 @@ static FlatpakCommand commands[] = {
   { "permissions", N_("List permissions"), flatpak_builtin_permission_list, flatpak_complete_permission_list },
   { "permission-remove", N_("Remove item from permission store"), flatpak_builtin_permission_remove, flatpak_complete_permission_remove },
   { "permission-list", NULL, flatpak_builtin_permission_list, flatpak_complete_permission_list, TRUE },
+  { "permission-set", N_("Set permissions"), flatpak_builtin_permission_set, flatpak_complete_permission_set },
   { "permission-show", N_("Show app permissions"), flatpak_builtin_permission_show, flatpak_complete_permission_show },
   { "permission-reset", N_("Reset app permissions"), flatpak_builtin_permission_reset, flatpak_complete_permission_reset },
 
@@ -239,6 +241,10 @@ check_environment (void)
   g_autofree char *user_exports = NULL;
   int i;
   int rows, cols;
+
+  /* Only print warnings on ttys */
+  if (!flatpak_fancy_output ())
+    return;
 
   /* Don't recommend restarting the session when we're not in one */
   if (!g_getenv ("DBUS_SESSION_BUS_ADDRESS"))
@@ -411,7 +417,7 @@ flatpak_option_context_parse (GOptionContext     *context,
                 {
                   FlatpakDir *dir = g_ptr_array_index (system_dirs, i);
                   const char *id = flatpak_dir_get_id (dir);
-                  if (g_strcmp0 (id, "default") != 0)
+                  if (g_strcmp0 (id, SYSTEM_DIR_DEFAULT_ID) != 0)
                     g_ptr_array_add (dirs, g_object_ref (dir));
                 }
             }
@@ -526,24 +532,45 @@ extract_command (int         *argc,
 }
 
 static const char *
-find_similar_command (const char *word)
+find_similar_command (const char *word,
+                      gboolean   *option)
 {
-  int i, d, best;
+  int i, d, k;
+  const char *suggestion;
+  GOptionEntry *entries[3] = { global_entries, empty_entries, user_entries };
 
   d = G_MAXINT;
-  best = 0;
+  suggestion = NULL;
 
   for (i = 0; commands[i].name; i++)
     {
+      if (!commands[i].fn)
+        continue;
+
       int d1 = flatpak_levenshtein_distance (word, commands[i].name);
       if (d1 < d)
         {
           d = d1;
-          best = i;
+          suggestion = commands[i].name;
+          *option = FALSE;
         }
     }
 
-  return commands[best].name;
+  for (k = 0; k < 3; k++)
+    {
+      for (i = 0; entries[k][i].long_name; i++)
+        {
+          int d1 = flatpak_levenshtein_distance (word, entries[k][i].long_name);
+          if (d1 < d)
+            {
+              d = d1;
+              suggestion = entries[k][i].long_name;
+              *option = TRUE;
+            }
+        }
+    }
+
+  return suggestion;
 }
 
 static gpointer
@@ -554,6 +581,15 @@ install_polkit_agent (void)
 #ifdef USE_SYSTEM_HELPER
   PolkitAgentListener *listener = NULL;
   g_autoptr(GError) local_error = NULL;
+  g_autoptr(GDBusConnection) bus = NULL;
+
+  bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &local_error);
+
+  if (bus == NULL)
+    {
+      g_debug ("Unable to connect to system bus: %s", local_error->message);
+      return NULL;
+    }
 
   /* Install a polkit agent as fallback, in case we're running on a console */
   listener = flatpak_polkit_agent_text_listener_new (NULL, &local_error);
@@ -630,11 +666,12 @@ flatpak_run (int      argc,
       if (command_name != NULL)
         {
           const char *similar;
+          gboolean option;
 
-          similar = find_similar_command (command_name);
+          similar = find_similar_command (command_name, &option);
           if (similar)
-            msg = g_strdup_printf (_("'%s' is not a flatpak command. Did you mean '%s'?"),
-                                   command_name, similar);
+            msg = g_strdup_printf (_("'%s' is not a flatpak command. Did you mean '%s%s'?"),
+                                   command_name, option ? "--" : "", similar);
           else
             msg = g_strdup_printf (_("'%s' is not a flatpak command"),
                                    command_name);
@@ -711,9 +748,20 @@ flatpak_run (int      argc,
   prgname = g_strdup_printf ("%s %s", g_get_prgname (), command_name);
   g_set_prgname (prgname);
 
-  check_environment ();
+  /* Only print environment warnings in some commonly used interactive operations so we
+     avoid messing up output in commands where you might parse the output. */
+  if (g_strcmp0 (command->name, "install") == 0 ||
+      g_strcmp0 (command->name, "update") == 0 ||
+      g_strcmp0 (command->name, "remote-add") == 0 ||
+      g_strcmp0 (command->name, "run") == 0)
+    check_environment ();
 
-  polkit_agent = install_polkit_agent ();
+  /* Don't talk to dbus in enter, as it must be thread-free to setns, also
+     skip run/build for performance reasons (no need to connect to dbus). */
+  if (g_strcmp0 (command->name, "enter") != 0 &&
+      g_strcmp0 (command->name, "run") != 0 &&
+      g_strcmp0 (command->name, "build") != 0)
+    polkit_agent = install_polkit_agent ();
 
   if (!command->fn (argc, argv, cancellable, &error))
     goto out;

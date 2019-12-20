@@ -1,5 +1,5 @@
 lib_LTLIBRARIES += libflatpak.la
-noinst_LTLIBRARIES += libflatpak-common.la
+noinst_LTLIBRARIES += libflatpak-common-base.la libflatpak-common.la
 noinst_PROGRAMS += test-libflatpak
 
 flatpakincludedir = $(includedir)/flatpak
@@ -37,13 +37,14 @@ common/flatpak-enum-types.c: $(flatpakinclude_HEADERS) common/flatpak-enum-types
 
 EXTRA_DIST += common/flatpak-enum-types.c.template common/flatpak-enum-types.h.template
 
-common/flatpak-dbus-generated.c: data/org.freedesktop.Flatpak.xml Makefile
+common/flatpak-dbus-generated.c: data/org.freedesktop.Flatpak.xml data/org.freedesktop.Flatpak.Authenticator.xml Makefile
 	mkdir -p $(builddir)/common
 	$(AM_V_GEN) $(GDBUS_CODEGEN)				\
 		--interface-prefix org.freedesktop.Flatpak.	\
 		--c-namespace Flatpak				\
 		--generate-c-code $(builddir)/common/flatpak-dbus-generated	\
 		$(srcdir)/data/org.freedesktop.Flatpak.xml  \
+		$(srcdir)/data/org.freedesktop.Flatpak.Authenticator.xml  \
 		$(NULL)
 
 common/flatpak-document-dbus-generated.c: data/org.freedesktop.portal.Documents.xml Makefile
@@ -67,9 +68,30 @@ common/flatpak-systemd-dbus-generated.c: data/org.freedesktop.systemd1.xml Makef
 common/%-dbus-generated.h: common/%-dbus-generated.c
 	@true # Built as a side-effect of the rules for the .c
 
+nodist_libflatpak_common_base_la_SOURCES = \
+	$(dbus_built_sources)		\
+	$(NULL)
+
+BUILT_SOURCES += $(nodist_libflatpak_common_base_la_SOURCES)
+CLEANFILES += $(nodist_libflatpak_common_base_la_SOURCES)
+
+libflatpak_common_base_la_SOURCES = \
+	common/flatpak-utils-base.c \
+	common/flatpak-utils-base-private.h \
+	$(NULL)
+
+libflatpak_common_base_la_CFLAGS = \
+	-DFLATPAK_COMPILATION \
+	$(AM_CFLAGS) \
+	$(BASE_CFLAGS) \
+	$(HIDDEN_VISIBILITY_CFLAGS) \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
+	$(NULL)
+
+libflatpak_common_base_la_LIBADD = $(AM_LIBADD) $(BASE_LIBS)
+
 nodist_libflatpak_common_la_SOURCES = \
 	$(nodist_flatpakinclude_HEADERS)    \
-	$(dbus_built_sources)		\
 	$(systemd_dbus_built_sources)	\
 	$(xdp_dbus_built_sources) \
 	common/flatpak-enum-types.c \
@@ -80,71 +102,99 @@ CLEANFILES += $(nodist_libflatpak_common_la_SOURCES)
 
 libflatpak_common_la_SOURCES = \
 	$(flatpakinclude_HEADERS) \
-	common/flatpak-common-types-private.h \
-	common/flatpak-appdata.c \
 	common/flatpak-appdata-private.h \
-	common/flatpak-bwrap.c \
-	common/flatpak-bwrap-private.h \
-	common/flatpak-dir.c \
-	common/flatpak-dir-private.h \
-	common/flatpak-run.c \
-	common/flatpak-run-private.h \
-	common/flatpak-context.c \
-	common/flatpak-context-private.h \
-	common/flatpak-exports.c \
-	common/flatpak-exports-private.h \
-	common/flatpak-transaction-private.h \
-	common/flatpak-transaction.h \
-	common/flatpak-transaction.c \
-	common/flatpak-utils.c \
-	common/flatpak-utils-http.c \
-	common/flatpak-utils-http-private.h \
-	common/flatpak-utils-private.h \
-	common/flatpak-chain-input-stream.c \
-	common/flatpak-chain-input-stream-private.h \
-	common/flatpak-portal-error.c \
-	common/flatpak-portal-error.h \
-	common/flatpak-json.c \
-	common/flatpak-json-private.h \
-	common/flatpak-json-oci.c \
-	common/flatpak-json-oci-private.h \
-	common/flatpak-oci-registry.c \
-	common/flatpak-oci-registry-private.h \
-	common/flatpak-ref.c \
-	common/flatpak-installed-ref.c \
-	common/flatpak-installed-ref-private.h \
-	common/flatpak-instance-private.h \
-	common/flatpak-remote-ref.c \
-	common/flatpak-remote-ref-private.h \
+	common/flatpak-appdata.c \
+	common/flatpak-auth-private.h \
+	common/flatpak-auth.c \
 	common/flatpak-bundle-ref.c \
-	common/flatpak-related-ref.c \
-	common/flatpak-related-ref-private.h \
-	common/flatpak-remote-private.h \
-	common/flatpak-remote.c \
+	common/flatpak-bwrap-private.h \
+	common/flatpak-bwrap.c \
+	common/flatpak-chain-input-stream-private.h \
+	common/flatpak-chain-input-stream.c \
+	common/flatpak-common-types-private.h \
+	common/flatpak-context-private.h \
+	common/flatpak-context.c \
+	common/flatpak-dir-private.h \
+	common/flatpak-dir.c \
 	common/flatpak-error.c \
+	common/flatpak-exports-private.h \
+	common/flatpak-exports.c \
 	common/flatpak-installation-private.h \
 	common/flatpak-installation.c \
+	common/flatpak-installed-ref-private.h \
+	common/flatpak-installed-ref.c \
+	common/flatpak-instance-private.h \
 	common/flatpak-instance.c \
+	common/flatpak-json-oci-private.h \
+	common/flatpak-json-oci.c \
+	common/flatpak-json-private.h \
+	common/flatpak-json.c \
+	common/flatpak-oci-registry-private.h \
+	common/flatpak-oci-registry.c \
+	common/flatpak-portal-error.c \
+	common/flatpak-portal-error.h \
+	common/flatpak-ref.c \
+	common/flatpak-related-ref-private.h \
+	common/flatpak-related-ref.c \
+	common/flatpak-remote-private.h \
+	common/flatpak-remote-ref-private.h \
+	common/flatpak-remote-ref.c \
+	common/flatpak-remote.c \
+	common/flatpak-run-private.h \
+	common/flatpak-run.c \
+	common/flatpak-transaction-private.h \
+	common/flatpak-transaction.c \
+	common/flatpak-transaction.h \
+	common/flatpak-utils-http-private.h \
+	common/flatpak-utils-http.c \
+	common/flatpak-utils-private.h \
+	common/flatpak-utils.c \
 	common/valgrind-private.h \
 	$(NULL)
 
+if HAVE_LIBMALCONTENT
+libflatpak_common_la_SOURCES += \
+	common/flatpak-parental-controls.c \
+	common/flatpak-parental-controls-private.h \
+	$(NULL)
+endif
+
 libflatpak_common_la_CFLAGS = \
 	-DFLATPAK_COMPILATION \
-	$(AM_CFLAGS) \
-	$(BASE_CFLAGS) \
-	$(HIDDEN_VISIBILITY_CFLAGS) \
-	$(OSTREE_CFLAGS) \
-	$(SOUP_CFLAGS) \
-	$(JSON_CFLAGS) \
-	$(XAUTH_CFLAGS) \
-	$(LIBSECCOMP_CFLAGS) \
-	$(INTERNAL_GPGME_CFLAGS) \
-	$(SYSTEMD_CFLAGS) \
-	$(DCONF_CFLAGS) \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-I$(srcdir)/dbus-proxy \
+	$(AM_CFLAGS) \
+	$(ARCHIVE_CFLAGS) \
+	$(BASE_CFLAGS) \
+	$(DCONF_CFLAGS) \
+	$(HIDDEN_VISIBILITY_CFLAGS) \
+	$(INTERNAL_GPGME_CFLAGS) \
+	$(JSON_CFLAGS) \
+	$(LIBSECCOMP_CFLAGS) \
+	$(MALCONTENT_CFLAGS) \
+	$(OSTREE_CFLAGS) \
+	$(POLKIT_CFLAGS) \
+	$(SOUP_CFLAGS) \
+	$(SYSTEMD_CFLAGS) \
+	$(XAUTH_CFLAGS) \
+	$(XML_CFLAGS) \
 	$(NULL)
-libflatpak_common_la_LIBADD = $(AM_LIBADD) libglnx.la $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(XAUTH_LIBS) $(LIBSECCOMP_LIBS) $(INTERNAL_GPGME_LIBS) $(SYSTEMD_LIBS) $(DCONF_LIBS)
+libflatpak_common_la_LIBADD = \
+	$(AM_LIBADD) \
+	$(ARCHIVE_LIBS) \
+	$(BASE_LIBS) \
+	$(DCONF_LIBS) \
+	$(INTERNAL_GPGME_LIBS) \
+	$(JSON_LIBS) \
+	$(LIBSECCOMP_LIBS) \
+	$(MALCONTENT_LIBS) \
+	$(OSTREE_LIBS) \
+	$(POLKIT_LIBS) \
+	$(SOUP_LIBS) \
+	$(SYSTEMD_LIBS) \
+	$(XAUTH_LIBS) \
+	$(XML_LIBS) \
+	$(NULL)
 
 
 libflatpak_la_SOURCES = \
@@ -173,6 +223,8 @@ libflatpak_la_LDFLAGS = \
 libflatpak_la_LIBADD = \
 	$(AM_LIBADD) \
 	libflatpak-common.la \
+	libflatpak-common-base.la \
+	libglnx.la \
 	$(BASE_LIBS)	\
 	$(OSTREE_LIBS)	\
 	$(SOUP_LIBS)	\

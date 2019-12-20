@@ -101,9 +101,9 @@ flatpak_find_installed_pref (const char *pref, FlatpakKinds kinds, const char *d
   g_autofree char *arch = NULL;
   g_autofree char *branch = NULL;
   g_autoptr(GError) lookup_error = NULL;
-  FlatpakDir *dir = NULL;
   g_autofree char *ref = NULL;
   FlatpakKinds kind = 0;
+  g_autoptr(FlatpakDir) dir = NULL;
   g_autoptr(FlatpakDir) user_dir = NULL;
   g_autoptr(FlatpakDir) system_dir = NULL;
   g_autoptr(GPtrArray) system_dirs = NULL;
@@ -123,7 +123,7 @@ flatpak_find_installed_pref (const char *pref, FlatpakKinds kinds, const char *d
                                             kinds, &kind,
                                             &lookup_error);
       if (ref)
-        dir = user_dir;
+        dir = g_steal_pointer (&user_dir);
 
       if (g_error_matches (lookup_error, G_IO_ERROR, G_IO_ERROR_FAILED))
         {
@@ -154,7 +154,7 @@ flatpak_find_installed_pref (const char *pref, FlatpakKinds kinds, const char *d
                                                 &lookup_error);
           if (ref)
             {
-              dir = system_dir;
+              dir = g_object_ref (system_dir);
               break;
             }
 
@@ -191,7 +191,7 @@ flatpak_find_installed_pref (const char *pref, FlatpakKinds kinds, const char *d
                                                         &lookup_error);
                   if (ref)
                     {
-                      dir = installation_dir;
+                      dir = g_steal_pointer (&installation_dir);
                       break;
                     }
 
@@ -218,7 +218,7 @@ flatpak_find_installed_pref (const char *pref, FlatpakKinds kinds, const char *d
                                                 &lookup_error);
 
           if (ref)
-            dir = system_dir;
+            dir = g_steal_pointer (&system_dir);
         }
     }
 
@@ -229,7 +229,7 @@ flatpak_find_installed_pref (const char *pref, FlatpakKinds kinds, const char *d
     }
 
   *out_ref = g_steal_pointer (&ref);
-  return g_object_ref (dir);
+  return g_steal_pointer (&dir);
 }
 
 
@@ -357,8 +357,19 @@ flatpak_resolve_duplicate_remotes (GPtrArray    *dirs,
   if (out_dir)
     {
       if (dirs_with_remote->len == 0)
-        return flatpak_fail_error (error, FLATPAK_ERROR_REMOTE_NOT_FOUND,
-                                   "Remote \"%s\" not found", remote_name);
+        {
+          if (dirs->len > 1 || dirs->len == 0)
+            return flatpak_fail_error (error, FLATPAK_ERROR_REMOTE_NOT_FOUND,
+                                       _("Remote \"%s\" not found\nHint: Use flatpak remote-add to add a remote"),
+                                       remote_name);
+          else
+            {
+              FlatpakDir *dir = g_ptr_array_index (dirs, 0);
+              return flatpak_fail_error (error, FLATPAK_ERROR_REMOTE_NOT_FOUND,
+                                         _("Remote \"%s\" not found in the %s installation"),
+                                         remote_name, flatpak_dir_get_name_cached (dir));
+            }
+        }
       else
         *out_dir = g_object_ref (g_ptr_array_index (dirs_with_remote, chosen - 1));
     }
@@ -661,7 +672,7 @@ update_appstream (GPtrArray    *dirs,
           for (i = 0; remotes[i] != NULL; i++)
             {
               g_autoptr(GError) local_error = NULL;
-              g_autoptr(OstreeAsyncProgress) progress = NULL;
+              g_autoptr(OstreeAsyncProgressFinish) progress = NULL;
               guint64 ts_file_age;
 
               ts_file_age = get_appstream_timestamp (dir, remotes[i], arch);
@@ -706,7 +717,6 @@ update_appstream (GPtrArray    *dirs,
                   else
                     g_printerr ("%s: %s\n", _("Error updating"), local_error->message);
                 }
-              ostree_async_progress_finish (progress);
             }
         }
     }
@@ -720,7 +730,7 @@ update_appstream (GPtrArray    *dirs,
 
           if (flatpak_dir_has_remote (dir, remote, NULL))
             {
-              g_autoptr(OstreeAsyncProgress) progress = NULL;
+              g_autoptr(OstreeAsyncProgressFinish) progress = NULL;
               guint64 ts_file_age;
 
               found = TRUE;
@@ -737,7 +747,6 @@ update_appstream (GPtrArray    *dirs,
               progress = ostree_async_progress_new_and_connect (no_progress_cb, NULL);
               res = flatpak_dir_update_appstream (dir, remote, arch, &changed,
                                                   progress, cancellable, error);
-              ostree_async_progress_finish (progress);
               if (!res)
                 return FALSE;
             }
@@ -1173,7 +1182,6 @@ flatpak_dir_load_appstream_store (FlatpakDir   *self,
   return success;
 }
 
-
 void
 print_aligned (int len, const char *title, const char *value)
 {
@@ -1186,7 +1194,7 @@ print_aligned (int len, const char *title, const char *value)
       off = FLATPAK_ANSI_BOLD_OFF;
     }
 
-  g_print ("%s%*s%s%s %s\n", on, len - (int) g_utf8_strlen (title, -1), "", title, off, value);
+  g_print ("%s%*s%s%s %s\n", on, len - (int) cell_width (title), "", title, off, value);
 }
 
 
@@ -1227,11 +1235,14 @@ skip_escape_sequence (const char *p)
   return p;
 }
 
-/* a variant of g_utf8_strlen that skips Escape sequences */
+/* A variant of g_utf8_strlen that skips Escape sequences,
+ * and takes character width into account
+ */
 int
 cell_width (const char *text)
 {
   const char *p = text;
+  gunichar c;
   int width = 0;
 
   while (*p)
@@ -1242,19 +1253,28 @@ cell_width (const char *text)
       if (!*p)
         break;
 
-      width += 1;
+      c = g_utf8_get_char (p);
+
+      if (g_unichar_iswide (c))
+        width += 2;
+      else if (!g_unichar_iszerowidth (c))
+        width += 1;
+
       p = g_utf8_next_char (p);
     }
 
   return width;
 }
 
-/* advance text by num utf8 chars, skipping Escape sequences */
+/* Advance text by num cells, skipping Escape sequences,
+ * and taking character width into account
+ */
 const char *
 cell_advance (const char *text,
               int         num)
 {
   const char *p = text;
+  gunichar c;
   int width = 0;
 
   while (width < num)
@@ -1265,7 +1285,13 @@ cell_advance (const char *text,
       if (!*p)
         break;
 
-      width += 1;
+      c = g_utf8_get_char (p);
+
+      if (g_unichar_iswide (c))
+        width += 2;
+      else if (!g_unichar_iszerowidth (c))
+        width += 1;
+
       p = g_utf8_next_char (p);
     }
 
@@ -1281,7 +1307,7 @@ print_line_wrapped (int cols, const char *line)
 
   for (i = 0; words[i]; i++)
     {
-      int len = g_utf8_strlen (words[i], -1);
+      int len = cell_width (words[i]);
       int space = col > 0;
 
       if (col + space + len >= cols)
