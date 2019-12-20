@@ -25,6 +25,9 @@
 /* gettext domain */
 #undef GETTEXT_PACKAGE
 
+/* Ignore massive GTimeVal deprecation warnings in 2.62 */
+#undef GLIB_VERSION_MIN_REQUIRED
+
 /* Define to 1 if you have the `archive_read_support_filter_all' function. */
 #undef HAVE_ARCHIVE_READ_SUPPORT_FILTER_ALL
 
@@ -69,6 +72,9 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define if libmalcontent is available */
+#undef HAVE_LIBMALCONTENT
 
 /* Define if libsystemd is available */
 #undef HAVE_LIBSYSTEMD

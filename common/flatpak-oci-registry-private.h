@@ -60,6 +60,8 @@ FlatpakOciRegistry  *  flatpak_oci_registry_new (const char           *uri,
                                                  int tmp_dfd,
                                                  GCancellable         * cancellable,
                                                  GError              **error);
+void                   flatpak_oci_registry_set_token (FlatpakOciRegistry *self,
+                                                       const char *token);
 const char          *  flatpak_oci_registry_get_uri (FlatpakOciRegistry *self);
 FlatpakOciIndex     *  flatpak_oci_registry_load_index (FlatpakOciRegistry *self,
                                                         GCancellable       *cancellable,
@@ -76,6 +78,12 @@ int                    flatpak_oci_registry_download_blob (FlatpakOciRegistry   
                                                            gpointer               user_data,
                                                            GCancellable          *cancellable,
                                                            GError               **error);
+char *                 flatpak_oci_registry_get_token (FlatpakOciRegistry *self,
+                                                       const char         *repository,
+                                                       const char         *digest,
+                                                       const char         *basic_auth,
+                                                       GCancellable       *cancellable,
+                                                       GError            **error);
 GBytes             *   flatpak_oci_registry_load_blob (FlatpakOciRegistry *self,
                                                        const char         *repository,
                                                        gboolean            manifest,
@@ -105,6 +113,12 @@ FlatpakOciVersioned *  flatpak_oci_registry_load_versioned (FlatpakOciRegistry *
                                                             gsize              *out_size,
                                                             GCancellable       *cancellable,
                                                             GError            **error);
+FlatpakOciImage *      flatpak_oci_registry_load_image_config (FlatpakOciRegistry *self,
+                                                               const char         *repository,
+                                                               const char         *digest,
+                                                               gsize              *out_size,
+                                                               GCancellable       *cancellable,
+                                                               GError            **error);
 FlatpakOciLayerWriter *flatpak_oci_registry_write_layer (FlatpakOciRegistry *self,
                                                          GCancellable       *cancellable,
                                                          GError            **error);

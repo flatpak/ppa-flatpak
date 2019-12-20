@@ -178,7 +178,9 @@
                 <term><option>--arch=ARCH</option></term>
 
                 <listitem><para>
-                    The default architecture to install for, if not given explicitly in the <arg choice="plain">REF</arg>.
+                    The default architecture to install for, if not given explicitly in
+                    the <arg choice="plain">REF</arg>. See <command>flatpak --supported-arches</command>
+                    for architectures supported by the host.
                 </para></listitem>
             </varlistentry>
 
@@ -229,6 +231,14 @@
 
                 <listitem><para>
                     Don't verify runtime dependencies when installing.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--or-update</option></term>
+                <listitem><para>
+                  Normally install just ignores things that are already installed (printing a warning), but if
+                  --or-update is specified it silently turns it into an update operation instead.
                 </para></listitem>
             </varlistentry>
 
