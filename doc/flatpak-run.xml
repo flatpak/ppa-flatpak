@@ -112,6 +112,11 @@
             Flatpak sets the environment variable <envar>FLATPAK_ID</envar> to the application
             ID of the running app.
         </para>
+        <para>
+            If parental controls support is enabled, flatpak will check the
+            current user’s parental controls settings, and will refuse to
+            run an app if it is blacklisted for the current user.
+        </para>
     </refsect1>
 
     <refsect1>
@@ -178,7 +183,8 @@
                 <term><option>--arch=ARCH</option></term>
 
                 <listitem><para>
-                    The architecture to install for.
+                    The architecture to run. See <command>flatpak --supported-arches</command>
+                    for architectures supported by the host.
                 </para></listitem>
             </varlistentry>
 
@@ -265,7 +271,7 @@
                     Expose a well known socket to the application. This overrides to
                     the Context section from the application metadata.
                     <arg choice="plain">SOCKET</arg> must be one of: x11, wayland, fallback-x11, pulseaudio, system-bus, session-bus,
-                    ssh-auth, pcsc.
+                    ssh-auth, pcsc, cups.
                     This option can be used multiple times.
                 </para></listitem>
             </varlistentry>
@@ -277,7 +283,7 @@
                     Don't expose a well known socket to the application. This overrides to
                     the Context section from the application metadata.
                     <arg choice="plain">SOCKET</arg> must be one of: x11, wayland, fallback-x11, pulseaudio, system-bus, session-bus,
-                    ssh-auth, pcsc.
+                    ssh-auth, pcsc, cups.
                     This option can be used multiple times.
                 </para></listitem>
             </varlistentry>
@@ -472,6 +478,51 @@ key=v1;v2;
             </varlistentry>
 
             <varlistentry>
+                <term><option>--no-session-bus</option></term>
+
+                <listitem><para>
+                    Run this instance without the filtered access to the session dbus connection. Note, this is the default when run with --sandbox.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--session-bus</option></term>
+
+                <listitem><para>
+                  Allow filtered access to the session dbus connection. This is the default, except when run with --sandbox.
+                  </para><para>
+                  Isandbox mode, even if you allow access to the session bus the sandbox cannot talk to or own
+                  the application ids (org.the.App.*) on the bus (unless explicitly added), only names in the
+                  .Sandbox subset (org.the.App.Sandbox.*).
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--no-a11y-bus</option></term>
+
+                <listitem><para>
+                    Run this instance without the access to the accessibility bus. Note, this is the default when run with --sandbox.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--a11y-bus</option></term>
+
+                <listitem><para>
+                    Allow access to the accessibility bus. This is the default, except when run with --sandbox.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--sandbox</option></term>
+
+                <listitem><para>
+                  Run the application in sandboxed mode, which means dropping all the extra permissions it would otherwise have, as
+                  well as access to the session/system/a11y busses and document portal.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--log-session-bus</option></term>
 
                 <listitem><para>
@@ -495,6 +546,23 @@ key=v1;v2;
 
                 <listitem><para>
                     Kill the entire sandbox when the launching process dies.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--parent-pid=PID</option></term>
+
+                <listitem><para>
+                    Specifies the pid of the "parent" flatpak, used by --parent-expose-pids.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--parent-expose-pids</option></term>
+
+                <listitem><para>
+                    Make the processes of the new sandbox visible in the sandbox of the parent flatpak, as defined
+                    by --parent-pid.
                 </para></listitem>
             </varlistentry>
 

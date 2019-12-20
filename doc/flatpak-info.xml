@@ -103,7 +103,8 @@
                 <term><option>--arch=ARCH</option></term>
 
                 <listitem><para>
-                    Query for this architecture.
+                    Query for this architecture. See <command>flatpak --supported-arches</command>
+                    for architectures supported by the host.
                 </para></listitem>
             </varlistentry>
 
@@ -218,6 +219,9 @@
 
         <para>
             <command>$ flatpak info org.gnome.Builder//master</command>
+        </para>
+        <para>
+            <command>$ tree `flatpak info -l org.gnome.Builder//master`/files</command>
         </para>
 
     </refsect1>

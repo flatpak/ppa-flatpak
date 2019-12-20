@@ -101,7 +101,7 @@
                 <term><option>--require-version=MAJOR.MINOR.MICRO</option></term>
 
                 <listitem><para>
-                    Require this version of later of flatpak to install/update to this build.
+                    Require this version or later of flatpak to install/update to this build.
                 </para></listitem>
             </varlistentry>
 
@@ -134,7 +134,7 @@
                     Expose a well-known socket to the application. This updates
                     the [Context] group in the metadata.
                     SOCKET must be one of: x11, wayland, fallback-x11, pulseaudio, system-bus, session-bus,
-                    ssh-auth, pcsc.
+                    ssh-auth, pcsc, cups.
                     This option can be used multiple times.
                 </para><para>
                     The fallback-x11 option makes the X11 socket available only if
@@ -151,7 +151,7 @@
                     Don't expose a well known socket to the application. This updates
                     the [Context] group in the metadata.
                     SOCKET must be one of: x11, wayland, fallback-x11, pulseaudio, system-bus, session-bus,
-                    ssh-auth, pcsc.
+                    ssh-auth, pcsc, cups.
                     This option can be used multiple times.
                 </para></listitem>
             </varlistentry>
