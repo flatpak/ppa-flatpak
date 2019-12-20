@@ -187,3 +187,26 @@ index 72b03f49..38d89d2f 100644
 -- 
 2.21.0
 
+From ba7b9c30d6c236f022bca25ba86f0ebab08c2226 Mon Sep 17 00:00:00 2001
+From: Alexander Larsson <alexl@redhat.com>
+Date: Fri, 20 Dec 2019 13:42:42 +0100
+Subject: [PATCH] tests: add some missing includes
+
+---
+ tests/test-update-portal.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/tests/test-update-portal.c b/tests/test-update-portal.c
+index 4b2ac492..3513dfeb 100644
+--- a/tests/test-update-portal.c
++++ b/tests/test-update-portal.c
+@@ -1,4 +1,6 @@
+ #include <stdio.h>
++#include <string.h>
++#include <stdlib.h>
+ #include <sys/types.h>
+ #include <unistd.h>
+ 
+-- 
+2.17.1
+
