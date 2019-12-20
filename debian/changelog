@@ -1,5 +1,6 @@
 flatpak (1.6.0-1) UNRELEASED; urgency=medium
 
+  * New upstream stable release
   * d/watch: Only watch for stable releases
   * Set upstream branch to upstream/1.6.x
 
