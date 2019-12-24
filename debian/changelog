@@ -4,6 +4,9 @@ flatpak (1.6.0-1) UNRELEASED; urgency=medium
     - d/p/testlibrary-Don-t-assert-that-progress-is-signalled.patch:
       Drop workaround, the leaks that broke this test have been fixed
     - Drop other patches, applied upstream
+    - Bump xdg-desktop-portal dependency to 1.6.x.
+      That version has new API which Flatpak apps might rely on, so the
+      corresponding versions should be tested and backported together.
   * d/watch: Only watch for stable releases
   * Set upstream branch to upstream/1.6.x
 
