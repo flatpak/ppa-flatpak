@@ -9,6 +9,10 @@ flatpak (1.6.0-1) UNRELEASED; urgency=medium
       corresponding versions should be tested and backported together.
   * d/watch: Only watch for stable releases
   * Set upstream branch to upstream/1.6.x
+  * Drop xdg-desktop-portal from Depends to Recommends.
+    Installing xdg-desktop-portal 1.6.x is strongly recommended, but
+    strictly speaking it is not required: some of the simpler Flatpak
+    apps can work without it. (Closes: #947022)
 
  -- Simon McVittie <smcv@debian.org>  Tue, 01 Oct 2019 09:54:13 +0100
 

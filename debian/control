@@ -73,7 +73,6 @@ Depends:
  adduser,
  bubblewrap (>= 0.4.0),
  xdg-dbus-proxy (>= 0.1.0),
- xdg-desktop-portal (>= 1.6),
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
@@ -84,6 +83,7 @@ Recommends:
  p11-kit,
  policykit-1,
  shared-mime-info,
+ xdg-desktop-portal (>= 1.6),
  xdg-desktop-portal-gtk (>= 1.6) | xdg-desktop-portal-backend,
 Suggests:
  avahi-daemon,
