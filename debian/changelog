@@ -1,4 +1,4 @@
-flatpak (1.6.0-1) UNRELEASED; urgency=medium
+flatpak (1.6.0-1) unstable; urgency=medium
 
   * New upstream stable release
     - d/p/testlibrary-Don-t-assert-that-progress-is-signalled.patch:
@@ -18,7 +18,7 @@ flatpak (1.6.0-1) UNRELEASED; urgency=medium
     This was a workaround for the build-dependency resolver used in
     experimental, and is unnecessary now that I'm targeting unstable.
 
- -- Simon McVittie <smcv@debian.org>  Tue, 01 Oct 2019 09:54:13 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 24 Dec 2019 16:11:00 +0000
 
 flatpak (1.5.2-1) experimental; urgency=medium
 
