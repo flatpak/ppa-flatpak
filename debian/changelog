@@ -14,6 +14,9 @@ flatpak (1.6.0-1) UNRELEASED; urgency=medium
     strictly speaking it is not required: some of the simpler Flatpak
     apps can work without it. (Closes: #947022)
   * tests: Depend on fuse and policykit-1
+  * Revert Build-Conflicts on elogind to be nice to non-systemd derivatives.
+    This was a workaround for the build-dependency resolver used in
+    experimental, and is unnecessary now that I'm targeting unstable.
 
  -- Simon McVittie <smcv@debian.org>  Tue, 01 Oct 2019 09:54:13 +0100
 
