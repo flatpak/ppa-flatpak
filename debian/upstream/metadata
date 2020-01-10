@@ -1,5 +1,4 @@
 ---
-Name: Flatpak
 Repository: https://github.com/flatpak/flatpak.git
 Repository-Browse: https://github.com/flatpak/flatpak
 Bug-Database: https://github.com/flatpak/flatpak/issues
