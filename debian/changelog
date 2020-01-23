@@ -5,6 +5,7 @@ flatpak (1.6.1-1) UNRELEASED; urgency=medium
   * Set upstream metadata fields: Repository.
   * Remove obsolete field Name from debian/upstream/metadata (already
     present in machine-readable debian/copyright).
+  * Standards-Version: 4.5.0 (no changes required)
 
  -- Simon McVittie <smcv@debian.org>  Fri, 10 Jan 2020 11:32:12 +0000
 
