@@ -2546,24 +2546,24 @@ static GVariant *
 appdata_content_rating_to_variant (const char *content_rating_type,
                                    GHashTable *content_rating)
 {
-  g_auto(GVariantBuilder) builder = G_VARIANT_BUILDER_INIT (G_VARIANT_TYPE ("(sa{ss})"));
+  g_autoptr(GVariantBuilder) builder = g_variant_builder_new (G_VARIANT_TYPE ("(sa{ss})"));
   GHashTableIter iter;
   gpointer key, value;
 
-  g_variant_builder_add (&builder, "s", content_rating_type);
-  g_variant_builder_open (&builder, G_VARIANT_TYPE ("a{ss}"));
+  g_variant_builder_add (builder, "s", content_rating_type);
+  g_variant_builder_open (builder, G_VARIANT_TYPE ("a{ss}"));
 
   g_hash_table_iter_init (&iter, content_rating);
 
   while (g_hash_table_iter_next (&iter, &key, &value))
     {
       const char *id = key, *val = value;
-      g_variant_builder_add (&builder, "{ss}", id, val);
+      g_variant_builder_add (builder, "{ss}", id, val);
     }
 
-  g_variant_builder_close (&builder);
+  g_variant_builder_close (builder);
 
-  return g_variant_builder_end (&builder);
+  return g_variant_builder_end (builder);
 }
 
 static void
@@ -14198,7 +14198,7 @@ flatpak_dir_find_remote_related_for_metadata (FlatpakDir         *self,
                                    state->remote_name,
                                    &url,
                                    error))
-    return FALSE;
+    return NULL;
 
   if (*url == 0)
     return g_steal_pointer (&related);  /* Empty url, silently disables updates */
@@ -14348,7 +14348,7 @@ flatpak_dir_find_remote_related (FlatpakDir         *self,
   const char *metadata = NULL;
   g_autoptr(GKeyFile) metakey = g_key_file_new ();
   g_auto(GStrv) parts = NULL;
-  g_autoptr(GPtrArray) related = NULL;
+  g_autoptr(GPtrArray) related = g_ptr_array_new_with_free_func ((GDestroyNotify) flatpak_related_free);
   g_autofree char *url = NULL;
 
   parts = flatpak_decompose_ref (ref, error);
@@ -14359,7 +14359,7 @@ flatpak_dir_find_remote_related (FlatpakDir         *self,
                                    state->remote_name,
                                    &url,
                                    error))
-    return FALSE;
+    return NULL;
 
   if (*url == 0)
     return g_steal_pointer (&related);  /* Empty url, silently disables updates */
@@ -14368,9 +14368,10 @@ flatpak_dir_find_remote_related (FlatpakDir         *self,
                                          NULL, NULL, &metadata,
                                          NULL, NULL) &&
       g_key_file_load_from_data (metakey, metadata, -1, 0, NULL))
-    related = flatpak_dir_find_remote_related_for_metadata (self, state, ref, metakey, cancellable, error);
-  else
-    related = g_ptr_array_new_with_free_func ((GDestroyNotify) flatpak_related_free);
+    {
+      g_ptr_array_unref (related);
+      related = flatpak_dir_find_remote_related_for_metadata (self, state, ref, metakey, cancellable, error);
+    }
 
   return g_steal_pointer (&related);
 }
