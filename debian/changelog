@@ -1,5 +1,6 @@
-flatpak (1.6.0-2) UNRELEASED; urgency=medium
+flatpak (1.6.1-1) UNRELEASED; urgency=medium
 
+  * New upstream stable release
   * Use secure URI in Homepage field.
   * Set upstream metadata fields: Repository.
   * Remove obsolete field Name from debian/upstream/metadata (already
