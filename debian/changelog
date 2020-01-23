@@ -1,4 +1,4 @@
-flatpak (1.6.1-1) UNRELEASED; urgency=medium
+flatpak (1.6.1-1) unstable; urgency=medium
 
   * New upstream stable release
   * Use secure URI in Homepage field.
@@ -7,7 +7,7 @@ flatpak (1.6.1-1) UNRELEASED; urgency=medium
     present in machine-readable debian/copyright).
   * Standards-Version: 4.5.0 (no changes required)
 
- -- Simon McVittie <smcv@debian.org>  Fri, 10 Jan 2020 11:32:12 +0000
+ -- Simon McVittie <smcv@debian.org>  Thu, 23 Jan 2020 17:53:52 +0000
 
 flatpak (1.6.0-1) unstable; urgency=medium
 
