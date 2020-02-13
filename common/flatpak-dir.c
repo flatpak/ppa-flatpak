@@ -4941,26 +4941,43 @@ flatpak_dir_setup_extra_data (FlatpakDir                           *self,
   /* If @results is set, @rev must be. */
   g_assert (results == NULL || rev != NULL);
 
-  extra_data_sources = flatpak_repo_get_extra_data_sources (repo, rev, cancellable, NULL);
-  if (extra_data_sources == NULL)
+  /* ostree-metadata and appstreams never have extra data, so ignore those */
+  if (g_str_has_prefix ("app/", ref) || g_str_has_prefix ("runtime/", ref))
     {
-      /* Pull the commits (and only the commits) to check for extra data
-       * again. Here we don't pass the progress because we don't want any
-       * reports coming out of it. */
-      if (!repo_pull (repo, repository,
-                      NULL,
-                      ref,
-                      rev,
-                      token,
-                      results,
-                      flatpak_flags,
-                      OSTREE_REPO_PULL_FLAGS_COMMIT_ONLY,
-                      NULL,
-                      cancellable,
-                      error))
-        return FALSE;
-
       extra_data_sources = flatpak_repo_get_extra_data_sources (repo, rev, cancellable, NULL);
+      if (extra_data_sources == NULL)
+        {
+          /* This is a gigantic hack where we download the commit in a temporary transaction
+           * which we then abort after having read the result. We do this to avoid creating
+           * a partial commit in the local repo and a ref that points to it, because that
+           * causes ostree to not use static deltas.
+           * See https://github.com/flatpak/flatpak/issues/3412 for details.
+           */
+
+          if (!ostree_repo_prepare_transaction (repo, NULL, cancellable, error))
+            return FALSE;
+
+          /* Pull the commits (and only the commits) to check for extra data
+           * again. Here we don't pass the progress because we don't want any
+           * reports coming out of it. */
+          if (!repo_pull (repo, repository,
+                          NULL,
+                          ref,
+                          rev,
+                          token,
+                          results,
+                          flatpak_flags,
+                          OSTREE_REPO_PULL_FLAGS_COMMIT_ONLY,
+                          NULL,
+                          cancellable,
+                          error))
+            return FALSE;
+
+          extra_data_sources = flatpak_repo_get_extra_data_sources (repo, rev, cancellable, NULL);
+
+          if (!ostree_repo_abort_transaction (repo, cancellable, error))
+            return FALSE;
+        }
     }
 
   n_extra_data = 0;
@@ -5601,9 +5618,6 @@ flatpak_dir_pull (FlatpakDir                           *self,
       g_ptr_array_add (subdirs_arg, NULL);
     }
 
-  if (!ostree_repo_prepare_transaction (repo, NULL, cancellable, error))
-    goto out;
-
   /* Setup extra data information before starting to pull, so we can have precise
    * progress reports */
   if (!flatpak_dir_setup_extra_data (self, repo, state->remote_name,
@@ -5612,6 +5626,10 @@ flatpak_dir_pull (FlatpakDir                           *self,
                                      progress,
                                      cancellable,
                                      error))
+    goto out;
+
+  /* Note, this has to start after setup_extra_data() because that also uses a transaction */
+  if (!ostree_repo_prepare_transaction (repo, NULL, cancellable, error))
     goto out;
 
   flatpak_repo_resolve_rev (repo, state->collection_id, state->remote_name, ref, TRUE,
@@ -9188,13 +9206,11 @@ flatpak_dir_ensure_bundle_remote (FlatpakDir   *self,
                                                  ref,
                                                  gpg_data,
                                                  collection_id,
+                                                 &created_remote,
                                                  cancellable,
                                                  error);
       if (remote == NULL)
         return NULL;
-
-      /* From here we need to goto out on error, to clean up */
-      created_remote = TRUE;
     }
 
   if (out_created_remote)
@@ -12752,6 +12768,7 @@ flatpak_dir_create_origin_remote (FlatpakDir   *self,
                                   const char   *main_ref,
                                   GBytes       *gpg_data,
                                   const char   *collection_id,
+                                  gboolean     *changed_config,
                                   GCancellable *cancellable,
                                   GError      **error)
 {
@@ -12765,8 +12782,11 @@ flatpak_dir_create_origin_remote (FlatpakDir   *self,
                                   gpg_data, cancellable, error))
     return NULL;
 
-  if (!_flatpak_dir_reload_config (self, cancellable, error))
+  if (new_config && !_flatpak_dir_reload_config (self, cancellable, error))
     return FALSE;
+
+  if (changed_config)
+    *changed_config = (new_config != NULL);
 
   return g_steal_pointer (&remote);
 }
@@ -12912,7 +12932,7 @@ flatpak_dir_create_remote_for_ref_file (FlatpakDir *self,
   if (remote == NULL)
     {
       remote = flatpak_dir_create_origin_remote (self, url, name, title, ref,
-                                                 gpg_data, collection_id, NULL, error);
+                                                 gpg_data, collection_id, NULL, NULL, error);
       if (remote == NULL)
         return FALSE;
     }
@@ -13601,7 +13621,7 @@ _flatpak_dir_fetch_remote_state_metadata_branch (FlatpakDir         *self,
           if (!flatpak_dir_pull (self, state, OSTREE_REPO_METADATA_REF, NULL, NULL, NULL, NULL,
                                  child_repo,
                                  flatpak_flags,
-                                 OSTREE_REPO_PULL_FLAGS_MIRROR,
+                                 0,
                                  progress, cancellable, error))
             return FALSE;
 
