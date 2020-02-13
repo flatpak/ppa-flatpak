@@ -6709,7 +6709,7 @@ common/%-dbus-generated.h: common/%-dbus-generated.c
 @HAVE_INTROSPECTION_TRUE@Flatpak-1.0.gir: libflatpak.la Makefile
 
 app/flatpak-permission-dbus-generated.c: data/org.freedesktop.impl.portal.PermissionStore.xml Makefile
-	mkdir -p $(builddir)/common
+	mkdir -p $(builddir)/app
 	$(AM_V_GEN) $(GDBUS_CODEGEN)                            \
 		--interface-prefix org.freedesktop.impl.portal  \
 		--c-namespace XdpDbus                           \
