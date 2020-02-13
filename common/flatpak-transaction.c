@@ -1954,6 +1954,7 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
 
   if (remote_name_is_file (remote))
     {
+      gboolean changed_config;
       origin_remote = flatpak_dir_create_origin_remote (priv->dir,
                                                         remote, /* uri */
                                                         parts[1],
@@ -1961,9 +1962,14 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
                                                         ref,
                                                         NULL,
                                                         NULL,
+                                                        &changed_config,
                                                         NULL, error);
       if (origin_remote == NULL)
         return FALSE;
+
+      /* Reload changed configuration */
+      if (changed_config)
+        flatpak_installation_drop_caches (priv->installation, NULL, NULL);
 
       g_ptr_array_add (priv->added_origin_remotes, g_strdup (origin_remote));
 
@@ -2225,7 +2231,7 @@ flatpak_transaction_update_metadata (FlatpakTransaction *self,
   g_auto(GStrv) remotes = NULL;
   int i;
   GList *l;
-  gboolean some_updated;
+  gboolean some_updated = FALSE;
   g_autoptr(GHashTable) ht = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
   /* Collect all dir+remotes used in this transaction */
@@ -2252,7 +2258,7 @@ flatpak_transaction_update_metadata (FlatpakTransaction *self,
 
       if (updated)
         {
-          g_debug ("Got updatedo metadata for %s", remote);
+          g_debug ("Got updated metadata for %s", remote);
           some_updated = TRUE;
         }
     }
@@ -3684,10 +3690,8 @@ flatpak_transaction_resolve_bundles (FlatpakTransaction *self,
       if (remote == NULL)
         return FALSE;
 
-      if (!flatpak_dir_recreate_repo (priv->dir, NULL, error))
-        return FALSE;
-
-      flatpak_installation_drop_caches (priv->installation, NULL, NULL);
+      if (created_remote)
+        flatpak_installation_drop_caches (priv->installation, NULL, NULL);
 
       if (!flatpak_transaction_add_ref (self, remote, ref, NULL, NULL, commit,
                                         FLATPAK_TRANSACTION_OPERATION_INSTALL_BUNDLE,
