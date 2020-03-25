@@ -8,6 +8,8 @@ flatpak (1.7.0~git20200325-1) UNRELEASED; urgency=medium
   * Build-depend on python3 even when not running tests, for
     variant-schema-compiler
   * Update symbols file
+  * d/patches: Add patches proposed upstream to formalize deprecations
+    and fix rebuild of generated files
 
  -- Simon McVittie <smcv@debian.org>  Wed, 25 Mar 2020 12:32:31 +0000
 
