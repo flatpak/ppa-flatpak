@@ -292,6 +292,8 @@ test_languages_config (void)
   g_assert_cmpstr (value[0], ==, "en");
   g_assert_null (value[1]);
 
+  g_clear_pointer (&value, g_strfreev);
+
   res = flatpak_installation_set_config_sync (inst, "extra-languages", "pt_BR;uz_UZ.utf8@cyrillic;es;zh_HK.big5hkscs;uz_UZ@cyrillic", NULL, &error);
   g_assert_no_error (error);
   g_assert_true (res);
@@ -446,6 +448,7 @@ test_ref (void)
 
   formatted = flatpak_ref_format_ref (ref);
   g_assert_cmpstr (formatted, ==, valid);
+  g_clear_pointer (&formatted, g_free);
 
   g_clear_object (&ref);
 
@@ -471,6 +474,7 @@ test_ref (void)
 
   formatted = flatpak_ref_format_ref (ref);
   g_assert_cmpstr (formatted, ==, valid);
+  g_clear_pointer (&formatted, g_free);
 
   g_clear_object (&ref);
 
@@ -619,10 +623,10 @@ test_remote (void)
   res = ostree_repo_open (repo, NULL, &error);
   g_assert_no_error (error);
   g_assert_true (res);
-  res = ostree_repo_get_remote_boolean_option (repo, repo_name, "gpg-verify-summary", TRUE, &gpg_verify_summary, &error);
+  res = ostree_repo_get_remote_boolean_option (repo, repo_name, "gpg-verify-summary", FALSE, &gpg_verify_summary, &error);
   g_assert_no_error (error);
   g_assert_true (res);
-  g_assert_false (gpg_verify_summary);
+  g_assert_true (gpg_verify_summary);
 
   /* Temporarily unset the collection ID */
   flatpak_remote_set_collection_id (remote, NULL);
@@ -929,9 +933,6 @@ test_list_refs_in_remotes (void)
   g_autoptr(FlatpakRemote) remote = NULL;
   g_autofree char *repo_dir = g_build_filename (testdir, repo_name, NULL);
   g_autofree char *repo_uri = NULL;
-  g_autoptr(GHashTable) collection_ids = g_hash_table_new_full (g_str_hash,
-                                                                g_str_equal,
-                                                                NULL, NULL);
   g_autoptr(GHashTable) ref_specs = g_hash_table_new_full (g_str_hash,
                                                            g_str_equal,
                                                            g_free,
@@ -967,12 +968,8 @@ test_list_refs_in_remotes (void)
   for (guint i = 0; i < refs1->len; ++i)
     {
       FlatpakRef *ref = g_ptr_array_index (refs1, i);
-      g_hash_table_add (collection_ids, (gchar *) flatpak_ref_get_collection_id (ref));
       g_hash_table_add (ref_specs, flatpak_ref_format_ref (ref));
     }
-
-  /* we have a locale extension for each app, thus the 2 */
-  g_assert_cmpuint (2 * g_hash_table_size (collection_ids), ==, refs1->len);
 
   /* Ensure that listing the refs by using a remote's URI will get us the
    * same results as using the name */
@@ -3283,6 +3280,11 @@ test_transaction_install_local (void)
 
   empty_installation (inst);
 
+  remote = flatpak_installation_get_remote_by_name (inst, "hello-origin", NULL, &error);
+  g_assert_error (error, FLATPAK_ERROR, FLATPAK_ERROR_REMOTE_NOT_FOUND);
+  g_assert_null (remote);
+  g_clear_error (&error);
+
   transaction = flatpak_transaction_new_for_installation (inst, NULL, &error);
   g_assert_no_error (error);
   g_assert_nonnull (transaction);
@@ -3293,11 +3295,6 @@ test_transaction_install_local (void)
   res = flatpak_transaction_add_install (transaction, url, app, NULL, &error);
   g_assert_no_error (error);
   g_assert_true (res);
-
-  remote = flatpak_installation_get_remote_by_name (inst, "hello-origin", NULL, &error);
-  g_assert_error (error, FLATPAK_ERROR, FLATPAK_ERROR_REMOTE_NOT_FOUND);
-  g_assert_null (remote);
-  g_clear_error (&error);
 
   res = flatpak_transaction_run (transaction, NULL, &error);
   g_assert_no_error (error);

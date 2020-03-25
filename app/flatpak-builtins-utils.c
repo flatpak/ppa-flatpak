@@ -357,8 +357,19 @@ flatpak_resolve_duplicate_remotes (GPtrArray    *dirs,
   if (out_dir)
     {
       if (dirs_with_remote->len == 0)
-        return flatpak_fail_error (error, FLATPAK_ERROR_REMOTE_NOT_FOUND,
-                                   "Remote \"%s\" not found", remote_name);
+        {
+          if (dirs->len > 1 || dirs->len == 0)
+            return flatpak_fail_error (error, FLATPAK_ERROR_REMOTE_NOT_FOUND,
+                                       _("Remote \"%s\" not found\nHint: Use flatpak remote-add to add a remote"),
+                                       remote_name);
+          else
+            {
+              FlatpakDir *dir = g_ptr_array_index (dirs, 0);
+              return flatpak_fail_error (error, FLATPAK_ERROR_REMOTE_NOT_FOUND,
+                                         _("Remote \"%s\" not found in the %s installation"),
+                                         remote_name, flatpak_dir_get_name_cached (dir));
+            }
+        }
       else
         *out_dir = g_object_ref (g_ptr_array_index (dirs_with_remote, chosen - 1));
     }
@@ -661,7 +672,7 @@ update_appstream (GPtrArray    *dirs,
           for (i = 0; remotes[i] != NULL; i++)
             {
               g_autoptr(GError) local_error = NULL;
-              g_autoptr(OstreeAsyncProgress) progress = NULL;
+              g_autoptr(OstreeAsyncProgressFinish) progress = NULL;
               guint64 ts_file_age;
 
               ts_file_age = get_appstream_timestamp (dir, remotes[i], arch);
@@ -706,7 +717,6 @@ update_appstream (GPtrArray    *dirs,
                   else
                     g_printerr ("%s: %s\n", _("Error updating"), local_error->message);
                 }
-              ostree_async_progress_finish (progress);
             }
         }
     }
@@ -720,7 +730,7 @@ update_appstream (GPtrArray    *dirs,
 
           if (flatpak_dir_has_remote (dir, remote, NULL))
             {
-              g_autoptr(OstreeAsyncProgress) progress = NULL;
+              g_autoptr(OstreeAsyncProgressFinish) progress = NULL;
               guint64 ts_file_age;
 
               found = TRUE;
@@ -737,7 +747,6 @@ update_appstream (GPtrArray    *dirs,
               progress = ostree_async_progress_new_and_connect (no_progress_cb, NULL);
               res = flatpak_dir_update_appstream (dir, remote, arch, &changed,
                                                   progress, cancellable, error);
-              ostree_async_progress_finish (progress);
               if (!res)
                 return FALSE;
             }
@@ -1340,23 +1349,33 @@ FlatpakRemoteState *
 get_remote_state (FlatpakDir   *dir,
                   const char   *remote,
                   gboolean      cached,
+                  gboolean      sideloaded,
                   GCancellable *cancellable,
                   GError      **error)
 {
   g_autoptr(GError) local_error = NULL;
-  FlatpakRemoteState *state;
+  FlatpakRemoteState *state = NULL;
 
-  state = flatpak_dir_get_remote_state (dir, remote, cached, cancellable, &local_error);
-  if (state == NULL && g_error_matches (local_error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_CACHED))
+  if (sideloaded)
     {
-      g_clear_error (&local_error);
-      state = flatpak_dir_get_remote_state (dir, remote, FALSE, cancellable, &local_error);
+      state = flatpak_dir_get_remote_state_local_only (dir, remote, cancellable, error);
+      if (state == NULL)
+        return NULL;
     }
-
-  if (state == NULL)
+  else
     {
-      g_propagate_error (error, g_steal_pointer (&local_error));
-      return NULL;
+      state = flatpak_dir_get_remote_state (dir, remote, cached, cancellable, &local_error);
+      if (state == NULL && g_error_matches (local_error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_CACHED))
+        {
+          g_clear_error (&local_error);
+          state = flatpak_dir_get_remote_state (dir, remote, FALSE, cancellable, &local_error);
+        }
+
+      if (state == NULL)
+        {
+          g_propagate_error (error, g_steal_pointer (&local_error));
+          return NULL;
+        }
     }
 
   return state;

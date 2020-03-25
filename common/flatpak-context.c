@@ -61,6 +61,7 @@ const char *flatpak_context_sockets[] = {
   "fallback-x11",
   "ssh-auth",
   "pcsc",
+  "cups",
   NULL
 };
 
@@ -68,6 +69,7 @@ const char *flatpak_context_devices[] = {
   "dri",
   "all",
   "kvm",
+  "shm",
   NULL
 };
 
@@ -76,6 +78,14 @@ const char *flatpak_context_features[] = {
   "multiarch",
   "bluetooth",
   "canbus",
+  NULL
+};
+
+const char *flatpak_context_special_filesystems[] = {
+  "home",
+  "host",
+  "host-etc",
+  "host-os",
   NULL
 };
 
@@ -747,9 +757,7 @@ flatpak_context_verify_filesystem (const char *filesystem_and_mode,
 {
   g_autofree char *filesystem = parse_filesystem_flags (filesystem_and_mode, NULL);
 
-  if (strcmp (filesystem, "host") == 0)
-    return TRUE;
-  if (strcmp (filesystem, "home") == 0)
+  if (g_strv_contains (flatpak_context_special_filesystems, filesystem))
     return TRUE;
   if (get_xdg_user_dir_from_string (filesystem, NULL, NULL, NULL))
     return TRUE;
@@ -759,7 +767,7 @@ flatpak_context_verify_filesystem (const char *filesystem_and_mode,
     return TRUE;
 
   g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_FAILED,
-               _("Unknown filesystem location %s, valid locations are: host, home, xdg-*[/…], ~/dir, /dir"), filesystem);
+               _("Unknown filesystem location %s, valid locations are: host, host-os, host-etc, home, xdg-*[/…], ~/dir, /dir"), filesystem);
   return FALSE;
 }
 
@@ -1817,22 +1825,25 @@ static gboolean
 adds_filesystem_access (GHashTable *old, GHashTable *new)
 {
   FlatpakFilesystemMode old_host_mode = GPOINTER_TO_INT (g_hash_table_lookup (old, "host"));
-  FlatpakFilesystemMode old_home_mode = GPOINTER_TO_INT (g_hash_table_lookup (old, "home"));
 
   GLNX_HASH_TABLE_FOREACH_KV (new, const char *, location, gpointer, _new_mode)
     {
       FlatpakFilesystemMode new_mode = GPOINTER_TO_INT (_new_mode);
       FlatpakFilesystemMode old_mode = GPOINTER_TO_INT (g_hash_table_lookup (old, location));
 
+      /* Allow more limited access to the same thing */
       if (new_mode <= old_mode)
         continue;
 
-      if (new_mode <= old_host_mode)
+      /* Allow more limited access if we used to have access to everything */
+     if (new_mode <= old_host_mode)
         continue;
 
-      /* All but absolute paths are in homedir */
-      if (!g_path_is_absolute (location) && new_mode <= old_home_mode)
-        continue;
+     /* For the remainder we have to be pessimistic, for instance even
+        if we have home access we can't allow adding access to ~/foo,
+        because foo might be a symlink outside home which didn't work
+        before but would work with an explicit access to that
+        particular file. */
 
       return TRUE;
     }
@@ -2050,7 +2061,7 @@ flatpak_context_export (FlatpakContext *context,
                         gboolean       *home_access_out)
 {
   gboolean home_access = FALSE;
-  FlatpakFilesystemMode fs_mode, home_mode;
+  FlatpakFilesystemMode fs_mode, os_mode, etc_mode, home_mode;
   GHashTableIter iter;
   gpointer key, value;
 
@@ -2080,8 +2091,19 @@ flatpak_context_export (FlatpakContext *context,
           closedir (dir);
         }
       flatpak_exports_add_path_expose (exports, fs_mode, "/run/media");
-      flatpak_exports_add_home_expose (exports, fs_mode);
     }
+
+  os_mode = MAX ((FlatpakFilesystemMode) g_hash_table_lookup (context->filesystems, "host-os"),
+                   fs_mode);
+
+  if (os_mode != 0)
+    flatpak_exports_add_host_os_expose (exports, os_mode);
+
+  etc_mode = MAX ((FlatpakFilesystemMode) g_hash_table_lookup (context->filesystems, "host-etc"),
+                   fs_mode);
+
+  if (etc_mode != 0)
+    flatpak_exports_add_host_etc_expose (exports, etc_mode);
 
   home_mode = (FlatpakFilesystemMode) g_hash_table_lookup (context->filesystems, "home");
   if (home_mode != 0)
@@ -2098,8 +2120,7 @@ flatpak_context_export (FlatpakContext *context,
       const char *filesystem = key;
       FlatpakFilesystemMode mode = GPOINTER_TO_INT (value);
 
-      if (strcmp (filesystem, "host") == 0 ||
-          strcmp (filesystem, "home") == 0)
+      if (g_strv_contains (flatpak_context_special_filesystems, filesystem))
         continue;
 
       if (g_str_has_prefix (filesystem, "xdg-"))

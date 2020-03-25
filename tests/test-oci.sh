@@ -43,10 +43,17 @@ digest=$(grep sha256: oci/image/index.json | sed s'@.*sha256:\([a-fA-F0-9]\+\).*
 manifest=oci/image/blobs/sha256/$digest
 
 assert_has_file $manifest
-assert_file_has_content $manifest "org\.freedesktop\.appstream\.appdata.*<summary>Print a greeting</summary>"
-assert_file_has_content $manifest "org\.freedesktop\.appstream\.icon-64"
 
-echo "ok export oci"
+DIGEST=$(grep -C2 application/vnd.oci.image.config.v1+json $manifest | grep digest  | sed s/.*\"sha256:\\\(.*\\\)\".*/\\1/)
+echo DIGEST: $DIGEST
+image=oci/image/blobs/sha256/$DIGEST
+
+assert_has_file $image
+assert_file_has_content $image "org\.freedesktop\.appstream\.appdata.*<summary>Print a greeting</summary>"
+assert_file_has_content $image "org\.freedesktop\.appstream\.icon-64"
+assert_file_has_content $image org.flatpak.ref.*app/org.test.Hello/x86_64/master
+
+ok "export oci"
 
 ostree --repo=repo2 init --mode=archive-z2
 
@@ -58,4 +65,4 @@ assert_has_dir checked-out/files
 assert_has_file checked-out/files/bin/hello.sh
 assert_has_file checked-out/metadata
 
-echo "ok import oci"
+ok "import oci"

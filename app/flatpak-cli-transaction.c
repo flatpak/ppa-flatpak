@@ -1018,15 +1018,21 @@ transaction_ready (FlatpakTransaction *transaction)
           guint64 download_size;
           g_autofree char *formatted = NULL;
           g_autofree char *text = NULL;
+          const char *prefix;
 
           download_size = flatpak_transaction_operation_get_download_size (op);
           formatted = g_format_size (download_size);
 
+          if (download_size > 0)
+            prefix = "< ";
+          else
+            prefix = "";
+
           flatpak_table_printer_add_column (printer, remote);
           if (g_str_has_suffix (flatpak_ref_get_name (rref), ".Locale"))
-            text = g_strdup_printf ("< %s (%s)", formatted, _("partial"));
+            text = g_strdup_printf ("%s%s (%s)", prefix, formatted, _("partial"));
           else
-            text = g_strdup_printf ("< %s", formatted);
+            text = g_strdup_printf ("%s%s", prefix, formatted);
           flatpak_table_printer_add_decimal_column (printer, text);
         }
 
@@ -1108,6 +1114,9 @@ flatpak_cli_transaction_finalize (GObject *object)
     g_error_free (self->first_operation_error);
 
   g_free (self->progress_msg);
+
+  if (self->printer)
+    flatpak_table_printer_free (self->printer);
 
   G_OBJECT_CLASS (flatpak_cli_transaction_parent_class)->finalize (object);
 }

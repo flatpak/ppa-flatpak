@@ -79,6 +79,11 @@ assert_failed_with_401
 # Install with right token
 echo -n the-secret > ${XDG_RUNTIME_DIR}/required-token
 ${FLATPAK} ${U} install -y test-repo org.test.Hello master
+assert_file_has_content ${XDG_RUNTIME_DIR}/request "^remote: test-repo$"
+assert_file_has_content ${XDG_RUNTIME_DIR}/request "^uri: http://127.0.0.1:${port}/test$"
+if [ x${USE_COLLECTIONS_IN_CLIENT-} == xyes ] ; then
+    assert_file_has_content ${XDG_RUNTIME_DIR}/request "^options: .*'collection-id': <'org.test.Collection.test'>"
+fi
 
 EXPORT_ARGS="--token-type=2" make_updated_app test "" master UPDATE2
 mark_need_token app/org.test.Hello/$ARCH/master the-secret
@@ -94,7 +99,7 @@ assert_failed_with_401
 echo -n the-secret > ${XDG_RUNTIME_DIR}/required-token
 ${FLATPAK} ${U} update -y org.test.Hello
 
-echo "ok installed build-exported token-type app"
+ok "installed build-exported token-type app"
 
 # Drop token-type on main version
 make_updated_app test "" master UPDATE3
@@ -116,7 +121,7 @@ assert_failed_with_401
 echo -n the-secret > ${XDG_RUNTIME_DIR}/required-token
 ${FLATPAK} ${U} install -y test-repo org.test.Hello//copy
 
-echo "ok installed build-commit-from token-type app"
+ok "installed build-commit-from token-type app"
 
 EXPORT_ARGS="--token-type=2" make_updated_app test "" master UPDATE4
 mark_need_token app/org.test.Hello/$ARCH/master the-secret
@@ -146,4 +151,4 @@ export BROWSER=curl
 EXPORT_ARGS="--token-type=2" make_updated_app test "" master UPDATE5
 mark_need_token app/org.test.Hello/$ARCH/master the-secret
 
-echo "ok update with webflow"
+ok "update with webflow"

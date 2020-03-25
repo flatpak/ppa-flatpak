@@ -383,9 +383,9 @@ flatpak_builtin_build_commit_from (int argc, char **argv, GCancellable *cancella
     {
       OstreeRepoPullFlags pullflags = 0;
       GVariantBuilder builder;
-      g_autoptr(OstreeAsyncProgress) progress = NULL;
+      g_autoptr(OstreeAsyncProgressFinish) progress = NULL;
       g_auto(GLnxConsoleRef) console = { 0, };
-      g_autoptr(GVariant) options = NULL;
+      g_autoptr(GVariant) pull_options = NULL;
       gboolean res;
 
       if (opt_untrusted)
@@ -404,14 +404,11 @@ flatpak_builtin_build_commit_from (int argc, char **argv, GCancellable *cancella
       g_variant_builder_add (&builder, "{s@v}", "depth",
                              g_variant_new_variant (g_variant_new_int32 (0)));
 
-      options = g_variant_ref_sink (g_variant_builder_end (&builder));
+      pull_options = g_variant_ref_sink (g_variant_builder_end (&builder));
       res = ostree_repo_pull_with_options (dst_repo, src_repo_uri,
-                                           options,
+                                           pull_options,
                                            progress,
                                            cancellable, error);
-
-      if (progress)
-        ostree_async_progress_finish (progress);
 
       if (!res)
         return FALSE;
@@ -607,7 +604,7 @@ flatpak_builtin_build_commit_from (int argc, char **argv, GCancellable *cancella
 
       if (opt_token_type >= 0)
         g_variant_builder_add (&metadata_builder, "{sv}", "xa.token-type",
-                               g_variant_new_int32 (opt_token_type));
+                               g_variant_new_int32 (GINT32_TO_LE (opt_token_type)));
 
       timestamp = ostree_commit_get_timestamp (src_commitv);
       if (opt_timestamp)

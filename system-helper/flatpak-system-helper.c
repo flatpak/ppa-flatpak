@@ -53,6 +53,9 @@ static gboolean on_session_bus = FALSE;
 static gboolean disable_revokefs = FALSE;
 static gboolean no_idle_exit = FALSE;
 
+static int opt_verbose;
+static gboolean opt_ostree_verbose;
+
 #define IDLE_TIMEOUT_SECS 10 * 60
 
 /* This uses a weird Auto prefix to avoid conflicts with later added polkit types.
@@ -386,7 +389,7 @@ handle_deploy (FlatpakSystemHelper   *object,
   g_autoptr(GFile) repo_file = g_file_new_for_path (arg_repo_path);
   g_autoptr(GError) error = NULL;
   g_autoptr(GFile) deploy_dir = NULL;
-  g_autoptr(OstreeAsyncProgress) ostree_progress = NULL;
+  g_autoptr(OstreeAsyncProgressFinish) ostree_progress = NULL;
   gboolean is_oci;
   gboolean is_update;
   gboolean no_deploy;
@@ -512,7 +515,6 @@ handle_deploy (FlatpakSystemHelper   *object,
       g_autoptr(FlatpakOciVersioned) versioned = NULL;
       g_autoptr(FlatpakOciImage) image_config = NULL;
       g_autoptr(FlatpakRemoteState) state = NULL;
-      FlatpakCollectionRef collection_ref;
       g_autoptr(GHashTable) remote_refs = NULL;
       g_autofree char *checksum = NULL;
       const char *verified_digest;
@@ -591,10 +593,7 @@ handle_deploy (FlatpakSystemHelper   *object,
           return TRUE;
         }
 
-      collection_ref.collection_id = state->collection_id;
-      collection_ref.ref_name = (char *) arg_ref;
-
-      verified_digest = g_hash_table_lookup (remote_refs, &collection_ref);
+      verified_digest = g_hash_table_lookup (remote_refs, arg_ref);
       if (!verified_digest)
         {
           g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
@@ -638,9 +637,6 @@ handle_deploy (FlatpakSystemHelper   *object,
           flatpak_invocation_return_error (invocation, error, "Error pulling from repo");
           return TRUE;
         }
-
-      if (ostree_progress)
-        ostree_async_progress_finish (ostree_progress);
     }
   else if (local_pull)
     {
@@ -674,16 +670,13 @@ handle_deploy (FlatpakSystemHelper   *object,
 
       ostree_progress = ostree_async_progress_new_and_connect (no_progress_cb, NULL);
 
-      if (!flatpak_dir_pull (system, state, arg_ref, NULL, NULL, (const char **) arg_subpaths, NULL, NULL,
+      if (!flatpak_dir_pull (system, state, arg_ref, NULL, (const char **) arg_subpaths, NULL, NULL, NULL, NULL,
                              FLATPAK_PULL_FLAGS_NONE, OSTREE_REPO_PULL_FLAGS_UNTRUSTED, ostree_progress,
                              NULL, &error))
         {
           flatpak_invocation_return_error (invocation, error, "Error pulling from repo");
           return TRUE;
         }
-
-      if (ostree_progress)
-        ostree_async_progress_finish (ostree_progress);
     }
 
   if (!no_deploy)
@@ -848,7 +841,7 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
       g_autoptr(GError) first_error = NULL;
       g_autoptr(GError) second_error = NULL;
       g_autoptr(GMainContextPopDefault) main_context = NULL;
-      g_autoptr(OstreeAsyncProgress) ostree_progress = NULL;
+      g_autoptr(OstreeAsyncProgressFinish) ostree_progress = NULL;
 
       /* Work around ostree-pull spinning the default main context for the sync calls */
       main_context = flatpak_main_context_new_default ();
@@ -880,7 +873,7 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
   else /* empty path == local pull */
     {
       g_autoptr(FlatpakRemoteState) state = NULL;
-      g_autoptr(OstreeAsyncProgress) ostree_progress = NULL;
+      g_autoptr(OstreeAsyncProgressFinish) ostree_progress = NULL;
       g_autoptr(GError) first_error = NULL;
       g_autoptr(GError) second_error = NULL;
       g_autofree char *url = NULL;
@@ -914,11 +907,11 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
 
       ostree_progress = ostree_async_progress_new_and_connect (no_progress_cb, NULL);
 
-      if (!flatpak_dir_pull (system, state, new_branch, NULL, NULL, NULL, NULL, NULL,
+      if (!flatpak_dir_pull (system, state, new_branch, NULL, NULL, NULL, NULL, NULL, NULL,
                              FLATPAK_PULL_FLAGS_NONE, OSTREE_REPO_PULL_FLAGS_UNTRUSTED, ostree_progress,
                              NULL, &first_error))
         {
-          if (!flatpak_dir_pull (system, state, old_branch, NULL, NULL, NULL, NULL, NULL,
+          if (!flatpak_dir_pull (system, state, old_branch, NULL, NULL, NULL, NULL, NULL, NULL,
                                  FLATPAK_PULL_FLAGS_NONE, OSTREE_REPO_PULL_FLAGS_UNTRUSTED, ostree_progress,
                                  NULL, &second_error))
             {
@@ -929,9 +922,6 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
               return TRUE;
             }
         }
-
-      if (ostree_progress)
-        ostree_async_progress_finish (ostree_progress);
     }
 
   if (!flatpak_dir_deploy_appstream (system,
@@ -1148,7 +1138,9 @@ handle_configure (FlatpakSystemHelper   *object,
       return TRUE;
     }
 
-  if ((strcmp (arg_key, "languages") != 0) && (strcmp (arg_key, "extra-languages") != 0))
+  if ((strcmp (arg_key, "languages") != 0) &&
+      (strcmp (arg_key, "extra-languages") != 0) &&
+      (strcmp (arg_key, "sideload-repos") != 0))
     {
       g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
                                              "Unsupported key: %s", arg_key);
@@ -1241,7 +1233,7 @@ handle_update_remote (FlatpakSystemHelper   *object,
       return TRUE;
     }
 
-  if (summary_sig_bytes == NULL && state->collection_id == NULL)
+  if (summary_sig_bytes == NULL)
     {
       g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
                                              "UpdateRemote requires a summary signature");
@@ -1361,6 +1353,7 @@ handle_ensure_repo (FlatpakSystemHelper   *object,
 {
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
+  g_autoptr(GError) local_error = NULL;
 
   g_debug ("EnsureRepo %u %s", arg_flags, arg_installation);
 
@@ -1383,6 +1376,9 @@ handle_ensure_repo (FlatpakSystemHelper   *object,
       g_dbus_method_invocation_return_gerror (invocation, error);
       return TRUE;
     }
+
+  if (!flatpak_dir_migrate_config (system, NULL, NULL, &local_error))
+    g_warning ("Failed to migrate configuration for installation %s: %s", arg_installation, local_error->message);
 
   flatpak_system_helper_complete_ensure_repo (object, invocation);
 
@@ -1881,7 +1877,7 @@ static gboolean
 dir_ref_is_installed (FlatpakDir *dir,
                       const char *ref)
 {
-  g_autoptr(GVariant) deploy_data = NULL;
+  g_autoptr(GBytes) deploy_data = NULL;
 
   deploy_data = flatpak_dir_get_deploy_data (dir, ref, FLATPAK_DEPLOY_VERSION_ANY, NULL, NULL);
 
@@ -2222,9 +2218,19 @@ message_handler (const gchar   *log_domain,
 {
   /* Make this look like normal console output */
   if (log_level & G_LOG_LEVEL_DEBUG)
-    g_printerr ("F: %s\n", message);
+    g_printerr ("FH: %s\n", message);
   else
     g_printerr ("%s: %s\n", g_get_prgname (), message);
+}
+
+static gboolean
+opt_verbose_cb (const gchar *option_name,
+                const gchar *value,
+                gpointer     data,
+                GError     **error)
+{
+  opt_verbose++;
+  return TRUE;
 }
 
 int
@@ -2234,14 +2240,14 @@ main (int    argc,
   gchar exe_path[PATH_MAX + 1];
   ssize_t exe_path_len;
   gboolean replace;
-  gboolean verbose;
   gboolean show_version;
   GBusNameOwnerFlags flags;
   GOptionContext *context;
   g_autoptr(GError) error = NULL;
   const GOptionEntry options[] = {
     { "replace", 'r', 0, G_OPTION_ARG_NONE, &replace,  "Replace old daemon.", NULL },
-    { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose,  "Enable debug output.", NULL },
+    { "verbose", 'v', G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK, &opt_verbose_cb, "Show debug information, -vv for more detail", NULL },
+    { "ostree-verbose", 0, 0, G_OPTION_ARG_NONE, &opt_ostree_verbose,"Show OSTree debug information", NULL },
     { "session", 0, 0, G_OPTION_ARG_NONE, &on_session_bus,  "Run in session, not system scope (for tests).", NULL },
     { "no-idle-exit", 0, 0, G_OPTION_ARG_NONE, &no_idle_exit,  "Don't exit when idle.", NULL },
     { "version", 0, 0, G_OPTION_ARG_NONE, &show_version, "Show program version.", NULL},
@@ -2270,7 +2276,6 @@ main (int    argc,
   context = g_option_context_new ("");
 
   replace = FALSE;
-  verbose = FALSE;
   show_version = FALSE;
 
   g_option_context_set_summary (context, "Flatpak system helper");
@@ -2293,8 +2298,15 @@ main (int    argc,
       return 0;
     }
 
-  if (verbose)
+  flatpak_disable_fancy_output ();
+
+  if (opt_verbose > 0)
     g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, message_handler, NULL);
+  if (opt_verbose > 1)
+    g_log_set_handler (G_LOG_DOMAIN "2", G_LOG_LEVEL_DEBUG, message_handler, NULL);
+
+  if (opt_ostree_verbose)
+    g_log_set_handler ("OSTree", G_LOG_LEVEL_DEBUG, message_handler, NULL);
 
   if (!on_session_bus)
     {

@@ -130,6 +130,8 @@ handle_request_ref_tokens_close (FlatpakAuthenticatorRequest *object,
 
   g_debug ("handlling Request.Close");
 
+  flatpak_authenticator_request_complete_close (object, invocation);
+
   cancel_basic_auth (auth);
 
   return TRUE;
@@ -223,6 +225,7 @@ run_basic_auth (FlatpakAuthenticatorRequest *request,
   BasicAuthData auth = { FALSE };
   int id1, id2;
   g_autofree char *combined = NULL;
+  g_autoptr(GVariant) options = g_variant_ref_sink (g_variant_new_array (G_VARIANT_TYPE ("{sv}"), NULL, 0));
 
   g_cond_init (&auth.cond);
   g_mutex_init (&auth.mutex);
@@ -234,7 +237,7 @@ run_basic_auth (FlatpakAuthenticatorRequest *request,
   id1 = g_signal_connect (request, "handle-close", G_CALLBACK (handle_request_ref_tokens_close), &auth);
   id2 = g_signal_connect (request, "handle-basic-auth-reply", G_CALLBACK (handle_request_ref_tokens_basic_auth_reply), &auth);
 
-  flatpak_auth_request_emit_basic_auth (request, sender, realm, NULL);
+  flatpak_authenticator_request_emit_basic_auth (request, realm, options);
 
   while (!auth.done)
     g_cond_wait (&auth.cond, &auth.mutex);
@@ -290,9 +293,9 @@ cancel_request (FlatpakAuthenticatorRequest *request,
   GVariantBuilder results;
 
   g_variant_builder_init (&results, G_VARIANT_TYPE ("a{sv}"));
-  flatpak_auth_request_emit_response (request, sender,
-                                      FLATPAK_AUTH_RESPONSE_CANCELLED,
-                                      g_variant_builder_end (&results));
+  flatpak_authenticator_request_emit_response (request,
+                                               FLATPAK_AUTH_RESPONSE_CANCELLED,
+                                               g_variant_builder_end (&results));
   return TRUE;
 }
 
@@ -305,9 +308,9 @@ error_request (FlatpakAuthenticatorRequest *request,
 
   g_variant_builder_init (&results, G_VARIANT_TYPE ("a{sv}"));
   g_variant_builder_add (&results, "{sv}", "error-message", g_variant_new_string (error_message));
-  flatpak_auth_request_emit_response (request, sender,
-                                      FLATPAK_AUTH_RESPONSE_ERROR,
-                                      g_variant_builder_end (&results));
+  flatpak_authenticator_request_emit_response (request,
+                                               FLATPAK_AUTH_RESPONSE_ERROR,
+                                               g_variant_builder_end (&results));
   return TRUE;
 }
 
@@ -411,7 +414,7 @@ lookup_auth_from_config (const char *oci_registry_uri)
 
 /* Note: This runs on a thread, so we can just block */
 static gboolean
-handle_request_ref_tokens (FlatpakAuthenticator *authenticator,
+handle_request_ref_tokens (FlatpakAuthenticator *f_authenticator,
                            GDBusMethodInvocation *invocation,
                            const gchar *arg_handle_token,
                            GVariant *arg_authenticator_options,
@@ -425,9 +428,12 @@ handle_request_ref_tokens (FlatpakAuthenticator *authenticator,
   g_autoptr(GError) error = NULL;
   g_autoptr(AutoFlatpakAuthenticatorRequest) request = NULL;
   const char *auth = NULL;
+  gboolean have_auth;
   const char *oci_registry_uri = NULL;
   gsize n_refs, i;
+  gboolean no_interaction = FALSE;
   g_autoptr(FlatpakOciRegistry) registry = NULL;
+  g_autofree char *first_token = NULL;
   GVariantBuilder tokens;
   GVariantBuilder results;
   g_autofree char *sender = g_strdup (g_dbus_method_invocation_get_sender (invocation));
@@ -435,6 +441,7 @@ handle_request_ref_tokens (FlatpakAuthenticator *authenticator,
   g_debug ("handling Authenticator.RequestRefTokens");
 
   g_variant_lookup (arg_authenticator_options, "auth", "&s", &auth);
+  have_auth = auth != NULL;
 
   if (!g_variant_lookup (arg_options, "xa.oci-registry-uri", "&s", &oci_registry_uri))
     {
@@ -443,6 +450,7 @@ handle_request_ref_tokens (FlatpakAuthenticator *authenticator,
                                              "Not a OCI remote");
       return TRUE;
     }
+  g_variant_lookup (arg_options, "no-interaction", "b", &no_interaction);
 
   request_path = flatpak_auth_create_request_path (g_dbus_method_invocation_get_sender (invocation),
                                                    arg_handle_token, NULL);
@@ -464,42 +472,65 @@ handle_request_ref_tokens (FlatpakAuthenticator *authenticator,
       return TRUE;
     }
 
-  flatpak_authenticator_complete_request_ref_tokens (authenticator, invocation, request_path);
+  flatpak_authenticator_complete_request_ref_tokens (f_authenticator, invocation, request_path);
 
   registry = flatpak_oci_registry_new (oci_registry_uri, FALSE, -1, NULL, &error);
   if (registry == NULL)
     return error_request (request, sender, error->message);
 
 
-  if (auth == NULL)
+  /* Look up credentials in config files */
+  if (!have_auth)
     {
       g_debug ("Looking for %s in auth info", oci_registry_uri);
       auth = lookup_auth_from_config (oci_registry_uri);
+      have_auth = auth != NULL;
     }
 
+  /* Try to see if we can get a token without presenting credentials */
   n_refs = g_variant_n_children (arg_refs);
-  if (auth == NULL && n_refs > 0)
+  if (!have_auth && n_refs > 0)
     {
       g_autoptr(GVariant) ref_data = g_variant_get_child_value (arg_refs, 0);
-      g_autofree char *token = NULL;
+
+      first_token = get_token_for_ref (registry, ref_data, NULL, &error);
+      if (first_token != NULL)
+        have_auth = TRUE;
+      else
+        g_clear_error (&error);
+    }
+
+  /* Prompt the user for credentials */
+  n_refs = g_variant_n_children (arg_refs);
+  if (!have_auth && n_refs > 0 &&
+      !no_interaction)
+    {
+      g_autoptr(GVariant) ref_data = g_variant_get_child_value (arg_refs, 0);
 
       while (auth == NULL)
         {
           g_autofree char *test_auth = NULL;
 
-          /* TODO: Handle the case where the peer dies */
           test_auth = run_basic_auth (request, sender, oci_registry_uri);
 
           if (test_auth == NULL)
             return cancel_request (request, sender);
 
-          token = get_token_for_ref (registry, ref_data, test_auth, &error);
-          if (token != NULL)
-            auth = g_steal_pointer (&test_auth);
+          first_token = get_token_for_ref (registry, ref_data, test_auth, &error);
+          if (first_token != NULL)
+            {
+              auth = g_steal_pointer (&test_auth);
+              have_auth = TRUE;
+            }
+          else
+            {
+              g_debug ("Failed to get token: %s", error->message);
+              g_clear_error (&error);
+            }
         }
     }
 
-  if (auth == NULL)
+  if (!have_auth)
     return error_request (request, sender, "No authentication information available");
 
   g_variant_builder_init (&tokens, G_VARIANT_TYPE ("a{sas}"));
@@ -510,9 +541,16 @@ handle_request_ref_tokens (FlatpakAuthenticator *authenticator,
       char *for_refs_strv[2] = { NULL, NULL};
       g_autofree char *token = NULL;
 
-      token = get_token_for_ref (registry, ref_data, auth, &error);
-      if (token == NULL)
-        return error_request (request, sender, error->message);
+      if (i == 0 && first_token != NULL)
+        {
+          token = g_steal_pointer (&first_token);
+        }
+      else
+        {
+          token = get_token_for_ref (registry, ref_data, auth, &error);
+          if (token == NULL)
+            return error_request (request, sender, error->message);
+        }
 
       g_variant_get_child (ref_data, 0, "&s", &for_refs_strv[0]);
       g_variant_builder_add (&tokens, "{s^as}", token, for_refs_strv);
@@ -522,9 +560,9 @@ handle_request_ref_tokens (FlatpakAuthenticator *authenticator,
   g_variant_builder_add (&results, "{sv}", "tokens", g_variant_builder_end (&tokens));
 
   g_debug ("emiting OK response");
-  flatpak_auth_request_emit_response (request, sender,
-                                      FLATPAK_AUTH_RESPONSE_OK,
-                                      g_variant_builder_end (&results));
+  flatpak_authenticator_request_emit_response (request,
+                                               FLATPAK_AUTH_RESPONSE_OK,
+                                               g_variant_builder_end (&results));
 
   return TRUE;
 }

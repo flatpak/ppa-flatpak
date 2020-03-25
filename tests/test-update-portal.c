@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -128,7 +130,6 @@ progress_cb (PortalFlatpakUpdateMonitor *object,
              GVariant *arg_info,
              UpdateData *data)
 {
-  g_autofree char *args = g_variant_print (arg_info, FALSE);
   guint32 op = 0;
   guint32 n_ops = 0;
   guint32 progress = 0;

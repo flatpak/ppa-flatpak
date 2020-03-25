@@ -1,3 +1,59 @@
+Changes in 1.6.2
+================
+
+Due to a combination of some behaviour in flatpak and recent versions of ostree we at some
+point lost the use of deltas for the initial install case, instead always falling back
+to a full ostree operation which is a lot less efficient for pulls with many small files
+like a runtime. This caused some very slow installs from e.g. flathub, so I recommend
+everyone update to this version to get better install performance.
+
+Other changes are:
+ * We now correctly handle TMPDIR env var overrides when bwrap is setuid
+ * Disallow running "flatpak run" under sudo (as it doesn't work and causes issues)
+ * Fix build with older versions of glib
+ * Minor documentation updates
+ * Updated translations
+
+Changes in 1.6.1
+================
+
+This is a (mild) security update. Flatpak 1.6.0 added the ability for an application to request it to be
+updated, as long as the new version doesn't require new permissions. Unfortunately in some special cases,
+if an app had acces to the home directory, but not the rest of the filesystem it would still allow a
+self-update where the new version could access some files outside the home directory..
+
+This is fixed in this version, and all users of 1.6.0 are recommended to update.
+
+Other changes are:
+
+ * New permission --device=shm giving access to host /dev/shm, as needed for jack.
+ * Generated correct download size in build-commit-from
+ * sub-sandbox now allows the child to share the gpu of the caller has full device access
+ * Fix crash with disabled remotes
+ * Fix builds with older versions of glib
+ * Update translations
+
+Changes in 1.6.0
+================
+
+This is the first stable release in the 1.6 series, main changes
+since 1.4 is the support for protected content and improvements
+in the self-sandboxing support.
+
+There is one change in the support for OCI remotes, we now
+only support the use of labels, not annotations, as labels
+work with more registries. This means pre-existing OCI flatpak
+registries (like fedora) may need some changes.
+
+Changes since 1.5.2:
+ * New permissions --socket=cups for direct cups access
+ * Fix some leaks
+ * Fix reporting of progress with latest version of ostree
+ * New no-interaction flag for authenticators
+ * Support for auto-installing authenticators from a flatpak remote
+ * Warn less about unset XDG_DATA_DIRS
+ * Don't poll for updates in the portal when on a metered connection
+
 Changes in 1.5.2
 ================
 

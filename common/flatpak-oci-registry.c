@@ -901,6 +901,7 @@ object_get_string_member_with_default (JsonNode *json,
 
 static char *
 get_token_for_www_auth (FlatpakOciRegistry *self,
+                        const char    *repository,
                         const char    *www_authenticate,
                         const char    *auth,
                         GCancellable  *cancellable,
@@ -911,6 +912,7 @@ get_token_for_www_auth (FlatpakOciRegistry *self,
   g_autoptr(GHashTable) params = NULL;
   g_autoptr(GHashTable) args = NULL;
   const char *realm, *service, *scope, *token;
+  g_autofree char *default_scope = NULL;
   g_autoptr(SoupURI) auth_uri = NULL;
   g_autoptr(GBytes) body = NULL;
   g_autoptr(JsonNode) json = NULL;
@@ -941,16 +943,21 @@ get_token_for_www_auth (FlatpakOciRegistry *self,
   service = g_hash_table_lookup (params, "service");
   if (service)
     g_hash_table_insert (args, "service", (char *)service);
+
   scope = g_hash_table_lookup (params, "scope");
-  if (scope)
-    g_hash_table_insert (args, "scope", (char *)scope);
+  if (scope == NULL)
+    scope = default_scope = g_strdup_printf("repository:%s:pull", repository);
+  g_hash_table_insert (args, "scope", (char *)scope);
 
   soup_uri_set_query_from_form (auth_uri, args);
 
   auth_msg = soup_message_new_from_uri ("GET", auth_uri);
 
-  g_autofree char *basic_auth = g_strdup_printf ("Basic %s", auth);
-  soup_message_headers_replace (auth_msg->request_headers, "Authorization", basic_auth);
+  if (auth)
+    {
+      g_autofree char *basic_auth = g_strdup_printf ("Basic %s", auth);
+      soup_message_headers_replace (auth_msg->request_headers, "Authorization", basic_auth);
+    }
 
   auth_stream = soup_session_send (self->soup_session, auth_msg, NULL, error);
   if (auth_stream == NULL)
@@ -1030,7 +1037,7 @@ flatpak_oci_registry_get_token (FlatpakOciRegistry *self,
       return NULL;
     }
 
-  token = get_token_for_www_auth (self, www_authenticate, basic_auth, cancellable, error);
+  token = get_token_for_www_auth (self, repository, www_authenticate, basic_auth, cancellable, error);
   if (token == NULL)
     return NULL;
 
@@ -2097,8 +2104,6 @@ get_image_metadata (FlatpakOciIndexImage *img, const char *key)
       if (ref)
         return ref;
     }
-  if (img->annotations)
-    return g_hash_table_lookup (img->annotations, key);
   return NULL;
 }
 
@@ -2142,9 +2147,6 @@ flatpak_oci_index_ensure_cached (SoupSession  *soup_session,
   const char *oci_arch = NULL;
   gboolean success = FALSE;
   g_autoptr(GError) local_error = NULL;
-  gboolean use_labels = FALSE;
-  const char *query_uri_part;
-  const char *metadata_query;
 
   if (!g_str_has_prefix (uri, "oci+http:") && !g_str_has_prefix (uri, "oci+https:"))
     {
@@ -2184,27 +2186,15 @@ flatpak_oci_index_ensure_cached (SoupSession  *soup_session,
       g_clear_pointer (&tag, g_free);
       tag = g_strdup ("latest");
     }
+
   soup_uri_set_fragment (base_uri, NULL);
-
-  query_uri_part = soup_uri_get_query (base_uri);
-  if (query_uri_part)
-    {
-      g_autoptr(GHashTable) query_args = soup_form_decode (query_uri_part);
-      const char *index = g_hash_table_lookup (query_args, "index");
-      use_labels = g_strcmp0 (index, "labels") == 0;
-    }
-
-  if (use_labels)
-    metadata_query = "label:org.flatpak.ref:exists";
-  else
-    metadata_query = "annotation:org.flatpak.ref:exists";
 
   query_uri = soup_uri_copy (base_uri);
 
   oci_arch = flatpak_arch_to_oci_arch (flatpak_get_arch ());
 
   soup_uri_set_query_from_fields (query_uri,
-                                  metadata_query, "1",
+                                  "label:org.flatpak.ref:exists", "1",
                                   "architecture", oci_arch,
                                   "os", "linux",
                                   "tag", tag,
@@ -2532,7 +2522,7 @@ add_image_to_appstream (SoupSession               *soup_session,
 
   static struct
   {
-    const char *annotation;
+    const char *label;
     const char *subdir;
   } icon_sizes[] = {
     { "org.freedesktop.appstream.icon-64", "64x64" },
@@ -2595,7 +2585,7 @@ add_image_to_appstream (SoupSession               *soup_session,
 
   for (i = 0; i < G_N_ELEMENTS (icon_sizes); i++)
     {
-      const char *icon_data = get_image_metadata (image, icon_sizes[i].annotation);
+      const char *icon_data = get_image_metadata (image, icon_sizes[i].label);
       if (icon_data)
         {
           if (!add_icon_image (soup_session,
@@ -2623,7 +2613,7 @@ clean_unused_icons_recurse (int           icons_dfd,
                             GCancellable *cancellable,
                             GError      **error)
 {
-  GLnxDirFdIterator iter = { 0, };
+  g_auto(GLnxDirFdIterator) iter = { 0, };
   gboolean any_found = FALSE;
 
   if (!glnx_dirfd_iterator_init_at (icons_dfd,

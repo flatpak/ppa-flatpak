@@ -64,6 +64,17 @@
 
 #define DEFAULT_SHELL "/bin/sh"
 
+const char * const abs_usrmerged_dirs[] =
+{
+  "/bin",
+  "/lib",
+  "/lib32",
+  "/lib64",
+  "/sbin",
+  NULL
+};
+const char * const *flatpak_abs_usrmerged_dirs = abs_usrmerged_dirs;
+
 static char *
 extract_unix_path_from_dbus_address (const char *address)
 {
@@ -316,6 +327,108 @@ flatpak_run_add_pcsc_args (FlatpakBwrap *bwrap)
   flatpak_bwrap_set_env (bwrap, "PCSCLITE_CSOCK_NAME", sandbox_pcsc_socket, TRUE);
 }
 
+static gboolean
+flatpak_run_cups_check_server_is_socket (const char *server)
+{
+  if (g_str_has_prefix (server, "/") && strstr (server, ":") == NULL)
+    return TRUE;
+
+  return FALSE;
+}
+
+/* Try to find a default server from a cups confguration file */
+static char *
+flatpak_run_get_cups_server_name_config (const char *path)
+{
+  g_autoptr(GFile) file = g_file_new_for_path (path);
+  g_autoptr(GError) my_error = NULL;
+  g_autoptr(GFileInputStream) input_stream = NULL;
+  g_autoptr(GDataInputStream) data_stream = NULL;
+  size_t len;
+
+  input_stream = g_file_read (file, NULL, &my_error);
+  if (my_error)
+    {
+      g_debug ("CUPS configuration file '%s': %s", path, my_error->message);
+      return NULL;
+    }
+
+  data_stream = g_data_input_stream_new (G_INPUT_STREAM (input_stream));
+
+  while (TRUE)
+    {
+      g_autofree char *line = g_data_input_stream_read_line (data_stream, &len, NULL, NULL);
+      if (line == NULL)
+        break;
+
+      g_strchug (line);
+
+      if ((*line  == '\0') || (*line == '#'))
+        continue;
+
+      g_auto(GStrv) tokens = g_strsplit (line, " ", 2);
+
+      if ((tokens[0] != NULL) && (tokens[1] != NULL))
+        {
+          if (strcmp ("ServerName", tokens[0]) == 0)
+            {
+              g_strchug (tokens[1]);
+
+              if (flatpak_run_cups_check_server_is_socket (tokens[1]))
+                return g_strdup (tokens[1]);
+            }
+        }
+    }
+
+    return NULL;
+}
+
+static char *
+flatpak_run_get_cups_server_name (void)
+{
+  g_autofree char * cups_server = NULL;
+  g_autofree char * cups_config = NULL;
+
+  /* TODO
+   * we don't currently support cups servers located on the network, if such
+   * server is detected, we simply ignore it and in the worst case we fallback
+   * to the default socket
+   */
+  cups_server = g_strdup (g_getenv ("CUPS_SERVER"));
+  if (cups_server && flatpak_run_cups_check_server_is_socket (cups_server))
+    return cups_server;
+
+  g_free (cups_server);
+  cups_config = g_build_filename (g_get_home_dir (), ".cups/client.conf", NULL);
+  cups_server = flatpak_run_get_cups_server_name_config (cups_config);
+  if (cups_server && flatpak_run_cups_check_server_is_socket (cups_server))
+    return cups_server;
+
+  g_free (cups_server);
+  cups_server = flatpak_run_get_cups_server_name_config ("/etc/cups/client.conf");
+  if (cups_server && flatpak_run_cups_check_server_is_socket (cups_server))
+    return cups_server;
+
+  // Fallback to default socket
+  return g_strdup ("/var/run/cups/cups.sock");
+}
+
+static void
+flatpak_run_add_cups_args (FlatpakBwrap *bwrap)
+{
+  g_autofree char * sandbox_server_name = g_strdup ("/var/run/cups/cups.sock");
+  g_autofree char * cups_server_name = flatpak_run_get_cups_server_name();
+
+  if (!g_file_test (cups_server_name, G_FILE_TEST_EXISTS))
+    return;
+  else
+    g_debug ("Could not find CUPS server");
+
+  flatpak_bwrap_add_args (bwrap,
+                          "--ro-bind", cups_server_name, sandbox_server_name,
+                          NULL);
+}
+
 /* Try to find a default server from a pulseaudio confguration file */
 static char *
 flatpak_run_get_pulseaudio_server_user_config (const char *path)
@@ -475,13 +588,13 @@ flatpak_run_add_journal_args (FlatpakBwrap *bwrap)
   if (g_file_test (journal_socket_socket, G_FILE_TEST_EXISTS))
     {
       flatpak_bwrap_add_args (bwrap,
-                              "--bind", journal_socket_socket, journal_socket_socket,
+                              "--ro-bind", journal_socket_socket, journal_socket_socket,
                               NULL);
     }
   if (g_file_test (journal_stdout_socket, G_FILE_TEST_EXISTS))
     {
       flatpak_bwrap_add_args (bwrap,
-                              "--bind", journal_stdout_socket, journal_stdout_socket,
+                              "--ro-bind", journal_stdout_socket, journal_stdout_socket,
                               NULL);
     }
 }
@@ -1084,20 +1197,32 @@ flatpak_run_add_environment_args (FlatpakBwrap    *bwrap,
       flatpak_bwrap_add_args (bwrap,
                               "--dev-bind", "/dev", "/dev",
                               NULL);
-      /* Don't expose the host /dev/shm, just the device nodes */
+      /* Don't expose the host /dev/shm, just the device nodes, unless explicitly allowed */
       if (g_file_test ("/dev/shm", G_FILE_TEST_IS_DIR))
-        flatpak_bwrap_add_args (bwrap,
-                                "--tmpfs", "/dev/shm",
-                                NULL);
+        {
+          if ((context->devices & FLATPAK_CONTEXT_DEVICE_SHM) == 0)
+            flatpak_bwrap_add_args (bwrap,
+                                    "--tmpfs", "/dev/shm",
+                                    NULL);
+        }
       else if (g_file_test ("/dev/shm", G_FILE_TEST_IS_SYMLINK))
         {
           g_autofree char *link = flatpak_readlink ("/dev/shm", NULL);
+
           /* On debian (with sysv init) the host /dev/shm is a symlink to /run/shm, so we can't
              mount on top of it. */
           if (g_strcmp0 (link, "/run/shm") == 0)
-            flatpak_bwrap_add_args (bwrap,
-                                    "--dir", "/run/shm",
-                                    NULL);
+            {
+              if (context->devices & FLATPAK_CONTEXT_DEVICE_SHM &&
+                  g_file_test ("/run/shm", G_FILE_TEST_IS_DIR))
+                flatpak_bwrap_add_args (bwrap,
+                                        "--bind", "/run/shm", "/run/shm",
+                                        NULL);
+              else
+                flatpak_bwrap_add_args (bwrap,
+                                        "--dir", "/run/shm",
+                                        NULL);
+            }
           else
             g_warning ("Unexpected /dev/shm symlink %s", link);
         }
@@ -1148,6 +1273,16 @@ flatpak_run_add_environment_args (FlatpakBwrap    *bwrap,
           if (g_file_test ("/dev/kvm", G_FILE_TEST_EXISTS))
             flatpak_bwrap_add_args (bwrap, "--dev-bind", "/dev/kvm", "/dev/kvm", NULL);
         }
+
+      if (context->devices & FLATPAK_CONTEXT_DEVICE_SHM)
+        {
+          /* This is a symlink to /run/shm on debian, so bind to real target */
+          g_autofree char *real_dev_shm = realpath ("/dev/shm", NULL);
+
+          g_debug ("Allowing /dev/shm access (as %s)", real_dev_shm);
+          if (real_dev_shm != NULL)
+              flatpak_bwrap_add_args (bwrap, "--bind", real_dev_shm, "/dev/shm", NULL);
+        }
     }
 
   flatpak_context_append_bwrap_filesystem (context, bwrap, app_id, app_id_dir, previous_app_id_dirs, &exports);
@@ -1181,6 +1316,11 @@ flatpak_run_add_environment_args (FlatpakBwrap    *bwrap,
       flatpak_run_add_pcsc_args (bwrap);
     }
 
+  if (context->sockets & FLATPAK_CONTEXT_SOCKET_CUPS)
+    {
+      flatpak_run_add_cups_args (bwrap);
+    }
+
   flatpak_run_add_session_dbus_args (bwrap, proxy_arg_bwrap, context, flags, app_id);
   flatpak_run_add_system_dbus_args (bwrap, proxy_arg_bwrap, context, flags);
   flatpak_run_add_a11y_dbus_args (bwrap, proxy_arg_bwrap, context, flags);
@@ -1192,6 +1332,15 @@ flatpak_run_add_environment_args (FlatpakBwrap    *bwrap,
                               "--setenv", "LD_LIBRARY_PATH", g_environ_getenv (bwrap->envp, "LD_LIBRARY_PATH"),
                               NULL);
       flatpak_bwrap_unset_env (bwrap, "LD_LIBRARY_PATH");
+    }
+
+  if (g_environ_getenv (bwrap->envp, "TMPDIR") != NULL)
+    {
+      /* TMPDIR is overridden for setuid helper, so pass it as cmdline arg */
+      flatpak_bwrap_add_args (bwrap,
+                              "--setenv", "TMPDIR", g_environ_getenv (bwrap->envp, "TMPDIR"),
+                              NULL);
+      flatpak_bwrap_unset_env (bwrap, "TMPDIR");
     }
 
   /* Must run this before spawning the dbus proxy, to ensure it
@@ -2038,10 +2187,10 @@ flatpak_run_add_dconf_args (FlatpakBwrap *bwrap,
 gboolean
 flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
                                GFile          *app_files,
-                               GVariant       *app_deploy_data,
+                               GBytes         *app_deploy_data,
                                const char     *app_extensions,
                                GFile          *runtime_files,
-                               GVariant       *runtime_deploy_data,
+                               GBytes         *runtime_deploy_data,
                                const char     *runtime_extensions,
                                const char     *app_id,
                                const char     *app_branch,
@@ -2661,22 +2810,25 @@ static void
 flatpak_run_setup_usr_links (FlatpakBwrap *bwrap,
                              GFile        *runtime_files)
 {
-  const char *usr_links[] = {"lib", "lib32", "lib64", "bin", "sbin"};
   int i;
 
   if (runtime_files == NULL)
     return;
 
-  for (i = 0; i < G_N_ELEMENTS (usr_links); i++)
+  for (i = 0; flatpak_abs_usrmerged_dirs[i] != NULL; i++)
     {
-      const char *subdir = usr_links[i];
-      g_autoptr(GFile) runtime_subdir = g_file_get_child (runtime_files, subdir);
+      const char *subdir = flatpak_abs_usrmerged_dirs[i];
+      g_autoptr(GFile) runtime_subdir = NULL;
+
+      g_assert (subdir[0] == '/');
+      /* Skip the '/' when using as a subdirectory of the runtime */
+      runtime_subdir = g_file_get_child (runtime_files, subdir + 1);
+
       if (g_file_query_exists (runtime_subdir, NULL))
         {
-          g_autofree char *link = g_strconcat ("usr/", subdir, NULL);
-          g_autofree char *dest = g_strconcat ("/", subdir, NULL);
+          g_autofree char *link = g_strconcat ("usr", subdir, NULL);
           flatpak_bwrap_add_args (bwrap,
-                                  "--symlink", link, dest,
+                                  "--symlink", link, subdir,
                                   NULL);
         }
     }
@@ -2692,16 +2844,12 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
 {
   g_autofree char *run_dir = NULL;
   g_autofree char *passwd_contents = NULL;
-  g_autofree char *group_contents = NULL;
+  g_autoptr(GString) group_contents = NULL;
   const char *pkcs11_conf_contents = NULL;
   struct group *g;
   gulong pers;
   gid_t gid = getgid ();
   g_autoptr(GFile) etc = NULL;
-
-  g = getgrgid (gid);
-  if (g == NULL)
-    return flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Invalid group: %d"), gid);
 
   run_dir = g_strdup_printf ("/run/user/%d", getuid ());
 
@@ -2713,10 +2861,14 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
                                      g_get_home_dir (),
                                      DEFAULT_SHELL);
 
-  group_contents = g_strdup_printf ("%s:x:%d:%s\n"
-                                    "nfsnobody:x:65534:\n",
-                                    g->gr_name,
-                                    gid, g_get_user_name ());
+  group_contents = g_string_new ("");
+  g = getgrgid (gid);
+  /* if NULL, the primary group is not known outside the container, so
+   * it might as well stay unknown inside the container... */
+  if (g != NULL)
+    g_string_append_printf (group_contents, "%s:x:%d:%s\n",
+                            g->gr_name, gid, g_get_user_name ());
+  g_string_append (group_contents, "nfsnobody:x:65534:\n");
 
   pkcs11_conf_contents =
     "# Disable user pkcs11 config, because the host modules don't work in the runtime\n"
@@ -2759,7 +2911,7 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
   if (!flatpak_bwrap_add_args_data (bwrap, "passwd", passwd_contents, -1, "/etc/passwd", error))
     return FALSE;
 
-  if (!flatpak_bwrap_add_args_data (bwrap, "group", group_contents, -1, "/etc/group", error))
+  if (!flatpak_bwrap_add_args_data (bwrap, "group", group_contents->str, -1, "/etc/group", error))
     return FALSE;
 
   if (!flatpak_bwrap_add_args_data (bwrap, "pkcs11.conf", pkcs11_conf_contents, -1, "/etc/pkcs11/pkcs11.conf", error))
@@ -3028,8 +3180,8 @@ flatpak_context_load_for_deploy (FlatpakDeploy *deploy,
 }
 
 static char *
-calculate_ld_cache_checksum (GVariant   *app_deploy_data,
-                             GVariant   *runtime_deploy_data,
+calculate_ld_cache_checksum (GBytes   *app_deploy_data,
+                             GBytes   *runtime_deploy_data,
                              const char *app_extensions,
                              const char *runtime_extensions)
 {
@@ -3288,6 +3440,27 @@ open_namespace_fd_if_needed (const char *path, const char *type)
   return -1;
 }
 
+static gboolean
+check_sudo (GError **error)
+{
+  const char *sudo_command_env = g_getenv ("SUDO_COMMAND");
+  g_auto(GStrv) split_command = NULL;
+
+  /* This check exists to stop accidental usage of `sudo flatpak run`
+     and is not to prevent running as root.
+   */
+
+  if (!sudo_command_env)
+    return TRUE;
+
+  /* SUDO_COMMAND could be a value like `/usr/bin/flatpak run foo` */
+  split_command = g_strsplit (sudo_command_env, " ", 2);
+  if (g_str_has_suffix (split_command[0], "flatpak"))
+    return flatpak_fail_error (error, FLATPAK_ERROR, _("\"flatpak run\" is not intended to be ran with sudo"));
+
+  return TRUE;
+}
+
 gboolean
 flatpak_run_app (const char     *app_ref,
                  FlatpakDeploy  *app_deploy,
@@ -3306,8 +3479,8 @@ flatpak_run_app (const char     *app_ref,
                  GError        **error)
 {
   g_autoptr(FlatpakDeploy) runtime_deploy = NULL;
-  g_autoptr(GVariant) runtime_deploy_data = NULL;
-  g_autoptr(GVariant) app_deploy_data = NULL;
+  g_autoptr(GBytes) runtime_deploy_data = NULL;
+  g_autoptr(GBytes) app_deploy_data = NULL;
   g_autoptr(GFile) app_files = NULL;
   g_autoptr(GFile) runtime_files = NULL;
   g_autoptr(GFile) bin_ldconfig = NULL;
@@ -3343,6 +3516,9 @@ flatpak_run_app (const char     *app_ref,
   gboolean parent_expose_pids = (flags & FLATPAK_RUN_FLAG_PARENT_EXPOSE_PIDS) != 0;
 
   struct stat s;
+
+  if (!check_sudo (error))
+    return FALSE;
 
   app_ref_parts = flatpak_decompose_ref (app_ref, error);
   if (app_ref_parts == NULL)
