@@ -48,7 +48,7 @@ Build-Depends:
  ostree (>= 2019.2) <!nocheck>,
  policykit-1 <!nocheck>,
  procps,
- python3 <!nocheck>,
+ python3:any,
  shared-mime-info <!nocheck>,
  socat <!nocheck>,
  xdg-dbus-proxy (>= 0.1.0),

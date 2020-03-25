@@ -5,6 +5,8 @@ flatpak (1.7.0~git20200325-1) UNRELEASED; urgency=medium
     - d/gbp.conf: Use upstream/latest branch
     - d/watch: Watch for development releases
   * New upstream snapshot
+  * Build-depend on python3 even when not running tests, for
+    variant-schema-compiler
 
  -- Simon McVittie <smcv@debian.org>  Wed, 25 Mar 2020 12:32:31 +0000
 
