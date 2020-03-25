@@ -177,6 +177,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_transaction_add_install_bundle@Base 0.11.8
  flatpak_transaction_add_install_flatpakref@Base 0.99.3
  flatpak_transaction_add_rebase@Base 1.3.2
+ flatpak_transaction_add_sideload_repo@Base 1.7.0~git20200325
  flatpak_transaction_add_uninstall@Base 0.11.8
  flatpak_transaction_add_update@Base 0.11.8
  flatpak_transaction_complete_basic_auth@Base 1.5.2
