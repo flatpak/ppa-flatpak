@@ -48,6 +48,7 @@
 #include "flatpak-run-private.h"
 #include "flatpak-utils-base-private.h"
 #include "flatpak-utils-private.h"
+#include "flatpak-variant-impl-private.h"
 #include "libglnx/libglnx.h"
 #include "valgrind-private.h"
 
@@ -2525,6 +2526,34 @@ flatpak_open_in_tmpdir_at (int             tmpdir_fd,
 }
 
 gboolean
+flatpak_bytes_save (GFile        *dest,
+                    GBytes       *bytes,
+                    GCancellable *cancellable,
+                    GError      **error)
+{
+  g_autoptr(GOutputStream) out = NULL;
+
+  out = (GOutputStream *) g_file_replace (dest, NULL, FALSE,
+                                          G_FILE_CREATE_REPLACE_DESTINATION,
+                                          cancellable, error);
+  if (out == NULL)
+    return FALSE;
+
+  if (!g_output_stream_write_all (out,
+                                  g_bytes_get_data (bytes, NULL),
+                                  g_bytes_get_size (bytes),
+                                  NULL,
+                                  cancellable,
+                                  error))
+    return FALSE;
+
+  if (!g_output_stream_close (out, cancellable, error))
+    return FALSE;
+
+  return TRUE;
+}
+
+gboolean
 flatpak_variant_save (GFile        *dest,
                       GVariant     *variant,
                       GCancellable *cancellable,
@@ -2553,18 +2582,20 @@ flatpak_variant_save (GFile        *dest,
   return TRUE;
 }
 
-gboolean
-flatpak_variant_bsearch_str (GVariant   *array,
-                             const char *str,
-                             int        *out_pos)
+/* This special cases the ref lookup which by doing a
+   bsearch since the array is sorted */
+static gboolean
+flatpak_var_ref_map_lookup_ref (VarRefMapRef   ref_map,
+                                const char    *ref,
+                                VarRefInfoRef *out_info)
 {
   gsize imax, imin;
   gsize imid;
   gsize n;
 
-  g_return_val_if_fail (out_pos != NULL, FALSE);
+  g_return_val_if_fail (out_info != NULL, FALSE);
 
-  n = g_variant_n_children (array);
+  n = var_ref_map_get_length (ref_map);
   if (n == 0)
     return FALSE;
 
@@ -2572,18 +2603,16 @@ flatpak_variant_bsearch_str (GVariant   *array,
   imin = 0;
   while (imax >= imin)
     {
-      g_autoptr(GVariant) child = NULL;
-      g_autoptr(GVariant) cur_v = NULL;
+      VarRefMapEntryRef entry;
       const char *cur;
       int cmp;
 
       imid = (imin + imax) / 2;
 
-      child = g_variant_get_child_value (array, imid);
-      cur_v = g_variant_get_child_value (child, 0);
-      cur = g_variant_get_data (cur_v);
+      entry = var_ref_map_get_at (ref_map, imid);
+      cur = var_ref_map_entry_get_ref (entry);
 
-      cmp = strcmp (cur, str);
+      cmp = strcmp (cur, ref);
       if (cmp < 0)
         {
           imin = imid + 1;
@@ -2596,65 +2625,65 @@ flatpak_variant_bsearch_str (GVariant   *array,
         }
       else
         {
-          *out_pos = imid;
+          *out_info = var_ref_map_entry_get_info (entry);
           return TRUE;
         }
     }
 
-  *out_pos = imid;
   return FALSE;
 }
 
 /* Find the list of refs which belong to the given @collection_id in @summary.
  * If @collection_id is %NULL, the main refs list from the summary will be
  * returned. If @collection_id doesn’t match any collection IDs in the summary
- * file, %NULL will be returned. */
-static GVariant *
-summary_find_refs_list (GVariant   *summary,
-                        const char *collection_id)
+ * file, %FALSE will be returned. */
+static gboolean
+summary_find_ref_map (VarSummaryRef summary,
+                      const char *collection_id,
+                      VarRefMapRef *refs_out)
 {
-  g_autoptr(GVariant) refs = NULL;
-  g_autoptr(GVariant) metadata = g_variant_get_child_value (summary, 1);
+  VarMetadataRef metadata = var_summary_get_metadata (summary);
   const char *summary_collection_id;
 
-  if (!g_variant_lookup (metadata, "ostree.summary.collection-id", "&s", &summary_collection_id))
-    summary_collection_id = NULL;
+  summary_collection_id = var_metadata_lookup_string (metadata, "ostree.summary.collection-id", NULL);
 
   if (collection_id == NULL || g_strcmp0 (collection_id, summary_collection_id) == 0)
     {
-      refs = g_variant_get_child_value (summary, 0);
+      *refs_out = var_summary_get_ref_map (summary);
+      return TRUE;
     }
   else if (collection_id != NULL)
     {
-      g_autoptr(GVariant) collection_map = NULL;
-
-      collection_map = g_variant_lookup_value (metadata, "ostree.summary.collection-map",
-                                               G_VARIANT_TYPE ("a{sa(s(taya{sv}))}"));
-      if (collection_map != NULL)
-        refs = g_variant_lookup_value (collection_map, collection_id, G_VARIANT_TYPE ("a(s(taya{sv}))"));
+      VarVariantRef collection_map_v;
+      if (var_metadata_lookup (metadata, "ostree.summary.collection-map", NULL, &collection_map_v))
+        {
+          VarCollectionMapRef collection_map = var_collection_map_from_variant (collection_map_v);
+          return var_collection_map_lookup (collection_map, collection_id, NULL, refs_out);
+        }
     }
 
-  return g_steal_pointer (&refs);
+  return FALSE;
 }
 
 /* This matches all refs from @collection_id that have ref, followed by '.'  as prefix */
 char **
-flatpak_summary_match_subrefs (GVariant   *summary,
+flatpak_summary_match_subrefs (GVariant   *summary_v,
                                const char *collection_id,
                                const char *ref)
 {
-  g_autoptr(GVariant) refs = NULL;
   GPtrArray *res = g_ptr_array_new ();
   gsize n, i;
   g_auto(GStrv) parts = NULL;
   g_autofree char *parts_prefix = NULL;
   g_autofree char *ref_prefix = NULL;
   g_autofree char *ref_suffix = NULL;
+  VarSummaryRef summary;
+  VarRefMapRef ref_map;
+
+  summary = var_summary_from_gvariant (summary_v);
 
   /* Work out which refs list to use, based on the @collection_id. */
-  refs = summary_find_refs_list (summary, collection_id);
-
-  if (refs != NULL)
+  if (summary_find_ref_map (summary, collection_id, &ref_map))
     {
       /* Match against the refs. */
       parts = g_strsplit (ref, "/", 0);
@@ -2663,17 +2692,14 @@ flatpak_summary_match_subrefs (GVariant   *summary,
       ref_prefix = g_strconcat (parts[0], "/", NULL);
       ref_suffix = g_strconcat ("/", parts[2], "/", parts[3], NULL);
 
-      n = g_variant_n_children (refs);
+      n = var_ref_map_get_length (ref_map);
       for (i = 0; i < n; i++)
         {
-          g_autoptr(GVariant) child = NULL;
-          g_autoptr(GVariant) cur_v = NULL;
+          VarRefMapEntryRef entry = var_ref_map_get_at (ref_map, i);
           const char *cur;
           const char *id_start;
 
-          child = g_variant_get_child_value (refs, i);
-          cur_v = g_variant_get_child_value (child, 0);
-          cur = g_variant_get_data (cur_v);
+          cur = var_ref_map_entry_get_ref (entry);
 
           /* Must match type */
           if (!g_str_has_prefix (cur, ref_prefix))
@@ -2700,38 +2726,36 @@ flatpak_summary_match_subrefs (GVariant   *summary,
 }
 
 gboolean
-flatpak_summary_lookup_ref (GVariant   *summary,
-                            const char *collection_id,
-                            const char *ref,
-                            char      **out_checksum,
-                            GVariant  **out_variant)
+flatpak_summary_lookup_ref (GVariant      *summary_v,
+                            const char    *collection_id,
+                            const char    *ref,
+                            char         **out_checksum,
+                            VarRefInfoRef *out_info)
 {
-  g_autoptr(GVariant) refs = NULL;
-  int pos;
-  g_autoptr(GVariant) refdata = NULL;
-  g_autoptr(GVariant) reftargetdata = NULL;
-  guint64 commit_size;
-  g_autoptr(GVariant) commit_csum_v = NULL;
+  VarSummaryRef summary;
+  VarRefMapRef ref_map;
+  VarRefInfoRef info;
+  const guchar *checksum_bytes;
+  gsize checksum_bytes_len;
 
-  refs = summary_find_refs_list (summary, collection_id);
-  if (refs == NULL)
+  summary = var_summary_from_gvariant (summary_v);
+
+  /* Work out which refs list to use, based on the @collection_id. */
+  if (!summary_find_ref_map (summary, collection_id, &ref_map))
     return FALSE;
 
-  if (!flatpak_variant_bsearch_str (refs, ref, &pos))
+  if (!flatpak_var_ref_map_lookup_ref (ref_map, ref, &info))
     return FALSE;
 
-  refdata = g_variant_get_child_value (refs, pos);
-  reftargetdata = g_variant_get_child_value (refdata, 1);
-  g_variant_get (reftargetdata, "(t@ay@a{sv})", &commit_size, &commit_csum_v, NULL);
-
-  if (!ostree_validate_structureof_csum_v (commit_csum_v, NULL))
+  checksum_bytes = var_ref_info_peek_checksum (info, &checksum_bytes_len);
+  if (G_UNLIKELY (checksum_bytes_len != OSTREE_SHA256_DIGEST_LEN))
     return FALSE;
 
   if (out_checksum)
-    *out_checksum = ostree_checksum_from_bytes_v (commit_csum_v);
+    *out_checksum = ostree_checksum_from_bytes (checksum_bytes);
 
-  if (out_variant)
-    *out_variant = g_steal_pointer (&reftargetdata);
+  if (out_info)
+    *out_info = info;
 
   return TRUE;
 }
@@ -2852,7 +2876,7 @@ flatpak_parse_repofile (const char   *remote_name,
   /* If a collection ID is set, refs are verified from commit metadata rather
    * than the summary file. */
   g_key_file_set_boolean (config, group, "gpg-verify-summary",
-                          (gpg_key != NULL && collection_id == NULL));
+                          (gpg_key != NULL));
 
   authenticator_name = g_key_file_get_string (keyfile, FLATPAK_REPO_GROUP,
                                               FLATPAK_REPO_AUTHENTICATOR_NAME_KEY, NULL);
@@ -3087,6 +3111,18 @@ flatpak_repo_set_deploy_collection_id (OstreeRepo *repo,
 
   config = ostree_repo_copy_config (repo);
   g_key_file_set_boolean (config, "flatpak", "deploy-collection-id", deploy_collection_id);
+  return ostree_repo_write_config (repo, config, error);
+}
+
+gboolean
+flatpak_repo_set_deploy_sideload_collection_id (OstreeRepo *repo,
+                                           gboolean    deploy_collection_id,
+                                           GError    **error)
+{
+  g_autoptr(GKeyFile) config = NULL;
+
+  config = ostree_repo_copy_config (repo);
+  g_key_file_set_boolean (config, "flatpak", "deploy-sideload-collection-id", deploy_collection_id);
   return ostree_repo_write_config (repo, config, error);
 }
 
@@ -3510,6 +3546,7 @@ flatpak_repo_update (OstreeRepo   *repo,
   g_autofree char *old_ostree_metadata_checksum = NULL;
   g_autoptr(GVariant) old_ostree_metadata_v = NULL;
   gboolean deploy_collection_id = FALSE;
+  gboolean deploy_sideload_collection_id = FALSE;
 
   config = ostree_repo_get_config (repo);
 
@@ -3523,6 +3560,7 @@ flatpak_repo_update (OstreeRepo   *repo,
       default_branch = g_key_file_get_string (config, "flatpak", "default-branch", NULL);
       gpg_keys = g_key_file_get_string (config, "flatpak", "gpg-keys", NULL);
       redirect_url = g_key_file_get_string (config, "flatpak", "redirect-url", NULL);
+      deploy_sideload_collection_id = g_key_file_get_boolean (config, "flatpak", "deploy-sideload-collection-id", NULL);
       deploy_collection_id = g_key_file_get_boolean (config, "flatpak", "deploy-collection-id", NULL);
       authenticator_name = g_key_file_get_string (config, "flatpak", "authenticator-name", NULL);
       if (g_key_file_has_key (config, "flatpak", "authenticator-install", NULL))
@@ -3563,6 +3601,9 @@ flatpak_repo_update (OstreeRepo   *repo,
 
   if (deploy_collection_id && collection_id != NULL)
     g_variant_builder_add (builder, "{sv}", OSTREE_META_KEY_DEPLOY_COLLECTION_ID,
+                           g_variant_new_string (collection_id));
+  else if (deploy_sideload_collection_id && collection_id != NULL)
+    g_variant_builder_add (builder, "{sv}", "xa.deploy-collection-id",
                            g_variant_new_string (collection_id));
   else if (deploy_collection_id)
     g_debug ("Ignoring deploy-collection-id=true because no collection ID is set.");
@@ -3714,7 +3755,8 @@ flatpak_repo_update (OstreeRepo   *repo,
 
       g_variant_lookup (commit_metadata, OSTREE_COMMIT_META_KEY_ENDOFLIFE, "&s", &eol);
       g_variant_lookup (commit_metadata, OSTREE_COMMIT_META_KEY_ENDOFLIFE_REBASE, "&s", &eol_rebase);
-      g_variant_lookup (commit_metadata, "xa.token-type", "i", &token_type);
+      if (g_variant_lookup (commit_metadata, "xa.token-type", "i", &token_type))
+        token_type = GINT32_FROM_LE(token_type);
       if (eol || eol_rebase || token_type >= 0)
         {
           g_auto(GVariantBuilder) sparse_builder = FLATPAK_VARIANT_BUILDER_INITIALIZER;
@@ -3724,7 +3766,7 @@ flatpak_repo_update (OstreeRepo   *repo,
           if (eol_rebase)
             g_variant_builder_add (&sparse_builder, "{sv}", FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE, g_variant_new_string (eol_rebase));
           if (token_type >= 0)
-            g_variant_builder_add (&sparse_builder, "{sv}", FLATPAK_SPARSE_CACHE_KEY_TOKEN_TYPE, g_variant_new_int32 (token_type));
+            g_variant_builder_add (&sparse_builder, "{sv}", FLATPAK_SPARSE_CACHE_KEY_TOKEN_TYPE, g_variant_new_int32 (GINT32_TO_LE(token_type)));
 
           rev_data->sparse_data = g_variant_ref_sink (g_variant_builder_end (&sparse_builder));
         }
@@ -4693,7 +4735,7 @@ flatpak_extension_new (const char *id,
                        gboolean    is_unmaintained)
 {
   FlatpakExtension *ext = g_new0 (FlatpakExtension, 1);
-  g_autoptr(GVariant) deploy_data = NULL;
+  g_autoptr(GBytes) deploy_data = NULL;
 
   ext->id = g_strdup (id);
   ext->installed_id = g_strdup (extension);
@@ -4731,14 +4773,14 @@ flatpak_extension_new (const char *id,
 
 gboolean
 flatpak_extension_matches_reason (const char *extension_id,
-                                  const char *reason,
+                                  const char *reasons,
                                   gboolean    default_value)
 {
   const char *extension_basename;
   g_auto(GStrv) reason_list = NULL;
   size_t i;
 
-  if (reason == NULL || *reason == 0)
+  if (reasons == NULL || *reasons == 0)
     return default_value;
 
   extension_basename = strrchr (extension_id, '.');
@@ -4746,7 +4788,7 @@ flatpak_extension_matches_reason (const char *extension_id,
     return FALSE;
   extension_basename += 1;
 
-  reason_list = g_strsplit (reason, ";", -1);
+  reason_list = g_strsplit (reasons, ";", -1);
 
   for (i = 0; reason_list[i]; ++i)
     {
@@ -7490,27 +7532,58 @@ gboolean
 flatpak_dconf_path_is_similar (const char *path1,
                                const char *path2)
 {
-  int i;
+  int i, i1, i2;
+  int num_components = -1;
 
-  for (i = 0; path1[i]; i++)
+  for (i = 0; path1[i] != '\0'; i++)
     {
       if (path2[i] == '\0')
-        return FALSE;
+        break;
 
       if (tolower (path1[i]) == tolower (path2[i]))
-        continue;
+        {
+          if (path1[i] == '/')
+            num_components++;
+          continue;
+        }
 
       if ((path1[i] == '-' || path1[i] == '_') &&
           (path2[i] == '-' || path2[i] == '_'))
         continue;
 
-      return FALSE;
+      break;
     }
 
-  if (path2[i] != '\0')
+  /* Skip over any versioning if we have at least a TLD and
+   * domain name, so 2 components */
+  /* We need at least TLD, and domain name, so 2 components */
+  i1 = i2 = i;
+  if (num_components >= 2)
+    {
+      while (isdigit (path1[i1]))
+        i1++;
+      while (isdigit (path2[i2]))
+        i2++;
+    }
+
+  if (path1[i1] != path2[i2])
     return FALSE;
 
-  return TRUE;
+  /* Both strings finished? */
+  if (path1[i1] == '\0')
+    return TRUE;
+
+  /* Maybe a trailing slash in both strings */
+  if (path1[i1] == '/')
+    {
+      i1++;
+      i2++;
+    }
+
+  if (path1[i1] != path2[i2])
+    return FALSE;
+
+  return (path1[i1] == '\0');
 }
 
 

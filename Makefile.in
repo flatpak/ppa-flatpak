@@ -380,6 +380,8 @@ am__libflatpak_common_la_SOURCES_DIST = common/flatpak.h \
 	common/flatpak-utils-http-private.h \
 	common/flatpak-utils-http.c common/flatpak-utils-private.h \
 	common/flatpak-utils.c common/valgrind-private.h \
+	common/flatpak-variant-private.h \
+	common/flatpak-variant-impl-private.h \
 	common/flatpak-parental-controls.c \
 	common/flatpak-parental-controls-private.h
 am__objects_3 = $(am__objects_1)
@@ -1183,23 +1185,19 @@ am__EXEEXT_11 = tests/test-run@user,nodeltas.wrap \
 	tests/test-info@user.wrap tests/test-info@system.wrap \
 	tests/test-repo@user.wrap tests/test-repo@system.wrap \
 	tests/test-repo@system-norevokefs.wrap \
-	tests/test-repo@collections.wrap \
-	tests/test-repo@collections-server-only.wrap \
+	tests/test-sideload@user.wrap tests/test-sideload@system.wrap \
 	tests/test-bundle@user.wrap tests/test-bundle@system.wrap \
 	tests/test-bundle@system-norevokefs.wrap \
 	tests/test-oci-registry@user.wrap \
-	tests/test-oci-registry@system.wrap \
-	tests/test-auth@nocollections.wrap \
-	tests/test-auth@collections.wrap $(am__EXEEXT_1)
+	tests/test-oci-registry@system.wrap $(am__EXEEXT_1)
 am__EXEEXT_12 = $(am__EXEEXT_11)
 am__EXEEXT_13 = tests/test-basic.sh tests/test-completion.sh \
 	tests/test-config.sh tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh tests/test-default-remotes.sh \
 	tests/test-extensions.sh tests/test-oci.sh \
-	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	tests/test-override.sh tests/test-update-portal.sh \
-	$(am__EXEEXT_1)
+	tests/test-auth.sh $(am__EXEEXT_1)
 am__EXEEXT_14 = $(am__EXEEXT_13)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
@@ -1453,6 +1451,8 @@ XML_LIBS = @XML_LIBS@
 XSLTPROC = @XSLTPROC@
 YACC = @YACC@
 YFLAGS = @YFLAGS@
+_GI_EXP_DATADIR = @_GI_EXP_DATADIR@
+_GI_EXP_LIBDIR = @_GI_EXP_LIBDIR@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -1499,6 +1499,7 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -1524,6 +1525,8 @@ noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
 	$(systemduserunit_DATA) \
 	$(nodist_libflatpak_common_base_la_SOURCES) \
+	common/flatpak-variant-private.h \
+	common/flatpak-variant-impl-private.h \
 	$(nodist_libflatpak_common_la_SOURCES) $(am__append_21) \
 	app/parse-datetime.c $(flatpak_dbus_built_sources) \
 	$(nodist_flatpak_portal_SOURCES) \
@@ -1538,6 +1541,8 @@ DISTCLEANFILES = $(NULL) $(am__append_24) flatpak.pp.bz2 \
 	tests/share/xdg-desktop-portal/portals/test.portal \
 	tests/package_version.txt $(NULL) flatpak.env
 BUILT_SOURCES = $(NULL) $(nodist_libflatpak_common_base_la_SOURCES) \
+	common/flatpak-variant-private.h \
+	common/flatpak-variant-impl-private.h \
 	$(nodist_libflatpak_common_la_SOURCES) \
 	$(flatpak_dbus_built_sources) $(nodist_flatpak_portal_SOURCES) \
 	$(nodist_flatpak_oci_authenticator_SOURCES)
@@ -1553,7 +1558,8 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	data/org.freedesktop.Flatpak.xml \
 	data/org.freedesktop.Flatpak.Authenticator.xml \
 	data/org.freedesktop.portal.Flatpak.xml \
-	data/flatpak-docker-seccomp.json $(NULL) app/parse-datetime.y \
+	data/flatpak-docker-seccomp.json data/flatpak-variants.gv \
+	$(NULL) app/parse-datetime.y \
 	system-helper/org.freedesktop.Flatpak.policy.in \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.conf \
 	system-helper/org.freedesktop.Flatpak.rules.in \
@@ -1565,7 +1571,9 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	tests/test-wrapper.sh $(bashcompletion_DATA) \
 	$(zshcompletion_DATA) $(profile_DATA) env.d/flatpak.env.in \
 	env.d/60-flatpak flatpak.pc.in scripts/flatpak-bisect \
-	scripts/flatpak-coredumpctl README.md flatpak.png
+	scripts/flatpak-coredumpctl \
+	variant-schema-compiler/variant-schema-compiler README.md \
+	flatpak.png
 TESTS_ENVIRONMENT = \
 	G_TEST_SRCDIR="$(abs_srcdir)/tests"	\
 	G_TEST_BUILDDIR="$(abs_builddir)/tests"	\
@@ -1788,8 +1796,9 @@ libflatpak_common_la_SOURCES = $(flatpakinclude_HEADERS) \
 	common/flatpak-transaction.c common/flatpak-transaction.h \
 	common/flatpak-utils-http-private.h \
 	common/flatpak-utils-http.c common/flatpak-utils-private.h \
-	common/flatpak-utils.c common/valgrind-private.h $(NULL) \
-	$(am__append_19)
+	common/flatpak-utils.c common/valgrind-private.h \
+	common/flatpak-variant-private.h \
+	common/flatpak-variant-impl-private.h $(NULL) $(am__append_19)
 libflatpak_common_la_CFLAGS = \
 	-DFLATPAK_COMPILATION \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
@@ -2243,17 +2252,17 @@ TEST_MATRIX_SOURCE = \
 	tests/test-http-utils.sh \
 	tests/test-run.sh{{user+system+system-norevokefs},{nodeltas+deltas}} \
 	tests/test-info.sh{user+system} \
-	tests/test-repo.sh{user+system+system-norevokefs+collections+collections-server-only} \
+	tests/test-repo.sh{user+system+system-norevokefs} \
+	tests/test-sideload.sh{user+system} \
 	tests/test-default-remotes.sh \
 	tests/test-extensions.sh \
 	tests/test-bundle.sh{user+system+system-norevokefs} \
 	tests/test-oci.sh \
 	tests/test-oci-registry.sh{{user+system} \
-	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	tests/test-override.sh \
 	tests/test-update-portal.sh \
-	tests/test-auth.sh{nocollections+collections} \
+	tests/test-auth.sh \
 	$(NULL)
 
 
@@ -2270,15 +2279,13 @@ TEST_MATRIX = \
 	tests/test-repo@user.wrap \
 	tests/test-repo@system.wrap \
 	tests/test-repo@system-norevokefs.wrap \
-	tests/test-repo@collections.wrap \
-	tests/test-repo@collections-server-only.wrap \
+	tests/test-sideload@user.wrap \
+	tests/test-sideload@system.wrap \
 	tests/test-bundle@user.wrap \
 	tests/test-bundle@system.wrap \
 	tests/test-bundle@system-norevokefs.wrap \
 	tests/test-oci-registry@user.wrap \
 	tests/test-oci-registry@system.wrap \
-	tests/test-auth@nocollections.wrap \
-	tests/test-auth@collections.wrap \
 	$(NULL)
 
 TEST_MATRIX_DIST = \
@@ -2290,19 +2297,19 @@ TEST_MATRIX_DIST = \
 	tests/test-default-remotes.sh \
 	tests/test-extensions.sh \
 	tests/test-oci.sh \
-	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	tests/test-override.sh \
 	tests/test-update-portal.sh \
+	tests/test-auth.sh \
 	$(NULL)
 
 TEST_MATRIX_EXTRA_DIST = \
 	tests/test-run.sh \
 	tests/test-info.sh \
 	tests/test-repo.sh \
+	tests/test-sideload.sh \
 	tests/test-bundle.sh \
 	tests/test-oci-registry.sh \
-	tests/test-auth.sh \
 	$(NULL)
 
 test_scripts = ${TEST_MATRIX}
@@ -5755,16 +5762,16 @@ tests/test-repo@system-norevokefs.wrap.log: tests/test-repo@system-norevokefs.wr
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-repo@collections.wrap.log: tests/test-repo@collections.wrap
-	@p='tests/test-repo@collections.wrap'; \
-	b='tests/test-repo@collections.wrap'; \
+tests/test-sideload@user.wrap.log: tests/test-sideload@user.wrap
+	@p='tests/test-sideload@user.wrap'; \
+	b='tests/test-sideload@user.wrap'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-repo@collections-server-only.wrap.log: tests/test-repo@collections-server-only.wrap
-	@p='tests/test-repo@collections-server-only.wrap'; \
-	b='tests/test-repo@collections-server-only.wrap'; \
+tests/test-sideload@system.wrap.log: tests/test-sideload@system.wrap
+	@p='tests/test-sideload@system.wrap'; \
+	b='tests/test-sideload@system.wrap'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5800,20 +5807,6 @@ tests/test-oci-registry@user.wrap.log: tests/test-oci-registry@user.wrap
 tests/test-oci-registry@system.wrap.log: tests/test-oci-registry@system.wrap
 	@p='tests/test-oci-registry@system.wrap'; \
 	b='tests/test-oci-registry@system.wrap'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-auth@nocollections.wrap.log: tests/test-auth@nocollections.wrap
-	@p='tests/test-auth@nocollections.wrap'; \
-	b='tests/test-auth@nocollections.wrap'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-auth@collections.wrap.log: tests/test-auth@collections.wrap
-	@p='tests/test-auth@collections.wrap'; \
-	b='tests/test-auth@collections.wrap'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5874,13 +5867,6 @@ tests/test-oci.sh.log: tests/test-oci.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-unsigned-summaries.sh.log: tests/test-unsigned-summaries.sh
-	@p='tests/test-unsigned-summaries.sh'; \
-	b='tests/test-unsigned-summaries.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 tests/test-update-remote-configuration.sh.log: tests/test-update-remote-configuration.sh
 	@p='tests/test-update-remote-configuration.sh'; \
 	b='tests/test-update-remote-configuration.sh'; \
@@ -5898,6 +5884,13 @@ tests/test-override.sh.log: tests/test-override.sh
 tests/test-update-portal.sh.log: tests/test-update-portal.sh
 	@p='tests/test-update-portal.sh'; \
 	b='tests/test-update-portal.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-auth.sh.log: tests/test-auth.sh
+	@p='tests/test-auth.sh'; \
+	b='tests/test-auth.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -6702,6 +6695,9 @@ common/flatpak-systemd-dbus-generated.c: data/org.freedesktop.systemd1.xml Makef
 
 common/%-dbus-generated.h: common/%-dbus-generated.c
 	@true # Built as a side-effect of the rules for the .c
+
+common/flatpak-variant-private.h common/flatpak-variant-impl-private.h: variant-schema-compiler/variant-schema-compiler  data/flatpak-variants.gv
+	$(AM_V_GEN) $(srcdir)/variant-schema-compiler/variant-schema-compiler --outfile-header common/flatpak-variant-private.h  --outfile common/flatpak-variant-impl-private.h --prefix var $(srcdir)/data/flatpak-variants.gv
 
 # gobject-introspection rules
 -include $(INTROSPECTION_MAKEFILE)
