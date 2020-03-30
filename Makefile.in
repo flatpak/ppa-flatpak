@@ -370,6 +370,7 @@ am__libflatpak_common_la_SOURCES_DIST = common/flatpak.h \
 	common/flatpak-json-private.h common/flatpak-json.c \
 	common/flatpak-oci-registry-private.h \
 	common/flatpak-oci-registry.c common/flatpak-portal-error.c \
+	common/flatpak-progress-private.h common/flatpak-progress.c \
 	common/flatpak-ref.c common/flatpak-related-ref-private.h \
 	common/flatpak-related-ref.c common/flatpak-remote-private.h \
 	common/flatpak-remote-ref-private.h \
@@ -380,8 +381,6 @@ am__libflatpak_common_la_SOURCES_DIST = common/flatpak.h \
 	common/flatpak-utils-http-private.h \
 	common/flatpak-utils-http.c common/flatpak-utils-private.h \
 	common/flatpak-utils.c common/valgrind-private.h \
-	common/flatpak-variant-private.h \
-	common/flatpak-variant-impl-private.h \
 	common/flatpak-parental-controls.c \
 	common/flatpak-parental-controls-private.h
 am__objects_3 = $(am__objects_1)
@@ -404,6 +403,7 @@ am_libflatpak_common_la_OBJECTS = $(am__objects_3) \
 	common/libflatpak_common_la-flatpak-json.lo \
 	common/libflatpak_common_la-flatpak-oci-registry.lo \
 	common/libflatpak_common_la-flatpak-portal-error.lo \
+	common/libflatpak_common_la-flatpak-progress.lo \
 	common/libflatpak_common_la-flatpak-ref.lo \
 	common/libflatpak_common_la-flatpak-related-ref.lo \
 	common/libflatpak_common_la-flatpak-remote-ref.lo \
@@ -852,6 +852,7 @@ am__depfiles_remade =  \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo \
+	common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-remote-ref.Plo \
@@ -1525,8 +1526,6 @@ noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
 	$(systemduserunit_DATA) \
 	$(nodist_libflatpak_common_base_la_SOURCES) \
-	common/flatpak-variant-private.h \
-	common/flatpak-variant-impl-private.h \
 	$(nodist_libflatpak_common_la_SOURCES) $(am__append_21) \
 	app/parse-datetime.c $(flatpak_dbus_built_sources) \
 	$(nodist_flatpak_portal_SOURCES) \
@@ -1541,8 +1540,6 @@ DISTCLEANFILES = $(NULL) $(am__append_24) flatpak.pp.bz2 \
 	tests/share/xdg-desktop-portal/portals/test.portal \
 	tests/package_version.txt $(NULL) flatpak.env
 BUILT_SOURCES = $(NULL) $(nodist_libflatpak_common_base_la_SOURCES) \
-	common/flatpak-variant-private.h \
-	common/flatpak-variant-impl-private.h \
 	$(nodist_libflatpak_common_la_SOURCES) \
 	$(flatpak_dbus_built_sources) $(nodist_flatpak_portal_SOURCES) \
 	$(nodist_flatpak_oci_authenticator_SOURCES)
@@ -1764,6 +1761,8 @@ nodist_libflatpak_common_la_SOURCES = \
 	$(systemd_dbus_built_sources)	\
 	$(xdp_dbus_built_sources) \
 	common/flatpak-enum-types.c \
+	common/flatpak-variant-private.h \
+	common/flatpak-variant-impl-private.h \
 	$(NULL)
 
 libflatpak_common_la_SOURCES = $(flatpakinclude_HEADERS) \
@@ -1786,8 +1785,9 @@ libflatpak_common_la_SOURCES = $(flatpakinclude_HEADERS) \
 	common/flatpak-json-private.h common/flatpak-json.c \
 	common/flatpak-oci-registry-private.h \
 	common/flatpak-oci-registry.c common/flatpak-portal-error.c \
-	common/flatpak-portal-error.h common/flatpak-ref.c \
-	common/flatpak-related-ref-private.h \
+	common/flatpak-portal-error.h \
+	common/flatpak-progress-private.h common/flatpak-progress.c \
+	common/flatpak-ref.c common/flatpak-related-ref-private.h \
 	common/flatpak-related-ref.c common/flatpak-remote-private.h \
 	common/flatpak-remote-ref-private.h \
 	common/flatpak-remote-ref.c common/flatpak-remote.c \
@@ -1796,9 +1796,8 @@ libflatpak_common_la_SOURCES = $(flatpakinclude_HEADERS) \
 	common/flatpak-transaction.c common/flatpak-transaction.h \
 	common/flatpak-utils-http-private.h \
 	common/flatpak-utils-http.c common/flatpak-utils-private.h \
-	common/flatpak-utils.c common/valgrind-private.h \
-	common/flatpak-variant-private.h \
-	common/flatpak-variant-impl-private.h $(NULL) $(am__append_19)
+	common/flatpak-utils.c common/valgrind-private.h $(NULL) \
+	$(am__append_19)
 libflatpak_common_la_CFLAGS = \
 	-DFLATPAK_COMPILATION \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
@@ -2787,6 +2786,8 @@ common/libflatpak_common_la-flatpak-oci-registry.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-portal-error.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-progress.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-ref.lo: common/$(am__dirstamp) \
 	common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-related-ref.lo:  \
@@ -3406,6 +3407,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-remote-ref.Plo@am__quote@ # am--include-marker
@@ -3636,6 +3638,13 @@ common/libflatpak_common_la-flatpak-portal-error.lo: common/flatpak-portal-error
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-portal-error.c' object='common/libflatpak_common_la-flatpak-portal-error.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-portal-error.lo `test -f 'common/flatpak-portal-error.c' || echo '$(srcdir)/'`common/flatpak-portal-error.c
+
+common/libflatpak_common_la-flatpak-progress.lo: common/flatpak-progress.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-progress.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Tpo -c -o common/libflatpak_common_la-flatpak-progress.lo `test -f 'common/flatpak-progress.c' || echo '$(srcdir)/'`common/flatpak-progress.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-progress.c' object='common/libflatpak_common_la-flatpak-progress.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-progress.lo `test -f 'common/flatpak-progress.c' || echo '$(srcdir)/'`common/flatpak-progress.c
 
 common/libflatpak_common_la-flatpak-ref.lo: common/flatpak-ref.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-ref.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Tpo -c -o common/libflatpak_common_la-flatpak-ref.lo `test -f 'common/flatpak-ref.c' || echo '$(srcdir)/'`common/flatpak-ref.c
@@ -6301,6 +6310,7 @@ distclean: distclean-recursive
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo
+	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-remote-ref.Plo
@@ -6490,6 +6500,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo
+	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-remote-ref.Plo
@@ -6696,8 +6707,12 @@ common/flatpak-systemd-dbus-generated.c: data/org.freedesktop.systemd1.xml Makef
 common/%-dbus-generated.h: common/%-dbus-generated.c
 	@true # Built as a side-effect of the rules for the .c
 
-common/flatpak-variant-private.h common/flatpak-variant-impl-private.h: variant-schema-compiler/variant-schema-compiler  data/flatpak-variants.gv
+common/flatpak-variant-private.h: variant-schema-compiler/variant-schema-compiler  data/flatpak-variants.gv
 	$(AM_V_GEN) $(srcdir)/variant-schema-compiler/variant-schema-compiler --outfile-header common/flatpak-variant-private.h  --outfile common/flatpak-variant-impl-private.h --prefix var $(srcdir)/data/flatpak-variants.gv
+
+# Generated by the same tool at the same time
+common/flatpak-variant-impl-private.h: common/flatpak-variant-private.h
+	@:
 
 # gobject-introspection rules
 -include $(INTROSPECTION_MAKEFILE)
