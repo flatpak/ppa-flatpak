@@ -1,5 +1,7 @@
-flatpak (1.7.0~git20200325-2) UNRELEASED; urgency=medium
+flatpak (1.7.0~git20200330-1) UNRELEASED; urgency=medium
 
+  * New upstream snapshot
+    - d/copyright: Update
   * Revert "d/control: Add spurious Build-Conflicts on elogind packages".
     experimental buildds now use aptitude rather than aspcud, so this
     particular workaround shouldn't be necessary, even in experimental.
