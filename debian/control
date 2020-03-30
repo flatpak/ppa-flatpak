@@ -49,6 +49,7 @@ Build-Depends:
  policykit-1 <!nocheck>,
  procps,
  python3:any,
+ python3-pyparsing,
  shared-mime-info <!nocheck>,
  socat <!nocheck>,
  xdg-dbus-proxy (>= 0.1.0),
