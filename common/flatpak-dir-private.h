@@ -167,9 +167,10 @@ GVariant *flatpak_remote_state_load_ref_commit (FlatpakRemoteState *self,
                                                 FlatpakDir         *dir,
                                                 const char         *ref,
                                                 const char         *commit,
+                                                const char         *token,
                                                 GError            **error);
 void flatpak_remote_state_add_sideload_repo (FlatpakRemoteState *self,
-                                             const char          *path);
+                                             GFile               *path);
 
 
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakDir, g_object_unref)
@@ -445,6 +446,8 @@ char *      flatpak_dir_get_origin (FlatpakDir   *self,
                                     GError      **error);
 GFile *     flatpak_dir_get_exports_dir (FlatpakDir *self);
 GFile *     flatpak_dir_get_removed_dir (FlatpakDir *self);
+GFile *     flatpak_dir_get_sideload_repos_dir (FlatpakDir *self);
+GFile *     flatpak_dir_get_runtime_sideload_repos_dir (FlatpakDir *self);
 GFile *     flatpak_dir_get_if_deployed (FlatpakDir   *self,
                                          const char   *ref,
                                          const char   *checksum,
@@ -837,7 +840,7 @@ gboolean   flatpak_dir_remove_remote (FlatpakDir   *self,
                                       const char   *remote_name,
                                       GCancellable *cancellable,
                                       GError      **error);
-char **   flatpak_dir_get_sideload_repo_paths (FlatpakDir *self);
+GPtrArray *flatpak_dir_get_sideload_repo_paths (FlatpakDir *self);
 char **   flatpak_dir_list_remote_config_keys (FlatpakDir *self,
                                                const char *remote_name);
 char      *flatpak_dir_get_remote_title (FlatpakDir *self,
@@ -887,6 +890,7 @@ GVariant * flatpak_dir_fetch_remote_commit (FlatpakDir   *self,
                                             const char   *remote_name,
                                             const char   *ref,
                                             const char   *opt_commit,
+                                            const char   *token,
                                             char        **out_commit,
                                             GCancellable *cancellable,
                                             GError      **error);
