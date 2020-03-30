@@ -8,8 +8,12 @@ flatpak (1.7.0~git20200330-1) UNRELEASED; urgency=medium
     particular workaround shouldn't be necessary, even in experimental.
   * Explicitly build-depend on python3-pyparsing.
     This is required to generate the variant schema compiler.
+  * d/p/variant-schema-compiler-Disable-optimized-calculation-of-.patch:
+    Disable optimized calculation of offset size.
+    This doesn't seem to be completely portable, and it isn't clear why not,
+    so disable it until we have more answers.
 
- -- Simon McVittie <smcv@debian.org>  Mon, 30 Mar 2020 09:27:38 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 30 Mar 2020 09:35:56 +0100
 
 flatpak (1.7.0~git20200325-1) experimental; urgency=medium
 
