@@ -35,6 +35,7 @@
 #include "flatpak-installed-ref-private.h"
 #include "flatpak-instance-private.h"
 #include "flatpak-related-ref-private.h"
+#include "flatpak-progress-private.h"
 #include "flatpak-remote-private.h"
 #include "flatpak-remote-ref-private.h"
 #include "flatpak-run-private.h"
@@ -86,11 +87,6 @@ G_DEFINE_TYPE_WITH_PRIVATE (FlatpakInstallation, flatpak_installation, G_TYPE_OB
 enum {
   PROP_0,
 };
-
-static void
-no_progress_cb (OstreeAsyncProgress *progress, gpointer user_data)
-{
-}
 
 static void
 flatpak_installation_finalize (GObject *object)
@@ -1617,7 +1613,7 @@ flatpak_installation_load_app_overrides (FlatpakInstallation *self,
  * @cancellable: (nullable): a #GCancellable
  * @error: return location for a #GError
  *
- * This is and old deprecated function, you should use
+ * This is an old deprecated function, you should use
  * #FlatpakTransaction and flatpak_transaction_add_install_bundle()
  * instead. It has a lot more interesting features.
  *
@@ -1625,6 +1621,7 @@ flatpak_installation_load_app_overrides (FlatpakInstallation *self,
  * See flatpak-build-bundle(1) for how to create bundles.
  *
  * Returns: (transfer full): The ref for the newly installed app or %NULL on failure
+ * Deprecated: 1.7.0: Use flatpak_transaction_add_install_bundle() instead.
  */
 FlatpakInstalledRef *
 flatpak_installation_install_bundle (FlatpakInstallation    *self,
@@ -1679,7 +1676,7 @@ flatpak_installation_install_bundle (FlatpakInstallation    *self,
  * @cancellable: (nullable): a #GCancellable
  * @error: return location for a #GError
  *
- * This is and old deprecated function, you should use
+ * This is an old deprecated function, you should use
  * #FlatpakTransaction and flatpak_transaction_add_install_flatpakref()
  * instead. It has a lot more interesting features.
  *
@@ -1695,6 +1692,7 @@ flatpak_installation_install_bundle (FlatpakInstallation    *self,
  * on error.
  *
  * Since: 0.6.10
+ * Deprecated: 1.7.0: Use flatpak_transaction_add_install_flatpakref() instead.
  */
 FlatpakRemoteRef *
 flatpak_installation_install_ref_file (FlatpakInstallation *self,
@@ -1741,9 +1739,10 @@ flatpak_installation_install_ref_file (FlatpakInstallation *self,
  * @cancellable: (nullable): a #GCancellable
  * @error: return location for a #GError
  *
- * This is and old deprecated function, you should use
+ * This is an old deprecated function, you should use
  * #FlatpakTransaction and flatpak_transaction_add_install()
  * instead. It has a lot more interesting features.
+ *
  * Install a new application or runtime.
  *
  * Note that this function was originally written to always return a
@@ -1755,6 +1754,7 @@ flatpak_installation_install_ref_file (FlatpakInstallation *self,
  * accordingly.
  *
  * Returns: (transfer full): The ref for the newly installed app or %NULL on failure
+ * Deprecated: 1.7.0: Use flatpak_transaction_add_install() instead.
  */
 FlatpakInstalledRef *
 flatpak_installation_install_full (FlatpakInstallation    *self,
@@ -1765,7 +1765,7 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
                                    const char             *arch,
                                    const char             *branch,
                                    const char * const     *subpaths,
-                                   FlatpakProgressCallback progress,
+                                   FlatpakProgressCallback progress_cb,
                                    gpointer                progress_data,
                                    GCancellable           *cancellable,
                                    GError                **error)
@@ -1773,10 +1773,9 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
   g_autoptr(FlatpakDir) dir = NULL;
   g_autofree char *ref = NULL;
   g_autoptr(FlatpakDir) dir_clone = NULL;
-  g_autoptr(OstreeAsyncProgressFinish) ostree_progress = NULL;
+  g_autoptr(FlatpakProgress) progress = NULL;
   g_autoptr(GFile) deploy_dir = NULL;
   g_autoptr(FlatpakRemoteState) state = NULL;
-  g_autoptr(GMainContextPopDefault) main_context = NULL;
 
   dir = flatpak_installation_get_dir (self, error);
   if (dir == NULL)
@@ -1803,13 +1802,8 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
   if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
     return NULL;
 
-  /* Work around ostree-pull spinning the default main context for the sync calls */
-  main_context = flatpak_main_context_new_default ();
-
-  if (progress)
-    ostree_progress = flatpak_progress_new (progress, progress_data);
-  else
-    ostree_progress = ostree_async_progress_new_and_connect (no_progress_cb, NULL);
+  if (progress_cb)
+      progress = flatpak_progress_new (progress_cb, progress_data);
 
   if (!flatpak_dir_install (dir_clone,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_PULL) != 0,
@@ -1817,7 +1811,7 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_STATIC_DELTAS) != 0,
                             FALSE, FALSE, state,
                             ref, NULL, (const char **) subpaths, NULL, NULL, NULL, NULL,
-                            ostree_progress, cancellable, error))
+                            progress, cancellable, error))
     return NULL;
 
   if (!(flags & FLATPAK_INSTALL_FLAGS_NO_TRIGGERS) &&
@@ -1850,10 +1844,9 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
  * @cancellable: (nullable): a #GCancellable
  * @error: return location for a #GError
  *
- * This is and old deprecated function, you should use
+ * This is an old deprecated function, you should use
  * #FlatpakTransaction and flatpak_transaction_add_install()
  * instead. It has a lot more interesting features.
- * Install a new application or runtime.
  *
  * Install a new application or runtime.
  *
@@ -1866,6 +1859,7 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
  * accordingly.
  *
  * Returns: (transfer full): The ref for the newly installed app or %NULL on failure
+ * Deprecated: 1.7.0: Use flatpak_transaction_add_install() instead.
  */
 FlatpakInstalledRef *
 flatpak_installation_install (FlatpakInstallation    *self,
@@ -1879,10 +1873,12 @@ flatpak_installation_install (FlatpakInstallation    *self,
                               GCancellable           *cancellable,
                               GError                **error)
 {
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   return flatpak_installation_install_full (self, FLATPAK_INSTALL_FLAGS_NONE,
                                             remote_name, kind, name, arch, branch,
                                             NULL, progress, progress_data,
                                             cancellable, error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 /**
@@ -1899,10 +1895,9 @@ flatpak_installation_install (FlatpakInstallation    *self,
  * @cancellable: (nullable): a #GCancellable
  * @error: return location for a #GError
  *
- * This is and old deprecated function, you should use
+ * This is an old deprecated function, you should use
  * #FlatpakTransaction and flatpak_transaction_add_update()
  * instead. It has a lot more interesting features.
- * Install a new application or runtime.
  *
  * Update an application or runtime.
  *
@@ -1913,6 +1908,7 @@ flatpak_installation_install (FlatpakInstallation    *self,
  * already up to date, then %FLATPAK_ERROR_ALREADY_INSTALLED will be thrown.
  *
  * Returns: (transfer full): The ref for the newly updated app or %NULL on failure
+ * Deprecated: 1.7.0: Use flatpak_transaction_add_update() instead.
  */
 FlatpakInstalledRef *
 flatpak_installation_update_full (FlatpakInstallation    *self,
@@ -1922,7 +1918,7 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
                                   const char             *arch,
                                   const char             *branch,
                                   const char * const     *subpaths,
-                                  FlatpakProgressCallback progress,
+                                  FlatpakProgressCallback progress_cb,
                                   gpointer                progress_data,
                                   GCancellable           *cancellable,
                                   GError                **error)
@@ -1931,12 +1927,11 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
   g_autofree char *ref = NULL;
   g_autoptr(GFile) deploy_dir = NULL;
   g_autoptr(FlatpakDir) dir_clone = NULL;
-  g_autoptr(OstreeAsyncProgressFinish) ostree_progress = NULL;
+  g_autoptr(FlatpakProgress) progress = NULL;
   g_autofree char *remote_name = NULL;
   FlatpakInstalledRef *result = NULL;
   g_autofree char *target_commit = NULL;
   g_autoptr(FlatpakRemoteState) state = NULL;
-  g_autoptr(GMainContextPopDefault) main_context = NULL;
 
   dir = flatpak_installation_get_dir (self, error);
   if (dir == NULL)
@@ -1974,13 +1969,8 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
   if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
     return NULL;
 
-  /* Work around ostree-pull spinning the default main context for the sync calls */
-  main_context = flatpak_main_context_new_default ();
-
-  if (progress)
-    ostree_progress = flatpak_progress_new (progress, progress_data);
-  else
-    ostree_progress = ostree_async_progress_new_and_connect (no_progress_cb, NULL);
+  if (progress_cb)
+    progress = flatpak_progress_new (progress_cb, progress_data);
 
   if (!flatpak_dir_update (dir_clone,
                            (flags & FLATPAK_UPDATE_FLAGS_NO_PULL) != 0,
@@ -1989,7 +1979,7 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
                            FALSE, FALSE, FALSE, state,
                            ref, target_commit,
                            (const char **) subpaths, NULL, NULL, NULL, NULL,
-                           ostree_progress, cancellable, error))
+                           progress, cancellable, error))
     return NULL;
 
   if (!(flags & FLATPAK_UPDATE_FLAGS_NO_TRIGGERS) &&
@@ -2003,7 +1993,6 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
   /* We don't get prunable objects if not pulling or if NO_PRUNE is passed */
   if (!(flags & FLATPAK_UPDATE_FLAGS_NO_PULL) && !(flags & FLATPAK_UPDATE_FLAGS_NO_PRUNE))
     flatpak_dir_prune (dir_clone, cancellable, NULL);
-
 
   return result;
 }
@@ -2021,10 +2010,9 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
  * @cancellable: (nullable): a #GCancellable
  * @error: return location for a #GError
  *
- * This is and old deprecated function, you should use
+ * This is an old deprecated function, you should use
  * #FlatpakTransaction and flatpak_transaction_add_update()
  * instead. It has a lot more interesting features.
- * Install a new application or runtime.
  *
  * Update an application or runtime.
  *
@@ -2035,6 +2023,7 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
  * already up to date, then %FLATPAK_ERROR_ALREADY_INSTALLED will be thrown.
  *
  * Returns: (transfer full): The ref for the newly updated app or %NULL on failure
+ * Deprecated: 1.7.0: Use flatpak_transaction_add_update() instead.
  */
 FlatpakInstalledRef *
 flatpak_installation_update (FlatpakInstallation    *self,
@@ -2048,9 +2037,11 @@ flatpak_installation_update (FlatpakInstallation    *self,
                              GCancellable           *cancellable,
                              GError                **error)
 {
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   return flatpak_installation_update_full (self, flags, kind, name, arch,
                                            branch, NULL, progress, progress_data,
                                            cancellable, error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 /**
@@ -2067,14 +2058,14 @@ flatpak_installation_update (FlatpakInstallation    *self,
  * @cancellable: (nullable): a #GCancellable
  * @error: return location for a #GError
  *
- * This is and old deprecated function, you should use
- * #FlatpakTransaction and flatpak_transaction_add_unintstall()
+ * This is an old deprecated function, you should use
+ * #FlatpakTransaction and flatpak_transaction_add_uninstall()
  * instead. It has a lot more interesting features.
- * Install a new application or runtime.
  *
  * Uninstall an application or runtime.
  *
  * Returns: %TRUE on success
+ * Deprecated: 1.7.0: Use flatpak_transaction_add_uninstall() instead.
  */
 FLATPAK_EXTERN gboolean
 flatpak_installation_uninstall (FlatpakInstallation    *self,
@@ -2087,10 +2078,12 @@ flatpak_installation_uninstall (FlatpakInstallation    *self,
                                 GCancellable           *cancellable,
                                 GError                **error)
 {
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   return flatpak_installation_uninstall_full (self, FLATPAK_UNINSTALL_FLAGS_NONE,
                                               kind, name, arch, branch,
                                               progress, progress_data,
                                               cancellable, error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
 }
 
 /**
@@ -2108,16 +2101,16 @@ flatpak_installation_uninstall (FlatpakInstallation    *self,
  * @cancellable: (nullable): a #GCancellable
  * @error: return location for a #GError
  *
- * This is and old deprecated function, you should use
- * #FlatpakTransaction and flatpak_transaction_add_unintstall()
+ * This is an old deprecated function, you should use
+ * #FlatpakTransaction and flatpak_transaction_add_uninstall()
  * instead. It has a lot more interesting features.
- * Install a new application or runtime.
  *
  * Uninstall an application or runtime.
  *
  * Returns: %TRUE on success
  *
  * Since: 0.11.8
+ * Deprecated: 1.7.0: Use flatpak_transaction_add_uninstall() instead.
  */
 gboolean
 flatpak_installation_uninstall_full (FlatpakInstallation    *self,
@@ -2499,7 +2492,7 @@ gboolean
 flatpak_installation_update_appstream_full_sync (FlatpakInstallation    *self,
                                                  const char             *remote_name,
                                                  const char             *arch,
-                                                 FlatpakProgressCallback progress,
+                                                 FlatpakProgressCallback progress_cb,
                                                  gpointer                progress_data,
                                                  gboolean               *out_changed,
                                                  GCancellable           *cancellable,
@@ -2507,9 +2500,7 @@ flatpak_installation_update_appstream_full_sync (FlatpakInstallation    *self,
 {
   g_autoptr(FlatpakDir) dir = NULL;
   g_autoptr(FlatpakDir) dir_clone = NULL;
-  g_autoptr(OstreeAsyncProgressFinish) ostree_progress = NULL;
-  gboolean res;
-  g_autoptr(GMainContextPopDefault) main_context = NULL;
+  g_autoptr(FlatpakProgress) progress = NULL;
 
   dir = flatpak_installation_get_dir (self, error);
   if (dir == NULL)
@@ -2520,23 +2511,16 @@ flatpak_installation_update_appstream_full_sync (FlatpakInstallation    *self,
   if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
     return FALSE;
 
-  /* Work around ostree-pull spinning the default main context for the sync calls */
-  main_context = flatpak_main_context_new_default ();
+  if (progress_cb)
+    progress = flatpak_progress_new (progress_cb, progress_data);
 
-  if (progress)
-    ostree_progress = flatpak_progress_new (progress, progress_data);
-  else
-    ostree_progress = ostree_async_progress_new_and_connect (no_progress_cb, NULL);
-
-  res = flatpak_dir_update_appstream (dir_clone,
-                                      remote_name,
-                                      arch,
-                                      out_changed,
-                                      ostree_progress,
-                                      cancellable,
-                                      error);
-
-  return res;
+  return flatpak_dir_update_appstream (dir_clone,
+                                       remote_name,
+                                       arch,
+                                       out_changed,
+                                       progress,
+                                       cancellable,
+                                       error);
 }
 
 
