@@ -1,3 +1,13 @@
+flatpak (1.7.0~git20200325-2) UNRELEASED; urgency=medium
+
+  * Revert "d/control: Add spurious Build-Conflicts on elogind packages".
+    experimental buildds now use aptitude rather than aspcud, so this
+    particular workaround shouldn't be necessary, even in experimental.
+  * Explicitly build-depend on python3-pyparsing.
+    This is required to generate the variant schema compiler.
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 30 Mar 2020 09:27:38 +0100
+
 flatpak (1.7.0~git20200325-1) experimental; urgency=medium
 
   * Branch for 1.7.x and Debian experimental
