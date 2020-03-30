@@ -79,6 +79,8 @@
 #define SYSCONF_REMOTES_DIR "remotes.d"
 #define SYSCONF_REMOTES_FILE_EXT ".flatpakrepo"
 
+#define SIDELOAD_REPOS_DIR_NAME "sideload-repos"
+
 #ifdef USE_SYSTEM_HELPER
 /* This uses a weird Auto prefix to avoid conflicts with later added polkit types.
  */
@@ -142,6 +144,7 @@ static GBytes * flatpak_dir_fetch_remote_object (FlatpakDir   *self,
                                                  const char   *remote_name,
                                                  const char   *checksum,
                                                  const char   *type,
+                                                 const char   *token,
                                                  GCancellable *cancellable,
                                                  GError      **error);
 
@@ -277,6 +280,25 @@ get_config_dir_location (void)
   return (const char *) path;
 }
 
+static const char *
+get_run_dir_location (void)
+{
+  static gsize path = 0;
+
+  if (g_once_init_enter (&path))
+    {
+      gsize setup_value = 0;
+      const char *config_dir = g_getenv ("FLATPAK_RUN_DIR");
+      if (config_dir != NULL)
+        setup_value = (gsize) config_dir;
+      else
+        setup_value = (gsize) "/run/flatpak";
+      g_once_init_leave (&path, setup_value);
+    }
+
+  return (const char *) path;
+}
+
 static void
 flatpak_sideload_state_free (FlatpakSideloadState *sideload_state)
 {
@@ -326,18 +348,18 @@ flatpak_remote_state_unref (FlatpakRemoteState *remote_state)
 
 void
 flatpak_remote_state_add_sideload_repo (FlatpakRemoteState *self,
-                                        const char          *path)
+                                        GFile *dir)
 {
-  g_autoptr(GFile) f = g_file_new_for_path (path);
-  g_autoptr(GFile) summary_path = g_file_get_child (f, "summary");
+  g_autoptr(GFile) summary_path = NULL;
   g_autoptr(GMappedFile) mfile = NULL;
-  g_autoptr(OstreeRepo) sideload_repo = ostree_repo_new (f);
+  g_autoptr(OstreeRepo) sideload_repo = NULL;
 
   /* Sideloading only works if collection id is set */
   if (self->collection_id == NULL)
     return;
 
-  /* TODO: The sideloadstates are duplicated for each remote with the collection id set, we should maybe reuse them */
+  summary_path = g_file_get_child (dir, "summary");
+  sideload_repo = ostree_repo_new (dir);
 
   mfile = g_mapped_file_new (flatpak_file_get_path_cached (summary_path), FALSE, NULL);
   if (mfile != NULL && ostree_repo_open (sideload_repo, NULL, NULL))
@@ -349,7 +371,7 @@ flatpak_remote_state_add_sideload_repo (FlatpakRemoteState *self,
       ss->summary = g_variant_ref_sink (g_variant_new_from_bytes (OSTREE_SUMMARY_GVARIANT_FORMAT, summary_bytes, TRUE));
       g_ptr_array_add (self->sideload_repos, ss);
 
-      g_debug ("Using sideloaded repo %s for remote %s", path, self->remote_name);
+      g_debug ("Using sideloaded repo %s for remote %s", flatpak_file_get_path_cached (dir), self->remote_name);
     }
 }
 
@@ -671,6 +693,7 @@ flatpak_remote_state_load_ref_commit (FlatpakRemoteState *self,
                                       FlatpakDir         *dir,
                                       const char         *ref,
                                       const char         *commit,
+                                      const char         *token,
                                       GError            **error)
 {
   g_autoptr(GBytes) commit_bytes = NULL;
@@ -690,7 +713,7 @@ flatpak_remote_state_load_ref_commit (FlatpakRemoteState *self,
     }
 
   commit_bytes = flatpak_dir_fetch_remote_object (dir, self->remote_name,
-                                                  commit, "commit",
+                                                  commit, "commit", token,
                                                   NULL, error);
   if (commit_bytes == NULL)
     return NULL;
@@ -2450,6 +2473,19 @@ GFile *
 flatpak_dir_get_removed_dir (FlatpakDir *self)
 {
   return g_file_get_child (self->basedir, ".removed");
+}
+
+GFile *
+flatpak_dir_get_sideload_repos_dir (FlatpakDir *self)
+{
+  return g_file_get_child (self->basedir, SIDELOAD_REPOS_DIR_NAME);
+}
+
+GFile *
+flatpak_dir_get_runtime_sideload_repos_dir (FlatpakDir *self)
+{
+  g_autoptr(GFile) base = g_file_new_for_path (get_run_dir_location ());
+  return g_file_get_child (base, SIDELOAD_REPOS_DIR_NAME);
 }
 
 OstreeRepo *
@@ -4611,40 +4647,11 @@ flatpak_dir_setup_extra_data (FlatpakDir                           *self,
   /* ostree-metadata and appstreams never have extra data, so ignore those */
   if (g_str_has_prefix (ref, "app/") || g_str_has_prefix (ref, "runtime/"))
     {
-      extra_data_sources = flatpak_repo_get_extra_data_sources (repo, rev, cancellable, NULL);
-      if (extra_data_sources == NULL)
-        {
-          /* This is a gigantic hack where we download the commit in a temporary transaction
-           * which we then abort after having read the result. We do this to avoid creating
-           * a partial commit in the local repo and a ref that points to it, because that
-           * causes ostree to not use static deltas.
-           * See https://github.com/flatpak/flatpak/issues/3412 for details.
-           */
+      g_autoptr(GVariant) commitv = flatpak_remote_state_load_ref_commit (state, self, ref, rev, token, error);
+      if (commitv == NULL)
+        return FALSE;
 
-          if (!ostree_repo_prepare_transaction (repo, NULL, cancellable, error))
-            return FALSE;
-
-          /* Pull the commits (and only the commits) to check for extra data
-           * again. Here we don't pass the progress because we don't want any
-           * reports coming out of it. */
-          if (!repo_pull (repo, state,
-                          NULL,
-                          ref,
-                          rev,
-                          sideload_repo,
-                          token,
-                          flatpak_flags,
-                          OSTREE_REPO_PULL_FLAGS_COMMIT_ONLY,
-                          NULL,
-                          cancellable,
-                          error))
-            return FALSE;
-
-          extra_data_sources = flatpak_repo_get_extra_data_sources (repo, rev, cancellable, NULL);
-
-          if (!ostree_repo_abort_transaction (repo, cancellable, error))
-            return FALSE;
-        }
+      extra_data_sources = flatpak_commit_get_extra_data_sources (commitv, NULL);
     }
 
   n_extra_data = 0;
@@ -4773,9 +4780,9 @@ flatpak_dir_pull_extra_data (FlatpakDir          *self,
       else
         {
           ensure_soup_session (self);
-          bytes = flatpak_load_http_uri (self->soup_session, extra_data_uri, 0, NULL,
-                                         extra_data_progress_report, progress,
-                                         cancellable, error);
+          bytes = flatpak_load_uri (self->soup_session, extra_data_uri, 0, NULL,
+                                    extra_data_progress_report, progress,
+                                    cancellable, error);
         }
 
       if (bytes == NULL)
@@ -10605,7 +10612,7 @@ _flatpak_dir_get_remote_state (FlatpakDir   *self,
                                GError      **error)
 {
   g_autoptr(FlatpakRemoteState) state = flatpak_remote_state_new ();
-  g_auto(GStrv) sideload_paths = NULL;
+  g_autoptr(GPtrArray) sideload_paths = NULL;
   g_autoptr(GError) my_error = NULL;
   gboolean is_local;
 
@@ -10630,8 +10637,8 @@ _flatpak_dir_get_remote_state (FlatpakDir   *self,
     }
 
   sideload_paths = flatpak_dir_get_sideload_repo_paths (self);
-  for (int i = 0; sideload_paths != NULL && sideload_paths[i] != NULL; i++)
-    flatpak_remote_state_add_sideload_repo (state, sideload_paths[i]);
+  for (int i = 0; i < sideload_paths->len; i++)
+    flatpak_remote_state_add_sideload_repo (state, g_ptr_array_index (sideload_paths, i));
 
   if (local_only)
     {
@@ -11127,7 +11134,10 @@ flatpak_dir_find_remote_refs (FlatpakDir           *self,
     return NULL;
 
   for (int i = 0; opt_sideload_repos != NULL && opt_sideload_repos[i] != NULL; i++)
-    flatpak_remote_state_add_sideload_repo (state, opt_sideload_repos[i]);
+    {
+      g_autoptr(GFile) f = g_file_new_for_path (opt_sideload_repos[i]);
+      flatpak_remote_state_add_sideload_repo (state, f);
+    }
 
   if (!flatpak_dir_list_all_remote_refs (self, state,
                                          &remote_refs, cancellable, error))
@@ -11231,7 +11241,10 @@ flatpak_dir_find_remote_ref (FlatpakDir   *self,
     return NULL;
 
   for (int i = 0; opt_sideload_repos != NULL && opt_sideload_repos[i] != NULL; i++)
-    flatpak_remote_state_add_sideload_repo (state, opt_sideload_repos[i]);
+    {
+      g_autoptr(GFile) f = g_file_new_for_path (opt_sideload_repos[i]);
+      flatpak_remote_state_add_sideload_repo (state, f);
+    }
 
   if (!flatpak_dir_list_all_remote_refs (self, state,
                                          &remote_refs, cancellable, error))
@@ -11706,15 +11719,45 @@ flatpak_dir_list_remote_config_keys (FlatpakDir *self,
   return NULL;
 }
 
-char **
+static void
+add_subdirs (GPtrArray *res,
+             GFile     *parent)
+{
+  g_autoptr(GFileEnumerator) dir_enum = NULL;
+
+  dir_enum = g_file_enumerate_children (parent,
+                                        G_FILE_ATTRIBUTE_STANDARD_NAME ","
+                                        G_FILE_ATTRIBUTE_STANDARD_TYPE,
+                                        G_FILE_QUERY_INFO_NONE,
+                                        NULL, NULL);
+  if (dir_enum == NULL)
+    return;
+
+  while (TRUE)
+    {
+      GFileInfo *info;
+      GFile *path;
+
+      if (!g_file_enumerator_iterate (dir_enum, &info, &path, NULL, NULL) ||
+          info == NULL)
+        break;
+
+      if (g_file_info_get_file_type (info) == G_FILE_TYPE_DIRECTORY)
+        g_ptr_array_add (res, g_object_ref (path));
+    }
+}
+
+GPtrArray *
 flatpak_dir_get_sideload_repo_paths (FlatpakDir *self)
 {
-  GKeyFile *config = flatpak_dir_get_repo_config (self);
+  g_autoptr(GFile) sideload_repos_dir = flatpak_dir_get_sideload_repos_dir (self);
+  g_autoptr(GFile) runtime_sideload_repos_dir = flatpak_dir_get_runtime_sideload_repos_dir (self);
+  g_autoptr(GPtrArray) res = g_ptr_array_new_with_free_func (g_object_unref);
 
-  if (config)
-    return g_key_file_get_string_list (config, "core", "xa.sideload-repos", NULL, NULL);
+  add_subdirs (res, sideload_repos_dir);
+  add_subdirs (res, runtime_sideload_repos_dir);
 
-  return NULL;
+  return g_steal_pointer (&res);
 }
 
 
@@ -13109,6 +13152,7 @@ flatpak_dir_fetch_remote_object (FlatpakDir   *self,
                                  const char   *remote_name,
                                  const char   *checksum,
                                  const char   *type,
+                                 const char   *token,
                                  GCancellable *cancellable,
                                  GError      **error)
 {
@@ -13128,9 +13172,9 @@ flatpak_dir_fetch_remote_object (FlatpakDir   *self,
 
   object_url = g_build_filename (base_url, "objects", part1, part2, NULL);
 
-  bytes = flatpak_load_http_uri (self->soup_session, object_url, 0, NULL,
-                                 NULL, NULL,
-                                 cancellable, error);
+  bytes = flatpak_load_uri (self->soup_session, object_url, 0, token,
+                            NULL, NULL,
+                            cancellable, error);
   if (bytes == NULL)
     return NULL;
 
@@ -13142,6 +13186,7 @@ flatpak_dir_fetch_remote_commit (FlatpakDir   *self,
                                  const char   *remote_name,
                                  const char   *ref,
                                  const char   *opt_commit,
+                                 const char   *token,
                                  char        **out_commit,
                                  GCancellable *cancellable,
                                  GError      **error)
@@ -13172,7 +13217,7 @@ flatpak_dir_fetch_remote_commit (FlatpakDir   *self,
     }
 
   commit_bytes = flatpak_dir_fetch_remote_object (self, remote_name,
-                                                  opt_commit, "commit",
+                                                  opt_commit, "commit", token,
                                                   cancellable, error);
   if (commit_bytes == NULL)
     return NULL;
