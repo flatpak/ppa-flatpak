@@ -115,10 +115,7 @@ get_config_from_opts (GKeyFile *config,
     }
 
   if (opt_collection_id)
-    {
-      g_key_file_set_string (config, group, "collection-id", opt_collection_id);
-      g_key_file_set_boolean (config, group, "gpg-verify-summary", FALSE);
-    }
+    g_key_file_set_string (config, group, "collection-id", opt_collection_id);
 
   if (opt_title)
     {
@@ -229,14 +226,15 @@ load_options (const char *remote_name,
   g_autoptr(GBytes) bytes = NULL;
 
   if (g_str_has_prefix (filename, "http:") ||
-      g_str_has_prefix (filename, "https:"))
+      g_str_has_prefix (filename, "https:") ||
+      g_str_has_prefix (filename, "file:"))
     {
       const char *options_data;
       gsize options_size;
       g_autoptr(SoupSession) soup_session = NULL;
 
       soup_session = flatpak_create_soup_session (PACKAGE_STRING);
-      bytes = flatpak_load_http_uri (soup_session, filename, 0, NULL, NULL, NULL, NULL, &local_error);
+      bytes = flatpak_load_uri (soup_session, filename, 0, NULL, NULL, NULL, NULL, &local_error);
 
       if (bytes == NULL)
         {
