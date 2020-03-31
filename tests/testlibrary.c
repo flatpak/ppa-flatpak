@@ -623,10 +623,10 @@ test_remote (void)
   res = ostree_repo_open (repo, NULL, &error);
   g_assert_no_error (error);
   g_assert_true (res);
-  res = ostree_repo_get_remote_boolean_option (repo, repo_name, "gpg-verify-summary", TRUE, &gpg_verify_summary, &error);
+  res = ostree_repo_get_remote_boolean_option (repo, repo_name, "gpg-verify-summary", FALSE, &gpg_verify_summary, &error);
   g_assert_no_error (error);
   g_assert_true (res);
-  g_assert_false (gpg_verify_summary);
+  g_assert_true (gpg_verify_summary);
 
   /* Temporarily unset the collection ID */
   flatpak_remote_set_collection_id (remote, NULL);
@@ -933,9 +933,6 @@ test_list_refs_in_remotes (void)
   g_autoptr(FlatpakRemote) remote = NULL;
   g_autofree char *repo_dir = g_build_filename (testdir, repo_name, NULL);
   g_autofree char *repo_uri = NULL;
-  g_autoptr(GHashTable) collection_ids = g_hash_table_new_full (g_str_hash,
-                                                                g_str_equal,
-                                                                NULL, NULL);
   g_autoptr(GHashTable) ref_specs = g_hash_table_new_full (g_str_hash,
                                                            g_str_equal,
                                                            g_free,
@@ -971,12 +968,8 @@ test_list_refs_in_remotes (void)
   for (guint i = 0; i < refs1->len; ++i)
     {
       FlatpakRef *ref = g_ptr_array_index (refs1, i);
-      g_hash_table_add (collection_ids, (gchar *) flatpak_ref_get_collection_id (ref));
       g_hash_table_add (ref_specs, flatpak_ref_format_ref (ref));
     }
-
-  /* we have a locale extension for each app, thus the 2 */
-  g_assert_cmpuint (2 * g_hash_table_size (collection_ids), ==, refs1->len);
 
   /* Ensure that listing the refs by using a remote's URI will get us the
    * same results as using the name */
@@ -1098,6 +1091,7 @@ test_update_installed_ref_if_missing_runtime (void)
   empty_installation (inst);
 
   /* Install the app */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   iref = flatpak_installation_install (inst,
                                        repo_name,
                                        FLATPAK_REF_KIND_APP,
@@ -1105,11 +1099,13 @@ test_update_installed_ref_if_missing_runtime (void)
                                        flatpak_get_default_arch (),
                                        "master",
                                        NULL, NULL, NULL, &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert (FLATPAK_IS_INSTALLED_REF (iref));
   iref = NULL;
 
   /* Install the Locale extension */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   iref = flatpak_installation_install (inst,
                                        repo_name,
                                        FLATPAK_REF_KIND_RUNTIME,
@@ -1117,6 +1113,7 @@ test_update_installed_ref_if_missing_runtime (void)
                                        flatpak_get_default_arch (),
                                        "master",
                                        NULL, NULL, NULL, &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert (FLATPAK_IS_INSTALLED_REF (iref));
   iref = NULL;
@@ -1169,21 +1166,25 @@ test_update_related_refs (void)
   empty_installation (inst);
 
   /* Install a runtime */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   runtime_ref = flatpak_installation_install (inst,
                                               repo_name,
                                               FLATPAK_REF_KIND_RUNTIME,
                                               "org.test.Platform",
                                               NULL, "master", NULL, NULL, NULL,
                                               &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert (FLATPAK_IS_INSTALLED_REF (runtime_ref));
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   iref = flatpak_installation_install (inst,
                                        repo_name,
                                        FLATPAK_REF_KIND_APP,
                                        "org.test.Hello",
                                        NULL, "master", NULL, NULL, NULL,
 				                               &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert (FLATPAK_IS_INSTALLED_REF (iref));
   iref = NULL;
@@ -1396,6 +1397,7 @@ test_install_launch_uninstall (void)
   changed_count = 0;
   progress_count = 0;
   timeout_reached = FALSE;
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   ref = flatpak_installation_install (inst,
                                       repo_name,
                                       FLATPAK_REF_KIND_RUNTIME,
@@ -1406,6 +1408,7 @@ test_install_launch_uninstall (void)
                                       &progress_count,
                                       NULL,
                                       &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert (FLATPAK_IS_INSTALLED_REF (ref));
   g_assert_cmpint (progress_count, >, 0);
@@ -1444,6 +1447,7 @@ test_install_launch_uninstall (void)
   changed_count = 0;
   progress_count = 0;
   timeout_reached = FALSE;
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   ref = flatpak_installation_install (inst,
                                       repo_name,
                                       FLATPAK_REF_KIND_APP,
@@ -1454,6 +1458,7 @@ test_install_launch_uninstall (void)
                                       &progress_count,
                                       NULL,
                                       &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert (FLATPAK_IS_INSTALLED_REF (ref));
   g_assert_cmpint (progress_count, >, 0);
@@ -1499,6 +1504,7 @@ test_install_launch_uninstall (void)
 
   changed_count = 0;
   progress_count = 0;
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   res = flatpak_installation_uninstall (inst,
                                         flatpak_ref_get_kind (FLATPAK_REF (ref)),
                                         flatpak_ref_get_name (FLATPAK_REF (ref)),
@@ -1508,6 +1514,7 @@ test_install_launch_uninstall (void)
                                         &progress_count,
                                         NULL,
                                         &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert_true (res);
   //FIXME: no progress for uninstall
@@ -1527,6 +1534,7 @@ test_install_launch_uninstall (void)
 
   changed_count = 0;
   progress_count = 0;
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   res = flatpak_installation_uninstall (inst,
                                         flatpak_ref_get_kind (FLATPAK_REF (runtime_ref)),
                                         flatpak_ref_get_name (FLATPAK_REF (runtime_ref)),
@@ -1536,6 +1544,7 @@ test_install_launch_uninstall (void)
                                         &progress_count,
                                         NULL,
                                         &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert_true (res);
   //FIXME: no progress for uninstall
@@ -1818,12 +1827,14 @@ test_list_updates (void)
   g_assert_cmpint (flatpak_ref_get_kind (FLATPAK_REF (update_ref)), ==, FLATPAK_REF_KIND_RUNTIME);
 
   /* Install the new update */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   updated_ref = flatpak_installation_update (inst,
                                              FLATPAK_UPDATE_FLAGS_NONE,
                                              FLATPAK_REF_KIND_APP,
                                              "org.test.Hello",
                                              flatpak_get_default_arch (), "master",
                                              NULL, NULL, NULL, &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert_true (FLATPAK_IS_INSTALLED_REF (updated_ref));
 
@@ -1869,12 +1880,14 @@ test_list_updates_offline (void)
   g_assert_nonnull (inst);
 
   /* Install a runtime */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   runtime_ref = flatpak_installation_install (inst,
                                               repo_name,
                                               FLATPAK_REF_KIND_RUNTIME,
                                               "org.test.Platform",
                                               NULL, NULL, NULL, NULL, NULL,
                                               &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert (FLATPAK_IS_INSTALLED_REF (runtime_ref));
 
@@ -1906,6 +1919,7 @@ test_list_updates_offline (void)
   g_assert_true (res);
 
   /* Uninstall the runtime */
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   res = flatpak_installation_uninstall (inst,
                                         flatpak_ref_get_kind (FLATPAK_REF (runtime_ref)),
                                         flatpak_ref_get_name (FLATPAK_REF (runtime_ref)),
@@ -1913,6 +1927,7 @@ test_list_updates_offline (void)
                                         flatpak_ref_get_branch (FLATPAK_REF (runtime_ref)),
                                         NULL, NULL, NULL,
                                         &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert_true (res);
 }
@@ -2446,6 +2461,7 @@ empty_installation (FlatpakInstallation *inst)
     {
       FlatpakRef *ref = g_ptr_array_index (refs, i);
 
+      G_GNUC_BEGIN_IGNORE_DEPRECATIONS
       flatpak_installation_uninstall_full (inst,
                                            FLATPAK_UNINSTALL_FLAGS_NO_TRIGGERS,
                                            flatpak_ref_get_kind (ref),
@@ -2453,6 +2469,7 @@ empty_installation (FlatpakInstallation *inst)
                                            flatpak_ref_get_arch (ref),
                                            flatpak_ref_get_branch (ref),
                                            NULL, NULL, NULL, &error);
+      G_GNUC_END_IGNORE_DEPRECATIONS
       g_assert_no_error (error);
     }
 
@@ -3517,7 +3534,9 @@ test_update_subpaths (void)
   g_clear_object (&transaction);
   g_clear_object (&ref);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   ref = flatpak_installation_update_full (inst, 0, FLATPAK_REF_KIND_RUNTIME, "org.test.Hello.Locale", flatpak_get_default_arch (), "master", subpaths2, NULL, NULL, NULL, &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
 
   subpaths = flatpak_installed_ref_get_subpaths (ref);
@@ -3569,16 +3588,22 @@ test_overrides (void)
 
   empty_installation (inst);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   ref = flatpak_installation_update (inst, 0, FLATPAK_REF_KIND_APP, "org.test.Hello", NULL, "master", NULL, NULL, NULL, &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED);
   g_assert_null (ref);
   g_clear_error (&error);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   ref = flatpak_installation_install (inst, repo_name, FLATPAK_REF_KIND_APP, "org.test.Hello", NULL, "master", NULL, NULL, NULL, &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert_nonnull (ref);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   ref = flatpak_installation_install (inst, repo_name, FLATPAK_REF_KIND_RUNTIME, "org.test.Platform", NULL, "master", NULL, NULL, NULL, &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert_nonnull (ref);
 
@@ -3718,7 +3743,9 @@ test_install_bundle (void)
   path = g_build_filename (testdir, "bundles", "hello.flatpak", NULL);
   file = g_file_new_for_path (path);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   ref = flatpak_installation_install_bundle (inst, file, NULL, NULL, NULL, &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert_nonnull (ref);
 }
@@ -3750,7 +3777,9 @@ test_install_flatpakref (void)
                    NULL);
   data = g_bytes_new (s, strlen (s));
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   ref = flatpak_installation_install_ref_file (inst, data, NULL, &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert_nonnull (ref);
 }
@@ -3782,7 +3811,9 @@ test_list_installed_related_refs (void)
   g_assert_null (refs);
   g_clear_error (&error);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   iref = flatpak_installation_install (inst, repo_name, FLATPAK_REF_KIND_APP, "org.test.Hello", NULL, "master", NULL, NULL, NULL, &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert_nonnull (iref);
   g_clear_object (&iref);
@@ -3831,7 +3862,9 @@ test_list_installed_related_refs (void)
   g_assert_null (refs);
   g_clear_error (&error);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   iref = flatpak_installation_install (inst, repo_name, FLATPAK_REF_KIND_APP, "org.test.Hello", NULL, "master", NULL, NULL, NULL, &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert_nonnull (iref);
   g_clear_object (&iref);
@@ -3893,6 +3926,7 @@ test_no_deploy (void)
 
   empty_installation (inst);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   ref = flatpak_installation_install_full (inst,
                                            FLATPAK_INSTALL_FLAGS_NO_DEPLOY,
                                            repo_name,
@@ -3905,6 +3939,7 @@ test_no_deploy (void)
                                            NULL,
                                            NULL,
                                            &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_error (error, FLATPAK_ERROR, FLATPAK_ERROR_ONLY_PULLED);
   g_assert_null (ref);
   g_clear_error (&error);
@@ -4038,7 +4073,9 @@ test_installation_unused_refs (void)
 
   empty_installation (inst);
 
+  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   iref = flatpak_installation_install (inst, repo_name, FLATPAK_REF_KIND_APP, "org.test.Hello", NULL, "master", NULL, NULL, NULL, &error);
+  G_GNUC_END_IGNORE_DEPRECATIONS
   g_assert_no_error (error);
   g_assert_nonnull (iref);
   g_clear_object (&iref);

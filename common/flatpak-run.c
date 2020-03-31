@@ -64,6 +64,17 @@
 
 #define DEFAULT_SHELL "/bin/sh"
 
+const char * const abs_usrmerged_dirs[] =
+{
+  "/bin",
+  "/lib",
+  "/lib32",
+  "/lib64",
+  "/sbin",
+  NULL
+};
+const char * const *flatpak_abs_usrmerged_dirs = abs_usrmerged_dirs;
+
 static char *
 extract_unix_path_from_dbus_address (const char *address)
 {
@@ -577,13 +588,13 @@ flatpak_run_add_journal_args (FlatpakBwrap *bwrap)
   if (g_file_test (journal_socket_socket, G_FILE_TEST_EXISTS))
     {
       flatpak_bwrap_add_args (bwrap,
-                              "--bind", journal_socket_socket, journal_socket_socket,
+                              "--ro-bind", journal_socket_socket, journal_socket_socket,
                               NULL);
     }
   if (g_file_test (journal_stdout_socket, G_FILE_TEST_EXISTS))
     {
       flatpak_bwrap_add_args (bwrap,
-                              "--bind", journal_stdout_socket, journal_stdout_socket,
+                              "--ro-bind", journal_stdout_socket, journal_stdout_socket,
                               NULL);
     }
 }
@@ -2176,10 +2187,10 @@ flatpak_run_add_dconf_args (FlatpakBwrap *bwrap,
 gboolean
 flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
                                GFile          *app_files,
-                               GVariant       *app_deploy_data,
+                               GBytes         *app_deploy_data,
                                const char     *app_extensions,
                                GFile          *runtime_files,
-                               GVariant       *runtime_deploy_data,
+                               GBytes         *runtime_deploy_data,
                                const char     *runtime_extensions,
                                const char     *app_id,
                                const char     *app_branch,
@@ -2799,22 +2810,25 @@ static void
 flatpak_run_setup_usr_links (FlatpakBwrap *bwrap,
                              GFile        *runtime_files)
 {
-  const char *usr_links[] = {"lib", "lib32", "lib64", "bin", "sbin"};
   int i;
 
   if (runtime_files == NULL)
     return;
 
-  for (i = 0; i < G_N_ELEMENTS (usr_links); i++)
+  for (i = 0; flatpak_abs_usrmerged_dirs[i] != NULL; i++)
     {
-      const char *subdir = usr_links[i];
-      g_autoptr(GFile) runtime_subdir = g_file_get_child (runtime_files, subdir);
+      const char *subdir = flatpak_abs_usrmerged_dirs[i];
+      g_autoptr(GFile) runtime_subdir = NULL;
+
+      g_assert (subdir[0] == '/');
+      /* Skip the '/' when using as a subdirectory of the runtime */
+      runtime_subdir = g_file_get_child (runtime_files, subdir + 1);
+
       if (g_file_query_exists (runtime_subdir, NULL))
         {
-          g_autofree char *link = g_strconcat ("usr/", subdir, NULL);
-          g_autofree char *dest = g_strconcat ("/", subdir, NULL);
+          g_autofree char *link = g_strconcat ("usr", subdir, NULL);
           flatpak_bwrap_add_args (bwrap,
-                                  "--symlink", link, dest,
+                                  "--symlink", link, subdir,
                                   NULL);
         }
     }
@@ -2830,16 +2844,12 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
 {
   g_autofree char *run_dir = NULL;
   g_autofree char *passwd_contents = NULL;
-  g_autofree char *group_contents = NULL;
+  g_autoptr(GString) group_contents = NULL;
   const char *pkcs11_conf_contents = NULL;
   struct group *g;
   gulong pers;
   gid_t gid = getgid ();
   g_autoptr(GFile) etc = NULL;
-
-  g = getgrgid (gid);
-  if (g == NULL)
-    return flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Invalid group: %d"), gid);
 
   run_dir = g_strdup_printf ("/run/user/%d", getuid ());
 
@@ -2851,10 +2861,14 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
                                      g_get_home_dir (),
                                      DEFAULT_SHELL);
 
-  group_contents = g_strdup_printf ("%s:x:%d:%s\n"
-                                    "nfsnobody:x:65534:\n",
-                                    g->gr_name,
-                                    gid, g_get_user_name ());
+  group_contents = g_string_new ("");
+  g = getgrgid (gid);
+  /* if NULL, the primary group is not known outside the container, so
+   * it might as well stay unknown inside the container... */
+  if (g != NULL)
+    g_string_append_printf (group_contents, "%s:x:%d:%s\n",
+                            g->gr_name, gid, g_get_user_name ());
+  g_string_append (group_contents, "nfsnobody:x:65534:\n");
 
   pkcs11_conf_contents =
     "# Disable user pkcs11 config, because the host modules don't work in the runtime\n"
@@ -2897,7 +2911,7 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
   if (!flatpak_bwrap_add_args_data (bwrap, "passwd", passwd_contents, -1, "/etc/passwd", error))
     return FALSE;
 
-  if (!flatpak_bwrap_add_args_data (bwrap, "group", group_contents, -1, "/etc/group", error))
+  if (!flatpak_bwrap_add_args_data (bwrap, "group", group_contents->str, -1, "/etc/group", error))
     return FALSE;
 
   if (!flatpak_bwrap_add_args_data (bwrap, "pkcs11.conf", pkcs11_conf_contents, -1, "/etc/pkcs11/pkcs11.conf", error))
@@ -3166,8 +3180,8 @@ flatpak_context_load_for_deploy (FlatpakDeploy *deploy,
 }
 
 static char *
-calculate_ld_cache_checksum (GVariant   *app_deploy_data,
-                             GVariant   *runtime_deploy_data,
+calculate_ld_cache_checksum (GBytes   *app_deploy_data,
+                             GBytes   *runtime_deploy_data,
                              const char *app_extensions,
                              const char *runtime_extensions)
 {
@@ -3465,8 +3479,8 @@ flatpak_run_app (const char     *app_ref,
                  GError        **error)
 {
   g_autoptr(FlatpakDeploy) runtime_deploy = NULL;
-  g_autoptr(GVariant) runtime_deploy_data = NULL;
-  g_autoptr(GVariant) app_deploy_data = NULL;
+  g_autoptr(GBytes) runtime_deploy_data = NULL;
+  g_autoptr(GBytes) app_deploy_data = NULL;
   g_autoptr(GFile) app_files = NULL;
   g_autoptr(GFile) runtime_files = NULL;
   g_autoptr(GFile) bin_ldconfig = NULL;
