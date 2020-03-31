@@ -370,6 +370,7 @@ am__libflatpak_common_la_SOURCES_DIST = common/flatpak.h \
 	common/flatpak-json-private.h common/flatpak-json.c \
 	common/flatpak-oci-registry-private.h \
 	common/flatpak-oci-registry.c common/flatpak-portal-error.c \
+	common/flatpak-progress-private.h common/flatpak-progress.c \
 	common/flatpak-ref.c common/flatpak-related-ref-private.h \
 	common/flatpak-related-ref.c common/flatpak-remote-private.h \
 	common/flatpak-remote-ref-private.h \
@@ -402,6 +403,7 @@ am_libflatpak_common_la_OBJECTS = $(am__objects_3) \
 	common/libflatpak_common_la-flatpak-json.lo \
 	common/libflatpak_common_la-flatpak-oci-registry.lo \
 	common/libflatpak_common_la-flatpak-portal-error.lo \
+	common/libflatpak_common_la-flatpak-progress.lo \
 	common/libflatpak_common_la-flatpak-ref.lo \
 	common/libflatpak_common_la-flatpak-related-ref.lo \
 	common/libflatpak_common_la-flatpak-remote-ref.lo \
@@ -850,6 +852,7 @@ am__depfiles_remade =  \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo \
+	common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-remote-ref.Plo \
@@ -1183,23 +1186,19 @@ am__EXEEXT_11 = tests/test-run@user,nodeltas.wrap \
 	tests/test-info@user.wrap tests/test-info@system.wrap \
 	tests/test-repo@user.wrap tests/test-repo@system.wrap \
 	tests/test-repo@system-norevokefs.wrap \
-	tests/test-repo@collections.wrap \
-	tests/test-repo@collections-server-only.wrap \
+	tests/test-sideload@user.wrap tests/test-sideload@system.wrap \
 	tests/test-bundle@user.wrap tests/test-bundle@system.wrap \
 	tests/test-bundle@system-norevokefs.wrap \
 	tests/test-oci-registry@user.wrap \
-	tests/test-oci-registry@system.wrap \
-	tests/test-auth@nocollections.wrap \
-	tests/test-auth@collections.wrap $(am__EXEEXT_1)
+	tests/test-oci-registry@system.wrap $(am__EXEEXT_1)
 am__EXEEXT_12 = $(am__EXEEXT_11)
 am__EXEEXT_13 = tests/test-basic.sh tests/test-completion.sh \
 	tests/test-config.sh tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh tests/test-default-remotes.sh \
 	tests/test-extensions.sh tests/test-oci.sh \
-	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	tests/test-override.sh tests/test-update-portal.sh \
-	$(am__EXEEXT_1)
+	tests/test-auth.sh $(am__EXEEXT_1)
 am__EXEEXT_14 = $(am__EXEEXT_13)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
@@ -1453,6 +1452,8 @@ XML_LIBS = @XML_LIBS@
 XSLTPROC = @XSLTPROC@
 YACC = @YACC@
 YFLAGS = @YFLAGS@
+_GI_EXP_DATADIR = @_GI_EXP_DATADIR@
+_GI_EXP_LIBDIR = @_GI_EXP_LIBDIR@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -1553,7 +1554,8 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	data/org.freedesktop.Flatpak.xml \
 	data/org.freedesktop.Flatpak.Authenticator.xml \
 	data/org.freedesktop.portal.Flatpak.xml \
-	data/flatpak-docker-seccomp.json $(NULL) app/parse-datetime.y \
+	data/flatpak-docker-seccomp.json data/flatpak-variants.gv \
+	$(NULL) app/parse-datetime.y \
 	system-helper/org.freedesktop.Flatpak.policy.in \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.conf \
 	system-helper/org.freedesktop.Flatpak.rules.in \
@@ -1565,7 +1567,9 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	tests/test-wrapper.sh $(bashcompletion_DATA) \
 	$(zshcompletion_DATA) $(profile_DATA) env.d/flatpak.env.in \
 	env.d/60-flatpak flatpak.pc.in scripts/flatpak-bisect \
-	scripts/flatpak-coredumpctl README.md flatpak.png
+	scripts/flatpak-coredumpctl \
+	variant-schema-compiler/variant-schema-compiler README.md \
+	flatpak.png
 TESTS_ENVIRONMENT = \
 	G_TEST_SRCDIR="$(abs_srcdir)/tests"	\
 	G_TEST_BUILDDIR="$(abs_builddir)/tests"	\
@@ -1756,6 +1760,8 @@ nodist_libflatpak_common_la_SOURCES = \
 	$(systemd_dbus_built_sources)	\
 	$(xdp_dbus_built_sources) \
 	common/flatpak-enum-types.c \
+	common/flatpak-variant-private.h \
+	common/flatpak-variant-impl-private.h \
 	$(NULL)
 
 libflatpak_common_la_SOURCES = $(flatpakinclude_HEADERS) \
@@ -1778,8 +1784,9 @@ libflatpak_common_la_SOURCES = $(flatpakinclude_HEADERS) \
 	common/flatpak-json-private.h common/flatpak-json.c \
 	common/flatpak-oci-registry-private.h \
 	common/flatpak-oci-registry.c common/flatpak-portal-error.c \
-	common/flatpak-portal-error.h common/flatpak-ref.c \
-	common/flatpak-related-ref-private.h \
+	common/flatpak-portal-error.h \
+	common/flatpak-progress-private.h common/flatpak-progress.c \
+	common/flatpak-ref.c common/flatpak-related-ref-private.h \
 	common/flatpak-related-ref.c common/flatpak-remote-private.h \
 	common/flatpak-remote-ref-private.h \
 	common/flatpak-remote-ref.c common/flatpak-remote.c \
@@ -2243,17 +2250,17 @@ TEST_MATRIX_SOURCE = \
 	tests/test-http-utils.sh \
 	tests/test-run.sh{{user+system+system-norevokefs},{nodeltas+deltas}} \
 	tests/test-info.sh{user+system} \
-	tests/test-repo.sh{user+system+system-norevokefs+collections+collections-server-only} \
+	tests/test-repo.sh{user+system+system-norevokefs} \
+	tests/test-sideload.sh{user+system} \
 	tests/test-default-remotes.sh \
 	tests/test-extensions.sh \
 	tests/test-bundle.sh{user+system+system-norevokefs} \
 	tests/test-oci.sh \
 	tests/test-oci-registry.sh{{user+system} \
-	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	tests/test-override.sh \
 	tests/test-update-portal.sh \
-	tests/test-auth.sh{nocollections+collections} \
+	tests/test-auth.sh \
 	$(NULL)
 
 
@@ -2270,15 +2277,13 @@ TEST_MATRIX = \
 	tests/test-repo@user.wrap \
 	tests/test-repo@system.wrap \
 	tests/test-repo@system-norevokefs.wrap \
-	tests/test-repo@collections.wrap \
-	tests/test-repo@collections-server-only.wrap \
+	tests/test-sideload@user.wrap \
+	tests/test-sideload@system.wrap \
 	tests/test-bundle@user.wrap \
 	tests/test-bundle@system.wrap \
 	tests/test-bundle@system-norevokefs.wrap \
 	tests/test-oci-registry@user.wrap \
 	tests/test-oci-registry@system.wrap \
-	tests/test-auth@nocollections.wrap \
-	tests/test-auth@collections.wrap \
 	$(NULL)
 
 TEST_MATRIX_DIST = \
@@ -2290,19 +2295,19 @@ TEST_MATRIX_DIST = \
 	tests/test-default-remotes.sh \
 	tests/test-extensions.sh \
 	tests/test-oci.sh \
-	tests/test-unsigned-summaries.sh \
 	tests/test-update-remote-configuration.sh \
 	tests/test-override.sh \
 	tests/test-update-portal.sh \
+	tests/test-auth.sh \
 	$(NULL)
 
 TEST_MATRIX_EXTRA_DIST = \
 	tests/test-run.sh \
 	tests/test-info.sh \
 	tests/test-repo.sh \
+	tests/test-sideload.sh \
 	tests/test-bundle.sh \
 	tests/test-oci-registry.sh \
-	tests/test-auth.sh \
 	$(NULL)
 
 test_scripts = ${TEST_MATRIX}
@@ -2779,6 +2784,8 @@ common/libflatpak_common_la-flatpak-json.lo: common/$(am__dirstamp) \
 common/libflatpak_common_la-flatpak-oci-registry.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-portal-error.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-progress.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-ref.lo: common/$(am__dirstamp) \
 	common/$(DEPDIR)/$(am__dirstamp)
@@ -3399,6 +3406,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-remote-ref.Plo@am__quote@ # am--include-marker
@@ -3629,6 +3637,13 @@ common/libflatpak_common_la-flatpak-portal-error.lo: common/flatpak-portal-error
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-portal-error.c' object='common/libflatpak_common_la-flatpak-portal-error.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-portal-error.lo `test -f 'common/flatpak-portal-error.c' || echo '$(srcdir)/'`common/flatpak-portal-error.c
+
+common/libflatpak_common_la-flatpak-progress.lo: common/flatpak-progress.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-progress.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Tpo -c -o common/libflatpak_common_la-flatpak-progress.lo `test -f 'common/flatpak-progress.c' || echo '$(srcdir)/'`common/flatpak-progress.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-progress.c' object='common/libflatpak_common_la-flatpak-progress.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-progress.lo `test -f 'common/flatpak-progress.c' || echo '$(srcdir)/'`common/flatpak-progress.c
 
 common/libflatpak_common_la-flatpak-ref.lo: common/flatpak-ref.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-ref.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Tpo -c -o common/libflatpak_common_la-flatpak-ref.lo `test -f 'common/flatpak-ref.c' || echo '$(srcdir)/'`common/flatpak-ref.c
@@ -5755,16 +5770,16 @@ tests/test-repo@system-norevokefs.wrap.log: tests/test-repo@system-norevokefs.wr
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-repo@collections.wrap.log: tests/test-repo@collections.wrap
-	@p='tests/test-repo@collections.wrap'; \
-	b='tests/test-repo@collections.wrap'; \
+tests/test-sideload@user.wrap.log: tests/test-sideload@user.wrap
+	@p='tests/test-sideload@user.wrap'; \
+	b='tests/test-sideload@user.wrap'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-repo@collections-server-only.wrap.log: tests/test-repo@collections-server-only.wrap
-	@p='tests/test-repo@collections-server-only.wrap'; \
-	b='tests/test-repo@collections-server-only.wrap'; \
+tests/test-sideload@system.wrap.log: tests/test-sideload@system.wrap
+	@p='tests/test-sideload@system.wrap'; \
+	b='tests/test-sideload@system.wrap'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5800,20 +5815,6 @@ tests/test-oci-registry@user.wrap.log: tests/test-oci-registry@user.wrap
 tests/test-oci-registry@system.wrap.log: tests/test-oci-registry@system.wrap
 	@p='tests/test-oci-registry@system.wrap'; \
 	b='tests/test-oci-registry@system.wrap'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-auth@nocollections.wrap.log: tests/test-auth@nocollections.wrap
-	@p='tests/test-auth@nocollections.wrap'; \
-	b='tests/test-auth@nocollections.wrap'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-auth@collections.wrap.log: tests/test-auth@collections.wrap
-	@p='tests/test-auth@collections.wrap'; \
-	b='tests/test-auth@collections.wrap'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -5874,13 +5875,6 @@ tests/test-oci.sh.log: tests/test-oci.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-tests/test-unsigned-summaries.sh.log: tests/test-unsigned-summaries.sh
-	@p='tests/test-unsigned-summaries.sh'; \
-	b='tests/test-unsigned-summaries.sh'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 tests/test-update-remote-configuration.sh.log: tests/test-update-remote-configuration.sh
 	@p='tests/test-update-remote-configuration.sh'; \
 	b='tests/test-update-remote-configuration.sh'; \
@@ -5898,6 +5892,13 @@ tests/test-override.sh.log: tests/test-override.sh
 tests/test-update-portal.sh.log: tests/test-update-portal.sh
 	@p='tests/test-update-portal.sh'; \
 	b='tests/test-update-portal.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-auth.sh.log: tests/test-auth.sh
+	@p='tests/test-auth.sh'; \
+	b='tests/test-auth.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -6308,6 +6309,7 @@ distclean: distclean-recursive
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo
+	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-remote-ref.Plo
@@ -6497,6 +6499,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-oci-registry.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo
+	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-remote-ref.Plo
@@ -6702,6 +6705,13 @@ common/flatpak-systemd-dbus-generated.c: data/org.freedesktop.systemd1.xml Makef
 
 common/%-dbus-generated.h: common/%-dbus-generated.c
 	@true # Built as a side-effect of the rules for the .c
+
+common/flatpak-variant-private.h: variant-schema-compiler/variant-schema-compiler  data/flatpak-variants.gv
+	$(AM_V_GEN) $(srcdir)/variant-schema-compiler/variant-schema-compiler --outfile-header common/flatpak-variant-private.h  --outfile common/flatpak-variant-impl-private.h --prefix var $(srcdir)/data/flatpak-variants.gv
+
+# Generated by the same tool at the same time
+common/flatpak-variant-impl-private.h: common/flatpak-variant-private.h
+	@:
 
 # gobject-introspection rules
 -include $(INTROSPECTION_MAKEFILE)
