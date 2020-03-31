@@ -1,3 +1,9 @@
+flatpak (1.6.3-1) UNRELEASED; urgency=medium
+
+  * New upstream stable release
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 31 Mar 2020 11:55:51 +0100
+
 flatpak (1.6.2-1) unstable; urgency=medium
 
   * New upstream stable release
