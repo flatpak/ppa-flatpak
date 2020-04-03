@@ -1,3 +1,9 @@
+flatpak (1.7.2-flatpak1~disco) disco; urgency=medium
+
+  * Rebuild for disco
+
+ -- Alexander Larsson <alexl@redhat.com>  Fri, 03 Apr 2020 17:29:34 +0200
+
 flatpak (1.7.2-flatpak1~bionic) bionic; urgency=medium
 
   * Update to 1.7.2
