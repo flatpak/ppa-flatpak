@@ -232,7 +232,8 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" \
 	"$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" \
 	"$(DESTDIR)$(installed_test_keyringdir)" \
 	"$(DESTDIR)$(installed_test_keyring2dir)" \
-	"$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" \
+	"$(DESTDIR)$(envdir)" "$(DESTDIR)$(fishcompletiondir)" \
+	"$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(installed_test_metadir)" \
 	"$(DESTDIR)$(introspectiondir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" \
@@ -983,11 +984,12 @@ DATA = $(bashcompletion_DATA) $(dbus_service_DATA) \
 	$(dbussystemservice_DATA) $(dist_dbusconf_DATA) \
 	$(dist_installed_test_keyring_DATA) \
 	$(dist_installed_test_keyring2_DATA) $(env_DATA) \
-	$(installed_test_DATA) $(installed_test_meta_DATA) \
-	$(introspection_DATA) $(nobase_installed_test_DATA) \
-	$(nodist_gir_DATA) $(nodist_typelib_DATA) $(noinst_DATA) \
-	$(pkgconfig_DATA) $(polkit_policy_DATA) $(polkit_rules_DATA) \
-	$(profile_DATA) $(selinux_devel_DATA) $(selinux_module_DATA) \
+	$(fishcompletion_DATA) $(installed_test_DATA) \
+	$(installed_test_meta_DATA) $(introspection_DATA) \
+	$(nobase_installed_test_DATA) $(nodist_gir_DATA) \
+	$(nodist_typelib_DATA) $(noinst_DATA) $(pkgconfig_DATA) \
+	$(polkit_policy_DATA) $(polkit_rules_DATA) $(profile_DATA) \
+	$(selinux_devel_DATA) $(selinux_module_DATA) \
 	$(systemdsystemunit_DATA) $(systemduserunit_DATA) \
 	$(zshcompletion_DATA)
 HEADERS = $(flatpakinclude_HEADERS) $(nodist_flatpakinclude_HEADERS)
@@ -1565,9 +1567,9 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	$(NULL) tests/flatpak.supp tests/glib.supp \
 	tests/Makefile-test-matrix.am.inc tests/expand-test-matrix.sh \
 	tests/test-wrapper.sh $(bashcompletion_DATA) \
-	$(zshcompletion_DATA) $(profile_DATA) env.d/flatpak.env.in \
-	env.d/60-flatpak flatpak.pc.in scripts/flatpak-bisect \
-	scripts/flatpak-coredumpctl \
+	$(zshcompletion_DATA) $(fishcompletion_DATA) $(profile_DATA) \
+	env.d/flatpak.env.in env.d/60-flatpak flatpak.pc.in \
+	scripts/flatpak-bisect scripts/flatpak-coredumpctl \
 	variant-schema-compiler/variant-schema-compiler README.md \
 	flatpak.png
 TESTS_ENVIRONMENT = \
@@ -2344,6 +2346,8 @@ bashcompletiondir = $(datadir)/bash-completion/completions
 bashcompletion_DATA = completion/flatpak
 zshcompletiondir = $(datadir)/zsh/site-functions
 zshcompletion_DATA = completion/_flatpak
+fishcompletiondir = $(datadir)/fish/vendor_completions.d
+fishcompletion_DATA = completion/flatpak.fish
 profiledir = $(PROFILE_DIR)
 profile_DATA = profile/flatpak.sh
 envdir = $(datadir)/gdm/env.d
@@ -5071,6 +5075,27 @@ uninstall-envDATA:
 	@list='$(env_DATA)'; test -n "$(envdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(envdir)'; $(am__uninstall_files_from_dir)
+install-fishcompletionDATA: $(fishcompletion_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(fishcompletion_DATA)'; test -n "$(fishcompletiondir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(fishcompletiondir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(fishcompletiondir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(fishcompletiondir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(fishcompletiondir)" || exit $$?; \
+	done
+
+uninstall-fishcompletionDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(fishcompletion_DATA)'; test -n "$(fishcompletiondir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(fishcompletiondir)'; $(am__uninstall_files_from_dir)
 install-installed_testDATA: $(installed_test_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(installed_test_DATA)'; test -n "$(installed_testdir)" || list=; \
@@ -6155,7 +6180,7 @@ install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(envgendir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(selinux_develdir)" "$(DESTDIR)$(selinux_moduledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(zshcompletiondir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(envgendir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(fishcompletiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(selinux_develdir)" "$(DESTDIR)$(selinux_moduledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(zshcompletiondir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -6378,8 +6403,9 @@ install-data-am: install-bashcompletionDATA install-bwrapPROGRAMS \
 	install-dist_installed_test_keyring2DATA \
 	install-dist_installed_test_keyringDATA \
 	install-dist_triggersSCRIPTS install-envDATA \
-	install-envgenSCRIPTS install-flatpakincludeHEADERS \
-	install-installed_testDATA install-installed_testLTLIBRARIES \
+	install-envgenSCRIPTS install-fishcompletionDATA \
+	install-flatpakincludeHEADERS install-installed_testDATA \
+	install-installed_testLTLIBRARIES \
 	install-installed_testPROGRAMS install-installed_testSCRIPTS \
 	install-installed_test_metaDATA install-introspectionDATA \
 	install-nobase_installed_testDATA \
@@ -6568,8 +6594,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	uninstall-dist_installed_test_keyring2DATA \
 	uninstall-dist_installed_test_keyringDATA \
 	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
-	uninstall-envgenSCRIPTS uninstall-flatpakincludeHEADERS \
-	uninstall-installed_testDATA \
+	uninstall-envgenSCRIPTS uninstall-fishcompletionDATA \
+	uninstall-flatpakincludeHEADERS uninstall-installed_testDATA \
 	uninstall-installed_testLTLIBRARIES \
 	uninstall-installed_testPROGRAMS \
 	uninstall-installed_testSCRIPTS \
@@ -6608,9 +6634,10 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	install-dist_installed_test_keyringDATA \
 	install-dist_triggersSCRIPTS install-dvi install-dvi-am \
 	install-envDATA install-envgenSCRIPTS install-exec \
-	install-exec-am install-flatpakincludeHEADERS install-html \
-	install-html-am install-info install-info-am \
-	install-installed_testDATA install-installed_testLTLIBRARIES \
+	install-exec-am install-fishcompletionDATA \
+	install-flatpakincludeHEADERS install-html install-html-am \
+	install-info install-info-am install-installed_testDATA \
+	install-installed_testLTLIBRARIES \
 	install-installed_testPROGRAMS install-installed_testSCRIPTS \
 	install-installed_test_metaDATA install-introspectionDATA \
 	install-libLTLIBRARIES install-libexecPROGRAMS install-man \
@@ -6633,8 +6660,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	uninstall-dist_installed_test_keyring2DATA \
 	uninstall-dist_installed_test_keyringDATA \
 	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
-	uninstall-envgenSCRIPTS uninstall-flatpakincludeHEADERS \
-	uninstall-installed_testDATA \
+	uninstall-envgenSCRIPTS uninstall-fishcompletionDATA \
+	uninstall-flatpakincludeHEADERS uninstall-installed_testDATA \
 	uninstall-installed_testLTLIBRARIES \
 	uninstall-installed_testPROGRAMS \
 	uninstall-installed_testSCRIPTS \
