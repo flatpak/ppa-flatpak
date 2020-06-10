@@ -58,6 +58,7 @@
 #include "flatpak-proxy.h"
 #include "flatpak-utils-base-private.h"
 #include "flatpak-dir-private.h"
+#include "flatpak-instance-private.h"
 #include "flatpak-systemd-dbus-generated.h"
 #include "flatpak-document-dbus-generated.h"
 #include "flatpak-error.h"
@@ -420,9 +421,10 @@ flatpak_run_add_cups_args (FlatpakBwrap *bwrap)
   g_autofree char * cups_server_name = flatpak_run_get_cups_server_name();
 
   if (!g_file_test (cups_server_name, G_FILE_TEST_EXISTS))
-    return;
-  else
-    g_debug ("Could not find CUPS server");
+    {
+      g_debug ("Could not find CUPS server");
+      return;
+    }
 
   flatpak_bwrap_add_args (bwrap,
                           "--ro-bind", cups_server_name, sandbox_server_name,
@@ -577,6 +579,14 @@ flatpak_run_add_pulseaudio_args (FlatpakBwrap *bwrap)
     }
   else
     g_debug ("Could not find pulseaudio socket");
+
+  /* Also allow ALSA access. This was added in 1.8, and is not ideally named. However,
+   * since the practical permission of ALSA and PulseAudio are essentially the same, and
+   * since we don't want to add more permissions for something we plan to replace with
+   * portals/pipewire going forward we reinterpret pulseaudio to also mean ALSA.
+   */
+  if (g_file_test ("/dev/snd", G_FILE_TEST_IS_DIR))
+    flatpak_bwrap_add_args (bwrap, "--dev-bind", "/dev/snd", "/dev/snd", NULL);
 }
 
 static void
@@ -1621,6 +1631,22 @@ job_removed_cb (SystemdManager *manager,
     g_main_loop_quit (data->main_loop);
 }
 
+static gchar *
+systemd_unit_name_escape (const gchar *in)
+{
+  /* Adapted from systemd source */
+  GString * const str = g_string_sized_new (strlen (in));
+
+  for (; *in; in++)
+    {
+      if (g_ascii_isalnum (*in) || *in == ':' || *in == '_' || *in == '.')
+        g_string_append_c (str, *in);
+      else
+        g_string_append_printf (str, "\\x%02x", *in);
+    }
+  return g_string_free (str, FALSE);
+}
+
 gboolean
 flatpak_run_in_transient_unit (const char *appid, GError **error)
 {
@@ -1628,6 +1654,7 @@ flatpak_run_in_transient_unit (const char *appid, GError **error)
   g_autofree char *path = NULL;
   g_autofree char *address = NULL;
   g_autofree char *name = NULL;
+  g_autofree char *appid_escaped = NULL;
   g_autofree char *job = NULL;
   SystemdManager *manager = NULL;
   GVariantBuilder builder;
@@ -1665,7 +1692,8 @@ flatpak_run_in_transient_unit (const char *appid, GError **error)
   if (!manager)
     goto out;
 
-  name = g_strdup_printf ("flatpak-%s-%d.scope", appid, getpid ());
+  appid_escaped = systemd_unit_name_escape (appid);
+  name = g_strdup_printf ("app-flatpak-%s-%d.scope", appid_escaped, getpid ());
 
   g_variant_builder_init (&builder, G_VARIANT_TYPE ("a(sv)"));
 
@@ -1711,7 +1739,7 @@ static void
 add_font_path_args (FlatpakBwrap *bwrap)
 {
   g_autoptr(GString) xml_snippet = g_string_new ("");
-  g_autoptr(GFile) home = NULL;
+  gchar *path_build_tmp = NULL;
   g_autoptr(GFile) user_font1 = NULL;
   g_autoptr(GFile) user_font2 = NULL;
   g_autoptr(GFile) user_font_cache = NULL;
@@ -1768,9 +1796,13 @@ add_font_path_args (FlatpakBwrap *bwrap)
                               NULL);
     }
 
-  home = g_file_new_for_path (g_get_home_dir ());
-  user_font1 = g_file_resolve_relative_path (home, ".local/share/fonts");
-  user_font2 = g_file_resolve_relative_path (home, ".fonts");
+  path_build_tmp = g_build_filename (g_get_user_data_dir (), "fonts", NULL);
+  user_font1 = g_file_new_for_path (path_build_tmp);
+  g_clear_pointer (&path_build_tmp, g_free);
+
+  path_build_tmp = g_build_filename (g_get_home_dir (), ".fonts", NULL);
+  user_font2 = g_file_new_for_path (path_build_tmp);
+  g_clear_pointer (&path_build_tmp, g_free);
 
   if (g_file_query_exists (user_font1, NULL))
     {
@@ -1791,7 +1823,10 @@ add_font_path_args (FlatpakBwrap *bwrap)
                               flatpak_file_get_path_cached (user_font2));
     }
 
-  user_font_cache = g_file_resolve_relative_path (home, ".cache/fontconfig");
+  path_build_tmp = g_build_filename (g_get_user_cache_dir (), "fontconfig", NULL);
+  user_font_cache = g_file_new_for_path (path_build_tmp);
+  g_clear_pointer (&path_build_tmp, g_free);
+
   if (g_file_query_exists (user_font_cache, NULL))
     {
       flatpak_bwrap_add_args (bwrap,
@@ -1818,7 +1853,7 @@ add_font_path_args (FlatpakBwrap *bwrap)
 static void
 add_icon_path_args (FlatpakBwrap *bwrap)
 {
-  g_autoptr(GFile) home = NULL;
+  g_autofree gchar *user_icons_path = NULL;
   g_autoptr(GFile) user_icons = NULL;
 
   if (g_file_test ("/usr/share/icons", G_FILE_TEST_IS_DIR))
@@ -1828,8 +1863,8 @@ add_icon_path_args (FlatpakBwrap *bwrap)
                               NULL);
     }
 
-  home = g_file_new_for_path (g_get_home_dir ());
-  user_icons = g_file_resolve_relative_path (home, ".local/share/icons");
+  user_icons_path = g_build_filename (g_get_user_data_dir (), "icons", NULL);
+  user_icons = g_file_new_for_path (user_icons_path);
   if (g_file_query_exists (user_icons, NULL))
     {
       flatpak_bwrap_add_args (bwrap,
@@ -1866,46 +1901,7 @@ flatpak_app_compute_permissions (GKeyFile *app_metadata,
 static void
 flatpak_run_gc_ids (void)
 {
-  g_autofree char *base_dir = g_build_filename (g_get_user_runtime_dir (), ".flatpak", NULL);
-  g_auto(GLnxDirFdIterator) iter = { 0 };
-  struct dirent *dent;
-
-  /* Clean up unused instances */
-  if (!glnx_dirfd_iterator_init_at (AT_FDCWD, base_dir, FALSE, &iter, NULL))
-    return;
-
-  while (TRUE)
-    {
-      if (!glnx_dirfd_iterator_next_dent_ensure_dtype (&iter, &dent, NULL, NULL))
-        break;
-
-      if (dent == NULL)
-        break;
-
-      if (dent->d_type == DT_DIR)
-        {
-          g_autofree char *ref_file = g_strconcat (dent->d_name, "/.ref", NULL);
-          struct stat statbuf;
-          struct flock l = {
-            .l_type = F_WRLCK,
-            .l_whence = SEEK_SET,
-            .l_start = 0,
-            .l_len = 0
-          };
-          glnx_autofd int lock_fd = openat (iter.fd, ref_file, O_RDWR | O_CLOEXEC);
-          if (lock_fd != -1 &&
-              fstat (lock_fd, &statbuf) == 0 &&
-              /* Only gc if created at least 3 secs ago, to work around race mentioned in flatpak_run_allocate_id() */
-              statbuf.st_mtime + 3 < time (NULL) &&
-              fcntl (lock_fd, F_GETLK, &l) == 0 &&
-              l.l_type == F_UNLCK)
-            {
-              /* The instance is not used, remove it */
-              g_debug ("Cleaning up unused container id %s", dent->d_name);
-              glnx_shutil_rm_rf_at (iter.fd, dent->d_name, NULL, NULL);
-            }
-        }
-    }
+  flatpak_instance_iterate_all_and_gc (NULL);
 }
 
 static char *
@@ -2202,6 +2198,7 @@ flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
                                gboolean        build,
                                gboolean        devel,
                                char          **app_info_path_out,
+                               int             instance_id_fd,
                                char          **instance_id_host_dir_out,
                                GError        **error)
 {
@@ -2374,6 +2371,38 @@ flatpak_run_add_app_info_args (FlatpakBwrap   *bwrap,
       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
                    _("Failed to open bwrapinfo.json file: %s"), g_strerror (errsv));
       return FALSE;
+    }
+
+  /* NOTE: It is important that this takes place after bwrapinfo.json is created,
+     otherwise start notifications in the portal may not work. */
+  if (instance_id_fd != -1)
+    {
+      gsize instance_id_position = 0;
+      gsize instance_id_size = strlen (instance_id);
+
+      while (instance_id_size > 0)
+        {
+          gssize bytes_written = write (instance_id_fd, instance_id + instance_id_position, instance_id_size);
+          if (G_UNLIKELY (bytes_written <= 0))
+            {
+              int errsv = bytes_written == -1 ? errno : ENOSPC;
+              if (errsv == EINTR)
+                continue;
+
+              close (fd);
+              close (fd2);
+              close (fd3);
+
+              g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+                           _("Failed to write to instance id fd: %s"), g_strerror (errsv));
+              return FALSE;
+            }
+
+          instance_id_position += bytes_written;
+          instance_id_size -= bytes_written;
+        }
+
+      close (instance_id_fd);
     }
 
   flatpak_bwrap_add_args_data_fd (bwrap, "--info-fd", fd3, NULL);
@@ -2590,8 +2619,8 @@ setup_seccomp (FlatpakBwrap   *bwrap,
    * can do, and we should support code portability between different
    * container tools.
    *
-   * This syscall blacklist is copied from linux-user-chroot, which was in turn
-   * clearly influenced by the Sandstorm.io blacklist.
+   * This syscall blocklist is copied from linux-user-chroot, which was in turn
+   * clearly influenced by the Sandstorm.io blocklist.
    *
    * If you make any changes here, I suggest sending the changes along
    * to other sandbox maintainers.  Using the libseccomp list is also
@@ -2599,7 +2628,7 @@ setup_seccomp (FlatpakBwrap   *bwrap,
    * https://groups.google.com/forum/#!topic/libseccomp
    *
    * A non-exhaustive list of links to container tooling that might
-   * want to share this blacklist:
+   * want to share this blocklist:
    *
    *  https://github.com/sandstorm-io/sandstorm
    *    in src/sandstorm/supervisor.c++
@@ -2614,7 +2643,7 @@ setup_seccomp (FlatpakBwrap   *bwrap,
   {
     int                  scall;
     struct scmp_arg_cmp *arg;
-  } syscall_blacklist[] = {
+  } syscall_blocklist[] = {
     /* Block dmesg */
     {SCMP_SYS (syslog)},
     /* Useless old syscall */
@@ -2653,7 +2682,7 @@ setup_seccomp (FlatpakBwrap   *bwrap,
   {
     int                  scall;
     struct scmp_arg_cmp *arg;
-  } syscall_nondevel_blacklist[] = {
+  } syscall_nondevel_blocklist[] = {
     /* Profiling operations; we expect these to be done by tools from outside
      * the sandbox.  In particular perf has been the source of many CVEs.
      */
@@ -2662,12 +2691,12 @@ setup_seccomp (FlatpakBwrap   *bwrap,
     {SCMP_SYS (personality), &SCMP_A0 (SCMP_CMP_NE, allowed_personality)},
     {SCMP_SYS (ptrace)}
   };
-  /* Blacklist all but unix, inet, inet6 and netlink */
+  /* Blocklist all but unix, inet, inet6 and netlink */
   struct
   {
     int             family;
     FlatpakRunFlags flags_mask;
-  } socket_family_whitelist[] = {
+  } socket_family_allowlist[] = {
     /* NOTE: Keep in numerical order */
     { AF_UNSPEC, 0 },
     { AF_LOCAL, 0 },
@@ -2742,11 +2771,11 @@ setup_seccomp (FlatpakBwrap   *bwrap,
    * leak system stuff or secrets from other apps.
    */
 
-  for (i = 0; i < G_N_ELEMENTS (syscall_blacklist); i++)
+  for (i = 0; i < G_N_ELEMENTS (syscall_blocklist); i++)
     {
-      int scall = syscall_blacklist[i].scall;
-      if (syscall_blacklist[i].arg)
-        r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO (EPERM), scall, 1, *syscall_blacklist[i].arg);
+      int scall = syscall_blocklist[i].scall;
+      if (syscall_blocklist[i].arg)
+        r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO (EPERM), scall, 1, *syscall_blocklist[i].arg);
       else
         r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO (EPERM), scall, 0);
       if (r < 0 && r == -EFAULT /* unknown syscall */)
@@ -2755,11 +2784,11 @@ setup_seccomp (FlatpakBwrap   *bwrap,
 
   if (!devel)
     {
-      for (i = 0; i < G_N_ELEMENTS (syscall_nondevel_blacklist); i++)
+      for (i = 0; i < G_N_ELEMENTS (syscall_nondevel_blocklist); i++)
         {
-          int scall = syscall_nondevel_blacklist[i].scall;
-          if (syscall_nondevel_blacklist[i].arg)
-            r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO (EPERM), scall, 1, *syscall_nondevel_blacklist[i].arg);
+          int scall = syscall_nondevel_blocklist[i].scall;
+          if (syscall_nondevel_blocklist[i].arg)
+            r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO (EPERM), scall, 1, *syscall_nondevel_blocklist[i].arg);
           else
             r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO (EPERM), scall, 0);
 
@@ -2772,23 +2801,23 @@ setup_seccomp (FlatpakBwrap   *bwrap,
    * However, we need to user seccomp_rule_add_exact to avoid libseccomp doing
    * something else: https://github.com/seccomp/libseccomp/issues/8 */
   last_allowed_family = -1;
-  for (i = 0; i < G_N_ELEMENTS (socket_family_whitelist); i++)
+  for (i = 0; i < G_N_ELEMENTS (socket_family_allowlist); i++)
     {
-      int family = socket_family_whitelist[i].family;
+      int family = socket_family_allowlist[i].family;
       int disallowed;
 
-      if (socket_family_whitelist[i].flags_mask != 0 &&
-          (socket_family_whitelist[i].flags_mask & run_flags) != socket_family_whitelist[i].flags_mask)
+      if (socket_family_allowlist[i].flags_mask != 0 &&
+          (socket_family_allowlist[i].flags_mask & run_flags) != socket_family_allowlist[i].flags_mask)
         continue;
 
       for (disallowed = last_allowed_family + 1; disallowed < family; disallowed++)
         {
-          /* Blacklist the in-between valid families */
+          /* Blocklist the in-between valid families */
           seccomp_rule_add_exact (seccomp, SCMP_ACT_ERRNO (EAFNOSUPPORT), SCMP_SYS (socket), 1, SCMP_A0 (SCMP_CMP_EQ, disallowed));
         }
       last_allowed_family = family;
     }
-  /* Blacklist the rest */
+  /* Blocklist the rest */
   seccomp_rule_add_exact (seccomp, SCMP_ACT_ERRNO (EAFNOSUPPORT), SCMP_SYS (socket), 1, SCMP_A0 (SCMP_CMP_GE, last_allowed_family + 1));
 
   if (!glnx_open_anonymous_tmpfile_full (O_RDWR | O_CLOEXEC, "/tmp", &seccomp_tmpf, error))
@@ -3224,7 +3253,9 @@ regenerate_ld_cache (GPtrArray    *base_argv_array,
   g_autoptr(FlatpakBwrap) bwrap = NULL;
   g_autoptr(GArray) combined_fd_array = NULL;
   g_autoptr(GFile) ld_so_cache = NULL;
+  g_autoptr(GFile) ld_so_cache_tmp = NULL;
   g_autofree char *sandbox_cache_path = NULL;
+  g_autofree char *tmp_basename = NULL;
   g_auto(GStrv) minimal_envp = NULL;
   g_autofree char *commandline = NULL;
   int exit_status;
@@ -3266,7 +3297,11 @@ regenerate_ld_cache (GPtrArray    *base_argv_array,
                             "--symlink", "../usr/etc/ld.so.conf", "/etc/ld.so.conf",
                             NULL);
 
-  sandbox_cache_path = g_build_filename ("/run/ld-so-cache-dir", checksum, NULL);
+  tmp_basename = g_strconcat (checksum, ".XXXXXX", NULL);
+  glnx_gen_temp_name (tmp_basename);
+
+  sandbox_cache_path = g_build_filename ("/run/ld-so-cache-dir", tmp_basename, NULL);
+  ld_so_cache_tmp = g_file_get_child (ld_so_dir, tmp_basename);
 
   flatpak_bwrap_add_args (bwrap,
                           "--unshare-pid",
@@ -3310,7 +3345,7 @@ regenerate_ld_cache (GPtrArray    *base_argv_array,
       return -1;
     }
 
-  ld_so_fd = open (flatpak_file_get_path_cached (ld_so_cache), O_RDONLY);
+  ld_so_fd = open (flatpak_file_get_path_cached (ld_so_cache_tmp), O_RDONLY);
   if (ld_so_fd < 0)
     {
       flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Can't open generated ld.so.cache"));
@@ -3320,13 +3355,20 @@ regenerate_ld_cache (GPtrArray    *base_argv_array,
   if (app_id_dir == NULL)
     {
       /* For runs without an app id dir we always regenerate the ld.so.cache */
-      unlink (flatpak_file_get_path_cached (ld_so_cache));
+      unlink (flatpak_file_get_path_cached (ld_so_cache_tmp));
     }
   else
     {
       g_autoptr(GFile) active = g_file_get_child (ld_so_dir, "active");
 
       /* For app-dirs we keep one checksum alive, by pointing the active symlink to it */
+
+      /* Rename to known name, possibly overwriting existing ref if race */
+      if (rename (flatpak_file_get_path_cached (ld_so_cache_tmp), flatpak_file_get_path_cached (ld_so_cache)) == -1)
+        {
+          glnx_set_error_from_errno (error);
+          return -1;
+        }
 
       if (!flatpak_switch_symlink_and_remove (flatpak_file_get_path_cached (active),
                                               checksum, error))
@@ -3474,6 +3516,7 @@ flatpak_run_app (const char     *app_ref,
                  const char     *custom_command,
                  char           *args[],
                  int             n_args,
+                 int             instance_id_fd,
                  char          **instance_dir_out,
                  GCancellable   *cancellable,
                  GError        **error)
@@ -3792,7 +3835,8 @@ flatpak_run_app (const char     *app_ref,
                                       app_ref_parts[1], app_ref_parts[3],
                                       runtime_ref, app_id_dir, app_context, extra_context,
                                       sandboxed, FALSE, flags & FLATPAK_RUN_FLAG_DEVEL,
-                                      &app_info_path, &instance_id_host_dir, error))
+                                      &app_info_path, instance_id_fd, &instance_id_host_dir,
+                                      error))
     return FALSE;
 
   if (!flatpak_run_add_dconf_args (bwrap, app_ref_parts[1], metakey, error))

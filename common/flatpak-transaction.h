@@ -174,6 +174,10 @@ FlatpakTransactionOperationType flatpak_transaction_operation_get_operation_type
 FLATPAK_EXTERN
 const char *                    flatpak_transaction_operation_get_ref (FlatpakTransactionOperation *self);
 FLATPAK_EXTERN
+GPtrArray *                     flatpak_transaction_operation_get_related_to_ops (FlatpakTransactionOperation *self);
+FLATPAK_EXTERN
+gboolean                        flatpak_transaction_operation_get_is_skipped (FlatpakTransactionOperation *self);
+FLATPAK_EXTERN
 const char *                    flatpak_transaction_operation_get_remote (FlatpakTransactionOperation *self);
 FLATPAK_EXTERN
 GFile *                         flatpak_transaction_operation_get_bundle_path (FlatpakTransactionOperation *self);
@@ -215,6 +219,9 @@ void                flatpak_transaction_set_disable_related (FlatpakTransaction 
 FLATPAK_EXTERN
 void                flatpak_transaction_set_reinstall (FlatpakTransaction *self,
                                                        gboolean            reinstall);
+FLATPAK_EXTERN
+void                flatpak_transaction_set_no_interaction (FlatpakTransaction *self,
+                                                            gboolean            no_interaction);
 FLATPAK_EXTERN
 void                flatpak_transaction_set_force_uninstall (FlatpakTransaction *self,
                                                              gboolean            force_uninstall);
