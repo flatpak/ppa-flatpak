@@ -45,6 +45,7 @@ Build-Depends:
  libxau-dev,
  libxml2-dev (>= 2.4),
  libxml2-utils,
+ libzstd-dev,
  ostree (>= 2019.2) <!nocheck>,
  policykit-1 <!nocheck>,
  procps,
