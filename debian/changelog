@@ -1,8 +1,13 @@
-flatpak (1.7.3-1) UNRELEASED; urgency=medium
+flatpak (1.7.3-1) experimental; urgency=medium
 
   * New upstream development release
+  * Install new fish completions
+  * Enable new libzstd support
+  * Install new sysusers.d fragment
+  * d/libflatpak0.symbols: Update.
+    Ignore deletion of flatpak_oci_error_quark(), which was not public API.
 
- -- Simon McVittie <smcv@debian.org>  Fri, 03 Apr 2020 19:49:18 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 10 Jun 2020 19:49:14 +0100
 
 flatpak (1.7.1-1) experimental; urgency=medium
 
