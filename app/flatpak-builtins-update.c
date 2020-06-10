@@ -67,6 +67,7 @@ static GOptionEntry options[] = {
   { "subpath", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_subpaths, N_("Only update this subpath"), N_("PATH") },
   { "assumeyes", 'y', 0, G_OPTION_ARG_NONE, &opt_yes, N_("Automatically answer yes for all questions"), NULL },
   { "noninteractive", 0, 0, G_OPTION_ARG_NONE, &opt_noninteractive, N_("Produce minimal output and don't ask questions"), NULL },
+  /* Translators: A sideload is when you install from a local USB drive rather than the Internet. */
   { "sideload-repo", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_sideload_repos, N_("Use this local repo for sideloads"), N_("PATH") },
   { NULL }
 };
@@ -114,6 +115,10 @@ flatpak_builtin_update (int           argc,
       default_branch = argv[2];
       n_prefs = 1;
     }
+
+  /* It doesn't make sense to use the same commit for more than one thing */
+  if (opt_commit && n_prefs != 1)
+    return usage_error (context, _("With --commit, only one REF may be specified"), error);
 
   transactions = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
 
