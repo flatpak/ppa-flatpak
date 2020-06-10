@@ -127,6 +127,10 @@ struct _FlatpakTransactionOperation
   int                             run_after_prio; /* Higher => run later (when it becomes runnable). Used to run related ops (runtime extensions) before deps (apps using the runtime) */
   GList                          *run_before_ops;
   FlatpakTransactionOperation    *fail_if_op_fails; /* main app/runtime for related extensions, runtime for apps */
+  /* main app/runtime for related extensions, app for runtimes; could be multiple
+   * related-to-ops if this op is for a runtime which is needed by multiple apps
+   * in the transaction: */
+  GPtrArray                      *related_to_ops;  /* (element-type FlatpakTransactionOperation) (nullable) */
 };
 
 typedef struct _FlatpakTransactionPrivate FlatpakTransactionPrivate;
@@ -184,6 +188,7 @@ struct _FlatpakTransactionPrivate
   guint                        max_op;
 
   gboolean                     needs_resolve;
+  gboolean                     needs_tokens;
 };
 
 enum {
@@ -602,6 +607,8 @@ flatpak_transaction_operation_finalize (GObject *object)
     g_key_file_unref (self->resolved_old_metakey);
   g_free (self->resolved_token);
   g_list_free (self->run_before_ops);
+  if (self->related_to_ops)
+    g_ptr_array_unref (self->related_to_ops);
   if (self->summary_metadata)
     g_variant_unref (self->summary_metadata);
 
@@ -672,6 +679,65 @@ const char *
 flatpak_transaction_operation_get_ref (FlatpakTransactionOperation *self)
 {
   return self->ref;
+}
+
+/**
+ * flatpak_transaction_operation_get_related_to_ops:
+ * @self: a #FlatpakTransactionOperation
+ *
+ * Gets the operations which caused this operation to be added to the
+ * transaction. In the case of a runtime, it's the apps whose runtime it is (and
+ * this could be multiple apps, if they all require the same runtime). In
+ * the case of a related ref such as an extension, it's the main app or
+ * runtime. In the case of a main app or something added to the transaction by
+ * flatpak_transaction_add_ref(), %NULL or an empty array will be returned.
+ *
+ * Note that an op will be returned even if it’s marked as to be skipped when
+ * the transaction is run. Check that using
+ * flatpak_transaction_operation_get_is_skipped().
+ *
+ * Elements in the returned array are only safe to access while the parent
+ * #FlatpakTransaction is alive.
+ *
+ * Returns: (transfer none) (element-type FlatpakTransactionOperation) (nullable): the
+ *   #FlatpakTransactionOperations this one is related to (may be %NULL or an
+ *   empty array, which are equivalent)
+ * Since: 1.7.3
+ */
+GPtrArray *
+flatpak_transaction_operation_get_related_to_ops (FlatpakTransactionOperation *self)
+{
+  return self->related_to_ops;
+}
+
+static void
+flatpak_transaction_operation_add_related_to_op (FlatpakTransactionOperation *op,
+                                                 FlatpakTransactionOperation *related_op)
+{
+  if (op->related_to_ops == NULL)
+    op->related_to_ops = g_ptr_array_new ();
+  g_ptr_array_add (op->related_to_ops, related_op);
+}
+
+/**
+ * flatpak_transaction_operation_get_is_skipped:
+ * @self: a #FlatpakTransactionOperation
+ *
+ * Gets whether this operation will be skipped when the transaction is run.
+ * Operations are skipped in some transaction situations, for example when an
+ * app has reached end of life and needs a rebase, or when it would have been
+ * updated but no update is available. By default, skipped
+ * operations are not returned by flatpak_transaction_get_operations() — but
+ * they can be accessed by traversing the operation graph using
+ * flatpak_transaction_operation_get_related_to_ops().
+ *
+ * Returns: %TRUE if the operation has been marked as to skip, %FALSE otherwise
+ * Since: 1.7.3
+ */
+gboolean
+flatpak_transaction_operation_get_is_skipped (FlatpakTransactionOperation *self)
+{
+  return self->skip;
 }
 
 /**
@@ -756,7 +822,7 @@ flatpak_transaction_operation_get_commit (FlatpakTransactionOperation *self)
  * This information is available when the transaction is resolved,
  * i.e. when #FlatpakTransaction::ready is emitted.
  *
- * Returns: the download size
+ * Returns: the download size, in bytes
  * Since: 1.1.2
  */
 guint64
@@ -780,7 +846,7 @@ flatpak_transaction_operation_get_download_size (FlatpakTransactionOperation *se
  * This information is available when the transaction is resolved,
  * i.e. when #FlatpakTransaction::ready is emitted.
  *
- * Returns: the installed size
+ * Returns: the installed size, in bytes
  * Since: 1.1.2
  */
 guint64
@@ -833,7 +899,7 @@ flatpak_transaction_operation_get_old_metadata (FlatpakTransactionOperation *sel
  * flatpak_transaction_is_empty:
  * @self: a #FlatpakTransaction
  *
- * Returns whether the transaction contains any operations.
+ * Returns whether the transaction contains any non-skipped operations.
  *
  * Returns: %TRUE if the transaction is empty
  */
@@ -1511,6 +1577,28 @@ flatpak_transaction_set_reinstall (FlatpakTransaction *self,
 }
 
 /**
+ * flatpak_transaction_set_no_interaction:
+ * @self: a #FlatpakTransaction
+ * @no_interaction: Whether to disallow interactive authorization for operations
+ *
+ * This method can be used to prevent interactive authorization dialogs to appear
+ * for operations on @self. This is useful for background operations that are not
+ * directly triggered by a user action.
+ *
+ * By default, the setting from the parent #FlatpakInstallation is used.
+ *
+ * Since: 1.7.3
+ */
+void
+flatpak_transaction_set_no_interaction (FlatpakTransaction *self,
+                                        gboolean            no_interaction)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+
+  flatpak_dir_set_no_interaction (priv->dir, no_interaction);
+}
+
+/**
  * flatpak_transaction_set_force_uninstall:
  * @self: a #FlatpakTransaction
  * @force_uninstall: whether to force-uninstall refs
@@ -1782,6 +1870,7 @@ add_related (FlatpakTransaction          *self,
                                                    FLATPAK_TRANSACTION_OPERATION_UNINSTALL);
           related_op->non_fatal = TRUE;
           related_op->fail_if_op_fails = op;
+          flatpak_transaction_operation_add_related_to_op (related_op, op);
           run_operation_before (op, related_op, 1);
         }
     }
@@ -1801,6 +1890,7 @@ add_related (FlatpakTransaction          *self,
                                                    FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE);
           related_op->non_fatal = TRUE;
           related_op->fail_if_op_fails = op;
+          flatpak_transaction_operation_add_related_to_op (related_op, op);
           run_operation_before (related_op, op, 1);
         }
     }
@@ -1938,6 +2028,7 @@ add_deps (FlatpakTransaction          *self,
                                    runtime_op->ref, op->ref);
 
       op->fail_if_op_fails = runtime_op;
+      flatpak_transaction_operation_add_related_to_op (runtime_op, op);
       run_operation_before (runtime_op, op, 2);
     }
 
@@ -1959,6 +2050,7 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
   g_autofree char *origin = NULL;
   g_auto(GStrv) parts = NULL;
+  g_auto(GStrv) merged_subpaths = NULL;
   const char *pref;
   g_autofree char *origin_remote = NULL;
   g_autoptr(FlatpakRemoteState) state = NULL;
@@ -1998,7 +2090,9 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
   /* install or update */
   if (kind == FLATPAK_TRANSACTION_OPERATION_UPDATE)
     {
-      if (!dir_ref_is_installed (priv->dir, ref, &origin, NULL))
+      g_autoptr(GBytes) deploy_data = NULL;
+
+      if (!dir_ref_is_installed (priv->dir, ref, &origin, &deploy_data))
         return flatpak_fail_error (error, FLATPAK_ERROR_NOT_INSTALLED,
                                    _("%s not installed"), pref);
 
@@ -2008,6 +2102,18 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
           return TRUE;
         }
       remote = origin;
+
+      /* As stated in the documentation for flatpak_transaction_add_update(),
+       * for locale extensions we merge existing subpaths with the set of
+       * configured languages, to match the behavior of add_related().
+       */
+      if (subpaths == NULL && g_str_has_suffix (parts[1], ".Locale"))
+        {
+          g_autofree const char **old_subpaths = flatpak_deploy_data_get_subpaths (deploy_data);
+          g_auto(GStrv) extra_subpaths = flatpak_dir_get_locale_subpaths (priv->dir);
+          merged_subpaths = flatpak_subpaths_merge ((char **)old_subpaths, extra_subpaths);
+          subpaths = (const char **)merged_subpaths;
+        }
     }
   else if (kind == FLATPAK_TRANSACTION_OPERATION_INSTALL)
     {
@@ -2121,7 +2227,7 @@ flatpak_transaction_add_rebase (FlatpakTransaction *self,
 
   g_return_val_if_fail (ref != NULL, FALSE);
   g_return_val_if_fail (remote != NULL, FALSE);
-  /* flatpak_transaction_add_install_rebase without previous_ids doesn't make sense */
+  /* flatpak_transaction_add_rebase without previous_ids doesn't make sense */
   g_return_val_if_fail (previous_ids != NULL, FALSE);
 
   /* If we install with no special args pull all subpaths */
@@ -2192,7 +2298,8 @@ flatpak_transaction_add_install_flatpakref (FlatpakTransaction *self,
  * @self: a #FlatpakTransaction
  * @ref: the ref
  * @subpaths: (nullable) (array zero-terminated=1): subpaths to install; %NULL
- *  to use the current set, or `{ "", NULL }` to pull all subpaths.
+ *  to use the current set plus the set of configured languages, or
+ *  `{ "", NULL }` to pull all subpaths.
  * @commit: (nullable): the commit to update to, or %NULL to use the latest
  * @error: return location for a #GError
  *
@@ -2215,6 +2322,7 @@ flatpak_transaction_add_update (FlatpakTransaction *self,
   if (subpaths != NULL && subpaths[0] != NULL && subpaths[0][0] == 0)
     subpaths = all_paths;
 
+  /* Note: we implement the merge when subpaths == NULL in flatpak_transaction_add_ref() */
   return flatpak_transaction_add_ref (self, NULL, ref, subpaths, NULL, commit, FLATPAK_TRANSACTION_OPERATION_UPDATE, NULL, NULL, error);
 }
 
@@ -2442,6 +2550,7 @@ mark_op_resolved (FlatpakTransactionOperation *op,
   g_assert (commit != NULL);
 
   op->resolved = TRUE;
+  g_free (op->resolved_commit); /* This is already set if we retry resolving to get a token, so free first */
   op->resolved_commit = g_strdup (commit);
 
   if (sideload_path)
@@ -2699,14 +2808,37 @@ resolve_ops (FlatpakTransaction *self,
             {
               /* Else try to load the commit object.
                * Note, we don't have a token here, so this will not work for authenticated apps.
-               * However they still work when in summary metadata or sideloaded. */
+               * We handle this by catching the 401 http status and retrying. */
               g_autoptr(GVariant) commit_data = NULL;
+              VarRefInfoRef ref_info;
+
+              /* OCI needs this to get the oci repository for the ref to request the token, so lets always set it here */
+              if (op->summary_metadata == NULL &&
+                  flatpak_remote_state_lookup_ref (state, op->ref, NULL, NULL, &ref_info, NULL, NULL))
+                op->summary_metadata = var_metadata_dup_to_gvariant (var_ref_info_get_metadata (ref_info));
 
               commit_data = flatpak_remote_state_load_ref_commit (state, priv->dir,
-                                                                  op->ref, checksum, /* token: */ NULL,
-                                                                  error);
+                                                                  op->ref, checksum, /* initially NULL */ op->resolved_token,
+                                                                  NULL, NULL, &local_error);
               if (commit_data == NULL)
-                return FALSE;
+                {
+                  if (g_error_matches (local_error, FLATPAK_HTTP_ERROR, FLATPAK_HTTP_ERROR_UNAUTHORIZED) && !op->requested_token)
+                    {
+
+                      g_debug ("Unauthorized access during resolve by commit of %s, retrying with token", op->ref);
+                      priv->needs_resolve = TRUE;
+                      priv->needs_tokens = TRUE;
+
+                      /* Token type maxint32 means we don't know the type */
+                      op->token_type = G_MAXINT32;
+                      op->resolved_commit = g_strdup (checksum);
+
+                      g_clear_error (&local_error);
+                      continue;
+                    }
+                  g_propagate_error (error, g_steal_pointer (&local_error));
+                  return FALSE;
+                }
 
               resolve_op_from_commit (self, op, checksum, sideload_path, commit_data);
             }
@@ -2726,8 +2858,17 @@ resolve_all_ops (FlatpakTransaction *self,
   while (priv->needs_resolve)
     {
       priv->needs_resolve = FALSE;
+      priv->needs_tokens = FALSE;
       if (!resolve_ops (self, cancellable, error))
         return FALSE;
+
+      /* We might need tokens early, if reading individual commits needs it,
+       * otherwise we try to delay to bunch the requests */
+      if (priv->needs_tokens)
+        {
+          if (!request_required_tokens (self, NULL, cancellable, error))
+            return FALSE;
+        }
     }
 
   return TRUE;
@@ -3047,11 +3188,26 @@ request_tokens_for_remote (FlatpakTransaction *self,
 
   if (data.response != FLATPAK_AUTH_RESPONSE_OK)
     {
-      const char *error_message = NULL;
-      if (g_variant_lookup (results, "error-message", "&s", &error_message))
-        return flatpak_fail (error, "Failed to get tokens for ref: %s", error_message);
+      const char *error_message;
+      gint32 error_code;
+
+      if (!g_variant_lookup (results, "error-message", "&s", &error_message))
+        error_message = NULL;
+
+      if (g_variant_lookup (results, "error-code", "i", &error_code) && error_code != -1)
+        {
+          if (error_message)
+            flatpak_fail_error (error, error_code, _("Failed to get tokens for ref: %s"), error_message);
+          else
+            return flatpak_fail_error (error, error_code, _("Failed to get tokens for ref"));
+        }
       else
-        return flatpak_fail (error, "Failed to get tokens for ref");
+        {
+          if (error_message)
+            return flatpak_fail (error, _("Failed to get tokens for ref: %s"), error_message);
+          else
+            return flatpak_fail (error, _("Failed to get tokens for ref"));
+        }
     }
 
   tokens = g_variant_lookup_value (results, "tokens", G_VARIANT_TYPE ("a{sas}"));
@@ -3153,7 +3309,7 @@ sort_ops (FlatpakTransaction *self)
   priv->ops = NULL;
 
   /* First mark runnable all jobs that depend on nothing.
-     Note that this seesntially reverses the original list, so these
+     Note that this essentially reverses the original list, so these
      are in the same order as specified */
   for (l = remaining; l != NULL; l = next)
     {
@@ -3209,7 +3365,7 @@ sort_ops (FlatpakTransaction *self)
  * flatpak_transaction_get_operations:
  * @self: a #FlatpakTransaction
  *
- * Gets the list of operations.
+ * Gets the list of operations. Skipped operations are not included.
  *
  * Returns: (transfer full) (element-type FlatpakTransactionOperation): a #GList of operations
  */
@@ -3366,7 +3522,7 @@ handle_runtime_repo_deps (FlatpakTransaction *self,
     return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Flatpakrepo URL %s not file, HTTP or HTTPS"), dep_url);
 
   soup_session = flatpak_create_soup_session (PACKAGE_STRING);
-  dep_data = flatpak_load_uri (soup_session, dep_url, 0, NULL, NULL, NULL, cancellable, error);
+  dep_data = flatpak_load_uri (soup_session, dep_url, 0, NULL, NULL, NULL, NULL, cancellable, error);
   if (dep_data == NULL)
     {
       g_prefix_error (error, _("Can't load dependent file %s: "), dep_url);
@@ -3826,7 +3982,7 @@ flatpak_transaction_real_run (FlatpakTransaction *self,
     {
       FlatpakTransactionOperation *op = l->data;
 
-      if (!add_deps (self, op, error))
+      if (!op->skip && !add_deps (self, op, error))
         return FALSE;
     }
 
@@ -3839,7 +3995,7 @@ flatpak_transaction_real_run (FlatpakTransaction *self,
     {
       FlatpakTransactionOperation *op = l->data;
 
-      if (!add_related (self, op, error))
+      if (!op->skip && !add_related (self, op, error))
         return FALSE;
     }
 
@@ -3847,7 +4003,7 @@ flatpak_transaction_real_run (FlatpakTransaction *self,
   if (!resolve_all_ops (self, cancellable, error))
     return FALSE;
 
-  /* Ensure we have all required tokens */
+  /* Ensure we have all required tokens, we do this after all resolves if possible to bunch requests */
   if (!request_required_tokens (self, NULL, cancellable, error))
     return FALSE;
 

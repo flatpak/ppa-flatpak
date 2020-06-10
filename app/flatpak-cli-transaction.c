@@ -473,8 +473,10 @@ operation_error (FlatpakTransaction            *transaction,
     msg = g_strdup_printf (_("%s needs a later flatpak version"), flatpak_ref_get_name (rref));
   else if (g_error_matches (error, FLATPAK_ERROR, FLATPAK_ERROR_OUT_OF_SPACE))
     msg = g_strdup (_("Not enough disk space to complete this operation"));
-  else
+  else if (error)
     msg = g_strdup (error->message);
+  else
+    msg = g_strdup (_("(internal error, please report)"));
 
   if (!non_fatal && self->first_operation_error == NULL)
     g_propagate_prefixed_error (&self->first_operation_error,
@@ -562,10 +564,13 @@ basic_auth_start (FlatpakTransaction *transaction,
                   guint               id)
 {
   FlatpakCliTransaction *self = FLATPAK_CLI_TRANSACTION (transaction);
-  char *user, *password;
+  char *user, *password, *previous_error = NULL;
 
   if (self->disable_interaction)
     return FALSE;
+
+  if (g_variant_lookup (options, "previous-error", "&s", &previous_error))
+    g_print ("%s\n", previous_error);
 
   g_print (_("Login required remote %s (realm %s)\n"), remote, realm);
   user = flatpak_prompt (FALSE, _("User"));
@@ -1159,8 +1164,6 @@ flatpak_cli_transaction_new (FlatpakDir *dir,
   g_autoptr(FlatpakInstallation) installation = NULL;
   g_autoptr(FlatpakCliTransaction) self = NULL;
 
-  flatpak_dir_set_no_interaction (dir, disable_interaction);
-
   installation = flatpak_installation_new_for_dir (dir, NULL, error);
   if (installation == NULL)
     return NULL;
@@ -1176,6 +1179,7 @@ flatpak_cli_transaction_new (FlatpakDir *dir,
   self->stop_on_first_error = stop_on_first_error;
   self->non_default_arch = non_default_arch;
 
+  flatpak_transaction_set_no_interaction (FLATPAK_TRANSACTION (self), disable_interaction);
   flatpak_transaction_add_default_dependency_sources (FLATPAK_TRANSACTION (self));
 
   return (FlatpakTransaction *) g_steal_pointer (&self);
