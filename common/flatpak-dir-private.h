@@ -167,8 +167,10 @@ gboolean flatpak_remote_state_lookup_sparse_cache (FlatpakRemoteState *self,
 GVariant *flatpak_remote_state_load_ref_commit (FlatpakRemoteState *self,
                                                 FlatpakDir         *dir,
                                                 const char         *ref,
-                                                const char         *commit,
+                                                const char         *opt_commit,
                                                 const char         *token,
+                                                char              **out_commit,
+                                                GCancellable       *cancellable,
                                                 GError            **error);
 void flatpak_remote_state_add_sideload_repo (FlatpakRemoteState *self,
                                              GFile               *path);
@@ -245,7 +247,7 @@ typedef enum {
 typedef enum {
   FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_NONE = 0,
   FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_NO_INTERACTION = 1 << 0,
-} FlatpakHelperInstalBundleFlags;
+} FlatpakHelperInstallBundleFlags;
 
 #define FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_ALL (FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_NO_INTERACTION)
 
@@ -706,11 +708,6 @@ gboolean flatpak_dir_needs_update_for_commit_and_subpaths (FlatpakDir  *self,
                                                            const char  *ref,
                                                            const char  *target_commit,
                                                            const char **opt_subpaths);
-gboolean flatpak_dir_check_if_installed_ref_needs_update (FlatpakDir               *self,
-                                                          FlatpakRemoteState       *state,
-                                                          const char               *ref,
-                                                          GBytes                   *deploy_data,
-                                                          GCancellable             *cancellable);
 char * flatpak_dir_check_for_update (FlatpakDir               *self,
                                      FlatpakRemoteState       *state,
                                      const char               *ref,
@@ -887,14 +884,6 @@ gboolean   flatpak_dir_list_all_remote_refs (FlatpakDir         *self,
                                              GHashTable        **out_all_refs,
                                              GCancellable       *cancellable,
                                              GError            **error);
-GVariant * flatpak_dir_fetch_remote_commit (FlatpakDir   *self,
-                                            const char   *remote_name,
-                                            const char   *ref,
-                                            const char   *opt_commit,
-                                            const char   *token,
-                                            char        **out_commit,
-                                            GCancellable *cancellable,
-                                            GError      **error);
 gboolean flatpak_dir_update_remote_configuration (FlatpakDir   *self,
                                                   const char   *remote,
                                                   FlatpakRemoteState *optional_remote_state,
@@ -943,10 +932,6 @@ GPtrArray * flatpak_dir_find_remote_related_for_metadata (FlatpakDir         *se
                                                           GKeyFile           *metakey,
                                                           GCancellable       *cancellable,
                                                           GError            **error);
-gboolean    flatpak_dir_check_installed_ref_missing_related_ref (FlatpakDir          *self,
-                                                                 FlatpakRemoteState  *state,
-                                                                 const gchar         *full_ref,
-                                                                 GCancellable        *cancellable);
 GPtrArray * flatpak_dir_find_remote_related (FlatpakDir         *dir,
                                              FlatpakRemoteState *state,
                                              const char         *ref,

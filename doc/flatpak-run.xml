@@ -115,7 +115,7 @@
         <para>
             If parental controls support is enabled, flatpak will check the
             current user’s parental controls settings, and will refuse to
-            run an app if it is blacklisted for the current user.
+            run an app if it is blocklisted for the current user.
         </para>
     </refsect1>
 
@@ -566,6 +566,14 @@ key=v1;v2;
                 <listitem><para>
                     Make the processes of the new sandbox visible in the sandbox of the parent flatpak, as defined
                     by --parent-pid.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--instance-id-fd</option></term>
+
+                <listitem><para>
+                    Write the instance ID string to the given file descriptor.
                 </para></listitem>
             </varlistentry>
 

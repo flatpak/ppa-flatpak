@@ -218,6 +218,16 @@ flatpak_quiet_transaction_run (FlatpakTransaction *transaction,
   return TRUE;
 }
 
+static void
+flatpak_quiet_transaction_finalize (GObject *object)
+{
+  FlatpakQuietTransaction *self = FLATPAK_QUIET_TRANSACTION (object);
+  g_autoptr(FlatpakInstallation) installation = NULL;
+
+  installation = flatpak_transaction_get_installation (FLATPAK_TRANSACTION (self));
+
+  G_OBJECT_CLASS (flatpak_quiet_transaction_parent_class)->finalize (object);
+}
 
 static void
 flatpak_quiet_transaction_init (FlatpakQuietTransaction *transaction)
@@ -227,8 +237,10 @@ flatpak_quiet_transaction_init (FlatpakQuietTransaction *transaction)
 static void
 flatpak_quiet_transaction_class_init (FlatpakQuietTransactionClass *class)
 {
+  GObjectClass *object_class = G_OBJECT_CLASS (class);
   FlatpakTransactionClass *transaction_class = FLATPAK_TRANSACTION_CLASS (class);
 
+  object_class->finalize = flatpak_quiet_transaction_finalize;
   transaction_class->choose_remote_for_ref = choose_remote_for_ref;
   transaction_class->add_new_remote = add_new_remote;
   transaction_class->new_operation = new_operation;
@@ -248,8 +260,6 @@ flatpak_quiet_transaction_new (FlatpakDir *dir,
   if (installation == NULL)
     return NULL;
 
-  flatpak_installation_set_no_interaction (installation, TRUE);
-
   self = g_initable_new (FLATPAK_TYPE_QUIET_TRANSACTION,
                          NULL, error,
                          "installation", installation,
@@ -258,6 +268,7 @@ flatpak_quiet_transaction_new (FlatpakDir *dir,
   if (self == NULL)
     return NULL;
 
+  flatpak_transaction_set_no_interaction (FLATPAK_TRANSACTION (self), TRUE);
   flatpak_transaction_add_default_dependency_sources (FLATPAK_TRANSACTION (self));
 
   return FLATPAK_TRANSACTION (g_steal_pointer (&self));

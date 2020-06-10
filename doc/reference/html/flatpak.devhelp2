@@ -357,6 +357,8 @@
     <keyword type="constant" name="FLATPAK_ERROR_NOT_CACHED" link="flatpak-Error-codes.html#FLATPAK-ERROR-NOT-CACHED:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_REF_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-ERROR-REF-NOT-FOUND:CAPS"/>
     <keyword type="constant" name="FLATPAK_ERROR_PERMISSION_DENIED" link="flatpak-Error-codes.html#FLATPAK-ERROR-PERMISSION-DENIED:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_AUTHENTICATION_FAILED" link="flatpak-Error-codes.html#FLATPAK-ERROR-AUTHENTICATION-FAILED:CAPS"/>
+    <keyword type="constant" name="FLATPAK_ERROR_NOT_AUTHORIZED" link="flatpak-Error-codes.html#FLATPAK-ERROR-NOT-AUTHORIZED:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_FAILED" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-FAILED:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_INVALID_ARGUMENT" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-INVALID-ARGUMENT:CAPS"/>
     <keyword type="constant" name="FLATPAK_PORTAL_ERROR_NOT_FOUND" link="flatpak-Error-codes.html#FLATPAK-PORTAL-ERROR-NOT-FOUND:CAPS"/>

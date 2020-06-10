@@ -551,7 +551,7 @@ handle_deploy (FlatpakSystemHelper   *object,
           return TRUE;
         }
 
-      versioned = flatpak_oci_registry_load_versioned (registry, NULL, desc->parent.digest, NULL,
+      versioned = flatpak_oci_registry_load_versioned (registry, NULL, desc->parent.digest, (const char **)desc->parent.urls, NULL,
                                                        NULL, &error);
       if (versioned == NULL || !FLATPAK_IS_OCI_MANIFEST (versioned))
         {
@@ -562,6 +562,7 @@ handle_deploy (FlatpakSystemHelper   *object,
 
       image_config = flatpak_oci_registry_load_image_config (registry, NULL,
                                                              FLATPAK_OCI_MANIFEST (versioned)->config.digest,
+                                                             (const char **)FLATPAK_OCI_MANIFEST (versioned)->config.urls,
                                                              NULL, NULL, &error);
       if (image_config == NULL)
         {
@@ -604,8 +605,8 @@ handle_deploy (FlatpakSystemHelper   *object,
           return TRUE;
         }
 
-      checksum = flatpak_pull_from_oci (flatpak_dir_get_repo (system), registry, NULL, desc->parent.digest, FLATPAK_OCI_MANIFEST (versioned), image_config,
-                                        arg_origin, arg_ref, NULL, NULL, NULL, &error);
+      checksum = flatpak_pull_from_oci (flatpak_dir_get_repo (system), registry, NULL, desc->parent.digest, NULL, FLATPAK_OCI_MANIFEST (versioned), image_config,
+                                        arg_origin, arg_ref, FLATPAK_PULL_FLAGS_NONE, NULL, NULL, NULL, &error);
       if (checksum == NULL)
         {
           g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
