@@ -143,6 +143,13 @@ div.table table td, div.table table th
   vertical-align: top;
 }
 
+div.table table tr.subhead
+{
+  /* tango:aluminium 2 */
+  background-color: #d3d7cf;
+  font-weight: bold;
+}
+
 div.table table th
 {
   /* tango:aluminium 2 */

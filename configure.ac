@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [1])
 m4_define([flatpak_minor_version], [7])
-m4_define([flatpak_micro_version], [2])
+m4_define([flatpak_micro_version], [3])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -214,6 +214,10 @@ PKG_CHECK_MODULES(ARCHIVE, [libarchive >= 2.8.0])
 PKG_CHECK_MODULES(BASE, [glib-2.0 >= $GLIB_REQS gio-2.0 gio-unix-2.0])
 PKG_CHECK_MODULES(SOUP, [libsoup-2.4])
 PKG_CHECK_MODULES(XML, [libxml-2.0 >= 2.4])
+PKG_CHECK_MODULES(ZSTD, [libzstd >= 0.8.1], [have_zstd=yes], [have_zstd=no])
+if test $have_zstd = yes; then
+  AC_DEFINE(HAVE_ZSTD, 1, [Define if libzstd is available])
+fi
 PKG_CHECK_MODULES(DCONF, [dconf >= 0.26], [have_dconf=yes], [have_dconf=no])
 if test $have_dconf = yes; then
   AC_DEFINE(HAVE_DCONF, 1, [Define if dconf is available])
@@ -341,6 +345,15 @@ AC_ARG_WITH(system-install-dir,
            [with_system_install_dir='$(localstatedir)/lib/flatpak'])
 SYSTEM_INSTALL_DIR=$with_system_install_dir
 AC_SUBST(SYSTEM_INSTALL_DIR)
+
+AC_ARG_WITH([sysusersdir],
+            [AS_HELP_STRING([--with-sysusersdir=DIR],
+                            [Directory for systemd sysusers.d configuration files (default=PREFIX/lib/sysusers.d)])],
+    [],
+    dnl This is deliberately not ${libdir}: systemd units always go in
+    dnl .../lib, never .../lib64 or .../lib/x86_64-linux-gnu
+    [with_sysusersdir='${prefix}/lib/sysusers.d'])
+AC_SUBST([sysusersdir], [$with_sysusersdir])
 
 AC_ARG_WITH(system-helper-user,
            [AS_HELP_STRING([--with-system-helper-user=USERNAME],
@@ -546,4 +559,5 @@ echo "          Privilege mode:         $with_priv_mode"
 echo "          Use dconf:              $have_dconf"
 echo "          Use libsystemd:         $have_libsystemd"
 echo "          Use libmalcontent:      $have_libmalcontent"
+echo "          Use libzstd:            $have_zstd"
 echo ""

@@ -187,7 +187,7 @@ check_PROGRAMS = $(am__EXEEXT_5) $(am__EXEEXT_6)
 
 @BUILD_SYSTEM_HELPER_TRUE@am__append_23 = system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/flatpak-system-helper.service.in
-@BUILD_SYSTEM_HELPER_TRUE@am__append_24 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service
+@BUILD_SYSTEM_HELPER_TRUE@am__append_24 = system-helper/org.freedesktop.Flatpak.policy system-helper/org.freedesktop.Flatpak.rules system-helper/flatpak-system-helper.service system-helper/org.freedesktop.Flatpak.SystemHelper.service system-helper/flatpak.conf
 @WITH_SYSTEM_DBUS_PROXY_TRUE@am__append_25 = FLATPAK_DBUSPROXY=$(DBUS_PROXY)
 @WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_26 = FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && pwd)/flatpak-dbus-proxy
 @WITH_SYSTEM_BWRAP_TRUE@am__append_27 = FLATPAK_BWRAP=$(BWRAP)
@@ -242,7 +242,7 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" \
 	"$(DESTDIR)$(profiledir)" "$(DESTDIR)$(selinux_develdir)" \
 	"$(DESTDIR)$(selinux_moduledir)" \
 	"$(DESTDIR)$(systemdsystemunitdir)" \
-	"$(DESTDIR)$(systemduserunitdir)" \
+	"$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(sysusersdir)" \
 	"$(DESTDIR)$(zshcompletiondir)" \
 	"$(DESTDIR)$(flatpakincludedir)" \
 	"$(DESTDIR)$(flatpakincludedir)"
@@ -339,12 +339,12 @@ libflatpak_common_base_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 libflatpak_common_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am__libflatpak_common_la_SOURCES_DIST = common/flatpak.h \
 	common/flatpak-ref.h common/flatpak-error.h \
 	common/flatpak-installed-ref.h common/flatpak-remote-ref.h \
@@ -381,8 +381,9 @@ am__libflatpak_common_la_SOURCES_DIST = common/flatpak.h \
 	common/flatpak-transaction.c \
 	common/flatpak-utils-http-private.h \
 	common/flatpak-utils-http.c common/flatpak-utils-private.h \
-	common/flatpak-utils.c common/valgrind-private.h \
-	common/flatpak-parental-controls.c \
+	common/flatpak-utils.c common/flatpak-zstd-decompressor.c \
+	common/flatpak-zstd-decompressor-private.h \
+	common/valgrind-private.h common/flatpak-parental-controls.c \
 	common/flatpak-parental-controls-private.h
 am__objects_3 = $(am__objects_1)
 @HAVE_LIBMALCONTENT_TRUE@am__objects_4 = common/libflatpak_common_la-flatpak-parental-controls.lo \
@@ -412,8 +413,9 @@ am_libflatpak_common_la_OBJECTS = $(am__objects_3) \
 	common/libflatpak_common_la-flatpak-run.lo \
 	common/libflatpak_common_la-flatpak-transaction.lo \
 	common/libflatpak_common_la-flatpak-utils-http.lo \
-	common/libflatpak_common_la-flatpak-utils.lo $(am__objects_1) \
-	$(am__objects_4)
+	common/libflatpak_common_la-flatpak-utils.lo \
+	common/libflatpak_common_la-flatpak-zstd-decompressor.lo \
+	$(am__objects_1) $(am__objects_4)
 am__objects_5 =  \
 	common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo
 nodist_libflatpak_common_la_OBJECTS = $(am__objects_3) \
@@ -863,6 +865,7 @@ am__depfiles_remade =  \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-transaction.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-utils-http.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-utils.Plo \
+	common/$(DEPDIR)/libflatpak_common_la-flatpak-zstd-decompressor.Plo \
 	common/$(DEPDIR)/libflatpak_la-flatpak.Plo \
 	common/$(DEPDIR)/test_libflatpak-test-lib.Po \
 	dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po \
@@ -991,7 +994,7 @@ DATA = $(bashcompletion_DATA) $(dbus_service_DATA) \
 	$(polkit_policy_DATA) $(polkit_rules_DATA) $(profile_DATA) \
 	$(selinux_devel_DATA) $(selinux_module_DATA) \
 	$(systemdsystemunit_DATA) $(systemduserunit_DATA) \
-	$(zshcompletion_DATA)
+	$(sysusers_DATA) $(zshcompletion_DATA)
 HEADERS = $(flatpakinclude_HEADERS) $(nodist_flatpakinclude_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
@@ -1454,6 +1457,8 @@ XML_LIBS = @XML_LIBS@
 XSLTPROC = @XSLTPROC@
 YACC = @YACC@
 YFLAGS = @YFLAGS@
+ZSTD_CFLAGS = @ZSTD_CFLAGS@
+ZSTD_LIBS = @ZSTD_LIBS@
 _GI_EXP_DATADIR = @_GI_EXP_DATADIR@
 _GI_EXP_LIBDIR = @_GI_EXP_LIBDIR@
 abs_builddir = @abs_builddir@
@@ -1509,6 +1514,7 @@ sysconfdir = @sysconfdir@
 systemdsystemunitdir = @systemdsystemunitdir@
 systemduserenvgendir = @systemduserenvgendir@
 systemduserunitdir = @systemduserunitdir@
+sysusersdir = @sysusersdir@
 target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -1538,6 +1544,7 @@ DISTCLEANFILES = $(NULL) $(am__append_24) flatpak.pp.bz2 \
 	tests/services/org.freedesktop.portal.Flatpak.service \
 	tests/services/org.freedesktop.impl.portal.desktop.test.service \
 	tests/services/org.flatpak.Authenticator.test.service \
+	tests/services/org.flatpak.Authenticator.Oci.service \
 	tests/share/xdg-desktop-portal/portals/test.portal \
 	tests/package_version.txt $(NULL) flatpak.env
 BUILT_SOURCES = $(NULL) $(nodist_libflatpak_common_base_la_SOURCES) \
@@ -1563,8 +1570,9 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	system-helper/org.freedesktop.Flatpak.rules.in \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
 	system-helper/flatpak-system-helper.service.in \
-	selinux/flatpak.te selinux/flatpak.fc selinux/flatpak.if \
-	$(NULL) tests/flatpak.supp tests/glib.supp \
+	system-helper/flatpak.conf.in selinux/flatpak.te \
+	selinux/flatpak.fc selinux/flatpak.if $(NULL) \
+	tests/flatpak.supp tests/glib.supp \
 	tests/Makefile-test-matrix.am.inc tests/expand-test-matrix.sh \
 	tests/test-wrapper.sh $(bashcompletion_DATA) \
 	$(zshcompletion_DATA) $(fishcompletion_DATA) $(profile_DATA) \
@@ -1797,14 +1805,16 @@ libflatpak_common_la_SOURCES = $(flatpakinclude_HEADERS) \
 	common/flatpak-transaction.c common/flatpak-transaction.h \
 	common/flatpak-utils-http-private.h \
 	common/flatpak-utils-http.c common/flatpak-utils-private.h \
-	common/flatpak-utils.c common/valgrind-private.h $(NULL) \
-	$(am__append_19)
+	common/flatpak-utils.c common/flatpak-zstd-decompressor.c \
+	common/flatpak-zstd-decompressor-private.h \
+	common/valgrind-private.h $(NULL) $(am__append_19)
 libflatpak_common_la_CFLAGS = \
 	-DFLATPAK_COMPILATION \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-I$(srcdir)/dbus-proxy \
 	$(AM_CFLAGS) \
 	$(ARCHIVE_CFLAGS) \
+	$(ZSTD_CFLAGS) \
 	$(BASE_CFLAGS) \
 	$(DCONF_CFLAGS) \
 	$(HIDDEN_VISIBILITY_CFLAGS) \
@@ -1823,6 +1833,7 @@ libflatpak_common_la_CFLAGS = \
 libflatpak_common_la_LIBADD = \
 	$(AM_LIBADD) \
 	$(ARCHIVE_LIBS) \
+	$(ZSTD_LIBS) \
 	$(BASE_LIBS) \
 	$(DCONF_LIBS) \
 	$(INTERNAL_GPGME_LIBS) \
@@ -2107,6 +2118,7 @@ flatpak_portal_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/portal
 @BUILD_SYSTEM_HELPER_TRUE@polkit_policy_DATA = \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/org.freedesktop.Flatpak.policy
 
+@BUILD_SYSTEM_HELPER_TRUE@sysusers_DATA = system-helper/flatpak.conf
 flatpak_oci_authenticator_SOURCES = \
 	oci-authenticator/flatpak-oci-authenticator.c		\
 	$(NULL)
@@ -2807,6 +2819,8 @@ common/libflatpak_common_la-flatpak-utils-http.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-utils.lo: common/$(am__dirstamp) \
 	common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-zstd-decompressor.lo:  \
+	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-parental-controls.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-systemd-dbus-generated.lo:  \
@@ -3420,6 +3434,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-transaction.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-utils-http.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-utils.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-zstd-decompressor.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_la-flatpak.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/test_libflatpak-test-lib.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po@am__quote@ # am--include-marker
@@ -3704,6 +3719,13 @@ common/libflatpak_common_la-flatpak-utils.lo: common/flatpak-utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-utils.c' object='common/libflatpak_common_la-flatpak-utils.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-utils.lo `test -f 'common/flatpak-utils.c' || echo '$(srcdir)/'`common/flatpak-utils.c
+
+common/libflatpak_common_la-flatpak-zstd-decompressor.lo: common/flatpak-zstd-decompressor.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-zstd-decompressor.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-zstd-decompressor.Tpo -c -o common/libflatpak_common_la-flatpak-zstd-decompressor.lo `test -f 'common/flatpak-zstd-decompressor.c' || echo '$(srcdir)/'`common/flatpak-zstd-decompressor.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-zstd-decompressor.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-zstd-decompressor.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-zstd-decompressor.c' object='common/libflatpak_common_la-flatpak-zstd-decompressor.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-zstd-decompressor.lo `test -f 'common/flatpak-zstd-decompressor.c' || echo '$(srcdir)/'`common/flatpak-zstd-decompressor.c
 
 common/libflatpak_common_la-flatpak-parental-controls.lo: common/flatpak-parental-controls.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-parental-controls.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Tpo -c -o common/libflatpak_common_la-flatpak-parental-controls.lo `test -f 'common/flatpak-parental-controls.c' || echo '$(srcdir)/'`common/flatpak-parental-controls.c
@@ -5393,6 +5415,27 @@ uninstall-systemduserunitDATA:
 	@list='$(systemduserunit_DATA)'; test -n "$(systemduserunitdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(systemduserunitdir)'; $(am__uninstall_files_from_dir)
+install-sysusersDATA: $(sysusers_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(sysusers_DATA)'; test -n "$(sysusersdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(sysusersdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(sysusersdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(sysusersdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(sysusersdir)" || exit $$?; \
+	done
+
+uninstall-sysusersDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(sysusers_DATA)'; test -n "$(sysusersdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(sysusersdir)'; $(am__uninstall_files_from_dir)
 install-zshcompletionDATA: $(zshcompletion_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(zshcompletion_DATA)'; test -n "$(zshcompletiondir)" || list=; \
@@ -6180,7 +6223,7 @@ install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(envgendir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(fishcompletiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(selinux_develdir)" "$(DESTDIR)$(selinux_moduledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(zshcompletiondir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(envgendir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(fishcompletiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(selinux_develdir)" "$(DESTDIR)$(selinux_moduledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(sysusersdir)" "$(DESTDIR)$(zshcompletiondir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -6344,6 +6387,7 @@ distclean: distclean-recursive
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-transaction.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-utils-http.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-utils.Plo
+	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-zstd-decompressor.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_la-flatpak.Plo
 	-rm -f common/$(DEPDIR)/test_libflatpak-test-lib.Po
 	-rm -f dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po
@@ -6415,7 +6459,7 @@ install-data-am: install-bashcompletionDATA install-bwrapPROGRAMS \
 	install-profileDATA install-scriptsSCRIPTS \
 	install-selinux_develDATA install-selinux_moduleDATA \
 	install-systemdsystemunitDATA install-systemduserunitDATA \
-	install-zshcompletionDATA
+	install-sysusersDATA install-zshcompletionDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 install-dvi: install-dvi-recursive
@@ -6535,6 +6579,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-transaction.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-utils-http.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-utils.Plo
+	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-zstd-decompressor.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_la-flatpak.Plo
 	-rm -f common/$(DEPDIR)/test_libflatpak-test-lib.Po
 	-rm -f dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po
@@ -6608,7 +6653,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	uninstall-polkit_rulesDATA uninstall-profileDATA \
 	uninstall-scriptsSCRIPTS uninstall-selinux_develDATA \
 	uninstall-selinux_moduleDATA uninstall-systemdsystemunitDATA \
-	uninstall-systemduserunitDATA uninstall-zshcompletionDATA
+	uninstall-systemduserunitDATA uninstall-sysusersDATA \
+	uninstall-zshcompletionDATA
 
 .MAKE: $(am__recursive_targets) all check check-am install install-am \
 	install-data-am install-strip
@@ -6649,8 +6695,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	install-ps-am install-scriptsSCRIPTS install-selinux_develDATA \
 	install-selinux_moduleDATA install-strip \
 	install-systemdsystemunitDATA install-systemduserunitDATA \
-	install-zshcompletionDATA installcheck installcheck-am \
-	installdirs installdirs-am maintainer-clean \
+	install-sysusersDATA install-zshcompletionDATA installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	recheck tags tags-am uninstall uninstall-am \
@@ -6674,7 +6720,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	uninstall-polkit_rulesDATA uninstall-profileDATA \
 	uninstall-scriptsSCRIPTS uninstall-selinux_develDATA \
 	uninstall-selinux_moduleDATA uninstall-systemdsystemunitDATA \
-	uninstall-systemduserunitDATA uninstall-zshcompletionDATA
+	uninstall-systemduserunitDATA uninstall-sysusersDATA \
+	uninstall-zshcompletionDATA
 
 .PRECIOUS: Makefile
 
@@ -6787,6 +6834,11 @@ portal/%-dbus.h: portal/%-dbus.c
 @BUILD_SYSTEM_HELPER_TRUE@%.policy: %.policy.in
 @BUILD_SYSTEM_HELPER_TRUE@	$(AM_V_GEN) $(MSGFMT) --xml -d $(top_srcdir)/po --template $< -o $@ || cp $< $@
 
+@BUILD_SYSTEM_HELPER_TRUE@%.conf: %.conf.in
+@BUILD_SYSTEM_HELPER_TRUE@	$(AM_V_GEN) $(SED) \
+@BUILD_SYSTEM_HELPER_TRUE@	  -e "s|\@SYSTEM_HELPER_USER\@|$(SYSTEM_HELPER_USER)|" \
+@BUILD_SYSTEM_HELPER_TRUE@	  $< > $@
+
 @BUILD_SELINUX_MODULE_TRUE@flatpak.pp.bz2: selinux/flatpak.te selinux/flatpak.fc
 @BUILD_SELINUX_MODULE_TRUE@	$(eval TMP := $(shell mktemp -d selinux-build-XXXXXX))
 @BUILD_SELINUX_MODULE_TRUE@	cp $^ $(TMP)/
@@ -6815,11 +6867,15 @@ tests/services/org.flatpak.Authenticator.test.service: tests/org.flatpak.Authent
 	mkdir -p tests/services
 	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(abs_top_builddir)/tests|" $< > $@
 
+tests/services/org.flatpak.Authenticator.Oci.service: oci-authenticator/org.flatpak.Authenticator.Oci.service.in
+	mkdir -p tests/services
+	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(abs_top_builddir)|" $< > $@
+
 tests/share/xdg-desktop-portal/portals/test.portal: tests/test.portal.in
 	mkdir -p tests/share/xdg-desktop-portal/portals
 	$(AM_V_GEN) install -m644 $< $@
 
-tests/libtest.sh: tests/services/org.freedesktop.Flatpak.service tests/services/org.freedesktop.Flatpak.SystemHelper.service tests/services/org.freedesktop.portal.Flatpak.service tests/share/xdg-desktop-portal/portals/test.portal tests/services/org.freedesktop.impl.portal.desktop.test.service tests/services/org.flatpak.Authenticator.test.service
+tests/libtest.sh: tests/services/org.freedesktop.Flatpak.service tests/services/org.freedesktop.Flatpak.SystemHelper.service tests/services/org.freedesktop.portal.Flatpak.service tests/share/xdg-desktop-portal/portals/test.portal tests/services/org.freedesktop.impl.portal.desktop.test.service tests/services/org.flatpak.Authenticator.test.service tests/services/org.flatpak.Authenticator.Oci.service
 
 install-test-data-hook:
 @ENABLE_INSTALLED_TESTS_TRUE@	mkdir -p $(DESTDIR)$(installed_testdir)/services
@@ -6844,7 +6900,7 @@ tests/test-%.wrap:
 
 tests/runtime-repo: tests/make-test-runtime.sh flatpak
 	rm -rf tests/runtime-repo
-	PATH=$(abs_top_builddir):$${PATH} $(top_srcdir)/tests/make-test-runtime.sh tests/runtime-repo org.test.Platform master ""
+	PATH=$(abs_top_builddir):$${PATH} $(top_srcdir)/tests/make-test-runtime.sh tests/runtime-repo org.test.Platform master "" ""
 
 distclean-local:
 	rm -rf tests/runtime-repo
