@@ -1,3 +1,9 @@
+flatpak (1.7.3-flatpak1~bionic) bionic; urgency=medium
+
+  * Update to 1.7.3
+
+ -- Alexander Larsson <alexl@redhat.com>  Wed, 10 Jun 2020 11:26:58 +0200
+
 flatpak (1.7.2-flatpak2~bionic) bionic; urgency=medium
 
   * Install fish competion file
