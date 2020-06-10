@@ -31,6 +31,8 @@
 /* copied from libostree */
 #define DEFAULT_N_NETWORK_RETRIES 5
 
+G_DEFINE_QUARK (flatpak_http_error, flatpak_http_error)
+
 typedef struct
 {
   char  *uri;
@@ -57,6 +59,7 @@ typedef struct
   gpointer               user_data;
   guint64                last_progress_time;
   CacheHttpData         *cache_data;
+  char                 **content_type_out;
 } LoadUriData;
 
 #define CACHE_HTTP_XATTR "user.flatpak.http"
@@ -431,8 +434,13 @@ load_uri_callback (GObject      *source_object,
           if (data->cache_data)
             set_cache_http_data_from_headers (data->cache_data, msg);
 
-          domain = FLATPAK_OCI_ERROR;
-          code = FLATPAK_OCI_ERROR_NOT_CHANGED;
+          domain = FLATPAK_HTTP_ERROR;
+          code = FLATPAK_HTTP_ERROR_NOT_CHANGED;
+          break;
+
+        case 401:
+          domain = FLATPAK_HTTP_ERROR;
+          code = FLATPAK_HTTP_ERROR_UNAUTHORIZED;
           break;
 
         case 403:
@@ -476,6 +484,9 @@ load_uri_callback (GObject      *source_object,
 
   if (data->cache_data)
     set_cache_http_data_from_headers (data->cache_data, msg);
+
+  if (data->content_type_out)
+    *data->content_type_out = g_strdup (soup_message_headers_get_content_type (msg->response_headers, NULL));
 
   if (data->out_tmpfile)
     {
@@ -586,6 +597,7 @@ flatpak_load_http_uri_once (SoupSession           *soup_session,
                             const char            *token,
                             FlatpakLoadUriProgress progress,
                             gpointer               user_data,
+                            char                 **out_content_type,
                             GCancellable          *cancellable,
                             GError               **error)
 {
@@ -608,6 +620,7 @@ flatpak_load_http_uri_once (SoupSession           *soup_session,
   data.cancellable = cancellable;
   data.user_data = user_data;
   data.last_progress_time = g_get_monotonic_time ();
+  data.content_type_out = out_content_type;
 
   request = soup_session_request_http (soup_session, "GET",
                                        uri, error);
@@ -618,7 +631,7 @@ flatpak_load_http_uri_once (SoupSession           *soup_session,
 
   if (flags & FLATPAK_HTTP_FLAGS_ACCEPT_OCI)
     soup_message_headers_replace (m->request_headers, "Accept",
-                                  FLATPAK_OCI_MEDIA_TYPE_IMAGE_MANIFEST ", " FLATPAK_DOCKER_MEDIA_TYPE_IMAGE_MANIFEST2);
+                                  FLATPAK_OCI_MEDIA_TYPE_IMAGE_MANIFEST ", " FLATPAK_DOCKER_MEDIA_TYPE_IMAGE_MANIFEST2 ", " FLATPAK_OCI_MEDIA_TYPE_IMAGE_INDEX);
 
 
   if (token)
@@ -652,6 +665,7 @@ flatpak_load_uri (SoupSession           *soup_session,
                   const char            *token,
                   FlatpakLoadUriProgress progress,
                   gpointer               user_data,
+                  char                 **out_content_type,
                   GCancellable          *cancellable,
                   GError               **error)
 {
@@ -684,7 +698,7 @@ flatpak_load_uri (SoupSession           *soup_session,
         }
 
       bytes = flatpak_load_http_uri_once (soup_session, uri, flags,
-                                          token, progress, user_data,
+                                          token, progress, user_data, out_content_type,
                                           cancellable, &local_error);
 
       if (local_error == NULL)
@@ -887,8 +901,8 @@ flatpak_cache_http_uri_once (SoupSession           *soup_session,
       if (cache_data->expires > now.tv_sec)
         {
           if (error)
-            *error = g_error_new (FLATPAK_OCI_ERROR,
-                                  FLATPAK_OCI_ERROR_NOT_CHANGED,
+            *error = g_error_new (FLATPAK_HTTP_ERROR,
+                                  FLATPAK_HTTP_ERROR_NOT_CHANGED,
                                   "Reusing cached value");
           return FALSE;
         }
@@ -949,8 +963,8 @@ flatpak_cache_http_uri_once (SoupSession           *soup_session,
 
   if (data.error)
     {
-      if (data.error->domain == FLATPAK_OCI_ERROR &&
-          data.error->code == FLATPAK_OCI_ERROR_NOT_CHANGED)
+      if (data.error->domain == FLATPAK_HTTP_ERROR &&
+          data.error->code == FLATPAK_HTTP_ERROR_NOT_CHANGED)
         {
           GError *tmp_error = NULL;
 

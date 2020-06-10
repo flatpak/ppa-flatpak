@@ -528,6 +528,8 @@ XML_LIBS = @XML_LIBS@
 XSLTPROC = @XSLTPROC@
 YACC = @YACC@
 YFLAGS = @YFLAGS@
+ZSTD_CFLAGS = @ZSTD_CFLAGS@
+ZSTD_LIBS = @ZSTD_LIBS@
 _GI_EXP_DATADIR = @_GI_EXP_DATADIR@
 _GI_EXP_LIBDIR = @_GI_EXP_LIBDIR@
 abs_builddir = @abs_builddir@
@@ -583,6 +585,7 @@ sysconfdir = @sysconfdir@
 systemdsystemunitdir = @systemdsystemunitdir@
 systemduserenvgendir = @systemduserenvgendir@
 systemduserunitdir = @systemduserunitdir@
+sysusersdir = @sysusersdir@
 target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
@@ -627,6 +630,7 @@ IGNORE_HFILES = \
 	flatpak-auth-private.h \
 	flatpak-parental-controls-private.h \
 	flatpak-appdata-private.h \
+	flatpak-zstd-decompressor-private.h \
 	$(NULL)
 
 EXTRA_HFILES = 
@@ -1124,9 +1128,8 @@ scan-build.stamp: setup-build.stamp $(HFILE_GLOB) $(CFILE_GLOB)
 	    fi; \
 	  fi; \
 	  CC="$(GTKDOC_CC)" LD="$(GTKDOC_LD)" RUN="$(GTKDOC_RUN)" CFLAGS="$(GTKDOC_CFLAGS) $(CFLAGS)" LDFLAGS="$(GTKDOC_LIBS) $(LDFLAGS)" \
-	  gtkdoc-scangobj $(SCANGOBJ_OPTIONS) $$scanobj_options --verbose --module=$(DOC_MODULE); \
+	  gtkdoc-scangobj $(SCANGOBJ_OPTIONS) $$scanobj_options --module=$(DOC_MODULE); \
 	else \
-	  echo GAZ; \
 	  for i in $(SCANOBJ_FILES) ; do \
 	    test -f $$i || touch $$i ; \
 	  done \
