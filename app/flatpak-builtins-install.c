@@ -74,6 +74,7 @@ static GOptionEntry options[] = {
   { "reinstall", 0, 0, G_OPTION_ARG_NONE, &opt_reinstall, N_("Uninstall first if already installed"), NULL },
   { "noninteractive", 0, 0, G_OPTION_ARG_NONE, &opt_noninteractive, N_("Produce minimal output and don't ask questions"), NULL },
   { "or-update", 0, 0, G_OPTION_ARG_NONE, &opt_or_update, N_("Update install if already installed"), NULL },
+  /* Translators: A sideload is when you install from a local USB drive rather than the Internet. */
   { "sideload-repo", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &opt_sideload_repos, N_("Use this local repo for sideloads"), N_("PATH") },
   { NULL }
 };
@@ -212,7 +213,7 @@ install_from (FlatpakDir *dir,
     {
       g_autoptr(SoupSession) soup_session = NULL;
       soup_session = flatpak_create_soup_session (PACKAGE_STRING);
-      file_data = flatpak_load_uri (soup_session, filename, 0, NULL, NULL, NULL, cancellable, error);
+      file_data = flatpak_load_uri (soup_session, filename, 0, NULL, NULL, NULL, NULL, cancellable, error);
       if (file_data == NULL)
         {
           g_prefix_error (error, "Can't load uri %s: ", filename);

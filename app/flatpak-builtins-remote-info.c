@@ -62,6 +62,7 @@ static GOptionEntry options[] = {
   { "show-runtime", 0, 0, G_OPTION_ARG_NONE, &opt_show_runtime, N_("Show runtime"), NULL },
   { "show-sdk", 0, 0, G_OPTION_ARG_NONE, &opt_show_sdk, N_("Show sdk"), NULL },
   { "cached", 0, 0, G_OPTION_ARG_NONE, &opt_cached, N_("Use local caches even if they are stale"), NULL },
+  /* Translators: A sideload is when you install from a local USB drive rather than the Internet. */
   { "sideloaded", 0, 0, G_OPTION_ARG_NONE, &opt_sideloaded, N_("Only list refs available as sideloads"), NULL },
   { NULL }
 };
@@ -165,7 +166,7 @@ flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, G
     }
   else
     {
-      commit_v = flatpak_dir_fetch_remote_commit (preferred_dir, remote, ref, opt_commit, NULL, &commit, cancellable, error);
+      commit_v = flatpak_remote_state_load_ref_commit (state, preferred_dir, ref, opt_commit, NULL, &commit, cancellable, error);
       if (commit_v == NULL)
         return FALSE;
     }
@@ -298,12 +299,12 @@ flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, G
           g_autofree char *runtime = g_key_file_get_string (metakey, "Application", "runtime", error);
           print_aligned (len, _("Runtime:"), runtime ? runtime : "-");
         }
-      g_print ("\n");
       if (strcmp (parts[0], "app") == 0 && metakey != NULL)
         {
           g_autofree char *sdk = g_key_file_get_string (metakey, "Application", "sdk", error);
           print_aligned (len, _("Sdk:"), sdk ? sdk : "-");
         }
+      g_print ("\n");
       {
         g_autofree char *formatted_commit = ellipsize_string (commit, width);
         print_aligned (len, _("Commit:"), formatted_commit);
@@ -344,7 +345,7 @@ flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, G
               g_autoptr(GVariant) p_commit_v = NULL;
               VarCommitRef p_commit;
 
-              p_commit_v = flatpak_dir_fetch_remote_commit (preferred_dir, remote, ref, p, NULL, NULL, cancellable, NULL);
+              p_commit_v = flatpak_remote_state_load_ref_commit (state, preferred_dir, ref, p, NULL, NULL, cancellable, NULL);
               if (p_commit_v == NULL)
                 break;
 
@@ -465,7 +466,7 @@ flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, G
           c_v = NULL;
 
           if (c && opt_log)
-            c_v = flatpak_dir_fetch_remote_commit (preferred_dir, remote, ref, c, NULL, NULL, cancellable, NULL);
+            c_v = flatpak_remote_state_load_ref_commit (state, preferred_dir, ref, c, NULL, NULL, cancellable, NULL);
         }
       while (c_v != NULL);
     }
