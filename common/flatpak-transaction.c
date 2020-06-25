@@ -203,6 +203,7 @@ enum {
   WEBFLOW_START,
   WEBFLOW_DONE,
   BASIC_AUTH_START,
+  INSTALL_AUTHENTICATOR,
   LAST_SIGNAL
 };
 
@@ -470,9 +471,10 @@ flatpak_transaction_add_dependency_source (FlatpakTransaction  *self,
  * @self: a #FlatpakTransaction
  * @path: a path to a local flatpak repository
  *
- * Adds an extra local ostree repo as source for installation. This is equivalent
- * with setting the xa.sideload-repos global option, but can be done dynamically.
- * If the option is set both sources are used.
+ * Adds an extra local ostree repo as source for installation. This is
+ * equivalent to using the sideload-repos directories (see flatpak(1)), but can
+ * be done dynamically. Any path added here is used in addition to ones in
+ * those directories.
  *
  * Since: 1.7.1
  */
@@ -1020,6 +1022,13 @@ flatpak_transaction_add_new_remote (FlatpakTransaction            *transaction,
   return FALSE;
 }
 
+static void
+flatpak_transaction_install_authenticator  (FlatpakTransaction *transaction,
+                                            const char         *remote,
+                                            const char         *authenticator_ref)
+{
+}
+
 static gboolean flatpak_transaction_real_run (FlatpakTransaction *transaction,
                                               GCancellable       *cancellable,
                                               GError            **error);
@@ -1031,6 +1040,7 @@ flatpak_transaction_class_init (FlatpakTransactionClass *klass)
 
   klass->ready = flatpak_transaction_ready;
   klass->add_new_remote = flatpak_transaction_add_new_remote;
+  klass->install_authenticator = flatpak_transaction_install_authenticator;
   klass->run = flatpak_transaction_real_run;
   object_class->finalize = flatpak_transaction_finalize;
   object_class->get_property = flatpak_transaction_get_property;
@@ -1216,6 +1226,33 @@ flatpak_transaction_class_init (FlatpakTransactionClass *klass)
                   g_signal_accumulator_first_wins, NULL,
                   NULL,
                   G_TYPE_BOOLEAN, 4, G_TYPE_INT, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
+
+  /**
+   * FlatpakTransaction::install-authenticator:
+   * @object: A #FlatpakTransaction
+   * @remote: The remote name
+   * @authenticator_ref: The ref for the authenticator
+   *
+   * The ::install-authenticator signal gets emitted if, as part of
+   * resolving the transaction, we need to use an authenticator, but the authentication
+   * is not installed, but is available to be installed from the ref.
+   *
+   * The application can handle this signal, and if so create another transaction
+   * to install the authenticator.
+   *
+   * The default handler does nothing, and if the authenticator is not installed when
+   * the signal handler fails the transaction will error out.
+   *
+   * Since: 1.7.4
+   */
+  signals[INSTALL_AUTHENTICATOR] =
+    g_signal_new ("install-authenticator",
+                  G_TYPE_FROM_CLASS (object_class),
+                  G_SIGNAL_RUN_LAST,
+                  G_STRUCT_OFFSET (FlatpakTransactionClass, install_authenticator),
+                  NULL, NULL,
+                  NULL,
+                  G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 
   /**
    * FlatpakTransaction::webflow-start:
@@ -2424,32 +2461,31 @@ flatpak_transaction_add_auto_install (FlatpakTransaction *self,
   for (int i = 0; remotes[i] != NULL; i++)
     {
       char *remote = remotes[i];
-      g_autoptr(GPtrArray) auto_install_refs = NULL;
+      g_autofree char *auto_install_ref = NULL;
 
       if (flatpak_dir_get_remote_disabled (priv->dir, remote))
         continue;
 
-      auto_install_refs = flatpak_dir_find_remote_auto_install_refs (priv->dir, remote);
-      for (int i = 0; i < auto_install_refs->len; i++)
+      auto_install_ref = flatpak_dir_get_remote_auto_install_authenticator_ref (priv->dir, remote);
+      if (auto_install_ref != NULL)
         {
-          const char *ref = g_ptr_array_index (auto_install_refs, i);
           g_autoptr(GError) local_error = NULL;
           g_autoptr(GFile) deploy = NULL;
 
-          deploy = flatpak_dir_get_if_deployed (priv->dir, ref, NULL, cancellable);
+          deploy = flatpak_dir_get_if_deployed (priv->dir, auto_install_ref, NULL, cancellable);
           if (deploy == NULL)
             {
               g_autoptr(FlatpakRemoteState) state = flatpak_transaction_ensure_remote_state (self, FLATPAK_TRANSACTION_OPERATION_UPDATE, remote, NULL);
 
               if (state != NULL &&
-                  flatpak_remote_state_lookup_ref (state, ref, NULL, NULL, NULL, NULL, NULL))
+                  flatpak_remote_state_lookup_ref (state, auto_install_ref, NULL, NULL, NULL, NULL, NULL))
                 {
-                  g_debug ("Auto adding install of %s from remote %s", ref, remote);
-                  if (!flatpak_transaction_add_ref (self, remote, ref, NULL, NULL, NULL,
+                  g_debug ("Auto adding install of %s from remote %s", auto_install_ref, remote);
+                  if (!flatpak_transaction_add_ref (self, remote, auto_install_ref, NULL, NULL, NULL,
                                                     FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE,
                                                     NULL, NULL,
                                                     &local_error))
-                    g_debug ("Failed to add auto-install ref %s: %s", ref, local_error->message);
+                    g_debug ("Failed to add auto-install ref %s: %s", auto_install_ref, local_error->message);
                 }
             }
         }
@@ -3097,6 +3133,21 @@ request_tokens_for_remote (FlatpakTransaction *self,
   g_autofree char *remote_url = NULL;
   g_autoptr(GVariantBuilder) extra_builder = NULL;
   FlatpakRemoteState *state;
+  g_autofree char *auto_install_ref = NULL;
+
+
+  auto_install_ref = flatpak_dir_get_remote_auto_install_authenticator_ref (priv->dir, remote);
+  if (auto_install_ref != NULL)
+    {
+      g_autoptr(GFile) deploy = NULL;
+      deploy = flatpak_dir_get_if_deployed (priv->dir, auto_install_ref, NULL, cancellable);
+      if (deploy == NULL)
+        g_signal_emit (self, signals[INSTALL_AUTHENTICATOR], 0,
+                       remote, auto_install_ref);
+      deploy = flatpak_dir_get_if_deployed (priv->dir, auto_install_ref, NULL, cancellable);
+      if (deploy == NULL)
+        return flatpak_fail (error, _("No authenticator installed for remote '%s'"), remote);
+    }
 
   if (!ostree_repo_remote_get_url (flatpak_dir_get_repo (priv->dir), remote, &remote_url, error))
     return FALSE;
@@ -3605,7 +3656,10 @@ handle_runtime_repo_deps_from_keyfile (FlatpakTransaction *self,
   dep_url = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP,
                                    FLATPAK_REF_RUNTIME_REPO_KEY, NULL);
   if (dep_url == NULL)
-    return TRUE;
+    {
+      g_warning ("Flatpakref file does not contain a %s", FLATPAK_REF_RUNTIME_REPO_KEY);
+      return TRUE;
+    }
 
   name = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP, FLATPAK_REF_NAME_KEY, NULL);
   if (name == NULL)
@@ -3962,20 +4016,35 @@ flatpak_transaction_real_run (FlatpakTransaction *self,
 
   if (!priv->no_pull &&
       !flatpak_transaction_update_metadata (self, cancellable, error))
-    return FALSE;
+    {
+      g_assert (error == NULL || *error != NULL);
+      return FALSE;
+    }
 
   if (!flatpak_transaction_add_auto_install (self, cancellable, error))
-    return FALSE;
+    {
+      g_assert (error == NULL || *error != NULL);
+      return FALSE;
+    }
 
   if (!flatpak_transaction_resolve_flatpakrefs (self, cancellable, error))
-    return FALSE;
+    {
+      g_assert (error == NULL || *error != NULL);
+      return FALSE;
+    }
 
   if (!flatpak_transaction_resolve_bundles (self, cancellable, error))
-    return FALSE;
+    {
+      g_assert (error == NULL || *error != NULL);
+      return FALSE;
+    }
 
   /* Resolve initial ops */
   if (!resolve_all_ops (self, cancellable, error))
-    return FALSE;
+    {
+      g_assert (error == NULL || *error != NULL);
+      return FALSE;
+    }
 
   /* Add all app -> runtime dependencies */
   for (l = priv->ops; l != NULL; l = l->next)
@@ -3983,12 +4052,18 @@ flatpak_transaction_real_run (FlatpakTransaction *self,
       FlatpakTransactionOperation *op = l->data;
 
       if (!op->skip && !add_deps (self, op, error))
-        return FALSE;
+        {
+          g_assert (error == NULL || *error != NULL);
+          return FALSE;
+        }
     }
 
   /* Resolve new ops */
   if (!resolve_all_ops (self, cancellable, error))
-    return FALSE;
+    {
+      g_assert (error == NULL || *error != NULL);
+      return FALSE;
+    }
 
   /* Add all related extensions */
   for (l = priv->ops; l != NULL; l = l->next)
@@ -3996,16 +4071,25 @@ flatpak_transaction_real_run (FlatpakTransaction *self,
       FlatpakTransactionOperation *op = l->data;
 
       if (!op->skip && !add_related (self, op, error))
-        return FALSE;
+        {
+          g_assert (error == NULL || *error != NULL);
+          return FALSE;
+        }
     }
 
   /* Resolve new ops */
   if (!resolve_all_ops (self, cancellable, error))
-    return FALSE;
+    {
+      g_assert (error == NULL || *error != NULL);
+      return FALSE;
+    }
 
   /* Ensure we have all required tokens, we do this after all resolves if possible to bunch requests */
   if (!request_required_tokens (self, NULL, cancellable, error))
-    return FALSE;
+    {
+      g_assert (error == NULL || *error != NULL);
+      return FALSE;
+    }
 
   sort_ops (self);
 
