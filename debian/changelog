@@ -1,3 +1,9 @@
+flatpak (1.8.0-flatpak1~bionic) bionic; urgency=medium
+
+  * Update to 1.8.0
+
+ -- Alexander Larsson <alexl@redhat.com>  Thu, 25 Jun 2020 09:57:29 +0200
+
 flatpak (1.7.3-flatpak1~xenial) xenial; urgency=medium
 
   * Rebuild for xenial
