@@ -283,6 +283,10 @@ get_run_dir_location (void)
   if (g_once_init_enter (&path))
     {
       gsize setup_value = 0;
+      /* Note: $FLATPAK_RUN_DIR should only be set in the unit tests. At
+       * runtime, /run/flatpak is assumed by
+       * flatpak-create-sideload-symlinks.sh
+       */
       const char *config_dir = g_getenv ("FLATPAK_RUN_DIR");
       if (config_dir != NULL)
         setup_value = (gsize) config_dir;
@@ -5546,7 +5550,7 @@ flatpak_dir_pull_untrusted_local (FlatpakDir          *self,
     return FALSE;
 
   if (current_checksum != NULL &&
-      !ostree_repo_load_commit (self->repo, current_checksum, &old_commit, NULL, NULL))
+      !ostree_repo_load_commit (self->repo, current_checksum, &old_commit, NULL, error))
     return FALSE;
 
   src_repo = ostree_repo_new (path_file);
@@ -11885,7 +11889,8 @@ flatpak_dir_list_remote_config_keys (FlatpakDir *self,
 
 static void
 add_subdirs (GPtrArray *res,
-             GFile     *parent)
+             GFile     *parent,
+             gboolean   recurse)
 {
   g_autoptr(GFileEnumerator) dir_enum = NULL;
 
@@ -11906,8 +11911,37 @@ add_subdirs (GPtrArray *res,
           info == NULL)
         break;
 
+      /* Here we support either a plain repo or, if @recurse is TRUE, the root
+       * directory of a USB created with "flatpak create-usb"
+       */
       if (g_file_info_get_file_type (info) == G_FILE_TYPE_DIRECTORY)
-        g_ptr_array_add (res, g_object_ref (path));
+        {
+          g_autoptr(OstreeRepo) repo = ostree_repo_new (path);
+
+          if (ostree_repo_open (repo, NULL, NULL))
+            g_ptr_array_add (res, g_object_ref (path));
+          else if (recurse)
+            {
+              g_autoptr(GFile) ostree_repo_subpath = NULL;
+              g_autoptr(GFile) dot_ostree_repo_subpath = NULL;
+              g_autoptr(GFile) dot_ostree_repo_d_subpath = NULL;
+              g_autoptr(OstreeRepo) ostree_repo_subpath_repo = NULL;
+              g_autoptr(OstreeRepo) dot_ostree_repo_subpath_repo = NULL;
+
+              ostree_repo_subpath = g_file_resolve_relative_path (path, "ostree/repo");
+              ostree_repo_subpath_repo = ostree_repo_new (ostree_repo_subpath);
+              if (ostree_repo_open (ostree_repo_subpath_repo, NULL, NULL))
+                g_ptr_array_add (res, g_object_ref (ostree_repo_subpath));
+
+              dot_ostree_repo_subpath = g_file_resolve_relative_path (path, ".ostree/repo");
+              dot_ostree_repo_subpath_repo = ostree_repo_new (dot_ostree_repo_subpath);
+              if (ostree_repo_open (dot_ostree_repo_subpath_repo, NULL, NULL))
+                g_ptr_array_add (res, g_object_ref (dot_ostree_repo_subpath));
+
+              dot_ostree_repo_d_subpath = g_file_resolve_relative_path (path, ".ostree/repos.d");
+              add_subdirs (res, dot_ostree_repo_d_subpath, FALSE);
+            }
+        }
     }
 }
 
@@ -11918,8 +11952,8 @@ flatpak_dir_get_sideload_repo_paths (FlatpakDir *self)
   g_autoptr(GFile) runtime_sideload_repos_dir = flatpak_dir_get_runtime_sideload_repos_dir (self);
   g_autoptr(GPtrArray) res = g_ptr_array_new_with_free_func (g_object_unref);
 
-  add_subdirs (res, sideload_repos_dir);
-  add_subdirs (res, runtime_sideload_repos_dir);
+  add_subdirs (res, sideload_repos_dir, TRUE);
+  add_subdirs (res, runtime_sideload_repos_dir, TRUE);
 
   return g_steal_pointer (&res);
 }
@@ -13860,22 +13894,17 @@ flatpak_dir_find_local_related (FlatpakDir   *self,
   return g_steal_pointer (&related);
 }
 
-GPtrArray *
-flatpak_dir_find_remote_auto_install_refs (FlatpakDir         *self,
-                                           const char         *remote_name)
+char *
+flatpak_dir_get_remote_auto_install_authenticator_ref (FlatpakDir         *self,
+                                                        const char         *remote_name)
 {
-  GPtrArray *auto_install_refs = g_ptr_array_new_with_free_func ((GDestroyNotify) g_free);
   g_autofree char *authenticator_name = NULL;
-  g_autofree char *authenticator_ref = NULL;
 
   authenticator_name = flatpak_dir_get_remote_install_authenticator_name (self, remote_name);
   if (authenticator_name != NULL)
-    authenticator_ref = g_strdup_printf ("app/%s/%s/autoinstall", authenticator_name, flatpak_get_arch ());
+    return g_strdup_printf ("app/%s/%s/autoinstall", authenticator_name, flatpak_get_arch ());
 
-  if (authenticator_ref)
-    g_ptr_array_add (auto_install_refs, g_steal_pointer (&authenticator_ref));
-
-  return auto_install_refs;
+  return NULL;
 }
 
 
