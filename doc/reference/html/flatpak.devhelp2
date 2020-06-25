@@ -189,6 +189,7 @@
     <keyword type="signal" name="The “choose-remote-for-ref” signal" link="FlatpakTransaction.html#FlatpakTransaction-choose-remote-for-ref"/>
     <keyword type="signal" name="The “end-of-lifed” signal" link="FlatpakTransaction.html#FlatpakTransaction-end-of-lifed"/>
     <keyword type="signal" name="The “end-of-lifed-with-rebase” signal" link="FlatpakTransaction.html#FlatpakTransaction-end-of-lifed-with-rebase"/>
+    <keyword type="signal" name="The “install-authenticator” signal" link="FlatpakTransaction.html#FlatpakTransaction-install-authenticator"/>
     <keyword type="signal" name="The “new-operation” signal" link="FlatpakTransaction.html#FlatpakTransaction-new-operation"/>
     <keyword type="signal" name="The “operation-done” signal" link="FlatpakTransaction.html#FlatpakTransaction-operation-done"/>
     <keyword type="signal" name="The “operation-error” signal" link="FlatpakTransaction.html#FlatpakTransaction-operation-error"/>
