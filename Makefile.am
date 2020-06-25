@@ -25,11 +25,13 @@ SUBDIRS += po
 %.service: %.service.in config.log
 	$(AM_V_GEN) $(SED) -e "s|\@libexecdir\@|$(libexecdir)|" \
 		-e "s|\@localstatedir\@|$(localstatedir)|" \
+		-e "s|\@media_dir\@|$(RUN_MEDIA_DIR)|" \
 		-e "s|\@extraargs\@||" $< > $@
 
 dbus_servicedir = $(DBUS_SERVICE_DIR)
 service_in_files = $(NULL)
 dbus_service_DATA = $(NULL)
+systemdsystemunit_DATA = $(NULL)
 systemduserunit_DATA = $(NULL)
 CLEANFILES += $(dbus_service_DATA)
 CLEANFILES += $(systemduserunit_DATA)
@@ -101,6 +103,7 @@ include oci-authenticator/Makefile.am.inc
 include icon-validator/Makefile.am.inc
 include revokefs/Makefile.am.inc
 include selinux/Makefile.am.inc
+include sideload-repos-systemd/Makefile.am.inc
 include tests/Makefile.am.inc
 
 if !WITH_SYSTEM_DBUS_PROXY
@@ -153,7 +156,11 @@ profile_DATA = profile/flatpak.sh
 EXTRA_DIST += $(profile_DATA)
 
 envdir = $(datadir)/gdm/env.d
-env_DATA = flatpak.env
+env_DATA =
+if INSTALL_GDM_ENV_FILE
+env_DATA += flatpak.env
+endif
+
 EXTRA_DIST += env.d/flatpak.env.in env.d/60-flatpak
 DISTCLEANFILES += flatpak.env
 
