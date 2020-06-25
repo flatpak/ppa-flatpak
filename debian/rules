@@ -41,11 +41,14 @@ endif
 override_dh_auto_configure:
 	rm -f app/parse-datetime.c
 	dh_auto_configure -- \
+		--disable-auto-sideloading \
 		--disable-selinux-module \
+		--enable-gdm-env-file \
 		--enable-installed-tests \
 		--with-dbus-config-dir=/usr/share/dbus-1/system.d \
 		--with-priv-mode=none \
 		--with-privileged-group=sudo \
+		--with-run-media-dir=/media \
 		--with-system-bubblewrap=bwrap \
 		--with-system-dbus-proxy=xdg-dbus-proxy \
 		--with-systemdsystemunitdir=/lib/systemd/system \

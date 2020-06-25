@@ -1,3 +1,18 @@
+flatpak (1.8.0-1) UNRELEASED; urgency=medium
+
+  * New upstream stable release
+    - Update configure options
+    - Install gdm env.d fragment, but only as an example file.
+      It is harmful on systems where environment.d(5) works (in particular
+      systems using systemd), because it overwrites additions to the
+      XDG_DATA_DIRS coming from other app frameworks like Snap.
+      However, using either this fragment or manual configuration might
+      be necessary on non-systemd systems. See
+      /usr/share/doc/flatpak/README.Debian for more details.
+    - d/flatpak.README.Debian: Add
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 25 Jun 2020 12:02:12 +0100
+
 flatpak (1.7.3-1) experimental; urgency=medium
 
   * New upstream development release
