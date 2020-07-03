@@ -1,3 +1,9 @@
+flatpak (1.8.1-flatpak1~bionic) bionic; urgency=medium
+
+  * Update to 1.8.1
+
+ -- Alexander Larsson <alexl@redhat.com>  Fri, 03 Jul 2020 14:58:22 +0200
+
 flatpak (1.8.0-flatpak1~focal) focal; urgency=medium
 
   * Rebuild for focal
