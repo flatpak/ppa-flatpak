@@ -224,6 +224,7 @@ enum {
   LAST_PROGRESS_SIGNAL
 };
 
+static void flatpak_transaction_normalize_ops (FlatpakTransaction *self);
 static gboolean request_required_tokens (FlatpakTransaction *self,
                                          const char         *optional_remote,
                                          GCancellable       *cancellable,
@@ -2714,6 +2715,7 @@ op_may_need_token (FlatpakTransactionOperation *op)
 {
   return
     !op->skip &&
+    !op->update_only_deploy &&
     (op->kind == FLATPAK_TRANSACTION_OPERATION_INSTALL ||
      op->kind == FLATPAK_TRANSACTION_OPERATION_UPDATE  ||
      op->kind == FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE);
@@ -3305,6 +3307,9 @@ request_required_tokens (FlatpakTransaction *self,
   GList *l;
   g_autoptr(GHashTable) need_token_ht = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, (GDestroyNotify) g_list_free); /* remote name -> list of op */
 
+  /* Ensure all ops so far ar normalized so we don't request authentication for no-op updates */
+  flatpak_transaction_normalize_ops (self);
+
   for (l = priv->ops; l != NULL; l = l->next)
     {
       FlatpakTransactionOperation *op = l->data;
@@ -3827,12 +3832,14 @@ _run_op_kind (FlatpakTransaction           *self,
   if (op->kind == FLATPAK_TRANSACTION_OPERATION_INSTALL)
     {
       g_autoptr(FlatpakTransactionProgress) progress = flatpak_transaction_progress_new ();
+      FlatpakTransactionResult result_details = 0;
+      g_autoptr(GError) local_error = NULL;
 
       emit_new_op (self, op, progress);
 
       g_assert (op->resolved_commit != NULL); /* We resolved this before */
 
-      if (op->resolved_metakey && !flatpak_check_required_version (op->ref, op->resolved_metakey, error))
+      if (op->resolved_metakey && !flatpak_check_required_version (op->ref, op->resolved_metakey, &local_error))
         res = FALSE;
       else
         res = flatpak_dir_install (priv->dir,
@@ -3848,12 +3855,27 @@ _run_op_kind (FlatpakTransaction           *self,
                                    op->resolved_metadata,
                                    op->resolved_token,
                                    progress->progress_obj,
-                                   cancellable, error);
+                                   cancellable, &local_error);
 
       flatpak_transaction_progress_done (progress);
+
+      /* Handle noop-installs (maybe we raced, or this was installed in install-authenticator)
+       * We do initial checks and fail with already installed in add_ref() for other cases. */
+      if (!res && g_error_matches (local_error, FLATPAK_ERROR, FLATPAK_ERROR_ALREADY_INSTALLED))
+        {
+          res = TRUE;
+          g_clear_error (&local_error);
+
+          result_details |= FLATPAK_TRANSACTION_RESULT_NO_CHANGE;
+        }
+      else if (!res)
+        {
+          g_propagate_error (error, g_steal_pointer (&local_error));
+        }
+
       if (res)
         {
-          emit_op_done (self, op, 0);
+          emit_op_done (self, op, result_details);
 
           /* Normally we don't need to prune after install, because it makes no old objects
              stale. However if we reinstall, that is not true. */
@@ -3981,13 +4003,55 @@ _run_op_kind (FlatpakTransaction           *self,
   return res;
 }
 
+/* Ensure the operation kind is normalized and not no-op */
+static void
+flatpak_transaction_normalize_ops (FlatpakTransaction *self)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+  GList *l, *next;
+
+  for (l = priv->ops; l != NULL; l = next)
+    {
+      FlatpakTransactionOperation *op = l->data;
+      next = l->next;
+
+      if (op->kind == FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE)
+        {
+          g_autoptr(GBytes) deploy_data = NULL;
+
+          if (dir_ref_is_installed (priv->dir, op->ref, NULL, &deploy_data))
+            {
+              /* Don't use the remote from related ref on update, always use
+                 the current remote. */
+              g_free (op->remote);
+              op->remote = g_strdup (flatpak_deploy_data_get_origin (deploy_data));
+
+              op->kind = FLATPAK_TRANSACTION_OPERATION_UPDATE;
+            }
+          else
+            op->kind = FLATPAK_TRANSACTION_OPERATION_INSTALL;
+        }
+
+      if (op->kind == FLATPAK_TRANSACTION_OPERATION_UPDATE &&
+          !flatpak_dir_needs_update_for_commit_and_subpaths (priv->dir, op->remote, op->ref, op->resolved_commit,
+                                                             (const char **) op->subpaths))
+        {
+          /* If this is a rebase, then at minimum a redeploy needs to happen */
+          if (op->previous_ids)
+            op->update_only_deploy = TRUE;
+          else
+            op->skip = TRUE;
+        }
+    }
+}
+
 static gboolean
 flatpak_transaction_real_run (FlatpakTransaction *self,
                               GCancellable       *cancellable,
                               GError            **error)
 {
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
-  GList *l, *next;
+  GList *l;
   gboolean succeeded = TRUE;
   gboolean needs_prune = FALSE;
   gboolean needs_triggers = FALSE;
@@ -4094,40 +4158,7 @@ flatpak_transaction_real_run (FlatpakTransaction *self,
   sort_ops (self);
 
   /* Ensure the operation kind is normalized and not no-op */
-  for (l = priv->ops; l != NULL; l = next)
-    {
-      FlatpakTransactionOperation *op = l->data;
-      next = l->next;
-
-      if (op->kind == FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE)
-        {
-          g_autoptr(GBytes) deploy_data = NULL;
-
-          if (dir_ref_is_installed (priv->dir, op->ref, NULL, &deploy_data))
-            {
-              /* Don't use the remote from related ref on update, always use
-                 the current remote. */
-              g_free (op->remote);
-              op->remote = g_strdup (flatpak_deploy_data_get_origin (deploy_data));
-
-              op->kind = FLATPAK_TRANSACTION_OPERATION_UPDATE;
-            }
-          else
-            op->kind = FLATPAK_TRANSACTION_OPERATION_INSTALL;
-        }
-
-      if (op->kind == FLATPAK_TRANSACTION_OPERATION_UPDATE &&
-          !flatpak_dir_needs_update_for_commit_and_subpaths (priv->dir, op->remote, op->ref, op->resolved_commit,
-                                                             (const char **) op->subpaths))
-        {
-          /* If this is a rebase, then at minimum a redeploy needs to happen */
-          if (op->previous_ids)
-            op->update_only_deploy = TRUE;
-          else
-            op->skip = TRUE;
-        }
-    }
-
+  flatpak_transaction_normalize_ops (self);
 
   g_signal_emit (self, signals[READY], 0, &ready_res);
   if (!ready_res)
