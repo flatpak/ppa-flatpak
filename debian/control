@@ -152,19 +152,29 @@ Architecture: linux-any
 Multi-Arch: same
 Section: libdevel
 Depends:
+ gir1.2-glib-2.0,
  gir1.2-flatpak-1.0 (= ${binary:Version}),
  libflatpak0 (= ${binary:Version}),
  libglib2.0-dev,
  libostree-dev (>= 2019.2),
  libxml2-dev (>= 2.4),
  pkg-config,
+ python3:any,
  ${misc:Depends},
+Recommends:
+ flatpak,
+Suggests:
+ gdb,
+ ostree,
+ python3-gi,
+ systemd-coredump,
 Description: Application deployment framework for desktop apps (development)
  Flatpak installs, manages and runs sandboxed desktop application bundles.
  See the flatpak package for a more comprehensive description.
  .
  This package contains development headers and pkg-config metadata
- for libflatpak0.
+ for libflatpak0, and the flatpak-coredump and flatpak-bisect scripts used
+ to debug Flatpak applications.
 
 Package: libflatpak-doc
 Build-Profiles: <!nodoc>
