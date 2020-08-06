@@ -1,0 +1,37 @@
+From: Julian Andres Klode <julian.klode@canonical.com>
+Date: Wed, 5 Aug 2020 16:28:50 +0200
+Subject: Fix argument order of clone() for s390x in seccomp filter
+
+clone() is a mad syscall with about 4 different argument orders. While
+most of them agree that argument 0 is flags, s390 and s390x have the
+flags argument second - A0 is the child stack pointer there.
+
+[smcv: Add an explanatory comment; also test __CRIS__ for completeness]
+
+Bug-Debian: https://bugs.debian.org/964541
+Bug-Ubuntu: https://launchpad.net/bugs/1886814
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/3777
+---
+ common/flatpak-run.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/common/flatpak-run.c b/common/flatpak-run.c
+index 354920e..73949cc 100644
+--- a/common/flatpak-run.c
++++ b/common/flatpak-run.c
+@@ -2667,7 +2667,14 @@ setup_seccomp (FlatpakBwrap   *bwrap,
+     {SCMP_SYS (unshare)},
+     {SCMP_SYS (mount)},
+     {SCMP_SYS (pivot_root)},
++#if defined(__s390__) || defined(__s390x__) || defined(__CRIS__)
++    /* Architectures with CONFIG_CLONE_BACKWARDS2: the child stack
++     * and flags arguments are reversed so the flags come second */
++    {SCMP_SYS (clone), &SCMP_A1 (SCMP_CMP_MASKED_EQ, CLONE_NEWUSER, CLONE_NEWUSER)},
++#else
++    /* Normally the flags come first */
+     {SCMP_SYS (clone), &SCMP_A0 (SCMP_CMP_MASKED_EQ, CLONE_NEWUSER, CLONE_NEWUSER)},
++#endif
+ 
+     /* Don't allow faking input to the controlling tty (CVE-2017-5226) */
+     {SCMP_SYS (ioctl), &SCMP_A1 (SCMP_CMP_MASKED_EQ, 0xFFFFFFFFu, (int) TIOCSTI)},
