@@ -1584,6 +1584,7 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	system-helper/flatpak.conf.in selinux/flatpak.te \
 	selinux/flatpak.fc selinux/flatpak.if $(NULL) \
 	sideload-repos-systemd/flatpak-sideload-usb-repo.path.in \
+	sideload-repos-systemd/flatpak-sideload-usb-repo.service.in \
 	sideload-repos-systemd/flatpak-sideload-repos-dir.service \
 	tests/flatpak.supp tests/glib.supp \
 	tests/Makefile-test-matrix.am.inc tests/expand-test-matrix.sh \
