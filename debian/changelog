@@ -1,3 +1,9 @@
+flatpak (1.8.2-flatpak1~eoan) eoan; urgency=medium
+
+  * Rebuild for eoan
+
+ -- Alexander Larsson <alexl@redhat.com>  Fri, 21 Aug 2020 15:22:30 +0200
+
 flatpak (1.8.2-flatpak1~bionic) bionic; urgency=medium
 
   * Update to 1.8.2
