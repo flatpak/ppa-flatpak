@@ -345,6 +345,21 @@ flatpak_remote_state_unref (FlatpakRemoteState *remote_state)
     }
 }
 
+static gboolean
+_validate_summary_for_collection_id (GVariant    *summary_v,
+                                     const char  *collection_id,
+                                     GError     **error)
+{
+  VarSummaryRef summary;
+  summary = var_summary_from_gvariant (summary_v);
+
+  if (!flatpak_summary_find_ref_map (summary, collection_id, NULL))
+    return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA,
+                               _("Configured collection ID ‘%s’ not in summary file"), collection_id);
+
+  return TRUE;
+}
+
 void
 flatpak_remote_state_add_sideload_repo (FlatpakRemoteState *self,
                                         GFile *dir)
@@ -363,14 +378,27 @@ flatpak_remote_state_add_sideload_repo (FlatpakRemoteState *self,
   mfile = g_mapped_file_new (flatpak_file_get_path_cached (summary_path), FALSE, NULL);
   if (mfile != NULL && ostree_repo_open (sideload_repo, NULL, NULL))
     {
+      g_autoptr(GError) local_error = NULL;
       g_autoptr(GBytes) summary_bytes = g_mapped_file_get_bytes (mfile);
       FlatpakSideloadState *ss = g_new0 (FlatpakSideloadState, 1);
 
       ss->repo = g_steal_pointer (&sideload_repo);
       ss->summary = g_variant_ref_sink (g_variant_new_from_bytes (OSTREE_SUMMARY_GVARIANT_FORMAT, summary_bytes, TRUE));
-      g_ptr_array_add (self->sideload_repos, ss);
 
-      g_debug ("Using sideloaded repo %s for remote %s", flatpak_file_get_path_cached (dir), self->remote_name);
+      if (!_validate_summary_for_collection_id (ss->summary, self->collection_id, &local_error))
+        {
+          /* We expect to hit this code path when the repo is providing things
+           * from other remotes
+           */
+          g_debug ("Sideload repo at path %s not valid for remote %s: %s",
+                   flatpak_file_get_path_cached (dir), self->remote_name, local_error->message);
+          flatpak_sideload_state_free (ss);
+        }
+      else
+        {
+          g_ptr_array_add (self->sideload_repos, ss);
+          g_debug ("Using sideloaded repo %s for remote %s", flatpak_file_get_path_cached (dir), self->remote_name);
+        }
     }
 }
 
@@ -876,6 +904,7 @@ flatpak_remote_state_fetch_commit_object (FlatpakRemoteState *self,
   if (ref != NULL)
     {
       const char *xa_ref = NULL;
+      const char *collection_binding = NULL;
       g_autofree const char **commit_refs = NULL;
 
       if ((g_variant_lookup (commit_metadata, "xa.ref", "&s", &xa_ref) &&
@@ -885,6 +914,39 @@ flatpak_remote_state_fetch_commit_object (FlatpakRemoteState *self,
         {
           flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Commit has no requested ref ‘%s’ in ref binding metadata"),  ref);
           return NULL;
+        }
+
+      /* Check that the locally configured collection ID is correct by looking
+       * for it in the commit metadata */
+      if (self->collection_id != NULL &&
+          (!g_variant_lookup (commit_metadata, OSTREE_COMMIT_META_KEY_COLLECTION_BINDING, "&s", &collection_binding) ||
+           g_strcmp0 (self->collection_id, collection_binding) != 0))
+        {
+          g_autoptr(GVariantIter) collection_refs_iter = NULL;
+          gboolean found_in_collection_refs_binding = FALSE;
+          /* Note: the OSTREE_COMMIT_META_... define for this is not yet merged
+           * in https://github.com/ostreedev/ostree/pull/1805 */
+          if (g_variant_lookup (commit_metadata, "ostree.collection-refs-binding", "a(ss)", &collection_refs_iter))
+            {
+              const gchar *crb_collection_id, *crb_ref_name;
+              while (g_variant_iter_loop (collection_refs_iter, "(&s&s)", &crb_collection_id, &crb_ref_name))
+                {
+                  if (g_strcmp0 (self->collection_id, crb_collection_id) == 0 &&
+                      g_strcmp0 (ref, crb_ref_name) == 0)
+                    {
+                      found_in_collection_refs_binding = TRUE;
+                      break;
+                    }
+                }
+            }
+
+          if (!found_in_collection_refs_binding)
+            {
+              flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA,
+                                  _("Configured collection ID ‘%s’ not in binding metadata"),
+                                  self->collection_id);
+              return NULL;
+            }
         }
     }
 
@@ -10857,6 +10919,11 @@ _flatpak_dir_get_remote_state (FlatpakDir   *self,
         }
     }
 
+  if (state->collection_id != NULL &&
+      state->summary != NULL &&
+      !_validate_summary_for_collection_id (state->summary, state->collection_id, error))
+    return NULL;
+
   if (flatpak_dir_get_remote_oci (self, remote_or_uri))
     {
       state->default_token_type = 1;
@@ -14074,30 +14141,41 @@ flatpak_dir_get_config_strv (FlatpakDir *self, char *key)
   return NULL;
 }
 
-static void
-get_system_locales (FlatpakDir *self, GPtrArray *langs)
+static const GPtrArray *
+get_system_locales (FlatpakDir *self)
 {
-  g_autoptr(GDBusProxy) localed_proxy = NULL;
-  g_autoptr(GDBusProxy) accounts_proxy = NULL;
+  static GPtrArray *cached = NULL;
 
-  /* Get the system default locales */
-  localed_proxy = get_localed_dbus_proxy ();
-  if (localed_proxy != NULL)
-    get_locale_langs_from_localed_dbus (localed_proxy, langs);
+  if (g_once_init_enter (&cached))
+    {
+      GPtrArray *langs = g_ptr_array_new_with_free_func (g_free);
+      g_autoptr(GDBusProxy) localed_proxy = NULL;
+      g_autoptr(GDBusProxy) accounts_proxy = NULL;
 
-  /* Now add the user account locales from AccountsService. If accounts_proxy is
-   * not NULL, it means that AccountsService exists */
-  accounts_proxy = get_accounts_dbus_proxy ();
-  if (accounts_proxy != NULL)
-    get_locale_langs_from_accounts_dbus (accounts_proxy, langs);
-  g_ptr_array_add (langs, NULL);
+      /* Get the system default locales */
+      localed_proxy = get_localed_dbus_proxy ();
+      if (localed_proxy != NULL)
+        get_locale_langs_from_localed_dbus (localed_proxy, langs);
+
+      /* Now add the user account locales from AccountsService. If accounts_proxy is
+       * not NULL, it means that AccountsService exists */
+      accounts_proxy = get_accounts_dbus_proxy ();
+      if (accounts_proxy != NULL)
+        get_locale_langs_from_accounts_dbus (accounts_proxy, langs);
+
+      g_ptr_array_add (langs, NULL);
+
+      g_once_init_leave (&cached, langs);
+    }
+
+  return (const GPtrArray *)cached;
 }
 
 char **
 flatpak_dir_get_default_locales (FlatpakDir *self)
 {
-  g_autoptr(GPtrArray) langs = g_ptr_array_new_with_free_func (g_free);
   g_auto(GStrv) extra_languages = NULL;
+  const GPtrArray *langs;
 
   extra_languages = flatpak_dir_get_config_strv (self, "xa.extra-languages");
 
@@ -14109,7 +14187,7 @@ flatpak_dir_get_default_locales (FlatpakDir *self)
     }
 
   /* Then get the system default locales */
-  get_system_locales (self, langs);
+  langs = get_system_locales (self);
 
   return sort_strv (flatpak_strv_merge (extra_languages, (char **) langs->pdata));
 }
@@ -14117,8 +14195,8 @@ flatpak_dir_get_default_locales (FlatpakDir *self)
 char **
 flatpak_dir_get_default_locale_languages (FlatpakDir *self)
 {
-  g_autoptr(GPtrArray) langs = g_ptr_array_new_with_free_func (g_free);
   g_auto(GStrv) extra_languages = NULL;
+  const GPtrArray *langs;
   int i;
 
   extra_languages = flatpak_dir_get_config_strv (self, "xa.extra-languages");
@@ -14138,7 +14216,7 @@ flatpak_dir_get_default_locale_languages (FlatpakDir *self)
     }
 
   /* Then get the system default locales */
-  get_system_locales (self, langs);
+  langs = get_system_locales (self);
 
   return sort_strv (flatpak_strv_merge (extra_languages, (char **) langs->pdata));
 }
