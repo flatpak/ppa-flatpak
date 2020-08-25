@@ -388,7 +388,7 @@ static char *
 flatpak_run_get_cups_server_name (void)
 {
   g_autofree char * cups_server = NULL;
-  g_autofree char * cups_config = NULL;
+  g_autofree char * cups_config_path = NULL;
 
   /* TODO
    * we don't currently support cups servers located on the network, if such
@@ -397,18 +397,18 @@ flatpak_run_get_cups_server_name (void)
    */
   cups_server = g_strdup (g_getenv ("CUPS_SERVER"));
   if (cups_server && flatpak_run_cups_check_server_is_socket (cups_server))
-    return cups_server;
+    return g_steal_pointer (&cups_server);
+  g_clear_pointer (&cups_server, g_free);
 
-  g_free (cups_server);
-  cups_config = g_build_filename (g_get_home_dir (), ".cups/client.conf", NULL);
-  cups_server = flatpak_run_get_cups_server_name_config (cups_config);
+  cups_config_path = g_build_filename (g_get_home_dir (), ".cups/client.conf", NULL);
+  cups_server = flatpak_run_get_cups_server_name_config (cups_config_path);
   if (cups_server && flatpak_run_cups_check_server_is_socket (cups_server))
-    return cups_server;
+    return g_steal_pointer (&cups_server);
+  g_clear_pointer (&cups_server, g_free);
 
-  g_free (cups_server);
   cups_server = flatpak_run_get_cups_server_name_config ("/etc/cups/client.conf");
   if (cups_server && flatpak_run_cups_check_server_is_socket (cups_server))
-    return cups_server;
+    return g_steal_pointer (&cups_server);
 
   // Fallback to default socket
   return g_strdup ("/var/run/cups/cups.sock");
@@ -418,7 +418,7 @@ static void
 flatpak_run_add_cups_args (FlatpakBwrap *bwrap)
 {
   g_autofree char * sandbox_server_name = g_strdup ("/var/run/cups/cups.sock");
-  g_autofree char * cups_server_name = flatpak_run_get_cups_server_name();
+  g_autofree char * cups_server_name = flatpak_run_get_cups_server_name ();
 
   if (!g_file_test (cups_server_name, G_FILE_TEST_EXISTS))
     {
@@ -986,6 +986,10 @@ start_dbus_proxy (FlatpakBwrap *app_bwrap,
                       flatpak_bwrap_child_setup_cb, proxy_bwrap->fds,
                       NULL, error))
     return FALSE;
+
+  /* The write end can be closed now, otherwise the read below will hang of xdg-dbus-proxy
+     fails to start. */
+  g_clear_pointer (&proxy_bwrap, flatpak_bwrap_free);
 
   /* Sync with proxy, i.e. wait until its listening on the sockets */
   if (read (sync_fds[0], &x, 1) != 1)
@@ -2667,7 +2671,14 @@ setup_seccomp (FlatpakBwrap   *bwrap,
     {SCMP_SYS (unshare)},
     {SCMP_SYS (mount)},
     {SCMP_SYS (pivot_root)},
+#if defined(__s390__) || defined(__s390x__) || defined(__CRIS__)
+    /* Architectures with CONFIG_CLONE_BACKWARDS2: the child stack
+     * and flags arguments are reversed so the flags come second */
+    {SCMP_SYS (clone), &SCMP_A1 (SCMP_CMP_MASKED_EQ, CLONE_NEWUSER, CLONE_NEWUSER)},
+#else
+    /* Normally the flags come first */
     {SCMP_SYS (clone), &SCMP_A0 (SCMP_CMP_MASKED_EQ, CLONE_NEWUSER, CLONE_NEWUSER)},
+#endif
 
     /* Don't allow faking input to the controlling tty (CVE-2017-5226) */
     {SCMP_SYS (ioctl), &SCMP_A1 (SCMP_CMP_MASKED_EQ, 0xFFFFFFFFu, (int) TIOCSTI)},
