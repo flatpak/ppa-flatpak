@@ -1,3 +1,10 @@
+flatpak (1.8.2-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+    - Drop patch for #964541, applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 25 Aug 2020 15:56:49 +0100
+
 flatpak (1.8.1-2) unstable; urgency=medium
 
   * Include flatpak-bisect and flatpak-coredumpctl in libflatpak-dev

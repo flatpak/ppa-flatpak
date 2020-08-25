@@ -13,7 +13,7 @@ Signed-off-by: Simon McVittie <smcv@debian.org>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/variant-schema-compiler/variant-schema-compiler b/variant-schema-compiler/variant-schema-compiler
-index f2accf3..7ba23cb 100755
+index fe2fb24..cb9fd6a 100755
 --- a/variant-schema-compiler/variant-schema-compiler
 +++ b/variant-schema-compiler/variant-schema-compiler
 @@ -118,7 +118,7 @@ typedef struct {{
