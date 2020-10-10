@@ -1,3 +1,15 @@
+flatpak (1.8.2-2) unstable; urgency=medium
+
+  [ Laurent Bigonville ]
+  * debian/control: Add libmalcontent-0-dev to the build-dependencies.
+    This provides optional parental controls for app installation and
+    launching.
+
+  [ Simon McVittie ]
+  * Add Suggests on malcontent-gui
+
+ -- Simon McVittie <smcv@debian.org>  Sat, 10 Oct 2020 20:10:55 +0100
+
 flatpak (1.8.2-1) unstable; urgency=medium
 
   * New upstream release
