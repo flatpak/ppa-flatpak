@@ -203,7 +203,7 @@ Depends:
  ${shlibs:Depends},
 Pre-Depends:
  ${misc:Pre-Depends},
-Multi-arch: same
+Multi-Arch: same
 Description: Application deployment framework for desktop apps (library)
  Flatpak installs, manages and runs sandboxed desktop application bundles.
  See the flatpak package for a more comprehensive description.
