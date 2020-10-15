@@ -1,3 +1,24 @@
+flatpak (1.8.2-3) unstable; urgency=medium
+
+  * d/p/Skip-parental-controls-checks-on-ServiceUnknown-or-NameHa.patch:
+    Add proposed patch to skip parental controls if accountsservice is not
+    installed.
+    The malcontent package (which activates parental controls support)
+    depends on accountsservice, but the libmalcontent-0-0 client library
+    does not, so we need to cope gracefully with the case where
+    neither malcontent nor accountsservice is installed. Presumably, in such
+    installations the sysadmin did not want the parental controls feature.
+    Ideally libmalcontent would do this itself (#972145). (Closes: #972138)
+  * Add Depends on dbus, for the well-known system bus service.
+    Now that the parental controls feature is enabled, Flatpak will refuse
+    to run apps if the D-Bus system bus is unavailable. Previously, it would
+    have partially worked (but with severely reduced functionality, in
+    particular only --user installations).
+  * d/control: Canonicalize case of Multi-Arch
+  * Update lintian overrides to silence some false-positives
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 15 Oct 2020 09:47:28 +0100
+
 flatpak (1.8.2-2) unstable; urgency=medium
 
   [ Laurent Bigonville ]
