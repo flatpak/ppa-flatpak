@@ -36,7 +36,6 @@ Build-Depends:
  libglib2.0-dev (>= 2.44),
  libgpgme-dev (>= 1.1.8),
  libjson-glib-dev,
- libmalcontent-0-dev (>= 0.4.0),
  libostree-dev (>= 2020.8),
  libpolkit-agent-1-dev,
  libpolkit-gobject-1-dev,
