@@ -87,7 +87,6 @@ Recommends:
  xdg-desktop-portal-gtk (>= 1.6) | xdg-desktop-portal-backend,
 Suggests:
  avahi-daemon,
- malcontent-gui,
 Conflicts:
  xdg-app,
 Replaces:
