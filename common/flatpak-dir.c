@@ -989,14 +989,14 @@ flatpak_remote_state_load_ref_commit (FlatpakRemoteState *self,
 
   /* First try local availability */
   if (ostree_repo_load_commit (dir->repo, commit, &commit_data, NULL, NULL))
-    return g_steal_pointer (&commit_data);
+    goto out;
 
   for (int i = 0; i < self->sideload_repos->len; i++)
     {
       FlatpakSideloadState *ss = g_ptr_array_index (self->sideload_repos, i);
 
       if (ostree_repo_load_commit (ss->repo, commit, &commit_data, NULL, NULL))
-        return g_steal_pointer (&commit_data);
+        goto out;
     }
 
   if (flatpak_dir_get_remote_oci (dir, self->remote_name))
@@ -1006,6 +1006,7 @@ flatpak_remote_state_load_ref_commit (FlatpakRemoteState *self,
     commit_data = flatpak_remote_state_fetch_commit_object (self, dir, ref, commit, token,
                                                             cancellable, error);
 
+out:
   if (out_commit)
     *out_commit = g_steal_pointer (&commit);
 
@@ -10591,7 +10592,7 @@ flatpak_dir_lookup_cached_summary (FlatpakDir *self,
   if (summary)
     {
       guint64 now = g_get_monotonic_time ();
-      if ((now - summary->time) < (1000 * 1000 * (SUMMARY_CACHE_TIMEOUT_SEC)) &&
+      if ((now - summary->time) / G_USEC_PER_SEC < SUMMARY_CACHE_TIMEOUT_SEC &&
           strcmp (url, summary->url) == 0)
         {
           /* g_debug ("Using cached summary for remote %s", name); */
@@ -10604,6 +10605,15 @@ flatpak_dir_lookup_cached_summary (FlatpakDir *self,
                 *bytes_sig_out = NULL;
             }
           res = TRUE;
+
+          /* Bump the cache expiry time */
+          summary->time = now;
+        }
+      else
+        {
+          /* Timed out or URL has changed; remove the entry */
+          g_hash_table_remove (self->summary_cache, name);
+          res = FALSE;
         }
     }
 
