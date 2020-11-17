@@ -1803,11 +1803,13 @@ flatpak_transaction_add_op (FlatpakTransaction             *self,
                             const char                    **previous_ids,
                             const char                     *commit,
                             GFile                          *bundle,
-                            FlatpakTransactionOperationType kind)
+                            FlatpakTransactionOperationType kind,
+                            GError                        **error)
 {
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
   FlatpakTransactionOperation *op;
   g_autofree char *subpaths_str = NULL;
+  g_auto(GStrv) ref_parts = NULL;
 
   subpaths_str = subpaths_to_string (subpaths);
   g_debug ("Transaction: %s %s:%s%s%s%s",
@@ -1815,6 +1817,11 @@ flatpak_transaction_add_op (FlatpakTransaction             *self,
            commit != NULL ? "@" : "",
            commit != NULL ? commit : "",
            subpaths_str);
+
+  /* Sanity check the ref format. */
+  ref_parts = flatpak_decompose_ref (ref, error);
+  if (ref_parts == NULL)
+    return NULL;
 
   op = flatpak_transaction_get_last_op_for_ref (self, ref);
   /* If previous_ids is given, then this is a rebase operation. */
@@ -1905,7 +1912,11 @@ add_related (FlatpakTransaction          *self,
 
           related_op = flatpak_transaction_add_op (self, op->remote, rel->ref,
                                                    NULL, NULL, NULL, NULL,
-                                                   FLATPAK_TRANSACTION_OPERATION_UNINSTALL);
+                                                   FLATPAK_TRANSACTION_OPERATION_UNINSTALL,
+                                                   error);
+          if (related_op == NULL)
+            return FALSE;
+
           related_op->non_fatal = TRUE;
           related_op->fail_if_op_fails = op;
           flatpak_transaction_operation_add_related_to_op (related_op, op);
@@ -1925,7 +1936,11 @@ add_related (FlatpakTransaction          *self,
           related_op = flatpak_transaction_add_op (self, op->remote, rel->ref,
                                                    (const char **) rel->subpaths,
                                                    NULL, NULL, NULL,
-                                                   FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE);
+                                                   FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE,
+                                                   error);
+          if (related_op == NULL)
+            return FALSE;
+
           related_op->non_fatal = TRUE;
           related_op->fail_if_op_fails = op;
           flatpak_transaction_operation_add_related_to_op (related_op, op);
@@ -2016,7 +2031,7 @@ add_deps (FlatpakTransaction          *self,
     {
       /* If the runtime this app uses is already to be uninstalled, then this uninstall must happen before
          the runtime is uninstalled */
-      if (runtime_op && op->kind == FLATPAK_TRANSACTION_OPERATION_UNINSTALL)
+      if (runtime_op && runtime_op->kind == FLATPAK_TRANSACTION_OPERATION_UNINSTALL)
         run_operation_before (op, runtime_op, 1);
 
       return TRUE;
@@ -2042,7 +2057,9 @@ add_deps (FlatpakTransaction          *self,
             return FALSE;
 
           runtime_op = flatpak_transaction_add_op (self, runtime_remote, full_runtime_ref, NULL, NULL, NULL, NULL,
-                                                   FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE);
+                                                   FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE, error);
+          if (runtime_op == NULL)
+            return FALSE;
         }
       else
         {
@@ -2051,7 +2068,9 @@ add_deps (FlatpakTransaction          *self,
             {
               g_debug ("Updating dependent runtime %s", full_runtime_ref);
               runtime_op = flatpak_transaction_add_op (self, runtime_remote, full_runtime_ref, NULL, NULL, NULL, NULL,
-                                                       FLATPAK_TRANSACTION_OPERATION_UPDATE);
+                                                       FLATPAK_TRANSACTION_OPERATION_UPDATE, error);
+              if (runtime_op == NULL)
+                return FALSE;
               runtime_op->non_fatal = TRUE;
             }
         }
@@ -2188,7 +2207,9 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
         return FALSE;
     }
 
-  op = flatpak_transaction_add_op (self, remote, ref, subpaths, previous_ids, commit, bundle, kind);
+  op = flatpak_transaction_add_op (self, remote, ref, subpaths, previous_ids, commit, bundle, kind, error);
+  if (op == NULL)
+    return FALSE;
 
   if (external_metadata)
     op->external_metadata = g_bytes_new (external_metadata, strlen (external_metadata) + 1);
@@ -2395,6 +2416,7 @@ flatpak_transaction_update_metadata (FlatpakTransaction *self,
   GList *l;
   gboolean some_updated = FALSE;
   g_autoptr(GHashTable) ht = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+  gboolean local_only = TRUE;
 
   /* Collect all dir+remotes used in this transaction */
 
@@ -2405,9 +2427,15 @@ flatpak_transaction_update_metadata (FlatpakTransaction *self,
     {
       FlatpakTransactionOperation *op = l->data;
       g_hash_table_add (ht, g_strdup (op->remote));
+      local_only = local_only && transaction_is_local_only (self, op->kind);
     }
   remotes = (char **) g_hash_table_get_keys_as_array (ht, NULL);
   g_hash_table_steal_all (ht); /* Move ownership to remotes */
+
+  /* Bail early if the entire transaction is local-only, as in that case we
+   * don’t need updated metadata. */
+  if (local_only)
+    return TRUE;
 
   /* Update metadata for said remotes */
   for (i = 0; remotes[i] != NULL; i++)
@@ -2741,6 +2769,18 @@ resolve_ops (FlatpakTransaction *self,
 
       if (op->resolved)
         continue;
+
+      if (op->skip)
+        {
+          /* We're not yet resolved, but marked skip anyway, this can happen if during
+           * request_required_tokens() we were normalized away even though not fully resolved.
+           * For example we got the checksum but need to auth to get the commit, but the
+           * checksum we got was the version already installed.
+           */
+          g_assert (op->resolved_commit != NULL);
+          mark_op_resolved (op, op->resolved_commit, NULL, NULL, NULL);
+          continue;
+        }
 
       if (op->kind == FLATPAK_TRANSACTION_OPERATION_UNINSTALL)
         {
@@ -3250,7 +3290,7 @@ request_tokens_for_remote (FlatpakTransaction *self,
       if (g_variant_lookup (results, "error-code", "i", &error_code) && error_code != -1)
         {
           if (error_message)
-            flatpak_fail_error (error, error_code, _("Failed to get tokens for ref: %s"), error_message);
+            return flatpak_fail_error (error, error_code, _("Failed to get tokens for ref: %s"), error_message);
           else
             return flatpak_fail_error (error, error_code, _("Failed to get tokens for ref"));
         }

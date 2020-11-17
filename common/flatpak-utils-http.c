@@ -462,6 +462,11 @@ load_uri_callback (GObject      *source_object,
           code = G_IO_ERROR_HOST_NOT_FOUND;
           break;
 
+        case SOUP_STATUS_INTERNAL_SERVER_ERROR:
+          /* The server did return something, but it was useless to us, so that’s basically equivalent to not returning */
+          code = G_IO_ERROR_HOST_UNREACHABLE;
+          break;
+
         case SOUP_STATUS_IO_ERROR:
 #if !GLIB_CHECK_VERSION(2, 44, 0)
           code = G_IO_ERROR_BROKEN_PIPE;
@@ -558,14 +563,6 @@ static gboolean
 flatpak_http_should_retry_request (const GError *error,
                                    guint         n_retries_remaining)
 {
-  if (error == NULL)
-    g_debug ("%s: error: unset, n_retries_remaining: %u",
-             G_STRFUNC, n_retries_remaining);
-  else
-    g_debug ("%s: error: %u:%u %s, n_retries_remaining: %u",
-             G_STRFUNC, error->domain, error->code, error->message,
-             n_retries_remaining);
-
   if (error == NULL || n_retries_remaining == 0)
     return FALSE;
 

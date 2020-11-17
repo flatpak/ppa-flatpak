@@ -326,7 +326,7 @@ else
 fi
 
 ostree init --repo=repos/test-copy --mode=archive-z2 ${copy_collection_args}
-${FLATPAK} build-commit-from --end-of-life=Reason1 --src-repo=repos/test repos/test-copy app/org.test.Hello/$ARCH/master
+${FLATPAK} build-commit-from --no-update-summary --end-of-life=Reason1 --src-repo=repos/test repos/test-copy app/org.test.Hello/$ARCH/master
 update_repo test-copy ${COPY_COLLECTION_ID}
 
 # Ensure we have no eol app in appdata
@@ -387,7 +387,7 @@ else
 fi
 
 ostree init --repo=repos/test-rebase --mode=archive-z2 ${rebase_collection_args}
-${FLATPAK} build-commit-from --src-repo=repos/test ${FL_GPGARGS} repos/test-rebase app/org.test.Hello/$ARCH/master runtime/org.test.Hello.Locale/$ARCH/master
+${FLATPAK} build-commit-from --no-update-summary --src-repo=repos/test ${FL_GPGARGS} repos/test-rebase app/org.test.Hello/$ARCH/master runtime/org.test.Hello.Locale/$ARCH/master
 update_repo test-rebase ${REBASE_COLLECTION_ID}
 
 flatpak remote-add ${U} --gpg-import=${FL_GPG_HOMEDIR}/pubring.gpg test-rebase "http://127.0.0.1:${port}/test-rebase"
@@ -399,8 +399,9 @@ ${CMD_PREFIX} flatpak run --command=bash org.test.Hello -c 'echo foo > $XDG_DATA
 assert_has_dir $HOME/.var/app/org.test.Hello
 assert_has_file $HOME/.var/app/org.test.Hello/data/a-file
 
-${FLATPAK} build-commit-from --end-of-life-rebase=org.test.Hello=org.test.NewHello --src-repo=repos/test ${FL_GPGARGS} repos/test-rebase app/org.test.Hello/$ARCH/master runtime/org.test.Hello.Locale/$ARCH/master
+${FLATPAK} build-commit-from --no-update-summary --end-of-life-rebase=org.test.Hello=org.test.NewHello --src-repo=repos/test ${FL_GPGARGS} repos/test-rebase app/org.test.Hello/$ARCH/master runtime/org.test.Hello.Locale/$ARCH/master
 GPGARGS="${FL_GPGARGS}" $(dirname $0)/make-test-app.sh repos/test-rebase org.test.NewHello master "${REBASE_COLLECTION_ID}" "NEW" > /dev/null
+update_repo test-rebase
 
 ${FLATPAK} ${U} update -y org.test.Hello
 
@@ -442,12 +443,21 @@ update_repo test-gpg3 org.test.Collection.test
 ${FLATPAK} ${U} install -y test-repo org.test.Hello
 assert_file_has_content $FL_DIR/app/org.test.Hello/$ARCH/master/active/files/bin/hello.sh UPDATED
 
+# Switch back to the old url to unconfuse other tests
+UPDATE_REPO_ARGS="--redirect-url=" update_repo
+${FLATPAK} ${U} remote-modify --url="http://127.0.0.1:${port}/test" test-repo
+
+# Also remove app so we can install the older one from the previous repo
+${FLATPAK} ${U} uninstall -y org.test.Hello
+
 ok "redirect url and gpg key"
+
+${FLATPAK} ${U} install -y -v test-repo org.test.Hello
 
 # Test https://github.com/flatpak/flatpak/issues/3222
 mkdir -p $FL_DIR/repo/refs/mirrors/org.test.Collection.test/app/org.test.Hello/$ARCH/
 cp $FL_DIR/repo/refs/remotes/test-repo/app/org.test.Hello/$ARCH/master $FL_DIR/repo/refs/mirrors/org.test.Collection.test/app/org.test.Hello/$ARCH/
-make_updated_app test-gpg3 org.test.Collection.test master UPDATE2
+make_updated_app test org.test.Collection.test master UPDATE2
 ${FLATPAK} ${U} update -y org.test.Hello
 assert_not_has_file $FL_DIR/repo/refs/mirrors/org.test.Collection.test/app/org.test.Hello/$ARCH/master
 assert_has_file $FL_DIR/repo/refs/remotes/test-repo/app/org.test.Hello/$ARCH/master
