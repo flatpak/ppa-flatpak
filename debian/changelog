@@ -1,3 +1,9 @@
+flatpak (1.9.1-flatpak1.2~bionic) bionic; urgency=medium
+
+  * Disable revokefs in testlibary to fix pps build
+
+ -- Alexander Larsson <alexl@redhat.com>  Thu, 19 Nov 2020 16:21:14 +0100
+
 flatpak (1.9.1-flatpak1.1~bionic) bionic; urgency=medium
 
   * Add better error message patch to debug test failure
