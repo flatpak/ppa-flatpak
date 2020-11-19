@@ -1,6 +1,6 @@
-flatpak (1.9.1-flatpak1~bionic) bionic; urgency=medium
+flatpak (1.9.1-flatpak1.1~bionic) bionic; urgency=medium
 
-  * Update to 1.9.1
+  * Add better error message patch to debug test failure
 
  -- Alexander Larsson <alexl@redhat.com>  Thu, 19 Nov 2020 16:21:14 +0100
 
