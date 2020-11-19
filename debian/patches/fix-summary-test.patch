@@ -1,5 +1,5 @@
 diff --git a/tests/test-summaries.sh b/tests/test-summaries.sh
-index ee8766ed..34b8eacf 100755
+index 0d102790..8671f090 100755
 --- a/tests/test-summaries.sh
 +++ b/tests/test-summaries.sh
 @@ -71,7 +71,7 @@ EOF
@@ -11,6 +11,15 @@ index ee8766ed..34b8eacf 100755
      rm -rf ${DIR}
  }
  
+@@ -144,7 +144,7 @@ fi
+ 
+ # Set up some arches, including the current one
+ declare -A arches
+-for A in aarch64 arm $($FLATPAK --supported-arches); do
++for A in x86_64 aarch64 arm $($FLATPAK --supported-arches); do
+     arches[$A]=1
+ done
+ ARCHES=${!arches[@]}
 @@ -160,6 +160,8 @@ for A in $ARCHES; do
          make_app org.app.App$I $A repos/test
      done
@@ -20,19 +29,10 @@ index ee8766ed..34b8eacf 100755
      # Make sure we have no superfluous summary files
      verify_subsummaries repos/test
  done
-@@ -168,13 +170,23 @@ set -x
- 
- ok subsummary update generations
- 
-+echo OTHER_ARCH: $OTHER_ARCH
-+flatpak repo --subsets repos/test
-+
+@@ -171,10 +173,14 @@ ok subsummary update generations
  ACTIVE_SUBSET=$(active_subset repos/test)
  ACTIVE_SUBSET_OTHER=$(active_subset_for_arch repos/test $OTHER_ARCH)
  
-+echo ACTIVE_SUBSET: $ACTIVE_SUBSET
-+echo ACTIVE_SUBSET_OTHER: $ACTIVE_SUBSET_OTHER
-+
 +# Ensure we have no initial cache
 +rm -rf $FL_CACHE_DIR/summaries/*
 +
@@ -44,12 +44,3 @@ index ee8766ed..34b8eacf 100755
  $FLATPAK $U remote-ls test-repo  > /dev/null
  
  assert_has_file $FL_CACHE_DIR/summaries/test-repo-${ARCH}-${ACTIVE_SUBSET}.sub
-@@ -185,6 +197,8 @@ assert_file_has_content httpd-log summaries/${ACTIVE_SUBSET}.gz
- httpd_clear_log
- $FLATPAK $U remote-ls test-repo --arch=$OTHER_ARCH  > /dev/null
- 
-+ls -l $FL_CACHE_DIR/summaries/
-+
- assert_has_file $FL_CACHE_DIR/summaries/test-repo-${ARCH}-${ACTIVE_SUBSET}.sub
- assert_has_file $FL_CACHE_DIR/summaries/test-repo-${OTHER_ARCH}-${ACTIVE_SUBSET_OTHER}.sub
- # We downloaded the full summary (not delta)

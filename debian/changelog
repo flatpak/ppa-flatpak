@@ -1,4 +1,4 @@
-flatpak (1.9.1-flatpak1.5~bionic) bionic; urgency=medium
+flatpak (1.9.1-flatpak1.6~bionic) bionic; urgency=medium
 
   * Debug summary test failure
 
