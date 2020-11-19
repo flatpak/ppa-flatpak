@@ -80,6 +80,7 @@ static FlatpakCommand commands[] = {
   /* Alias remove to uninstall to help users of yum/dnf/apt */
   { "remove", NULL, flatpak_builtin_uninstall, flatpak_complete_uninstall, TRUE },
   { "mask", N_("Mask out updates and automatic installation"), flatpak_builtin_mask, flatpak_complete_mask },
+  { "pin", N_("Pin a runtime to prevent automatic removal"), flatpak_builtin_pin, flatpak_complete_pin },
   { "list", N_("List installed apps and/or runtimes"), flatpak_builtin_list, flatpak_complete_list },
   { "info", N_("Show info for installed app or runtime"), flatpak_builtin_info, flatpak_complete_info },
   { "history", N_("Show history"), flatpak_builtin_history, flatpak_complete_history },
@@ -549,7 +550,7 @@ find_similar_command (const char *word,
       if (!commands[i].fn)
         continue;
 
-      int d1 = flatpak_levenshtein_distance (word, commands[i].name);
+      int d1 = flatpak_levenshtein_distance (word, -1, commands[i].name, -1);
       if (d1 < d)
         {
           d = d1;
@@ -562,7 +563,7 @@ find_similar_command (const char *word,
     {
       for (i = 0; entries[k][i].long_name; i++)
         {
-          int d1 = flatpak_levenshtein_distance (word, entries[k][i].long_name);
+          int d1 = flatpak_levenshtein_distance (word, -1, entries[k][i].long_name, -1);
           if (d1 < d)
             {
               d = d1;
