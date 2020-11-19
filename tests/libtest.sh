@@ -295,7 +295,7 @@ make_runtime () {
         ostree --repo=repos/${REPONAME} init --mode=archive-z2 ${collection_args}
     fi
 
-    flatpak build-commit-from --disable-fsync --src-repo=${RUNTIME_REPO} --force ${GPGARGS} repos/${REPONAME}  ${RUNTIME_REF}
+    flatpak build-commit-from --disable-fsync --no-update-summary --src-repo=${RUNTIME_REPO} --force ${GPGARGS} repos/${REPONAME}  ${RUNTIME_REF}
 }
 
 httpd () {
@@ -358,6 +358,10 @@ update_repo () {
         collection_args=--collection-id=${COLLECTION_ID}
     else
         collection_args=
+    fi
+
+    if test -f repos/${REPONAME}/summary; then
+        sleep 1 # ensure we get a new timestamp on the summary files
     fi
 
     ${FLATPAK} build-update-repo ${collection_args} ${GPGARGS:-${FL_GPGARGS}} ${UPDATE_REPO_ARGS-} repos/${REPONAME}

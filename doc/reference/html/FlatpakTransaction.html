@@ -8,7 +8,7 @@
 <link rel="up" href="ch01.html" title="Flatpak">
 <link rel="prev" href="FlatpakTransactionProgress.html" title="FlatpakTransactionProgress">
 <link rel="next" href="FlatpakRef.html" title="FlatpakRef">
-<meta name="generator" content="GTK-Doc V1.99 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.33.0 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -305,7 +305,7 @@
 <td class="signal_flags">Run Last</td>
 </tr>
 <tr>
-<td class="signal_type"><span class="returnvalue">gint</span></td>
+<td class="signal_type"><span class="returnvalue">int</span></td>
 <td class="signal_name"><a class="link" href="FlatpakTransaction.html#FlatpakTransaction-choose-remote-for-ref" title="The “choose-remote-for-ref” signal">choose-remote-for-ref</a></td>
 <td class="signal_flags">Run Last</td>
 </tr>
@@ -1612,10 +1612,10 @@ window with a browser, but the user closed it before it was finished.</p>
 <a name="FlatpakTransaction-add-new-remote"></a><h3>The <code class="literal">“add-new-remote”</code> signal</h3>
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
 user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
-               <span class="type">gint</span>                reason,
-               <span class="type">gchar</span>              *from_id,
-               <span class="type">gchar</span>              *suggested_remote_name,
-               <span class="type">gchar</span>              *url,
+               <span class="type">int</span>                 reason,
+               <span class="type">char</span>               *from_id,
+               <span class="type">char</span>               *suggested_remote_name,
+               <span class="type">char</span>               *url,
                <span class="type">gpointer</span>            user_data)</pre>
 <p>The ::add-new-remote signal gets emitted if, as part of the transaction,
 it is required or recommended that a new remote is added, for the reason
@@ -1674,10 +1674,10 @@ described in <em class="parameter"><code>reason</code></em>
 <a name="FlatpakTransaction-basic-auth-start"></a><h3>The <code class="literal">“basic-auth-start”</code> signal</h3>
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
 user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
-               <span class="type">gchar</span>              *remote,
-               <span class="type">gchar</span>              *realm,
+               <span class="type">char</span>               *remote,
+               <span class="type">char</span>               *realm,
                <span class="type">GVariant</span>           *options,
-               <span class="type">gint</span>                id,
+               <span class="type">int</span>                 id,
                <span class="type">gpointer</span>            user_data)</pre>
 <p>The ::basic-auth-start signal gets emitted when a basic user/password
 authentication is needed during the operation. If the caller handles this
@@ -1736,10 +1736,10 @@ optional).</p>
 <hr>
 <div class="refsect2">
 <a name="FlatpakTransaction-choose-remote-for-ref"></a><h3>The <code class="literal">“choose-remote-for-ref”</code> signal</h3>
-<pre class="programlisting"><span class="returnvalue">gint</span>
+<pre class="programlisting"><span class="returnvalue">int</span>
 user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
-               <span class="type">gchar</span>              *for_ref,
-               <span class="type">gchar</span>              *runtime_ref,
+               <span class="type">char</span>               *for_ref,
+               <span class="type">char</span>               *runtime_ref,
                <span class="type">GStrv</span>               remotes,
                <span class="type">gpointer</span>            user_data)</pre>
 <p>The ::choose-remote-for-ref signal gets emitted when a
@@ -1792,9 +1792,9 @@ remote needs to be selected during the execution of the transaction.</p>
 <a name="FlatpakTransaction-end-of-lifed"></a><h3>The <code class="literal">“end-of-lifed”</code> signal</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
-               <span class="type">gchar</span>              *ref,
-               <span class="type">gchar</span>              *reason,
-               <span class="type">gchar</span>              *rebase,
+               <span class="type">char</span>               *ref,
+               <span class="type">char</span>               *reason,
+               <span class="type">char</span>               *rebase,
                <span class="type">gpointer</span>            user_data)</pre>
 <p>The ::end-of-lifed signal gets emitted when a ref is found to
 be marked as end-of-life during the execution of the transaction.</p>
@@ -1842,10 +1842,10 @@ be marked as end-of-life during the execution of the transaction.</p>
 <a name="FlatpakTransaction-end-of-lifed-with-rebase"></a><h3>The <code class="literal">“end-of-lifed-with-rebase”</code> signal</h3>
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
 user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
-               <span class="type">gchar</span>              *remote,
-               <span class="type">gchar</span>              *ref,
-               <span class="type">gchar</span>              *reason,
-               <span class="type">gchar</span>              *rebased_to_ref,
+               <span class="type">char</span>               *remote,
+               <span class="type">char</span>               *ref,
+               <span class="type">char</span>               *reason,
+               <span class="type">char</span>               *rebased_to_ref,
                <span class="type">GStrv</span>               previous_ids,
                <span class="type">gpointer</span>            user_data)</pre>
 <p>The ::end-of-lifed-with-rebase signal gets emitted when a ref is found
@@ -1913,8 +1913,8 @@ be skipped, <code class="literal">FALSE</code> if it should remain.</p>
 <a name="FlatpakTransaction-install-authenticator"></a><h3>The <code class="literal">“install-authenticator”</code> signal</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
-               <span class="type">gchar</span>              *remote,
-               <span class="type">gchar</span>              *authenticator_ref,
+               <span class="type">char</span>               *remote,
+               <span class="type">char</span>               *authenticator_ref,
                <span class="type">gpointer</span>            user_data)</pre>
 <p>The ::install-authenticator signal gets emitted if, as part of
 resolving the transaction, we need to use an authenticator, but the authentication
@@ -2009,8 +2009,8 @@ the transaction when a new operation is beginning.</p>
 <pre class="programlisting"><span class="returnvalue">void</span>
 user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a>          *object,
                <a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> *operation,
-               <span class="type">gchar</span>                       *commit,
-               <span class="type">gint</span>                         result,
+               <span class="type">char</span>                        *commit,
+               <span class="type">int</span>                          result,
                <span class="type">gpointer</span>                     user_data)</pre>
 <p>The ::operation-done signal gets emitted during the execution of
 the transaction when an operation is finished.</p>
@@ -2060,7 +2060,7 @@ the transaction when an operation is finished.</p>
 user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a>          *object,
                <a class="link" href="FlatpakTransactionOperation.html" title="FlatpakTransactionOperation"><span class="type">FlatpakTransactionOperation</span></a> *operation,
                <span class="type">GError</span>                      *error,
-               <span class="type">gint</span>                         details,
+               <span class="type">int</span>                          details,
                <span class="type">gpointer</span>                     user_data)</pre>
 <p>The ::operation-error signal gets emitted when an error occurs during the
 execution of the transaction.</p>
@@ -2151,7 +2151,7 @@ transaction.</p>
 <pre class="programlisting"><span class="returnvalue">void</span>
 user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
                <span class="type">GVariant</span>           *options,
-               <span class="type">gint</span>                id,
+               <span class="type">int</span>                 id,
                <span class="type">gpointer</span>            user_data)</pre>
 <p>The ::webflow-done signal gets emitted when the authentication
 finished the webflow, independent of the reason and results.  If
@@ -2196,10 +2196,10 @@ you for were showing a web-browser window it can now be closed.</p>
 <a name="FlatpakTransaction-webflow-start"></a><h3>The <code class="literal">“webflow-start”</code> signal</h3>
 <pre class="programlisting"><span class="returnvalue">gboolean</span>
 user_function (<a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *object,
-               <span class="type">gchar</span>              *remote,
-               <span class="type">gchar</span>              *url,
+               <span class="type">char</span>               *remote,
+               <span class="type">char</span>               *url,
                <span class="type">GVariant</span>           *options,
-               <span class="type">gint</span>                id,
+               <span class="type">int</span>                 id,
                <span class="type">gpointer</span>            user_data)</pre>
 <p>The ::webflow-start signal gets emitted when some kind of user
 authentication is needed during the operation. If the caller handles this
@@ -2262,6 +2262,6 @@ like e.g. closing the browser window.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.99</div>
+<hr>Generated by GTK-Doc V1.33.0</div>
 </body>
 </html>
