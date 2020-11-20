@@ -1,9 +1,21 @@
-flatpak (1.9.1-1) UNRELEASED; urgency=medium
+flatpak (1.9.1-1) experimental; urgency=medium
 
   * Branch for experimental
   * New upstream development release
+  * Update ostree build-dependency
+  * Use upstream's autogen.sh now that it's shipped
+  * d/copyright: Update
+  * d/p/Skip-parental-controls-checks-on-ServiceUnknown-or-NameHa.patch:
+    Drop patch that was applied upstream
+  * d/patches: Add post-release fixes from upstream
+  * d/p/Skip-a-test-case-if-etc-mtab-doesn-t-exist.patch:
+    Work around a test failure that can happen in sbuild
+  * Update symbols file.
+    Ignore removal of flatpak_http_error_quark (aka FLATPAK_HTTP_ERROR),
+    which is not in any public headers and is not referenced by any
+    other Debian package.
 
- -- Simon McVittie <smcv@debian.org>  Thu, 19 Nov 2020 20:36:55 +0000
+ -- Simon McVittie <smcv@debian.org>  Fri, 20 Nov 2020 15:25:18 +0000
 
 flatpak (1.8.3-1) unstable; urgency=medium
 
