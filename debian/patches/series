@@ -1,6 +1,2 @@
-transaction-Add-more-details-to-the-ABORTED-error.patch
-dir-Fix-spurious-permission-denied-errors.patch
-tests-Don-t-hardcode-x86-64.patch
-Fix-test-summaries-on-non-x86-64.patch
 variant-schema-compiler-Disable-optimized-calculation-of-.patch
 Skip-a-test-case-if-etc-mtab-doesn-t-exist.patch

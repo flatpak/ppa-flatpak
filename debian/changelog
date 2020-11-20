@@ -1,4 +1,4 @@
-flatpak (1.9.1-1) UNRELEASED; urgency=medium
+flatpak (1.9.2-1) UNRELEASED; urgency=medium
 
   * Branch for experimental
   * New upstream development release
@@ -7,7 +7,6 @@ flatpak (1.9.1-1) UNRELEASED; urgency=medium
   * d/copyright: Update
   * d/p/Skip-parental-controls-checks-on-ServiceUnknown-or-NameHa.patch:
     Drop patch that was applied upstream
-  * d/patches: Add post-release fixes from upstream
   * d/p/Skip-a-test-case-if-etc-mtab-doesn-t-exist.patch:
     Work around a test failure that can happen in sbuild
   * Update symbols file.
