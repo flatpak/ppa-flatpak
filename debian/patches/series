@@ -1,5 +1,2 @@
 debian/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch
-better-error-message.patch
 testlibrary-no-revokefs.patch
-test-non-x86_64.patch
-fix-summary-test.patch

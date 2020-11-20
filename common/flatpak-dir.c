@@ -67,8 +67,6 @@
 #include <systemd/sd-journal.h>
 #endif
 
-#define OSTREE_COMMIT_TIMESTAMP "ostree.commit.timestamp"
-
 #define NO_SYSTEM_HELPER ((FlatpakSystemHelper *) (gpointer) 1)
 
 #define SUMMARY_CACHE_TIMEOUT_SEC (60 * 5)
@@ -14337,6 +14335,7 @@ flatpak_dir_update_remote_configuration (FlatpakDir   *self,
   gboolean is_oci;
   g_autoptr(FlatpakRemoteState) local_state = NULL;
   FlatpakRemoteState *state;
+  gboolean has_changed = FALSE;
 
   /* Initialize if we exit early */
   if (updated_out)
@@ -14361,7 +14360,6 @@ flatpak_dir_update_remote_configuration (FlatpakDir   *self,
 
   if (flatpak_dir_use_system_helper (self, NULL))
     {
-      gboolean has_changed = FALSE;
       gboolean gpg_verify_summary;
       gboolean gpg_verify;
 
@@ -14432,18 +14430,23 @@ flatpak_dir_update_remote_configuration (FlatpakDir   *self,
           if (!flatpak_dir_remote_clear_cached_summary (self, remote, cancellable, error))
             return FALSE;
 
-          if (updated_out)
-            *updated_out = TRUE;
         }
+
+      if (updated_out)
+        *updated_out = has_changed;
 
       return TRUE;
     }
 
-  if (!flatpak_dir_update_remote_configuration_for_state (self, state, FALSE, updated_out, cancellable, error))
+  if (!flatpak_dir_update_remote_configuration_for_state (self, state, FALSE, &has_changed, cancellable, error))
     return FALSE;
 
-  if (!flatpak_dir_remote_clear_cached_summary (self, remote, cancellable, error))
+  if (has_changed &&
+      !flatpak_dir_remote_clear_cached_summary (self, remote, cancellable, error))
     return FALSE;
+
+  if (updated_out)
+    *updated_out = has_changed;
 
   return TRUE;
 }
@@ -15846,14 +15849,21 @@ flatpak_dir_list_unused_refs (FlatpakDir         *self,
    */
   if (!flatpak_dir_is_user (self))
     {
-      g_autoptr(GFile) user_base_dir = flatpak_get_user_base_dir_location ();
-      if (g_file_query_exists (user_base_dir, cancellable))
-        {
-          g_autoptr(FlatpakDir) user_dir = flatpak_dir_get_user ();
+      g_autoptr(FlatpakDir) user_dir = flatpak_dir_get_user ();
+      g_autoptr(GError) local_error = NULL;
 
-          if (!find_used_refs (self, user_dir, arch, metadata_injection, excluded_refs_ht,
-                               used_refs, cancellable, error))
-            return NULL;
+      if (!find_used_refs (self, user_dir, arch, metadata_injection, excluded_refs_ht,
+                           used_refs, cancellable, &local_error))
+        {
+          /* We may get permission denied if the process is sandboxed with
+           * systemd's ProtectHome=
+           */
+          if (!g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND) &&
+              !g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED))
+            {
+              g_propagate_error (error, g_steal_pointer (&local_error));
+              return NULL;
+            }
         }
     }
 
