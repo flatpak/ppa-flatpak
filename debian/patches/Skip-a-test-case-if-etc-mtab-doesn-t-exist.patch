@@ -1,0 +1,30 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Fri, 20 Nov 2020 14:52:00 +0000
+Subject: Skip a test-case if /etc/mtab doesn't exist
+
+fusermount requires /etc/mtab, but not all Debian buildd chroots
+have that file, either as a regular file or as a symlink to
+/proc/self/mounts.
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ tests/testlibrary.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/tests/testlibrary.c b/tests/testlibrary.c
+index 4b3e11f..718f37c 100644
+--- a/tests/testlibrary.c
++++ b/tests/testlibrary.c
+@@ -4459,6 +4459,12 @@ test_installation_unused_refs_across_installations (void)
+   FlatpakInstalledRef *unused_ref;
+   gboolean res;
+ 
++  if (!g_file_test ("/etc/mtab", G_FILE_TEST_EXISTS))
++    {
++      g_test_skip ("fusermount won't work without /etc/mtab");
++      return;
++    }
++
+   runtime = g_strdup_printf ("runtime/org.test.Platform/%s/master",
+                              flatpak_get_default_arch ());
+   app = g_strdup_printf ("app/org.test.Hello/%s/master",
