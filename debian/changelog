@@ -1,4 +1,4 @@
-flatpak (1.9.2-1) UNRELEASED; urgency=medium
+flatpak (1.9.2-1) experimental; urgency=medium
 
   * Branch for experimental
   * New upstream development release
@@ -14,7 +14,7 @@ flatpak (1.9.2-1) UNRELEASED; urgency=medium
     which is not in any public headers and is not referenced by any
     other Debian package.
 
- -- Simon McVittie <smcv@debian.org>  Fri, 20 Nov 2020 15:25:18 +0000
+ -- Simon McVittie <smcv@debian.org>  Fri, 20 Nov 2020 17:30:05 +0000
 
 flatpak (1.8.3-1) unstable; urgency=medium
 
