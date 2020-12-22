@@ -1253,6 +1253,7 @@ flatpak_find_deploy_for_ref_in (GPtrArray    *dirs,
 FlatpakDeploy *
 flatpak_find_deploy_for_ref (const char   *ref,
                              const char   *commit,
+                             FlatpakDir   *opt_user_dir,
                              GCancellable *cancellable,
                              GError      **error)
 {
@@ -1262,7 +1263,15 @@ flatpak_find_deploy_for_ref (const char   *ref,
   if (dirs == NULL)
     return NULL;
 
-  g_ptr_array_insert (dirs, 0, flatpak_dir_get_user ());
+  /* If an custom dir was passed, use that instead of the user dir.
+   * This is used when running apply-extra-data where if the target
+   * is a custom installation location the regular user one may not
+   * have the (possibly just installed in this transaction) runtime.
+   */
+  if (opt_user_dir)
+    g_ptr_array_insert (dirs, 0, g_object_ref (opt_user_dir));
+  else
+    g_ptr_array_insert (dirs, 0, flatpak_dir_get_user ());
 
   return flatpak_find_deploy_for_ref_in (dirs, ref, commit, cancellable, error);
 }
@@ -2945,6 +2954,7 @@ flatpak_repo_save_compat_summary (OstreeRepo   *repo,
 static gboolean
 flatpak_repo_save_summary_index (OstreeRepo   *repo,
                                  GVariant     *index,
+                                 const char   *index_digest,
                                  GBytes       *index_sig,
                                  GCancellable *cancellable,
                                  GError      **error)
@@ -2976,6 +2986,22 @@ flatpak_repo_save_summary_index (OstreeRepo   *repo,
   else
     flags |= GLNX_FILE_REPLACE_DATASYNC_NEW;
 
+  if (index_sig)
+    {
+      g_autofree char *path = g_strconcat ("summaries/", index_digest, ".idx.sig", NULL);
+
+      if (!glnx_shutil_mkdir_p_at (repo_dfd, "summaries",
+                                   0775, cancellable, error))
+        return FALSE;
+
+      if (!glnx_file_replace_contents_at (repo_dfd, path,
+                                          g_bytes_get_data (index_sig, NULL),
+                                          g_bytes_get_size (index_sig),
+                                          flags,
+                                          cancellable, error))
+        return FALSE;
+    }
+
   if (!glnx_file_replace_contents_at (repo_dfd, "summary.idx",
                                       g_variant_get_data (index),
                                       g_variant_get_size (index),
@@ -2983,6 +3009,9 @@ flatpak_repo_save_summary_index (OstreeRepo   *repo,
                                       cancellable, error))
     return FALSE;
 
+  /* Update the non-indexed summary.idx.sig file that was introduced in 1.9.1 but
+   * was made unnecessary in 1.9.3. Lets keep it for a while until everyone updates
+   */
   if (index_sig)
     {
       if (!glnx_file_replace_contents_at (repo_dfd, "summary.idx.sig",
@@ -4582,6 +4611,8 @@ generate_summary_index (OstreeRepo   *repo,
 
 static gboolean
 flatpak_repo_gc_digested_summaries (OstreeRepo *repo,
+                                    const char *index_digest,           /* The digest of the current (new) index (if any) */
+                                    const char *old_index_digest,       /* The digest of the previous index (if any) */
                                     GHashTable *digested_summaries,     /* generated */
                                     GHashTable *digested_summary_cache, /* generated + referenced */
                                     GCancellable *cancellable,
@@ -4649,6 +4680,19 @@ flatpak_repo_gc_digested_summaries (OstreeRepo *repo,
                   remove = TRUE;
                 }
             }
+          else if (strcmp (ext, ".idx.sig") == 0)
+            {
+              g_autofree char *digest = g_strndup (dent->d_name, strlen (dent->d_name) - strlen (".idx.sig"));
+
+              if (g_strcmp0 (digest, index_digest) == 0)
+                continue; /* Always keep current */
+
+              if (g_strcmp0 (digest, old_index_digest) == 0)
+                continue; /* Always keep previous one, to avoid some races */
+
+              /* Remove the rest */
+              remove = TRUE;
+            }
         }
 
       if (remove)
@@ -4705,6 +4749,8 @@ flatpak_repo_update (OstreeRepo   *repo,
   time_t old_compat_sig_mtime;
   GKeyFile *config;
   gboolean disable_index = (flags & FLATPAK_REPO_UPDATE_FLAG_DISABLE_INDEX) != 0;
+  g_autofree char *index_digest = NULL;
+  g_autofree char *old_index_digest = NULL;
 
   config = ostree_repo_get_config (repo);
 
@@ -4828,7 +4874,16 @@ flatpak_repo_update (OstreeRepo   *repo,
         return FALSE;
     }
 
-  if (!flatpak_repo_save_summary_index (repo, summary_index, index_sig, cancellable, error))
+  if (summary_index)
+    index_digest = g_compute_checksum_for_data (G_CHECKSUM_SHA256,
+                                                g_variant_get_data (summary_index),
+                                                g_variant_get_size (summary_index));
+  if (old_index)
+    old_index_digest = g_compute_checksum_for_data (G_CHECKSUM_SHA256,
+                                                    g_variant_get_data (old_index),
+                                                    g_variant_get_size (old_index));
+
+  if (!flatpak_repo_save_summary_index (repo, summary_index, index_digest, index_sig, cancellable, error))
     return FALSE;
 
   if (!flatpak_repo_save_compat_summary (repo, compat_summary, &old_compat_sig_mtime, cancellable, error))
@@ -4860,7 +4915,7 @@ flatpak_repo_update (OstreeRepo   *repo,
     }
 
   if (!disable_index &&
-      !flatpak_repo_gc_digested_summaries (repo, digested_summaries, digested_summary_cache, cancellable, error))
+      !flatpak_repo_gc_digested_summaries (repo, index_digest, old_index_digest, digested_summaries, digested_summary_cache, cancellable, error))
     return FALSE;
 
   return TRUE;
@@ -5834,7 +5889,8 @@ flatpak_extension_new (const char        *id,
                        char             **merge_dirs,
                        GFile             *files,
                        GFile             *deploy_dir,
-                       gboolean           is_unmaintained)
+                       gboolean           is_unmaintained,
+                       OstreeRepo        *repo)
 {
   FlatpakExtension *ext = g_new0 (FlatpakExtension, 1);
   g_autoptr(GBytes) deploy_data = NULL;
@@ -5849,9 +5905,11 @@ flatpak_extension_new (const char        *id,
   ext->merge_dirs = g_strdupv (merge_dirs);
   ext->is_unmaintained = is_unmaintained;
 
-  if (deploy_dir)
+  /* Unmaintained extensions won't have a deploy or commit; see
+   * https://github.com/flatpak/flatpak/issues/167 */
+  if (deploy_dir && !is_unmaintained)
     {
-      deploy_data = flatpak_load_deploy_data (deploy_dir, ref, FLATPAK_DEPLOY_VERSION_ANY, NULL, NULL);
+      deploy_data = flatpak_load_deploy_data (deploy_dir, ref, repo, FLATPAK_DEPLOY_VERSION_ANY, NULL, NULL);
       if (deploy_data)
         ext->commit = g_strdup (flatpak_deploy_data_get_commit (deploy_data));
     }
@@ -5971,6 +6029,7 @@ add_extension (GKeyFile   *metakey,
   gboolean is_unmaintained = FALSE;
   g_autoptr(GFile) files = NULL;
   g_autoptr(GFile) deploy_dir = NULL;
+  g_autoptr(FlatpakDir) dir = NULL;
 
   if (directory == NULL)
     return res;
@@ -5983,7 +6042,7 @@ add_extension (GKeyFile   *metakey,
 
   if (files == NULL)
     {
-      deploy_dir = flatpak_find_deploy_dir_for_ref (ref, NULL, NULL, NULL);
+      deploy_dir = flatpak_find_deploy_dir_for_ref (ref, &dir, NULL, NULL);
       if (deploy_dir)
         files = g_file_get_child (deploy_dir, "files");
     }
@@ -5995,7 +6054,10 @@ add_extension (GKeyFile   *metakey,
     {
       if (flatpak_extension_matches_reason (extension, enable_if, TRUE))
         {
-          ext = flatpak_extension_new (extension, extension, ref, directory, add_ld_path, subdir_suffix, merge_dirs, files, deploy_dir, is_unmaintained);
+          ext = flatpak_extension_new (extension, extension, ref, directory,
+                                       add_ld_path, subdir_suffix, merge_dirs,
+                                       files, deploy_dir, is_unmaintained,
+                                       is_unmaintained ? NULL : flatpak_dir_get_repo (dir));
           res = g_list_prepend (res, ext);
         }
     }
@@ -6016,18 +6078,22 @@ add_extension (GKeyFile   *metakey,
           g_autoptr(FlatpakDecomposed) dir_ref = NULL;
           g_autoptr(GFile) subdir_deploy_dir = NULL;
           g_autoptr(GFile) subdir_files = NULL;
+          g_autoptr(FlatpakDir) subdir_dir = NULL;
 
           dir_ref = flatpak_decomposed_new_from_parts (FLATPAK_KINDS_RUNTIME, id, arch, branch, NULL);
           if (dir_ref == NULL)
             continue;
 
-          subdir_deploy_dir = flatpak_find_deploy_dir_for_ref (dir_ref, NULL, NULL, NULL);
+          subdir_deploy_dir = flatpak_find_deploy_dir_for_ref (dir_ref, &subdir_dir, NULL, NULL);
           if (subdir_deploy_dir)
             subdir_files = g_file_get_child (subdir_deploy_dir, "files");
 
           if (subdir_files && flatpak_extension_matches_reason (id, enable_if, TRUE))
             {
-              ext = flatpak_extension_new (extension, id, dir_ref, extended_dir, add_ld_path, subdir_suffix, merge_dirs, subdir_files, subdir_deploy_dir, FALSE);
+              ext = flatpak_extension_new (extension, id, dir_ref, extended_dir,
+                                           add_ld_path, subdir_suffix, merge_dirs,
+                                           subdir_files, subdir_deploy_dir, FALSE,
+                                           flatpak_dir_get_repo (subdir_dir));
               ext->needs_tmpfs = TRUE;
               res = g_list_prepend (res, ext);
             }
@@ -6047,7 +6113,9 @@ add_extension (GKeyFile   *metakey,
 
           if (subdir_files && flatpak_extension_matches_reason (unmaintained_refs[j], enable_if, TRUE))
             {
-              ext = flatpak_extension_new (extension, unmaintained_refs[j], dir_ref, extended_dir, add_ld_path, subdir_suffix, merge_dirs, subdir_files, NULL, TRUE);
+              ext = flatpak_extension_new (extension, unmaintained_refs[j], dir_ref,
+                                           extended_dir, add_ld_path, subdir_suffix,
+                                           merge_dirs, subdir_files, NULL, TRUE, NULL);
               ext->needs_tmpfs = TRUE;
               res = g_list_prepend (res, ext);
             }
