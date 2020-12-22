@@ -1,3 +1,9 @@
+flatpak (1.9.3-flatpak1~bionic) bionic; urgency=medium
+
+  * Update to 1.9.3
+
+ -- Alexander Larsson <alexl@redhat.com>  Tue, 22 Dec 2020 14:27:30 +0100
+
 flatpak (1.9.2-flatpak1~bionic) bionic; urgency=medium
 
   * Update to 1.9.2
