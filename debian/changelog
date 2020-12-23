@@ -1,3 +1,10 @@
+flatpak (1.8.3-3) UNRELEASED; urgency=medium
+
+  * debian/o.fd.Flatpak.pkla: sync with rules provided by upstream
+  * Use debian/unstable branch for packaging
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 23 Dec 2020 17:10:15 +0000
+
 flatpak (1.8.3-2) unstable; urgency=medium
 
   * Preferentially build-depend on libgdk-pixbuf-2.0-dev.
