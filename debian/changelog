@@ -3,6 +3,8 @@ flatpak (1.8.4-1) UNRELEASED; urgency=medium
   * debian/o.fd.Flatpak.pkla: sync with rules provided by upstream
   * Use debian/unstable branch for packaging
   * New upstream release
+  * d/p/variant-schema-compiler-Disable-optimized-calculation-of-.patch:
+    Drop patch, which should be unnecessary with the new version
 
  -- Simon McVittie <smcv@debian.org>  Wed, 23 Dec 2020 17:10:15 +0000
 
