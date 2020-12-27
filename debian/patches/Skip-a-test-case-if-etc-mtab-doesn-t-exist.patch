@@ -6,6 +6,9 @@ fusermount requires /etc/mtab, but not all Debian buildd chroots
 have that file, either as a regular file or as a symlink to
 /proc/self/mounts.
 
+(This is similar to commit b07b48e, but for C code.)
+
+Forwarded: https://github.com/flatpak/flatpak/pull/4041
 Signed-off-by: Simon McVittie <smcv@debian.org>
 ---
  tests/testlibrary.c | 6 ++++++
