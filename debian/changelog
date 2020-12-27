@@ -2,6 +2,8 @@ flatpak (1.9.3-1) UNRELEASED; urgency=medium
 
   * Merge packaging changes from unstable
   * New upstream release
+  * d/p/variant-schema-compiler-Disable-optimized-calculation-of-.patch:
+    Drop patch, which should be unnecessary with the new version
 
  -- Simon McVittie <smcv@debian.org>  Tue, 24 Nov 2020 15:31:37 +0000
 
