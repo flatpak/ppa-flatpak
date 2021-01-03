@@ -1,3 +1,12 @@
+flatpak (1.9.3-2) experimental; urgency=medium
+
+  * Add patch to avoid gvfs-daemon being started when logging in as root.
+    Thanks to Mourad De Clerck (Closes: #975710)
+  * Add package-specific info from bubblewrap to bug reports.
+    In particular, this will tell us whether it's setuid.
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 03 Jan 2021 15:37:18 +0000
+
 flatpak (1.9.3-1) experimental; urgency=medium
 
   * Merge packaging changes from unstable
