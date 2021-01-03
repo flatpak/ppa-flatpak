@@ -13,6 +13,8 @@ these errors to MCT_APP_FILTER_ERROR_DISABLED.
 Bug: https://github.com/flatpak/flatpak/issues/3902
 Bug-Debian: https://bugs.debian.org/972138
 Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/3906
+Applied-upstream: 1.9.1, commit:1a58a866765f5cd777a46363059cf728139db597
 ---
  common/flatpak-dir.c | 7 +++++++
  common/flatpak-run.c | 7 +++++++
