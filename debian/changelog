@@ -1,3 +1,13 @@
+flatpak (1.8.4-2) unstable; urgency=medium
+
+  * Mark patch for #972138 as having been applied upstream
+  * Add patch to avoid gvfs-daemon being started when logging in as root.
+    Thanks to Mourad De Clerck (Closes: #975710)
+  * Add package-specific info from bubblewrap to bug reports.
+    In particular, this will tell us whether it's setuid.
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 03 Jan 2021 15:37:04 +0000
+
 flatpak (1.8.4-1) unstable; urgency=medium
 
   * debian/o.fd.Flatpak.pkla: sync with rules provided by upstream
