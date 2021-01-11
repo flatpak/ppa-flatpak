@@ -6,6 +6,7 @@ This avoids gvfs-daemon being started when logging in as root via ssh.
 
 Bug-Debian: https://bugs.debian.org/975710
 Forwarded: https://github.com/flatpak/flatpak/pull/4049
+Applied-upstream: 1.9.4
 ---
  profile/flatpak.sh | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
