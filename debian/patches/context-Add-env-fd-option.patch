@@ -1,0 +1,274 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Sun, 10 Jan 2021 16:18:58 +0000
+Subject: context: Add --env-fd option
+
+This allows environment variables to be added to the context without
+making their values visible to processes running under a different uid,
+which might be significant if the variable's value is a token or some
+other secret value.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Part-of: https://github.com/flatpak/flatpak/security/advisories/GHSA-4ppf-fxf6-vxg2
+---
+ common/flatpak-context.c     | 60 ++++++++++++++++++++++++++++++++++++++++++++
+ doc/flatpak-build-finish.xml | 12 +++++++++
+ doc/flatpak-build.xml        | 12 +++++++++
+ doc/flatpak-override.xml     | 12 +++++++++
+ doc/flatpak-run.xml          | 12 +++++++++
+ portal/flatpak-portal.c      | 50 +++++++++++++++++++++++++++++++++++-
+ 6 files changed, 157 insertions(+), 1 deletion(-)
+
+diff --git a/common/flatpak-context.c b/common/flatpak-context.c
+index 04719dc..1172a6b 100644
+--- a/common/flatpak-context.c
++++ b/common/flatpak-context.c
+@@ -1045,6 +1045,65 @@ option_env_cb (const gchar *option_name,
+   return TRUE;
+ }
+ 
++static gboolean
++option_env_fd_cb (const gchar *option_name,
++                  const gchar *value,
++                  gpointer     data,
++                  GError     **error)
++{
++  FlatpakContext *context = data;
++  g_autoptr(GBytes) env_block = NULL;
++  gsize remaining;
++  const char *p;
++  guint64 fd;
++  gchar *endptr;
++
++  fd = g_ascii_strtoull (value, &endptr, 10);
++
++  if (endptr == NULL || *endptr != '\0' || fd > G_MAXINT)
++    return glnx_throw (error, "Not a valid file descriptor: %s", value);
++
++  env_block = glnx_fd_readall_bytes ((int) fd, NULL, error);
++
++  if (env_block == NULL)
++    return FALSE;
++
++  p = g_bytes_get_data (env_block, &remaining);
++
++  /* env_block might not be \0-terminated */
++  while (remaining > 0)
++    {
++      size_t len = strnlen (p, remaining);
++      const char *equals;
++
++      g_assert (len <= remaining);
++
++      equals = memchr (p, '=', len);
++
++      if (equals == NULL || equals == p)
++        return glnx_throw (error,
++                           "Environment variable must be given in the form VARIABLE=VALUE, not %.*s", (int) len, p);
++
++      flatpak_context_set_env_var (context,
++                                   g_strndup (p, equals - p),
++                                   g_strndup (equals + 1, len - (equals - p) - 1));
++      p += len;
++      remaining -= len;
++
++      if (remaining > 0)
++        {
++          g_assert (*p == '\0');
++          p += 1;
++          remaining -= 1;
++        }
++    }
++
++  if (fd >= 3)
++    close (fd);
++
++  return TRUE;
++}
++
+ static gboolean
+ option_own_name_cb (const gchar *option_name,
+                     const gchar *value,
+@@ -1242,6 +1301,7 @@ static GOptionEntry context_options[] = {
+   { "filesystem", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_filesystem_cb, N_("Expose filesystem to app (:ro for read-only)"), N_("FILESYSTEM[:ro]") },
+   { "nofilesystem", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_nofilesystem_cb, N_("Don't expose filesystem to app"), N_("FILESYSTEM") },
+   { "env", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_env_cb, N_("Set environment variable"), N_("VAR=VALUE") },
++  { "env-fd", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_env_fd_cb, N_("Read environment variables in env -0 format from FD"), N_("FD") },
+   { "own-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_own_name_cb, N_("Allow app to own name on the session bus"), N_("DBUS_NAME") },
+   { "talk-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_talk_name_cb, N_("Allow app to talk to name on the session bus"), N_("DBUS_NAME") },
+   { "no-talk-name", 0, G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_CALLBACK, &option_no_talk_name_cb, N_("Don't allow app to talk to name on the session bus"), N_("DBUS_NAME") },
+diff --git a/doc/flatpak-build-finish.xml b/doc/flatpak-build-finish.xml
+index e942d39..bf8f2c6 100644
+--- a/doc/flatpak-build-finish.xml
++++ b/doc/flatpak-build-finish.xml
+@@ -286,6 +286,18 @@ key=v1;v2;
+                 </para></listitem>
+             </varlistentry>
+ 
++            <varlistentry>
++                <term><option>--env-fd=<replaceable>FD</replaceable></option></term>
++
++                <listitem><para>
++                    Read environment variables from the file descriptor
++                    <replaceable>FD</replaceable>, and set them as if
++                    via <option>--env</option>. This can be used to avoid
++                    environment variables and their values becoming visible
++                    to other users.
++                </para></listitem>
++            </varlistentry>
++
+             <varlistentry>
+                 <term><option>--own-name=NAME</option></term>
+ 
+diff --git a/doc/flatpak-build.xml b/doc/flatpak-build.xml
+index 4414f14..1148cda 100644
+--- a/doc/flatpak-build.xml
++++ b/doc/flatpak-build.xml
+@@ -288,6 +288,18 @@ key=v1;v2;
+                 </para></listitem>
+             </varlistentry>
+ 
++            <varlistentry>
++                <term><option>--env-fd=<replaceable>FD</replaceable></option></term>
++
++                <listitem><para>
++                    Read environment variables from the file descriptor
++                    <replaceable>FD</replaceable>, and set them as if
++                    via <option>--env</option>. This can be used to avoid
++                    environment variables and their values becoming visible
++                    to other users.
++                </para></listitem>
++            </varlistentry>
++
+             <varlistentry>
+                 <term><option>--own-name=NAME</option></term>
+ 
+diff --git a/doc/flatpak-override.xml b/doc/flatpak-override.xml
+index ef941bd..5986cfc 100644
+--- a/doc/flatpak-override.xml
++++ b/doc/flatpak-override.xml
+@@ -262,6 +262,18 @@ key=v1;v2;
+                 </para></listitem>
+             </varlistentry>
+ 
++            <varlistentry>
++                <term><option>--env-fd=<replaceable>FD</replaceable></option></term>
++
++                <listitem><para>
++                    Read environment variables from the file descriptor
++                    <replaceable>FD</replaceable>, and set them as if
++                    via <option>--env</option>. This can be used to avoid
++                    environment variables and their values becoming visible
++                    to other users.
++                </para></listitem>
++            </varlistentry>
++
+             <varlistentry>
+                 <term><option>--own-name=NAME</option></term>
+ 
+diff --git a/doc/flatpak-run.xml b/doc/flatpak-run.xml
+index 82582d4..d60a0f5 100644
+--- a/doc/flatpak-run.xml
++++ b/doc/flatpak-run.xml
+@@ -402,6 +402,18 @@ key=v1;v2;
+                 </para></listitem>
+             </varlistentry>
+ 
++            <varlistentry>
++                <term><option>--env-fd=<replaceable>FD</replaceable></option></term>
++
++                <listitem><para>
++                    Read environment variables from the file descriptor
++                    <replaceable>FD</replaceable>, and set them as if
++                    via <option>--env</option>. This can be used to avoid
++                    environment variables and their values becoming visible
++                    to other users.
++                </para></listitem>
++            </varlistentry>
++
+             <varlistentry>
+                 <term><option>--own-name=NAME</option></term>
+ 
+diff --git a/portal/flatpak-portal.c b/portal/flatpak-portal.c
+index 274f1f4..352fa8c 100644
+--- a/portal/flatpak-portal.c
++++ b/portal/flatpak-portal.c
+@@ -257,6 +257,7 @@ typedef struct
+   int         instance_id_fd;
+   gboolean    set_tty;
+   int         tty;
++  int         env_fd;
+ } ChildSetupData;
+ 
+ typedef struct
+@@ -485,6 +486,9 @@ child_setup_func (gpointer user_data)
+   if (data->instance_id_fd != -1)
+     drop_cloexec (data->instance_id_fd);
+ 
++  if (data->env_fd != -1)
++    drop_cloexec (data->env_fd);
++
+   /* Unblock all signals */
+   sigemptyset (&set);
+   if (pthread_sigmask (SIG_SETMASK, &set, NULL) == -1)
+@@ -774,8 +778,10 @@ handle_spawn (PortalFlatpak         *object,
+   gboolean expose_pids;
+   gboolean notify_start;
+   gboolean devel;
++  g_autoptr(GString) env_string = g_string_new ("");
+ 
+   child_setup_data.instance_id_fd = -1;
++  child_setup_data.env_fd = -1;
+ 
+   if (fd_list != NULL)
+     fds = g_unix_fd_list_peek_fds (fd_list, &fds_len);
+@@ -1028,7 +1034,49 @@ handle_spawn (PortalFlatpak         *object,
+   else
+     {
+       for (i = 0; extra_args != NULL && extra_args[i] != NULL; i++)
+-        g_ptr_array_add (flatpak_argv, g_strdup (extra_args[i]));
++        {
++          if (g_str_has_prefix (extra_args[i], "--env="))
++            {
++              const char *var_val = extra_args[i] + strlen ("--env=");
++
++              if (var_val[0] == '\0' || var_val[0] == '=')
++                {
++                  g_warning ("Environment variable in extra-args has empty name");
++                  continue;
++                }
++
++              if (strchr (var_val, '=') == NULL)
++                {
++                  g_warning ("Environment variable in extra-args has no value");
++                  continue;
++                }
++
++              g_string_append (env_string, var_val);
++              g_string_append_c (env_string, '\0');
++            }
++          else
++            {
++              g_ptr_array_add (flatpak_argv, g_strdup (extra_args[i]));
++            }
++        }
++    }
++
++  if (env_string->len > 0)
++    {
++      g_auto(GLnxTmpfile) env_tmpf  = { 0, };
++
++      if (!flatpak_buffer_to_sealed_memfd_or_tmpfile (&env_tmpf, "environ",
++                                                      env_string->str,
++                                                      env_string->len, &error))
++        {
++          g_dbus_method_invocation_return_gerror (invocation, error);
++          return G_DBUS_METHOD_INVOCATION_HANDLED;
++        }
++
++      child_setup_data.env_fd = glnx_steal_fd (&env_tmpf.fd);
++      g_ptr_array_add (flatpak_argv,
++                       g_strdup_printf ("--env-fd=%d",
++                                        child_setup_data.env_fd));
+     }
+ 
+   expose_pids = (arg_flags & FLATPAK_SPAWN_FLAGS_EXPOSE_PIDS) != 0;

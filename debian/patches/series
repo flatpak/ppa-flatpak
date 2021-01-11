@@ -1,2 +1,9 @@
 Skip-parental-controls-checks-on-ServiceUnknown-or-NameHa.patch
 profile.d-Disable-gvfs-plugins-when-listing-flatpak-insta.patch
+common-Add-a-backport-of-G_DBUS_METHOD_INVOCATION_HANDLED.patch
+run-Convert-all-environment-variables-into-bwrap-argument.patch
+tests-Expand-coverage-for-environment-variable-overrides.patch
+context-Add-env-fd-option.patch
+tests-Exercise-env-fd.patch
+portal-Do-not-use-caller-supplied-variables-in-environmen.patch
+tests-Assert-that-env-does-not-go-in-flatpak-run-or-bwrap.patch
