@@ -39,10 +39,10 @@ index ed1248e..8d07c1f 100644
      {
        g_propagate_error (error, g_steal_pointer (&local_error));
 diff --git a/common/flatpak-run.c b/common/flatpak-run.c
-index ec83b03..6d7af8f 100644
+index 3e26710..5b6e81f 100644
 --- a/common/flatpak-run.c
 +++ b/common/flatpak-run.c
-@@ -3422,6 +3422,13 @@ check_parental_controls (const char     *app_ref,
+@@ -3404,6 +3404,13 @@ check_parental_controls (const char     *app_ref,
                 "controls are disabled globally", app_ref);
        return TRUE;
      }
