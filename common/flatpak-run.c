@@ -543,22 +543,143 @@ flatpak_run_parse_pulse_server (const char *value)
   return NULL;
 }
 
+/*
+ * Get the machine ID as used by PulseAudio. This is the systemd/D-Bus
+ * machine ID, or failing that, the hostname.
+ */
+static char *
+flatpak_run_get_pulse_machine_id (void)
+{
+  static const char * const machine_ids[] =
+  {
+    "/etc/machine-id",
+    "/var/lib/dbus/machine-id",
+  };
+  gsize i;
+
+  for (i = 0; i < G_N_ELEMENTS (machine_ids); i++)
+    {
+      g_autofree char *ret = NULL;
+
+      if (g_file_get_contents (machine_ids[i], &ret, NULL, NULL))
+        {
+          gsize j;
+
+          g_strstrip (ret);
+
+          for (j = 0; ret[j] != '\0'; j++)
+            {
+              if (!g_ascii_isxdigit (ret[j]))
+                break;
+            }
+
+          if (ret[0] != '\0' && ret[j] == '\0')
+            return g_steal_pointer (&ret);
+        }
+    }
+
+  return g_strdup (g_get_host_name ());
+}
+
+/*
+ * Get the directory used by PulseAudio for its configuration.
+ */
+static char *
+flatpak_run_get_pulse_home (void)
+{
+  /* Legacy path ~/.pulse is tried first, for compatibility */
+  {
+    const char *parent = g_get_home_dir ();
+    g_autofree char *ret = g_build_filename (parent, ".pulse", NULL);
+
+    if (g_file_test (ret, G_FILE_TEST_IS_DIR))
+      return g_steal_pointer (&ret);
+  }
+
+  /* The more modern path, usually ~/.config/pulse */
+  {
+    const char *parent = g_get_user_config_dir ();
+    /* Usually ~/.config/pulse */
+    g_autofree char *ret = g_build_filename (parent, "pulse", NULL);
+
+    if (g_file_test (ret, G_FILE_TEST_IS_DIR))
+      return g_steal_pointer (&ret);
+  }
+
+  return NULL;
+}
+
+/*
+ * Get the runtime directory used by PulseAudio for its socket.
+ */
+static char *
+flatpak_run_get_pulse_runtime_dir (void)
+{
+  const char *val = NULL;
+
+  val = g_getenv ("PULSE_RUNTIME_PATH");
+
+  if (val != NULL)
+    return realpath (val, NULL);
+
+  {
+    const char *user_runtime_dir = g_get_user_runtime_dir ();
+
+    if (user_runtime_dir != NULL)
+      {
+        g_autofree char *dir = g_build_filename (user_runtime_dir, "pulse", NULL);
+
+        if (g_file_test (dir, G_FILE_TEST_IS_DIR))
+          return realpath (dir, NULL);
+      }
+  }
+
+  {
+    g_autofree char *pulse_home = flatpak_run_get_pulse_home ();
+    g_autofree char *machine_id = flatpak_run_get_pulse_machine_id ();
+
+    if (pulse_home != NULL && machine_id != NULL)
+      {
+        /* This is usually a symlink, but we take its realpath() anyway */
+        g_autofree char *dir = g_strdup_printf ("%s/%s-runtime", pulse_home, machine_id);
+
+        if (g_file_test (dir, G_FILE_TEST_IS_DIR))
+          return realpath (dir, NULL);
+      }
+  }
+
+  return NULL;
+}
+
 static void
 flatpak_run_add_pulseaudio_args (FlatpakBwrap *bwrap)
 {
   g_autofree char *pulseaudio_server = flatpak_run_get_pulseaudio_server ();
   g_autofree char *pulseaudio_socket = NULL;
-  g_autofree char *user_runtime_dir = flatpak_get_real_xdg_runtime_dir ();
+  g_autofree char *pulse_runtime_dir = flatpak_run_get_pulse_runtime_dir ();
 
   if (pulseaudio_server)
     pulseaudio_socket = flatpak_run_parse_pulse_server (pulseaudio_server);
 
   if (!pulseaudio_socket)
-    pulseaudio_socket = g_build_filename (user_runtime_dir, "pulse/native", NULL);
+    {
+      pulseaudio_socket = g_build_filename (pulse_runtime_dir, "native", NULL);
+
+      if (!g_file_test (pulseaudio_socket, G_FILE_TEST_EXISTS))
+        g_clear_pointer (&pulseaudio_socket, g_free);
+    }
+
+  if (!pulseaudio_socket)
+    {
+      pulseaudio_socket = realpath ("/var/run/pulse/native", NULL);
+
+      if (pulseaudio_socket && !g_file_test (pulseaudio_socket, G_FILE_TEST_EXISTS))
+        g_clear_pointer (&pulseaudio_socket, g_free);
+    }
 
   flatpak_bwrap_unset_env (bwrap, "PULSE_SERVER");
 
-  if (g_file_test (pulseaudio_socket, G_FILE_TEST_EXISTS))
+  if (pulseaudio_socket && g_file_test (pulseaudio_socket, G_FILE_TEST_EXISTS))
     {
       gboolean share_shm = FALSE; /* TODO: When do we add this? */
       g_autofree char *client_config = g_strdup_printf ("enable-shm=%s\n", share_shm ? "yes" : "no");
@@ -587,6 +708,15 @@ flatpak_run_add_pulseaudio_args (FlatpakBwrap *bwrap)
    */
   if (g_file_test ("/dev/snd", G_FILE_TEST_IS_DIR))
     flatpak_bwrap_add_args (bwrap, "--dev-bind", "/dev/snd", "/dev/snd", NULL);
+}
+
+static void
+flatpak_run_add_resolved_args (FlatpakBwrap *bwrap)
+{
+  const char *resolved_socket = "/run/systemd/resolve/io.systemd.Resolve";
+
+  if (g_file_test (resolved_socket, G_FILE_TEST_EXISTS))
+    flatpak_bwrap_add_args (bwrap, "--bind", resolved_socket, resolved_socket, NULL);
 }
 
 static void
@@ -1333,24 +1463,6 @@ flatpak_run_add_environment_args (FlatpakBwrap    *bwrap,
   flatpak_run_add_system_dbus_args (bwrap, proxy_arg_bwrap, context, flags);
   flatpak_run_add_a11y_dbus_args (bwrap, proxy_arg_bwrap, context, flags);
 
-  if (g_environ_getenv (bwrap->envp, "LD_LIBRARY_PATH") != NULL)
-    {
-      /* LD_LIBRARY_PATH is overridden for setuid helper, so pass it as cmdline arg */
-      flatpak_bwrap_add_args (bwrap,
-                              "--setenv", "LD_LIBRARY_PATH", g_environ_getenv (bwrap->envp, "LD_LIBRARY_PATH"),
-                              NULL);
-      flatpak_bwrap_unset_env (bwrap, "LD_LIBRARY_PATH");
-    }
-
-  if (g_environ_getenv (bwrap->envp, "TMPDIR") != NULL)
-    {
-      /* TMPDIR is overridden for setuid helper, so pass it as cmdline arg */
-      flatpak_bwrap_add_args (bwrap,
-                              "--setenv", "TMPDIR", g_environ_getenv (bwrap->envp, "TMPDIR"),
-                              NULL);
-      flatpak_bwrap_unset_env (bwrap, "TMPDIR");
-    }
-
   /* Must run this before spawning the dbus proxy, to ensure it
      ends up in the app cgroup */
   if (!flatpak_run_in_transient_unit (app_id, &my_error))
@@ -1566,7 +1678,7 @@ flatpak_run_apply_env_vars (FlatpakBwrap *bwrap, FlatpakContext *context)
       const char *var = key;
       const char *val = value;
 
-      if (val && val[0] != 0)
+      if (val)
         flatpak_bwrap_set_env (bwrap, var, val, TRUE);
       else
         flatpak_bwrap_unset_env (bwrap, var);
@@ -2918,8 +3030,10 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
                             "--proc", "/proc",
                             NULL);
 
+  if (!(flags & FLATPAK_RUN_FLAG_PARENT_SHARE_PIDS))
+    flatpak_bwrap_add_arg (bwrap, "--unshare-pid");
+
   flatpak_bwrap_add_args (bwrap,
-                          "--unshare-pid",
                           "--dir", "/tmp",
                           "--dir", "/var/tmp",
                           "--dir", "/run/host",
@@ -3574,7 +3688,7 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
   gboolean use_ld_so_cache = TRUE;
   gboolean sandboxed = (flags & FLATPAK_RUN_FLAG_SANDBOX) != 0;
   gboolean parent_expose_pids = (flags & FLATPAK_RUN_FLAG_PARENT_EXPOSE_PIDS) != 0;
-
+  gboolean parent_share_pids = (flags & FLATPAK_RUN_FLAG_PARENT_SHARE_PIDS) != 0;
   struct stat s;
 
   if (!check_sudo (error))
@@ -3873,6 +3987,9 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
                                          &exports, cancellable, error))
     return FALSE;
 
+  if ((app_context->shares & FLATPAK_CONTEXT_SHARED_NETWORK) != 0)
+    flatpak_run_add_resolved_args (bwrap);
+
   flatpak_run_add_journal_args (bwrap);
   add_font_path_args (bwrap);
   add_icon_path_args (bwrap);
@@ -3886,7 +4003,7 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
   if (cwd)
     flatpak_bwrap_add_args (bwrap, "--chdir", cwd, NULL);
 
-  if (parent_expose_pids)
+  if (parent_expose_pids || parent_share_pids)
     {
       g_autofree char *userns_path = NULL;
       g_autofree char *pidns_path = NULL;
@@ -3933,6 +4050,8 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
       command = default_command;
     }
 
+  flatpak_bwrap_envp_to_args (bwrap);
+
   if (!flatpak_bwrap_bundle_args (bwrap, 1, -1, FALSE, error))
     return FALSE;
 
@@ -3963,6 +4082,12 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
       /* We use LEAVE_DESCRIPTORS_OPEN to work around dead-lock, see flatpak_close_fds_workaround */
       spawn_flags |= G_SPAWN_LEAVE_DESCRIPTORS_OPEN;
 
+      /* flatpak_bwrap_envp_to_args() moved the environment variables to
+       * be set into --setenv instructions in argv, so the environment
+       * in which the bwrap command runs must be empty. */
+      g_assert (bwrap->envp != NULL);
+      g_assert (bwrap->envp[0] == NULL);
+
       if (!g_spawn_async (NULL,
                           (char **) bwrap->argv->pdata,
                           bwrap->envp,
@@ -3989,6 +4114,12 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
        * Note that this does not close fds that are not already marked O_CLOEXEC, because
        * we do want to allow inheriting fds into flatpak run. */
       flatpak_bwrap_child_setup (bwrap->fds, FALSE);
+
+      /* flatpak_bwrap_envp_to_args() moved the environment variables to
+       * be set into --setenv instructions in argv, so the environment
+       * in which the bwrap command runs must be empty. */
+      g_assert (bwrap->envp != NULL);
+      g_assert (bwrap->envp[0] == NULL);
 
       if (execvpe (flatpak_get_bwrap (), (char **) bwrap->argv->pdata, bwrap->envp) == -1)
         {

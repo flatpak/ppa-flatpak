@@ -14,8 +14,8 @@ AC_PREREQ([2.63])
 # on the unstable (ie master), interface age = 0
 
 m4_define([flatpak_major_version], [1])
-m4_define([flatpak_minor_version], [9])
-m4_define([flatpak_micro_version], [3])
+m4_define([flatpak_minor_version], [10])
+m4_define([flatpak_micro_version], [0])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -121,6 +121,15 @@ AC_ARG_WITH([systemdsystemunitdir],
     dnl .../lib, never .../lib64 or .../lib/x86_64-linux-gnu
     [with_systemdsystemunitdir='${prefix}/lib/systemd/system'])
 AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
+
+AC_ARG_WITH([systemdsystemenvgendir],
+            [AS_HELP_STRING([--with-systemdsystemenvgendir=DIR],
+                            [Directory for systemd system environment generators (default=PREFIX/lib/systemd/system-environment-generators)])],
+    [],
+    dnl This is deliberately not ${libdir}: systemd units always go in
+    dnl .../lib, never .../lib64 or .../lib/x86_64-linux-gnu
+    [with_systemdsystemenvgendir='${prefix}/lib/systemd/system-environment-generators'])
+AC_SUBST([systemdsystemenvgendir], [$with_systemdsystemenvgendir])
 
 AC_ARG_WITH([systemduserenvgendir],
             [AS_HELP_STRING([--with-systemduserenvgendir=DIR],

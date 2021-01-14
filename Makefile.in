@@ -197,9 +197,11 @@ check_PROGRAMS = $(am__EXEEXT_5) $(am__EXEEXT_6)
 @WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_30 = FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && pwd)/flatpak-dbus-proxy
 @WITH_SYSTEM_BWRAP_TRUE@am__append_31 = FLATPAK_BWRAP=$(BWRAP)
 @WITH_SYSTEM_BWRAP_FALSE@am__append_32 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
-@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_33 = flatpak-dbus-proxy
+@ENABLE_INSTALLED_TESTS_TRUE@am__append_33 = -rpath $(installed_testdir)
+@ENABLE_INSTALLED_TESTS_FALSE@am__append_34 = -rpath  ${abs_builddir}
+@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_35 = flatpak-dbus-proxy
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_PROGRAMS = flatpak-bwrap$(EXEEXT)
-@INSTALL_GDM_ENV_FILE_TRUE@am__append_34 = flatpak.env
+@INSTALL_GDM_ENV_FILE_TRUE@am__append_36 = flatpak.env
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/libglnx/libglnx.m4 \
@@ -233,8 +235,9 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" \
 	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" \
 	"$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" \
-	"$(DESTDIR)$(envgendir)" "$(DESTDIR)$(installed_testdir)" \
-	"$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(bashcompletiondir)" \
+	"$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" \
+	"$(DESTDIR)$(systemenvgendir)" "$(DESTDIR)$(userenvgendir)" \
+	"$(DESTDIR)$(bashcompletiondir)" \
 	"$(DESTDIR)$(dbus_servicedir)" \
 	"$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" \
 	"$(DESTDIR)$(installed_test_keyringdir)" \
@@ -462,6 +465,17 @@ libglnx_la_OBJECTS = $(am_libglnx_la_OBJECTS)
 libglnx_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libglnx_la_CFLAGS) \
 	$(CFLAGS) $(libglnx_la_LDFLAGS) $(LDFLAGS) -o $@
+tests_libpreload_la_LIBADD =
+am_tests_libpreload_la_OBJECTS = tests/libpreload.lo
+tests_libpreload_la_OBJECTS = $(am_tests_libpreload_la_OBJECTS)
+tests_libpreload_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(tests_libpreload_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
+@ENABLE_ALWAYS_BUILD_TESTS_FALSE@am_tests_libpreload_la_rpath =
+@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am_tests_libpreload_la_rpath =
+@ENABLE_INSTALLED_TESTS_TRUE@am_tests_libpreload_la_rpath = -rpath \
+@ENABLE_INSTALLED_TESTS_TRUE@	$(installed_testdir)
 am__flatpak_SOURCES_DIST = app/flatpak-main.c app/flatpak-builtins.h \
 	app/flatpak-builtins-remote-add.c \
 	app/flatpak-builtins-remote-modify.c \
@@ -810,8 +824,8 @@ tests_test_update_portal_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 am__dist_libexec_SCRIPTS_DIST =  \
 	sideload-repos-systemd/flatpak-create-sideload-symlinks.sh
 SCRIPTS = $(dist_libexec_SCRIPTS) $(dist_triggers_SCRIPTS) \
-	$(envgen_SCRIPTS) $(installed_test_SCRIPTS) $(noinst_SCRIPTS) \
-	$(scripts_SCRIPTS)
+	$(installed_test_SCRIPTS) $(noinst_SCRIPTS) $(scripts_SCRIPTS) \
+	$(systemenvgen_SCRIPTS) $(userenvgen_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -955,6 +969,7 @@ am__depfiles_remade =  \
 	session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po \
 	system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po \
 	tests/$(DEPDIR)/httpcache-httpcache.Po \
+	tests/$(DEPDIR)/libpreload.Plo \
 	tests/$(DEPDIR)/list_unused-list-unused.Po \
 	tests/$(DEPDIR)/test_authenticator-test-authenticator.Po \
 	tests/$(DEPDIR)/test_exports-test-exports.Po \
@@ -988,8 +1003,9 @@ SOURCES = $(libflatpak_app_la_SOURCES) \
 	$(libflatpak_common_la_SOURCES) \
 	$(nodist_libflatpak_common_la_SOURCES) \
 	$(libflatpak_la_SOURCES) $(libglnx_la_SOURCES) \
-	$(flatpak_SOURCES) $(nodist_flatpak_SOURCES) \
-	$(flatpak_bwrap_SOURCES) $(flatpak_dbus_proxy_SOURCES) \
+	$(tests_libpreload_la_SOURCES) $(flatpak_SOURCES) \
+	$(nodist_flatpak_SOURCES) $(flatpak_bwrap_SOURCES) \
+	$(flatpak_dbus_proxy_SOURCES) \
 	$(flatpak_oci_authenticator_SOURCES) $(flatpak_portal_SOURCES) \
 	$(nodist_flatpak_portal_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
@@ -1009,7 +1025,8 @@ DIST_SOURCES = $(libflatpak_app_la_SOURCES) \
 	$(libflatpak_common_base_la_SOURCES) \
 	$(am__libflatpak_common_la_SOURCES_DIST) \
 	$(libflatpak_la_SOURCES) $(libglnx_la_SOURCES) \
-	$(am__flatpak_SOURCES_DIST) $(am__flatpak_bwrap_SOURCES_DIST) \
+	$(tests_libpreload_la_SOURCES) $(am__flatpak_SOURCES_DIST) \
+	$(am__flatpak_bwrap_SOURCES_DIST) \
 	$(am__flatpak_dbus_proxy_SOURCES_DIST) \
 	$(flatpak_oci_authenticator_SOURCES) $(flatpak_portal_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
@@ -1584,6 +1601,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
+systemdsystemenvgendir = @systemdsystemenvgendir@
 systemdsystemunitdir = @systemdsystemunitdir@
 systemduserenvgendir = @systemduserenvgendir@
 systemduserunitdir = @systemduserunitdir@
@@ -1651,7 +1669,8 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	tests/Makefile-test-matrix.am.inc tests/expand-test-matrix.sh \
 	tests/test-wrapper.sh $(bashcompletion_DATA) \
 	$(zshcompletion_DATA) $(fishcompletion_DATA) $(profile_DATA) \
-	env.d/flatpak.env.in env.d/60-flatpak flatpak.pc.in \
+	env.d/flatpak.env.in env.d/60-flatpak \
+	env.d/60-flatpak-system-only flatpak.pc.in \
 	scripts/flatpak-bisect scripts/flatpak-coredumpctl \
 	variant-schema-compiler/variant-schema-compiler autogen.sh \
 	README.md flatpak.png
@@ -2335,6 +2354,10 @@ dist_installed_test_data = \
 	tests/org.flatpak.Authenticator.test.service.in \
 	$(NULL)
 
+test_ltlibraries = tests/libpreload.la
+tests_libpreload_la_SOURCES = tests/libpreload.c
+tests_libpreload_la_LDFLAGS = -avoid-version -module -no-undefined \
+	$(NULL) $(am__append_33) $(am__append_34)
 installed_test_keyringdir = $(installed_testdir)/test-keyring
 installed_test_keyring2dir = $(installed_testdir)/test-keyring2
 @ENABLE_INSTALLED_TESTS_TRUE@dist_installed_test_keyring_DATA = \
@@ -2474,9 +2497,11 @@ fishcompletion_DATA = completion/flatpak.fish
 profiledir = $(PROFILE_DIR)
 profile_DATA = profile/flatpak.sh
 envdir = $(datadir)/gdm/env.d
-env_DATA = $(am__append_34)
-envgendir = $(systemduserenvgendir)
-envgen_SCRIPTS = env.d/60-flatpak
+env_DATA = $(am__append_36)
+systemenvgendir = $(systemdsystemenvgendir)
+systemenvgen_SCRIPTS = env.d/60-flatpak-system-only
+userenvgendir = $(systemduserenvgendir)
+userenvgen_SCRIPTS = env.d/60-flatpak
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = flatpak.pc
 scriptsdir = $(bindir)
@@ -2975,6 +3000,17 @@ libglnx/la-glnx-shutil.lo: libglnx/$(am__dirstamp) \
 
 libglnx.la: $(libglnx_la_OBJECTS) $(libglnx_la_DEPENDENCIES) $(EXTRA_libglnx_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(libglnx_la_LINK)  $(libglnx_la_OBJECTS) $(libglnx_la_LIBADD) $(LIBS)
+tests/$(am__dirstamp):
+	@$(MKDIR_P) tests
+	@: > tests/$(am__dirstamp)
+tests/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) tests/$(DEPDIR)
+	@: > tests/$(DEPDIR)/$(am__dirstamp)
+tests/libpreload.lo: tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+tests/libpreload.la: $(tests_libpreload_la_OBJECTS) $(tests_libpreload_la_DEPENDENCIES) $(EXTRA_tests_libpreload_la_DEPENDENCIES) tests/$(am__dirstamp)
+	$(AM_V_CCLD)$(tests_libpreload_la_LINK) $(am_tests_libpreload_la_rpath) $(tests_libpreload_la_OBJECTS) $(tests_libpreload_la_LIBADD) $(LIBS)
 app/flatpak-flatpak-main.$(OBJEXT): app/$(am__dirstamp) \
 	app/$(DEPDIR)/$(am__dirstamp)
 app/flatpak-flatpak-builtins-remote-add.$(OBJEXT):  \
@@ -3208,12 +3244,6 @@ revokefs/fuse-writer.$(OBJEXT): revokefs/$(am__dirstamp) \
 revokefs-fuse$(EXEEXT): $(revokefs_fuse_OBJECTS) $(revokefs_fuse_DEPENDENCIES) $(EXTRA_revokefs_fuse_DEPENDENCIES) 
 	@rm -f revokefs-fuse$(EXEEXT)
 	$(AM_V_CCLD)$(revokefs_fuse_LINK) $(revokefs_fuse_OBJECTS) $(revokefs_fuse_LDADD) $(LIBS)
-tests/$(am__dirstamp):
-	@$(MKDIR_P) tests
-	@: > tests/$(am__dirstamp)
-tests/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) tests/$(DEPDIR)
-	@: > tests/$(DEPDIR)/$(am__dirstamp)
 tests/test_exports-test-exports.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -3396,41 +3426,6 @@ uninstall-dist_triggersSCRIPTS:
 	files=`for p in $$list; do echo "$$p"; done | \
 	       sed -e 's,.*/,,;$(transform)'`; \
 	dir='$(DESTDIR)$(triggersdir)'; $(am__uninstall_files_from_dir)
-install-envgenSCRIPTS: $(envgen_SCRIPTS)
-	@$(NORMAL_INSTALL)
-	@list='$(envgen_SCRIPTS)'; test -n "$(envgendir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(envgendir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(envgendir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
-	done | \
-	sed -e 'p;s,.*/,,;n' \
-	    -e 'h;s|.*|.|' \
-	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
-	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
-	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
-	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
-	      if (++n[d] == $(am__install_max)) { \
-		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
-	    else { print "f", d "/" $$4, $$1 } } \
-	  END { for (d in files) print "f", d, files[d] }' | \
-	while read type dir files; do \
-	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
-	     test -z "$$files" || { \
-	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(envgendir)$$dir'"; \
-	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(envgendir)$$dir" || exit $$?; \
-	     } \
-	; done
-
-uninstall-envgenSCRIPTS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(envgen_SCRIPTS)'; test -n "$(envgendir)" || exit 0; \
-	files=`for p in $$list; do echo "$$p"; done | \
-	       sed -e 's,.*/,,;$(transform)'`; \
-	dir='$(DESTDIR)$(envgendir)'; $(am__uninstall_files_from_dir)
 install-installed_testSCRIPTS: $(installed_test_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	@list='$(installed_test_SCRIPTS)'; test -n "$(installed_testdir)" || list=; \
@@ -3501,6 +3496,76 @@ uninstall-scriptsSCRIPTS:
 	files=`for p in $$list; do echo "$$p"; done | \
 	       sed -e 's,.*/,,;$(transform)'`; \
 	dir='$(DESTDIR)$(scriptsdir)'; $(am__uninstall_files_from_dir)
+install-systemenvgenSCRIPTS: $(systemenvgen_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	@list='$(systemenvgen_SCRIPTS)'; test -n "$(systemenvgendir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(systemenvgendir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(systemenvgendir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n' \
+	    -e 'h;s|.*|.|' \
+	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
+	      if (++n[d] == $(am__install_max)) { \
+		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
+	    else { print "f", d "/" $$4, $$1 } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	     test -z "$$files" || { \
+	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(systemenvgendir)$$dir'"; \
+	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(systemenvgendir)$$dir" || exit $$?; \
+	     } \
+	; done
+
+uninstall-systemenvgenSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(systemenvgen_SCRIPTS)'; test -n "$(systemenvgendir)" || exit 0; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	       sed -e 's,.*/,,;$(transform)'`; \
+	dir='$(DESTDIR)$(systemenvgendir)'; $(am__uninstall_files_from_dir)
+install-userenvgenSCRIPTS: $(userenvgen_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	@list='$(userenvgen_SCRIPTS)'; test -n "$(userenvgendir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(userenvgendir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(userenvgendir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n' \
+	    -e 'h;s|.*|.|' \
+	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
+	      if (++n[d] == $(am__install_max)) { \
+		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
+	    else { print "f", d "/" $$4, $$1 } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	     test -z "$$files" || { \
+	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(userenvgendir)$$dir'"; \
+	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(userenvgendir)$$dir" || exit $$?; \
+	     } \
+	; done
+
+uninstall-userenvgenSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(userenvgen_SCRIPTS)'; test -n "$(userenvgendir)" || exit 0; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	       sed -e 's,.*/,,;$(transform)'`; \
+	dir='$(DESTDIR)$(userenvgendir)'; $(am__uninstall_files_from_dir)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -3520,6 +3585,7 @@ mostlyclean-compile:
 	-rm -f session-helper/*.$(OBJEXT)
 	-rm -f system-helper/*.$(OBJEXT)
 	-rm -f tests/*.$(OBJEXT)
+	-rm -f tests/*.lo
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -3651,6 +3717,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/httpcache-httpcache.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/libpreload.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/list_unused-list-unused.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_authenticator-test-authenticator.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_exports-test-exports.Po@am__quote@ # am--include-marker
@@ -6625,7 +6692,7 @@ install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(envgendir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(tmpfilesdir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(fishcompletiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(selinux_develdir)" "$(DESTDIR)$(selinux_moduledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(sysusersdir)" "$(DESTDIR)$(zshcompletiondir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(systemenvgendir)" "$(DESTDIR)$(userenvgendir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(tmpfilesdir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(fishcompletiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(selinux_develdir)" "$(DESTDIR)$(selinux_moduledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(sysusersdir)" "$(DESTDIR)$(zshcompletiondir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -6829,6 +6896,7 @@ distclean: distclean-recursive
 	-rm -f session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po
 	-rm -f system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po
 	-rm -f tests/$(DEPDIR)/httpcache-httpcache.Po
+	-rm -f tests/$(DEPDIR)/libpreload.Plo
 	-rm -f tests/$(DEPDIR)/list_unused-list-unused.Po
 	-rm -f tests/$(DEPDIR)/test_authenticator-test-authenticator.Po
 	-rm -f tests/$(DEPDIR)/test_exports-test-exports.Po
@@ -6858,9 +6926,9 @@ install-data-am: install-bashcompletionDATA install-bwrapPROGRAMS \
 	install-dist_installed_test_keyring2DATA \
 	install-dist_installed_test_keyringDATA \
 	install-dist_tmpfilesDATA install-dist_triggersSCRIPTS \
-	install-envDATA install-envgenSCRIPTS \
-	install-fishcompletionDATA install-flatpakincludeHEADERS \
-	install-installed_testDATA install-installed_testLTLIBRARIES \
+	install-envDATA install-fishcompletionDATA \
+	install-flatpakincludeHEADERS install-installed_testDATA \
+	install-installed_testLTLIBRARIES \
 	install-installed_testPROGRAMS install-installed_testSCRIPTS \
 	install-installed_test_metaDATA install-introspectionDATA \
 	install-nobase_installed_testDATA \
@@ -6870,7 +6938,8 @@ install-data-am: install-bashcompletionDATA install-bwrapPROGRAMS \
 	install-profileDATA install-scriptsSCRIPTS \
 	install-selinux_develDATA install-selinux_moduleDATA \
 	install-systemdsystemunitDATA install-systemduserunitDATA \
-	install-sysusersDATA install-zshcompletionDATA
+	install-systemenvgenSCRIPTS install-sysusersDATA \
+	install-userenvgenSCRIPTS install-zshcompletionDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 install-dvi: install-dvi-recursive
@@ -7030,6 +7099,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f session-helper/$(DEPDIR)/flatpak_session_helper-flatpak-session-helper.Po
 	-rm -f system-helper/$(DEPDIR)/flatpak_system_helper-flatpak-system-helper.Po
 	-rm -f tests/$(DEPDIR)/httpcache-httpcache.Po
+	-rm -f tests/$(DEPDIR)/libpreload.Plo
 	-rm -f tests/$(DEPDIR)/list_unused-list-unused.Po
 	-rm -f tests/$(DEPDIR)/test_authenticator-test-authenticator.Po
 	-rm -f tests/$(DEPDIR)/test_exports-test-exports.Po
@@ -7060,8 +7130,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	uninstall-dist_installed_test_keyringDATA \
 	uninstall-dist_libexecSCRIPTS uninstall-dist_tmpfilesDATA \
 	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
-	uninstall-envgenSCRIPTS uninstall-fishcompletionDATA \
-	uninstall-flatpakincludeHEADERS uninstall-installed_testDATA \
+	uninstall-fishcompletionDATA uninstall-flatpakincludeHEADERS \
+	uninstall-installed_testDATA \
 	uninstall-installed_testLTLIBRARIES \
 	uninstall-installed_testPROGRAMS \
 	uninstall-installed_testSCRIPTS \
@@ -7074,7 +7144,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	uninstall-polkit_rulesDATA uninstall-profileDATA \
 	uninstall-scriptsSCRIPTS uninstall-selinux_develDATA \
 	uninstall-selinux_moduleDATA uninstall-systemdsystemunitDATA \
-	uninstall-systemduserunitDATA uninstall-sysusersDATA \
+	uninstall-systemduserunitDATA uninstall-systemenvgenSCRIPTS \
+	uninstall-sysusersDATA uninstall-userenvgenSCRIPTS \
 	uninstall-zshcompletionDATA
 
 .MAKE: $(am__recursive_targets) all check check-am install install-am \
@@ -7101,11 +7172,10 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	install-dist_installed_test_keyringDATA \
 	install-dist_libexecSCRIPTS install-dist_tmpfilesDATA \
 	install-dist_triggersSCRIPTS install-dvi install-dvi-am \
-	install-envDATA install-envgenSCRIPTS install-exec \
-	install-exec-am install-fishcompletionDATA \
-	install-flatpakincludeHEADERS install-html install-html-am \
-	install-info install-info-am install-installed_testDATA \
-	install-installed_testLTLIBRARIES \
+	install-envDATA install-exec install-exec-am \
+	install-fishcompletionDATA install-flatpakincludeHEADERS \
+	install-html install-html-am install-info install-info-am \
+	install-installed_testDATA install-installed_testLTLIBRARIES \
 	install-installed_testPROGRAMS install-installed_testSCRIPTS \
 	install-installed_test_metaDATA install-introspectionDATA \
 	install-libLTLIBRARIES install-libexecPROGRAMS install-man \
@@ -7117,20 +7187,22 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	install-ps-am install-scriptsSCRIPTS install-selinux_develDATA \
 	install-selinux_moduleDATA install-strip \
 	install-systemdsystemunitDATA install-systemduserunitDATA \
-	install-sysusersDATA install-zshcompletionDATA installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	recheck tags tags-am uninstall uninstall-am \
-	uninstall-bashcompletionDATA uninstall-binPROGRAMS \
-	uninstall-bwrapPROGRAMS uninstall-dbus_serviceDATA \
-	uninstall-dbussystemserviceDATA uninstall-dist_dbusconfDATA \
+	install-systemenvgenSCRIPTS install-sysusersDATA \
+	install-userenvgenSCRIPTS install-zshcompletionDATA \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am recheck tags tags-am uninstall \
+	uninstall-am uninstall-bashcompletionDATA \
+	uninstall-binPROGRAMS uninstall-bwrapPROGRAMS \
+	uninstall-dbus_serviceDATA uninstall-dbussystemserviceDATA \
+	uninstall-dist_dbusconfDATA \
 	uninstall-dist_installed_test_keyring2DATA \
 	uninstall-dist_installed_test_keyringDATA \
 	uninstall-dist_libexecSCRIPTS uninstall-dist_tmpfilesDATA \
 	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
-	uninstall-envgenSCRIPTS uninstall-fishcompletionDATA \
-	uninstall-flatpakincludeHEADERS uninstall-installed_testDATA \
+	uninstall-fishcompletionDATA uninstall-flatpakincludeHEADERS \
+	uninstall-installed_testDATA \
 	uninstall-installed_testLTLIBRARIES \
 	uninstall-installed_testPROGRAMS \
 	uninstall-installed_testSCRIPTS \
@@ -7143,7 +7215,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	uninstall-polkit_rulesDATA uninstall-profileDATA \
 	uninstall-scriptsSCRIPTS uninstall-selinux_develDATA \
 	uninstall-selinux_moduleDATA uninstall-systemdsystemunitDATA \
-	uninstall-systemduserunitDATA uninstall-sysusersDATA \
+	uninstall-systemduserunitDATA uninstall-systemenvgenSCRIPTS \
+	uninstall-sysusersDATA uninstall-userenvgenSCRIPTS \
 	uninstall-zshcompletionDATA
 
 .PRECIOUS: Makefile

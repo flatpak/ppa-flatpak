@@ -161,15 +161,18 @@ if INSTALL_GDM_ENV_FILE
 env_DATA += flatpak.env
 endif
 
-EXTRA_DIST += env.d/flatpak.env.in env.d/60-flatpak
+EXTRA_DIST += env.d/flatpak.env.in env.d/60-flatpak env.d/60-flatpak-system-only
 DISTCLEANFILES += flatpak.env
 
 flatpak.env: env.d/flatpak.env.in
 	$(AM_V_GEN) $(SED) -e "s|\@localstatedir\@|$(localstatedir)|" \
 		-e "s|\@sysconfdir\@|$(sysconfdir)|" $< > $@
 
-envgendir = $(systemduserenvgendir)
-envgen_SCRIPTS = env.d/60-flatpak
+systemenvgendir = $(systemdsystemenvgendir)
+systemenvgen_SCRIPTS = env.d/60-flatpak-system-only
+
+userenvgendir = $(systemduserenvgendir)
+userenvgen_SCRIPTS = env.d/60-flatpak
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = flatpak.pc
