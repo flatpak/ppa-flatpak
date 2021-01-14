@@ -1,7 +1,8 @@
-flatpak (1.9.3-3) UNRELEASED; urgency=medium
+flatpak (1.10.0-1) UNRELEASED; urgency=medium
 
   * d/control: Fix branch in Vcs-Git for experimental
   * Merge packaging from unstable
+  * New upstream release
 
  -- Simon McVittie <smcv@debian.org>  Thu, 14 Jan 2021 09:38:52 +0000
 
