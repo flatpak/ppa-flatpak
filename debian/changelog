@@ -1,3 +1,9 @@
+flatpak (1.10.0-flatpak1~focal) focal; urgency=medium
+
+  * Rebuild for focal
+
+ -- Alexander Larsson <alexl@redhat.com>  Thu, 14 Jan 2021 15:24:08 +0100
+
 flatpak (1.10.0-flatpak1~bionic) bionic; urgency=medium
 
   * Update to 1.10.0
