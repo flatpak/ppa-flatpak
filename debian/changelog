@@ -1,10 +1,14 @@
-flatpak (1.10.0-1) UNRELEASED; urgency=medium
+flatpak (1.10.0-1) experimental; urgency=medium
 
   * d/control: Fix branch in Vcs-Git for experimental
   * Merge packaging from unstable
-  * New upstream release
+  * New upstream release, starting the 1.10.x branch
+  * Drop patches, applied upstream
+  * d/flatpak.install: Install new systemd environment generator
+  * d/tests: Mark update portal test as flaky due to
+    https://github.com/flatpak/flatpak/issues/4065
 
- -- Simon McVittie <smcv@debian.org>  Thu, 14 Jan 2021 09:38:52 +0000
+ -- Simon McVittie <smcv@debian.org>  Thu, 14 Jan 2021 12:35:25 +0000
 
 flatpak (1.8.5-1) unstable; urgency=high
 
