@@ -207,7 +207,7 @@ typedef struct
   char    *client;
   guint    child_watch;
   gboolean watch_bus;
-  gboolean expose_pids;
+  gboolean expose_or_share_pids;
 } PidData;
 
 static void
@@ -257,6 +257,7 @@ typedef struct
   int         instance_id_fd;
   gboolean    set_tty;
   int         tty;
+  int         env_fd;
 } ChildSetupData;
 
 typedef struct
@@ -408,7 +409,7 @@ check_child_pid_status (void *user_data)
     }
 
   /* Only send the child PID if it's exposed */
-  if (pid_data->expose_pids)
+  if (pid_data->expose_or_share_pids)
     {
       g_autoptr(GError) error = NULL;
       relative_child_pid = get_child_pid_relative_to_parent_sandbox (child_pid, &error);
@@ -484,6 +485,9 @@ child_setup_func (gpointer user_data)
 
   if (data->instance_id_fd != -1)
     drop_cloexec (data->instance_id_fd);
+
+  if (data->env_fd != -1)
+    drop_cloexec (data->env_fd);
 
   /* Unblock all signals */
   sigemptyset (&set);
@@ -771,6 +775,7 @@ handle_spawn (PortalFlatpak         *object,
   g_auto(GStrv) shares = NULL;
   g_auto(GStrv) sockets = NULL;
   g_auto(GStrv) devices = NULL;
+  g_auto(GStrv) unset_env = NULL;
   g_auto(GStrv) sandbox_expose = NULL;
   g_auto(GStrv) sandbox_expose_ro = NULL;
   g_autoptr(GVariant) sandbox_expose_fd = NULL;
@@ -779,10 +784,13 @@ handle_spawn (PortalFlatpak         *object,
   guint sandbox_flags = 0;
   gboolean sandboxed;
   gboolean expose_pids;
+  gboolean share_pids;
   gboolean notify_start;
   gboolean devel;
+  g_autoptr(GString) env_string = g_string_new ("");
 
   child_setup_data.instance_id_fd = -1;
+  child_setup_data.env_fd = -1;
 
   if (fd_list != NULL)
     fds = g_unix_fd_list_peek_fds (fd_list, &fds_len);
@@ -867,6 +875,7 @@ handle_spawn (PortalFlatpak         *object,
   g_variant_lookup (arg_options, "sandbox-flags", "u", &sandbox_flags);
   sandbox_expose_fd = g_variant_lookup_value (arg_options, "sandbox-expose-fd", G_VARIANT_TYPE ("ah"));
   sandbox_expose_fd_ro = g_variant_lookup_value (arg_options, "sandbox-expose-fd-ro", G_VARIANT_TYPE ("ah"));
+  g_variant_lookup (arg_options, "unset-env", "^as", &unset_env);
 
   if ((sandbox_flags & ~FLATPAK_SPAWN_SANDBOX_FLAGS_ALL) != 0)
     {
@@ -983,6 +992,11 @@ handle_spawn (PortalFlatpak         *object,
         fd_map[i].to = ++max_fd;
     }
 
+  /* TODO: Ideally we should let `flatpak run` inherit the portal's
+   * environment, in case e.g. a LD_LIBRARY_PATH is needed to be able
+   * to run `flatpak run`, but tell it to start from a blank environment
+   * when running the Flatpak app; but this isn't currently possible, so
+   * for now we preserve existing behaviour. */
   if (arg_flags & FLATPAK_SPAWN_FLAGS_CLEAR_ENV)
     {
       char *empty[] = { NULL };
@@ -990,16 +1004,6 @@ handle_spawn (PortalFlatpak         *object,
     }
   else
     env = g_get_environ ();
-
-  n_envs = g_variant_n_children (arg_envs);
-  for (i = 0; i < n_envs; i++)
-    {
-      const char *var = NULL;
-      const char *val = NULL;
-      g_variant_get_child (arg_envs, i, "{&s&s}", &var, &val);
-
-      env = g_environ_setenv (env, var, val, TRUE);
-    }
 
   g_ptr_array_add (flatpak_argv, g_strdup ("flatpak"));
   g_ptr_array_add (flatpak_argv, g_strdup ("run"));
@@ -1043,11 +1047,115 @@ handle_spawn (PortalFlatpak         *object,
   else
     {
       for (i = 0; extra_args != NULL && extra_args[i] != NULL; i++)
-        g_ptr_array_add (flatpak_argv, g_strdup (extra_args[i]));
+        {
+          if (g_str_has_prefix (extra_args[i], "--env="))
+            {
+              const char *var_val = extra_args[i] + strlen ("--env=");
+
+              if (var_val[0] == '\0' || var_val[0] == '=')
+                {
+                  g_warning ("Environment variable in extra-args has empty name");
+                  continue;
+                }
+
+              if (strchr (var_val, '=') == NULL)
+                {
+                  g_warning ("Environment variable in extra-args has no value");
+                  continue;
+                }
+
+              g_string_append (env_string, var_val);
+              g_string_append_c (env_string, '\0');
+            }
+          else
+            {
+              g_ptr_array_add (flatpak_argv, g_strdup (extra_args[i]));
+            }
+        }
+    }
+
+  /* Let the environment variables given by the caller override the ones
+   * from extra_args. Don't add them to @env, because they are controlled
+   * by our caller, which might be trying to use them to inject code into
+   * flatpak(1); add them to the environment block instead.
+   *
+   * We don't use --env= here, so that if the values are something that
+   * should not be exposed to other uids, they can remain confidential. */
+  n_envs = g_variant_n_children (arg_envs);
+  for (i = 0; i < n_envs; i++)
+    {
+      const char *var = NULL;
+      const char *val = NULL;
+      g_variant_get_child (arg_envs, i, "{&s&s}", &var, &val);
+
+      if (var[0] == '\0')
+        {
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                                 G_DBUS_ERROR_INVALID_ARGS,
+                                                 "Environment variable cannot have empty name");
+          return G_DBUS_METHOD_INVOCATION_HANDLED;
+        }
+
+      if (strchr (var, '=') != NULL)
+        {
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                                 G_DBUS_ERROR_INVALID_ARGS,
+                                                 "Environment variable name cannot contain '='");
+          return G_DBUS_METHOD_INVOCATION_HANDLED;
+        }
+
+      g_string_append (env_string, var);
+      g_string_append_c (env_string, '=');
+      g_string_append (env_string, val);
+      g_string_append_c (env_string, '\0');
+    }
+
+  if (env_string->len > 0)
+    {
+      g_auto(GLnxTmpfile) env_tmpf  = { 0, };
+
+      if (!flatpak_buffer_to_sealed_memfd_or_tmpfile (&env_tmpf, "environ",
+                                                      env_string->str,
+                                                      env_string->len, &error))
+        {
+          g_dbus_method_invocation_return_gerror (invocation, error);
+          return G_DBUS_METHOD_INVOCATION_HANDLED;
+        }
+
+      child_setup_data.env_fd = glnx_steal_fd (&env_tmpf.fd);
+      g_ptr_array_add (flatpak_argv,
+                       g_strdup_printf ("--env-fd=%d",
+                                        child_setup_data.env_fd));
+    }
+
+  for (i = 0; unset_env != NULL && unset_env[i] != NULL; i++)
+    {
+      const char *var = unset_env[i];
+
+      if (var[0] == '\0')
+        {
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                                 G_DBUS_ERROR_INVALID_ARGS,
+                                                 "Environment variable cannot have empty name");
+          return G_DBUS_METHOD_INVOCATION_HANDLED;
+        }
+
+      if (strchr (var, '=') != NULL)
+        {
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                                 G_DBUS_ERROR_INVALID_ARGS,
+                                                 "Environment variable name cannot contain '='");
+          return G_DBUS_METHOD_INVOCATION_HANDLED;
+        }
+
+      g_ptr_array_add (flatpak_argv,
+                       g_strdup_printf ("--unset-env=%s", var));
     }
 
   expose_pids = (arg_flags & FLATPAK_SPAWN_FLAGS_EXPOSE_PIDS) != 0;
-  if (expose_pids)
+  share_pids = (arg_flags & FLATPAK_SPAWN_FLAGS_SHARE_PIDS) != 0;
+
+  if (expose_pids || share_pids)
     {
       g_autofree char *instance_id = NULL;
       int sender_pid1 = 0;
@@ -1056,7 +1164,7 @@ handle_spawn (PortalFlatpak         *object,
         {
           g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
                                                  G_DBUS_ERROR_NOT_SUPPORTED,
-                                                 "Expose pids not supported");
+                                                 "Expose pids not supported with setuid bwrap");
           return G_DBUS_METHOD_INVOCATION_HANDLED;
         }
 
@@ -1079,7 +1187,11 @@ handle_spawn (PortalFlatpak         *object,
         }
 
       g_ptr_array_add (flatpak_argv, g_strdup_printf ("--parent-pid=%d", sender_pid1));
-      g_ptr_array_add (flatpak_argv, g_strdup ("--parent-expose-pids"));
+
+      if (share_pids)
+        g_ptr_array_add (flatpak_argv, g_strdup ("--parent-share-pids"));
+      else
+        g_ptr_array_add (flatpak_argv, g_strdup ("--parent-expose-pids"));
     }
 
   notify_start = (arg_flags & FLATPAK_SPAWN_FLAGS_NOTIFY_START) != 0;
@@ -1278,7 +1390,7 @@ handle_spawn (PortalFlatpak         *object,
   pid_data->pid = pid;
   pid_data->client = g_strdup (g_dbus_method_invocation_get_sender (invocation));
   pid_data->watch_bus = (arg_flags & FLATPAK_SPAWN_FLAGS_WATCH_BUS) != 0;
-  pid_data->expose_pids = expose_pids;
+  pid_data->expose_or_share_pids = (expose_pids || share_pids);
   pid_data->child_watch = g_child_watch_add_full (G_PRIORITY_DEFAULT,
                                                   pid,
                                                   child_watch_died,
@@ -2679,7 +2791,7 @@ on_bus_acquired (GDBusConnection *connection,
   g_dbus_interface_skeleton_set_flags (G_DBUS_INTERFACE_SKELETON (portal),
                                        G_DBUS_INTERFACE_SKELETON_FLAGS_HANDLE_METHOD_INVOCATIONS_IN_THREAD);
 
-  portal_flatpak_set_version (PORTAL_FLATPAK (portal), 4);
+  portal_flatpak_set_version (PORTAL_FLATPAK (portal), 5);
   portal_flatpak_set_supports (PORTAL_FLATPAK (portal), supports);
 
   g_signal_connect (portal, "handle-spawn", G_CALLBACK (handle_spawn), NULL);
