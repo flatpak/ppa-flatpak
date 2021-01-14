@@ -1,3 +1,9 @@
+flatpak (1.9.3-3) UNRELEASED; urgency=medium
+
+  * d/control: Fix branch in Vcs-Git for experimental
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 14 Jan 2021 09:38:52 +0000
+
 flatpak (1.9.3-2) experimental; urgency=medium
 
   * Add patch to avoid gvfs-daemon being started when logging in as root.
