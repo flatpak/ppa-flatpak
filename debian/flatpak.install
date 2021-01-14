@@ -5,6 +5,7 @@ etc/X11/Xsession.d
 etc/profile.d/
 lib/systemd/system/flatpak-system-helper.service
 usr/bin/flatpak
+usr/lib/systemd/system-environment-generators
 usr/lib/systemd/user-environment-generators
 usr/lib/systemd/user/flatpak-oci-authenticator.service
 usr/lib/systemd/user/flatpak-portal.service
