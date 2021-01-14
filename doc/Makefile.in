@@ -452,6 +452,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
+systemdsystemenvgendir = @systemdsystemenvgendir@
 systemdsystemunitdir = @systemdsystemunitdir@
 systemduserenvgendir = @systemduserenvgendir@
 systemduserunitdir = @systemduserunitdir@

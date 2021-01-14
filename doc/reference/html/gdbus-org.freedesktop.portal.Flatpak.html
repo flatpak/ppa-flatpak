@@ -76,7 +76,7 @@
       bus name org.freedesktop.portal.Flatpak and the object path
       /org/freedesktop/portal/Flatpak.
 </p>
-<p>      This documentation describes version 4 of this interface.
+<p>      This documentation describes version 5 of this interface.
 </p>
 </div>
 <div class="refsect1">
@@ -153,6 +153,20 @@ Spawn (IN  ay    cwd_path,
                </p>
 <p>
                This was added in version 4 of this interface (available from flatpak 1.8.0 and later).
+             </p>
+</td>
+</tr>
+<tr>
+<td><p><span class="term">128 (FLATPAK_SPAWN_FLAGS_SHARE_PIDS)</span></p></td>
+<td>
+<p>
+              Expose the sandbox process IDs in the caller's sandbox and
+              the caller's process IDs in the new sandbox. Only supported
+              if using user namespaces for containers (not setuid), see the
+              support property.
+             </p>
+<p>
+               This was added in version 5 of this interface (available from flatpak 1.10.0 and later).
              </p>
 </td>
 </tr>
@@ -274,6 +288,17 @@ Spawn (IN  ay    cwd_path,
 <p>             </p>
 <p>
              This was added in version 3 of this interface (available from flatpak 1.6.0 and later).
+             </p>
+</td>
+</tr>
+<tr>
+<td><p><span class="term">unset-env as</span></p></td>
+<td>
+<p>
+             A list of environment variables to unset (remove from the environment).
+             </p>
+<p>
+             This was added in version 5 of this interface (available from flatpak 1.10.0 and later).
              </p>
 </td>
 </tr>
@@ -399,7 +424,8 @@ CreateUpdateMonitor (IN  a{sv} options,
 SpawnStarted (u pid,
               u relpid);
 </pre>
-<p>        This is only non-zero if the expose PIDs flag (32) was passed to
+<p>        This is only non-zero if the expose PIDs flag (32) or the share
+        PIDs flag (128) was passed to
         <a class="link" href="gdbus-org.freedesktop.portal.Flatpak.html#gdbus-method-org-freedesktop-portal-Flatpak.Spawn" title="The Spawn() method">Spawn()</a>, and it may still be zero if
         the process exits before its relative PID could be read.
 </p>
@@ -491,7 +517,9 @@ supports  readable   u
 <tbody><tr>
 <td><p><span class="term">1 (FLATPAK_SPAWN_SUPPORT_FLAGS_EXPOSE_PIDS)</span></p></td>
 <td><p>
-               Supports the expose sandbox pids flag of Spawn.
+              Supports the expose sandbox pids flag of Spawn.
+              If the version of this interface is 5 or later, this also
+              indicates that the share sandbox pids flag is available.
              </p></td>
 </tr></tbody>
 </table></div>
