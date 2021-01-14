@@ -1,7 +1,13 @@
+flatpak (1.8.5-2) UNRELEASED; urgency=medium
+
+  * Add CVE-2021-21261 reference to previous changelog entry
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 14 Jan 2021 19:49:39 +0000
+
 flatpak (1.8.5-1) unstable; urgency=high
 
   * New upstream release fixing a sandbox escape vulnerability
-    (GHSA-4ppf-fxf6-vxg2)
+    (GHSA-4ppf-fxf6-vxg2, CVE-2021-21261)
   * Mark patch for #975710 as having been applied upstream
 
  -- Simon McVittie <smcv@debian.org>  Thu, 14 Jan 2021 09:34:09 +0000
