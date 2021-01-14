@@ -1,3 +1,11 @@
+flatpak (1.8.5-1) UNRELEASED; urgency=high
+
+  * New upstream release fixing a sandbox escape vulnerability
+    (GHSA-4ppf-fxf6-vxg2)
+  * Mark patch for #975710 as having been applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 14 Jan 2021 09:31:47 +0000
+
 flatpak (1.8.4-2) unstable; urgency=medium
 
   * Mark patch for #972138 as having been applied upstream
