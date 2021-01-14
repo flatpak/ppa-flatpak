@@ -1,8 +1,27 @@
 flatpak (1.9.3-3) UNRELEASED; urgency=medium
 
   * d/control: Fix branch in Vcs-Git for experimental
+  * Merge packaging from unstable
 
  -- Simon McVittie <smcv@debian.org>  Thu, 14 Jan 2021 09:38:52 +0000
+
+flatpak (1.8.5-1) unstable; urgency=high
+
+  * New upstream release fixing a sandbox escape vulnerability
+    (GHSA-4ppf-fxf6-vxg2)
+  * Mark patch for #975710 as having been applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 14 Jan 2021 09:34:09 +0000
+
+flatpak (1.8.4-2) unstable; urgency=medium
+
+  * Mark patch for #972138 as having been applied upstream
+  * Add patch to avoid gvfs-daemon being started when logging in as root.
+    Thanks to Mourad De Clerck (Closes: #975710)
+  * Add package-specific info from bubblewrap to bug reports.
+    In particular, this will tell us whether it's setuid.
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 03 Jan 2021 15:37:04 +0000
 
 flatpak (1.9.3-2) experimental; urgency=medium
 
