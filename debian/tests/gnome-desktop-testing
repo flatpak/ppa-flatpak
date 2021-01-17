@@ -28,6 +28,8 @@ exec gnome-desktop-testing-runner $(
 		case "$t" in
 			(Flatpak/test-oci*)
 				;;
+			(Flatpak/test-update-portal*)
+				;;
 			(*)
 				echo "$t"
 				;;

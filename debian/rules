@@ -16,9 +16,10 @@ override_dh_clean:
 	rm -fr debian/XDG_RUNTIME_DIR
 
 override_dh_autoreconf:
+	NOCONFIGURE=1 \
 	dh_autoreconf \
 		--as-needed \
-		debian/autogen.sh \
+		./autogen.sh \
 		-- \
 		$(NULL)
 
