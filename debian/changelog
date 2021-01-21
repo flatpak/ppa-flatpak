@@ -1,3 +1,9 @@
+flatpak (1.10.1-flatpak1~eoan) eoan; urgency=medium
+
+  * Rebuild for eoan
+
+ -- Alexander Larsson <alexl@redhat.com>  Thu, 21 Jan 2021 15:35:22 +0100
+
 flatpak (1.10.1-flatpak1~bionic) bionic; urgency=medium
 
   * Update to 1.10.1
