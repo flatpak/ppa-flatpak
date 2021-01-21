@@ -121,7 +121,7 @@ flatpak_builtin_enter (int           argc,
       FlatpakInstance *instance = (FlatpakInstance *) g_ptr_array_index (instances, j);
 
       if (pid == flatpak_instance_get_pid (instance) ||
-          strcmp (pid_s, flatpak_instance_get_app (instance)) == 0 ||
+          g_strcmp0 (pid_s, flatpak_instance_get_app (instance)) == 0 ||
           strcmp (pid_s, flatpak_instance_get_id (instance)) == 0)
         {
           pid = flatpak_instance_get_child_pid (instance);
@@ -271,10 +271,10 @@ flatpak_builtin_enter (int           argc,
 
   session_bus_path = g_strdup_printf ("/run/user/%d/bus", uid);
   if (g_file_test (session_bus_path, G_FILE_TEST_EXISTS))
-    g_ptr_array_add (envp_array, g_strdup_printf ("DBUS_SESSION_BUS_ADDRESS=unix:%s", session_bus_path));
+    g_ptr_array_add (envp_array, g_strdup_printf ("DBUS_SESSION_BUS_ADDRESS=unix:path=%s", session_bus_path));
 
   if (g_file_test ("/run/dbus/system_bus_socket", G_FILE_TEST_EXISTS))
-    g_ptr_array_add (envp_array, g_strdup ("DBUS_SYSTEM_BUS_ADDRESS=unix:/run/dbus/system_bus_socket"));
+    g_ptr_array_add (envp_array, g_strdup ("DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket"));
 
   g_ptr_array_add (envp_array, NULL);
 
@@ -315,7 +315,11 @@ flatpak_complete_enter (FlatpakCompletion *completion)
       for (i = 0; i < instances->len; i++)
         {
           FlatpakInstance *instance = (FlatpakInstance *) g_ptr_array_index (instances, i);
-          flatpak_complete_word (completion, "%s ", flatpak_instance_get_app (instance));
+
+          const char *app_name = flatpak_instance_get_app (instance);
+          if (app_name)
+            flatpak_complete_word (completion, "%s ", app_name);
+
           flatpak_complete_word (completion, "%s ", flatpak_instance_get_id (instance));
         }
       break;

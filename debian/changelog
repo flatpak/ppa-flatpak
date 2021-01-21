@@ -1,3 +1,57 @@
+flatpak (1.10.1-flatpak1~bionic) bionic; urgency=medium
+
+  * Update to 1.10.1
+
+ -- Alexander Larsson <alexl@redhat.com>  Thu, 21 Jan 2021 15:09:53 +0100
+
+flatpak (1.10.0-flatpak1~bionic) bionic; urgency=medium
+
+  * Update to 1.10.0
+
+ -- Alexander Larsson <alexl@redhat.com>  Thu, 14 Jan 2021 14:59:05 +0100
+
+flatpak (1.9.3-flatpak1~bionic) bionic; urgency=medium
+
+  * Update to 1.9.3
+
+ -- Alexander Larsson <alexl@redhat.com>  Tue, 22 Dec 2020 14:27:30 +0100
+
+flatpak (1.9.2-flatpak1~bionic) bionic; urgency=medium
+
+  * Update to 1.9.2
+
+ -- Alexander Larsson <alexl@redhat.com>  Fri, 20 Nov 2020 15:50:19 +0100
+
+flatpak (1.9.1-flatpak1.6~bionic) bionic; urgency=medium
+
+  * Debug summary test failure
+
+ -- Alexander Larsson <alexl@redhat.com>  Thu, 19 Nov 2020 16:21:14 +0100
+
+flatpak (1.9.1-flatpak1.3~bionic) bionic; urgency=medium
+
+  * Fix builds on non-x86-64
+
+ -- Alexander Larsson <alexl@redhat.com>  Thu, 19 Nov 2020 16:21:14 +0100
+
+flatpak (1.9.1-flatpak1.2~bionic) bionic; urgency=medium
+
+  * Disable revokefs in testlibary to fix pps build
+
+ -- Alexander Larsson <alexl@redhat.com>  Thu, 19 Nov 2020 16:21:14 +0100
+
+flatpak (1.9.1-flatpak1.1~bionic) bionic; urgency=medium
+
+  * Add better error message patch to debug test failure
+
+ -- Alexander Larsson <alexl@redhat.com>  Thu, 19 Nov 2020 16:21:14 +0100
+
+flatpak (1.8.3-flatpak1~bionic) bionic; urgency=medium
+
+  * Update to 1.8.3
+
+ -- Alexander Larsson <alexl@redhat.com>  Tue, 17 Nov 2020 14:47:27 +0100
+
 flatpak (1.8.2-flatpak1~eoan) eoan; urgency=medium
 
   * Rebuild for eoan
