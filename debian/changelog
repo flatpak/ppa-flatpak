@@ -1,3 +1,11 @@
+flatpak (1.10.1-2) unstable; urgency=medium
+
+  * d/patches: Disable FUSE-based revokefs if any of several factors fail.
+    This fixes FTBFS in pbuilder, and hopefully also on Launchpad
+    autobuilders.
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 28 Jan 2021 22:24:20 +0000
+
 flatpak (1.10.1-1) unstable; urgency=medium
 
   * New upstream release
