@@ -180,7 +180,7 @@ index 0000000..bfc47e3
 +gboolean check_fuse (void);
 +gboolean check_fuse_or_skip_test (void);
 diff --git a/tests/testlibrary.c b/tests/testlibrary.c
-index 718f37c..64dff19 100644
+index b5ad853..b8f04ef 100644
 --- a/tests/testlibrary.c
 +++ b/tests/testlibrary.c
 @@ -10,6 +10,8 @@

@@ -1,0 +1,28 @@
+From: Phaedrus Leeds <mwleeds@endlessos.org>
+Date: Thu, 4 Feb 2021 19:04:15 -0800
+Subject: testlibrary: Fix memory leaks
+
+(cherry picked from commit 7224809bc1e2584708b29ec1389cbcf1eeba1d3f)
+
+Origin: upstream, 1.10.2, commit:a1a6b7f208676885c770ab5ee97f71dacbc4baa1
+---
+ tests/testlibrary.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tests/testlibrary.c b/tests/testlibrary.c
+index 718f37c..b5ad853 100644
+--- a/tests/testlibrary.c
++++ b/tests/testlibrary.c
+@@ -1338,10 +1338,10 @@ test_list_remote_related_refs (void)
+   // Make the test with extra-languages, instead of languages
+   clean_languages();
+   configure_extra_languages();
+-
+-  inst = flatpak_installation_new_user (NULL, &error);
++  flatpak_installation_drop_caches (inst, NULL, &error);
+   g_assert_no_error (error);
+ 
++  g_clear_pointer (&refs, g_ptr_array_unref);
+   refs = flatpak_installation_list_remote_related_refs_sync (inst, repo_name, app, NULL, &error);
+   g_assert_nonnull (refs);
+   g_assert_no_error (error);
