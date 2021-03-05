@@ -1,13 +1,15 @@
-flatpak (1.10.1-4) UNRELEASED; urgency=high
+flatpak (1.10.1-4) unstable; urgency=high
 
-  * Add proposed patch to fix a sandbox escape via crafted .desktop
+  * d/p/Disallow-and-u-usage-in-desktop-files.patch:
+    Add proposed patch to fix a sandbox escape via crafted .desktop
     files (flatpak#4146). Thanks, Ryan Gonzalez
-  * Add proposed patch to fix some tests on non-x86_64 machines.
+  * d/p/tests-Remove-hard-coded-references-to-x86_64.patch:
+    Add proposed patch to fix some tests on non-x86_64 machines.
     The affected tests were already skipped in schroot/lxc for other
     reasons, but would be run (and fail) on autopkgtest testbeds with
     isolation-machine and working FUSE.
 
- -- Simon McVittie <smcv@debian.org>  Fri, 05 Mar 2021 09:55:38 +0000
+ -- Simon McVittie <smcv@debian.org>  Fri, 05 Mar 2021 10:21:35 +0000
 
 flatpak (1.10.1-3) unstable; urgency=medium
 
