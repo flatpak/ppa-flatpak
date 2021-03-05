@@ -2,6 +2,10 @@ flatpak (1.10.1-4) UNRELEASED; urgency=high
 
   * Add proposed patch to fix a sandbox escape via crafted .desktop
     files (flatpak#4146). Thanks, Ryan Gonzalez
+  * Add proposed patch to fix some tests on non-x86_64 machines.
+    The affected tests were already skipped in schroot/lxc for other
+    reasons, but would be run (and fail) on autopkgtest testbeds with
+    isolation-machine and working FUSE.
 
  -- Simon McVittie <smcv@debian.org>  Fri, 05 Mar 2021 09:55:38 +0000
 

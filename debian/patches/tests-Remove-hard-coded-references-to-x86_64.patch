@@ -1,0 +1,40 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Fri, 26 Feb 2021 19:48:10 +0000
+Subject: tests: Remove hard-coded references to x86_64
+
+Distributions run these tests on other architectures, but hard-coding
+x86_64 to look for in output dooms that to failure.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/4142
+---
+ tests/test-oci.sh    | 2 +-
+ tests/test-unused.sh | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tests/test-oci.sh b/tests/test-oci.sh
+index 50e4504..0e4726f 100755
+--- a/tests/test-oci.sh
++++ b/tests/test-oci.sh
+@@ -51,7 +51,7 @@ image=oci/image/blobs/sha256/$DIGEST
+ assert_has_file $image
+ assert_file_has_content $image "org\.freedesktop\.appstream\.appdata.*<summary>Print a greeting</summary>"
+ assert_file_has_content $image "org\.freedesktop\.appstream\.icon-64"
+-assert_file_has_content $image org.flatpak.ref.*app/org.test.Hello/x86_64/master
++assert_file_has_content $image org.flatpak.ref.*app/"org.test.Hello/$ARCH/master"
+ 
+ ok "export oci"
+ 
+diff --git a/tests/test-unused.sh b/tests/test-unused.sh
+index 5bd359a..20bbabe 100755
+--- a/tests/test-unused.sh
++++ b/tests/test-unused.sh
+@@ -391,7 +391,7 @@ ok "list unused regular"
+ 
+ mv unused.txt old-unused.txt
+ 
+-${test_builddir}/list-unused --exclude app/org.app.APP_A/x86_64/stable | sed s@^app/@@g | sed s@^runtime/@@g | sort > unused.txt
++${test_builddir}/list-unused --exclude "app/org.app.APP_A/$ARCH/stable" | sed s@^app/@@g | sed s@^runtime/@@g | sort > unused.txt
+ 
+ # We don't report the excluded ref itself as unused. It's as if it wasn't even installed
+ assert_not_file_has_content unused.txt "org.app.APP_A/"
