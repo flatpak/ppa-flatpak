@@ -1,3 +1,10 @@
+flatpak (1.10.1-4) UNRELEASED; urgency=high
+
+  * Add proposed patch to fix a sandbox escape via crafted .desktop
+    files (flatpak#4146). Thanks, Ryan Gonzalez
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 05 Mar 2021 09:55:38 +0000
+
 flatpak (1.10.1-3) unstable; urgency=medium
 
   * Mark patch as applied upstream

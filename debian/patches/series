@@ -1,3 +1,4 @@
 testlibrary-Fix-memory-leaks.patch
 Add-G_BEGIN_DECLS-G_END_DECLS-to-public-headers.patch
 tests-Disable-revokefs-if-FUSE-doesn-t-work.patch
+Disallow-and-u-usage-in-desktop-files.patch

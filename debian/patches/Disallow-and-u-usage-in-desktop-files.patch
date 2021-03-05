@@ -1,0 +1,23 @@
+From: Ryan Gonzalez <rymg19@gmail.com>
+Date: Tue, 2 Mar 2021 13:20:07 -0600
+Subject: Disallow @@ and @@u usage in desktop files
+
+Bug: https://github.com/flatpak/flatpak/issues/4146
+Forwarded: https://github.com/flatpak/flatpak/pull/4148
+---
+ common/flatpak-dir.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/common/flatpak-dir.c b/common/flatpak-dir.c
+index 507a71b..82f2ce6 100644
+--- a/common/flatpak-dir.c
++++ b/common/flatpak-dir.c
+@@ -7139,6 +7139,8 @@ export_desktop_file (const char         *app,
+                 g_string_append_printf (new_exec, " @@ %s @@", arg);
+               else if (strcasecmp (arg, "%u") == 0)
+                 g_string_append_printf (new_exec, " @@u %s @@", arg);
++              else if (strcmp (arg, "@@") == 0 || strcmp (arg, "@@u") == 0)
++                g_print (_("Skipping invalid Exec argument %s\n"), arg);
+               else
+                 g_string_append_printf (new_exec, " %s", arg);
+             }
