@@ -287,6 +287,21 @@ flatpak_bwrap_add_bind_arg (FlatpakBwrap *bwrap,
 }
 
 /*
+ * Sort bwrap->envp. This has no practical effect, but it's easier to
+ * see what is going on in a large environment block if the variables
+ * are sorted.
+ */
+void
+flatpak_bwrap_sort_envp (FlatpakBwrap *bwrap)
+{
+  if (bwrap->envp != NULL)
+    {
+      qsort (bwrap->envp, g_strv_length (bwrap->envp), sizeof (char *),
+             flatpak_envp_cmp);
+    }
+}
+
+/*
  * Convert bwrap->envp into a series of --setenv arguments for bwrap(1),
  * assumed to be applied to an empty environment. Reset envp to be an
  * empty environment.
@@ -347,10 +362,21 @@ flatpak_bwrap_bundle_args (FlatpakBwrap *bwrap,
 
   fd = glnx_steal_fd (&args_tmpf.fd);
 
-  {
-    g_autofree char *commandline = flatpak_quote_argv ((const char **) bwrap->argv->pdata + start, end - start);
-    flatpak_debug2 ("bwrap --args %d = %s", fd, commandline);
-  }
+  flatpak_debug2 ("bwrap --args %d = ...", fd);
+
+  for (i = start; i < end; i++)
+    {
+      if (flatpak_argument_needs_quoting (bwrap->argv->pdata[i]))
+        {
+          g_autofree char *quoted = g_shell_quote (bwrap->argv->pdata[i]);
+
+          flatpak_debug2 ("    %s", quoted);
+        }
+      else
+        {
+          flatpak_debug2 ("    %s", (const char *) bwrap->argv->pdata[i]);
+        }
+    }
 
   flatpak_bwrap_add_fd (bwrap, fd);
   g_ptr_array_remove_range (bwrap->argv, start, end - start);

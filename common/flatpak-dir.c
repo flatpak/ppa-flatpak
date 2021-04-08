@@ -2078,6 +2078,8 @@ flatpak_dir_system_helper_call_deploy (FlatpakDir         *self,
 {
   const char *empty[] = { NULL };
 
+  if (arg_subpaths == NULL)
+    arg_subpaths = empty;
   if (arg_previous_ids == NULL)
     arg_previous_ids = empty;
 
@@ -7137,6 +7139,12 @@ export_desktop_file (const char         *app,
                 g_string_append_printf (new_exec, " @@ %s @@", arg);
               else if (strcasecmp (arg, "%u") == 0)
                 g_string_append_printf (new_exec, " @@u %s @@", arg);
+              else if (g_str_has_prefix (arg, "@@"))
+                {
+                  flatpak_fail_error (error, FLATPAK_ERROR_EXPORT_FAILED,
+                                     _("Invalid Exec argument %s"), arg);
+                  goto out;
+                }
               else
                 g_string_append_printf (new_exec, " %s", arg);
             }
@@ -7847,6 +7855,8 @@ apply_extra_data (FlatpakDir   *self,
                                          app_context, NULL, NULL, NULL, cancellable, error))
     return FALSE;
 
+  flatpak_bwrap_envp_to_args (bwrap);
+
   flatpak_bwrap_add_arg (bwrap, "/app/bin/apply_extra");
 
   flatpak_bwrap_finish (bwrap);
@@ -7924,13 +7934,14 @@ flatpak_dir_check_parental_controls (FlatpakDir    *self,
   const char *content_rating_type;
   g_autoptr(GHashTable) content_rating = NULL;
   g_autoptr(AutoPolkitAuthority) authority = NULL;
-  g_autoptr(AutoPolkitDetails) details = NULL;
   g_autoptr(AutoPolkitSubject) subject = NULL;
   gint subject_uid;
   g_autoptr(AutoPolkitAuthorizationResult) result = NULL;
   gboolean authorized;
   gboolean repo_installation_allowed, app_is_appropriate;
-  
+  PolkitCheckAuthorizationFlags polkit_flags;
+  MctGetAppFilterFlags manager_flags;
+
   /* Assume that root is allowed to install any ref and shouldn't have any
    * parental controls restrictions applied to them */
   if (getuid () == 0)
@@ -7977,8 +7988,11 @@ flatpak_dir_check_parental_controls (FlatpakDir    *self,
     }
 
   manager = mct_manager_new (dbus_connection);
+  manager_flags = MCT_GET_APP_FILTER_FLAGS_NONE;
+  if (!flatpak_dir_get_no_interaction (self))
+    manager_flags |= MCT_GET_APP_FILTER_FLAGS_INTERACTIVE;
   app_filter = mct_manager_get_app_filter (manager, subject_uid,
-                                           MCT_GET_APP_FILTER_FLAGS_INTERACTIVE,
+                                           manager_flags,
                                            cancellable, &local_error);
   if (g_error_matches (local_error, MCT_APP_FILTER_ERROR, MCT_APP_FILTER_ERROR_DISABLED))
     {
@@ -8023,10 +8037,13 @@ flatpak_dir_check_parental_controls (FlatpakDir    *self,
   if (authority == NULL)
     return FALSE;
 
+  polkit_flags = POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE;
+  if (!flatpak_dir_get_no_interaction (self))
+    polkit_flags |= POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION;
   result = polkit_authority_check_authorization_sync (authority, subject,
                                                       "org.freedesktop.Flatpak.override-parental-controls",
                                                       NULL,
-                                                      POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION,
+                                                      polkit_flags,
                                                       cancellable, error);
   if (result == NULL)
     return FALSE;
@@ -9684,6 +9701,7 @@ flatpak_dir_update (FlatpakDir                           *self,
 {
   g_autoptr(GBytes) deploy_data = NULL;
   const char **subpaths = NULL;
+  const char *empty_subpaths[] = {NULL};
   g_autofree char *url = NULL;
   FlatpakPullFlags flatpak_flags;
   g_autofree const char **old_subpaths = NULL;
@@ -9706,8 +9724,10 @@ flatpak_dir_update (FlatpakDir                           *self,
 
   if (opt_subpaths)
     subpaths = opt_subpaths;
-  else
+  else if (old_subpaths)
     subpaths = old_subpaths;
+  else
+    subpaths = empty_subpaths;
 
   if (!ostree_repo_remote_get_url (self->repo, state->remote_name, &url, error))
     return FALSE;
@@ -14886,6 +14906,7 @@ GPtrArray *
 flatpak_dir_find_remote_related (FlatpakDir         *self,
                                  FlatpakRemoteState *state,
                                  FlatpakDecomposed  *ref,
+                                 gboolean            use_installed_metadata,
                                  GCancellable       *cancellable,
                                  GError            **error)
 {
@@ -14893,6 +14914,9 @@ flatpak_dir_find_remote_related (FlatpakDir         *self,
   g_autoptr(GKeyFile) metakey = g_key_file_new ();
   g_autoptr(GPtrArray) related = g_ptr_array_new_with_free_func ((GDestroyNotify) flatpak_related_free);
   g_autofree char *url = NULL;
+
+  if (!flatpak_dir_ensure_repo (self, cancellable, error))
+    return NULL;
 
   if (!ostree_repo_remote_get_url (self->repo,
                                    state->remote_name,
@@ -14903,9 +14927,37 @@ flatpak_dir_find_remote_related (FlatpakDir         *self,
   if (*url == 0)
     return g_steal_pointer (&related);  /* Empty url, silently disables updates */
 
-  if (flatpak_remote_state_load_data (state, flatpak_decomposed_get_ref (ref),
-                                      NULL, NULL, &metadata,
-                                      NULL) &&
+  if (use_installed_metadata)
+    {
+      g_autoptr(GFile) deploy_dir = NULL;
+      g_autoptr(GBytes) deploy_data = NULL;
+      g_autoptr(GFile) metadata_file = NULL;
+
+      deploy_dir = flatpak_dir_get_if_deployed (self, ref, NULL, cancellable);
+      if (deploy_dir == NULL)
+        {
+          g_set_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED,
+                       _("%s not installed"), flatpak_decomposed_get_ref (ref));
+          return NULL;
+        }
+
+      deploy_data = flatpak_load_deploy_data (deploy_dir, ref, self->repo, FLATPAK_DEPLOY_VERSION_ANY, cancellable, error);
+      if (deploy_data == NULL)
+        return NULL;
+
+      metadata_file = g_file_get_child (deploy_dir, "metadata");
+      if (!g_file_load_contents (metadata_file, cancellable, &metadata, NULL, NULL, NULL))
+        {
+          g_debug ("No metadata in local deploy");
+          /* No metadata => no related, but no error */
+        }
+    }
+  else
+    flatpak_remote_state_load_data (state, flatpak_decomposed_get_ref (ref),
+                                    NULL, NULL, &metadata,
+                                    NULL);
+
+  if (metadata != NULL &&
       g_key_file_load_from_data (metakey, metadata, -1, 0, NULL))
     {
       g_ptr_array_unref (related);
