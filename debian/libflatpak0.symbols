@@ -51,6 +51,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_list_pinned_refs@Base 1.9.1
  flatpak_installation_list_remote_refs_sync@Base 0.5.2
  flatpak_installation_list_remote_refs_sync_full@Base 1.3.3
+ flatpak_installation_list_remote_related_refs_for_installed_sync@Base 1.11~git20210407
  flatpak_installation_list_remote_related_refs_sync@Base 0.6.7
  flatpak_installation_list_remotes@Base 0.5.2
  flatpak_installation_list_remotes_by_type@Base 0.11.4
