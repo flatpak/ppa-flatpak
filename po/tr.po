@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flatpak master\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2021-04-08 14:50+0100\n"
+"POT-Creation-Date: 2021-04-14 12:29+0100\n"
 "PO-Revision-Date: 2019-05-13 07:32+0300\n"
 "Last-Translator: Serdar Sağlam <teknomobil@yandex.com>\n"
 "Language-Team: Türkçe <gnome-turk@gnome.org>\n"
@@ -4361,7 +4361,7 @@ msgid "Couldn't find ref %s in remote %s"
 msgstr "Uzak %2$s'te %1$s bulunamadı"
 
 #: common/flatpak-dir.c:988 common/flatpak-dir.c:5637
-#: common/flatpak-utils.c:6824 common/flatpak-utils.c:6829
+#: common/flatpak-utils.c:6827 common/flatpak-utils.c:6832
 msgid "Image is not a manifest"
 msgstr ""
 
@@ -4499,7 +4499,7 @@ msgstr "%s değişikliği %s zaten yüklü"
 msgid "While pulling %s from remote %s: "
 msgstr "Uzak %2$s'ten %1$s çekerken:"
 
-#: common/flatpak-dir.c:5983 common/flatpak-utils.c:6719
+#: common/flatpak-dir.c:5983 common/flatpak-utils.c:6722
 msgid "GPG signatures found, but none are in trusted keyring"
 msgstr ""
 
@@ -4755,7 +4755,7 @@ msgstr "Yükleme %s bulunamadı"
 msgid "Invalid file format, no %s group"
 msgstr "Geçersiz env formatı %s"
 
-#: common/flatpak-dir.c:13640 common/flatpak-utils.c:2251
+#: common/flatpak-dir.c:13640 common/flatpak-utils.c:2254
 #, fuzzy, c-format
 msgid "Invalid version %s, only 1 supported"
 msgstr "Geçersiz uri tipi %s, sadece http/https destekli"
@@ -4771,7 +4771,7 @@ msgstr "Geçersiz env formatı %s"
 msgid "Invalid file format, gpg key invalid"
 msgstr "Geçersiz env formatı %s"
 
-#: common/flatpak-dir.c:13691 common/flatpak-utils.c:2309
+#: common/flatpak-dir.c:13691 common/flatpak-utils.c:2312
 msgid "Collection ID requires GPG key to be provided"
 msgstr ""
 
@@ -5310,97 +5310,97 @@ msgstr ""
 msgid "Unexpected word '%s' on line %d"
 msgstr ""
 
-#: common/flatpak-utils.c:2232
+#: common/flatpak-utils.c:2235
 #, c-format
 msgid "Invalid %s: Missing group ‘%s’"
 msgstr ""
 
-#: common/flatpak-utils.c:2241
+#: common/flatpak-utils.c:2244
 #, c-format
 msgid "Invalid %s: Missing key ‘%s’"
 msgstr ""
 
-#: common/flatpak-utils.c:2288
+#: common/flatpak-utils.c:2291
 msgid "Invalid gpg key"
 msgstr "Geçersiz gpg anahtarı"
 
-#: common/flatpak-utils.c:2673
+#: common/flatpak-utils.c:2676
 msgid "No extra data sources"
 msgstr "Ek veri kaynağı yok"
 
-#: common/flatpak-utils.c:5330
+#: common/flatpak-utils.c:5333
 #, fuzzy, c-format
 msgid "Error copying 64x64 icon for component %s: %s\n"
 msgstr "Hata: %2$s'i %1$s başarılamadı: %3$s\n"
 
-#: common/flatpak-utils.c:5336
+#: common/flatpak-utils.c:5339
 #, fuzzy, c-format
 msgid "Error copying 128x128 icon for component %s: %s\n"
 msgstr "Hata: %2$s'i %1$s başarılamadı: %3$s\n"
 
-#: common/flatpak-utils.c:5583
+#: common/flatpak-utils.c:5586
 #, c-format
 msgid "%s is end-of-life, ignoring for appstream"
 msgstr ""
 
-#: common/flatpak-utils.c:5618
+#: common/flatpak-utils.c:5621
 #, fuzzy, c-format
 msgid "No appstream data for %s: %s\n"
 msgstr "Appstream uzak %s için güncelleniyor\n"
 
-#: common/flatpak-utils.c:6581
+#: common/flatpak-utils.c:6584
 #, fuzzy
 msgid "Invalid bundle, no ref in metadata"
 msgstr "Ek veri için geçersiz sağlama toplamı"
 
-#: common/flatpak-utils.c:6679
+#: common/flatpak-utils.c:6682
 #, c-format
 msgid "Collection ‘%s’ of bundle doesn’t match collection ‘%s’ of remote"
 msgstr ""
 
-#: common/flatpak-utils.c:6758
+#: common/flatpak-utils.c:6761
 msgid "Metadata in header and app are inconsistent"
 msgstr ""
 
-#: common/flatpak-utils.c:6843 common/flatpak-utils.c:7002
+#: common/flatpak-utils.c:6846 common/flatpak-utils.c:7005
 msgid "Invalid OCI image config"
 msgstr ""
 
-#: common/flatpak-utils.c:6905 common/flatpak-utils.c:7151
+#: common/flatpak-utils.c:6908 common/flatpak-utils.c:7154
 #, c-format
 msgid "Wrong layer checksum, expected %s, was %s"
 msgstr ""
 
-#: common/flatpak-utils.c:6985
+#: common/flatpak-utils.c:6988
 #, c-format
 msgid "No ref specified for OCI image %s"
 msgstr ""
 
-#: common/flatpak-utils.c:6991
+#: common/flatpak-utils.c:6994
 #, c-format
 msgid "Wrong ref (%s) specified for OCI image %s, expected %s"
 msgstr ""
 
-#: common/flatpak-utils.c:7819
+#: common/flatpak-utils.c:7822
 #, c-format
 msgid "Invalid require-flatpak argument %s"
 msgstr ""
 
-#: common/flatpak-utils.c:7829 common/flatpak-utils.c:7848
+#: common/flatpak-utils.c:7832 common/flatpak-utils.c:7851
 #, c-format
 msgid "%s needs a later flatpak version (%s)"
 msgstr "%s daha üst bir flatpak versiyonu gerektiriyor (%s)"
 
-#: common/flatpak-utils.c:7892
+#: common/flatpak-utils.c:7895
 msgid "Empty string is not a number"
 msgstr "Boş dize bir sayı değil"
 
-#: common/flatpak-utils.c:7918
+#: common/flatpak-utils.c:7921
 #, c-format
 msgid "“%s” is not an unsigned number"
 msgstr ""
 
-#: common/flatpak-utils.c:7928
+#: common/flatpak-utils.c:7931
 #, c-format
 msgid "Number “%s” is out of bounds [%s, %s]"
 msgstr ""
