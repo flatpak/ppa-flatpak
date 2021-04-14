@@ -1,8 +1,10 @@
-flatpak (1.11~git20210413-1) UNRELEASED; urgency=medium
+flatpak (1.11~git20210413-1) experimental; urgency=medium
 
   * New upstream snapshot
+    - Drop remaining patch, applied upstream
+    - Update symbols file
 
- -- Simon McVittie <smcv@debian.org>  Thu, 08 Apr 2021 15:27:35 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Apr 2021 12:33:30 +0100
 
 flatpak (1.10.2-1) unstable; urgency=medium
 
