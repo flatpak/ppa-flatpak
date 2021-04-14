@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flatpak master\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2021-04-08 14:50+0100\n"
+"POT-Creation-Date: 2021-04-14 12:29+0100\n"
 "PO-Revision-Date: 2020-09-03 14:05+0200\n"
 "Last-Translator: Milo Ivir <mail@milotype.de>\n"
 "Language-Team: Croatian <hr@li.org>\n"
@@ -4306,7 +4306,7 @@ msgid "Couldn't find ref %s in remote %s"
 msgstr "Nije moguće pronaći referencu %s u udaljenom repozitoriju %s"
 
 #: common/flatpak-dir.c:988 common/flatpak-dir.c:5637
-#: common/flatpak-utils.c:6824 common/flatpak-utils.c:6829
+#: common/flatpak-utils.c:6827 common/flatpak-utils.c:6832
 msgid "Image is not a manifest"
 msgstr "Slika nije manifest"
 
@@ -4447,7 +4447,7 @@ msgstr "%s izmjena %s već instalirano"
 msgid "While pulling %s from remote %s: "
 msgstr "Prilikom povlačenja %s s udaljenog repozitorija %s: "
 
-#: common/flatpak-dir.c:5983 common/flatpak-utils.c:6719
+#: common/flatpak-dir.c:5983 common/flatpak-utils.c:6722
 msgid "GPG signatures found, but none are in trusted keyring"
 msgstr ""
 "GPG potpisi su pronađeni, ali niti jedan se ne nalazi u pouzdanom privjesku "
@@ -4709,7 +4709,7 @@ msgstr "Nije bilo moguće naći instalaciju %s"
 msgid "Invalid file format, no %s group"
 msgstr "Neispravan datotečni format, nema %s grupe"
 
-#: common/flatpak-dir.c:13640 common/flatpak-utils.c:2251
+#: common/flatpak-dir.c:13640 common/flatpak-utils.c:2254
 #, c-format
 msgid "Invalid version %s, only 1 supported"
 msgstr "Neispravna verzija %s, podržava se samo 1"
@@ -4724,7 +4724,7 @@ msgstr "Neispravan datotečni format, %s nije određen"
 msgid "Invalid file format, gpg key invalid"
 msgstr "Neispravan datotečni format, gpg ključ neispravan"
 
-#: common/flatpak-dir.c:13691 common/flatpak-utils.c:2309
+#: common/flatpak-dir.c:13691 common/flatpak-utils.c:2312
 msgid "Collection ID requires GPG key to be provided"
 msgstr "ID zbirke zahtijeva GPG ključ"
 
@@ -5261,97 +5261,97 @@ msgstr "u %d. retku"
 msgid "Unexpected word '%s' on line %d"
 msgstr "Neočekivana riječ „%s” u %d. retku"
 
-#: common/flatpak-utils.c:2232
+#: common/flatpak-utils.c:2235
 #, c-format
 msgid "Invalid %s: Missing group ‘%s’"
 msgstr "Neispravno %s: Nedostaje grupa „%s”"
 
-#: common/flatpak-utils.c:2241
+#: common/flatpak-utils.c:2244
 #, c-format
 msgid "Invalid %s: Missing key ‘%s’"
 msgstr "Neispravno %s: Nedostaje ključ „%s”"
 
-#: common/flatpak-utils.c:2288
+#: common/flatpak-utils.c:2291
 msgid "Invalid gpg key"
 msgstr "Neispravnan gpg ključ"
 
-#: common/flatpak-utils.c:2673
+#: common/flatpak-utils.c:2676
 msgid "No extra data sources"
 msgstr "Nema izvora dodatnih dodataka"
 
-#: common/flatpak-utils.c:5330
+#: common/flatpak-utils.c:5333
 #, c-format
 msgid "Error copying 64x64 icon for component %s: %s\n"
 msgstr "Greška pri kopiranju ikone 64 × 64 za komponentu %s: %s\n"
 
-#: common/flatpak-utils.c:5336
+#: common/flatpak-utils.c:5339
 #, c-format
 msgid "Error copying 128x128 icon for component %s: %s\n"
 msgstr "Greška pri kopiranju ikone 128 × 128 za komponentu %s: %s\n"
 
-#: common/flatpak-utils.c:5583
+#: common/flatpak-utils.c:5586
 #, fuzzy, c-format
 msgid "%s is end-of-life, ignoring for appstream"
 msgstr "%s je kraj-života, zanemaruje se\n"
 
-#: common/flatpak-utils.c:5618
+#: common/flatpak-utils.c:5621
 #, c-format
 msgid "No appstream data for %s: %s\n"
 msgstr "Nema appstream podataka za %s: %s\n"
 
-#: common/flatpak-utils.c:6581
+#: common/flatpak-utils.c:6584
 msgid "Invalid bundle, no ref in metadata"
 msgstr "Neispravan paket, nema reference u metapodacima"
 
-#: common/flatpak-utils.c:6679
+#: common/flatpak-utils.c:6682
 #, c-format
 msgid "Collection ‘%s’ of bundle doesn’t match collection ‘%s’ of remote"
 msgstr ""
 "Zbirka „%s” paketa ne se poklapa sa zbirkom „%s” udaljenog repozitorija"
 
-#: common/flatpak-utils.c:6758
+#: common/flatpak-utils.c:6761
 msgid "Metadata in header and app are inconsistent"
 msgstr "Metapodaci u zaglavlju i programu su nedosljedni"
 
-#: common/flatpak-utils.c:6843 common/flatpak-utils.c:7002
+#: common/flatpak-utils.c:6846 common/flatpak-utils.c:7005
 msgid "Invalid OCI image config"
 msgstr "Neispravna konfiguracija OCI slike"
 
-#: common/flatpak-utils.c:6905 common/flatpak-utils.c:7151
+#: common/flatpak-utils.c:6908 common/flatpak-utils.c:7154
 #, c-format
 msgid "Wrong layer checksum, expected %s, was %s"
 msgstr "Krivi kontrolni zbroj sloja, očekivan %s, dobiven %s"
 
-#: common/flatpak-utils.c:6985
+#: common/flatpak-utils.c:6988
 #, c-format
 msgid "No ref specified for OCI image %s"
 msgstr "Nema određene reference za OCI sliku %s"
 
-#: common/flatpak-utils.c:6991
+#: common/flatpak-utils.c:6994
 #, c-format
 msgid "Wrong ref (%s) specified for OCI image %s, expected %s"
 msgstr "Kriva referenca (%s) je određena za OCI sliku %s, očekuje se %s"
 
-#: common/flatpak-utils.c:7819
+#: common/flatpak-utils.c:7822
 #, c-format
 msgid "Invalid require-flatpak argument %s"
 msgstr "Neispravni require-flatpak argument %s"
 
-#: common/flatpak-utils.c:7829 common/flatpak-utils.c:7848
+#: common/flatpak-utils.c:7832 common/flatpak-utils.c:7851
 #, c-format
 msgid "%s needs a later flatpak version (%s)"
 msgstr "%s treba noviju flatpak verziju (%s)"
 
-#: common/flatpak-utils.c:7892
+#: common/flatpak-utils.c:7895
 msgid "Empty string is not a number"
 msgstr "Prazan znakovni niz nije broj"
 
-#: common/flatpak-utils.c:7918
+#: common/flatpak-utils.c:7921
 #, c-format
 msgid "“%s” is not an unsigned number"
 msgstr "„%s” nije nedodijeljeni broj"
 
-#: common/flatpak-utils.c:7928
+#: common/flatpak-utils.c:7931
 #, c-format
 msgid "Number “%s” is out of bounds [%s, %s]"
 msgstr "Broj „%s” je izvan granica [%s, %s]"
