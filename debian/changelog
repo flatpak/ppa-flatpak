@@ -1,6 +1,11 @@
 flatpak (1.11~git20210416.0-1) UNRELEASED; urgency=medium
 
   * New upstream snapshot
+  * d/p/portal-Reject-negative-handle-numbers.patch,
+    d/p/oci-registry-Fix-error-reporting.patch,
+    d/p/revokefs-Use-the-right-variable-name-in-an-error-message.patch,
+    d/p/transaction-Avoid-a-possible-use-after-free.patch:
+    Add proposed patches for various issues detected by scan-build
 
  -- Simon McVittie <smcv@debian.org>  Fri, 16 Apr 2021 13:19:41 +0100
 

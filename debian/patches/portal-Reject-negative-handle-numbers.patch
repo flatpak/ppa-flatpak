@@ -1,0 +1,61 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Fri, 16 Apr 2021 10:51:20 +0100
+Subject: portal: Reject negative handle numbers
+
+In D-Bus, handles are defined to be unsigned, but in GVariant, for some
+reason they're signed. Make sure they aren't negative, which could
+result in a NULL dereference for fds.
+
+A handle used in the conventional way will never legitimately be
+negative (in GVariant's interpretation) or have its high bit set
+(in D-Bus' interpretation), because file descriptors are signed 32-bit
+integers, so an array of distinct file descriptors can never be long
+enough for the distinction between signed and unsigned to matter.
+In practice fds are limited by the kernel to several orders of
+magnitude fewer than that anyway.
+
+Fixes: 3ebf371f "run: Allow caller to replace /app and/or /usr"
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/4229
+---
+ portal/flatpak-portal.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/portal/flatpak-portal.c b/portal/flatpak-portal.c
+index e0040e2..a894089 100644
+--- a/portal/flatpak-portal.c
++++ b/portal/flatpak-portal.c
+@@ -1346,7 +1346,7 @@ handle_spawn (PortalFlatpak         *object,
+           return G_DBUS_METHOD_INVOCATION_HANDLED;
+         }
+ 
+-      if (handle >= fds_len)
++      if (handle >= fds_len || handle < 0)
+         {
+           g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                                  G_DBUS_ERROR_INVALID_ARGS,
+@@ -1355,6 +1355,7 @@ handle_spawn (PortalFlatpak         *object,
+           return G_DBUS_METHOD_INVOCATION_HANDLED;
+         }
+ 
++      g_assert (fds != NULL);   /* otherwise fds_len would be 0 */
+       path = get_path_for_fd (fds[handle], NULL, &error);
+ 
+       if (path == NULL)
+@@ -1378,7 +1379,7 @@ handle_spawn (PortalFlatpak         *object,
+       gint32 handle = g_variant_get_handle (usr_fd);
+       g_autofree char *path = NULL;
+ 
+-      if (handle >= fds_len)
++      if (handle >= fds_len || handle < 0)
+         {
+           g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                                  G_DBUS_ERROR_INVALID_ARGS,
+@@ -1387,6 +1388,7 @@ handle_spawn (PortalFlatpak         *object,
+           return G_DBUS_METHOD_INVOCATION_HANDLED;
+         }
+ 
++      g_assert (fds != NULL);   /* otherwise fds_len would be 0 */
+       path = get_path_for_fd (fds[handle], NULL, &error);
+ 
+       if (path == NULL)
