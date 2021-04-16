@@ -56,6 +56,7 @@
 #include "flatpak-variant-private.h"
 #include "flatpak-variant-impl-private.h"
 #include "libglnx/libglnx.h"
+#include "system-helper/flatpak-system-helper.h"
 
 #ifdef HAVE_LIBMALCONTENT
 #include <libmalcontent/malcontent.h>
@@ -2047,9 +2048,9 @@ flatpak_dir_system_helper_call (FlatpakDir         *self,
 
   g_debug ("Calling system helper: %s", method_name);
   res = g_dbus_connection_call_with_unix_fd_list_sync (self->system_helper_bus,
-                                                       "org.freedesktop.Flatpak.SystemHelper",
-                                                       "/org/freedesktop/Flatpak/SystemHelper",
-                                                       "org.freedesktop.Flatpak.SystemHelper",
+                                                       FLATPAK_SYSTEM_HELPER_BUS_NAME,
+                                                       FLATPAK_SYSTEM_HELPER_PATH,
+                                                       FLATPAK_SYSTEM_HELPER_INTERFACE,
                                                        method_name,
                                                        parameters,
                                                        reply_type,
@@ -7852,8 +7853,11 @@ apply_extra_data (FlatpakDir   *self,
                                          FLATPAK_RUN_FLAG_NO_SYSTEM_BUS_PROXY |
                                          FLATPAK_RUN_FLAG_NO_A11Y_BUS_PROXY,
                                          id,
-                                         app_context, NULL, NULL, NULL, cancellable, error))
+                                         app_context, NULL, NULL, -1,
+                                         NULL, cancellable, error))
     return FALSE;
+
+  flatpak_bwrap_populate_runtime_dir (bwrap, NULL);
 
   flatpak_bwrap_envp_to_args (bwrap);
 
