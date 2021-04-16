@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flatpak master\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2021-04-16 13:05+0100\n"
+"POT-Creation-Date: 2021-04-16 14:34+0100\n"
 "PO-Revision-Date: 2018-03-10 00:00+0100\n"
 "Last-Translator: Balázs Úr <urbalazs@gmail.com>\n"
 "Language-Team: Hungarian <openscope at googlegroups dot com>\n"
@@ -133,17 +133,17 @@ msgstr "A HELY, FÁJLNÉV és NÉV megadása kötelező"
 #: app/flatpak-builtins-build-init.c:211 app/flatpak-builtins-build-sign.c:75
 #: app/flatpak-builtins-document-export.c:112
 #: app/flatpak-builtins-document-info.c:75
-#: app/flatpak-builtins-document-list.c:182
+#: app/flatpak-builtins-document-list.c:181
 #: app/flatpak-builtins-document-unexport.c:67
-#: app/flatpak-builtins-history.c:466 app/flatpak-builtins-info.c:130
+#: app/flatpak-builtins-history.c:465 app/flatpak-builtins-info.c:130
 #: app/flatpak-builtins-install.c:143 app/flatpak-builtins-install.c:210
-#: app/flatpak-builtins-list.c:414 app/flatpak-builtins-make-current.c:72
+#: app/flatpak-builtins-list.c:412 app/flatpak-builtins-make-current.c:72
 #: app/flatpak-builtins-override.c:73
 #: app/flatpak-builtins-permission-list.c:157
 #: app/flatpak-builtins-permission-remove.c:132
 #: app/flatpak-builtins-remote-add.c:316
 #: app/flatpak-builtins-remote-delete.c:68
-#: app/flatpak-builtins-remote-list.c:238 app/flatpak-builtins-remote-ls.c:414
+#: app/flatpak-builtins-remote-list.c:237 app/flatpak-builtins-remote-ls.c:412
 msgid "Too many arguments"
 msgstr "Túl sok argumentum"
 
@@ -457,7 +457,7 @@ msgid "Mark build as end-of-life, to be replaced with the given ID"
 msgstr ""
 
 #: app/flatpak-builtins-build-export.c:73
-#: app/flatpak-builtins-document-list.c:47 app/flatpak-cli-transaction.c:1125
+#: app/flatpak-builtins-document-list.c:47 app/flatpak-cli-transaction.c:1124
 #, fuzzy
 msgid "ID"
 msgstr "Azonosító:"
@@ -921,7 +921,7 @@ msgstr "HELY [AZONOSÍTÓ [ÁG]] - Egy alkalmazás vagy futtatókörnyezet alá�
 
 #: app/flatpak-builtins-build-sign.c:72
 #: app/flatpak-builtins-build-update-repo.c:495
-#: app/flatpak-builtins-remote-add.c:313 app/flatpak-builtins-repo.c:737
+#: app/flatpak-builtins-remote-add.c:313 app/flatpak-builtins-repo.c:735
 msgid "LOCATION must be specified"
 msgstr "A HELY megadása kötelező"
 
@@ -979,7 +979,7 @@ msgstr "Ehhez a tárolóhoz használandó alapértelmezett ág"
 
 #: app/flatpak-builtins-build-update-repo.c:71
 #: app/flatpak-builtins-remote-add.c:79 app/flatpak-builtins-remote-modify.c:86
-#: app/flatpak-builtins-repo.c:712 app/flatpak-builtins-repo.c:713
+#: app/flatpak-builtins-repo.c:710 app/flatpak-builtins-repo.c:711
 #: app/flatpak-builtins-run.c:69
 msgid "BRANCH"
 msgstr "ÁG"
@@ -1437,7 +1437,7 @@ msgstr "Jogosultságok megjelenítése"
 msgid "Show permissions for applications"
 msgstr "Jogosultságok felülbírálása egy alkalmazásnál"
 
-#: app/flatpak-builtins-document-list.c:171
+#: app/flatpak-builtins-document-list.c:170
 msgid "[APPID] - List exported files"
 msgstr "[ALKALMAZÁSAZONOSÍTÓ] - Exportált fájlok felsorolása"
 
@@ -1572,7 +1572,7 @@ msgstr "Alkalmazásazonosító"
 
 #: app/flatpak-builtins-history.c:61 app/flatpak-builtins-list.c:62
 #: app/flatpak-builtins-ps.c:51 app/flatpak-builtins-remote-ls.c:70
-#: app/flatpak-cli-transaction.c:1130
+#: app/flatpak-cli-transaction.c:1129
 #, fuzzy
 msgid "Arch"
 msgstr "Architektúra:"
@@ -1584,7 +1584,7 @@ msgstr ""
 
 #: app/flatpak-builtins-history.c:62 app/flatpak-builtins-list.c:61
 #: app/flatpak-builtins-ps.c:52 app/flatpak-builtins-remote-ls.c:69
-#: app/flatpak-builtins-search.c:47 app/flatpak-cli-transaction.c:1133
+#: app/flatpak-builtins-search.c:47 app/flatpak-cli-transaction.c:1132
 msgid "Branch"
 msgstr "Ág"
 
@@ -1604,7 +1604,7 @@ msgstr "Telepítve"
 msgid "Show the affected installation"
 msgstr "Felhasználói telepítések megjelenítése"
 
-#: app/flatpak-builtins-history.c:64 app/flatpak-cli-transaction.c:1147
+#: app/flatpak-builtins-history.c:64 app/flatpak-cli-transaction.c:1146
 #, fuzzy
 msgid "Remote"
 msgstr "Távoli tárolók"
@@ -1681,16 +1681,16 @@ msgstr "Nem sikerült megnyitni a flatpak-információs átmeneti fájlt: %s"
 msgid "Failed to add match to journal: %s"
 msgstr "Nem sikerült a(z) %s helyi további adat betöltése: %s"
 
-#: app/flatpak-builtins-history.c:455
+#: app/flatpak-builtins-history.c:454
 msgid " - Show history"
 msgstr ""
 
-#: app/flatpak-builtins-history.c:474
+#: app/flatpak-builtins-history.c:473
 #, fuzzy
 msgid "Failed to parse the --since option"
 msgstr "Nem hozható létre szinkronizálási cső"
 
-#: app/flatpak-builtins-history.c:485
+#: app/flatpak-builtins-history.c:484
 msgid "Failed to parse the --until option"
 msgstr ""
 
@@ -2059,7 +2059,7 @@ msgstr ""
 "\n"
 " Futó alkalmazások"
 
-#: app/flatpak-builtins-kill.c:90 app/flatpak-builtins-ps.c:253
+#: app/flatpak-builtins-kill.c:90 app/flatpak-builtins-ps.c:252
 #, fuzzy
 msgid "Extra arguments given"
 msgstr "További adatinformációk"
@@ -2194,7 +2194,7 @@ msgstr "Beállítások"
 msgid "Show options"
 msgstr "Súgólehetőségek megjelenítése"
 
-#: app/flatpak-builtins-list.c:403
+#: app/flatpak-builtins-list.c:401
 msgid " - List installed apps and/or runtimes"
 msgstr " - Telepített alkalmazások és/vagy futtatókörnyezetek felsorolása"
 
@@ -2421,7 +2421,7 @@ msgstr ""
 msgid "Show whether the app is background"
 msgstr "Csak futtatókörnyezetek megjelenítése"
 
-#: app/flatpak-builtins-ps.c:243
+#: app/flatpak-builtins-ps.c:242
 msgid " - Enumerate running sandboxes"
 msgstr ""
 
@@ -2676,7 +2676,7 @@ msgstr "Hivatkozás megjelenítése"
 msgid "Show the collection ID"
 msgstr "Alkalmazásazonosító"
 
-#: app/flatpak-builtins-remote-list.c:53 app/flatpak-builtins-repo.c:390
+#: app/flatpak-builtins-remote-list.c:53 app/flatpak-builtins-repo.c:389
 msgid "Subset"
 msgstr ""
 
@@ -2736,7 +2736,7 @@ msgstr ""
 msgid "Show icon"
 msgstr "Súgólehetőségek megjelenítése"
 
-#: app/flatpak-builtins-remote-list.c:228
+#: app/flatpak-builtins-remote-list.c:227
 msgid " - List remote repositories"
 msgstr " - Távoli tárolók felsorolása"
 
@@ -2774,7 +2774,7 @@ msgstr "Letöltési méret"
 msgid "Show the download size"
 msgstr "Letöltési méret"
 
-#: app/flatpak-builtins-remote-ls.c:398
+#: app/flatpak-builtins-remote-ls.c:396
 #, fuzzy
 msgid " [REMOTE or URI] - Show available runtimes and applications"
 msgstr " [TÁVOLI] – Elérhető futtatókörnyezetek és alkalmazások megjelenítése"
@@ -3070,7 +3070,7 @@ msgstr "%zd ág\n"
 msgid "Installed"
 msgstr "Telepítve"
 
-#: app/flatpak-builtins-repo.c:335 app/flatpak-cli-transaction.c:1156
+#: app/flatpak-builtins-repo.c:335 app/flatpak-cli-transaction.c:1155
 msgid "Download"
 msgstr "Letöltés"
 
@@ -3078,42 +3078,42 @@ msgstr "Letöltés"
 msgid "Subsets"
 msgstr ""
 
-#: app/flatpak-builtins-repo.c:391
+#: app/flatpak-builtins-repo.c:390
 msgid "Digest"
 msgstr ""
 
-#: app/flatpak-builtins-repo.c:392
+#: app/flatpak-builtins-repo.c:391
 #, fuzzy
 msgid "History length"
 msgstr "Előzmények:\n"
 
-#: app/flatpak-builtins-repo.c:710
+#: app/flatpak-builtins-repo.c:708
 msgid "Print general information about the repository"
 msgstr "Általános információk kiírása a tárolóról"
 
-#: app/flatpak-builtins-repo.c:711
+#: app/flatpak-builtins-repo.c:709
 msgid "List the branches in the repository"
 msgstr "A tárolóban lévő ágak felsorolása"
 
-#: app/flatpak-builtins-repo.c:712
+#: app/flatpak-builtins-repo.c:710
 msgid "Print metadata for a branch"
 msgstr "Egy ág metaadatainak kiírása"
 
-#: app/flatpak-builtins-repo.c:713
+#: app/flatpak-builtins-repo.c:711
 #, fuzzy
 msgid "Show commits for a branch"
 msgstr "Architektúrák és ágak megjelenítése"
 
-#: app/flatpak-builtins-repo.c:714
+#: app/flatpak-builtins-repo.c:712
 #, fuzzy
 msgid "Print information about the repo subsets"
 msgstr "Általános információk kiírása a tárolóról"
 
-#: app/flatpak-builtins-repo.c:715
+#: app/flatpak-builtins-repo.c:713
 msgid "Limit information to subsets with this prefix"
 msgstr ""
 
-#: app/flatpak-builtins-repo.c:730
+#: app/flatpak-builtins-repo.c:728
 msgid "LOCATION - Repository maintenance"
 msgstr "HELY - Tároló karbantartása"
 
@@ -3234,16 +3234,16 @@ msgstr "Távoli tárolók"
 msgid "Show the remotes"
 msgstr "Letiltott távoliak megjelenítése"
 
-#: app/flatpak-builtins-search.c:275
+#: app/flatpak-builtins-search.c:273
 msgid "TEXT - Search remote apps/runtimes for text"
 msgstr ""
 "SZÖVEG – Távoli alkalmazások vagy futtatókörnyezetek keresése a szöveghez"
 
-#: app/flatpak-builtins-search.c:286
+#: app/flatpak-builtins-search.c:284
 msgid "TEXT must be specified"
 msgstr "A SZÖVEG megadása kötelező"
 
-#: app/flatpak-builtins-search.c:345
+#: app/flatpak-builtins-search.c:343
 msgid "No matches found"
 msgstr "Nincs találat"
 
@@ -3732,59 +3732,59 @@ msgstr "Jogosultságok megjelenítése"
 msgid "%s permissions:"
 msgstr "Jogosultságok megjelenítése"
 
-#: app/flatpak-cli-transaction.c:1045
+#: app/flatpak-cli-transaction.c:1044
 msgid "Warning: "
 msgstr ""
 
 #. translators: This is short for operation, the title of a one-char column
-#: app/flatpak-cli-transaction.c:1137
+#: app/flatpak-cli-transaction.c:1136
 msgid "Op"
 msgstr ""
 
 #. Avoid resizing the download column too much,
 #. * by making the title as long as typical content
 #.
-#: app/flatpak-cli-transaction.c:1153 app/flatpak-cli-transaction.c:1197
+#: app/flatpak-cli-transaction.c:1152 app/flatpak-cli-transaction.c:1196
 msgid "partial"
 msgstr ""
 
-#: app/flatpak-cli-transaction.c:1229
+#: app/flatpak-cli-transaction.c:1228
 #, fuzzy
 msgid "Proceed with these changes to the user installation?"
 msgstr "Felhasználói telepítések megjelenítése"
 
-#: app/flatpak-cli-transaction.c:1231
+#: app/flatpak-cli-transaction.c:1230
 #, fuzzy
 msgid "Proceed with these changes to the system installation?"
 msgstr "Felhasználói telepítések megjelenítése"
 
-#: app/flatpak-cli-transaction.c:1233
+#: app/flatpak-cli-transaction.c:1232
 #, fuzzy, c-format
 msgid "Proceed with these changes to the %s?"
 msgstr "Felhasználói telepítések megjelenítése"
 
-#: app/flatpak-cli-transaction.c:1401
+#: app/flatpak-cli-transaction.c:1400
 msgid "Changes complete."
 msgstr ""
 
-#: app/flatpak-cli-transaction.c:1403
+#: app/flatpak-cli-transaction.c:1402
 #, fuzzy
 msgid "Uninstall complete."
 msgstr "Alkalmazás eltávolítása"
 
-#: app/flatpak-cli-transaction.c:1405
+#: app/flatpak-cli-transaction.c:1404
 #, fuzzy
 msgid "Installation complete."
 msgstr "Telepítve"
 
-#: app/flatpak-cli-transaction.c:1407
+#: app/flatpak-cli-transaction.c:1406
 #, fuzzy
 msgid "Updates complete."
 msgstr "Távoli metaadatok frissítése"
 
 #. For updates/!stop_on_first_error we already printed all errors so we make up
 #. a different one.
-#: app/flatpak-cli-transaction.c:1440
+#: app/flatpak-cli-transaction.c:1439
 msgid "There were one or more errors"
 msgstr ""
 
@@ -5315,63 +5315,63 @@ msgstr "Érvénytelen require-flatpak argumentum: %s\n"
 msgid "Error updating remote metadata for '%s': %s"
 msgstr "Hiba a(z) „%s” távoli metaadatainak frissítéskor: %s\n"
 
-#: common/flatpak-transaction.c:3236
+#: common/flatpak-transaction.c:3240
 #, c-format
 msgid ""
 "Warning: Treating remote fetch error as non-fatal since %s is already "
 "installed: %s"
 msgstr ""
 
-#: common/flatpak-transaction.c:3552
+#: common/flatpak-transaction.c:3556
 #, fuzzy, c-format
 msgid "No authenticator installed for remote '%s'"
 msgstr "Hitelesítés szükséges a szoftver frissítéséhez"
 
-#: common/flatpak-transaction.c:3656 common/flatpak-transaction.c:3663
+#: common/flatpak-transaction.c:3660 common/flatpak-transaction.c:3667
 #, fuzzy, c-format
 msgid "Failed to get tokens for ref: %s"
 msgstr "Nem sikerült megnyitni az átmeneti fájlt: %s"
 
-#: common/flatpak-transaction.c:3658 common/flatpak-transaction.c:3665
+#: common/flatpak-transaction.c:3662 common/flatpak-transaction.c:3669
 #, fuzzy
 msgid "Failed to get tokens for ref"
 msgstr "Nem sikerült megnyitni az átmeneti fájlt: %s"
 
-#: common/flatpak-transaction.c:3989
+#: common/flatpak-transaction.c:3993
 #, c-format
 msgid "Flatpakrepo URL %s not file, HTTP or HTTPS"
 msgstr ""
 
-#: common/flatpak-transaction.c:3995
+#: common/flatpak-transaction.c:3999
 #, fuzzy, c-format
 msgid "Can't load dependent file %s: "
 msgstr "Nem lehet betölteni a(z) %s fájlt: %s\n"
 
-#: common/flatpak-transaction.c:4003
+#: common/flatpak-transaction.c:4007
 #, fuzzy, c-format
 msgid "Invalid .flatpakrepo: %s"
 msgstr "Érvénytelen require-flatpak argumentum: %s\n"
 
-#: common/flatpak-transaction.c:4599
+#: common/flatpak-transaction.c:4603
 msgid "Transaction already executed"
 msgstr ""
 
-#: common/flatpak-transaction.c:4614
+#: common/flatpak-transaction.c:4618
 msgid ""
 "Refusing to operate on a user installation as root! This can lead to "
 "incorrect file ownership and permission errors."
 msgstr ""
 
-#: common/flatpak-transaction.c:4706 common/flatpak-transaction.c:4719
+#: common/flatpak-transaction.c:4710 common/flatpak-transaction.c:4723
 msgid "Aborted by user"
 msgstr ""
 
-#: common/flatpak-transaction.c:4744
+#: common/flatpak-transaction.c:4748
 #, c-format
 msgid "Skipping %s due to previous error"
 msgstr ""
 
-#: common/flatpak-transaction.c:4796
+#: common/flatpak-transaction.c:4800
 #, c-format
 msgid "Aborted due to failure (%s)"
 msgstr ""
@@ -5522,42 +5522,42 @@ msgstr ""
 msgid "Invalid token"
 msgstr "Érvénytelen gpg kulcs"
 
-#: portal/flatpak-portal.c:2225
+#: portal/flatpak-portal.c:2227
 #, fuzzy
 msgid "No portal support found"
 msgstr "Nincs találat"
 
-#: portal/flatpak-portal.c:2231
+#: portal/flatpak-portal.c:2233
 msgid "Deny"
 msgstr ""
 
-#: portal/flatpak-portal.c:2233
+#: portal/flatpak-portal.c:2235
 #, fuzzy
 msgid "Update"
 msgstr "frissítés"
 
-#: portal/flatpak-portal.c:2238
+#: portal/flatpak-portal.c:2240
 #, fuzzy, c-format
 msgid "Update %s?"
 msgstr "Összegzés frissítése\n"
 
-#: portal/flatpak-portal.c:2250
+#: portal/flatpak-portal.c:2252
 msgid "The application wants to update itself."
 msgstr ""
 
-#: portal/flatpak-portal.c:2251
+#: portal/flatpak-portal.c:2253
 msgid "Update access can be changed any time from the privacy settings."
 msgstr ""
 
-#: portal/flatpak-portal.c:2276
+#: portal/flatpak-portal.c:2278
 msgid "Application update not allowed"
 msgstr ""
 
-#: portal/flatpak-portal.c:2433
+#: portal/flatpak-portal.c:2435
 msgid "Self update not supported, new version requires new permissions"
 msgstr ""
 
-#: portal/flatpak-portal.c:2615 portal/flatpak-portal.c:2632
+#: portal/flatpak-portal.c:2617 portal/flatpak-portal.c:2634
 #, fuzzy
 msgid "Update ended unexpectedly"
 msgstr "Aláírt futtatókörnyezet frissítése"

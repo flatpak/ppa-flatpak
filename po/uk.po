@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flatpak master\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2021-04-16 13:05+0100\n"
+"POT-Creation-Date: 2021-04-16 14:34+0100\n"
 "PO-Revision-Date: 2021-04-01 16:54+0300\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <kde-i18n-uk@kde.org>\n"
@@ -134,17 +134,17 @@ msgstr "Слід вказати РОЗТАШУВАННЯ, НАЗВУ_ФАЙЛА 
 #: app/flatpak-builtins-build-init.c:211 app/flatpak-builtins-build-sign.c:75
 #: app/flatpak-builtins-document-export.c:112
 #: app/flatpak-builtins-document-info.c:75
-#: app/flatpak-builtins-document-list.c:182
+#: app/flatpak-builtins-document-list.c:181
 #: app/flatpak-builtins-document-unexport.c:67
-#: app/flatpak-builtins-history.c:466 app/flatpak-builtins-info.c:130
+#: app/flatpak-builtins-history.c:465 app/flatpak-builtins-info.c:130
 #: app/flatpak-builtins-install.c:143 app/flatpak-builtins-install.c:210
-#: app/flatpak-builtins-list.c:414 app/flatpak-builtins-make-current.c:72
+#: app/flatpak-builtins-list.c:412 app/flatpak-builtins-make-current.c:72
 #: app/flatpak-builtins-override.c:73
 #: app/flatpak-builtins-permission-list.c:157
 #: app/flatpak-builtins-permission-remove.c:132
 #: app/flatpak-builtins-remote-add.c:316
 #: app/flatpak-builtins-remote-delete.c:68
-#: app/flatpak-builtins-remote-list.c:238 app/flatpak-builtins-remote-ls.c:414
+#: app/flatpak-builtins-remote-list.c:237 app/flatpak-builtins-remote-ls.c:412
 msgid "Too many arguments"
 msgstr "Забагато аргументів"
 
@@ -455,7 +455,7 @@ msgstr ""
 "ідентифікатором"
 
 #: app/flatpak-builtins-build-export.c:73
-#: app/flatpak-builtins-document-list.c:47 app/flatpak-cli-transaction.c:1125
+#: app/flatpak-builtins-document-list.c:47 app/flatpak-cli-transaction.c:1124
 msgid "ID"
 msgstr "ІД"
 
@@ -915,7 +915,7 @@ msgstr ""
 
 #: app/flatpak-builtins-build-sign.c:72
 #: app/flatpak-builtins-build-update-repo.c:495
-#: app/flatpak-builtins-remote-add.c:313 app/flatpak-builtins-repo.c:737
+#: app/flatpak-builtins-remote-add.c:313 app/flatpak-builtins-repo.c:735
 msgid "LOCATION must be specified"
 msgstr "Слід вказати РОЗТАШУВАННЯ"
 
@@ -968,7 +968,7 @@ msgstr "Типова гілка для цього сховища"
 
 #: app/flatpak-builtins-build-update-repo.c:71
 #: app/flatpak-builtins-remote-add.c:79 app/flatpak-builtins-remote-modify.c:86
-#: app/flatpak-builtins-repo.c:712 app/flatpak-builtins-repo.c:713
+#: app/flatpak-builtins-repo.c:710 app/flatpak-builtins-repo.c:711
 #: app/flatpak-builtins-run.c:69
 msgid "BRANCH"
 msgstr "ГІЛКА"
@@ -1432,7 +1432,7 @@ msgstr "Права доступу"
 msgid "Show permissions for applications"
 msgstr "Показати права доступу для програм"
 
-#: app/flatpak-builtins-document-list.c:171
+#: app/flatpak-builtins-document-list.c:170
 msgid "[APPID] - List exported files"
 msgstr "[ІДЕНТИФІКАТОРПРОГРАМИ] - Вивести список експортованих файлів"
 
@@ -1564,7 +1564,7 @@ msgstr "Показати ідентифікатор програми або се
 
 #: app/flatpak-builtins-history.c:61 app/flatpak-builtins-list.c:62
 #: app/flatpak-builtins-ps.c:51 app/flatpak-builtins-remote-ls.c:70
-#: app/flatpak-cli-transaction.c:1130
+#: app/flatpak-cli-transaction.c:1129
 msgid "Arch"
 msgstr "Архітектура"
 
@@ -1575,7 +1575,7 @@ msgstr "Показати архітектуру"
 
 #: app/flatpak-builtins-history.c:62 app/flatpak-builtins-list.c:61
 #: app/flatpak-builtins-ps.c:52 app/flatpak-builtins-remote-ls.c:69
-#: app/flatpak-builtins-search.c:47 app/flatpak-cli-transaction.c:1133
+#: app/flatpak-builtins-search.c:47 app/flatpak-cli-transaction.c:1132
 msgid "Branch"
 msgstr "Гілка"
 
@@ -1592,7 +1592,7 @@ msgstr "Встановлення"
 msgid "Show the affected installation"
 msgstr "Показати відповідне встановлення"
 
-#: app/flatpak-builtins-history.c:64 app/flatpak-cli-transaction.c:1147
+#: app/flatpak-builtins-history.c:64 app/flatpak-cli-transaction.c:1146
 msgid "Remote"
 msgstr "Віддалене сховище"
 
@@ -1661,15 +1661,15 @@ msgstr "Не вдалося відкрити журнал: %s"
 msgid "Failed to add match to journal: %s"
 msgstr "Не вдалося додати відповідність до журналу: %s"
 
-#: app/flatpak-builtins-history.c:455
+#: app/flatpak-builtins-history.c:454
 msgid " - Show history"
 msgstr " - Показати журнал"
 
-#: app/flatpak-builtins-history.c:474
+#: app/flatpak-builtins-history.c:473
 msgid "Failed to parse the --since option"
 msgstr "Не вдало обробити параметр --since"
 
-#: app/flatpak-builtins-history.c:485
+#: app/flatpak-builtins-history.c:484
 msgid "Failed to parse the --until option"
 msgstr "Не вдало обробити параметр --until"
 
@@ -2021,7 +2021,7 @@ msgstr "%s не запущено"
 msgid "INSTANCE - Stop a running application"
 msgstr "ЕКЗЕМПЛЯР — припинити роботу запущеної програми"
 
-#: app/flatpak-builtins-kill.c:90 app/flatpak-builtins-ps.c:253
+#: app/flatpak-builtins-kill.c:90 app/flatpak-builtins-ps.c:252
 msgid "Extra arguments given"
 msgstr "Вказано зайві аргументи"
 
@@ -2139,7 +2139,7 @@ msgstr "Параметри"
 msgid "Show options"
 msgstr "Показати параметри"
 
-#: app/flatpak-builtins-list.c:403
+#: app/flatpak-builtins-list.c:401
 msgid " - List installed apps and/or runtimes"
 msgstr " - Вивести список встановлених програм і/або середовищ виконання"
 
@@ -2348,7 +2348,7 @@ msgstr "Фонова"
 msgid "Show whether the app is background"
 msgstr "Показувати, чи працює програма у фоновому режимі"
 
-#: app/flatpak-builtins-ps.c:243
+#: app/flatpak-builtins-ps.c:242
 msgid " - Enumerate running sandboxes"
 msgstr " - пронумерувати запущені пісочниці"
 
@@ -2590,7 +2590,7 @@ msgstr "Показати адресу"
 msgid "Show the collection ID"
 msgstr "Показати ідентифікатор збірки"
 
-#: app/flatpak-builtins-remote-list.c:53 app/flatpak-builtins-repo.c:390
+#: app/flatpak-builtins-remote-list.c:53 app/flatpak-builtins-repo.c:389
 msgid "Subset"
 msgstr "Піднабір"
 
@@ -2642,7 +2642,7 @@ msgstr "Піктограма"
 msgid "Show icon"
 msgstr "Показати піктограму"
 
-#: app/flatpak-builtins-remote-list.c:228
+#: app/flatpak-builtins-remote-list.c:227
 msgid " - List remote repositories"
 msgstr " - Вивести список віддалених сховищ"
 
@@ -2678,7 +2678,7 @@ msgstr "Розмір отриманого"
 msgid "Show the download size"
 msgstr "Показати розмір отриманого"
 
-#: app/flatpak-builtins-remote-ls.c:398
+#: app/flatpak-builtins-remote-ls.c:396
 msgid " [REMOTE or URI] - Show available runtimes and applications"
 msgstr ""
 " [СХОВИЩЕ або АДРЕСА] - Показати доступні середовища виконання і програми"
@@ -2966,7 +2966,7 @@ msgstr "%zd гілок резюме\n"
 msgid "Installed"
 msgstr "Встановлено"
 
-#: app/flatpak-builtins-repo.c:335 app/flatpak-cli-transaction.c:1156
+#: app/flatpak-builtins-repo.c:335 app/flatpak-cli-transaction.c:1155
 msgid "Download"
 msgstr "Отримати"
 
@@ -2974,39 +2974,39 @@ msgstr "Отримати"
 msgid "Subsets"
 msgstr "Піднабори"
 
-#: app/flatpak-builtins-repo.c:391
+#: app/flatpak-builtins-repo.c:390
 msgid "Digest"
 msgstr "Контрольна сума"
 
-#: app/flatpak-builtins-repo.c:392
+#: app/flatpak-builtins-repo.c:391
 msgid "History length"
 msgstr "Довжина журналу"
 
-#: app/flatpak-builtins-repo.c:710
+#: app/flatpak-builtins-repo.c:708
 msgid "Print general information about the repository"
 msgstr "Вивести загальну інформацію щодо сховища"
 
-#: app/flatpak-builtins-repo.c:711
+#: app/flatpak-builtins-repo.c:709
 msgid "List the branches in the repository"
 msgstr "Вивести список гілок у сховищі"
 
-#: app/flatpak-builtins-repo.c:712
+#: app/flatpak-builtins-repo.c:710
 msgid "Print metadata for a branch"
 msgstr "Вивести метадані для гілки"
 
-#: app/flatpak-builtins-repo.c:713
+#: app/flatpak-builtins-repo.c:711
 msgid "Show commits for a branch"
 msgstr "Показати внески для гілки"
 
-#: app/flatpak-builtins-repo.c:714
+#: app/flatpak-builtins-repo.c:712
 msgid "Print information about the repo subsets"
 msgstr "Вивести інформацію щодо піднаборів сховища"
 
-#: app/flatpak-builtins-repo.c:715
+#: app/flatpak-builtins-repo.c:713
 msgid "Limit information to subsets with this prefix"
 msgstr "Обмежити відомості до піднаборів із цим префіксом"
 
-#: app/flatpak-builtins-repo.c:730
+#: app/flatpak-builtins-repo.c:728
 msgid "LOCATION - Repository maintenance"
 msgstr "РОЗТАШУВАННЯ - Супровід сховища"
 
@@ -3127,15 +3127,15 @@ msgstr "Сховища"
 msgid "Show the remotes"
 msgstr "Показати віддалені сховища"
 
-#: app/flatpak-builtins-search.c:275
+#: app/flatpak-builtins-search.c:273
 msgid "TEXT - Search remote apps/runtimes for text"
 msgstr "ТЕКСТ - шукати у віддалених програмах або середовищах текст"
 
-#: app/flatpak-builtins-search.c:286
+#: app/flatpak-builtins-search.c:284
 msgid "TEXT must be specified"
 msgstr "Має бути вказано ТЕКСТ"
 
-#: app/flatpak-builtins-search.c:345
+#: app/flatpak-builtins-search.c:343
 msgid "No matches found"
 msgstr "Відповідників не знайдено"
 
@@ -3617,54 +3617,54 @@ msgstr "Нові права доступу %s:"
 msgid "%s permissions:"
 msgstr "Права доступу %s:"
 
-#: app/flatpak-cli-transaction.c:1045
+#: app/flatpak-cli-transaction.c:1044
 msgid "Warning: "
 msgstr "Попередження: "
 
 #. translators: This is short for operation, the title of a one-char column
-#: app/flatpak-cli-transaction.c:1137
+#: app/flatpak-cli-transaction.c:1136
 msgid "Op"
 msgstr "Дія"
 
 #. Avoid resizing the download column too much,
 #. * by making the title as long as typical content
 #.
-#: app/flatpak-cli-transaction.c:1153 app/flatpak-cli-transaction.c:1197
+#: app/flatpak-cli-transaction.c:1152 app/flatpak-cli-transaction.c:1196
 msgid "partial"
 msgstr "частка"
 
-#: app/flatpak-cli-transaction.c:1229
+#: app/flatpak-cli-transaction.c:1228
 msgid "Proceed with these changes to the user installation?"
 msgstr "Продовжити із цими змінами у встановленому користувачем?"
 
-#: app/flatpak-cli-transaction.c:1231
+#: app/flatpak-cli-transaction.c:1230
 msgid "Proceed with these changes to the system installation?"
 msgstr "Продовжити із цими змінами у встановленому загальносистемно?"
 
-#: app/flatpak-cli-transaction.c:1233
+#: app/flatpak-cli-transaction.c:1232
 #, c-format
 msgid "Proceed with these changes to the %s?"
 msgstr "Продовжити із цими змінами у %s?"
 
-#: app/flatpak-cli-transaction.c:1401
+#: app/flatpak-cli-transaction.c:1400
 msgid "Changes complete."
 msgstr "Внесення змін завершено."
 
-#: app/flatpak-cli-transaction.c:1403
+#: app/flatpak-cli-transaction.c:1402
 msgid "Uninstall complete."
 msgstr "Вилучення завершено."
 
-#: app/flatpak-cli-transaction.c:1405
+#: app/flatpak-cli-transaction.c:1404
 msgid "Installation complete."
 msgstr "Встановлення завершено."
 
-#: app/flatpak-cli-transaction.c:1407
+#: app/flatpak-cli-transaction.c:1406
 msgid "Updates complete."
 msgstr "Оновлення завершено."
 
 #. For updates/!stop_on_first_error we already printed all errors so we make up
 #. a different one.
-#: app/flatpak-cli-transaction.c:1440
+#: app/flatpak-cli-transaction.c:1439
 msgid "There were one or more errors"
 msgstr "Сталася одна або декілька помилок"
 
@@ -5166,7 +5166,7 @@ msgstr "Некоректний .flatpakref: %s"
 msgid "Error updating remote metadata for '%s': %s"
 msgstr "Помилка під час оновлення метаданих сховища для «%s»: %s"
 
-#: common/flatpak-transaction.c:3236
+#: common/flatpak-transaction.c:3240
 #, c-format
 msgid ""
 "Warning: Treating remote fetch error as non-fatal since %s is already "
@@ -5175,41 +5175,41 @@ msgstr ""
 "Попередження: вважаємо помилку отримання даних віддаленого сховища "
 "некритичною, оскільки %s вже встановлено: %s"
 
-#: common/flatpak-transaction.c:3552
+#: common/flatpak-transaction.c:3556
 #, c-format
 msgid "No authenticator installed for remote '%s'"
 msgstr "Не встановлено засобу розпізнавання для віддаленого сховища «%s»"
 
-#: common/flatpak-transaction.c:3656 common/flatpak-transaction.c:3663
+#: common/flatpak-transaction.c:3660 common/flatpak-transaction.c:3667
 #, c-format
 msgid "Failed to get tokens for ref: %s"
 msgstr "Не вдалося отримати ключі для посилання: %s"
 
-#: common/flatpak-transaction.c:3658 common/flatpak-transaction.c:3665
+#: common/flatpak-transaction.c:3662 common/flatpak-transaction.c:3669
 msgid "Failed to get tokens for ref"
 msgstr "Не вдалося отримати ключі для посилання"
 
-#: common/flatpak-transaction.c:3989
+#: common/flatpak-transaction.c:3993
 #, c-format
 msgid "Flatpakrepo URL %s not file, HTTP or HTTPS"
 msgstr ""
 "Адреса Flatpakrepo %s не є ні файлом, ні адресою HTTP, ні адресою HTTPS"
 
-#: common/flatpak-transaction.c:3995
+#: common/flatpak-transaction.c:3999
 #, c-format
 msgid "Can't load dependent file %s: "
 msgstr "Не вдалося завантажити залежний файл %s: "
 
-#: common/flatpak-transaction.c:4003
+#: common/flatpak-transaction.c:4007
 #, c-format
 msgid "Invalid .flatpakrepo: %s"
 msgstr "Некоректний .flatpakrepo: %s"
 
-#: common/flatpak-transaction.c:4599
+#: common/flatpak-transaction.c:4603
 msgid "Transaction already executed"
 msgstr "Операцію вже виконано"
 
-#: common/flatpak-transaction.c:4614
+#: common/flatpak-transaction.c:4618
 msgid ""
 "Refusing to operate on a user installation as root! This can lead to "
 "incorrect file ownership and permission errors."
@@ -5218,16 +5218,16 @@ msgstr ""
 "Виконання таких дій може призвести до помилок у визначенні власника об'єктів "
 "та прав доступу."
 
-#: common/flatpak-transaction.c:4706 common/flatpak-transaction.c:4719
+#: common/flatpak-transaction.c:4710 common/flatpak-transaction.c:4723
 msgid "Aborted by user"
 msgstr "Перервано користувачем"
 
-#: common/flatpak-transaction.c:4744
+#: common/flatpak-transaction.c:4748
 #, c-format
 msgid "Skipping %s due to previous error"
 msgstr "Пропускаємо %s через попередню помилку"
 
-#: common/flatpak-transaction.c:4796
+#: common/flatpak-transaction.c:4800
 #, c-format
 msgid "Aborted due to failure (%s)"
 msgstr "Перервано через критичну помилку (%s)"
@@ -5375,44 +5375,44 @@ msgstr "Не є віддаленим сховищем OCI"
 msgid "Invalid token"
 msgstr "Некоректний ключ"
 
-#: portal/flatpak-portal.c:2225
+#: portal/flatpak-portal.c:2227
 msgid "No portal support found"
 msgstr "Не виявлено підтримки порталу"
 
-#: portal/flatpak-portal.c:2231
+#: portal/flatpak-portal.c:2233
 msgid "Deny"
 msgstr "Заборонити"
 
-#: portal/flatpak-portal.c:2233
+#: portal/flatpak-portal.c:2235
 msgid "Update"
 msgstr "Оновлення"
 
-#: portal/flatpak-portal.c:2238
+#: portal/flatpak-portal.c:2240
 #, c-format
 msgid "Update %s?"
 msgstr "Оновити %s?"
 
-#: portal/flatpak-portal.c:2250
+#: portal/flatpak-portal.c:2252
 msgid "The application wants to update itself."
 msgstr "Програма хоче оновити саму себе."
 
-#: portal/flatpak-portal.c:2251
+#: portal/flatpak-portal.c:2253
 msgid "Update access can be changed any time from the privacy settings."
 msgstr ""
 "Параметри доступу до оновлення може бути будь-коли змінено за допомогою "
 "налаштувань конфіденційності."
 
-#: portal/flatpak-portal.c:2276
+#: portal/flatpak-portal.c:2278
 msgid "Application update not allowed"
 msgstr "Оновлення програми заборонено"
 
-#: portal/flatpak-portal.c:2433
+#: portal/flatpak-portal.c:2435
 msgid "Self update not supported, new version requires new permissions"
 msgstr ""
 "Підтримки самостійного оновлення не передбачено. Нова версія потребує нових "
 "прав доступу."
 
-#: portal/flatpak-portal.c:2615 portal/flatpak-portal.c:2632
+#: portal/flatpak-portal.c:2617 portal/flatpak-portal.c:2634
 msgid "Update ended unexpectedly"
 msgstr "Результати оновлення є неочікуваними"
 
