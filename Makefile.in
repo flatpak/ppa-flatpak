@@ -395,7 +395,9 @@ am__libflatpak_common_la_SOURCES_DIST = common/flatpak.h \
 	common/flatpak-transaction.c \
 	common/flatpak-utils-http-private.h \
 	common/flatpak-utils-http.c common/flatpak-utils-private.h \
-	common/flatpak-utils.c common/flatpak-zstd-decompressor.c \
+	common/flatpak-utils.c common/flatpak-prune.c \
+	common/flatpak-prune-private.h \
+	common/flatpak-zstd-decompressor.c \
 	common/flatpak-zstd-decompressor-private.h \
 	common/valgrind-private.h common/flatpak-parental-controls.c \
 	common/flatpak-parental-controls-private.h
@@ -429,6 +431,7 @@ am_libflatpak_common_la_OBJECTS = $(am__objects_3) \
 	common/libflatpak_common_la-flatpak-transaction.lo \
 	common/libflatpak_common_la-flatpak-utils-http.lo \
 	common/libflatpak_common_la-flatpak-utils.lo \
+	common/libflatpak_common_la-flatpak-prune.lo \
 	common/libflatpak_common_la-flatpak-zstd-decompressor.lo \
 	$(am__objects_1) $(am__objects_4)
 am__objects_5 =  \
@@ -945,6 +948,7 @@ am__depfiles_remade =  \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo \
+	common/$(DEPDIR)/libflatpak_common_la-flatpak-prune.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-ref-utils.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo \
 	common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo \
@@ -1327,7 +1331,7 @@ am__EXEEXT_13 = tests/test-basic.sh tests/test-completion.sh \
 	tests/test-http-utils.sh tests/test-default-remotes.sh \
 	tests/test-extensions.sh tests/test-oci.sh \
 	tests/test-override.sh tests/test-auth.sh tests/test-unused.sh \
-	$(am__EXEEXT_1)
+	tests/test-prune.sh $(am__EXEEXT_1)
 am__EXEEXT_14 = $(am__EXEEXT_13)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
@@ -1949,7 +1953,9 @@ libflatpak_common_la_SOURCES = $(flatpakinclude_HEADERS) \
 	common/flatpak-transaction.c common/flatpak-transaction.h \
 	common/flatpak-utils-http-private.h \
 	common/flatpak-utils-http.c common/flatpak-utils-private.h \
-	common/flatpak-utils.c common/flatpak-zstd-decompressor.c \
+	common/flatpak-utils.c common/flatpak-prune.c \
+	common/flatpak-prune-private.h \
+	common/flatpak-zstd-decompressor.c \
 	common/flatpak-zstd-decompressor-private.h \
 	common/valgrind-private.h $(NULL) $(am__append_20)
 libflatpak_common_la_CFLAGS = \
@@ -2476,6 +2482,7 @@ TEST_MATRIX_SOURCE = \
 	tests/test-unused.sh \
 	tests/test-summaries.sh{user+system} \
 	tests/test-subset.sh{user+system} \
+	tests/test-prune.sh \
 	$(NULL)
 
 
@@ -2523,6 +2530,7 @@ TEST_MATRIX_DIST = \
 	tests/test-override.sh \
 	tests/test-auth.sh \
 	tests/test-unused.sh \
+	tests/test-prune.sh \
 	$(NULL)
 
 TEST_MATRIX_EXTRA_DIST = \
@@ -3050,6 +3058,8 @@ common/libflatpak_common_la-flatpak-transaction.lo:  \
 common/libflatpak_common_la-flatpak-utils-http.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-utils.lo: common/$(am__dirstamp) \
+	common/$(DEPDIR)/$(am__dirstamp)
+common/libflatpak_common_la-flatpak-prune.lo: common/$(am__dirstamp) \
 	common/$(DEPDIR)/$(am__dirstamp)
 common/libflatpak_common_la-flatpak-zstd-decompressor.lo:  \
 	common/$(am__dirstamp) common/$(DEPDIR)/$(am__dirstamp)
@@ -3791,6 +3801,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-prune.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-ref-utils.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo@am__quote@ # am--include-marker
@@ -4110,6 +4121,13 @@ common/libflatpak_common_la-flatpak-utils.lo: common/flatpak-utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-utils.c' object='common/libflatpak_common_la-flatpak-utils.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-utils.lo `test -f 'common/flatpak-utils.c' || echo '$(srcdir)/'`common/flatpak-utils.c
+
+common/libflatpak_common_la-flatpak-prune.lo: common/flatpak-prune.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-prune.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-prune.Tpo -c -o common/libflatpak_common_la-flatpak-prune.lo `test -f 'common/flatpak-prune.c' || echo '$(srcdir)/'`common/flatpak-prune.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) common/$(DEPDIR)/libflatpak_common_la-flatpak-prune.Tpo common/$(DEPDIR)/libflatpak_common_la-flatpak-prune.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak-prune.c' object='common/libflatpak_common_la-flatpak-prune.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_common_la-flatpak-prune.lo `test -f 'common/flatpak-prune.c' || echo '$(srcdir)/'`common/flatpak-prune.c
 
 common/libflatpak_common_la-flatpak-zstd-decompressor.lo: common/flatpak-zstd-decompressor.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_common_la_CFLAGS) $(CFLAGS) -MT common/libflatpak_common_la-flatpak-zstd-decompressor.lo -MD -MP -MF common/$(DEPDIR)/libflatpak_common_la-flatpak-zstd-decompressor.Tpo -c -o common/libflatpak_common_la-flatpak-zstd-decompressor.lo `test -f 'common/flatpak-zstd-decompressor.c' || echo '$(srcdir)/'`common/flatpak-zstd-decompressor.c
@@ -6635,6 +6653,13 @@ tests/test-unused.sh.log: tests/test-unused.sh
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-prune.sh.log: tests/test-prune.sh
+	@p='tests/test-prune.sh'; \
+	b='tests/test-prune.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 test-libglnx-xattrs.log: test-libglnx-xattrs$(EXEEXT)
 	@p='test-libglnx-xattrs$(EXEEXT)'; \
 	b='test-libglnx-xattrs'; \
@@ -7046,6 +7071,7 @@ distclean: distclean-recursive
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo
+	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-prune.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-ref-utils.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo
@@ -7254,6 +7280,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-parental-controls.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-portal-error.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-progress.Plo
+	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-prune.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-ref-utils.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-ref.Plo
 	-rm -f common/$(DEPDIR)/libflatpak_common_la-flatpak-related-ref.Plo
