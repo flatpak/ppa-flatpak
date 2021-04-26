@@ -1349,6 +1349,7 @@ test_parse_datetime (void)
   g_assert_true (ts.tv_sec == now.tv_sec); // close enough
 
   ret = parse_datetime (&ts, "2018-10-29 00:19:07 +0000", NULL);
+  g_assert_true (ret);
   dt = g_date_time_new_utc (2018, 10, 29, 0, 19, 7);
   g_date_time_to_timeval (dt, &tv);
 
@@ -1557,6 +1558,206 @@ test_dconf_paths (void)
     }
 }
 
+static void
+test_envp_cmp (void)
+{
+  static const char * const unsorted[] =
+  {
+    "SAME_NAME=2",
+    "EARLY_NAME=a",
+    "SAME_NAME=222",
+    "Z_LATE_NAME=b",
+    "SUFFIX_ADDED=23",
+    "SAME_NAME=1",
+    "SAME_NAME=",
+    "SUFFIX=42",
+    "SAME_NAME=3",
+    "SAME_NAME",
+  };
+  static const char * const sorted[] =
+  {
+    "EARLY_NAME=a",
+    "SAME_NAME",
+    "SAME_NAME=",
+    "SAME_NAME=1",
+    "SAME_NAME=2",
+    "SAME_NAME=222",
+    "SAME_NAME=3",
+    "SUFFIX=42",
+    "SUFFIX_ADDED=23",
+    "Z_LATE_NAME=b",
+  };
+  const char **sort_this = NULL;
+  gsize i, j;
+
+  G_STATIC_ASSERT (G_N_ELEMENTS (sorted) == G_N_ELEMENTS (unsorted));
+
+  for (i = 0; i < G_N_ELEMENTS (sorted); i++)
+    {
+      g_autofree gchar *copy = g_strdup (sorted[i]);
+
+      g_test_message ("%s == %s", copy, sorted[i]);
+      g_assert_cmpint (flatpak_envp_cmp (&copy, &sorted[i]), ==, 0);
+      g_assert_cmpint (flatpak_envp_cmp (&sorted[i], &copy), ==, 0);
+
+      for (j = i + 1; j < G_N_ELEMENTS (sorted); j++)
+        {
+          g_test_message ("%s < %s", sorted[i], sorted[j]);
+          g_assert_cmpint (flatpak_envp_cmp (&sorted[i], &sorted[j]), <, 0);
+          g_assert_cmpint (flatpak_envp_cmp (&sorted[j], &sorted[i]), >, 0);
+        }
+    }
+
+  sort_this = g_new0 (const char *, G_N_ELEMENTS (unsorted));
+
+  for (i = 0; i < G_N_ELEMENTS (unsorted); i++)
+    sort_this[i] = unsorted[i];
+
+  qsort (sort_this, G_N_ELEMENTS (unsorted), sizeof (char *),
+         flatpak_envp_cmp);
+
+  for (i = 0; i < G_N_ELEMENTS (sorted); i++)
+    g_assert_cmpstr (sorted[i], ==, sort_this[i]);
+
+  g_free (sort_this);
+}
+
+static void
+test_needs_quoting (void)
+{
+  static const char * const needs_quoting[] =
+  {
+    "",
+    "$var",
+    "{}",
+    "()",
+    "[]",
+    "*",
+    "?",
+    "`exec`",
+    "has space",
+    "quoted-\"",
+    "quoted-'",
+    "back\\slash",
+    "control\001char",
+  };
+  static const char * const does_not_need_quoting[] =
+  {
+    "foo",
+    "--foo=bar",
+    "-x",
+    "foo@bar:/srv/big_files",
+    "~smcv",
+    "7-zip.org",
+  };
+  gsize i;
+
+  for (i = 0; i < G_N_ELEMENTS (needs_quoting); i++)
+    {
+      const char *orig = needs_quoting[i];
+      g_autoptr(GError) error = NULL;
+      g_autofree char *quoted = NULL;
+      int argc = -1;
+      g_auto(GStrv) argv = NULL;
+      gboolean ok;
+
+      g_assert_true (flatpak_argument_needs_quoting (orig));
+      quoted = flatpak_quote_argv (&orig, 1);
+      g_test_message ("Unquoted: \"%s\"", orig);
+      g_test_message ("  Quoted: \"%s\"", quoted);
+      g_assert_cmpstr (quoted, !=, orig);
+
+      ok = g_shell_parse_argv (quoted, &argc, &argv, &error);
+      g_assert_no_error (error);
+      g_assert_true (ok);
+      g_assert_cmpint (argc, ==, 1);
+      g_assert_nonnull (argv);
+      g_assert_cmpstr (argv[0], ==, orig);
+      g_assert_cmpstr (argv[1], ==, NULL);
+    }
+
+  for (i = 0; i < G_N_ELEMENTS (does_not_need_quoting); i++)
+    {
+      const char *orig = does_not_need_quoting[i];
+      g_autoptr(GError) error = NULL;
+      g_autofree char *quoted = NULL;
+      int argc = -1;
+      g_auto(GStrv) argv = NULL;
+      gboolean ok;
+
+      g_assert_false (flatpak_argument_needs_quoting (orig));
+      quoted = flatpak_quote_argv (&orig, 1);
+      g_assert_cmpstr (quoted, ==, orig);
+
+      ok = g_shell_parse_argv (quoted, &argc, &argv, &error);
+      g_assert_no_error (error);
+      g_assert_true (ok);
+      g_assert_cmpint (argc, ==, 1);
+      g_assert_nonnull (argv);
+      g_assert_cmpstr (argv[0], ==, orig);
+      g_assert_cmpstr (argv[1], ==, NULL);
+    }
+}
+
+static void
+test_quote_argv (void)
+{
+  static const char * const orig[] =
+  {
+    "foo",
+    "--bar",
+    "",
+    "baz",
+    NULL
+  };
+  gsize i;
+  g_autofree char *quoted = NULL;
+  g_autoptr(GError) error = NULL;
+  int argc = -1;
+  g_auto(GStrv) argv = NULL;
+  gboolean ok;
+
+  quoted = flatpak_quote_argv ((const char **) orig, -1);
+  ok = g_shell_parse_argv (quoted, &argc, &argv, &error);
+  g_assert_no_error (error);
+  g_assert_true (ok);
+  g_assert_cmpint (argc, >, 0);
+  g_assert_cmpuint ((gsize) argc, ==, G_N_ELEMENTS (orig) - 1);
+  g_assert_nonnull (argv);
+
+  for (i = 0; i < G_N_ELEMENTS (orig); i++)
+    g_assert_cmpstr (argv[i], ==, orig[i]);
+
+  g_clear_pointer (&quoted, g_free);
+  g_clear_pointer (&argv, g_strfreev);
+
+  quoted = flatpak_quote_argv ((const char **) orig, 3);
+  ok = g_shell_parse_argv (quoted, &argc, &argv, &error);
+  g_assert_no_error (error);
+  g_assert_true (ok);
+  g_assert_cmpint (argc, ==, 3);
+  g_assert_nonnull (argv);
+
+  for (i = 0; i < 3; i++)
+    g_assert_cmpstr (argv[i], ==, orig[i]);
+
+  g_assert_cmpstr (argv[i], ==, NULL);
+}
+
+static void
+test_str_is_integer (void)
+{
+  g_assert_true (flatpak_str_is_integer ("0"));
+  g_assert_true (flatpak_str_is_integer ("1234567890987654356765432121245674"));
+  g_assert_false (flatpak_str_is_integer (NULL));
+  g_assert_false (flatpak_str_is_integer (""));
+  g_assert_false (flatpak_str_is_integer ("0.0"));
+  g_assert_false (flatpak_str_is_integer ("0e0"));
+  g_assert_false (flatpak_str_is_integer ("bees"));
+  g_assert_false (flatpak_str_is_integer ("1234a"));
+  g_assert_false (flatpak_str_is_integer ("a1234"));
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -1585,6 +1786,10 @@ main (int argc, char *argv[])
   g_test_add_func ("/common/dconf-app-id", test_dconf_app_id);
   g_test_add_func ("/common/dconf-paths", test_dconf_paths);
   g_test_add_func ("/common/decompose-ref", test_decompose);
+  g_test_add_func ("/common/envp-cmp", test_envp_cmp);
+  g_test_add_func ("/common/needs-quoting", test_needs_quoting);
+  g_test_add_func ("/common/quote-argv", test_quote_argv);
+  g_test_add_func ("/common/str-is-integer", test_str_is_integer);
 
   g_test_add_func ("/app/looks-like-branch", test_looks_like_branch);
   g_test_add_func ("/app/columns", test_columns);

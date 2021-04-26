@@ -20,6 +20,22 @@ else
 AM_TESTS_ENVIRONMENT += FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
 endif
 
+noinst_LTLIBRARIES += libtestlib.la
+libtestlib_la_CFLAGS = \
+	$(AM_CFLAGS) \
+	$(BASE_CFLAGS) \
+	-DFLATPAK_COMPILATION \
+	$(NULL)
+libtestlib_la_SOURCES = \
+	tests/testlib.c \
+	tests/testlib.h \
+	$(NULL)
+libtestlib_la_LIBADD = \
+	$(AM_LDADD) \
+	$(BASE_LIBS) \
+	libglnx.la \
+	$(NULL)
+
 testlibrary_CFLAGS = \
 	$(AM_CFLAGS) \
 	$(BASE_CFLAGS) \
@@ -67,8 +83,20 @@ testcommon_LDADD = \
 testcommon_SOURCES = tests/testcommon.c
 
 test_exports_CFLAGS = $(testcommon_CFLAGS)
-test_exports_LDADD = $(testcommon_LDADD)
+test_exports_LDADD = $(testcommon_LDADD) libtestlib.la
 test_exports_SOURCES = tests/test-exports.c
+
+test_instance_CFLAGS = $(testcommon_CFLAGS)
+test_instance_LDADD = $(testcommon_LDADD) libtestlib.la
+test_instance_SOURCES = \
+	subprojects/libglnx/tests/libglnx-testlib.c \
+	subprojects/libglnx/tests/libglnx-testlib.h \
+	tests/test-instance.c \
+	$(NULL)
+
+tests_hold_lock_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
+tests_hold_lock_LDADD = $(AM_LDADD) $(BASE_LIBS) libglnx.la
+tests_hold_lock_SOURCES = tests/hold-lock.c
 
 tests_httpcache_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
 	-DFLATPAK_COMPILATION \
@@ -227,6 +255,7 @@ TEST_MATRIX_SOURCE = \
 	tests/test-unused.sh \
 	tests/test-summaries.sh{user+system} \
 	tests/test-subset.sh{user+system} \
+	tests/test-prune.sh \
 	$(NULL)
 
 update-test-matrix:
@@ -251,8 +280,21 @@ test_scripts = ${TEST_MATRIX}
 dist_test_scripts = ${TEST_MATRIX_DIST}
 dist_installed_test_extra_scripts += ${TEST_MATRIX_EXTRA_DIST}
 
-test_programs = testlibrary testcommon test-exports
-test_extra_programs = tests/httpcache tests/test-update-portal tests/test-portal-impl tests/test-authenticator tests/list-unused
+test_programs = \
+	test-exports \
+	test-instance \
+	testcommon \
+	testlibrary \
+	$(NULL)
+
+test_extra_programs = \
+	tests/hold-lock \
+	tests/httpcache \
+	tests/list-unused \
+	tests/test-authenticator \
+	tests/test-portal-impl \
+	tests/test-update-portal \
+	$(NULL)
 
 @VALGRIND_CHECK_RULES@
 VALGRIND_SUPPRESSIONS_FILES=tests/flatpak.supp tests/glib.supp
