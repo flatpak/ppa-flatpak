@@ -1,5 +1,11 @@
 flatpak (1.10.2-flatpak1~bionic) bionic; urgency=medium
 
+  * Rebuild for bionic
+
+ -- Alexander Larsson <alexl@redhat.com>  Mon, 26 Apr 2021 15:59:19 +0200
+
+flatpak (1.10.2-flatpak1~bionic) bionic; urgency=medium
+
   * Update to 1.10.2
 
  -- Alexander Larsson <alexl@redhat.com>  Wed, 10 Mar 2021 12:44:13 +0100
