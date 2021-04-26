@@ -1,3 +1,9 @@
+flatpak (1.11.1-1) UNRELEASED; urgency=medium
+
+  * New upstream development release
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 26 Apr 2021 12:52:29 +0100
+
 flatpak (1.11~git20210416.1-1) experimental; urgency=medium
 
   * New upstream snapshot
