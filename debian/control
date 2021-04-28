@@ -53,9 +53,6 @@ Build-Depends:
  socat <!nocheck>,
  xmlto <!nodoc>,
  xsltproc <!nodoc>,
-Build-Depends-Indep:
- libglib2.0-doc,
- libostree-doc,
 Standards-Version: 4.3.0
 Homepage: http://flatpak.org/
 Vcs-Git: https://salsa.debian.org/debian/flatpak.git
@@ -157,21 +154,6 @@ Description: Application deployment framework for desktop apps (development)
  .
  This package contains development headers and pkg-config metadata
  for libflatpak0.
-
-Package: libflatpak-doc
-Build-Profiles: <!nodoc>
-Architecture: all
-Section: doc
-Depends:
- ${misc:Depends},
-Suggests:
- devhelp,
-Multi-Arch: foreign
-Description: Application deployment framework for desktop apps (documentation)
- Flatpak installs, manages and runs sandboxed desktop application bundles.
- See the flatpak package for a more comprehensive description.
- .
- This package contains reference documentation for libflatpak0.
 
 Package: libflatpak0
 Architecture: linux-any
