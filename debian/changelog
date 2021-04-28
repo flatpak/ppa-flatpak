@@ -1,3 +1,14 @@
+flatpak (1.11.1-1flatpak1) UNRELEASED; urgency=medium
+
+  * Backport to Ubuntu 20.04 'focal', using changes previously applied
+    in Debian buster-backports
+    - Revert libmalcontent integration, only added to Ubuntu since 20.04.
+    - Downgrade dbus from Depends to Recommends.
+      This is necessary for system-wide installations (without --user),
+      but doesn't need to be a hard dependency with libmalcontent disabled.
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 28 Apr 2021 19:46:25 +0100
+
 flatpak (1.11.1-1) experimental; urgency=medium
 
   * New upstream development release
