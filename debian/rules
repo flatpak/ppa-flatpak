@@ -45,6 +45,7 @@ override_dh_auto_configure:
 		--disable-auto-sideloading \
 		--disable-selinux-module \
 		--enable-gdm-env-file \
+		--disable-silent-rules \
 		--enable-installed-tests \
 		--libexecdir=/usr/libexec \
 		--with-dbus-config-dir=/usr/share/dbus-1/system.d \
