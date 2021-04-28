@@ -8,7 +8,7 @@ include /usr/share/dpkg/default.mk
 binaries := $(shell dh_listpackages)
 
 %:
-	dh $@ --with=gir
+	dh $@ --parallel --with=autoreconf,gir,systemd
 
 override_dh_clean:
 	dh_clean
