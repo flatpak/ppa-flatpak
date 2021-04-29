@@ -1,0 +1,25 @@
+Maintaining this backport
+=========================
+
+You'll want the official Debian packaging as a git remote:
+
+git remote add salsa https://salsa.debian.org/debian/flatpak.git
+
+Ideally import new versions into Debian experimental, but directly into
+this repository is OK too.
+
+First, import/merge new versions into the branch corresponding to the newest
+Ubuntu branch, currently ppa/focal for Ubuntu 20.04.
+
+If you have merged updated packaging from Debian, you might need to adjust
+it for compatibility with focal.
+
+Then merge the ppa/focal branch into ppa/bionic, and adjust as necessary
+for compatibility with bionic.
+
+Next, merge the ppa/bionic branch into ppa/xenial, and so on.
+
+The advantage of this approach is that the package in each branch is as
+modern as possible: changes that were necessary to be compatible with
+xenial will automatically disappear if we stop maintaining a backport
+to xenial, and so on.
