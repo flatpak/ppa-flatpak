@@ -1,3 +1,15 @@
+flatpak (1.11.1+git20210615-1) UNRELEASED; urgency=medium
+
+  * New upstream snapshot
+    - Don't leak a file descriptor each time flatpak-spawn --env=... is used
+      (Closes: #989934)
+    - When an app uses flatpak-spawn --env=... --forward-fd=..., ensure
+      that the file descriptors do not collide, which could result in the
+      subsandbox failing to launch or being launched with wrong environment
+      variables. (Closes: #989935)
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 16 Jun 2021 00:02:49 +0100
+
 flatpak (1.11.1-1) experimental; urgency=medium
 
   * New upstream development release
