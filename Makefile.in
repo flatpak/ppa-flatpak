@@ -257,10 +257,12 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" \
 	"$(DESTDIR)$(zshcompletiondir)" \
 	"$(DESTDIR)$(flatpakincludedir)" \
 	"$(DESTDIR)$(flatpakincludedir)"
-am__EXEEXT_2 = test-exports$(EXEEXT) test-instance$(EXEEXT) \
+am__EXEEXT_2 = test-context$(EXEEXT) test-exports$(EXEEXT) \
+	test-instance$(EXEEXT) test-portal$(EXEEXT) \
 	testcommon$(EXEEXT) testlibrary$(EXEEXT) $(am__EXEEXT_1)
 am__EXEEXT_3 = tests/hold-lock$(EXEEXT) tests/httpcache$(EXEEXT) \
-	tests/list-unused$(EXEEXT) tests/test-authenticator$(EXEEXT) \
+	tests/list-unused$(EXEEXT) tests/mock-flatpak$(EXEEXT) \
+	tests/test-authenticator$(EXEEXT) \
 	tests/test-portal-impl$(EXEEXT) \
 	tests/test-update-portal$(EXEEXT) $(am__EXEEXT_1)
 am__EXEEXT_4 = $(am__EXEEXT_2) $(am__EXEEXT_3)
@@ -706,12 +708,18 @@ revokefs_fuse_DEPENDENCIES = libglnx.la $(am__DEPENDENCIES_1) \
 revokefs_fuse_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(revokefs_fuse_CFLAGS) \
 	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-am_test_exports_OBJECTS = tests/test_exports-test-exports.$(OBJEXT)
-test_exports_OBJECTS = $(am_test_exports_OBJECTS)
+am_test_context_OBJECTS = tests/test_context-test-context.$(OBJEXT)
+test_context_OBJECTS = $(am_test_context_OBJECTS)
 am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) libflatpak-app.la libflatpak-common.la \
 	libflatpak-common-base.la libglnx.la $(am__DEPENDENCIES_1)
+test_context_DEPENDENCIES = $(am__DEPENDENCIES_4) libtestlib.la
+test_context_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(test_context_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_test_exports_OBJECTS = tests/test_exports-test-exports.$(OBJEXT)
+test_exports_OBJECTS = $(am_test_exports_OBJECTS)
 test_exports_DEPENDENCIES = $(am__DEPENDENCIES_4) libtestlib.la
 test_exports_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(test_exports_CFLAGS) \
@@ -777,6 +785,14 @@ test_libglnx_xattrs_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(test_libglnx_xattrs_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_test_portal_OBJECTS =  \
+	portal/test_portal-flatpak-portal-dbus.$(OBJEXT) \
+	tests/test_portal-test-portal.$(OBJEXT) $(am__objects_1)
+test_portal_OBJECTS = $(am_test_portal_OBJECTS)
+test_portal_DEPENDENCIES = $(am__DEPENDENCIES_4) libtestlib.la
+test_portal_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(test_portal_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_testcommon_OBJECTS = tests/testcommon-testcommon.$(OBJEXT)
 testcommon_OBJECTS = $(am_testcommon_OBJECTS)
 testcommon_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
@@ -822,6 +838,14 @@ tests_list_unused_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(tests_list_unused_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
+am_tests_mock_flatpak_OBJECTS =  \
+	tests/mock_flatpak-mock-flatpak.$(OBJEXT)
+tests_mock_flatpak_OBJECTS = $(am_tests_mock_flatpak_OBJECTS)
+tests_mock_flatpak_DEPENDENCIES = $(am__DEPENDENCIES_4) libtestlib.la
+tests_mock_flatpak_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(tests_mock_flatpak_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_tests_test_authenticator_OBJECTS =  \
 	tests/test_authenticator-test-authenticator.$(OBJEXT)
 tests_test_authenticator_OBJECTS =  \
@@ -969,6 +993,7 @@ am__depfiles_remade =  \
 	portal/$(DEPDIR)/flatpak_portal-flatpak-portal-dbus.Po \
 	portal/$(DEPDIR)/flatpak_portal-flatpak-portal.Po \
 	portal/$(DEPDIR)/flatpak_portal-portal-impl.Po \
+	portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Po \
 	portal/$(DEPDIR)/tests_test_update_portal-flatpak-portal-dbus.Po \
 	revokefs/$(DEPDIR)/demo-demo.Po \
 	revokefs/$(DEPDIR)/fuse-main.Po \
@@ -1006,9 +1031,12 @@ am__depfiles_remade =  \
 	tests/$(DEPDIR)/libpreload.Plo \
 	tests/$(DEPDIR)/libtestlib_la-testlib.Plo \
 	tests/$(DEPDIR)/list_unused-list-unused.Po \
+	tests/$(DEPDIR)/mock_flatpak-mock-flatpak.Po \
 	tests/$(DEPDIR)/test_authenticator-test-authenticator.Po \
+	tests/$(DEPDIR)/test_context-test-context.Po \
 	tests/$(DEPDIR)/test_exports-test-exports.Po \
 	tests/$(DEPDIR)/test_instance-test-instance.Po \
+	tests/$(DEPDIR)/test_portal-test-portal.Po \
 	tests/$(DEPDIR)/test_portal_impl-test-portal-impl.Po \
 	tests/$(DEPDIR)/test_update_portal-test-update-portal.Po \
 	tests/$(DEPDIR)/testcommon-testcommon.Po \
@@ -1048,13 +1076,15 @@ SOURCES = $(libflatpak_app_la_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
 	$(flatpak_system_helper_SOURCES) \
 	$(flatpak_validate_icon_SOURCES) $(revokefs_demo_SOURCES) \
-	$(revokefs_fuse_SOURCES) $(test_exports_SOURCES) \
-	$(test_instance_SOURCES) $(test_libflatpak_SOURCES) \
-	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
-	$(test_libglnx_macros_SOURCES) $(test_libglnx_shutil_SOURCES) \
-	$(test_libglnx_xattrs_SOURCES) $(testcommon_SOURCES) \
+	$(revokefs_fuse_SOURCES) $(test_context_SOURCES) \
+	$(test_exports_SOURCES) $(test_instance_SOURCES) \
+	$(test_libflatpak_SOURCES) $(test_libglnx_errors_SOURCES) \
+	$(test_libglnx_fdio_SOURCES) $(test_libglnx_macros_SOURCES) \
+	$(test_libglnx_shutil_SOURCES) $(test_libglnx_xattrs_SOURCES) \
+	$(test_portal_SOURCES) $(testcommon_SOURCES) \
 	$(testlibrary_SOURCES) $(tests_hold_lock_SOURCES) \
 	tests/httpcache.c $(tests_list_unused_SOURCES) \
+	$(tests_mock_flatpak_SOURCES) \
 	$(tests_test_authenticator_SOURCES) \
 	$(tests_test_portal_impl_SOURCES) \
 	$(tests_test_update_portal_SOURCES) \
@@ -1070,13 +1100,15 @@ DIST_SOURCES = $(libflatpak_app_la_SOURCES) \
 	$(flatpak_session_helper_SOURCES) \
 	$(am__flatpak_system_helper_SOURCES_DIST) \
 	$(flatpak_validate_icon_SOURCES) $(revokefs_demo_SOURCES) \
-	$(revokefs_fuse_SOURCES) $(test_exports_SOURCES) \
-	$(test_instance_SOURCES) $(test_libflatpak_SOURCES) \
-	$(test_libglnx_errors_SOURCES) $(test_libglnx_fdio_SOURCES) \
-	$(test_libglnx_macros_SOURCES) $(test_libglnx_shutil_SOURCES) \
-	$(test_libglnx_xattrs_SOURCES) $(testcommon_SOURCES) \
+	$(revokefs_fuse_SOURCES) $(test_context_SOURCES) \
+	$(test_exports_SOURCES) $(test_instance_SOURCES) \
+	$(test_libflatpak_SOURCES) $(test_libglnx_errors_SOURCES) \
+	$(test_libglnx_fdio_SOURCES) $(test_libglnx_macros_SOURCES) \
+	$(test_libglnx_shutil_SOURCES) $(test_libglnx_xattrs_SOURCES) \
+	$(test_portal_SOURCES) $(testcommon_SOURCES) \
 	$(testlibrary_SOURCES) $(tests_hold_lock_SOURCES) \
 	tests/httpcache.c $(tests_list_unused_SOURCES) \
+	$(tests_mock_flatpak_SOURCES) \
 	$(tests_test_authenticator_SOURCES) \
 	$(tests_test_portal_impl_SOURCES) \
 	$(tests_test_update_portal_SOURCES)
@@ -2307,12 +2339,13 @@ revokefs_demo_LDADD = $(BASE_LIBS)
 @BUILD_AUTO_SIDELOADING_TRUE@tmpfilesdir = $(prefix)/lib/tmpfiles.d
 @BUILD_AUTO_SIDELOADING_TRUE@dist_tmpfiles_DATA = sideload-repos-systemd/tmpfiles.d/flatpak-sideload-repos.conf
 AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 \
-	FLATPAK_CONFIG_DIR=/dev/null FLATPAK_TRIGGERSDIR=$$(cd \
-	$(top_srcdir) && pwd)/triggers FLATPAK_VALIDATE_ICON=$$(cd \
-	$(top_builddir) && pwd)/flatpak-validate-icon \
-	FLATPAK_REVOKEFS_FUSE=$$(cd $(top_builddir) && \
-	pwd)/revokefs-fuse GI_TYPELIB_PATH=$$(cd $(top_builddir) && \
-	pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
+	FLATPAK_CONFIG_DIR=/dev/null FLATPAK_PORTAL=$$(cd \
+	$(top_builddir) && pwd)/flatpak-portal \
+	FLATPAK_TRIGGERSDIR=$$(cd $(top_srcdir) && pwd)/triggers \
+	FLATPAK_VALIDATE_ICON=$$(cd $(top_builddir) && \
+	pwd)/flatpak-validate-icon FLATPAK_REVOKEFS_FUSE=$$(cd \
+	$(top_builddir) && pwd)/revokefs-fuse GI_TYPELIB_PATH=$$(cd \
+	$(top_builddir) && pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
 	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && \
 	pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} PATH=$$(cd \
 	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_29) \
@@ -2365,6 +2398,7 @@ testcommon_CFLAGS = \
 	$(JSON_CFLAGS) \
 	$(APPSTREAM_GLIB_CFLAGS) \
 	-DFLATPAK_COMPILATION \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-I$(srcdir)/app \
 	-I$(builddir)/app \
 	$(NULL)
@@ -2383,6 +2417,9 @@ testcommon_LDADD = \
 	$(NULL)
 
 testcommon_SOURCES = tests/testcommon.c
+test_context_CFLAGS = $(testcommon_CFLAGS)
+test_context_LDADD = $(testcommon_LDADD) libtestlib.la
+test_context_SOURCES = tests/test-context.c
 test_exports_CFLAGS = $(testcommon_CFLAGS)
 test_exports_LDADD = $(testcommon_LDADD) libtestlib.la
 test_exports_SOURCES = tests/test-exports.c
@@ -2392,6 +2429,14 @@ test_instance_SOURCES = \
 	subprojects/libglnx/tests/libglnx-testlib.c \
 	subprojects/libglnx/tests/libglnx-testlib.h \
 	tests/test-instance.c \
+	$(NULL)
+
+test_portal_CFLAGS = $(testcommon_CFLAGS)
+test_portal_LDADD = $(testcommon_LDADD) libtestlib.la
+test_portal_SOURCES = \
+	portal/flatpak-portal-dbus.c \
+	portal/flatpak-portal-dbus.h \
+	tests/test-portal.c \
 	$(NULL)
 
 tests_hold_lock_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
@@ -2404,6 +2449,9 @@ tests_httpcache_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFL
 tests_httpcache_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) \
 	libflatpak-common.la libflatpak-common-base.la libglnx.la
 
+tests_mock_flatpak_CFLAGS = $(testcommon_CFLAGS)
+tests_mock_flatpak_LDADD = $(testcommon_LDADD) libtestlib.la
+tests_mock_flatpak_SOURCES = tests/mock-flatpak.c
 tests_test_update_portal_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) \
 	-DFLATPAK_COMPILATION \
 	-DLOCALEDIR=\"$(localedir)\"
@@ -2549,8 +2597,10 @@ TEST_MATRIX_EXTRA_DIST = \
 test_scripts = ${TEST_MATRIX}
 dist_test_scripts = ${TEST_MATRIX_DIST}
 test_programs = \
+	test-context \
 	test-exports \
 	test-instance \
+	test-portal \
 	testcommon \
 	testlibrary \
 	$(NULL)
@@ -2559,6 +2609,7 @@ test_extra_programs = \
 	tests/hold-lock \
 	tests/httpcache \
 	tests/list-unused \
+	tests/mock-flatpak \
 	tests/test-authenticator \
 	tests/test-portal-impl \
 	tests/test-update-portal \
@@ -3363,6 +3414,12 @@ revokefs/fuse-writer.$(OBJEXT): revokefs/$(am__dirstamp) \
 revokefs-fuse$(EXEEXT): $(revokefs_fuse_OBJECTS) $(revokefs_fuse_DEPENDENCIES) $(EXTRA_revokefs_fuse_DEPENDENCIES) 
 	@rm -f revokefs-fuse$(EXEEXT)
 	$(AM_V_CCLD)$(revokefs_fuse_LINK) $(revokefs_fuse_OBJECTS) $(revokefs_fuse_LDADD) $(LIBS)
+tests/test_context-test-context.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+test-context$(EXEEXT): $(test_context_OBJECTS) $(test_context_DEPENDENCIES) $(EXTRA_test_context_DEPENDENCIES) 
+	@rm -f test-context$(EXEEXT)
+	$(AM_V_CCLD)$(test_context_LINK) $(test_context_OBJECTS) $(test_context_LDADD) $(LIBS)
 tests/test_exports-test-exports.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -3440,6 +3497,14 @@ subprojects/libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.$(OBJEXT):  \
 test-libglnx-xattrs$(EXEEXT): $(test_libglnx_xattrs_OBJECTS) $(test_libglnx_xattrs_DEPENDENCIES) $(EXTRA_test_libglnx_xattrs_DEPENDENCIES) 
 	@rm -f test-libglnx-xattrs$(EXEEXT)
 	$(AM_V_CCLD)$(test_libglnx_xattrs_LINK) $(test_libglnx_xattrs_OBJECTS) $(test_libglnx_xattrs_LDADD) $(LIBS)
+portal/test_portal-flatpak-portal-dbus.$(OBJEXT):  \
+	portal/$(am__dirstamp) portal/$(DEPDIR)/$(am__dirstamp)
+tests/test_portal-test-portal.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+test-portal$(EXEEXT): $(test_portal_OBJECTS) $(test_portal_DEPENDENCIES) $(EXTRA_test_portal_DEPENDENCIES) 
+	@rm -f test-portal$(EXEEXT)
+	$(AM_V_CCLD)$(test_portal_LINK) $(test_portal_OBJECTS) $(test_portal_LDADD) $(LIBS)
 tests/testcommon-testcommon.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -3472,6 +3537,12 @@ tests/list_unused-list-unused.$(OBJEXT): tests/$(am__dirstamp) \
 tests/list-unused$(EXEEXT): $(tests_list_unused_OBJECTS) $(tests_list_unused_DEPENDENCIES) $(EXTRA_tests_list_unused_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/list-unused$(EXEEXT)
 	$(AM_V_CCLD)$(tests_list_unused_LINK) $(tests_list_unused_OBJECTS) $(tests_list_unused_LDADD) $(LIBS)
+tests/mock_flatpak-mock-flatpak.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+
+tests/mock-flatpak$(EXEEXT): $(tests_mock_flatpak_OBJECTS) $(tests_mock_flatpak_DEPENDENCIES) $(EXTRA_tests_mock_flatpak_DEPENDENCIES) tests/$(am__dirstamp)
+	@rm -f tests/mock-flatpak$(EXEEXT)
+	$(AM_V_CCLD)$(tests_mock_flatpak_LINK) $(tests_mock_flatpak_OBJECTS) $(tests_mock_flatpak_LDADD) $(LIBS)
 tests/test_authenticator-test-authenticator.$(OBJEXT):  \
 	tests/$(am__dirstamp) tests/$(DEPDIR)/$(am__dirstamp)
 
@@ -3822,6 +3893,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@portal/$(DEPDIR)/flatpak_portal-flatpak-portal-dbus.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@portal/$(DEPDIR)/flatpak_portal-flatpak-portal.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@portal/$(DEPDIR)/flatpak_portal-portal-impl.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@portal/$(DEPDIR)/tests_test_update_portal-flatpak-portal-dbus.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@revokefs/$(DEPDIR)/demo-demo.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@revokefs/$(DEPDIR)/fuse-main.Po@am__quote@ # am--include-marker
@@ -3859,9 +3931,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/libpreload.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/libtestlib_la-testlib.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/list_unused-list-unused.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/mock_flatpak-mock-flatpak.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_authenticator-test-authenticator.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_context-test-context.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_exports-test-exports.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_instance-test-instance.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_portal-test-portal.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_portal_impl-test-portal-impl.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/test_update_portal-test-update-portal.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/testcommon-testcommon.Po@am__quote@ # am--include-marker
@@ -5186,6 +5261,20 @@ revokefs/fuse-writer.obj: revokefs/writer.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(revokefs_fuse_CFLAGS) $(CFLAGS) -c -o revokefs/fuse-writer.obj `if test -f 'revokefs/writer.c'; then $(CYGPATH_W) 'revokefs/writer.c'; else $(CYGPATH_W) '$(srcdir)/revokefs/writer.c'; fi`
 
+tests/test_context-test-context.o: tests/test-context.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_context_CFLAGS) $(CFLAGS) -MT tests/test_context-test-context.o -MD -MP -MF tests/$(DEPDIR)/test_context-test-context.Tpo -c -o tests/test_context-test-context.o `test -f 'tests/test-context.c' || echo '$(srcdir)/'`tests/test-context.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/test_context-test-context.Tpo tests/$(DEPDIR)/test_context-test-context.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/test-context.c' object='tests/test_context-test-context.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_context_CFLAGS) $(CFLAGS) -c -o tests/test_context-test-context.o `test -f 'tests/test-context.c' || echo '$(srcdir)/'`tests/test-context.c
+
+tests/test_context-test-context.obj: tests/test-context.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_context_CFLAGS) $(CFLAGS) -MT tests/test_context-test-context.obj -MD -MP -MF tests/$(DEPDIR)/test_context-test-context.Tpo -c -o tests/test_context-test-context.obj `if test -f 'tests/test-context.c'; then $(CYGPATH_W) 'tests/test-context.c'; else $(CYGPATH_W) '$(srcdir)/tests/test-context.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/test_context-test-context.Tpo tests/$(DEPDIR)/test_context-test-context.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/test-context.c' object='tests/test_context-test-context.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_context_CFLAGS) $(CFLAGS) -c -o tests/test_context-test-context.obj `if test -f 'tests/test-context.c'; then $(CYGPATH_W) 'tests/test-context.c'; else $(CYGPATH_W) '$(srcdir)/tests/test-context.c'; fi`
+
 tests/test_exports-test-exports.o: tests/test-exports.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_exports_CFLAGS) $(CFLAGS) -MT tests/test_exports-test-exports.o -MD -MP -MF tests/$(DEPDIR)/test_exports-test-exports.Tpo -c -o tests/test_exports-test-exports.o `test -f 'tests/test-exports.c' || echo '$(srcdir)/'`tests/test-exports.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/test_exports-test-exports.Tpo tests/$(DEPDIR)/test_exports-test-exports.Po
@@ -5382,6 +5471,34 @@ subprojects/libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.obj: subprojec
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_xattrs_CFLAGS) $(CFLAGS) -c -o subprojects/libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.obj `if test -f 'subprojects/libglnx/tests/test-libglnx-xattrs.c'; then $(CYGPATH_W) 'subprojects/libglnx/tests/test-libglnx-xattrs.c'; else $(CYGPATH_W) '$(srcdir)/subprojects/libglnx/tests/test-libglnx-xattrs.c'; fi`
 
+portal/test_portal-flatpak-portal-dbus.o: portal/flatpak-portal-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -MT portal/test_portal-flatpak-portal-dbus.o -MD -MP -MF portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Tpo -c -o portal/test_portal-flatpak-portal-dbus.o `test -f 'portal/flatpak-portal-dbus.c' || echo '$(srcdir)/'`portal/flatpak-portal-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Tpo portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='portal/flatpak-portal-dbus.c' object='portal/test_portal-flatpak-portal-dbus.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -c -o portal/test_portal-flatpak-portal-dbus.o `test -f 'portal/flatpak-portal-dbus.c' || echo '$(srcdir)/'`portal/flatpak-portal-dbus.c
+
+portal/test_portal-flatpak-portal-dbus.obj: portal/flatpak-portal-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -MT portal/test_portal-flatpak-portal-dbus.obj -MD -MP -MF portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Tpo -c -o portal/test_portal-flatpak-portal-dbus.obj `if test -f 'portal/flatpak-portal-dbus.c'; then $(CYGPATH_W) 'portal/flatpak-portal-dbus.c'; else $(CYGPATH_W) '$(srcdir)/portal/flatpak-portal-dbus.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Tpo portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='portal/flatpak-portal-dbus.c' object='portal/test_portal-flatpak-portal-dbus.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -c -o portal/test_portal-flatpak-portal-dbus.obj `if test -f 'portal/flatpak-portal-dbus.c'; then $(CYGPATH_W) 'portal/flatpak-portal-dbus.c'; else $(CYGPATH_W) '$(srcdir)/portal/flatpak-portal-dbus.c'; fi`
+
+tests/test_portal-test-portal.o: tests/test-portal.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -MT tests/test_portal-test-portal.o -MD -MP -MF tests/$(DEPDIR)/test_portal-test-portal.Tpo -c -o tests/test_portal-test-portal.o `test -f 'tests/test-portal.c' || echo '$(srcdir)/'`tests/test-portal.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/test_portal-test-portal.Tpo tests/$(DEPDIR)/test_portal-test-portal.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/test-portal.c' object='tests/test_portal-test-portal.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -c -o tests/test_portal-test-portal.o `test -f 'tests/test-portal.c' || echo '$(srcdir)/'`tests/test-portal.c
+
+tests/test_portal-test-portal.obj: tests/test-portal.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -MT tests/test_portal-test-portal.obj -MD -MP -MF tests/$(DEPDIR)/test_portal-test-portal.Tpo -c -o tests/test_portal-test-portal.obj `if test -f 'tests/test-portal.c'; then $(CYGPATH_W) 'tests/test-portal.c'; else $(CYGPATH_W) '$(srcdir)/tests/test-portal.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/test_portal-test-portal.Tpo tests/$(DEPDIR)/test_portal-test-portal.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/test-portal.c' object='tests/test_portal-test-portal.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -c -o tests/test_portal-test-portal.obj `if test -f 'tests/test-portal.c'; then $(CYGPATH_W) 'tests/test-portal.c'; else $(CYGPATH_W) '$(srcdir)/tests/test-portal.c'; fi`
+
 tests/testcommon-testcommon.o: tests/testcommon.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testcommon_CFLAGS) $(CFLAGS) -MT tests/testcommon-testcommon.o -MD -MP -MF tests/$(DEPDIR)/testcommon-testcommon.Tpo -c -o tests/testcommon-testcommon.o `test -f 'tests/testcommon.c' || echo '$(srcdir)/'`tests/testcommon.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/testcommon-testcommon.Tpo tests/$(DEPDIR)/testcommon-testcommon.Po
@@ -5465,6 +5582,20 @@ tests/list_unused-list-unused.obj: tests/list-unused.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/list-unused.c' object='tests/list_unused-list-unused.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_list_unused_CFLAGS) $(CFLAGS) -c -o tests/list_unused-list-unused.obj `if test -f 'tests/list-unused.c'; then $(CYGPATH_W) 'tests/list-unused.c'; else $(CYGPATH_W) '$(srcdir)/tests/list-unused.c'; fi`
+
+tests/mock_flatpak-mock-flatpak.o: tests/mock-flatpak.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_mock_flatpak_CFLAGS) $(CFLAGS) -MT tests/mock_flatpak-mock-flatpak.o -MD -MP -MF tests/$(DEPDIR)/mock_flatpak-mock-flatpak.Tpo -c -o tests/mock_flatpak-mock-flatpak.o `test -f 'tests/mock-flatpak.c' || echo '$(srcdir)/'`tests/mock-flatpak.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/mock_flatpak-mock-flatpak.Tpo tests/$(DEPDIR)/mock_flatpak-mock-flatpak.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/mock-flatpak.c' object='tests/mock_flatpak-mock-flatpak.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_mock_flatpak_CFLAGS) $(CFLAGS) -c -o tests/mock_flatpak-mock-flatpak.o `test -f 'tests/mock-flatpak.c' || echo '$(srcdir)/'`tests/mock-flatpak.c
+
+tests/mock_flatpak-mock-flatpak.obj: tests/mock-flatpak.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_mock_flatpak_CFLAGS) $(CFLAGS) -MT tests/mock_flatpak-mock-flatpak.obj -MD -MP -MF tests/$(DEPDIR)/mock_flatpak-mock-flatpak.Tpo -c -o tests/mock_flatpak-mock-flatpak.obj `if test -f 'tests/mock-flatpak.c'; then $(CYGPATH_W) 'tests/mock-flatpak.c'; else $(CYGPATH_W) '$(srcdir)/tests/mock-flatpak.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/mock_flatpak-mock-flatpak.Tpo tests/$(DEPDIR)/mock_flatpak-mock-flatpak.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/mock-flatpak.c' object='tests/mock_flatpak-mock-flatpak.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_mock_flatpak_CFLAGS) $(CFLAGS) -c -o tests/mock_flatpak-mock-flatpak.obj `if test -f 'tests/mock-flatpak.c'; then $(CYGPATH_W) 'tests/mock-flatpak.c'; else $(CYGPATH_W) '$(srcdir)/tests/mock-flatpak.c'; fi`
 
 tests/test_authenticator-test-authenticator.o: tests/test-authenticator.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tests_test_authenticator_CFLAGS) $(CFLAGS) -MT tests/test_authenticator-test-authenticator.o -MD -MP -MF tests/$(DEPDIR)/test_authenticator-test-authenticator.Tpo -c -o tests/test_authenticator-test-authenticator.o `test -f 'tests/test-authenticator.c' || echo '$(srcdir)/'`tests/test-authenticator.c
@@ -6352,6 +6483,13 @@ recheck: all $(check_PROGRAMS) $(check_LTLIBRARIES) $(check_SCRIPTS) $(check_DAT
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
+test-context.log: test-context$(EXEEXT)
+	@p='test-context$(EXEEXT)'; \
+	b='test-context'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 test-exports.log: test-exports$(EXEEXT)
 	@p='test-exports$(EXEEXT)'; \
 	b='test-exports'; \
@@ -6362,6 +6500,13 @@ test-exports.log: test-exports$(EXEEXT)
 test-instance.log: test-instance$(EXEEXT)
 	@p='test-instance$(EXEEXT)'; \
 	b='test-instance'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test-portal.log: test-portal$(EXEEXT)
+	@p='test-portal$(EXEEXT)'; \
+	b='test-portal'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -7092,6 +7237,7 @@ distclean: distclean-recursive
 	-rm -f portal/$(DEPDIR)/flatpak_portal-flatpak-portal-dbus.Po
 	-rm -f portal/$(DEPDIR)/flatpak_portal-flatpak-portal.Po
 	-rm -f portal/$(DEPDIR)/flatpak_portal-portal-impl.Po
+	-rm -f portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Po
 	-rm -f portal/$(DEPDIR)/tests_test_update_portal-flatpak-portal-dbus.Po
 	-rm -f revokefs/$(DEPDIR)/demo-demo.Po
 	-rm -f revokefs/$(DEPDIR)/fuse-main.Po
@@ -7129,9 +7275,12 @@ distclean: distclean-recursive
 	-rm -f tests/$(DEPDIR)/libpreload.Plo
 	-rm -f tests/$(DEPDIR)/libtestlib_la-testlib.Plo
 	-rm -f tests/$(DEPDIR)/list_unused-list-unused.Po
+	-rm -f tests/$(DEPDIR)/mock_flatpak-mock-flatpak.Po
 	-rm -f tests/$(DEPDIR)/test_authenticator-test-authenticator.Po
+	-rm -f tests/$(DEPDIR)/test_context-test-context.Po
 	-rm -f tests/$(DEPDIR)/test_exports-test-exports.Po
 	-rm -f tests/$(DEPDIR)/test_instance-test-instance.Po
+	-rm -f tests/$(DEPDIR)/test_portal-test-portal.Po
 	-rm -f tests/$(DEPDIR)/test_portal_impl-test-portal-impl.Po
 	-rm -f tests/$(DEPDIR)/test_update_portal-test-update-portal.Po
 	-rm -f tests/$(DEPDIR)/testcommon-testcommon.Po
@@ -7301,6 +7450,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f portal/$(DEPDIR)/flatpak_portal-flatpak-portal-dbus.Po
 	-rm -f portal/$(DEPDIR)/flatpak_portal-flatpak-portal.Po
 	-rm -f portal/$(DEPDIR)/flatpak_portal-portal-impl.Po
+	-rm -f portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Po
 	-rm -f portal/$(DEPDIR)/tests_test_update_portal-flatpak-portal-dbus.Po
 	-rm -f revokefs/$(DEPDIR)/demo-demo.Po
 	-rm -f revokefs/$(DEPDIR)/fuse-main.Po
@@ -7338,9 +7488,12 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f tests/$(DEPDIR)/libpreload.Plo
 	-rm -f tests/$(DEPDIR)/libtestlib_la-testlib.Plo
 	-rm -f tests/$(DEPDIR)/list_unused-list-unused.Po
+	-rm -f tests/$(DEPDIR)/mock_flatpak-mock-flatpak.Po
 	-rm -f tests/$(DEPDIR)/test_authenticator-test-authenticator.Po
+	-rm -f tests/$(DEPDIR)/test_context-test-context.Po
 	-rm -f tests/$(DEPDIR)/test_exports-test-exports.Po
 	-rm -f tests/$(DEPDIR)/test_instance-test-instance.Po
+	-rm -f tests/$(DEPDIR)/test_portal-test-portal.Po
 	-rm -f tests/$(DEPDIR)/test_portal_impl-test-portal-impl.Po
 	-rm -f tests/$(DEPDIR)/test_update_portal-test-update-portal.Po
 	-rm -f tests/$(DEPDIR)/testcommon-testcommon.Po
