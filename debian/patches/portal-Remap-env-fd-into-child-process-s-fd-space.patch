@@ -1,0 +1,48 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Fri, 21 May 2021 13:45:03 +0100
+Subject: portal: Remap --env-fd into child process's fd space
+
+Just because we can allocate a new, unused fd in the portal's fd space,
+that doesn't mean that fd number is going to be unused in the child
+process's fd space: we might need to remap it.
+
+Resolves: flatpak/flatpak#4286
+Fixes: aeb6a7ab "portal: Convert --env in extra-args into --env-fd"
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Origin: upstream, 1.11.2, commit:526dae92418616c71517945e810227416f160ce6
+Forwarded: https://github.com/flatpak/flatpak/pull/4322
+---
+ portal/flatpak-portal.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/portal/flatpak-portal.c b/portal/flatpak-portal.c
+index b0664aa..50ebcc8 100644
+--- a/portal/flatpak-portal.c
++++ b/portal/flatpak-portal.c
+@@ -1085,6 +1085,7 @@ handle_spawn (PortalFlatpak         *object,
+ 
+   if (env_string->len > 0)
+     {
++      FdMapEntry fd_map_entry;
+       g_auto(GLnxTmpfile) env_tmpf  = { 0, };
+ 
+       if (!flatpak_buffer_to_sealed_memfd_or_tmpfile (&env_tmpf, "environ",
+@@ -1096,9 +1097,16 @@ handle_spawn (PortalFlatpak         *object,
+         }
+ 
+       env_fd = glnx_steal_fd (&env_tmpf.fd);
+-      child_setup_data.env_fd = env_fd;
++
++      /* Use a fd that hasn't been used yet. We might have to reshuffle
++       * fd_map_entry.to, a bit later. */
++      fd_map_entry.from = env_fd;
++      fd_map_entry.to = ++max_fd;
++      fd_map_entry.final = fd_map_entry.to;
++      g_array_append_val (fd_map, fd_map_entry);
++
+       g_ptr_array_add (flatpak_argv,
+-                       g_strdup_printf ("--env-fd=%d", env_fd));
++                       g_strdup_printf ("--env-fd=%d", fd_map_entry.final));
+     }
+ 
+   for (i = 0; unset_env != NULL && unset_env[i] != NULL; i++)

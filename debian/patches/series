@@ -1,1 +1,5 @@
 tests-Remove-hard-coded-references-to-x86_64.patch
+Fix-several-memory-leaks.patch
+portal-Don-t-leak-fd-used-for-serialized-environment.patch
+portal-Use-a-GArray-to-store-fds.patch
+portal-Remap-env-fd-into-child-process-s-fd-space.patch
