@@ -1120,36 +1120,22 @@ option_env_cb (const gchar *option_name,
   return TRUE;
 }
 
-static gboolean
-option_env_fd_cb (const gchar *option_name,
-                  const gchar *value,
-                  gpointer     data,
-                  GError     **error)
+gboolean
+flatpak_context_parse_env_block (FlatpakContext *context,
+                                 const char *data,
+                                 gsize length,
+                                 GError **error)
 {
-  FlatpakContext *context = data;
-  g_autoptr(GBytes) env_block = NULL;
-  gsize remaining;
-  const char *p;
-  guint64 fd;
-  gchar *endptr;
-
-  fd = g_ascii_strtoull (value, &endptr, 10);
-
-  if (endptr == NULL || *endptr != '\0' || fd > G_MAXINT)
-    return glnx_throw (error, "Not a valid file descriptor: %s", value);
-
-  env_block = glnx_fd_readall_bytes ((int) fd, NULL, error);
-
-  if (env_block == NULL)
-    return FALSE;
-
-  p = g_bytes_get_data (env_block, &remaining);
+  const char *p = data;
+  gsize remaining = length;
 
   /* env_block might not be \0-terminated */
   while (remaining > 0)
     {
       size_t len = strnlen (p, remaining);
       const char *equals;
+      g_autofree char *env_var = NULL;
+      g_autofree char *env_value = NULL;
 
       g_assert (len <= remaining);
 
@@ -1159,9 +1145,9 @@ option_env_fd_cb (const gchar *option_name,
         return glnx_throw (error,
                            "Environment variable must be given in the form VARIABLE=VALUE, not %.*s", (int) len, p);
 
-      flatpak_context_set_env_var (context,
-                                   g_strndup (p, equals - p),
-                                   g_strndup (equals + 1, len - (equals - p) - 1));
+      env_var = g_strndup (p, equals - p);
+      env_value = g_strndup (equals + 1, len - (equals - p) - 1);
+      flatpak_context_set_env_var (context, env_var, env_value);
       p += len;
       remaining -= len;
 
@@ -1173,10 +1159,49 @@ option_env_fd_cb (const gchar *option_name,
         }
     }
 
+  return TRUE;
+}
+
+gboolean
+flatpak_context_parse_env_fd (FlatpakContext *context,
+                              int fd,
+                              GError **error)
+{
+  g_autoptr(GBytes) env_block = NULL;
+  const char *data;
+  gsize len;
+
+  env_block = glnx_fd_readall_bytes (fd, NULL, error);
+
+  if (env_block == NULL)
+    return FALSE;
+
+  data = g_bytes_get_data (env_block, &len);
+  return flatpak_context_parse_env_block (context, data, len, error);
+}
+
+static gboolean
+option_env_fd_cb (const gchar *option_name,
+                  const gchar *value,
+                  gpointer     data,
+                  GError     **error)
+{
+  FlatpakContext *context = data;
+  guint64 fd;
+  gchar *endptr;
+  gboolean ret;
+
+  fd = g_ascii_strtoull (value, &endptr, 10);
+
+  if (endptr == NULL || *endptr != '\0' || fd > G_MAXINT)
+    return glnx_throw (error, "Not a valid file descriptor: %s", value);
+
+  ret = flatpak_context_parse_env_fd (context, (int) fd, error);
+
   if (fd >= 3)
     close (fd);
 
-  return TRUE;
+  return ret;
 }
 
 static gboolean
