@@ -785,10 +785,13 @@ test_libglnx_xattrs_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(test_libglnx_xattrs_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_test_portal_OBJECTS =  \
+am_test_portal_OBJECTS = tests/test_portal-test-portal.$(OBJEXT) \
+	$(am__objects_1)
+nodist_test_portal_OBJECTS =  \
 	portal/test_portal-flatpak-portal-dbus.$(OBJEXT) \
-	tests/test_portal-test-portal.$(OBJEXT) $(am__objects_1)
-test_portal_OBJECTS = $(am_test_portal_OBJECTS)
+	$(am__objects_1)
+test_portal_OBJECTS = $(am_test_portal_OBJECTS) \
+	$(nodist_test_portal_OBJECTS)
 test_portal_DEPENDENCIES = $(am__DEPENDENCIES_4) libtestlib.la
 test_portal_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(test_portal_CFLAGS) \
@@ -1081,10 +1084,10 @@ SOURCES = $(libflatpak_app_la_SOURCES) \
 	$(test_libflatpak_SOURCES) $(test_libglnx_errors_SOURCES) \
 	$(test_libglnx_fdio_SOURCES) $(test_libglnx_macros_SOURCES) \
 	$(test_libglnx_shutil_SOURCES) $(test_libglnx_xattrs_SOURCES) \
-	$(test_portal_SOURCES) $(testcommon_SOURCES) \
-	$(testlibrary_SOURCES) $(tests_hold_lock_SOURCES) \
-	tests/httpcache.c $(tests_list_unused_SOURCES) \
-	$(tests_mock_flatpak_SOURCES) \
+	$(test_portal_SOURCES) $(nodist_test_portal_SOURCES) \
+	$(testcommon_SOURCES) $(testlibrary_SOURCES) \
+	$(tests_hold_lock_SOURCES) tests/httpcache.c \
+	$(tests_list_unused_SOURCES) $(tests_mock_flatpak_SOURCES) \
 	$(tests_test_authenticator_SOURCES) \
 	$(tests_test_portal_impl_SOURCES) \
 	$(tests_test_update_portal_SOURCES) \
@@ -2434,9 +2437,12 @@ test_instance_SOURCES = \
 test_portal_CFLAGS = $(testcommon_CFLAGS)
 test_portal_LDADD = $(testcommon_LDADD) libtestlib.la
 test_portal_SOURCES = \
+	tests/test-portal.c \
+	$(NULL)
+
+nodist_test_portal_SOURCES = \
 	portal/flatpak-portal-dbus.c \
 	portal/flatpak-portal-dbus.h \
-	tests/test-portal.c \
 	$(NULL)
 
 tests_hold_lock_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
@@ -3497,10 +3503,10 @@ subprojects/libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.$(OBJEXT):  \
 test-libglnx-xattrs$(EXEEXT): $(test_libglnx_xattrs_OBJECTS) $(test_libglnx_xattrs_DEPENDENCIES) $(EXTRA_test_libglnx_xattrs_DEPENDENCIES) 
 	@rm -f test-libglnx-xattrs$(EXEEXT)
 	$(AM_V_CCLD)$(test_libglnx_xattrs_LINK) $(test_libglnx_xattrs_OBJECTS) $(test_libglnx_xattrs_LDADD) $(LIBS)
-portal/test_portal-flatpak-portal-dbus.$(OBJEXT):  \
-	portal/$(am__dirstamp) portal/$(DEPDIR)/$(am__dirstamp)
 tests/test_portal-test-portal.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
+portal/test_portal-flatpak-portal-dbus.$(OBJEXT):  \
+	portal/$(am__dirstamp) portal/$(DEPDIR)/$(am__dirstamp)
 
 test-portal$(EXEEXT): $(test_portal_OBJECTS) $(test_portal_DEPENDENCIES) $(EXTRA_test_portal_DEPENDENCIES) 
 	@rm -f test-portal$(EXEEXT)
@@ -5471,20 +5477,6 @@ subprojects/libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.obj: subprojec
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_libglnx_xattrs_CFLAGS) $(CFLAGS) -c -o subprojects/libglnx/tests/test_libglnx_xattrs-test-libglnx-xattrs.obj `if test -f 'subprojects/libglnx/tests/test-libglnx-xattrs.c'; then $(CYGPATH_W) 'subprojects/libglnx/tests/test-libglnx-xattrs.c'; else $(CYGPATH_W) '$(srcdir)/subprojects/libglnx/tests/test-libglnx-xattrs.c'; fi`
 
-portal/test_portal-flatpak-portal-dbus.o: portal/flatpak-portal-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -MT portal/test_portal-flatpak-portal-dbus.o -MD -MP -MF portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Tpo -c -o portal/test_portal-flatpak-portal-dbus.o `test -f 'portal/flatpak-portal-dbus.c' || echo '$(srcdir)/'`portal/flatpak-portal-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Tpo portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='portal/flatpak-portal-dbus.c' object='portal/test_portal-flatpak-portal-dbus.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -c -o portal/test_portal-flatpak-portal-dbus.o `test -f 'portal/flatpak-portal-dbus.c' || echo '$(srcdir)/'`portal/flatpak-portal-dbus.c
-
-portal/test_portal-flatpak-portal-dbus.obj: portal/flatpak-portal-dbus.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -MT portal/test_portal-flatpak-portal-dbus.obj -MD -MP -MF portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Tpo -c -o portal/test_portal-flatpak-portal-dbus.obj `if test -f 'portal/flatpak-portal-dbus.c'; then $(CYGPATH_W) 'portal/flatpak-portal-dbus.c'; else $(CYGPATH_W) '$(srcdir)/portal/flatpak-portal-dbus.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Tpo portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='portal/flatpak-portal-dbus.c' object='portal/test_portal-flatpak-portal-dbus.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -c -o portal/test_portal-flatpak-portal-dbus.obj `if test -f 'portal/flatpak-portal-dbus.c'; then $(CYGPATH_W) 'portal/flatpak-portal-dbus.c'; else $(CYGPATH_W) '$(srcdir)/portal/flatpak-portal-dbus.c'; fi`
-
 tests/test_portal-test-portal.o: tests/test-portal.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -MT tests/test_portal-test-portal.o -MD -MP -MF tests/$(DEPDIR)/test_portal-test-portal.Tpo -c -o tests/test_portal-test-portal.o `test -f 'tests/test-portal.c' || echo '$(srcdir)/'`tests/test-portal.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/test_portal-test-portal.Tpo tests/$(DEPDIR)/test_portal-test-portal.Po
@@ -5498,6 +5490,20 @@ tests/test_portal-test-portal.obj: tests/test-portal.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='tests/test-portal.c' object='tests/test_portal-test-portal.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -c -o tests/test_portal-test-portal.obj `if test -f 'tests/test-portal.c'; then $(CYGPATH_W) 'tests/test-portal.c'; else $(CYGPATH_W) '$(srcdir)/tests/test-portal.c'; fi`
+
+portal/test_portal-flatpak-portal-dbus.o: portal/flatpak-portal-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -MT portal/test_portal-flatpak-portal-dbus.o -MD -MP -MF portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Tpo -c -o portal/test_portal-flatpak-portal-dbus.o `test -f 'portal/flatpak-portal-dbus.c' || echo '$(srcdir)/'`portal/flatpak-portal-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Tpo portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='portal/flatpak-portal-dbus.c' object='portal/test_portal-flatpak-portal-dbus.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -c -o portal/test_portal-flatpak-portal-dbus.o `test -f 'portal/flatpak-portal-dbus.c' || echo '$(srcdir)/'`portal/flatpak-portal-dbus.c
+
+portal/test_portal-flatpak-portal-dbus.obj: portal/flatpak-portal-dbus.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -MT portal/test_portal-flatpak-portal-dbus.obj -MD -MP -MF portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Tpo -c -o portal/test_portal-flatpak-portal-dbus.obj `if test -f 'portal/flatpak-portal-dbus.c'; then $(CYGPATH_W) 'portal/flatpak-portal-dbus.c'; else $(CYGPATH_W) '$(srcdir)/portal/flatpak-portal-dbus.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Tpo portal/$(DEPDIR)/test_portal-flatpak-portal-dbus.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='portal/flatpak-portal-dbus.c' object='portal/test_portal-flatpak-portal-dbus.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_portal_CFLAGS) $(CFLAGS) -c -o portal/test_portal-flatpak-portal-dbus.obj `if test -f 'portal/flatpak-portal-dbus.c'; then $(CYGPATH_W) 'portal/flatpak-portal-dbus.c'; else $(CYGPATH_W) '$(srcdir)/portal/flatpak-portal-dbus.c'; fi`
 
 tests/testcommon-testcommon.o: tests/testcommon.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(testcommon_CFLAGS) $(CFLAGS) -MT tests/testcommon-testcommon.o -MD -MP -MF tests/$(DEPDIR)/testcommon-testcommon.Tpo -c -o tests/testcommon-testcommon.o `test -f 'tests/testcommon.c' || echo '$(srcdir)/'`tests/testcommon.c
