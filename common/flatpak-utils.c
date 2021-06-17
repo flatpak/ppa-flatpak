@@ -122,14 +122,11 @@ flatpak_debug2 (const char *format, ...)
 {
   va_list var_args;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
   va_start (var_args, format);
   g_logv (G_LOG_DOMAIN "2",
           G_LOG_LEVEL_DEBUG,
           format, var_args);
   va_end (var_args);
-#pragma GCC diagnostic pop
 }
 
 gboolean
@@ -2288,6 +2285,7 @@ flatpak_parse_repofile (const char   *remote_name,
       decoded = g_base64_decode (gpg_key, &decoded_len);
       if (decoded_len < 10) /* Check some minimal size so we don't get crap */
         {
+          g_free (decoded);
           flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Invalid gpg key"));
           return NULL;
         }
@@ -2302,9 +2300,13 @@ flatpak_parse_repofile (const char   *remote_name,
 
   collection_id = g_key_file_get_string (keyfile, source_group,
                                          FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY, NULL);
-  if (collection_id == NULL || *collection_id == '\0')
+  if (collection_id != NULL && *collection_id == '\0')
+    g_clear_pointer (&collection_id, g_free);
+  if (collection_id == NULL)
     collection_id = g_key_file_get_string (keyfile, source_group,
                                            FLATPAK_REPO_COLLECTION_ID_KEY, NULL);
+  if (collection_id != NULL && *collection_id == '\0')
+    g_clear_pointer (&collection_id, g_free);
   if (collection_id != NULL)
     {
       if (gpg_key == NULL)
@@ -5087,7 +5089,7 @@ validate_component (FlatpakXml *component,
     }
 
   while ((bundle = flatpak_xml_find (component, "bundle", &prev)) != NULL)
-    flatpak_xml_free (flatpak_xml_unlink (component, bundle));
+    flatpak_xml_free (flatpak_xml_unlink (bundle, prev));
 
   bundle = flatpak_xml_new ("bundle");
   bundle->attribute_names = g_new0 (char *, 2 * 4);
@@ -7340,12 +7342,9 @@ flatpak_prompt (gboolean allow_empty,
   g_autofree char *s = NULL;
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
   va_start (var_args, prompt);
   s = g_strdup_vprintf (prompt, var_args);
   va_end (var_args);
-#pragma GCC diagnostic pop
 
   while (TRUE)
     {
@@ -7376,12 +7375,9 @@ flatpak_password_prompt (const char *prompt, ...)
   gboolean was_echo;
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
   va_start (var_args, prompt);
   s = g_strdup_vprintf (prompt, var_args);
   va_end (var_args);
-#pragma GCC diagnostic pop
 
   while (TRUE)
     {
@@ -7414,12 +7410,9 @@ flatpak_yes_no_prompt (gboolean default_yes, const char *prompt, ...)
   g_autofree char *s = NULL;
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
   va_start (var_args, prompt);
   s = g_strdup_vprintf (prompt, var_args);
   va_end (var_args);
-#pragma GCC diagnostic pop
 
   while (TRUE)
     {
