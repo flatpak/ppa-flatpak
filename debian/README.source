@@ -23,3 +23,12 @@ The advantage of this approach is that the package in each branch is as
 modern as possible: changes that were necessary to be compatible with
 xenial will automatically disappear if we stop maintaining a backport
 to xenial, and so on.
+
+Version numbering
+-----------------
+
+If the version has already been packaged in Debian, for example as
+1.11.2-1, version it like 1.11.2-1flatpak1~20.04 in the PPA.
+
+If the version has not already been packaged in Debian,
+version it like 1.11.2-0flatpak1~20.04 in the PPA.
