@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flatpak master\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2021-06-15 23:41+0100\n"
+"POT-Creation-Date: 2021-06-17 17:42+0100\n"
 "PO-Revision-Date: 2019-08-24 23:27+0100\n"
 "Last-Translator: Zander Brown <zbrown@gnome.org>\n"
 "Language-Team: English - United Kingdom <en_GB@li.org>\n"
@@ -3461,7 +3461,7 @@ msgstr "%s already installed"
 #: app/flatpak-quiet-transaction.c:138 app/flatpak-quiet-transaction.c:140
 #: common/flatpak-dir.c:2867 common/flatpak-dir.c:3565
 #: common/flatpak-dir.c:15024 common/flatpak-dir.c:15300
-#: common/flatpak-transaction.c:2460 common/flatpak-transaction.c:2508
+#: common/flatpak-transaction.c:2461 common/flatpak-transaction.c:2509
 #: common/flatpak-utils.c:1123 common/flatpak-utils.c:1216
 #, c-format
 msgid "%s not installed"
@@ -5095,47 +5095,47 @@ msgstr "Failed to create symlink while migrating %s: %s"
 msgid "Warning: Problem looking for related refs: %s"
 msgstr "Warning: Problem looking for related refs: %s"
 
-#: common/flatpak-transaction.c:2281
+#: common/flatpak-transaction.c:2282
 #, c-format
 msgid "The application %s requires the runtime %s which was not found"
 msgstr "The application %s requires the runtime %s which was not found"
 
-#: common/flatpak-transaction.c:2297
+#: common/flatpak-transaction.c:2298
 #, c-format
 msgid "The application %s requires the runtime %s which is not installed"
 msgstr "The application %s requires the runtime %s which is not installed"
 
-#: common/flatpak-transaction.c:2395
+#: common/flatpak-transaction.c:2396
 #, c-format
 msgid "Can't uninstall %s which is needed by %s"
 msgstr "Can't uninstall %s which is needed by %s"
 
-#: common/flatpak-transaction.c:2464
+#: common/flatpak-transaction.c:2465
 #, c-format
 msgid "Remote %s disabled, ignoring %s update"
 msgstr "Remote %s disabled, ignoring %s update"
 
-#: common/flatpak-transaction.c:2497
+#: common/flatpak-transaction.c:2498
 #, c-format
 msgid "%s is already installed"
 msgstr "%s is already installed"
 
-#: common/flatpak-transaction.c:2500
+#: common/flatpak-transaction.c:2501
 #, c-format
 msgid "%s is already installed from remote %s"
 msgstr "%s is already installed from remote %s"
 
-#: common/flatpak-transaction.c:2695
+#: common/flatpak-transaction.c:2696
 #, c-format
 msgid "Invalid .flatpakref: %s"
 msgstr "Invalid .flatpakref: %s"
 
-#: common/flatpak-transaction.c:2809
+#: common/flatpak-transaction.c:2810
 #, c-format
 msgid "Error updating remote metadata for '%s': %s"
 msgstr "Error updating remote metadata for '%s': %s"
 
-#: common/flatpak-transaction.c:3254
+#: common/flatpak-transaction.c:3255
 #, c-format
 msgid ""
 "Warning: Treating remote fetch error as non-fatal since %s is already "
@@ -5144,41 +5144,41 @@ msgstr ""
 "Warning: Treating remote fetch error as non-fatal since %s is already "
 "installed: %s"
 
-#: common/flatpak-transaction.c:3570
+#: common/flatpak-transaction.c:3571
 #, fuzzy, c-format
 msgid "No authenticator installed for remote '%s'"
 msgstr "Authentication is required to update remote info"
 
-#: common/flatpak-transaction.c:3674 common/flatpak-transaction.c:3681
+#: common/flatpak-transaction.c:3675 common/flatpak-transaction.c:3682
 #, fuzzy, c-format
 msgid "Failed to get tokens for ref: %s"
 msgstr "Failed to determine parts from ref: %s"
 
-#: common/flatpak-transaction.c:3676 common/flatpak-transaction.c:3683
+#: common/flatpak-transaction.c:3677 common/flatpak-transaction.c:3684
 #, fuzzy
 msgid "Failed to get tokens for ref"
 msgstr "Failed to determine parts from ref: %s"
 
-#: common/flatpak-transaction.c:4007
+#: common/flatpak-transaction.c:4008
 #, fuzzy, c-format
 msgid "Flatpakrepo URL %s not file, HTTP or HTTPS"
 msgstr "Flatpakrepo URL %s not HTTP or HTTPS"
 
-#: common/flatpak-transaction.c:4013
+#: common/flatpak-transaction.c:4014
 #, c-format
 msgid "Can't load dependent file %s: "
 msgstr "Can't load dependent file %s: "
 
-#: common/flatpak-transaction.c:4021
+#: common/flatpak-transaction.c:4022
 #, c-format
 msgid "Invalid .flatpakrepo: %s"
 msgstr "Invalid .flatpakrepo: %s"
 
-#: common/flatpak-transaction.c:4617
+#: common/flatpak-transaction.c:4618
 msgid "Transaction already executed"
 msgstr "Transaction already executed"
 
-#: common/flatpak-transaction.c:4632
+#: common/flatpak-transaction.c:4633
 msgid ""
 "Refusing to operate on a user installation as root! This can lead to "
 "incorrect file ownership and permission errors."
@@ -5186,16 +5186,16 @@ msgstr ""
 "Refusing to operate on a user installation as root! This can lead to "
 "incorrect file ownership and permission errors."
 
-#: common/flatpak-transaction.c:4724 common/flatpak-transaction.c:4737
+#: common/flatpak-transaction.c:4725 common/flatpak-transaction.c:4738
 msgid "Aborted by user"
 msgstr "Aborted by user"
 
-#: common/flatpak-transaction.c:4762
+#: common/flatpak-transaction.c:4763
 #, c-format
 msgid "Skipping %s due to previous error"
 msgstr "Skipping %s due to previous error"
 
-#: common/flatpak-transaction.c:4814
+#: common/flatpak-transaction.c:4815
 #, fuzzy, c-format
 msgid "Aborted due to failure (%s)"
 msgstr "Aborted due to failure"
