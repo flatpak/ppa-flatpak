@@ -1,4 +1,4 @@
-flatpak (1.10.2-2) UNRELEASED; urgency=medium
+flatpak (1.10.2-2) unstable; urgency=medium
 
   * Backport changes from upstream git to fix regressions when apps invoke
     flatpak-spawn --env=... to launch a subsandbox.
@@ -14,7 +14,7 @@ flatpak (1.10.2-2) UNRELEASED; urgency=medium
       subsandbox failing to launch or being launched with wrong environment
       variables. (Closes: #989935)
 
- -- Simon McVittie <smcv@debian.org>  Wed, 16 Jun 2021 10:48:08 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 22 Jun 2021 10:10:38 +0100
 
 flatpak (1.10.2-1) unstable; urgency=medium
 
