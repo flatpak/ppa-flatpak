@@ -1,0 +1,132 @@
+From: Alexander Larsson <alexl@redhat.com>
+Date: Wed, 17 Mar 2021 17:12:32 +0100
+Subject: system-helper: Fix deploys of local remotes
+
+For updates in remotes with a local (file:) uri we just do a deploy
+with a LOCAL_PULL flag set and an empty arg_repo_path. However, our
+arg_repo_path checking at some point seemed to stop properly handling
+the case where it is empty. I got it to report "No such file" wich
+broke the tests.
+
+(cherry picked from commit 49e8bfcea516e96eb950109d0fa45811a352a517)
+
+Bug: https://github.com/flatpak/flatpak/issues/4339
+Bug: https://gitlab.gnome.org/GNOME/gnome-software/-/issues/1204
+Origin: upstream, 1.11.1, commit:49e8bfcea516e96eb950109d0fa45811a352a517
+Applied-upstream: 1.10.3, commit:c8b9069ab1d894f0f3a30e34f0865ee0287ec7a1
+---
+ system-helper/flatpak-system-helper.c | 89 ++++++++++++++++++-----------------
+ 1 file changed, 46 insertions(+), 43 deletions(-)
+
+diff --git a/system-helper/flatpak-system-helper.c b/system-helper/flatpak-system-helper.c
+index b202c94..adcfe61 100644
+--- a/system-helper/flatpak-system-helper.c
++++ b/system-helper/flatpak-system-helper.c
+@@ -410,61 +410,64 @@ handle_deploy (FlatpakSystemHelper   *object,
+       return G_DBUS_METHOD_INVOCATION_HANDLED;
+     }
+ 
+-  src_dir = g_path_get_dirname (arg_repo_path);
+-  ongoing_pull = take_ongoing_pull_by_dir (src_dir);
+-  if (ongoing_pull != NULL)
++  if ((arg_flags & ~FLATPAK_HELPER_DEPLOY_FLAGS_ALL) != 0)
+     {
+-      g_autoptr(GError) local_error = NULL;
+-      uid_t uid;
++      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
++                                             "Unsupported flags enabled: 0x%x", (arg_flags & ~FLATPAK_HELPER_DEPLOY_FLAGS_ALL));
++      return G_DBUS_METHOD_INVOCATION_HANDLED;
++    }
+ 
+-      /* Ensure that pull's uid is same as the caller's uid */
+-      if (!get_connection_uid (invocation, &uid, &local_error))
++  if (strlen (arg_repo_path) > 0)
++    {
++      if (!g_file_query_exists (repo_file, NULL))
+         {
+-          g_dbus_method_invocation_return_gerror (invocation, local_error);
++          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
++                                                 "Path does not exist");
+           return G_DBUS_METHOD_INVOCATION_HANDLED;
+         }
+-      else
++
++      src_dir = g_path_get_dirname (arg_repo_path);
++      ongoing_pull = take_ongoing_pull_by_dir (src_dir);
++      if (ongoing_pull != NULL)
+         {
+-          if (ongoing_pull->uid != uid)
++          g_autoptr(GError) local_error = NULL;
++          uid_t uid;
++
++          /* Ensure that pull's uid is same as the caller's uid */
++          if (!get_connection_uid (invocation, &uid, &local_error))
+             {
+-              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+-                                                     "Ongoing pull's uid(%d) does not match with peer uid(%d)",
+-                                                     ongoing_pull->uid, uid);
++              g_dbus_method_invocation_return_gerror (invocation, local_error);
+               return G_DBUS_METHOD_INVOCATION_HANDLED;
+             }
+-        }
+-
+-      terminate_revokefs_backend (ongoing_pull);
+-
+-      if (!flatpak_canonicalize_permissions (AT_FDCWD,
+-                                             arg_repo_path,
+-                                             getuid() == 0 ? 0 : -1,
+-                                             getuid() == 0 ? 0 : -1,
+-                                             &local_error))
+-        {
+-          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+-                                                 "Failed to canonicalize permissions of repo %s: %s",
+-                                                 arg_repo_path, local_error->message);
+-          return G_DBUS_METHOD_INVOCATION_HANDLED;
+-        }
++          else
++            {
++              if (ongoing_pull->uid != uid)
++                {
++                  g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
++                                                         "Ongoing pull's uid(%d) does not match with peer uid(%d)",
++                                                         ongoing_pull->uid, uid);
++                  return G_DBUS_METHOD_INVOCATION_HANDLED;
++                }
++            }
+ 
+-      /* At this point, the cache-dir's repo is owned by root. Hence, any failure
+-       * from here on, should always cleanup the cache-dir and not preserve it to be re-used. */
+-      ongoing_pull->preserve_pull = FALSE;
+-    }
++          terminate_revokefs_backend (ongoing_pull);
+ 
+-  if ((arg_flags & ~FLATPAK_HELPER_DEPLOY_FLAGS_ALL) != 0)
+-    {
+-      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+-                                             "Unsupported flags enabled: 0x%x", (arg_flags & ~FLATPAK_HELPER_DEPLOY_FLAGS_ALL));
+-      return G_DBUS_METHOD_INVOCATION_HANDLED;
+-    }
++          if (!flatpak_canonicalize_permissions (AT_FDCWD,
++                                                 arg_repo_path,
++                                                 getuid() == 0 ? 0 : -1,
++                                                 getuid() == 0 ? 0 : -1,
++                                                 &local_error))
++            {
++              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
++                                                     "Failed to canonicalize permissions of repo %s: %s",
++                                                     arg_repo_path, local_error->message);
++              return G_DBUS_METHOD_INVOCATION_HANDLED;
++            }
+ 
+-  if (!g_file_query_exists (repo_file, NULL))
+-    {
+-      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+-                                             "Path does not exist");
+-      return G_DBUS_METHOD_INVOCATION_HANDLED;
++          /* At this point, the cache-dir's repo is owned by root. Hence, any failure
++           * from here on, should always cleanup the cache-dir and not preserve it to be re-used. */
++          ongoing_pull->preserve_pull = FALSE;
++        }
+     }
+ 
+   ref = flatpak_decomposed_new_from_ref (arg_ref, &error);
