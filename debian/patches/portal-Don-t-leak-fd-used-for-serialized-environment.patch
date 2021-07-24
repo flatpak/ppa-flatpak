@@ -9,6 +9,7 @@ Resolves: flatpak/flatpak#4285
 Fixes: aeb6a7ab "portal: Convert --env in extra-args into --env-fd"
 Signed-off-by: Simon McVittie <smcv@collabora.com>
 Origin: upstream, 1.11.2, commit:f2fbc75827a58cc6b4cba48a0c895c3313274020
+Applied-upstream: 1.10.3, commit:b4c6aa1cc88625db8b5a26313b34bad3e7c2ed56
 Forwarded: https://github.com/flatpak/flatpak/pull/4322
 ---
  portal/flatpak-portal.c | 7 ++++---

@@ -12,6 +12,7 @@ already been added by then.
 Helps: flatpak/flatpak#4286
 Signed-off-by: Simon McVittie <smcv@collabora.com>
 Origin: upstream, 1.11.2, commit:a09d07f085d85efdf34934ecc864a6a5ce9af761
+Applied-upstream: 1.10.3, commit:77b484cb2e4d7c8ce5937f6c7f3055755980de06
 Forwarded: https://github.com/flatpak/flatpak/pull/4322
 ---
  portal/flatpak-portal.c | 81 +++++++++++++++++++++++++------------------------
