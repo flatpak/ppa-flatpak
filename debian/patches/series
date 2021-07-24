@@ -1,3 +1,4 @@
+create-usb-Skip-copying-extra-data-flatpaks.patch
 tests-Remove-hard-coded-references-to-x86_64.patch
 Fix-several-memory-leaks.patch
 portal-Don-t-leak-fd-used-for-serialized-environment.patch
