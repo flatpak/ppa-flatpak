@@ -1,3 +1,29 @@
+flatpak (1.10.2-3) UNRELEASED; urgency=medium
+
+  * Align with upstream flatpak-1.10.x branch, making this effectively
+    a release candidate for upstream stable release 1.10.3
+    - d/patches: Update metadata to reflect upstream flatpak-1.10.x branch.
+      All the patches we apply in Debian are expected to be released in
+      1.10.3 upstream, but not all were annotated to reflect this.
+    - d/p/system-helper-Fix-deploys-of-local-remotes.patch:
+      Fix some failures to update in GNOME Software and the unit tests.
+      This change was previously applied in Ubuntu's flatpak_1.10.2-1ubuntu1
+      to fix a unit test failure, possibly triggered by a newer version of
+      GLib. It has also been reported to fix a failure to upgrade Flatpak
+      apps using GNOME Software, this time in Fedora.
+    - d/p/create-usb-Skip-copying-extra-data-flatpaks.patch:
+      Skip flatpaks with "extra-data" when using `flatpak create-usb`.
+      This command is intended to create USB drives that can be
+      used to install Flatpak apps and/or runtimes while offline,
+      but the "extra-data" feature downloads extra content for an app
+      or runtime at install time, as a way to automate installation of
+      data that can be re-downloaded by end users but is not licensed
+      for redistribution by Flatpak repositories. Such apps and runtimes
+      would fail to install while offline.
+    - d/p/series: Re-order patches to match upstream flatpak-1.10.x branch
+
+ -- Simon McVittie <smcv@debian.org>  Sat, 24 Jul 2021 16:38:05 +0100
+
 flatpak (1.10.2-2) unstable; urgency=medium
 
   * Backport changes from upstream git to fix regressions when apps invoke
