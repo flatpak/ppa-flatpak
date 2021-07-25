@@ -1,7 +1,7 @@
-flatpak (1.10.2-3) UNRELEASED; urgency=medium
+flatpak (1.10.2-3) unstable; urgency=medium
 
-  * Align with upstream flatpak-1.10.x branch, making this effectively
-    a release candidate for upstream stable release 1.10.3
+  * d/patches: Align with upstream flatpak-1.10.x branch, making this
+    effectively a release candidate for upstream stable release 1.10.3
     - d/patches: Update metadata to reflect upstream flatpak-1.10.x branch.
       All the patches we apply in Debian are expected to be released in
       1.10.3 upstream, but not all were annotated to reflect this.
@@ -22,7 +22,7 @@ flatpak (1.10.2-3) UNRELEASED; urgency=medium
       would fail to install while offline.
     - d/p/series: Re-order patches to match upstream flatpak-1.10.x branch
 
- -- Simon McVittie <smcv@debian.org>  Sat, 24 Jul 2021 16:38:05 +0100
+ -- Simon McVittie <smcv@debian.org>  Sun, 25 Jul 2021 20:44:58 +0100
 
 flatpak (1.10.2-2) unstable; urgency=medium
 
