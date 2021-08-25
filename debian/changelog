@@ -1,4 +1,4 @@
-flatpak (1.11.3-1flatpak1~20.04) UNRELEASED; urgency=medium
+flatpak (1.11.3-1flatpak1~20.04) focal; urgency=medium
 
   * Resync packaging with 1.11.3 in Debian
   * Changes relative to Debian:
@@ -17,7 +17,7 @@ flatpak (1.11.3-1flatpak1~20.04) UNRELEASED; urgency=medium
       and xdg-dbus-proxy separately if the host OS versions are too old.
     - Set changelog merge driver for debian/changelog
 
- -- Simon McVittie <smcv@debian.org>  Wed, 25 Aug 2021 15:54:16 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 25 Aug 2021 15:56:50 +0100
 
 flatpak (1.11.3-1) unstable; urgency=medium
 
