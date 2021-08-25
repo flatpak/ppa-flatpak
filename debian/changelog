@@ -1,8 +1,14 @@
-flatpak (1.11.3-1) UNRELEASED; urgency=medium
+flatpak (1.11.3-1) unstable; urgency=medium
 
   * New upstream development release
+  * Move to debhelper compat level 13
+    - Drop dh_missing override, --fail-missing is now the default
+  * d/rules: Normalize permissions of installed-tests
+  * Release to unstable to get wider testing.
+    We're early in the Debian release cycle, and this release is basically
+    a release-candidate for a new 1.12.x stable branch.
 
- -- Simon McVittie <smcv@debian.org>  Wed, 25 Aug 2021 12:28:28 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 25 Aug 2021 12:45:23 +0100
 
 flatpak (1.11.2-1) experimental; urgency=medium
 
