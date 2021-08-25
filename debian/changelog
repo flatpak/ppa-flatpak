@@ -1,3 +1,36 @@
+flatpak (1.11.3-1flatpak1~20.04) focal; urgency=medium
+
+  * Resync packaging with 1.11.3 in Debian
+  * Changes relative to Debian:
+    - Backport to Ubuntu 20.04 'focal'
+      - Revert libmalcontent integration, only added to Ubuntu after 20.04.
+      - Downgrade dbus from Depends to Recommends.
+        This is necessary for system-wide installations (without --user),
+        but doesn't need to be a hard dependency with libmalcontent
+        disabled.
+      - Revert use of libgdk-pixbuf-2.0-dev.
+        Ubuntu didn't get this until 21.04, and PPAs don't follow
+        alternative build-dependencies.
+      - Roll back to debhelper 12
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 25 Aug 2021 15:56:50 +0100
+
+flatpak (1.11.3-1) unstable; urgency=medium
+
+  * New upstream development release
+  * Move to debhelper compat level 13
+    - Drop dh_missing override, --fail-missing is now the default
+  * d/rules: Normalize permissions of installed-tests
+  * Release to unstable to get wider testing.
+    We're early in the Debian release cycle, and this release is basically
+    a release-candidate for a new 1.12.x stable branch.
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 25 Aug 2021 12:45:23 +0100
+
 flatpak (1.11.2-1flatpak1~18.04) bionic; urgency=medium
 
   * Backport from Ubuntu 20.04 'focal' to 18.04 'bionic', using changes
@@ -60,6 +93,50 @@ flatpak (1.11~git20210413-1) experimental; urgency=medium
     - Update symbols file
 
  -- Simon McVittie <smcv@debian.org>  Wed, 14 Apr 2021 12:33:30 +0100
+
+flatpak (1.10.2-3) unstable; urgency=medium
+
+  * d/patches: Align with upstream flatpak-1.10.x branch, making this
+    effectively a release candidate for upstream stable release 1.10.3
+    - d/patches: Update metadata to reflect upstream flatpak-1.10.x branch.
+      All the patches we apply in Debian are expected to be released in
+      1.10.3 upstream, but not all were annotated to reflect this.
+    - d/p/system-helper-Fix-deploys-of-local-remotes.patch:
+      Fix some failures to update in GNOME Software and the unit tests.
+      This change was previously applied in Ubuntu's flatpak_1.10.2-1ubuntu1
+      to fix a unit test failure, possibly triggered by a newer version of
+      GLib. It has also been reported to fix a failure to upgrade Flatpak
+      apps using GNOME Software, this time in Fedora.
+    - d/p/create-usb-Skip-copying-extra-data-flatpaks.patch:
+      Skip flatpaks with "extra-data" when using `flatpak create-usb`.
+      This command is intended to create USB drives that can be
+      used to install Flatpak apps and/or runtimes while offline,
+      but the "extra-data" feature downloads extra content for an app
+      or runtime at install time, as a way to automate installation of
+      data that can be re-downloaded by end users but is not licensed
+      for redistribution by Flatpak repositories. Such apps and runtimes
+      would fail to install while offline.
+    - d/p/series: Re-order patches to match upstream flatpak-1.10.x branch
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 25 Jul 2021 20:44:58 +0100
+
+flatpak (1.10.2-2) unstable; urgency=medium
+
+  * Backport changes from upstream git to fix regressions when apps invoke
+    flatpak-spawn --env=... to launch a subsandbox.
+    - d/p/Fix-several-memory-leaks.patch:
+      Fix minor memory leaks so that subsequent backports apply cleanly
+    - d/p/portal-Don-t-leak-fd-used-for-serialized-environment.patch:
+      Don't leak a file descriptor each time flatpak-spawn --env=... is used
+      (Closes: #989934)
+    - d/p/portal-Use-a-GArray-to-store-fds.patch,
+      d/p/portal-Remap-env-fd-into-child-process-s-fd-space.patch:
+      When an app uses flatpak-spawn --env=... --forward-fd=..., ensure
+      that the file descriptors do not collide, which could result in the
+      subsandbox failing to launch or being launched with wrong environment
+      variables. (Closes: #989935)
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 22 Jun 2021 10:10:38 +0100
 
 flatpak (1.10.2-1) unstable; urgency=medium
 
