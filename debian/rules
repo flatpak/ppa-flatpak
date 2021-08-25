@@ -61,15 +61,6 @@ override_dh_install:
 	rm -f debian/tmp/usr/lib/*/*.la
 	dh_install
 
-# debhelper >= 13.4 makes all of /usr/libexec executable, which is not
-# quite right for installed-tests
-override_dh_fixperms:
-	dh_fixperms -Xusr/libexec/installed-tests
-ifneq ($(filter %-tests,$(binaries)),)
-	chmod --changes u=rw,og=r debian/*-tests/usr/libexec/installed-tests/*/*.so
-	chmod --recursive --changes a+rX,u+w,og-w debian/*-tests/usr/libexec/installed-tests
-endif
-
 override_dh_installsystemd:
 	dh_installsystemd --no-start
 
