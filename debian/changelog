@@ -1,3 +1,9 @@
+flatpak (1.11.3-1) UNRELEASED; urgency=medium
+
+  * New upstream development release
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 25 Aug 2021 12:28:28 +0100
+
 flatpak (1.11.2-1) experimental; urgency=medium
 
   * New upstream development release
