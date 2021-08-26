@@ -1,3 +1,12 @@
+flatpak (1.10.2-3flatpak1~18.04) UNRELEASED; urgency=medium
+
+  * Resync Ubuntu 18.04 backport
+  * Changes relative to Ubuntu 20.04 backport:
+    - Roll back from debhelper compat level 12 to 11
+    - Set --libexecdir explicitly
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 26 Aug 2021 10:49:18 +0100
+
 flatpak (1.10.2-3flatpak1~20.04) focal; urgency=medium
 
   * Resync Ubuntu 20.04 backport with Debian 11 packaging
