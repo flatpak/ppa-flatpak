@@ -11,16 +11,16 @@ Build-Depends:
  bison,
  ca-certificates <!nocheck>,
  dbus,
- debhelper (>= 9),
+ debhelper-compat (= 12),
  desktop-file-utils <!nocheck>,
  dh-exec (>= 0.23~),
  docbook-xml <!nodoc>,
  docbook-xsl <!nodoc>,
  fuse <!nocheck>,
  gnupg <!nocheck>,
- gobject-introspection,
+ gobject-introspection (>= 1.54.1-2~),
  gtk-doc-tools,
- gtk-update-icon-cache  | libgtk-3-bin <!nocheck>,
+ gtk-update-icon-cache <!nocheck>,
  hicolor-icon-theme <!nocheck>,
  libappstream-glib-dev (>= 0.5.10),
  libarchive-dev (>= 2.8.0),
@@ -33,7 +33,7 @@ Build-Depends:
  libgdk-pixbuf2.0-dev,
  libgirepository1.0-dev,
  libglib2.0-dev (>= 2.44),
- libgpgme11-dev (>= 1.1.8),
+ libgpgme-dev (>= 1.1.8),
  libjson-glib-dev,
  libostree-dev (>= 2020.8),
  libpolkit-agent-1-dev,
@@ -44,10 +44,11 @@ Build-Depends:
  libxau-dev,
  libxml2-dev (>= 2.4),
  libxml2-utils,
+ libzstd-dev,
  ostree (>= 2020.8) <!nocheck>,
  policykit-1 <!nocheck>,
  procps,
- python3 <!nocheck>,
+ python3:any,
  python3-pyparsing,
  shared-mime-info <!nocheck>,
  socat <!nocheck>,
@@ -56,19 +57,20 @@ Build-Depends:
 Build-Depends-Indep:
  libglib2.0-doc,
  libostree-doc,
-Standards-Version: 4.3.0
-Homepage: http://flatpak.org/
+Standards-Version: 4.5.1
+Homepage: https://flatpak.org/
 Vcs-Git: https://salsa.debian.org/debian/flatpak.git
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
+Rules-Requires-Root: no
 
 Package: flatpak
 Architecture: linux-any
 Depends:
  adduser,
- xdg-desktop-portal (>= 0.10),
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
+ dbus,
  desktop-file-utils,
  hicolor-icon-theme,
  gtk-update-icon-cache,
@@ -76,7 +78,8 @@ Recommends:
  p11-kit,
  policykit-1,
  shared-mime-info,
- xdg-desktop-portal-gtk | xdg-desktop-portal-backend,
+ xdg-desktop-portal (>= 1.6),
+ xdg-desktop-portal-gtk (>= 1.6) | xdg-desktop-portal-backend,
 Suggests:
  avahi-daemon,
 Conflicts:
@@ -109,10 +112,12 @@ Depends:
  ca-certificates,
  desktop-file-utils,
  flatpak (= ${binary:Version}),
+ fuse,
  gnupg,
  gtk-update-icon-cache,
  hicolor-icon-theme,
  ostree (>= 2020.8),
+ policykit-1,
  shared-mime-info,
  socat,
  ${misc:Depends},
@@ -144,19 +149,29 @@ Architecture: linux-any
 Multi-Arch: same
 Section: libdevel
 Depends:
+ gir1.2-glib-2.0,
  gir1.2-flatpak-1.0 (= ${binary:Version}),
  libflatpak0 (= ${binary:Version}),
  libglib2.0-dev,
  libostree-dev (>= 2020.8),
  libxml2-dev (>= 2.4),
  pkg-config,
+ python3:any,
  ${misc:Depends},
+Recommends:
+ flatpak,
+Suggests:
+ gdb,
+ ostree,
+ python3-gi,
+ systemd-coredump,
 Description: Application deployment framework for desktop apps (development)
  Flatpak installs, manages and runs sandboxed desktop application bundles.
  See the flatpak package for a more comprehensive description.
  .
  This package contains development headers and pkg-config metadata
- for libflatpak0.
+ for libflatpak0, and the flatpak-coredump and flatpak-bisect scripts used
+ to debug Flatpak applications.
 
 Package: libflatpak-doc
 Build-Profiles: <!nodoc>
@@ -181,7 +196,7 @@ Depends:
  ${shlibs:Depends},
 Pre-Depends:
  ${misc:Pre-Depends},
-Multi-arch: same
+Multi-Arch: same
 Description: Application deployment framework for desktop apps (library)
  Flatpak installs, manages and runs sandboxed desktop application bundles.
  See the flatpak package for a more comprehensive description.

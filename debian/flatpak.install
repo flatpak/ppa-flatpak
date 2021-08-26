@@ -5,11 +5,12 @@ etc/X11/Xsession.d
 etc/profile.d/
 lib/systemd/system/flatpak-system-helper.service
 usr/bin/flatpak
+usr/lib/systemd/system-environment-generators
 usr/lib/systemd/user-environment-generators
 usr/lib/systemd/user/flatpak-oci-authenticator.service
 usr/lib/systemd/user/flatpak-portal.service
 usr/lib/systemd/user/flatpak-session-helper.service
-usr/lib/systemd/system-environment-generators/60-flatpak-system-only
+usr/lib/sysusers.d
 usr/libexec/flatpak-bwrap
 usr/libexec/flatpak-dbus-proxy
 usr/libexec/flatpak-oci-authenticator
@@ -22,8 +23,9 @@ usr/share/bash-completion
 usr/share/dbus-1/services
 usr/share/dbus-1/system-services
 usr/share/dbus-1/system.d
+usr/share/fish/vendor_completions.d
 usr/share/flatpak
-usr/share/fish/vendor_completions.d/flatpak.fish
+usr/share/gdm/env.d/*                   usr/share/doc/flatpak/examples/etc/gdm3/env.d
 usr/share/locale/*/LC_MESSAGES/flatpak.mo
 usr/share/polkit-1/actions
 usr/share/polkit-1/rules.d
