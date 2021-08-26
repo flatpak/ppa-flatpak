@@ -1,0 +1,27 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Thu, 26 Aug 2021 12:54:07 +0100
+Subject: libtest: Make sure ldconfig and capsh are in the PATH
+
+This gives us better test coverage on Debian derivatives.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/4385
+---
+ tests/libtest.sh | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/tests/libtest.sh b/tests/libtest.sh
+index eaefe5a..e12907f 100644
+--- a/tests/libtest.sh
++++ b/tests/libtest.sh
+@@ -105,6 +105,10 @@ export XDG_RUNTIME_DIR=${TEST_DATA_DIR}/runtime
+ export XDG_DESKTOP_PORTAL_DIR=${test_builddir}/share/xdg-desktop-portal/portals
+ export XDG_CURRENT_DESKTOP=test
+ 
++# On Debian derivatives, /usr/sbin and /sbin aren't in ordinary users'
++# PATHs, but ldconfig and capsh are kept in /sbin
++PATH="$PATH:/usr/sbin:/sbin"
++
+ export USERDIR=${TEST_DATA_DIR}/home/share/flatpak
+ export SYSTEMDIR=${TEST_DATA_DIR}/system
+ export ARCH=`flatpak --default-arch`

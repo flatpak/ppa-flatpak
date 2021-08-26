@@ -1,1 +1,2 @@
 tests-Don-t-reset-XDG_RUNTIME_DIR-locally.patch
+libtest-Make-sure-ldconfig-and-capsh-are-in-the-PATH.patch
