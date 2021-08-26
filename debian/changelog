@@ -1,3 +1,10 @@
+flatpak (1.10.2-4) UNRELEASED; urgency=medium
+
+  * d/gbp.conf, d/control: Branch for bullseye
+  * d/watch: Restrict to 1.10.x versions for bullseye
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 26 Aug 2021 12:01:16 +0100
+
 flatpak (1.10.2-3) unstable; urgency=medium
 
   * d/patches: Align with upstream flatpak-1.10.x branch, making this
