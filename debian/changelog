@@ -1,11 +1,13 @@
-flatpak (1.11.3-2) UNRELEASED; urgency=medium
+flatpak (1.11.3-2) unstable; urgency=medium
 
   * d/p/libtest-Make-sure-ldconfig-and-capsh-are-in-the-PATH.patch:
     Add patch from upstream git to improve autopkgtest coverage
   * d/p/tests-Don-t-reset-XDG_RUNTIME_DIR-locally.patch:
     Add patch from upstream git to prevent an autopkgtest failure under qemu
+  * d/rules: Remove all .la files, not just the one for libflatpak
+  * Generalize Lintian overrides to be independent of systemd unit location
 
- -- Simon McVittie <smcv@debian.org>  Fri, 27 Aug 2021 10:31:44 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 27 Aug 2021 14:59:25 +0100
 
 flatpak (1.11.3-1) unstable; urgency=medium
 
