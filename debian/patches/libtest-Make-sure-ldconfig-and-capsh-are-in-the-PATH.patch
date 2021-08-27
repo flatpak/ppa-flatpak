@@ -6,6 +6,7 @@ This gives us better test coverage on Debian derivatives.
 
 Signed-off-by: Simon McVittie <smcv@collabora.com>
 Forwarded: https://github.com/flatpak/flatpak/pull/4385
+Applied-upstream: 1.11.4, commit:21a5fe5ff1c4b6067b9d85ff31553d021fda1864
 ---
  tests/libtest.sh | 4 ++++
  1 file changed, 4 insertions(+)
