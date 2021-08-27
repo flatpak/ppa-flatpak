@@ -60,7 +60,7 @@ override_dh_install:
 	install -d debian/tmp/etc/X11/Xsession.d
 	install -m644 debian/tmp/etc/profile.d/flatpak.sh \
 		debian/tmp/etc/X11/Xsession.d/20flatpak
-	rm -f debian/tmp/usr/lib/*/*.la
+	find debian/tmp -name '*.la' -print -delete
 	dh_install
 
 # debhelper >= 13.4 makes all of /usr/libexec executable, which is not
