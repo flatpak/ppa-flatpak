@@ -1,4 +1,4 @@
-flatpak (1.10.3-0+deb11u1) UNRELEASED; urgency=medium
+flatpak (1.10.3-0+deb11u1) bullseye; urgency=medium
 
   * New upstream stable release
     - Don't inherit an unusual $XDG_RUNTIME_DIR setting into the sandbox
@@ -9,7 +9,7 @@ flatpak (1.10.3-0+deb11u1) UNRELEASED; urgency=medium
   * d/gbp.conf, d/control: Branch for bullseye
   * d/watch: Restrict to 1.10.x versions for bullseye
 
- -- Simon McVittie <smcv@debian.org>  Thu, 26 Aug 2021 12:01:16 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 31 Aug 2021 19:10:52 +0100
 
 flatpak (1.10.2-3) unstable; urgency=medium
 
