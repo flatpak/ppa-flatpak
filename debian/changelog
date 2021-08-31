@@ -1,3 +1,14 @@
+flatpak (1.10.3-0flatpak1~20.04) UNRELEASED; urgency=medium
+
+  * New upstream stable release
+    - Don't inherit an unusual $XDG_RUNTIME_DIR setting into the sandbox
+      (regression in 1.8.5 and 1.10.0)
+    - Improve unit test coverage
+    - Various other changes that were already in earlier releases to the PPA
+  * Drop all patches, applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 26 Aug 2021 12:01:16 +0100
+
 flatpak (1.10.2-3flatpak1~20.04) focal; urgency=medium
 
   * Resync Ubuntu 20.04 backport with Debian 11 packaging
