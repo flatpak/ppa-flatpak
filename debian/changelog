@@ -1,3 +1,10 @@
+flatpak (1.11.3-1flatpak2~20.04) focal; urgency=medium
+
+  * Rebuild with arm64 architecture enabled in PPA.
+    No source changes.
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 31 Aug 2021 13:40:57 +0100
+
 flatpak (1.11.3-1flatpak1~20.04) focal; urgency=medium
 
   * Resync packaging with 1.11.3 in Debian
