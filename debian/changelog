@@ -1,5 +1,11 @@
-flatpak (1.10.2-4) UNRELEASED; urgency=medium
+flatpak (1.10.3-0+deb11u1) UNRELEASED; urgency=medium
 
+  * New upstream stable release
+    - Don't inherit an unusual $XDG_RUNTIME_DIR setting into the sandbox
+      (regression in 1.8.5 and 1.10.0)
+    - Improve unit test coverage
+    - Various other changes that were already in earlier releases to Debian
+  * Drop all patches, applied upstream
   * d/gbp.conf, d/control: Branch for bullseye
   * d/watch: Restrict to 1.10.x versions for bullseye
 
