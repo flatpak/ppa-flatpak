@@ -1,4 +1,4 @@
-flatpak (1.10.3-0flatpak1~16.04) UNRELEASED; urgency=medium
+flatpak (1.10.3-0flatpak1~16.04) xenial; urgency=medium
 
   * Rebuild for xenial
   * Changes relative to Ubuntu 18.04 backport:
@@ -18,7 +18,7 @@ flatpak (1.10.3-0flatpak1~16.04) UNRELEASED; urgency=medium
       be satisfied in xenial
     - Use libgpgme11-dev instead of libgpgme-dev
 
- -- Simon McVittie <smcv@debian.org>  Thu, 02 Sep 2021 19:20:00 +0100
+ -- Simon McVittie <smcv@debian.org>  Thu, 02 Sep 2021 19:21:10 +0100
 
 flatpak (1.10.3-0flatpak1~18.04) bionic; urgency=medium
 
