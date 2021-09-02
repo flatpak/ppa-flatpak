@@ -1,3 +1,45 @@
+flatpak (1.10.3-0flatpak1~16.04) UNRELEASED; urgency=medium
+
+  * Rebuild for xenial
+  * Changes relative to Ubuntu 18.04 backport:
+    - Roll back to debhelper compat level 9
+    - Explicitly use dh-autoreconf, dh-systemd and --disable-silent-rules.
+      Newer debhelper does these by default, but xenial's version doesn't.
+    - Use libgtk-3-bin instead of gtk-update-icon-theme.
+      xenial predates the separation of gtk-update-icon-theme.
+    - d/p/debian/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch:
+      Try to run gtk-update-icon-cache-3.0 from GTK 3 in preference to
+      gtk-update-icon-cache from GTK 2
+    - Disable gtk-doc reference documentation for xenial.
+      xenial only has Python 3.5, which has less convenient Unicode
+      handling than later versions, causing gdbus-codegen to fail.
+    - Remove Rules-Requires-Root, which wasn't supported by xenial's
+      toolchain and added a gobject-introspection dependency that cannot
+      be satisfied in xenial
+    - Use libgpgme11-dev instead of libgpgme-dev
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 02 Sep 2021 19:20:00 +0100
+
+flatpak (1.10.3-0flatpak1~18.04) bionic; urgency=medium
+
+  * Rebuild for bionic
+  * Changes relative to Ubuntu 20.04 backport:
+    - Roll back from debhelper compat level 12 to 11
+    - Set --libexecdir explicitly
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 02 Sep 2021 14:07:47 +0100
+
+flatpak (1.10.3-0flatpak1~20.04) focal; urgency=medium
+
+  * New upstream stable release
+    - Don't inherit an unusual $XDG_RUNTIME_DIR setting into the sandbox
+      (regression in 1.8.5 and 1.10.0)
+    - Improve unit test coverage
+    - Various other changes that were already in earlier releases to the PPA
+  * Drop all patches, applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 01 Sep 2021 11:15:44 +0100
+
 flatpak (1.10.2-3flatpak1~16.04) xenial; urgency=medium
 
   * Resync Ubuntu 16.04 backport
