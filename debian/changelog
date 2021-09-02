@@ -1,11 +1,11 @@
-flatpak (1.10.3-0flatpak1~18.04) UNRELEASED; urgency=medium
+flatpak (1.10.3-0flatpak1~18.04) bionic; urgency=medium
 
   * Rebuild for bionic
   * Changes relative to Ubuntu 20.04 backport:
     - Roll back from debhelper compat level 12 to 11
     - Set --libexecdir explicitly
 
- -- Simon McVittie <smcv@debian.org>  Wed, 01 Sep 2021 11:16:42 +0100
+ -- Simon McVittie <smcv@debian.org>  Thu, 02 Sep 2021 14:07:47 +0100
 
 flatpak (1.10.3-0flatpak1~20.04) focal; urgency=medium
 
