@@ -76,6 +76,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
+ ca-certificates,
  desktop-file-utils,
  hicolor-icon-theme,
  gtk-update-icon-cache,
