@@ -40,7 +40,7 @@ Build-Depends:
  libostree-dev (>= 2020.8),
  libpolkit-agent-1-dev,
  libpolkit-gobject-1-dev,
- libseccomp-dev,
+ libseccomp-dev (>= 2.5.2),
  libsoup2.4-dev,
  libsystemd-dev,
  libxau-dev,
