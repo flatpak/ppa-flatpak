@@ -1,8 +1,10 @@
 flatpak (1.12.0-2) UNRELEASED; urgency=medium
 
   * Add CVE-2021-41133 reference in previous changelog entry
+  * Standards-Version: 4.6.0 (no changes required)
+  * Update Lintian overrides
 
- -- Simon McVittie <smcv@debian.org>  Fri, 08 Oct 2021 14:43:33 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Oct 2021 14:47:37 +0100
 
 flatpak (1.12.0-1) unstable; urgency=high
 
