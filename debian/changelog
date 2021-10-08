@@ -1,3 +1,18 @@
+flatpak (1.12.1-1) unstable; urgency=medium
+
+  * New upstream stable release
+    - Fix regressions in 1.12.0 with extra data or --allow=multiarch
+  * Depend on libseccomp 2.5.2 so that CVE-2021-41133 is still fully
+    prevented. Resolving this with older libseccomp versions will require
+    further development.
+  * Add CVE-2021-41133 reference in previous changelog entry
+  * Standards-Version: 4.6.0 (no changes required)
+  * Update Lintian overrides
+  * d/p/Fix-handling-of-syscalls-only-allowed-by-devel.patch:
+    Fix error handling for syscalls that are only allowed with --devel
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Oct 2021 21:24:55 +0100
+
 flatpak (1.12.0-1flatpak1~20.04) focal; urgency=high
 
   * Merge 1.12.0 stable release from Debian
@@ -25,7 +40,7 @@ flatpak (1.12.0-1) unstable; urgency=high
   * New upstream stable release
     - Don't allow VFS manipulation which could be used to trick portals
       into allowing unintended access to host
-      (Closes: #995935, GHSA-67h7-w3jq-vh4q)
+      (Closes: #995935, CVE-2021-41133, GHSA-67h7-w3jq-vh4q)
     - Fix misleading progress output in `flatpak repair`
     - Fix parental controls check when installing system-wide as non-root
     - Cope with /var/tmp being a symlink
