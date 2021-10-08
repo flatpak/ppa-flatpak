@@ -1,3 +1,33 @@
+flatpak (1.12.0-1) unstable; urgency=high
+
+  * New upstream stable release
+    - Don't allow VFS manipulation which could be used to trick portals
+      into allowing unintended access to host
+      (Closes: #995935, GHSA-67h7-w3jq-vh4q)
+    - Fix misleading progress output in `flatpak repair`
+    - Fix parental controls check when installing system-wide as non-root
+    - Cope with /var/tmp being a symlink
+    - Improve handling of separate locale environment variables such as
+      LC_COLLATE
+    - Share host's /etc/gai.conf with apps that have Internet access
+    - Test-suite fixes (previously applied in 1.11.3-2)
+  * Drop both patches from 1.11.3-2, applied upstream
+  * d/control: Add Recommends on ca-certificates.
+    Most Flatpak users will likely want to install from https servers.
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Oct 2021 12:58:34 +0100
+
+flatpak (1.11.3-2) unstable; urgency=medium
+
+  * d/p/libtest-Make-sure-ldconfig-and-capsh-are-in-the-PATH.patch:
+    Add patch from upstream git to improve autopkgtest coverage
+  * d/p/tests-Don-t-reset-XDG_RUNTIME_DIR-locally.patch:
+    Add patch from upstream git to prevent an autopkgtest failure under qemu
+  * d/rules: Remove all .la files, not just the one for libflatpak
+  * Generalize Lintian overrides to be independent of systemd unit location
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 27 Aug 2021 14:59:25 +0100
+
 flatpak (1.11.3-1flatpak2~20.04) focal; urgency=medium
 
   * Rebuild with arm64 architecture enabled in PPA.
