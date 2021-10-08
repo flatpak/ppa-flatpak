@@ -1,3 +1,18 @@
+flatpak (1.10.4-0+deb11u1) UNRELEASED; urgency=medium
+
+  * New upstream stable release
+    - Don't allow VFS manipulation which could be used to trick portals
+      into allowing unintended access to host
+      (Closes: #995935, GHSA-67h7-w3jq-vh4q)
+    - Fix parental controls check when installing system-wide as non-root
+    - OCI now uses the pax tar format, which handles large files better
+      than GNU tar
+    - tests: Fix test-sideload.sh if ostree is built with curl backend
+      (this change is unnecessary but harmless in the configuration used
+      in Debian)
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Oct 2021 13:00:58 +0100
+
 flatpak (1.10.3-0+deb11u1) bullseye; urgency=medium
 
   * New upstream stable release
