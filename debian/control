@@ -59,7 +59,7 @@ Build-Depends-Indep:
  libostree-doc,
 Standards-Version: 4.5.1
 Homepage: https://flatpak.org/
-Vcs-Git: https://salsa.debian.org/debian/flatpak.git -b debian/bullseye
+Vcs-Git: https://salsa.debian.org/debian/flatpak.git
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
 Rules-Requires-Root: no
 
@@ -70,6 +70,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
+ ca-certificates,
  dbus,
  desktop-file-utils,
  hicolor-icon-theme,

@@ -1,19 +1,101 @@
-flatpak (1.10.3-0flatpak1~20.04) focal; urgency=medium
+flatpak (1.12.0-1flatpak1~20.04) UNRELEASED; urgency=medium
+
+  * Merge 1.12.0 stable release from Debian
+  * Changes relative to Debian:
+    - Backport to Ubuntu 20.04 'focal'
+      - Revert libmalcontent integration, only added to Ubuntu after 20.04.
+      - Downgrade dbus from Depends to Recommends.
+        This is necessary for system-wide installations (without --user),
+        but doesn't need to be a hard dependency with libmalcontent
+        disabled.
+      - Revert use of libgdk-pixbuf-2.0-dev.
+        Ubuntu didn't get this until 21.04, and PPAs don't follow
+        alternative build-dependencies.
+      - Roll back to debhelper 12
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Oct 2021 13:38:33 +0100
+
+flatpak (1.12.0-1) unstable; urgency=high
 
   * New upstream stable release
-    - Don't inherit an unusual $XDG_RUNTIME_DIR setting into the sandbox
-      (regression in 1.8.5 and 1.10.0)
-    - Improve unit test coverage
-    - Various other changes that were already in earlier releases to the PPA
-  * Drop all patches, applied upstream
+    - Don't allow VFS manipulation which could be used to trick portals
+      into allowing unintended access to host
+      (Closes: #995935, GHSA-67h7-w3jq-vh4q)
+    - Fix misleading progress output in `flatpak repair`
+    - Fix parental controls check when installing system-wide as non-root
+    - Cope with /var/tmp being a symlink
+    - Improve handling of separate locale environment variables such as
+      LC_COLLATE
+    - Share host's /etc/gai.conf with apps that have Internet access
+    - Test-suite fixes (previously applied in 1.11.3-2)
+  * Drop both patches from 1.11.3-2, applied upstream
+  * d/control: Add Recommends on ca-certificates.
+    Most Flatpak users will likely want to install from https servers.
 
- -- Simon McVittie <smcv@debian.org>  Wed, 01 Sep 2021 11:15:44 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Oct 2021 12:58:34 +0100
 
-flatpak (1.10.2-3flatpak1~20.04) focal; urgency=medium
+flatpak (1.11.3-2) unstable; urgency=medium
 
-  * Resync Ubuntu 20.04 backport with Debian 11 packaging
-  * Remaining changes relative to Debian 11:
+  * d/p/libtest-Make-sure-ldconfig-and-capsh-are-in-the-PATH.patch:
+    Add patch from upstream git to improve autopkgtest coverage
+  * d/p/tests-Don-t-reset-XDG_RUNTIME_DIR-locally.patch:
+    Add patch from upstream git to prevent an autopkgtest failure under qemu
+  * d/rules: Remove all .la files, not just the one for libflatpak
+  * Generalize Lintian overrides to be independent of systemd unit location
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 27 Aug 2021 14:59:25 +0100
+
+flatpak (1.11.3-1flatpak2~20.04) focal; urgency=medium
+
+  * Rebuild with arm64 architecture enabled in PPA.
+    No source changes.
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 31 Aug 2021 13:40:57 +0100
+
+flatpak (1.11.3-1flatpak1~20.04) focal; urgency=medium
+
+  * Resync packaging with 1.11.3 in Debian
+  * Changes relative to Debian:
     - Backport to Ubuntu 20.04 'focal'
+      - Revert libmalcontent integration, only added to Ubuntu after 20.04.
+      - Downgrade dbus from Depends to Recommends.
+        This is necessary for system-wide installations (without --user),
+        but doesn't need to be a hard dependency with libmalcontent
+        disabled.
+      - Revert use of libgdk-pixbuf-2.0-dev.
+        Ubuntu didn't get this until 21.04, and PPAs don't follow
+        alternative build-dependencies.
+      - Roll back to debhelper 12
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 25 Aug 2021 15:56:50 +0100
+
+flatpak (1.11.3-1) unstable; urgency=medium
+
+  * New upstream development release
+  * Move to debhelper compat level 13
+    - Drop dh_missing override, --fail-missing is now the default
+  * d/rules: Normalize permissions of installed-tests
+  * Release to unstable to get wider testing.
+    We're early in the Debian release cycle, and this release is basically
+    a release-candidate for a new 1.12.x stable branch.
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 25 Aug 2021 12:45:23 +0100
+
+flatpak (1.11.2-1flatpak1~20.04) focal; urgency=medium
+
+  * Resync packaging with 1.11.1 in Debian experimental
+  * Changes relative to Debian experimental:
+    - Backport to Ubuntu 20.04 'focal', using changes previously applied
+      in Debian buster-backports
       - Revert libmalcontent integration, only added to Ubuntu after 20.04.
       - Downgrade dbus from Depends to Recommends.
         This is necessary for system-wide installations (without --user),
@@ -27,7 +109,40 @@ flatpak (1.10.2-3flatpak1~20.04) focal; urgency=medium
       and xdg-dbus-proxy separately if the host OS versions are too old.
     - Set changelog merge driver for debian/changelog
 
- -- Simon McVittie <smcv@debian.org>  Thu, 26 Aug 2021 10:28:27 +0100
+ -- Simon McVittie <smcv@debian.org>  Thu, 17 Jun 2021 20:19:49 +0100
+
+flatpak (1.11.2-1) experimental; urgency=medium
+
+  * New upstream development release
+    - Don't leak a file descriptor each time flatpak-spawn --env=... is used
+      (Closes: #989934)
+    - When an app uses flatpak-spawn --env=... --forward-fd=..., ensure
+      that the file descriptors do not collide, which could result in the
+      subsandbox failing to launch or being launched with wrong environment
+      variables. (Closes: #989935)
+    - Various other bug fixes
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 17 Jun 2021 18:07:22 +0100
+
+flatpak (1.11.1-1) experimental; urgency=medium
+
+  * New upstream development release
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 26 Apr 2021 12:53:06 +0100
+
+flatpak (1.11~git20210416.1-1) experimental; urgency=medium
+
+  * New upstream snapshot
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 16 Apr 2021 14:40:26 +0100
+
+flatpak (1.11~git20210413-1) experimental; urgency=medium
+
+  * New upstream snapshot
+    - Drop remaining patch, applied upstream
+    - Update symbols file
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Apr 2021 12:33:30 +0100
 
 flatpak (1.10.2-3) unstable; urgency=medium
 
@@ -492,6 +607,24 @@ flatpak (1.4.2-1) experimental; urgency=medium
     debian/output/reprotest.log on salsa-ci) after running tests
 
  -- Simon McVittie <smcv@debian.org>  Tue, 02 Jul 2019 16:20:14 +0100
+
+flatpak (1.11.1-0flatpak1~focal) focal; urgency=medium
+
+  * Rebuild for focal
+
+ -- Alexander Larsson <alexl@redhat.com>  Mon, 26 Apr 2021 17:07:29 +0200
+
+flatpak (1.11.1-0flatpak1~bionic) bionic; urgency=medium
+
+  * Update to 1.11.1
+
+ -- Alexander Larsson <alexl@redhat.com>  Mon, 26 Apr 2021 16:00:12 +0200
+
+flatpak (1.10.2-flatpak1~bionic) bionic; urgency=medium
+
+  * Rebuild for bionic
+
+ -- Alexander Larsson <alexl@redhat.com>  Mon, 26 Apr 2021 15:59:19 +0200
 
 flatpak (1.10.2-flatpak1~focal) focal; urgency=medium
 
