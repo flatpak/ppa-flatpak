@@ -1,3 +1,102 @@
+flatpak (1.12.1-1flatpak1~20.04) focal; urgency=medium
+
+  * Merge 1.12.1 stable release from Debian
+  * Changes relative to Debian:
+    - Backport to Ubuntu 20.04 'focal'
+      - Revert libmalcontent integration, only added to Ubuntu after 20.04.
+      - Downgrade dbus from Depends to Recommends.
+        This is necessary for system-wide installations (without --user),
+        but doesn't need to be a hard dependency with libmalcontent
+        disabled.
+      - Revert use of libgdk-pixbuf-2.0-dev.
+        Ubuntu didn't get this until 21.04, and PPAs don't follow
+        alternative build-dependencies.
+      - Roll back to debhelper 12
+      - Reduce libseccomp dependency for compatibility with focal.
+        This only partially prevents use of VFS-manipulating syscalls if a
+        newer kernel is used, but is sufficient for focal's kernel.
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Oct 2021 22:09:15 +0100
+
+flatpak (1.12.1-1) unstable; urgency=medium
+
+  * New upstream stable release
+    - Fix regressions in 1.12.0 with extra data or --allow=multiarch
+  * Depend on libseccomp 2.5.2 so that CVE-2021-41133 is still fully
+    prevented. Resolving this with older libseccomp versions will require
+    further development.
+  * Add CVE-2021-41133 reference in previous changelog entry
+  * Standards-Version: 4.6.0 (no changes required)
+  * Update Lintian overrides
+  * d/p/Fix-handling-of-syscalls-only-allowed-by-devel.patch:
+    Fix error handling for syscalls that are only allowed with --devel
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Oct 2021 21:24:55 +0100
+
+flatpak (1.12.0-1flatpak1~20.04) focal; urgency=high
+
+  * Merge 1.12.0 stable release from Debian
+  * Changes relative to Debian:
+    - Backport to Ubuntu 20.04 'focal'
+      - Revert libmalcontent integration, only added to Ubuntu after 20.04.
+      - Downgrade dbus from Depends to Recommends.
+        This is necessary for system-wide installations (without --user),
+        but doesn't need to be a hard dependency with libmalcontent
+        disabled.
+      - Revert use of libgdk-pixbuf-2.0-dev.
+        Ubuntu didn't get this until 21.04, and PPAs don't follow
+        alternative build-dependencies.
+      - Roll back to debhelper 12
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Oct 2021 13:42:45 +0100
+
+flatpak (1.12.0-1) unstable; urgency=high
+
+  * New upstream stable release
+    - Don't allow VFS manipulation which could be used to trick portals
+      into allowing unintended access to host
+      (Closes: #995935, CVE-2021-41133, GHSA-67h7-w3jq-vh4q)
+    - Fix misleading progress output in `flatpak repair`
+    - Fix parental controls check when installing system-wide as non-root
+    - Cope with /var/tmp being a symlink
+    - Improve handling of separate locale environment variables such as
+      LC_COLLATE
+    - Share host's /etc/gai.conf with apps that have Internet access
+    - Test-suite fixes (previously applied in 1.11.3-2)
+  * Drop both patches from 1.11.3-2, applied upstream
+  * d/control: Add Recommends on ca-certificates.
+    Most Flatpak users will likely want to install from https servers.
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Oct 2021 12:58:34 +0100
+
+flatpak (1.11.3-2) unstable; urgency=medium
+
+  * d/p/libtest-Make-sure-ldconfig-and-capsh-are-in-the-PATH.patch:
+    Add patch from upstream git to improve autopkgtest coverage
+  * d/p/tests-Don-t-reset-XDG_RUNTIME_DIR-locally.patch:
+    Add patch from upstream git to prevent an autopkgtest failure under qemu
+  * d/rules: Remove all .la files, not just the one for libflatpak
+  * Generalize Lintian overrides to be independent of systemd unit location
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 27 Aug 2021 14:59:25 +0100
+
+flatpak (1.11.3-1flatpak2~20.04) focal; urgency=medium
+
+  * Rebuild with arm64 architecture enabled in PPA.
+    No source changes.
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 31 Aug 2021 13:40:57 +0100
+
 flatpak (1.11.3-1flatpak1~18.04) bionic; urgency=medium
 
   * Backport from Ubuntu 20.04 'focal' to 18.04 'bionic'
