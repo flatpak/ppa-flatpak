@@ -16,6 +16,13 @@ flatpak (1.10.5-0+deb11u1) UNRELEASED; urgency=medium
       newer kernel is used with an older libseccomp, but that's the best
       we will be able to achieve without new features in libseccomp and/or
       bubblewrap.
+  * d/control: Build-depend on libseccomp 2.5.0.
+    This ensures that we can block creation of new user namespaces via
+    clone3(), which should be enough to prevent CVE-2021-41133 on
+    at least Debian 11 kernels (Linux 5.10). It also allows blocking most
+    of the syscalls we want to block; we cannot guarantee to be able to
+    block mount_setattr(), which was only added in libseccomp 2.5.2, but
+    that syscall was new in Linux 5.12.
   * d/p/Fix-handling-of-syscalls-only-allowed-by-devel.patch:
     Fix error handling for syscalls that are only allowed with --devel
 
