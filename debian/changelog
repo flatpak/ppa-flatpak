@@ -1,9 +1,26 @@
 flatpak (1.10.5-0flatpak1~18.04) UNRELEASED; urgency=medium
 
   * Rebuild for bionic
+    - 1.12.x is not yet available for bionic: it failed build-time tests
+      during packaging. Backport 1.10.x from the version proposed for
+      Debian 11 instead.
   * Changes relative to Debian 11:
-    - Roll back from debhelper compat level 12 to 11
-    - Set --libexecdir explicitly
+    - d/control, d/rules:
+      Revert libmalcontent integration, only added to Ubuntu after 20.04.
+    - d/control: Downgrade dbus from Depends to Recommends.
+      This is necessary for system-wide installations (without --user),
+      but doesn't need to be a hard dependency with libmalcontent
+      disabled.
+    - d/control: Revert use of libgdk-pixbuf-2.0-dev.
+      Ubuntu didn't get this until 21.04, and PPAs don't follow
+      alternative build-dependencies.
+    - d/control, d/rules: Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - d/README.source: Add notes on maintaining this backport
+    - d/control: Roll back from debhelper compat level 12 to 11
+    - d/rules: Set --libexecdir explicitly
+    - d/.gitattributes: Set changelog merge driver for d/changelog
 
  -- Simon McVittie <smcv@debian.org>  Sun, 10 Oct 2021 14:19:48 +0100
 
@@ -43,8 +60,10 @@ flatpak (1.10.3-0+deb11u1) bullseye; urgency=medium
     - Don't inherit an unusual $XDG_RUNTIME_DIR setting into the sandbox
       (regression in 1.8.5 and 1.10.0)
     - Improve unit test coverage
-    - Various other changes that were already in earlier releases to the PPA
+    - Various other changes that were already in earlier releases to Debian
   * Drop all patches, applied upstream
+  * d/gbp.conf, d/control: Branch for bullseye
+  * d/watch: Restrict to 1.10.x versions for bullseye
 
  -- Simon McVittie <smcv@debian.org>  Tue, 31 Aug 2021 19:10:52 +0100
 
