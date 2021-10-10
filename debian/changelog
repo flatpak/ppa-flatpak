@@ -1,17 +1,21 @@
-flatpak (1.10.4-0+deb11u1) UNRELEASED; urgency=medium
+flatpak (1.10.5-0+deb11u1) UNRELEASED; urgency=medium
 
-  * New upstream stable release
+  * New upstream stable release 1.10.4
     - Don't allow VFS manipulation which could be used to trick portals
       into allowing unintended access to host
-      (Closes: #995935, GHSA-67h7-w3jq-vh4q)
+      (Closes: #995935, CVE-2021-41133, GHSA-67h7-w3jq-vh4q)
     - Fix parental controls check when installing system-wide as non-root
     - OCI now uses the pax tar format, which handles large files better
       than GNU tar
     - tests: Fix test-sideload.sh if ostree is built with curl backend
       (this change is unnecessary but harmless in the configuration used
       in Debian)
+  * New upstream stable release 1.10.5
+    - Fix regressions in 1.12.0 with extra data or --allow=multiarch
+  * d/p/Fix-handling-of-syscalls-only-allowed-by-devel.patch:
+    Fix error handling for syscalls that are only allowed with --devel
 
- -- Simon McVittie <smcv@debian.org>  Fri, 08 Oct 2021 13:00:58 +0100
+ -- Simon McVittie <smcv@debian.org>  Sun, 10 Oct 2021 13:55:18 +0100
 
 flatpak (1.10.3-0+deb11u1) bullseye; urgency=medium
 
