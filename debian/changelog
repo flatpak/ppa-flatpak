@@ -1,3 +1,14 @@
+flatpak (1.10.3-0+deb11u1) bullseye; urgency=medium
+
+  * New upstream stable release
+    - Don't inherit an unusual $XDG_RUNTIME_DIR setting into the sandbox
+      (regression in 1.8.5 and 1.10.0)
+    - Improve unit test coverage
+    - Various other changes that were already in earlier releases to the PPA
+  * Drop all patches, applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 31 Aug 2021 19:10:52 +0100
+
 flatpak (1.10.3-0flatpak1~18.04) bionic; urgency=medium
 
   * Rebuild for bionic
