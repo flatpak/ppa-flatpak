@@ -1,3 +1,33 @@
+flatpak (1.10.5-0+deb11u1) UNRELEASED; urgency=medium
+
+  * New upstream stable release 1.10.4
+    - Don't allow VFS manipulation which could be used to trick portals
+      into allowing unintended access to host
+      (Closes: #995935, CVE-2021-41133, GHSA-67h7-w3jq-vh4q)
+    - Fix parental controls check when installing system-wide as non-root
+    - OCI now uses the pax tar format, which handles large files better
+      than GNU tar
+    - tests: Fix test-sideload.sh if ostree is built with curl backend
+      (this change is unnecessary but harmless in the configuration used
+      in Debian)
+  * New upstream stable release 1.10.5
+    - Fix regressions in 1.12.0 with extra data or --allow=multiarch.
+      This only partially prevents use of VFS-manipulating syscalls if a
+      newer kernel is used with an older libseccomp, but that's the best
+      we will be able to achieve without new features in libseccomp and/or
+      bubblewrap.
+  * d/control: Build-depend on libseccomp 2.5.0.
+    This ensures that we can block creation of new user namespaces via
+    clone3(), which should be enough to prevent CVE-2021-41133 on
+    at least Debian 11 kernels (Linux 5.10). It also allows blocking most
+    of the syscalls we want to block; we cannot guarantee to be able to
+    block mount_setattr(), which was only added in libseccomp 2.5.2, but
+    that syscall was new in Linux 5.12.
+  * d/p/Fix-handling-of-syscalls-only-allowed-by-devel.patch:
+    Fix error handling for syscalls that are only allowed with --devel
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 10 Oct 2021 13:55:18 +0100
+
 flatpak (1.10.3-0+deb11u1) bullseye; urgency=medium
 
   * New upstream stable release
