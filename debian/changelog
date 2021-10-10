@@ -1,4 +1,4 @@
-flatpak (1.10.5-0flatpak1~18.04) UNRELEASED; urgency=medium
+flatpak (1.10.5-0flatpak1~18.04) bionic; urgency=medium
 
   * Rebuild for bionic
     - 1.12.x is not yet available for bionic: it failed build-time tests
@@ -22,7 +22,7 @@ flatpak (1.10.5-0flatpak1~18.04) UNRELEASED; urgency=medium
     - d/rules: Set --libexecdir explicitly
     - d/.gitattributes: Set changelog merge driver for d/changelog
 
- -- Simon McVittie <smcv@debian.org>  Sun, 10 Oct 2021 14:19:48 +0100
+ -- Simon McVittie <smcv@debian.org>  Sun, 10 Oct 2021 14:25:08 +0100
 
 flatpak (1.10.5-0+deb11u1) UNRELEASED; urgency=medium
 
