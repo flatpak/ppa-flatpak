@@ -1,3 +1,12 @@
+flatpak (1.10.5-0flatpak1~18.04) UNRELEASED; urgency=medium
+
+  * Rebuild for bionic
+  * Changes relative to Debian 11:
+    - Roll back from debhelper compat level 12 to 11
+    - Set --libexecdir explicitly
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 10 Oct 2021 14:19:48 +0100
+
 flatpak (1.10.5-0+deb11u1) UNRELEASED; urgency=medium
 
   * New upstream stable release 1.10.4
