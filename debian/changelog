@@ -1,3 +1,25 @@
+flatpak (1.10.5-0flatpak1~16.04) xenial; urgency=medium
+
+  * Rebuild for xenial
+  * Changes relative to Ubuntu 18.04 backport:
+    - Roll back to debhelper compat level 9
+    - Explicitly use dh-autoreconf, dh-systemd and --disable-silent-rules.
+      Newer debhelper does these by default, but xenial's version doesn't.
+    - Use libgtk-3-bin instead of gtk-update-icon-theme.
+      xenial predates the separation of gtk-update-icon-theme.
+    - d/p/debian/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch:
+      Try to run gtk-update-icon-cache-3.0 from GTK 3 in preference to
+      gtk-update-icon-cache from GTK 2
+    - Disable gtk-doc reference documentation for xenial.
+      xenial only has Python 3.5, which has less convenient Unicode
+      handling than later versions, causing gdbus-codegen to fail.
+    - Remove Rules-Requires-Root, which wasn't supported by xenial's
+      toolchain and added a gobject-introspection dependency that cannot
+      be satisfied in xenial
+    - Use libgpgme11-dev instead of libgpgme-dev
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 10 Oct 2021 16:04:29 +0100
+
 flatpak (1.10.5-0flatpak1~18.04) bionic; urgency=medium
 
   * Rebuild for bionic
