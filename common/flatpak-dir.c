@@ -7009,6 +7009,7 @@ export_desktop_file (const char         *app,
   g_autofree char *escaped_branch = maybe_quote (branch);
   g_autofree char *escaped_arch = maybe_quote (arch);
   int i;
+  const char *flatpak;
 
   if (!flatpak_openat_noatime (parent_fd, name, &desktop_fd, cancellable, error))
     return FALSE;
@@ -7129,8 +7130,12 @@ export_desktop_file (const char         *app,
       g_key_file_remove_key (keyfile, groups[i], "X-GNOME-Bugzilla-ExtraInfoScript", NULL);
 
       new_exec = g_string_new ("");
+      if ((flatpak = g_getenv ("FLATPAK_BINARY")) == NULL)
+        flatpak = FLATPAK_BINDIR "/flatpak";
+
       g_string_append_printf (new_exec,
-                              FLATPAK_BINDIR "/flatpak run --branch=%s --arch=%s",
+                              "%s run --branch=%s --arch=%s",
+                              flatpak,
                               escaped_branch,
                               escaped_arch);
 
@@ -7967,9 +7972,15 @@ flatpak_dir_check_parental_controls (FlatpakDir    *self,
   MctGetAppFilterFlags manager_flags;
 
   /* Assume that root is allowed to install any ref and shouldn't have any
-   * parental controls restrictions applied to them */
-  if (getuid () == 0)
-    return TRUE;
+   * parental controls restrictions applied to them. Note that this branch
+   * must not be taken if this code is running within the system-helper, as that
+   * runs as root but on behalf of another process. If running within the
+   * system-helper, self->source_pid is non-zero. */
+  if (self->source_pid == 0 && getuid () == 0)
+    {
+      g_debug ("Skipping parental controls check for %s due to running as root", ref);
+      return TRUE;
+    }
 
   /* The ostree-metadata and appstream/ branches should not have any parental
    * controls restrictions. Similarly, for the moment, there is no point in
@@ -8143,6 +8154,7 @@ flatpak_dir_deploy (FlatpakDir          *self,
   g_autoptr(GFile) metadata_file = NULL;
   g_autofree char *metadata_contents = NULL;
   gboolean is_oci;
+  const char *flatpak;
 
   if (!flatpak_dir_ensure_repo (self, cancellable, error))
     return FALSE;
@@ -8452,9 +8464,11 @@ flatpak_dir_deploy (FlatpakDir          *self,
                                        cancellable,
                                        error))
         return FALSE;
+      if ((flatpak = g_getenv ("FLATPAK_BINARY")) == NULL)
+        flatpak = FLATPAK_BINDIR "/flatpak";
 
-      bin_data = g_strdup_printf ("#!/bin/sh\nexec %s/flatpak run --branch=%s --arch=%s %s \"$@\"\n",
-                                  FLATPAK_BINDIR, escaped_branch, escaped_arch, escaped_app);
+      bin_data = g_strdup_printf ("#!/bin/sh\nexec %s run --branch=%s --arch=%s %s \"$@\"\n",
+                                  flatpak, escaped_branch, escaped_arch, escaped_app);
       if (!g_file_replace_contents (wrapper, bin_data, strlen (bin_data), NULL, FALSE,
                                     G_FILE_CREATE_REPLACE_DESTINATION, NULL, cancellable, error))
         return FALSE;
@@ -15389,18 +15403,14 @@ get_locale_langs_from_localed_dbus (GDBusProxy *proxy, GPtrArray *langs)
       const gchar *locale = NULL;
       g_autofree char *lang = NULL;
 
-      /* See locale(7) for these categories */
-      const char * const categories[] = { "LANG=", "LC_ALL=", "LC_MESSAGES=", "LC_ADDRESS=",
-                                          "LC_COLLATE=", "LC_CTYPE=", "LC_IDENTIFICATION=",
-                                          "LC_MONETARY=", "LC_MEASUREMENT=", "LC_NAME=",
-                                          "LC_NUMERIC=", "LC_PAPER=", "LC_TELEPHONE=",
-                                          "LC_TIME=", NULL };
+      const char * const *categories = flatpak_get_locale_categories ();
 
       for (j = 0; categories[j]; j++)
         {
-          if (g_str_has_prefix (strv[i], categories[j]))
+          g_autofree char *prefix = g_strdup_printf ("%s=", categories[j]);
+          if (g_str_has_prefix (strv[i], prefix))
             {
-              locale = strv[i] + strlen (categories[j]);
+              locale = strv[i] + strlen (prefix);
               break;
             }
         }
