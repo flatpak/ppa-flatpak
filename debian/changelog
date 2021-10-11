@@ -1,3 +1,17 @@
+flatpak (1.12.1-1~bpo11+1) bullseye-backports; urgency=medium
+
+  * Rebuild for bullseye-backports
+    - In particular, this backport allows the Flatpak version of Steam
+      to run Windows games using a recent official version of Proton,
+      which was not possible in 1.10.x.
+  * d/control: Relax libseccomp build-dependency to 2.5.0.
+    This is not sufficient to block mount_setattr(), but it should be
+    sufficient to block clone3(), which is believed to be enough to
+    prevent CVE-2021-41133.
+  * d/gbp.conf: Adjust for bullseye-backports
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 11 Oct 2021 10:51:49 +0100
+
 flatpak (1.12.1-1) unstable; urgency=medium
 
   * New upstream stable release
