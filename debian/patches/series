@@ -1,3 +1,0 @@
-Fix-handling-of-syscalls-only-allowed-by-devel.patch
-common-Backport-g_get_language_names_with_category-more-t.patch
-debian/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch
