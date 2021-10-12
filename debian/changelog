@@ -1,4 +1,4 @@
-flatpak (1.12.2-1) UNRELEASED; urgency=medium
+flatpak (1.12.2-1) unstable; urgency=medium
 
   * New upstream stable release
     - Better diagnostic messages if libseccomp calls fail
@@ -8,7 +8,7 @@ flatpak (1.12.2-1) UNRELEASED; urgency=medium
   * d/p/Fix-handling-of-syscalls-only-allowed-by-devel.patch:
     Drop patch, applied upstream
 
- -- Simon McVittie <smcv@debian.org>  Tue, 12 Oct 2021 11:27:09 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 12 Oct 2021 11:54:06 +0100
 
 flatpak (1.12.1-1) unstable; urgency=medium
 
