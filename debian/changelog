@@ -1,4 +1,4 @@
-flatpak (1.12.2-1flatpak1~20.04) UNRELEASED; urgency=medium
+flatpak (1.12.2-1flatpak1~20.04) focal; urgency=medium
 
   * Merge 1.12.2 stable release from Debian
   * Changes relative to Debian:
@@ -22,7 +22,7 @@ flatpak (1.12.2-1flatpak1~20.04) UNRELEASED; urgency=medium
     - Set changelog merge driver for debian/changelog
     - Add PPA backport notes to debian/README.source
 
- -- Simon McVittie <smcv@debian.org>  Tue, 12 Oct 2021 18:11:49 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 18 Oct 2021 11:25:25 +0100
 
 flatpak (1.12.2-1) unstable; urgency=medium
 
