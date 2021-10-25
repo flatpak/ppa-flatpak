@@ -71,7 +71,7 @@ Architecture: linux-any
 Depends:
  adduser,
  bubblewrap (>= 0.4.0),
- dbus,
+ default-dbus-system-bus | dbus-system-bus,
  xdg-dbus-proxy (>= 0.1.0),
  ${misc:Depends},
  ${shlibs:Depends},
