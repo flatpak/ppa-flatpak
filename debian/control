@@ -86,6 +86,7 @@ Recommends:
  shared-mime-info,
  xdg-desktop-portal (>= 1.6),
  xdg-desktop-portal-gtk (>= 1.6) | xdg-desktop-portal-backend,
+ xdg-user-dirs,
 Suggests:
  avahi-daemon,
  malcontent-gui,
