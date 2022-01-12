@@ -1,3 +1,20 @@
+flatpak (1.12.2-2) unstable; urgency=medium
+
+  * flatpak Recommends xdg-user-dirs.
+    If we don't have this, the XDG special directories for documents, music,
+    downloads etc. will not be listed in ~/.config/user-dirs.dirs unless
+    configured manually; this means that app permissions that would normally
+    share those directories with the host, such as --filesystem=xdg-download,
+    will have no practical effect. (Closes: #1000609)
+  * Build/test-depend on dbus-daemon.
+    We don't necessarily need a full implementation for the unit tests, but
+    we do need to be able to run dbus-daemon --session.
+  * Depend on default-dbus-system-bus | dbus-system-bus instead of dbus.
+    Any implementation of the system bus will do.
+  * Adjust Lintian overrides for current Lintian
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 13 Dec 2021 13:22:23 +0000
+
 flatpak (1.12.2-1~bpo11+1) bullseye-backports; urgency=medium
 
   * Rebuild for bullseye-backports.
