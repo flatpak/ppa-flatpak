@@ -1,4 +1,4 @@
-flatpak (1.12.3-1flatpak1~16.04) xenial; urgency=high
+flatpak (1.12.3-1flatpak1~16.04) UNRELEASED; urgency=high
 
   * Backport to Ubuntu 16.04 'xenial'
   * Remaining changes:
