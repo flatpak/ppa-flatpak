@@ -1293,9 +1293,9 @@ am__EXEEXT_12 = $(am__EXEEXT_11)
 am__EXEEXT_13 = tests/test-basic.sh tests/test-completion.sh \
 	tests/test-config.sh tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh tests/test-default-remotes.sh \
-	tests/test-extensions.sh tests/test-oci.sh \
-	tests/test-override.sh tests/test-auth.sh tests/test-unused.sh \
-	$(am__EXEEXT_1)
+	tests/test-metadata-validation.sh tests/test-extensions.sh \
+	tests/test-oci.sh tests/test-override.sh tests/test-auth.sh \
+	tests/test-unused.sh $(am__EXEEXT_1)
 am__EXEEXT_14 = $(am__EXEEXT_13)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
@@ -2401,6 +2401,7 @@ TEST_MATRIX_SOURCE = \
 	tests/test-repo.sh{{user+system+system-norevokefs}+{{user+system},oldsummary}} \
 	tests/test-sideload.sh{user+system} \
 	tests/test-default-remotes.sh \
+	tests/test-metadata-validation.sh \
 	tests/test-extensions.sh \
 	tests/test-bundle.sh{user+system+system-norevokefs} \
 	tests/test-oci.sh \
@@ -2454,6 +2455,7 @@ TEST_MATRIX_DIST = \
 	tests/test-build-update-repo.sh \
 	tests/test-http-utils.sh \
 	tests/test-default-remotes.sh \
+	tests/test-metadata-validation.sh \
 	tests/test-extensions.sh \
 	tests/test-oci.sh \
 	tests/test-override.sh \
@@ -6428,6 +6430,13 @@ tests/test-http-utils.sh.log: tests/test-http-utils.sh
 tests/test-default-remotes.sh.log: tests/test-default-remotes.sh
 	@p='tests/test-default-remotes.sh'; \
 	b='tests/test-default-remotes.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+tests/test-metadata-validation.sh.log: tests/test-metadata-validation.sh
+	@p='tests/test-metadata-validation.sh'; \
+	b='tests/test-metadata-validation.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

@@ -1762,19 +1762,28 @@ static gboolean
 validate_commit_metadata (GVariant   *commit_data,
                           const char *ref,
                           const char *required_metadata,
-                          gboolean   require_xa_metadata,
+                          gsize       required_metadata_size,
                           GError   **error)
 {
   g_autoptr(GVariant) commit_metadata = NULL;
+  g_autoptr(GVariant) xa_metadata_v = NULL;
   const char *xa_metadata = NULL;
+  gsize xa_metadata_size = 0;
 
   commit_metadata = g_variant_get_child_value (commit_data, 0);
 
   if (commit_metadata != NULL)
-    g_variant_lookup (commit_metadata, "xa.metadata", "&s", &xa_metadata);
+    {
+      xa_metadata_v = g_variant_lookup_value (commit_metadata,
+                                              "xa.metadata",
+                                              G_VARIANT_TYPE_STRING);
+      if (xa_metadata_v)
+        xa_metadata = g_variant_get_string (xa_metadata_v, &xa_metadata_size);
+    }
 
-  if ((xa_metadata == NULL && require_xa_metadata) ||
-      (xa_metadata != NULL && g_strcmp0 (required_metadata, xa_metadata) != 0))
+  if (xa_metadata == NULL ||
+      xa_metadata_size != required_metadata_size ||
+      memcmp (xa_metadata, required_metadata, xa_metadata_size) != 0)
     {
       g_set_error (error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED,
                    _("Commit metadata for %s not matching expected metadata"), ref);
@@ -3478,6 +3487,7 @@ upgrade_deploy_data (GBytes             *deploy_data,
       g_autoptr(GKeyFile) keyfile = NULL;
       g_autoptr(GFile) metadata_file = NULL;
       g_autofree char *metadata_contents = NULL;
+      gsize metadata_size = 0;
       g_autofree char *id = flatpak_decomposed_dup_id (ref);
 
       /* Add fields from commit metadata to deploy */
@@ -3491,9 +3501,9 @@ upgrade_deploy_data (GBytes             *deploy_data,
       keyfile = g_key_file_new ();
       metadata_file = g_file_resolve_relative_path (deploy_dir, "metadata");
       if (!g_file_load_contents (metadata_file, cancellable,
-                                 &metadata_contents, NULL, NULL, error))
+                                 &metadata_contents, &metadata_size, NULL, error))
         return NULL;
-      if (!g_key_file_load_from_data (keyfile, metadata_contents, -1, 0, error))
+      if (!g_key_file_load_from_data (keyfile, metadata_contents, metadata_size, 0, error))
         return NULL;
       add_metadata_to_deploy_data (&metadata_dict, keyfile);
 
@@ -5799,8 +5809,12 @@ flatpak_dir_pull (FlatpakDir                           *self,
     {
       g_autoptr(GVariant) commit_data = NULL;
       if (!ostree_repo_load_commit (repo, rev, &commit_data, NULL, error) ||
-          !validate_commit_metadata (commit_data, ref, (const char *)g_bytes_get_data (require_metadata, NULL), TRUE, error))
-        return FALSE;
+          !validate_commit_metadata (commit_data,
+                                     ref,
+                                     (const char *)g_bytes_get_data (require_metadata, NULL),
+                                     g_bytes_get_size (require_metadata),
+                                     error))
+        goto out;
     }
 
   if (!flatpak_dir_pull_extra_data (self, repo,
@@ -8117,7 +8131,7 @@ flatpak_dir_deploy (FlatpakDir          *self,
   g_auto(GLnxLockFile) lock = { 0, };
   g_autoptr(GFile) metadata_file = NULL;
   g_autofree char *metadata_contents = NULL;
-  gboolean is_oci;
+  gsize metadata_size = 0;
 
   if (!flatpak_dir_ensure_repo (self, cancellable, error))
     return FALSE;
@@ -8326,11 +8340,12 @@ flatpak_dir_deploy (FlatpakDir          *self,
   keyfile = g_key_file_new ();
   metadata_file = g_file_resolve_relative_path (checkoutdir, "metadata");
   if (g_file_load_contents (metadata_file, NULL,
-                            &metadata_contents, NULL, NULL, NULL))
+                            &metadata_contents,
+                            &metadata_size, NULL, NULL))
     {
       if (!g_key_file_load_from_data (keyfile,
                                       metadata_contents,
-                                      -1,
+                                      metadata_size,
                                       0, error))
         return FALSE;
 
@@ -8341,12 +8356,9 @@ flatpak_dir_deploy (FlatpakDir          *self,
   /* Check the metadata in the commit to make sure it matches the actual
    * deployed metadata, in case we relied on the one in the commit for
    * a decision
-   * Note: For historical reason we don't enforce commits to contain xa.metadata
-   * since this was lacking in fedora builds.
    */
-  is_oci = flatpak_dir_get_remote_oci (self, origin);
   if (!validate_commit_metadata (commit_data, flatpak_decomposed_get_ref (ref),
-                                 metadata_contents, !is_oci, error))
+                                 metadata_contents, metadata_size, error))
     return FALSE;
 
   dotref = g_file_resolve_relative_path (checkoutdir, "files/.ref");
@@ -9300,6 +9312,13 @@ flatpak_dir_ensure_bundle_remote (FlatpakDir         *self,
                                   error);
   if (metadata == NULL)
     return NULL;
+
+  /* If we rely on metadata (to e.g. print permissions), check it exists before creating the remote */
+  if (out_metadata && fp_metadata == NULL)
+    {
+      flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, "No metadata in bundler header");
+      return NULL;
+    }
 
   gpg_data = extra_gpg_data ? extra_gpg_data : included_gpg_data;
 

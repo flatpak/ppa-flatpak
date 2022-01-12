@@ -1,9 +1,46 @@
+Changes in 1.10.6
+~~~~~~~~~~~~~~~~~
+Released: 2022-01-12
+
+This is a security update that fixes two issues that were found in flatpak:
+
+https://github.com/flatpak/flatpak/security/advisories/GHSA-qpjc-vq3c-572j
+(also known as CVE-2021-43860)
+
+This issue is about the possibility for a malicious repository to send
+invalid application metadata in a way that hides some of the app
+permissions displayed during installation.
+
+https://github.com/flatpak/flatpak/security/advisories/GHSA-8ch7-5j3h-g4fx
+
+This issue is a problem with how flatpak-builder uses flatpak, that
+can cause `flatpak-builder --mirror-screenshots-url` commands to be
+allowed to create directories outside of the build directory.
+
+The fix for this is done in flatpak by making the --nofilesystem=host
+and --nofilesystem=home more powerful. They previously only removed
+access to the particular location, i.e. `--nofilesystem=host` negated
+`--filesystem=host`, but not `--filesytem=/some/dir`. This is a minor
+change in behavior, as it may change the behavior of an override
+with these specific options, however it is likely that the new
+behavior was the expected one.
+
+Other changes:
+
+ * Fix error handling for the syscalls that are blocked when not using --devel
+ * Improve diagnostic messages when seccomp rules cannot be applied
+ * Update Polish translation
+
 Changes in 1.10.5
 ~~~~~~~~~~~~~~~~~
 Released: 2021-10-08
 
-The security fix in the 1.12.1 release failed when used with some
+The security fix in the 1.12.0 and 1.10.4 releases failed when used with some
 older versions of libseccomp (that don't know about the new syscalls).
+
+More specifically, installing modules that use extra-data would fail, and so
+would running applications with the --allow=multiarch feature, such as Steam.
+This release fixes those regressions.
 
 Changes in 1.10.4
 ~~~~~~~~~~~~~~~~~
@@ -11,9 +48,9 @@ Released: 2021-10-08
 
 This release fixes a security vulnerability in the portal
 support. Some recently added syscalls were not blocked by the seccomp rules
-which allowed the application to create sub-sandboxes which can confuste
+which allowed the application to create sub-sandboxes which can confuse
 the sandboxing verification mechanisms of the portal. This has been
-fixed by extending the seccomp rules.
+fixed by extending the seccomp rules. (CVE-2021-41133)
 For details, see:
   https://github.com/flatpak/flatpak/security/advisories/GHSA-67h7-w3jq-vh4q
 
