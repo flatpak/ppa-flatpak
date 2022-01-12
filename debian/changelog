@@ -1,3 +1,98 @@
+flatpak (1.12.3-1flatpak1~18.04) bionic; urgency=high
+
+  * Backport from Ubuntu 20.04 'focal' to 18.04 'bionic'
+    - Roll back to debhelper compat level 11
+    - Reinstate --libexecdir
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 12 Jan 2022 14:49:26 +0000
+
+flatpak (1.12.3-1flatpak1~20.04) focal; urgency=high
+
+  * Merge 1.12.3 stable release from Debian
+  * Changes relative to Debian:
+    - Backport to Ubuntu 20.04 'focal'
+      - Revert libmalcontent integration, only added to Ubuntu after 20.04.
+      - Downgrade dbus from Depends to Recommends.
+        This is necessary for system-wide installations (without --user),
+        but doesn't need to be a hard dependency with libmalcontent
+        disabled.
+      - Revert use of libgdk-pixbuf-2.0-dev.
+        Ubuntu didn't get this until 21.04, and PPAs don't follow
+        alternative build-dependencies.
+      - Roll back to debhelper 12
+      - Reduce libseccomp dependency for compatibility with focal.
+        This only partially prevents use of VFS-manipulating syscalls if a
+        newer kernel is used, but is sufficient for focal's kernel,
+        and in particular still prevents clone3().
+      - Go back to depending on dbus, instead of dbus-daemon.
+        The separate packages didn't exist in Ubuntu, even as Provides,
+        before Ubuntu 21.10 'impish'.
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 12 Jan 2022 13:39:28 +0000
+
+flatpak (1.12.3-1) unstable; urgency=high
+
+  * New upstream stable release
+  * Security fixes:
+    - Prevent a malicious repository from arranging for permissions to be
+      granted without being correctly displayed during installation
+      (CVE-2021-43860, GHSA-qpjc-vq3c-572j)
+    - Prevent a malicious build in flatpak-builder creating directories
+      outside the build directory (GHSA-8ch7-5j3h-g4fx)
+  * Behaviour changes, as a result of how GHSA-8ch7-5j3h-g4fx was fixed:
+    - --nofilesystem=host is now special-cased to negate all --filesystem
+      permissions. Previously, it would cancel out --filesystem=host but
+      not --filesystem=/some/dir.
+    - --nofilesystem=home is now special-cased to negate several
+      home-directory-related filesystem permssions such as
+      --filesystem=xdg-config/foo, not just --filesystem=host.
+  * Other bug fixes:
+    - Extra-data downloading now properly handles compressed
+      content-encodings, which fixes checksum verification
+    - Avoid unnecessary polkit prompt due to auto-pinning when installing
+      runtimes
+    - Better handling of updates of extensions that exist in multiple
+      repositories
+    - Fixed (initial) installation of apps with renamed app-IDs
+    - Support more pulseaudio configuration, including the one used in WSL2
+    - Fixed regression in updates from no-enumerate remotes
+    - We now verify checksums of summary caches, to better handle local file
+      corruption
+    - Improved CLI output for non-terminal targets
+    - Flatpak run --session-bus now works
+    - Fix build with PyParsing >= 3.0.4
+    - bash auto completion now doesn't complete on command name aliases
+    - Minor improvements to the search command
+    - Minor improvements to the list command
+    - Minor improvements to the repair command
+    - Add more tests
+    - Updated translations and docs
+  * d/copyright: Update
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 12 Jan 2022 13:33:12 +0000
+
+flatpak (1.12.2-2) unstable; urgency=medium
+
+  * flatpak Recommends xdg-user-dirs.
+    If we don't have this, the XDG special directories for documents, music,
+    downloads etc. will not be listed in ~/.config/user-dirs.dirs unless
+    configured manually; this means that app permissions that would normally
+    share those directories with the host, such as --filesystem=xdg-download,
+    will have no practical effect. (Closes: #1000609)
+  * Build/test-depend on dbus-daemon.
+    We don't necessarily need a full implementation for the unit tests, but
+    we do need to be able to run dbus-daemon --session.
+  * Depend on default-dbus-system-bus | dbus-system-bus instead of dbus.
+    Any implementation of the system bus will do.
+  * Adjust Lintian overrides for current Lintian
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 13 Dec 2021 13:22:23 +0000
+
 flatpak (1.12.2-1flatpak1~16.04) xenial; urgency=medium
 
   * Backport to Ubuntu 16.04 'xenial'
