@@ -1,3 +1,10 @@
+flatpak (1.12.3-1~bpo11+1) bullseye-backports; urgency=high
+
+  * Rebuild for bullseye-backports
+    - Not waiting for testing migration due to security fixes
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 12 Jan 2022 13:34:15 +0000
+
 flatpak (1.12.3-1) unstable; urgency=high
 
   * New upstream stable release
