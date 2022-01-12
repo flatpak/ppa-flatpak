@@ -1,4 +1,4 @@
-flatpak (1.12.3-1) UNRELEASED; urgency=medium
+flatpak (1.12.3-1) unstable; urgency=high
 
   * New upstream stable release
   * Security fixes:
@@ -35,8 +35,9 @@ flatpak (1.12.3-1) UNRELEASED; urgency=medium
     - Minor improvements to the repair command
     - Add more tests
     - Updated translations and docs
+  * d/copyright: Update
 
- -- Simon McVittie <smcv@debian.org>  Wed, 12 Jan 2022 13:14:16 +0000
+ -- Simon McVittie <smcv@debian.org>  Wed, 12 Jan 2022 13:33:12 +0000
 
 flatpak (1.12.2-2) unstable; urgency=medium
 
