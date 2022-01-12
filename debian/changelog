@@ -1,4 +1,4 @@
-flatpak (1.12.3-1flatpak1~16.04) UNRELEASED; urgency=high
+flatpak (1.12.3-1flatpak1~16.04) xenial; urgency=high
 
   * Backport to Ubuntu 16.04 'xenial'
   * Remaining changes:
@@ -17,8 +17,10 @@ flatpak (1.12.3-1flatpak1~16.04) UNRELEASED; urgency=high
       toolchain and added a gobject-introspection dependency that cannot
       be satisfied in xenial
     - Use libgpgme11-dev instead of libgpgme-dev
+    - d/p/Don-t-rely-on-AS_BUNDLE_KIND_FLATPAK-existing.patch:
+      Cope with older appstream-glib
 
- -- Simon McVittie <smcv@debian.org>  Wed, 12 Jan 2022 15:51:07 +0000
+ -- Simon McVittie <smcv@debian.org>  Wed, 12 Jan 2022 16:01:42 +0000
 
 flatpak (1.12.3-1flatpak1~18.04) bionic; urgency=high
 
