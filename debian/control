@@ -10,7 +10,7 @@ Build-Depends:
  automake (>= 1.14.1),
  bison,
  ca-certificates <!nocheck>,
- dbus-daemon,
+ dbus,
  debhelper-compat (= 12),
  desktop-file-utils <!nocheck>,
  dh-exec (>= 0.23~),
@@ -112,7 +112,6 @@ Section: misc
 Depends:
  attr,
  ca-certificates,
- dbus-daemon,
  desktop-file-utils,
  flatpak (= ${binary:Version}),
  fuse,
