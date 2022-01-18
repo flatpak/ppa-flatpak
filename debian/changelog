@@ -1,3 +1,11 @@
+flatpak (1.12.4-1flatpak1~18.04) bionic; urgency=high
+
+  * Backport from Ubuntu 20.04 'focal' to 18.04 'bionic'
+    - Roll back to debhelper compat level 11
+    - Reinstate --libexecdir
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 18 Jan 2022 19:50:37 +0000
+
 flatpak (1.12.4-1flatpak1~20.04) focal; urgency=high
 
   * Merge 1.12.4 stable release from Debian
