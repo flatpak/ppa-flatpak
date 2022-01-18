@@ -1,3 +1,32 @@
+flatpak (1.12.4-1flatpak1~20.04) focal; urgency=high
+
+  * Merge 1.12.4 stable release from Debian
+  * Changes relative to Debian:
+    - Backport to Ubuntu 20.04 'focal'
+      - Revert libmalcontent integration, only added to Ubuntu after 20.04.
+      - Downgrade dbus from Depends to Recommends.
+        This is necessary for system-wide installations (without --user),
+        but doesn't need to be a hard dependency with libmalcontent
+        disabled.
+      - Revert use of libgdk-pixbuf-2.0-dev.
+        Ubuntu didn't get this until 21.04, and PPAs don't follow
+        alternative build-dependencies.
+      - Roll back to debhelper 12
+      - Reduce libseccomp dependency for compatibility with focal.
+        This only partially prevents use of VFS-manipulating syscalls if a
+        newer kernel is used, but is sufficient for focal's kernel,
+        and in particular still prevents clone3().
+      - Go back to depending on dbus, instead of dbus-daemon.
+        The separate packages didn't exist in Ubuntu, even as Provides,
+        before Ubuntu 21.10 'impish'.
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 18 Jan 2022 19:10:24 +0000
+
 flatpak (1.12.4-1) unstable; urgency=medium
 
   * New upstream stable release
