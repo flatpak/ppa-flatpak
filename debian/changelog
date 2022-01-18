@@ -1,4 +1,4 @@
-flatpak (1.12.4-1) UNRELEASED; urgency=high
+flatpak (1.12.4-1) unstable; urgency=medium
 
   * New upstream stable release
   * Alter the solution to CVE-2022-21682 to avoid regressions:
@@ -14,7 +14,7 @@ flatpak (1.12.4-1) UNRELEASED; urgency=high
     - Restore compatibility with older appstream-glib versions, for backports
   * Set high urgency to resolve regressions in 1.12.3
 
- -- Simon McVittie <smcv@debian.org>  Tue, 18 Jan 2022 17:41:52 +0000
+ -- Simon McVittie <smcv@debian.org>  Tue, 18 Jan 2022 18:01:05 +0000
 
 flatpak (1.12.3-1) unstable; urgency=high
 
