@@ -1,3 +1,9 @@
+flatpak (1.12.4-1~bpo11+1) bullseye-backports; urgency=medium
+
+  * Rebuild for bullseye-backports.
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 19 Jan 2022 22:46:37 +0000
+
 flatpak (1.12.4-1) unstable; urgency=medium
 
   * New upstream stable release
