@@ -1,3 +1,11 @@
+flatpak (1.12.4-2) UNRELEASED; urgency=medium
+
+  * Stop installing flatpak-bisect and flatpak-coredumpctl as examples.
+    Since 1.8.1-2 they're installed into PATH, in libflatpak-dev.
+  * d/flatpak.docs: Use debhelper 11 dh_installdoc instead of dh-exec
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 24 Jan 2022 10:41:24 +0000
+
 flatpak (1.12.4-1) unstable; urgency=medium
 
   * New upstream stable release
