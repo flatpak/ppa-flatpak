@@ -1,4 +1,4 @@
-flatpak (1.12.6-1flatpak1~16.04) UNRELEASED; urgency=medium
+flatpak (1.12.6-1flatpak1~16.04) xenial; urgency=medium
 
   * Backport to Ubuntu 16.04 'xenial'
   * Remaining changes:
@@ -20,7 +20,7 @@ flatpak (1.12.6-1flatpak1~16.04) UNRELEASED; urgency=medium
     - d/p/Don-t-rely-on-AS_BUNDLE_KIND_FLATPAK-existing.patch:
       Cope with older appstream-glib
 
- -- Simon McVittie <smcv@debian.org>  Tue, 22 Feb 2022 16:55:11 +0000
+ -- Simon McVittie <smcv@debian.org>  Tue, 22 Feb 2022 16:56:07 +0000
 
 flatpak (1.12.6-1flatpak1~18.04) bionic; urgency=medium
 
