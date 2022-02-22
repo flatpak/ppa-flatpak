@@ -1,3 +1,123 @@
+flatpak (1.12.6-1flatpak1~16.04) UNRELEASED; urgency=medium
+
+  * Backport to Ubuntu 16.04 'xenial'
+  * Remaining changes:
+    - Roll back to debhelper compat level 9
+    - Explicitly use dh-autoreconf, dh-systemd and --disable-silent-rules.
+      Newer debhelper does these by default, but xenial's version doesn't.
+    - Use libgtk-3-bin instead of gtk-update-icon-theme.
+      xenial predates the separation of gtk-update-icon-theme.
+    - d/p/debian/Try-gtk-3.0-version-of-the-icon-cache-utility-first.patch:
+      Try to run gtk-update-icon-cache-3.0 from GTK 3 in preference to
+      gtk-update-icon-cache from GTK 2
+    - Disable gtk-doc reference documentation for xenial.
+      xenial only has Python 3.5, which has less convenient Unicode
+      handling than later versions, causing gdbus-codegen to fail.
+    - Remove Rules-Requires-Root, which wasn't supported by xenial's
+      toolchain and added a gobject-introspection dependency that cannot
+      be satisfied in xenial
+    - Use libgpgme11-dev instead of libgpgme-dev
+    - d/p/Don-t-rely-on-AS_BUNDLE_KIND_FLATPAK-existing.patch:
+      Cope with older appstream-glib
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 22 Feb 2022 16:55:11 +0000
+
+flatpak (1.12.6-1flatpak1~18.04) bionic; urgency=medium
+
+  * Backport from Ubuntu 20.04 'focal' to 18.04 'bionic'
+    - Roll back to debhelper compat level 11
+    - Reinstate --libexecdir
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 22 Feb 2022 16:15:06 +0000
+
+flatpak (1.12.6-1flatpak1~20.04) focal; urgency=medium
+
+  * Merge 1.12.6 stable release from Debian
+  * Changes relative to Debian:
+    - Backport to Ubuntu 20.04 'focal'
+      - Revert libmalcontent integration, only added to Ubuntu after 20.04.
+      - Downgrade dbus from Depends to Recommends.
+        This is necessary for system-wide installations (without --user),
+        but doesn't need to be a hard dependency with libmalcontent
+        disabled.
+      - Revert use of libgdk-pixbuf-2.0-dev.
+        Ubuntu didn't get this until 21.04, and PPAs don't follow
+        alternative build-dependencies.
+      - Roll back to debhelper 12
+      - Reduce libseccomp dependency for compatibility with focal.
+        This only partially prevents use of VFS-manipulating syscalls if a
+        newer kernel is used, but is sufficient for focal's kernel,
+        and in particular still prevents clone3().
+      - Go back to depending on dbus, instead of dbus-daemon.
+        The separate packages didn't exist in Ubuntu, even as Provides,
+        before Ubuntu 21.10 'impish'.
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 22 Feb 2022 15:41:56 +0000
+
+flatpak (1.12.6-1) unstable; urgency=medium
+
+  * New upstream stable release
+    - Better robustness against downloads being interrupted or cancelled
+    - Detect the GTK theme more reliably
+    - Fix history command unit test when not using persistent systemd journal
+    - Translation update: pt_BR
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 22 Feb 2022 10:58:48 +0000
+
+flatpak (1.12.5-1flatpak1~18.04) bionic; urgency=medium
+
+  * Backport from Ubuntu 20.04 'focal' to 18.04 'bionic'
+    - Roll back to debhelper compat level 11
+    - Reinstate --libexecdir
+
+ -- Simon McVittie <smcv@debian.org>  Sat, 12 Feb 2022 12:08:59 +0000
+
+flatpak (1.12.5-1flatpak1~20.04) focal; urgency=medium
+
+  * Merge 1.12.5 stable release from Debian
+  * Changes relative to Debian:
+    - Backport to Ubuntu 20.04 'focal'
+      - Revert libmalcontent integration, only added to Ubuntu after 20.04.
+      - Downgrade dbus from Depends to Recommends.
+        This is necessary for system-wide installations (without --user),
+        but doesn't need to be a hard dependency with libmalcontent
+        disabled.
+      - Revert use of libgdk-pixbuf-2.0-dev.
+        Ubuntu didn't get this until 21.04, and PPAs don't follow
+        alternative build-dependencies.
+      - Roll back to debhelper 12
+      - Reduce libseccomp dependency for compatibility with focal.
+        This only partially prevents use of VFS-manipulating syscalls if a
+        newer kernel is used, but is sufficient for focal's kernel,
+        and in particular still prevents clone3().
+      - Go back to depending on dbus, instead of dbus-daemon.
+        The separate packages didn't exist in Ubuntu, even as Provides,
+        before Ubuntu 21.10 'impish'.
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 11 Feb 2022 23:01:06 +0000
+
+flatpak (1.12.5-1) unstable; urgency=medium
+
+  * New upstream stable release
+    - Don't propagate GStreamer-related environment variables into sandbox
+    - Fix regressions in `flatpak history` since 1.9.1
+    - Remove temporary files from /var/lib/flatpak/appstream
+  * Stop installing flatpak-bisect and flatpak-coredumpctl as examples.
+    Since 1.8.1-2 they're installed into PATH, in libflatpak-dev.
+  * d/flatpak.docs: Use debhelper 11 dh_installdoc instead of dh-exec
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 11 Feb 2022 17:16:22 +0000
+
 flatpak (1.12.4-1flatpak1~16.04) xenial; urgency=high
 
   * Backport to Ubuntu 16.04 'xenial'

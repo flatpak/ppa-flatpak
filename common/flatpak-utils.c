@@ -632,7 +632,7 @@ flatpak_get_gtk_theme (void)
       else
         {
           schema = g_settings_schema_source_lookup (source,
-                                                    "org.gnome.desktop.interface", FALSE);
+                                                    "org.gnome.desktop.interface", TRUE);
 
           if (schema == NULL)
             g_once_init_leave (&gtk_theme, g_strdup (""));
@@ -3169,7 +3169,7 @@ flatpak_repo_save_digested_summary_delta (OstreeRepo   *repo,
 }
 
 
-static gboolean
+gboolean
 is_flatpak_ref (const char *ref)
 {
   return
