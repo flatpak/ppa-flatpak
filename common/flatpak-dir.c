@@ -5222,7 +5222,7 @@ repo_pull (OstreeRepo                           *self,
            FlatpakRemoteState                   *state,
            const char                          **dirs_to_pull,
            const char                           *ref_to_fetch,
-           const char                           *rev_to_fetch, /* (nullable) */
+           const char                           *rev_to_fetch,
            GFile                                *sideload_repo,
            const char                           *token,
            FlatpakPullFlags                      flatpak_flags,
@@ -5241,6 +5241,9 @@ repo_pull (OstreeRepo                           *self,
   g_autoptr(GVariant) options = NULL;
   const char *refs_to_fetch[2];
   g_autofree char *sideload_url = NULL;
+
+  g_return_val_if_fail (ref_to_fetch != NULL, FALSE);
+  g_return_val_if_fail (rev_to_fetch != NULL, FALSE);
 
   /* The ostree fetcher asserts if error is NULL */
   if (error == NULL)
@@ -5813,6 +5816,7 @@ flatpak_dir_pull (FlatpakDir                           *self,
                   GError                              **error)
 {
   gboolean ret = FALSE;
+  gboolean have_commit = FALSE;
   g_autofree char *rev = NULL;
   g_autofree char *url = NULL;
   g_autoptr(GPtrArray) subdirs_arg = NULL;
@@ -5898,6 +5902,23 @@ flatpak_dir_pull (FlatpakDir                           *self,
                                      cancellable,
                                      error))
     goto out;
+
+  /* Work around a libostree bug where the pull may succeed but the pulled
+   * commit will be incomplete by preemptively marking the commit partial.
+   * Note this has to be done before ostree_repo_prepare_transaction() so we
+   * aren't checking the staging dir for the commit.
+   * https://github.com/flatpak/flatpak/issues/3479
+   * https://github.com/ostreedev/ostree/pull/2549
+   */
+  {
+    g_autoptr(GError) local_error = NULL;
+
+    if (!ostree_repo_has_object (repo, OSTREE_OBJECT_TYPE_COMMIT, rev, &have_commit, NULL, &local_error))
+      g_warning ("Encountered error checking for commit object %s: %s", rev, local_error->message);
+    else if (!have_commit &&
+             !ostree_repo_mark_commit_partial (repo, rev, TRUE, &local_error))
+      g_warning ("Encountered error marking commit partial: %s: %s", rev, local_error->message);
+  }
 
   if (!ostree_repo_prepare_transaction (repo, NULL, cancellable, error))
     goto out;

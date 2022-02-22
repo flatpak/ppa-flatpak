@@ -1,3 +1,13 @@
+flatpak (1.12.6-1) unstable; urgency=medium
+
+  * New upstream stable release
+    - Better robustness against downloads being interrupted or cancelled
+    - Detect the GTK theme more reliably
+    - Fix history command unit test when not using persistent systemd journal
+    - Translation update: pt_BR
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 22 Feb 2022 10:58:48 +0000
+
 flatpak (1.12.5-1flatpak1~20.04) focal; urgency=medium
 
   * Merge 1.12.5 stable release from Debian
