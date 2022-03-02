@@ -6,6 +6,7 @@ This is specifically for running build-time tests in the Autotools build
 system, and is not used when running installed-tests.
 
 Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/4788
 ---
  tests/Makefile.am.inc | 1 -
  1 file changed, 1 deletion(-)

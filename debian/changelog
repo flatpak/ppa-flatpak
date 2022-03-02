@@ -1,10 +1,16 @@
-flatpak (1.13.1-1) UNRELEASED; urgency=medium
+flatpak (1.13.1-1) experimental; urgency=medium
 
   * New upstream development release
   * Build-depend on libappstream-dev instead of libappstream-glib-dev
   * Increase dependency on bubblewrap
+  * Install fish profile snippet
+  * Add patch to work around #1006684 in libappstream
+  * Update symbols file
+  * Add patch to avoid unnecessarily installing tap-driver.sh.
+    As well as being unnecessary, this file triggers some Lintian
+    false-positives.
 
- -- Simon McVittie <smcv@debian.org>  Wed, 02 Mar 2022 10:57:55 +0000
+ -- Simon McVittie <smcv@debian.org>  Wed, 02 Mar 2022 13:27:15 +0000
 
 flatpak (1.12.6-1) unstable; urgency=medium
 
