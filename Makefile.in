@@ -17,6 +17,7 @@
 # GLIB - Library of useful C routines
 
 # Copyright (C) 2015 Colin Walters <walters@verbum.org>
+# SPDX-License-Identifier: LGPL-2.0-or-later
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -243,7 +244,7 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" \
 	"$(DESTDIR)$(installed_test_keyringdir)" \
 	"$(DESTDIR)$(installed_test_keyring2dir)" \
 	"$(DESTDIR)$(tmpfilesdir)" "$(DESTDIR)$(envdir)" \
-	"$(DESTDIR)$(fishcompletiondir)" \
+	"$(DESTDIR)$(fishcompletiondir)" "$(DESTDIR)$(fishconfdir)" \
 	"$(DESTDIR)$(installed_testdir)" \
 	"$(DESTDIR)$(installed_test_metadir)" \
 	"$(DESTDIR)$(introspectiondir)" \
@@ -827,8 +828,8 @@ tests_httpcache_SOURCES = tests/httpcache.c
 tests_httpcache_OBJECTS = tests/httpcache-httpcache.$(OBJEXT)
 tests_httpcache_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	libflatpak-common.la libflatpak-common-base.la libglnx.la
+	$(am__DEPENDENCIES_1) libflatpak-common.la \
+	libflatpak-common-base.la libglnx.la
 tests_httpcache_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(tests_httpcache_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
@@ -1154,12 +1155,12 @@ DATA = $(bashcompletion_DATA) $(dbus_service_DATA) \
 	$(dbussystemservice_DATA) $(dist_dbusconf_DATA) \
 	$(dist_installed_test_keyring_DATA) \
 	$(dist_installed_test_keyring2_DATA) $(dist_tmpfiles_DATA) \
-	$(env_DATA) $(fishcompletion_DATA) $(installed_test_DATA) \
-	$(installed_test_meta_DATA) $(introspection_DATA) \
-	$(nobase_installed_test_DATA) $(nodist_gir_DATA) \
-	$(nodist_typelib_DATA) $(noinst_DATA) $(pkgconfig_DATA) \
-	$(polkit_policy_DATA) $(polkit_rules_DATA) $(profile_DATA) \
-	$(selinux_devel_DATA) $(selinux_module_DATA) \
+	$(env_DATA) $(fishcompletion_DATA) $(fishconf_DATA) \
+	$(installed_test_DATA) $(installed_test_meta_DATA) \
+	$(introspection_DATA) $(nobase_installed_test_DATA) \
+	$(nodist_gir_DATA) $(nodist_typelib_DATA) $(noinst_DATA) \
+	$(pkgconfig_DATA) $(polkit_policy_DATA) $(polkit_rules_DATA) \
+	$(profile_DATA) $(selinux_devel_DATA) $(selinux_module_DATA) \
 	$(systemdsystemunit_DATA) $(systemduserunit_DATA) \
 	$(sysusers_DATA) $(zshcompletion_DATA)
 HEADERS = $(flatpakinclude_HEADERS) $(nodist_flatpakinclude_HEADERS)
@@ -1466,8 +1467,10 @@ distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
-APPSTREAM_GLIB_CFLAGS = @APPSTREAM_GLIB_CFLAGS@
-APPSTREAM_GLIB_LIBS = @APPSTREAM_GLIB_LIBS@
+APPSTREAM_0_14_0_CFLAGS = @APPSTREAM_0_14_0_CFLAGS@
+APPSTREAM_0_14_0_LIBS = @APPSTREAM_0_14_0_LIBS@
+APPSTREAM_CFLAGS = @APPSTREAM_CFLAGS@
+APPSTREAM_LIBS = @APPSTREAM_LIBS@
 AR = @AR@
 ARCHIVE_CFLAGS = @ARCHIVE_CFLAGS@
 ARCHIVE_LIBS = @ARCHIVE_LIBS@
@@ -1712,7 +1715,7 @@ noinst_LTLIBRARIES = $(NULL) $(am__append_1) libglnx.la \
 	libflatpak-common-base.la libflatpak-common.la \
 	libflatpak-app.la libtestlib.la
 CLEANFILES = $(NULL) $(am__append_13) $(dbus_service_DATA) \
-	$(systemduserunit_DATA) \
+	$(systemduserunit_DATA) $(top_builddir)/libglnx-config.h \
 	$(nodist_libflatpak_common_base_la_SOURCES) \
 	$(nodist_libflatpak_common_la_SOURCES) $(am__append_22) \
 	app/parse-datetime.c $(flatpak_dbus_built_sources) \
@@ -1728,15 +1731,19 @@ DISTCLEANFILES = $(NULL) $(am__append_26) flatpak.pp.bz2 \
 	tests/services/org.flatpak.Authenticator.Oci.service \
 	tests/share/xdg-desktop-portal/portals/test.portal \
 	tests/package_version.txt $(NULL) flatpak.env
-BUILT_SOURCES = $(NULL) $(nodist_libflatpak_common_base_la_SOURCES) \
+BUILT_SOURCES = $(NULL) $(top_builddir)/libglnx-config.h \
+	$(nodist_libflatpak_common_base_la_SOURCES) \
 	$(nodist_libflatpak_common_la_SOURCES) \
 	$(flatpak_dbus_built_sources) $(nodist_flatpak_portal_SOURCES) \
 	$(nodist_flatpak_oci_authenticator_SOURCES)
 EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	$(all_dist_test_scripts) $(all_dist_test_data) \
 	$(service_in_files) subprojects/libglnx/README.md \
-	subprojects/libglnx/COPYING subprojects/libglnx/libglnx.m4 \
-	$(NULL) common/flatpak-enum-types.c.template \
+	subprojects/libglnx/COPYING \
+	subprojects/libglnx/LICENSES/LGPL-2.0-or-later.txt \
+	subprojects/libglnx/LICENSES/LGPL-2.1-or-later.txt \
+	subprojects/libglnx/libglnx.m4 $(NULL) \
+	common/flatpak-enum-types.c.template \
 	common/flatpak-enum-types.h.template \
 	data/org.freedesktop.portal.Documents.xml \
 	data/org.freedesktop.impl.portal.PermissionStore.xml \
@@ -1759,7 +1766,7 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	tests/Makefile-test-matrix.am.inc tests/expand-test-matrix.sh \
 	tests/test-wrapper.sh $(bashcompletion_DATA) \
 	$(zshcompletion_DATA) $(fishcompletion_DATA) $(profile_DATA) \
-	env.d/flatpak.env.in env.d/60-flatpak \
+	$(fishconf_DATA) env.d/flatpak.env.in env.d/60-flatpak \
 	env.d/60-flatpak-system-only flatpak.pc.in \
 	scripts/flatpak-bisect scripts/flatpak-coredumpctl \
 	subprojects/variant-schema-compiler/variant-schema-compiler \
@@ -1896,7 +1903,7 @@ libglnx_la_SOURCES = \
 	subprojects/libglnx/tests/libglnx-testlib.h \
 	$(NULL)
 
-libglnx_la_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags)
+libglnx_la_CFLAGS = $(AM_CFLAGS) $(libglnx_cflags) -I$(builddir)
 libglnx_la_LDFLAGS = -avoid-version -Bsymbolic-functions -export-symbols-regex "^glnx_" -no-undefined -export-dynamic 
 libglnx_la_LIBADD = $(libglnx_libs)
 libglnx_tests = test-libglnx-xattrs test-libglnx-fdio test-libglnx-errors test-libglnx-macros test-libglnx-shutil
@@ -2151,7 +2158,7 @@ libflatpak_app_la_LIBADD = \
 	$(OSTREE_LIBS) \
 	$(SOUP_LIBS) \
 	$(JSON_LIBS) \
-	$(APPSTREAM_GLIB_LIBS) \
+	$(APPSTREAM_LIBS) \
 	$(SYSTEMD_LIBS) \
 	$(POLKIT_LIBS) \
 	$(NULL)
@@ -2162,7 +2169,7 @@ libflatpak_app_la_CFLAGS = \
 	$(OSTREE_CFLAGS) \
 	$(SOUP_CFLAGS) \
 	$(JSON_CFLAGS) \
-	$(APPSTREAM_GLIB_CFLAGS) \
+	$(APPSTREAM_CFLAGS) \
 	 $(SYSTEMD_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	-DFLATPAK_COMPILATION \
@@ -2237,7 +2244,7 @@ flatpak_LDADD = \
 	$(OSTREE_LIBS) \
 	$(SOUP_LIBS) \
 	$(JSON_LIBS) \
-	$(APPSTREAM_GLIB_LIBS) \
+	$(APPSTREAM_LIBS) \
 	$(SYSTEMD_LIBS) \
 	$(POLKIT_LIBS) \
 	libglnx.la \
@@ -2252,7 +2259,7 @@ flatpak_CFLAGS = \
 	$(OSTREE_CFLAGS) \
 	$(SOUP_CFLAGS) \
 	$(JSON_CFLAGS) \
-	$(APPSTREAM_GLIB_CFLAGS) \
+	$(APPSTREAM_CFLAGS) \
 	$(SYSTEMD_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	-DFLATPAK_COMPILATION \
@@ -2309,7 +2316,7 @@ flatpak_portal_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/portal
 @BUILD_SYSTEM_HELPER_TRUE@	$(NULL)
 
 @BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_LDADD = $(BASE_LIBS) $(OSTREE_LIBS) $(JSON_LIBS) $(POLKIT_LIBS) libflatpak-common.la libflatpak-common-base.la libglnx.la
-@BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(POLKIT_CFLAGS) -DFLATPAK_COMPILATION -DLIBEXECDIR=\"$(libexecdir)\"
+@BUILD_SYSTEM_HELPER_TRUE@flatpak_system_helper_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(APPSTREAM_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(POLKIT_CFLAGS) -DFLATPAK_COMPILATION -DLIBEXECDIR=\"$(libexecdir)\"
 @BUILD_SYSTEM_HELPER_TRUE@polkit_rulesdir = $(datadir)/polkit-1/rules.d
 @BUILD_SYSTEM_HELPER_TRUE@polkit_rules_DATA = \
 @BUILD_SYSTEM_HELPER_TRUE@	system-helper/org.freedesktop.Flatpak.rules
@@ -2412,7 +2419,7 @@ testcommon_CFLAGS = \
 	$(OSTREE_CFLAGS) \
 	$(SOUP_CFLAGS) \
 	$(JSON_CFLAGS) \
-	$(APPSTREAM_GLIB_CFLAGS) \
+	$(APPSTREAM_CFLAGS) \
 	-DFLATPAK_COMPILATION \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
 	-I$(srcdir)/app \
@@ -2425,7 +2432,7 @@ testcommon_LDADD = \
 	$(OSTREE_LIBS) \
 	$(SOUP_LIBS) \
 	$(JSON_LIBS) \
-	$(APPSTREAM_GLIB_LIBS) \
+	$(APPSTREAM_LIBS) \
 	libflatpak-app.la \
 	libflatpak-common.la \
 	libflatpak-common-base.la \
@@ -2461,11 +2468,11 @@ nodist_test_portal_SOURCES = \
 tests_hold_lock_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
 tests_hold_lock_LDADD = $(AM_LDADD) $(BASE_LIBS) libglnx.la
 tests_hold_lock_SOURCES = tests/hold-lock.c
-tests_httpcache_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
+tests_httpcache_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) \
 	-DFLATPAK_COMPILATION \
 	-DLOCALEDIR=\"$(localedir)\"
 
-tests_httpcache_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) $(APPSTREAM_GLIB_LIBS) \
+tests_httpcache_LDADD = $(AM_LDADD) $(BASE_LIBS) $(OSTREE_LIBS) $(SOUP_LIBS) $(JSON_LIBS) \
 	libflatpak-common.la libflatpak-common-base.la libglnx.la
 
 tests_mock_flatpak_CFLAGS = $(testcommon_CFLAGS)
@@ -2493,7 +2500,7 @@ tests_test_authenticator_SOURCES = tests/test-authenticator.c
 tests_try_syscall_CFLAGS = $(AM_CFLAGS)
 tests_try_syscall_LDADD = $(AM_LDADD)
 tests_try_syscall_SOURCES = tests/try-syscall.c
-tests_list_unused_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) $(SOUP_CFLAGS) $(JSON_CFLAGS) $(APPSTREAM_GLIB_CFLAGS) \
+tests_list_unused_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) $(OSTREE_CFLAGS) \
 	-DFLATPAK_COMPILATION \
 	-DLOCALEDIR=\"$(localedir)\"
 
@@ -2680,6 +2687,8 @@ fishcompletiondir = $(datadir)/fish/vendor_completions.d
 fishcompletion_DATA = completion/flatpak.fish
 profiledir = $(PROFILE_DIR)
 profile_DATA = profile/flatpak.sh
+fishconfdir = $(datadir)/fish/vendor_conf.d
+fishconf_DATA = profile/flatpak.fish
 envdir = $(datadir)/gdm/env.d
 env_DATA = $(am__append_36)
 systemenvgendir = $(systemdsystemenvgendir)
@@ -5906,6 +5915,27 @@ uninstall-fishcompletionDATA:
 	@list='$(fishcompletion_DATA)'; test -n "$(fishcompletiondir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(fishcompletiondir)'; $(am__uninstall_files_from_dir)
+install-fishconfDATA: $(fishconf_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(fishconf_DATA)'; test -n "$(fishconfdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(fishconfdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(fishconfdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(fishconfdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(fishconfdir)" || exit $$?; \
+	done
+
+uninstall-fishconfDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(fishconf_DATA)'; test -n "$(fishconfdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(fishconfdir)'; $(am__uninstall_files_from_dir)
 install-installed_testDATA: $(installed_test_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(installed_test_DATA)'; test -n "$(installed_testdir)" || list=; \
@@ -7143,7 +7173,7 @@ install-binPROGRAMS: install-libLTLIBRARIES
 
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(systemenvgendir)" "$(DESTDIR)$(userenvgendir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(tmpfilesdir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(fishcompletiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(selinux_develdir)" "$(DESTDIR)$(selinux_moduledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(sysusersdir)" "$(DESTDIR)$(zshcompletiondir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bwrapdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(libdir)" "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(triggersdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(scriptsdir)" "$(DESTDIR)$(systemenvgendir)" "$(DESTDIR)$(userenvgendir)" "$(DESTDIR)$(bashcompletiondir)" "$(DESTDIR)$(dbus_servicedir)" "$(DESTDIR)$(dbussystemservicedir)" "$(DESTDIR)$(dbusconfdir)" "$(DESTDIR)$(installed_test_keyringdir)" "$(DESTDIR)$(installed_test_keyring2dir)" "$(DESTDIR)$(tmpfilesdir)" "$(DESTDIR)$(envdir)" "$(DESTDIR)$(fishcompletiondir)" "$(DESTDIR)$(fishconfdir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(installed_test_metadir)" "$(DESTDIR)$(introspectiondir)" "$(DESTDIR)$(installed_testdir)" "$(DESTDIR)$(girdir)" "$(DESTDIR)$(typelibdir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(polkit_policydir)" "$(DESTDIR)$(polkit_rulesdir)" "$(DESTDIR)$(profiledir)" "$(DESTDIR)$(selinux_develdir)" "$(DESTDIR)$(selinux_moduledir)" "$(DESTDIR)$(systemdsystemunitdir)" "$(DESTDIR)$(systemduserunitdir)" "$(DESTDIR)$(sysusersdir)" "$(DESTDIR)$(zshcompletiondir)" "$(DESTDIR)$(flatpakincludedir)" "$(DESTDIR)$(flatpakincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: $(BUILT_SOURCES)
@@ -7389,8 +7419,8 @@ install-data-am: install-bashcompletionDATA install-bwrapPROGRAMS \
 	install-dist_installed_test_keyringDATA \
 	install-dist_tmpfilesDATA install-dist_triggersSCRIPTS \
 	install-envDATA install-fishcompletionDATA \
-	install-flatpakincludeHEADERS install-installed_testDATA \
-	install-installed_testLTLIBRARIES \
+	install-fishconfDATA install-flatpakincludeHEADERS \
+	install-installed_testDATA install-installed_testLTLIBRARIES \
 	install-installed_testPROGRAMS install-installed_testSCRIPTS \
 	install-installed_test_metaDATA install-introspectionDATA \
 	install-nobase_installed_testDATA \
@@ -7603,8 +7633,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	uninstall-dist_installed_test_keyringDATA \
 	uninstall-dist_libexecSCRIPTS uninstall-dist_tmpfilesDATA \
 	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
-	uninstall-fishcompletionDATA uninstall-flatpakincludeHEADERS \
-	uninstall-installed_testDATA \
+	uninstall-fishcompletionDATA uninstall-fishconfDATA \
+	uninstall-flatpakincludeHEADERS uninstall-installed_testDATA \
 	uninstall-installed_testLTLIBRARIES \
 	uninstall-installed_testPROGRAMS \
 	uninstall-installed_testSCRIPTS \
@@ -7646,9 +7676,10 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	install-dist_libexecSCRIPTS install-dist_tmpfilesDATA \
 	install-dist_triggersSCRIPTS install-dvi install-dvi-am \
 	install-envDATA install-exec install-exec-am \
-	install-fishcompletionDATA install-flatpakincludeHEADERS \
-	install-html install-html-am install-info install-info-am \
-	install-installed_testDATA install-installed_testLTLIBRARIES \
+	install-fishcompletionDATA install-fishconfDATA \
+	install-flatpakincludeHEADERS install-html install-html-am \
+	install-info install-info-am install-installed_testDATA \
+	install-installed_testLTLIBRARIES \
 	install-installed_testPROGRAMS install-installed_testSCRIPTS \
 	install-installed_test_metaDATA install-introspectionDATA \
 	install-libLTLIBRARIES install-libexecPROGRAMS install-man \
@@ -7674,8 +7705,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 	uninstall-dist_installed_test_keyringDATA \
 	uninstall-dist_libexecSCRIPTS uninstall-dist_tmpfilesDATA \
 	uninstall-dist_triggersSCRIPTS uninstall-envDATA \
-	uninstall-fishcompletionDATA uninstall-flatpakincludeHEADERS \
-	uninstall-installed_testDATA \
+	uninstall-fishcompletionDATA uninstall-fishconfDATA \
+	uninstall-flatpakincludeHEADERS uninstall-installed_testDATA \
 	uninstall-installed_testLTLIBRARIES \
 	uninstall-installed_testPROGRAMS \
 	uninstall-installed_testSCRIPTS \
@@ -7710,6 +7741,8 @@ uninstall-am: uninstall-bashcompletionDATA uninstall-binPROGRAMS \
 		-e "s|\@localstatedir\@|$(localstatedir)|" \
 		-e "s|\@media_dir\@|$(RUN_MEDIA_DIR)|" \
 		-e "s|\@extraargs\@||" $< > $@
+$(top_builddir)/libglnx-config.h: Makefile.am
+	echo '#include "config.h"' > $@
 
 common/flatpak-enum-types.h: $(flatpakinclude_HEADERS) common/flatpak-enum-types.h.template
 	$(AM_V_GEN) $(GLIB_MKENUMS) --template $(filter %.template,$^) $(filter-out %.template,$^) > \
@@ -7896,7 +7929,7 @@ flatpak.env: env.d/flatpak.env.in
 
 coverage:
 	$(AM_V_GEN) $(MAKE) $(AM_MAKEFLAGS) lcov-clean
-	$(AM_V_GEN) $(MAKE) check
+	$(AM_V_GEN) FLATPAK_TEST_COVERAGE=1 $(MAKE) check
 	$(AM_V_GEN) $(MAKE) $(AM_MAKEFLAGS) genlcov
 
 lcov-clean:

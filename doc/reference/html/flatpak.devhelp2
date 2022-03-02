@@ -195,6 +195,7 @@
     <keyword type="enum" name="enum FlatpakTransactionRemoteReason" link="FlatpakTransaction.html#FlatpakTransactionRemoteReason"/>
     <keyword type="enum" name="enum FlatpakTransactionResult" link="FlatpakTransaction.html#FlatpakTransactionResult"/>
     <keyword type="property" name="The “installation” property" link="FlatpakTransaction.html#FlatpakTransaction--installation"/>
+    <keyword type="property" name="The “no-interaction” property" link="FlatpakTransaction.html#FlatpakTransaction--no-interaction"/>
     <keyword type="signal" name="The “add-new-remote” signal" link="FlatpakTransaction.html#FlatpakTransaction-add-new-remote"/>
     <keyword type="signal" name="The “basic-auth-start” signal" link="FlatpakTransaction.html#FlatpakTransaction-basic-auth-start"/>
     <keyword type="signal" name="The “choose-remote-for-ref” signal" link="FlatpakTransaction.html#FlatpakTransaction-choose-remote-for-ref"/>

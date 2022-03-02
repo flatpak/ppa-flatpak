@@ -3,15 +3,17 @@
 # This file is distributed under the same license as the flatpak package.
 # Wolfgang Stöggl <c72578@yahoo.de>, 2016.
 # Mario Blättermann <mario.blaettermann@gmail.com>, 2016-2017.
-# Christian Kirbach <christian.kirbach@gmail.com>, 2017.
 # Thomas Siegele <tsiegele@gmx.at>, 2019
+# Christian Kirbach <christian.kirbach@gmail.com>, 2017, 2021.
+# Philipp Kiemle <philipp.kiemle@gmail.com>, 2021.
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: flatpak master\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2022-02-21 14:57-0800\n"
-"PO-Revision-Date: 2020-11-20 14:24+0100\n"
-"Last-Translator: Tim Sabsch <tim@sabsch.com>\n"
+"POT-Creation-Date: 2022-03-01 12:25-0800\n"
+"PO-Revision-Date: 2021-04-08 15:20+0200\n"
+"Last-Translator: Philipp Kiemle <philipp.kiemle@gmail.com>\n"
 "Language-Team: German <gnome-de@gnome.org>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -132,11 +134,11 @@ msgstr "ORT, DATEINAME und NAME müssen angegeben werden"
 #: app/flatpak-builtins-build-bundle.c:630
 #: app/flatpak-builtins-build-export.c:833
 #: app/flatpak-builtins-build-import-bundle.c:190
-#: app/flatpak-builtins-build-init.c:212 app/flatpak-builtins-build-sign.c:75
+#: app/flatpak-builtins-build-init.c:217 app/flatpak-builtins-build-sign.c:75
 #: app/flatpak-builtins-document-export.c:112
 #: app/flatpak-builtins-document-info.c:75
 #: app/flatpak-builtins-document-list.c:181
-#: app/flatpak-builtins-document-unexport.c:67
+#: app/flatpak-builtins-document-unexport.c:70
 #: app/flatpak-builtins-history.c:480 app/flatpak-builtins-info.c:130
 #: app/flatpak-builtins-install.c:143 app/flatpak-builtins-install.c:210
 #: app/flatpak-builtins-list.c:404 app/flatpak-builtins-make-current.c:72
@@ -145,7 +147,7 @@ msgstr "ORT, DATEINAME und NAME müssen angegeben werden"
 #: app/flatpak-builtins-permission-remove.c:132
 #: app/flatpak-builtins-remote-add.c:316
 #: app/flatpak-builtins-remote-delete.c:68
-#: app/flatpak-builtins-remote-list.c:239 app/flatpak-builtins-remote-ls.c:412
+#: app/flatpak-builtins-remote-list.c:239 app/flatpak-builtins-remote-ls.c:407
 msgid "Too many arguments"
 msgstr "Zu viele Argumente"
 
@@ -163,21 +165,21 @@ msgid "'%s' is not a valid repository: "
 msgstr "»%s« ist keine gültige Quelle: "
 
 #: app/flatpak-builtins-build-bundle.c:660 app/flatpak-builtins-build-sign.c:87
-#: common/flatpak-dir.c:12544
+#: common/flatpak-dir.c:12581
 #, c-format
 msgid "'%s' is not a valid name: %s"
 msgstr "»%s« ist kein gültiger Name: %s"
 
 #: app/flatpak-builtins-build-bundle.c:663
 #: app/flatpak-builtins-build-export.c:854 app/flatpak-builtins-build-sign.c:90
-#: common/flatpak-dir.c:12550
+#: common/flatpak-dir.c:12587
 #, c-format
 msgid "'%s' is not a valid branch name: %s"
 msgstr "»%s« ist kein gültiger Zweig-Name: %s"
 
 #: app/flatpak-builtins-build-bundle.c:677
 #: app/flatpak-builtins-build-import-bundle.c:203
-#: app/flatpak-builtins-build-init.c:276
+#: app/flatpak-builtins-build-init.c:281
 #, c-format
 msgid "'%s' is not a valid filename"
 msgstr "»%s« ist kein gültiger Dateiname"
@@ -235,7 +237,7 @@ msgstr "Systembus-Aufrufe protokollieren"
 msgid "DIRECTORY [COMMAND [ARGUMENT…]] - Build in directory"
 msgstr "ORDNER [BEFEHL [Argumente …]] - In Ordner erstellen"
 
-#: app/flatpak-builtins-build.c:230 app/flatpak-builtins-build-finish.c:646
+#: app/flatpak-builtins-build.c:230 app/flatpak-builtins-build-finish.c:653
 msgid "DIRECTORY must be specified"
 msgstr "ORDNER muss angegeben werden"
 
@@ -260,7 +262,7 @@ msgstr "Kein Erweiterungspunkt entspricht %s in %s"
 msgid "Missing '=' in bind mount option '%s'"
 msgstr "Fehlendes »=« in Bind-Mount-Option »%s«"
 
-#: app/flatpak-builtins-build.c:606 common/flatpak-run.c:4563
+#: app/flatpak-builtins-build.c:606 common/flatpak-run.c:4724
 msgid "Unable to start app"
 msgstr "Anwendung kann nicht gestartet werden"
 
@@ -393,7 +395,7 @@ msgstr ""
 
 #: app/flatpak-builtins-build-commit-from.c:298
 msgid "Either --src-repo or --src-ref must be specified"
-msgstr "Es muss entweder »--src-repo« oder »--src-ref« angegeben werden."
+msgstr "Es muss entweder »--src-repo« oder »--src-ref« angegeben werden"
 
 #: app/flatpak-builtins-build-commit-from.c:314
 msgid "Invalid argument format of use  --end-of-life-rebase=OLDID=NEWID"
@@ -547,7 +549,7 @@ msgid "‘%s’ is not a valid collection ID: %s"
 msgstr "»%s« ist keine gültige Sammlungskennung: %s"
 
 #: app/flatpak-builtins-build-export.c:893
-#: app/flatpak-builtins-build-finish.c:674
+#: app/flatpak-builtins-build-finish.c:681
 msgid "No name specified in the metadata"
 msgstr "In den Metadaten ist kein Name angegeben"
 
@@ -678,30 +680,30 @@ msgstr ""
 msgid "Exporting %s\n"
 msgstr ""
 
-#: app/flatpak-builtins-build-finish.c:430
+#: app/flatpak-builtins-build-finish.c:437
 msgid "More than one executable found\n"
 msgstr ""
 
-#: app/flatpak-builtins-build-finish.c:441
+#: app/flatpak-builtins-build-finish.c:448
 #, c-format
 msgid "Using %s as command\n"
 msgstr ""
 
-#: app/flatpak-builtins-build-finish.c:446
+#: app/flatpak-builtins-build-finish.c:453
 msgid "No executable found\n"
 msgstr ""
 
-#: app/flatpak-builtins-build-finish.c:501
+#: app/flatpak-builtins-build-finish.c:508
 #, c-format
 msgid "Invalid --require-version argument: %s"
 msgstr ""
 
-#: app/flatpak-builtins-build-finish.c:533
+#: app/flatpak-builtins-build-finish.c:540
 #, c-format
 msgid "Too few elements in --extra-data argument %s"
 msgstr "Zu wenige Elemente im Argument %s von --extra-data"
 
-#: app/flatpak-builtins-build-finish.c:565
+#: app/flatpak-builtins-build-finish.c:572
 #, c-format
 msgid ""
 "Too few elements in --metadata argument %s, format should be "
@@ -710,8 +712,8 @@ msgstr ""
 "Zu wenige Elemente im Argument %s von --metadata. Das Format ist "
 "GRUPPE=SCHLÜSSEL[=WERT]]"
 
-#: app/flatpak-builtins-build-finish.c:587
-#: app/flatpak-builtins-build-init.c:452
+#: app/flatpak-builtins-build-finish.c:594
+#: app/flatpak-builtins-build-init.c:458
 #, c-format
 msgid ""
 "Too few elements in --extension argument %s, format should be "
@@ -720,27 +722,27 @@ msgstr ""
 "Zu wenige Elemente für den Parameter %s von --extension. Das Format ist "
 "NAME=VAR[=WERT]"
 
-#: app/flatpak-builtins-build-finish.c:593
-#: app/flatpak-builtins-build-init.c:455
+#: app/flatpak-builtins-build-finish.c:600
+#: app/flatpak-builtins-build-init.c:461
 #, c-format
 msgid "Invalid extension name %s"
 msgstr "Ungültiger Erweiterungsname %s"
 
-#: app/flatpak-builtins-build-finish.c:636
+#: app/flatpak-builtins-build-finish.c:643
 msgid "DIRECTORY - Finalize a build directory"
 msgstr "ORDNER - einen Erstellungsordner abschließen"
 
-#: app/flatpak-builtins-build-finish.c:658
+#: app/flatpak-builtins-build-finish.c:665
 #, c-format
 msgid "Build directory %s not initialized"
 msgstr "Erstellungsordner %s ist nicht initialisiert"
 
-#: app/flatpak-builtins-build-finish.c:679
+#: app/flatpak-builtins-build-finish.c:686
 #, c-format
 msgid "Build directory %s already finalized"
 msgstr "Erstellungsordner %s wurde bereits finalisiert"
 
-#: app/flatpak-builtins-build-finish.c:692
+#: app/flatpak-builtins-build-finish.c:699
 msgid "Please review the exported files and the metadata\n"
 msgstr "Bitte überprüfen Sie die exportierten Dateien und die Metadaten\n"
 
@@ -856,38 +858,38 @@ msgstr "Legt fest, wo sdk gespeichert wird (Standard ist »usr«)"
 msgid "Re-initialize the sdk/var"
 msgstr "sdk/var reinitialisieren"
 
-#: app/flatpak-builtins-build-init.c:114
+#: app/flatpak-builtins-build-init.c:118
 #, c-format
 msgid "Requested extension %s is only partially installed"
 msgstr "Angeforderte Erweiterung »%s« ist nur teilweise installiert"
 
-#: app/flatpak-builtins-build-init.c:143
+#: app/flatpak-builtins-build-init.c:147
 #, c-format
 msgid "Requested extension %s not installed"
 msgstr "Angeforderte Erweiterung »%s« ist nicht installiert"
 
-#: app/flatpak-builtins-build-init.c:202
+#: app/flatpak-builtins-build-init.c:207
 msgid ""
 "DIRECTORY APPNAME SDK RUNTIME [BRANCH] - Initialize a directory for building"
 msgstr ""
 "ORDNER ANWENDUNGSNAME SDK LAUFZEIT [ZWEIG] - Einen Erstellungsordner "
 "initialisieren"
 
-#: app/flatpak-builtins-build-init.c:209
+#: app/flatpak-builtins-build-init.c:214
 msgid "RUNTIME must be specified"
 msgstr "LAUFZEIT muss angegeben werden"
 
-#: app/flatpak-builtins-build-init.c:230
+#: app/flatpak-builtins-build-init.c:235
 #, c-format
 msgid "'%s' is not a valid build type name, use app, runtime or extension"
 msgstr ""
 
-#: app/flatpak-builtins-build-init.c:236 app/flatpak-builtins-override.c:79
+#: app/flatpak-builtins-build-init.c:241 app/flatpak-builtins-override.c:79
 #, c-format
 msgid "'%s' is not a valid application name: %s"
 msgstr "»%s« ist kein gültiger Anwendungsname: %s"
 
-#: app/flatpak-builtins-build-init.c:289
+#: app/flatpak-builtins-build-init.c:295
 #, c-format
 msgid "Build directory %s already initialized"
 msgstr "Erstellungsordner %s ist bereits initialisiert"
@@ -931,9 +933,8 @@ msgid "TITLE"
 msgstr "TITEL"
 
 #: app/flatpak-builtins-build-update-repo.c:69
-#, fuzzy
 msgid "A one-line comment for this repository"
-msgstr "Ein passender Name für diese Quelle"
+msgstr "Eine einzeilige Beschreibung für dieses Depot"
 
 #: app/flatpak-builtins-build-update-repo.c:69
 #: app/flatpak-builtins-remote-add.c:75 app/flatpak-builtins-remote-modify.c:82
@@ -1345,7 +1346,7 @@ msgstr "DATEI - Eine Datei an Anwendungen exportieren"
 
 #: app/flatpak-builtins-document-export.c:109
 #: app/flatpak-builtins-document-info.c:72
-#: app/flatpak-builtins-document-unexport.c:64
+#: app/flatpak-builtins-document-unexport.c:67
 msgid "FILE must be specified"
 msgstr "DATEI muss angegeben werden"
 
@@ -1354,7 +1355,7 @@ msgid "FILE - Get information about an exported file"
 msgstr "DATEI - Informationen über die exportierte Datei erhalten"
 
 #: app/flatpak-builtins-document-info.c:100
-#: app/flatpak-builtins-document-unexport.c:87
+#: app/flatpak-builtins-document-unexport.c:92
 msgid "Not exported\n"
 msgstr "Nicht exportiert\n"
 
@@ -1378,7 +1379,7 @@ msgstr "Die Dokumentkennung anzeigen"
 
 #: app/flatpak-builtins-document-list.c:48
 msgid "Path"
-msgstr ""
+msgstr "Pfad"
 
 #: app/flatpak-builtins-document-list.c:48
 #: app/flatpak-builtins-document-list.c:49
@@ -1403,7 +1404,7 @@ msgstr "Anwendungen mit Berechtigung anzeigen"
 #: app/flatpak-builtins-permission-list.c:177
 #: app/flatpak-builtins-permission-show.c:142
 msgid "Permissions"
-msgstr ""
+msgstr "Berechtigungen"
 
 #: app/flatpak-builtins-document-list.c:51
 msgid "Show permissions for applications"
@@ -1413,7 +1414,12 @@ msgstr "Berechtigungen für Anwendungen anzeigen"
 msgid "[APPID] - List exported files"
 msgstr "[ANWENDUNGSKENNUNG] - Exportierte Dateien auflisten"
 
-#: app/flatpak-builtins-document-unexport.c:55
+#: app/flatpak-builtins-document-unexport.c:43
+#, fuzzy
+msgid "Specify the document ID"
+msgstr "Die Dokumentkennung anzeigen"
+
+#: app/flatpak-builtins-document-unexport.c:58
 msgid "FILE - Unexport a file to apps"
 msgstr "DATEI - Export einer Datei an Anwendungen rückgängig machen"
 
@@ -1510,7 +1516,7 @@ msgstr "Die jüngsten Einträge zuerst anzeigen"
 
 #: app/flatpak-builtins-history.c:57
 msgid "Time"
-msgstr ""
+msgstr "Zeit"
 
 #: app/flatpak-builtins-history.c:57
 #, fuzzy
@@ -1518,8 +1524,9 @@ msgid "Show when the change happened"
 msgstr "Nur Laufzeitumgebungen anzeigen"
 
 #: app/flatpak-builtins-history.c:58
+#, fuzzy
 msgid "Change"
-msgstr ""
+msgstr "Ändern"
 
 #: app/flatpak-builtins-history.c:58
 msgid "Show the kind of change"
@@ -1554,7 +1561,7 @@ msgstr ""
 
 #: app/flatpak-builtins-history.c:62 app/flatpak-builtins-list.c:61
 #: app/flatpak-builtins-ps.c:52 app/flatpak-builtins-remote-ls.c:69
-#: app/flatpak-builtins-search.c:47 app/flatpak-cli-transaction.c:1149
+#: app/flatpak-builtins-search.c:46 app/flatpak-cli-transaction.c:1149
 msgid "Branch"
 msgstr "Zweig"
 
@@ -1572,9 +1579,8 @@ msgid "Show the affected installation"
 msgstr "Die betroffene Installationen anzeigen"
 
 #: app/flatpak-builtins-history.c:64 app/flatpak-cli-transaction.c:1163
-#, fuzzy
 msgid "Remote"
-msgstr "Keine entfernte Quelle %s"
+msgstr "Gegenstelle"
 
 #: app/flatpak-builtins-history.c:64
 #, fuzzy
@@ -1605,7 +1611,7 @@ msgstr "Nur Laufzeitumgebungen anzeigen"
 
 #: app/flatpak-builtins-history.c:68 app/flatpak-cli-transaction.c:633
 msgid "User"
-msgstr ""
+msgstr "Benutzer"
 
 #: app/flatpak-builtins-history.c:68
 #, fuzzy
@@ -1614,7 +1620,7 @@ msgstr "Nur Laufzeitumgebungen anzeigen"
 
 #: app/flatpak-builtins-history.c:69
 msgid "Tool"
-msgstr ""
+msgstr "Werkzeug"
 
 #: app/flatpak-builtins-history.c:69
 msgid "Show the tool that was used"
@@ -1623,7 +1629,7 @@ msgstr ""
 #: app/flatpak-builtins-history.c:70 app/flatpak-builtins-list.c:60
 #: app/flatpak-builtins-remote-ls.c:68 app/flatpak-builtins-search.c:45
 msgid "Version"
-msgstr ""
+msgstr "Version"
 
 #: app/flatpak-builtins-history.c:70
 msgid "Show the Flatpak version"
@@ -1738,50 +1744,50 @@ msgstr "NAME muss angegeben werden"
 msgid "ref not present in origin"
 msgstr "Referenz ist im Ursprung nicht vorhanden"
 
-#: app/flatpak-builtins-info.c:211 app/flatpak-builtins-remote-info.c:226
+#: app/flatpak-builtins-info.c:211 app/flatpak-builtins-remote-info.c:216
 msgid "Warning: Commit has no flatpak metadata\n"
 msgstr ""
 
 #: app/flatpak-builtins-info.c:217 app/flatpak-builtins-info.c:259
 #: app/flatpak-builtins-info.c:451 app/flatpak-builtins-info.c:498
-#: app/flatpak-builtins-remote-info.c:245
-#: app/flatpak-builtins-remote-info.c:280
+#: app/flatpak-builtins-remote-info.c:235
+#: app/flatpak-builtins-remote-info.c:270
 msgid "ID:"
 msgstr "Kennung:"
 
 #: app/flatpak-builtins-info.c:218 app/flatpak-builtins-info.c:260
-#: app/flatpak-builtins-remote-info.c:246
-#: app/flatpak-builtins-remote-info.c:281
+#: app/flatpak-builtins-remote-info.c:236
+#: app/flatpak-builtins-remote-info.c:271
 msgid "Ref:"
 msgstr "Ref:"
 
 #: app/flatpak-builtins-info.c:219 app/flatpak-builtins-info.c:261
-#: app/flatpak-builtins-remote-info.c:247
-#: app/flatpak-builtins-remote-info.c:282
+#: app/flatpak-builtins-remote-info.c:237
+#: app/flatpak-builtins-remote-info.c:272
 msgid "Arch:"
 msgstr "Architektur:"
 
 #: app/flatpak-builtins-info.c:220 app/flatpak-builtins-info.c:262
-#: app/flatpak-builtins-remote-info.c:248
-#: app/flatpak-builtins-remote-info.c:283
+#: app/flatpak-builtins-remote-info.c:238
+#: app/flatpak-builtins-remote-info.c:273
 msgid "Branch:"
 msgstr "Zweig:"
 
 #: app/flatpak-builtins-info.c:222 app/flatpak-builtins-info.c:264
-#: app/flatpak-builtins-remote-info.c:250
-#: app/flatpak-builtins-remote-info.c:285
+#: app/flatpak-builtins-remote-info.c:240
+#: app/flatpak-builtins-remote-info.c:275
 msgid "Version:"
 msgstr "Version:"
 
 #: app/flatpak-builtins-info.c:224 app/flatpak-builtins-info.c:266
-#: app/flatpak-builtins-remote-info.c:252
-#: app/flatpak-builtins-remote-info.c:287
+#: app/flatpak-builtins-remote-info.c:242
+#: app/flatpak-builtins-remote-info.c:277
 msgid "License:"
-msgstr ""
+msgstr "Lizenz:"
 
 #: app/flatpak-builtins-info.c:226 app/flatpak-builtins-info.c:269
-#: app/flatpak-builtins-remote-info.c:254
-#: app/flatpak-builtins-remote-info.c:289
+#: app/flatpak-builtins-remote-info.c:244
+#: app/flatpak-builtins-remote-info.c:279
 msgid "Collection:"
 msgstr "Sammlung:"
 
@@ -1791,34 +1797,34 @@ msgstr "Installation:"
 
 #: app/flatpak-builtins-info.c:228 app/flatpak-builtins-info.c:271
 #: app/flatpak-builtins-info.c:454 app/flatpak-builtins-info.c:501
-#: app/flatpak-builtins-remote-info.c:258
-#: app/flatpak-builtins-remote-info.c:293
+#: app/flatpak-builtins-remote-info.c:248
+#: app/flatpak-builtins-remote-info.c:283
 msgid "Installed:"
 msgstr "Installiert:"
 
 #: app/flatpak-builtins-info.c:231 app/flatpak-builtins-info.c:279
-#: app/flatpak-builtins-remote-info.c:261
-#: app/flatpak-builtins-remote-info.c:297
+#: app/flatpak-builtins-remote-info.c:251
+#: app/flatpak-builtins-remote-info.c:287
 msgid "Runtime:"
 msgstr "Laufzeitumgebung:"
 
 #: app/flatpak-builtins-info.c:232 app/flatpak-builtins-info.c:288
-#: app/flatpak-builtins-remote-info.c:262
-#: app/flatpak-builtins-remote-info.c:302
+#: app/flatpak-builtins-remote-info.c:252
+#: app/flatpak-builtins-remote-info.c:292
 msgid "Sdk:"
 msgstr ""
 
 #: app/flatpak-builtins-info.c:235 app/flatpak-builtins-info.c:313
-#: app/flatpak-builtins-remote-info.c:265
-#: app/flatpak-builtins-remote-info.c:328
+#: app/flatpak-builtins-remote-info.c:255
+#: app/flatpak-builtins-remote-info.c:318
 msgid "Date:"
-msgstr ""
+msgstr "Datum:"
 
 #: app/flatpak-builtins-info.c:237 app/flatpak-builtins-info.c:311
-#: app/flatpak-builtins-remote-info.c:267
-#: app/flatpak-builtins-remote-info.c:326
+#: app/flatpak-builtins-remote-info.c:257
+#: app/flatpak-builtins-remote-info.c:316
 msgid "Subject:"
-msgstr ""
+msgstr "Betreff:"
 
 #: app/flatpak-builtins-info.c:240 app/flatpak-builtins-info.c:295
 msgid "Active commit:"
@@ -1830,14 +1836,14 @@ msgstr "Letzter Commit:"
 
 #: app/flatpak-builtins-info.c:244 app/flatpak-builtins-info.c:303
 #: app/flatpak-builtins-info.c:453 app/flatpak-builtins-info.c:500
-#: app/flatpak-builtins-remote-info.c:268
-#: app/flatpak-builtins-remote-info.c:307
+#: app/flatpak-builtins-remote-info.c:258
+#: app/flatpak-builtins-remote-info.c:297
 msgid "Commit:"
 msgstr "Commit:"
 
 #: app/flatpak-builtins-info.c:246 app/flatpak-builtins-info.c:308
-#: app/flatpak-builtins-remote-info.c:270
-#: app/flatpak-builtins-remote-info.c:312
+#: app/flatpak-builtins-remote-info.c:260
+#: app/flatpak-builtins-remote-info.c:302
 msgid "Parent:"
 msgstr ""
 
@@ -1846,14 +1852,14 @@ msgid "Alt-id:"
 msgstr ""
 
 #: app/flatpak-builtins-info.c:250 app/flatpak-builtins-info.c:325
-#: app/flatpak-builtins-remote-info.c:272
-#: app/flatpak-builtins-remote-info.c:317
+#: app/flatpak-builtins-remote-info.c:262
+#: app/flatpak-builtins-remote-info.c:307
 msgid "End-of-life:"
 msgstr ""
 
 #: app/flatpak-builtins-info.c:252 app/flatpak-builtins-info.c:330
-#: app/flatpak-builtins-remote-info.c:274
-#: app/flatpak-builtins-remote-info.c:322
+#: app/flatpak-builtins-remote-info.c:264
+#: app/flatpak-builtins-remote-info.c:312
 msgid "End-of-life-rebase:"
 msgstr ""
 
@@ -1881,7 +1887,7 @@ msgstr ""
 
 #: app/flatpak-builtins-info.c:475
 msgid "unknown"
-msgstr ""
+msgstr "unbekannt"
 
 #: app/flatpak-builtins-install.c:64
 msgid "Don't pull, only install from local cache"
@@ -1965,14 +1971,12 @@ msgid "[LOCATION/REMOTE] [REF…] - Install applications or runtimes"
 msgstr "ORT/GEGENSTELLE [REF…] - Anwendungen oder Laufzeiten installieren"
 
 #: app/flatpak-builtins-install.c:313
-#, fuzzy
 msgid "At least one REF must be specified"
-msgstr "FERNE QUELLE und REFERENZ muss angegeben werden"
+msgstr "Mindestens eine REF muss angegeben werden"
 
 #: app/flatpak-builtins-install.c:324
-#, fuzzy
 msgid "Looking for matches…\n"
-msgstr "Keine Aktualisierungen.\n"
+msgstr "Suchen nach Übereinstimmungen …\n"
 
 #: app/flatpak-builtins-install.c:439
 #, c-format
@@ -1980,7 +1984,7 @@ msgid "No remote refs found similar to ‘%s’"
 msgstr ""
 
 #: app/flatpak-builtins-install.c:504 app/flatpak-builtins-uninstall.c:293
-#: common/flatpak-ref-utils.c:690 common/flatpak-ref-utils.c:1586
+#: common/flatpak-ref-utils.c:690 common/flatpak-ref-utils.c:1596
 #, fuzzy, c-format
 msgid "Invalid branch %s: %s"
 msgstr "»%s« ist kein gültiger Zweig-Name: %s"
@@ -2001,9 +2005,9 @@ msgid "Skipping: %s\n"
 msgstr ""
 
 #: app/flatpak-builtins-kill.c:68
-#, fuzzy, c-format
+#, c-format
 msgid "%s is not running"
-msgstr "%s ist nicht verfügbar"
+msgstr "%s wird nicht ausgeführt"
 
 #: app/flatpak-builtins-kill.c:82
 #, fuzzy
@@ -2071,9 +2075,8 @@ msgstr "Sammlungskennung"
 
 #: app/flatpak-builtins-list.c:59 app/flatpak-builtins-remote-ls.c:67
 #: app/flatpak-builtins-search.c:44
-#, fuzzy
 msgid "Application ID"
-msgstr "Sammlungskennung"
+msgstr "Anwendungskennung"
 
 #: app/flatpak-builtins-list.c:59 app/flatpak-builtins-ps.c:50
 #: app/flatpak-builtins-remote-ls.c:67 app/flatpak-builtins-search.c:44
@@ -2089,9 +2092,8 @@ msgstr "Sammlungskennung"
 
 #: app/flatpak-builtins-list.c:63 app/flatpak-builtins-ps.c:54
 #: app/flatpak-builtins-remote-ls.c:74
-#, fuzzy
 msgid "Runtime"
-msgstr "Laufzeitumgebung:"
+msgstr "Laufzeit"
 
 #: app/flatpak-builtins-list.c:63
 #, fuzzy
@@ -2198,9 +2200,8 @@ msgid "Show existing overrides"
 msgstr ""
 
 #: app/flatpak-builtins-override.c:59
-#, fuzzy
 msgid "[APP] - Override settings [for application]"
-msgstr "ANWENDUNG - Einstellungen für Anwendung ersetzen"
+msgstr "[ANWENDUNG] - Einstellungen für ANWENDUNG überschreiben"
 
 #: app/flatpak-builtins-permission-list.c:138
 msgid "[TABLE] [ID] - List permissions"
@@ -2209,22 +2210,22 @@ msgstr ""
 #: app/flatpak-builtins-permission-list.c:174
 #: app/flatpak-builtins-permission-show.c:139
 msgid "Table"
-msgstr ""
+msgstr "Tabelle"
 
 #: app/flatpak-builtins-permission-list.c:175
 #: app/flatpak-builtins-permission-show.c:140
 msgid "Object"
-msgstr ""
+msgstr "Objekt"
 
 #: app/flatpak-builtins-permission-list.c:176
 #: app/flatpak-builtins-permission-show.c:141
 msgid "App"
-msgstr ""
+msgstr "App"
 
 #: app/flatpak-builtins-permission-list.c:178
 #: app/flatpak-builtins-permission-show.c:143
 msgid "Data"
-msgstr ""
+msgstr "Daten"
 
 #: app/flatpak-builtins-permission-remove.c:120
 #, fuzzy
@@ -2233,9 +2234,8 @@ msgstr "Schreib-Berechtigungen der Anwendung widerrufen"
 
 #: app/flatpak-builtins-permission-remove.c:129
 #: app/flatpak-builtins-permission-set.c:120
-#, fuzzy
 msgid "Too few arguments"
-msgstr "Zu viele Argumente"
+msgstr "Zu wenig Argumente"
 
 #: app/flatpak-builtins-permission-reset.c:43
 #, fuzzy
@@ -2243,15 +2243,13 @@ msgid "Reset all permissions"
 msgstr "Der Anwendung Lese-Berechtigungen erteilen"
 
 #: app/flatpak-builtins-permission-reset.c:137
-#, fuzzy
 msgid "APP_ID - Reset permissions for an app"
-msgstr "Dieser Anwendung Berechtigungen erteilen"
+msgstr "APP_ID - Berechtigungen für eine Anwendung zurücksetzen"
 
 #: app/flatpak-builtins-permission-reset.c:146
 #: app/flatpak-builtins-permission-show.c:121
-#, fuzzy
 msgid "Wrong number of arguments"
-msgstr "Zu viele Argumente"
+msgstr "Falsche Anzahl an Argumenten"
 
 #: app/flatpak-builtins-permission-set.c:42
 msgid "Associate DATA with the entry"
@@ -2271,9 +2269,8 @@ msgid "Failed to parse '%s' as GVariant: "
 msgstr "Commit %s konnte nicht gelesen werden: "
 
 #: app/flatpak-builtins-permission-show.c:112
-#, fuzzy
 msgid "APP_ID - Show permissions for an app"
-msgstr "Dieser Anwendung Berechtigungen erteilen"
+msgstr "APP_ID - Berechtigungen für eine Anwendung anzeigen"
 
 #: app/flatpak-builtins-pin.c:44
 #, fuzzy
@@ -2293,19 +2290,16 @@ msgid "Pinned patterns:\n"
 msgstr ""
 
 #: app/flatpak-builtins-ps.c:47
-#, fuzzy
 msgid "Instance"
-msgstr "Installiert"
+msgstr "Instanz"
 
 #: app/flatpak-builtins-ps.c:47
-#, fuzzy
 msgid "Show the instance ID"
-msgstr "Nur Laufzeitumgebungen anzeigen"
+msgstr "Die Instanzkennung anzeigen"
 
 #: app/flatpak-builtins-ps.c:48 app/flatpak-builtins-run.c:86
-#, fuzzy
 msgid "PID"
-msgstr "ANWENDUNGSKENNUNG"
+msgstr "Prozesskennung"
 
 #: app/flatpak-builtins-ps.c:48
 msgid "Show the PID of the wrapper process"
@@ -2319,7 +2313,7 @@ msgstr ""
 msgid "Show the PID of the sandbox process"
 msgstr ""
 
-#: app/flatpak-builtins-ps.c:52 app/flatpak-builtins-search.c:47
+#: app/flatpak-builtins-ps.c:52 app/flatpak-builtins-search.c:46
 #, fuzzy
 msgid "Show the application branch"
 msgstr "Architekturen und Zweige zeigen"
@@ -2355,9 +2349,8 @@ msgid "Show the runtime commit"
 msgstr "Nur Laufzeitumgebungen anzeigen"
 
 #: app/flatpak-builtins-ps.c:57
-#, fuzzy
 msgid "Active"
-msgstr "Aktiver Commit"
+msgstr "Aktiv"
 
 #: app/flatpak-builtins-ps.c:57
 #, fuzzy
@@ -2366,7 +2359,7 @@ msgstr "Nur Laufzeitumgebungen anzeigen"
 
 #: app/flatpak-builtins-ps.c:58
 msgid "Background"
-msgstr ""
+msgstr "Hintergrund"
 
 #: app/flatpak-builtins-ps.c:58
 #, fuzzy
@@ -2423,14 +2416,12 @@ msgid "A nice name to use for this remote"
 msgstr "Ein passender Name für diese entfernte Quelle"
 
 #: app/flatpak-builtins-remote-add.c:75 app/flatpak-builtins-remote-modify.c:82
-#, fuzzy
 msgid "A one-line comment for this remote"
-msgstr "Ein passender Name für diese entfernte Quelle"
+msgstr "Eine einzeilige Beschreibung für diese entfernte Quelle"
 
 #: app/flatpak-builtins-remote-add.c:76 app/flatpak-builtins-remote-modify.c:83
-#, fuzzy
 msgid "A full-paragraph description for this remote"
-msgstr "Zu verwendender Vorgabe-Zweig für diese ferne Quelle"
+msgstr "Ein vollständiger Absatz als Beschreibung für diese entfernte Quelle"
 
 #: app/flatpak-builtins-remote-add.c:77 app/flatpak-builtins-remote-modify.c:84
 #, fuzzy
@@ -2481,7 +2472,7 @@ msgstr ""
 msgid "Can't load uri %s: %s\n"
 msgstr ""
 
-#: app/flatpak-builtins-remote-add.c:269 common/flatpak-dir.c:3874
+#: app/flatpak-builtins-remote-add.c:269 common/flatpak-dir.c:3876
 #, fuzzy, c-format
 msgid "Can't load file %s: %s\n"
 msgstr "Namensraum %s konnte nicht geöffnet werden: %s"
@@ -2566,39 +2557,30 @@ msgstr ""
 msgid "REMOTE and REF must be specified"
 msgstr "FERNE QUELLE und REFERENZ muss angegeben werden"
 
-#: app/flatpak-builtins-remote-info.c:159 common/flatpak-dir.c:1179
-#: common/flatpak-dir.c:4751 common/flatpak-dir.c:5672
-#: common/flatpak-dir.c:5740 common/flatpak-dir.c:5863
-#, fuzzy, c-format
-msgid "Couldn't find latest checksum for ref %s in remote %s"
-msgstr "%s konnte nicht in entfernter Quelle %s gefunden werden"
-
-#: app/flatpak-builtins-remote-info.c:256
-#: app/flatpak-builtins-remote-info.c:291
+#: app/flatpak-builtins-remote-info.c:246
+#: app/flatpak-builtins-remote-info.c:281
 #, fuzzy
 msgid "Download:"
 msgstr "Download"
 
-#: app/flatpak-builtins-remote-info.c:276
-#: app/flatpak-builtins-remote-info.c:334
-#, fuzzy
+#: app/flatpak-builtins-remote-info.c:266
+#: app/flatpak-builtins-remote-info.c:324
 msgid "History:"
-msgstr "Commit anzeigen"
+msgstr "Chronik:"
 
-#: app/flatpak-builtins-remote-info.c:357
-#, fuzzy
+#: app/flatpak-builtins-remote-info.c:347
 msgid " Commit:"
-msgstr "Commit:"
+msgstr " Commit:"
 
-#: app/flatpak-builtins-remote-info.c:358
+#: app/flatpak-builtins-remote-info.c:348
 msgid " Subject:"
-msgstr ""
+msgstr " Betreff:"
 
-#: app/flatpak-builtins-remote-info.c:359
+#: app/flatpak-builtins-remote-info.c:349
 msgid " Date:"
-msgstr ""
+msgstr " Datum:"
 
-#: app/flatpak-builtins-remote-info.c:392
+#: app/flatpak-builtins-remote-info.c:382
 #, c-format
 msgid "Warning: Commit %s has no flatpak metadata\n"
 msgstr ""
@@ -2621,9 +2603,8 @@ msgid "Show the title"
 msgstr "Nur Laufzeitumgebungen anzeigen"
 
 #: app/flatpak-builtins-remote-list.c:51
-#, fuzzy
 msgid "Show the URL"
-msgstr "Referenz anzeigen"
+msgstr "Diese Adresse anzeigen"
 
 #: app/flatpak-builtins-remote-list.c:52
 #, fuzzy
@@ -2632,7 +2613,7 @@ msgstr "Sammlungskennung"
 
 #: app/flatpak-builtins-remote-list.c:53 app/flatpak-builtins-repo.c:389
 msgid "Subset"
-msgstr ""
+msgstr "Teilmenge"
 
 #: app/flatpak-builtins-remote-list.c:53
 #, fuzzy
@@ -2641,7 +2622,7 @@ msgstr "Referenz anzeigen"
 
 #: app/flatpak-builtins-remote-list.c:54
 msgid "Filter"
-msgstr ""
+msgstr "Filter"
 
 #: app/flatpak-builtins-remote-list.c:54
 #, fuzzy
@@ -2657,38 +2638,35 @@ msgstr "Priorität"
 msgid "Show the priority"
 msgstr "Nur Laufzeitumgebungen anzeigen"
 
+# Kommentar oder kommentieren?
 #: app/flatpak-builtins-remote-list.c:57
 #, fuzzy
 msgid "Comment"
-msgstr "Commit"
+msgstr "Kommentar"
 
 #: app/flatpak-builtins-remote-list.c:57
-#, fuzzy
 msgid "Show comment"
-msgstr "Commit anzeigen"
+msgstr "Kommentar anzeigen"
 
 #: app/flatpak-builtins-remote-list.c:58
-#, fuzzy
 msgid "Show description"
-msgstr "Sammlungskennung"
+msgstr "Beschreibung anzeigen"
 
 #: app/flatpak-builtins-remote-list.c:59
 msgid "Homepage"
-msgstr ""
+msgstr "Startseite"
 
 #: app/flatpak-builtins-remote-list.c:59
-#, fuzzy
 msgid "Show homepage"
-msgstr "Nur Laufzeitumgebungen anzeigen"
+msgstr "Startseite anzeigen"
 
 #: app/flatpak-builtins-remote-list.c:60
 msgid "Icon"
-msgstr ""
+msgstr "Symbol"
 
 #: app/flatpak-builtins-remote-list.c:60
-#, fuzzy
 msgid "Show icon"
-msgstr "Hilfeoptionen anzeigen"
+msgstr "Symbol anzeigen"
 
 #: app/flatpak-builtins-remote-list.c:229
 msgid " - List remote repositories"
@@ -2715,9 +2693,8 @@ msgid "Limit to this arch (* for all)"
 msgstr "Auf diese Architektur begrenzen (* für alle)"
 
 #: app/flatpak-builtins-remote-ls.c:74
-#, fuzzy
 msgid "Show the runtime"
-msgstr "Nur Laufzeitumgebungen anzeigen"
+msgstr "Die Laufzeitumgebung anzeigen"
 
 #: app/flatpak-builtins-remote-ls.c:76
 msgid "Download size"
@@ -2728,10 +2705,11 @@ msgstr "Heruntergeladene Größe"
 msgid "Show the download size"
 msgstr "Heruntergeladene Größe"
 
-#: app/flatpak-builtins-remote-ls.c:396
-#, fuzzy
+#: app/flatpak-builtins-remote-ls.c:391
 msgid " [REMOTE or URI] - Show available runtimes and applications"
-msgstr " ENTFERNTE QUELLE - Verfügbare Laufzeiten und Anwendungen anzeigen"
+msgstr ""
+" [ENTFERNTE QUELLE oder ADRESSE] - Verfügbare Laufzeiten und Anwendungen "
+"anzeigen"
 
 #: app/flatpak-builtins-remote-modify.c:66
 msgid "Enable GPG verification"
@@ -2957,12 +2935,12 @@ msgstr ""
 #: app/flatpak-builtins-repo.c:111 app/flatpak-builtins-repo.c:137
 #: app/flatpak-builtins-repo.c:170
 msgid "true"
-msgstr ""
+msgstr "wahr"
 
 #: app/flatpak-builtins-repo.c:111 app/flatpak-builtins-repo.c:137
 #: app/flatpak-builtins-repo.c:170
 msgid "false"
-msgstr ""
+msgstr "falsch"
 
 #: app/flatpak-builtins-repo.c:119
 msgid "Subsummaries: "
@@ -3053,11 +3031,11 @@ msgstr "Download"
 
 #: app/flatpak-builtins-repo.c:336
 msgid "Subsets"
-msgstr ""
+msgstr "Teilmengen"
 
 #: app/flatpak-builtins-repo.c:390
 msgid "Digest"
-msgstr ""
+msgstr "Prüfsumme"
 
 #: app/flatpak-builtins-repo.c:391
 #, fuzzy
@@ -3188,9 +3166,8 @@ msgid "Use PATH instead of the runtime's /usr"
 msgstr ""
 
 #: app/flatpak-builtins-run.c:114
-#, fuzzy
 msgid "APP [ARGUMENT…] - Run an app"
-msgstr "ANWENDUNG [Argumente …] - Eine Anwendung ausführen"
+msgstr "ANWENDUNG [ARGUMENT…] - Eine Anwendung ausführen"
 
 #: app/flatpak-builtins-run.c:264
 #, fuzzy, c-format
@@ -3198,29 +3175,27 @@ msgid "runtime/%s/%s/%s not installed"
 msgstr "%s %s ist nicht installiert"
 
 #: app/flatpak-builtins-search.c:36
-#, fuzzy
 msgid "Arch to search for"
-msgstr "Architektur, für die installiert wird"
+msgstr "Architektur, nach der gesucht werden soll"
 
-#: app/flatpak-builtins-search.c:49
-#, fuzzy
+#: app/flatpak-builtins-search.c:47
 msgid "Remotes"
-msgstr "Keine entfernte Quelle %s"
+msgstr "Gegenstellen"
 
-#: app/flatpak-builtins-search.c:49
+#: app/flatpak-builtins-search.c:47
 #, fuzzy
 msgid "Show the remotes"
 msgstr "Deaktivierte entfernte Quellen anzeigen"
 
-#: app/flatpak-builtins-search.c:312
+#: app/flatpak-builtins-search.c:245
 msgid "TEXT - Search remote apps/runtimes for text"
 msgstr ""
 
-#: app/flatpak-builtins-search.c:323
+#: app/flatpak-builtins-search.c:256
 msgid "TEXT must be specified"
 msgstr "TEXT muss angegeben werden"
 
-#: app/flatpak-builtins-search.c:382
+#: app/flatpak-builtins-search.c:329
 #, fuzzy
 msgid "No matches found"
 msgstr "Kein Treffer für %s"
@@ -3261,9 +3236,8 @@ msgid "Delete data for %s?"
 msgstr ""
 
 #: app/flatpak-builtins-uninstall.c:155
-#, fuzzy
 msgid "[REF…] - Uninstall an application"
-msgstr "REF… - Eine Anwendung deinstallieren"
+msgstr "[REF…] - Eine Anwendung deinstallieren"
 
 #: app/flatpak-builtins-uninstall.c:164
 #, fuzzy
@@ -3291,10 +3265,10 @@ msgstr ""
 msgid "Nothing unused to uninstall\n"
 msgstr "Zu installierende Architektur"
 
-#: app/flatpak-builtins-uninstall.c:326 common/flatpak-dir.c:13090
-#, fuzzy, c-format
+#: app/flatpak-builtins-uninstall.c:326 common/flatpak-dir.c:13127
+#, c-format
 msgid "%s/%s/%s not installed"
-msgstr "%s %s ist nicht installiert"
+msgstr "%s/%s/%s nicht installiert"
 
 #: app/flatpak-builtins-uninstall.c:333
 #, fuzzy, c-format
@@ -3332,7 +3306,6 @@ msgid "Only update this subpath"
 msgstr "Nur diesen Unterpfad aktualisieren"
 
 #: app/flatpak-builtins-update.c:90
-#, fuzzy
 msgid "[REF…] - Update applications or runtimes"
 msgstr "[REF…] - Anwendungen oder Laufzeitumgebungen aktualisieren"
 
@@ -3352,9 +3325,8 @@ msgid "Unable to update %s: %s\n"
 msgstr "Während des Holens von %s von der entfernten Quelle %s: "
 
 #: app/flatpak-builtins-update.c:272
-#, fuzzy
 msgid "Nothing to do.\n"
-msgstr "Kein Treffer für %s"
+msgstr "Nichts zu tun.\n"
 
 #: app/flatpak-builtins-utils.c:341
 #, c-format
@@ -3567,9 +3539,8 @@ msgid "uninstall"
 msgstr "installieren"
 
 #: app/flatpak-cli-transaction.c:427
-#, fuzzy
 msgid "Installing…"
-msgstr "Installiert"
+msgstr "Wird installiert …"
 
 #: app/flatpak-cli-transaction.c:429
 #, fuzzy, c-format
@@ -3578,7 +3549,7 @@ msgstr "Installieren: %s\n"
 
 #: app/flatpak-cli-transaction.c:434
 msgid "Updating…"
-msgstr ""
+msgstr "Aktualisieren …"
 
 #: app/flatpak-cli-transaction.c:436
 #, fuzzy, c-format
@@ -3601,25 +3572,25 @@ msgid "Info: %s was skipped"
 msgstr ""
 
 #: app/flatpak-cli-transaction.c:520 app/flatpak-quiet-transaction.c:136
-#: common/flatpak-dir.c:9832
-#, fuzzy, c-format
+#: common/flatpak-dir.c:9869
+#, c-format
 msgid "%s already installed"
-msgstr "%s-Commit %s wurde bereits installiert"
+msgstr "%s bereits installiert"
 
 #: app/flatpak-cli-transaction.c:522 app/flatpak-cli-transaction.c:524
 #: app/flatpak-quiet-transaction.c:138 app/flatpak-quiet-transaction.c:140
-#: common/flatpak-dir.c:2876 common/flatpak-dir.c:3575
-#: common/flatpak-dir.c:15211 common/flatpak-dir.c:15491
-#: common/flatpak-transaction.c:2469 common/flatpak-transaction.c:2517
-#: common/flatpak-utils.c:1124 common/flatpak-utils.c:1217
+#: common/flatpak-dir.c:2878 common/flatpak-dir.c:3577
+#: common/flatpak-dir.c:15235 common/flatpak-dir.c:15525
+#: common/flatpak-transaction.c:2516 common/flatpak-transaction.c:2564
+#: common/flatpak-utils.c:1191 common/flatpak-utils.c:1284
 #, c-format
 msgid "%s not installed"
 msgstr "%s ist nicht installiert"
 
 #: app/flatpak-cli-transaction.c:526 app/flatpak-quiet-transaction.c:142
-#, fuzzy, c-format
+#, c-format
 msgid "%s needs a later flatpak version"
-msgstr "%s verlangt eine neuere Version von flatpak (%s)"
+msgstr "%s benötigt eine neuere Version von flatpak"
 
 #: app/flatpak-cli-transaction.c:528 app/flatpak-quiet-transaction.c:144
 msgid "Not enough disk space to complete this operation"
@@ -3636,10 +3607,9 @@ msgstr "Fehler: %s %s ist fehlgeschlagen: %s\n"
 
 #: app/flatpak-cli-transaction.c:540 app/flatpak-quiet-transaction.c:149
 msgid "Warning:"
-msgstr ""
+msgstr "Warnung:"
 
 #: app/flatpak-cli-transaction.c:540 app/flatpak-quiet-transaction.c:149
-#, fuzzy
 msgid "Error:"
 msgstr "Fehler:"
 
@@ -3659,7 +3629,7 @@ msgstr ""
 
 #: app/flatpak-cli-transaction.c:637
 msgid "Password"
-msgstr ""
+msgstr "Passwort"
 
 #: app/flatpak-cli-transaction.c:718
 #, c-format
@@ -3682,9 +3652,8 @@ msgid "Info: %s//%s is end-of-life, with reason:\n"
 msgstr ""
 
 #: app/flatpak-cli-transaction.c:735
-#, fuzzy
 msgid "Applications using this runtime:\n"
-msgstr "Eine Anwendung oder Laufzeitumgebung signieren"
+msgstr "Anwendungen, die diese Laufzeitumgebung verwenden:\n"
 
 #: app/flatpak-cli-transaction.c:752
 #, c-format
@@ -3712,13 +3681,13 @@ msgid "New %s permissions:"
 msgstr "Der Anwendung Schreib-Berechtigungen erteilen"
 
 #: app/flatpak-cli-transaction.c:996
-#, fuzzy, c-format
+#, c-format
 msgid "%s permissions:"
-msgstr "Der Anwendung Lese-Berechtigungen erteilen"
+msgstr "%s Berechtigungen:"
 
 #: app/flatpak-cli-transaction.c:1058
 msgid "Warning: "
-msgstr ""
+msgstr "Warnung: "
 
 #. translators: This is short for operation, the title of a one-char column
 #: app/flatpak-cli-transaction.c:1153
@@ -3774,7 +3743,6 @@ msgstr ""
 
 #. translators: please keep the leading space
 #: app/flatpak-main.c:76
-#, fuzzy
 msgid " Manage installed applications and runtimes"
 msgstr " Installierte Anwendungen und Laufzeitumgebungen verwalten"
 
@@ -3826,11 +3794,12 @@ msgstr ""
 
 #. translators: please keep the leading newline and space
 #: app/flatpak-main.c:94
-#, fuzzy
 msgid ""
 "\n"
 " Find applications and runtimes"
-msgstr "Eine Anwendung oder Laufzeitumgebung signieren"
+msgstr ""
+"\n"
+" Anwendungen und Laufzeitumgebungen finden"
 
 #: app/flatpak-main.c:95
 msgid "Search for remote apps/runtimes"
@@ -3838,13 +3807,12 @@ msgstr ""
 
 #. translators: please keep the leading newline and space
 #: app/flatpak-main.c:98
-#, fuzzy
 msgid ""
 "\n"
 " Manage running applications"
 msgstr ""
 "\n"
-" Anwendungen ausführen"
+" Laufende Anwendungen verwalten"
 
 #: app/flatpak-main.c:99
 msgid "Run an application"
@@ -4094,31 +4062,37 @@ msgid ""
 "not appear on your desktop until the session is restarted."
 msgstr ""
 
-#: app/flatpak-main.c:440
+#: app/flatpak-main.c:378
+msgid ""
+"Refusing to operate under sudo with --user. Omit sudo to operate on the user "
+"installation, or use a root shell to operate on the root user's installation."
+msgstr ""
+
+#: app/flatpak-main.c:450
 msgid ""
 "Multiple installations specified for a command that works on one installation"
 msgstr ""
 
-#: app/flatpak-main.c:489 app/flatpak-main.c:671
+#: app/flatpak-main.c:501 app/flatpak-main.c:683
 #, c-format
 msgid "See '%s --help'"
 msgstr ""
 
-#: app/flatpak-main.c:680
-#, fuzzy, c-format
+#: app/flatpak-main.c:692
+#, c-format
 msgid "'%s' is not a flatpak command. Did you mean '%s%s'?"
-msgstr "»%s« ist kein gültiger Anwendungsname: %s"
+msgstr "»%s« ist kein Flatpak-Befehl. Meinten Sie »%s%s«?"
 
-#: app/flatpak-main.c:683
+#: app/flatpak-main.c:695
 #, c-format
 msgid "'%s' is not a flatpak command"
 msgstr ""
 
-#: app/flatpak-main.c:798
+#: app/flatpak-main.c:810
 msgid "No command specified"
 msgstr "Kein Befehl angegeben"
 
-#: app/flatpak-main.c:959
+#: app/flatpak-main.c:971
 msgid "error:"
 msgstr "Fehler:"
 
@@ -4137,10 +4111,11 @@ msgstr "Zusammenfassung wird aktualisiert\n"
 msgid "Uninstalling %s\n"
 msgstr "Installieren: %s von %s\n"
 
+# Das ist aber schwer zu übersetzen...
 #: app/flatpak-quiet-transaction.c:148
-#, fuzzy, c-format
+#, c-format
 msgid "%s Failed to %s %s: %s\n"
-msgstr "Fehler: %s %s ist fehlgeschlagen: %s\n"
+msgstr "%s Fehler bei der Aktion %s %s: %s\n"
 
 #: app/flatpak-quiet-transaction.c:215
 #, c-format
@@ -4321,7 +4296,7 @@ msgstr ""
 
 #: common/flatpak-context.c:1531
 msgid "FD"
-msgstr ""
+msgstr "FD"
 
 #: common/flatpak-context.c:1532
 #, fuzzy
@@ -4329,9 +4304,8 @@ msgid "Remove variable from environment"
 msgstr "Schreib-Berechtigungen der Anwendung widerrufen"
 
 #: common/flatpak-context.c:1532
-#, fuzzy
 msgid "VAR"
-msgstr "WERT"
+msgstr "VAR"
 
 #: common/flatpak-context.c:1533
 msgid "Allow app to own name on the session bus"
@@ -4434,7 +4408,7 @@ msgstr ""
 msgid "Missing xa.data in summary for remote %s"
 msgstr "Kein Flatpak-Zwischenspeicher in Zusammenfassung entfernter Quelle"
 
-#: common/flatpak-dir.c:845 common/flatpak-dir.c:1261
+#: common/flatpak-dir.c:845 common/flatpak-dir.c:1262
 #, fuzzy, c-format
 msgid "Unsupported summary version %d for remote %s"
 msgstr "Kein Flatpak-Zwischenspeicher in Zusammenfassung entfernter Quelle"
@@ -4448,8 +4422,8 @@ msgstr ""
 msgid "Couldn't find ref %s in remote %s"
 msgstr "%s konnte nicht in entfernter Quelle %s gefunden werden"
 
-#: common/flatpak-dir.c:1018 common/flatpak-dir.c:5763
-#: common/flatpak-utils.c:6833 common/flatpak-utils.c:6838
+#: common/flatpak-dir.c:1018 common/flatpak-dir.c:5807
+#: common/flatpak-utils.c:6907 common/flatpak-utils.c:6912
 msgid "Image is not a manifest"
 msgstr ""
 
@@ -4463,442 +4437,448 @@ msgstr ""
 msgid "Configured collection ID ‘%s’ not in binding metadata"
 msgstr ""
 
-#: common/flatpak-dir.c:1232 common/flatpak-dir.c:1267
+#: common/flatpak-dir.c:1179 common/flatpak-dir.c:4795
+#: common/flatpak-dir.c:5716 common/flatpak-dir.c:5784
 #, fuzzy, c-format
-msgid "No entry for %s in remote summary flatpak sparse cache "
+msgid "Couldn't find latest checksum for ref %s in remote %s"
+msgstr "%s konnte nicht in entfernter Quelle %s gefunden werden"
+
+#: common/flatpak-dir.c:1232 common/flatpak-dir.c:1268
+#, fuzzy, c-format
+msgid "No entry for %s in remote %s summary flatpak sparse cache"
 msgstr ""
 "Kein Eintrag für %s in Zusammenfassung des entfernten Flatpak-"
 "Zwischenspeichers"
 
-#: common/flatpak-dir.c:1819
+#: common/flatpak-dir.c:1821
 #, c-format
 msgid "Commit metadata for %s not matching expected metadata"
 msgstr ""
 
-#: common/flatpak-dir.c:2083
+#: common/flatpak-dir.c:2085
 #, fuzzy
 msgid "Unable to connect to system bus"
 msgstr ""
 "Der Anwendung erlauben, einen Namen auf dem Sitzungsbus zu beanspruchen"
 
-#: common/flatpak-dir.c:2678
+#: common/flatpak-dir.c:2680
 #, fuzzy
 msgid "User installation"
 msgstr "Benutzerinstallationen anzeigen"
 
-#: common/flatpak-dir.c:2685
+#: common/flatpak-dir.c:2687
 #, fuzzy, c-format
 msgid "System (%s) installation"
 msgstr "Benutzerinstallationen anzeigen"
 
-#: common/flatpak-dir.c:2730
+#: common/flatpak-dir.c:2732
 #, c-format
 msgid "No overrides found for %s"
 msgstr "Keine Ersetzungen für %s gefunden"
 
-#: common/flatpak-dir.c:2879
-#, fuzzy, c-format
+#: common/flatpak-dir.c:2881
+#, c-format
 msgid "%s (commit %s) not installed"
-msgstr "%s %s ist nicht installiert"
+msgstr "%s (Commit %s) nicht installiert"
 
-#: common/flatpak-dir.c:3881
+#: common/flatpak-dir.c:3883
 #, fuzzy, c-format
 msgid "Error parsing system flatpakrepo file for %s: %s"
 msgstr "Fehler beim Aktualisieren der Metadaten für »%s«: %s\n"
 
-#: common/flatpak-dir.c:4004
+#: common/flatpak-dir.c:3958
 #, c-format
 msgid "While opening repository %s: "
 msgstr "Während des Öffnens der Quelle %s: "
 
-#: common/flatpak-dir.c:4175
+#: common/flatpak-dir.c:4219
 #, c-format
 msgid "The config key %s is not set"
 msgstr ""
 
-#: common/flatpak-dir.c:4308
+#: common/flatpak-dir.c:4352
 #, fuzzy, c-format
 msgid "No current %s pattern matching %s"
 msgstr "Zugehörige Referenzen nicht aktualisieren"
 
-#: common/flatpak-dir.c:4529
+#: common/flatpak-dir.c:4573
 #, fuzzy
 msgid "No appstream commit to deploy"
 msgstr "Bereitzustellender Commit"
 
-#: common/flatpak-dir.c:5047 common/flatpak-dir.c:6105
-#: common/flatpak-dir.c:9270 common/flatpak-dir.c:9974
+#: common/flatpak-dir.c:5091 common/flatpak-dir.c:6141
+#: common/flatpak-dir.c:9307 common/flatpak-dir.c:10011
 msgid "Can't pull from untrusted non-gpg verified remote"
 msgstr ""
 
-#: common/flatpak-dir.c:5459 common/flatpak-dir.c:5496
+#: common/flatpak-dir.c:5503 common/flatpak-dir.c:5540
 msgid "Extra data not supported for non-gpg-verified local system installs"
 msgstr ""
 
-#: common/flatpak-dir.c:5525
+#: common/flatpak-dir.c:5569
 #, fuzzy, c-format
 msgid "Invalid checksum for extra data uri %s"
 msgstr "Ungültige Prüfsumme für Extradaten %s"
 
-#: common/flatpak-dir.c:5530
+#: common/flatpak-dir.c:5574
 #, c-format
 msgid "Empty name for extra data uri %s"
 msgstr "Leerer Name für die Adresse %s der Extradaten"
 
-#: common/flatpak-dir.c:5537
+#: common/flatpak-dir.c:5581
 #, c-format
 msgid "Unsupported extra data uri %s"
 msgstr "Nicht unterstützte Adresse %s der Extradaten"
 
-#: common/flatpak-dir.c:5551
+#: common/flatpak-dir.c:5595
 #, c-format
 msgid "Failed to load local extra-data %s: %s"
 msgstr "Zusätzliche lokale Daten %s konnten nicht gelesen werden: %s"
 
-#: common/flatpak-dir.c:5554
+#: common/flatpak-dir.c:5598
 #, c-format
 msgid "Wrong size for extra-data %s"
 msgstr "Falsche Größe für Extradaten %s"
 
-#: common/flatpak-dir.c:5569
+#: common/flatpak-dir.c:5613
 #, c-format
 msgid "While downloading %s: "
 msgstr "Während des Herunterladens von %s: "
 
-#: common/flatpak-dir.c:5576
+#: common/flatpak-dir.c:5620
 #, c-format
 msgid "Wrong size for extra data %s"
 msgstr "Falsche Größe für Extradaten %s"
 
-#: common/flatpak-dir.c:5585
+#: common/flatpak-dir.c:5629
 #, c-format
 msgid "Invalid checksum for extra data %s"
 msgstr "Ungültige Prüfsumme für Extradaten %s"
 
-#: common/flatpak-dir.c:5680 common/flatpak-dir.c:8317
-#: common/flatpak-dir.c:9852
+#: common/flatpak-dir.c:5724 common/flatpak-dir.c:8354
+#: common/flatpak-dir.c:9889
 #, c-format
 msgid "%s commit %s already installed"
 msgstr "%s-Commit %s wurde bereits installiert"
 
-#: common/flatpak-dir.c:5935 common/flatpak-dir.c:6188
+#: common/flatpak-dir.c:5971 common/flatpak-dir.c:6224
 #, c-format
 msgid "While pulling %s from remote %s: "
 msgstr "Während des Holens von %s von der entfernten Quelle %s: "
 
-#: common/flatpak-dir.c:6129 common/flatpak-utils.c:6730
+#: common/flatpak-dir.c:6165 common/flatpak-utils.c:6804
 msgid "GPG signatures found, but none are in trusted keyring"
 msgstr ""
 
-#: common/flatpak-dir.c:6146
+#: common/flatpak-dir.c:6182
 #, c-format
 msgid "Commit for ‘%s’ has no ref binding"
 msgstr ""
 
-#: common/flatpak-dir.c:6151
+#: common/flatpak-dir.c:6187
 #, c-format
 msgid "Commit for ‘%s’ is not in expected bound refs: %s"
 msgstr ""
 
-#: common/flatpak-dir.c:6326
+#: common/flatpak-dir.c:6362
 #, fuzzy
 msgid "Only applications can be made current"
 msgstr "Eine Anwendung oder Laufzeitumgebung signieren"
 
-#: common/flatpak-dir.c:6845
+#: common/flatpak-dir.c:6881
 msgid "Not enough memory"
 msgstr "Nicht genug Speicher"
 
-#: common/flatpak-dir.c:6864
+#: common/flatpak-dir.c:6900
 msgid "Failed to read from exported file"
 msgstr "Lesen aus der exportierten Datei fehlgeschlagen"
 
-#: common/flatpak-dir.c:7054
+#: common/flatpak-dir.c:7090
 msgid "Error reading mimetype xml file"
 msgstr "Fehler beim Lesen der MIME-Typen-XML-Datei"
 
-#: common/flatpak-dir.c:7059
+#: common/flatpak-dir.c:7095
 msgid "Invalid mimetype xml file"
 msgstr "Ungültige MIME-Typen-XML-Datei"
 
-#: common/flatpak-dir.c:7148
+#: common/flatpak-dir.c:7184
 #, c-format
 msgid "D-Bus service file '%s' has wrong name"
 msgstr ""
 
-#: common/flatpak-dir.c:7291
+#: common/flatpak-dir.c:7327
 #, fuzzy, c-format
 msgid "Invalid Exec argument %s"
 msgstr "Ungültiges Umgebungsformat: %s"
 
-#: common/flatpak-dir.c:7756
+#: common/flatpak-dir.c:7793
 msgid "While getting detached metadata: "
 msgstr "Während des Versuchs, abgekoppelte Metadaten zu holen: "
 
-#: common/flatpak-dir.c:7761 common/flatpak-dir.c:7766
-#: common/flatpak-dir.c:7770
+#: common/flatpak-dir.c:7798 common/flatpak-dir.c:7803
+#: common/flatpak-dir.c:7807
 #, fuzzy
 msgid "Extra data missing in detached metadata"
 msgstr "Während des Versuchs, abgekoppelte Metadaten zu holen: "
 
-#: common/flatpak-dir.c:7774
+#: common/flatpak-dir.c:7811
 msgid "While creating extradir: "
 msgstr "Beim Anlegen von extradir: "
 
-#: common/flatpak-dir.c:7795 common/flatpak-dir.c:7828
+#: common/flatpak-dir.c:7832 common/flatpak-dir.c:7865
 msgid "Invalid checksum for extra data"
 msgstr "Ungültige Prüfsumme für zusätzliche Daten"
 
-#: common/flatpak-dir.c:7824
+#: common/flatpak-dir.c:7861
 msgid "Wrong size for extra data"
 msgstr "Falsche Größe für zusätzliche Daten"
 
-#: common/flatpak-dir.c:7837
+#: common/flatpak-dir.c:7874
 #, c-format
 msgid "While writing extra data file '%s': "
 msgstr "Fehler beim Schreiben der zusätzlichen Datendatei: »%s«: "
 
-#: common/flatpak-dir.c:7845
+#: common/flatpak-dir.c:7882
 #, fuzzy, c-format
 msgid "Extra data %s missing in detached metadata"
 msgstr "Während des Versuchs, abgekoppelte Metadaten zu holen: "
 
-#: common/flatpak-dir.c:8039
+#: common/flatpak-dir.c:8076
 #, c-format
 msgid "apply_extra script failed, exit status %d"
 msgstr "Skript apply_extra ist fehlgeschlagen, Exit-Status %d"
 
 #. Translators: The placeholder is for an app ref.
-#: common/flatpak-dir.c:8205
+#: common/flatpak-dir.c:8242
 #, c-format
 msgid "Installing %s is not allowed by the policy set by your administrator"
 msgstr ""
 
-#: common/flatpak-dir.c:8293
+#: common/flatpak-dir.c:8330
 #, c-format
 msgid "While trying to resolve ref %s: "
 msgstr "Während des Auflösens der Referenz %s: "
 
-#: common/flatpak-dir.c:8305
+#: common/flatpak-dir.c:8342
 #, c-format
 msgid "%s is not available"
 msgstr "%s ist nicht verfügbar"
 
-#: common/flatpak-dir.c:8326
+#: common/flatpak-dir.c:8363
 msgid "Can't create deploy directory"
 msgstr "Bereitstellungsordner konnte nicht erstellt werden"
 
-#: common/flatpak-dir.c:8334
+#: common/flatpak-dir.c:8371
 #, c-format
 msgid "Failed to read commit %s: "
 msgstr "Commit %s konnte nicht gelesen werden: "
 
-#: common/flatpak-dir.c:8354
+#: common/flatpak-dir.c:8391
 #, c-format
 msgid "While trying to checkout %s into %s: "
 msgstr "Während des Versuchs, eine Arbeitskopie von %s nach %s zu erstellen: "
 
-#: common/flatpak-dir.c:8373
+#: common/flatpak-dir.c:8410
 msgid "While trying to checkout metadata subpath: "
 msgstr ""
 "Während des Versuchs, eine Arbeitskopie des Metadaten-Unterordners zu "
 "erstellen: "
 
-#: common/flatpak-dir.c:8404
+#: common/flatpak-dir.c:8441
 #, fuzzy, c-format
 msgid "While trying to checkout subpath ‘%s’: "
 msgstr "Während des Versuchs, eine Arbeitskopie von %s nach %s zu erstellen: "
 
-#: common/flatpak-dir.c:8414
+#: common/flatpak-dir.c:8451
 msgid "While trying to remove existing extra dir: "
 msgstr "Während des Versuchs, den bestehenden Extraordner zu entfernen: "
 
-#: common/flatpak-dir.c:8425
+#: common/flatpak-dir.c:8462
 msgid "While trying to apply extra data: "
 msgstr "Während des Versuchs, zusätzliche Daten anzuwenden: "
 
-#: common/flatpak-dir.c:8452
+#: common/flatpak-dir.c:8489
 #, c-format
 msgid "Invalid commit ref %s: "
 msgstr "Ungültige Commit-Referenz %s: "
 
-#: common/flatpak-dir.c:8460 common/flatpak-dir.c:8472
+#: common/flatpak-dir.c:8497 common/flatpak-dir.c:8509
 #, c-format
 msgid "Deployed ref %s does not match commit (%s)"
 msgstr "Bereitgestellte Referenz %s entspricht nicht dem Commit (%s)"
 
-#: common/flatpak-dir.c:8466
+#: common/flatpak-dir.c:8503
 #, c-format
 msgid "Deployed ref %s branch does not match commit (%s)"
 msgstr ""
 "Bereitgestellte Referenz des Zweigs %s entspricht nicht dem Commit (%s)"
 
-#: common/flatpak-dir.c:8723 common/flatpak-installation.c:1909
+#: common/flatpak-dir.c:8760 common/flatpak-installation.c:1909
 #, c-format
 msgid "%s branch %s already installed"
 msgstr "%s Zweig %s wurde bereits installiert"
 
-#: common/flatpak-dir.c:9374
+#: common/flatpak-dir.c:9411
 #, c-format
 msgid "Could not unmount revokefs-fuse filesystem at %s: "
 msgstr ""
 
-#: common/flatpak-dir.c:9648
+#: common/flatpak-dir.c:9685
 #, c-format
 msgid "This version of %s is already installed"
 msgstr "Diese Version von %s ist bereits installiert"
 
-#: common/flatpak-dir.c:9655
+#: common/flatpak-dir.c:9692
 msgid "Can't change remote during bundle install"
 msgstr ""
 
-#: common/flatpak-dir.c:9927
+#: common/flatpak-dir.c:9964
 msgid "Can't update to a specific commit without root permissions"
 msgstr ""
 
-#: common/flatpak-dir.c:10193
+#: common/flatpak-dir.c:10230
 #, c-format
 msgid "Can't remove %s, it is needed for: %s"
 msgstr ""
 
-#: common/flatpak-dir.c:10249 common/flatpak-installation.c:2065
+#: common/flatpak-dir.c:10286 common/flatpak-installation.c:2065
 #, c-format
 msgid "%s branch %s is not installed"
 msgstr "%s Zweig %s ist nicht installiert"
 
-#: common/flatpak-dir.c:10502
-#, fuzzy, c-format
+#: common/flatpak-dir.c:10539
+#, c-format
 msgid "%s commit %s not installed"
-msgstr "%s %s ist nicht installiert"
+msgstr "%s Commit %s nicht installiert"
 
-#: common/flatpak-dir.c:10838
+#: common/flatpak-dir.c:10875
 #, c-format
 msgid "Pruning repo failed: %s"
 msgstr ""
 
-#: common/flatpak-dir.c:11006 common/flatpak-dir.c:11012
+#: common/flatpak-dir.c:11043 common/flatpak-dir.c:11049
 #, fuzzy, c-format
 msgid "Failed to load filter '%s'"
 msgstr "Commit %s konnte nicht gelesen werden: "
 
-#: common/flatpak-dir.c:11018
+#: common/flatpak-dir.c:11055
 #, fuzzy, c-format
 msgid "Failed to parse filter '%s'"
 msgstr "Commit %s konnte nicht gelesen werden: "
 
-#: common/flatpak-dir.c:11300
+#: common/flatpak-dir.c:11337
 #, fuzzy
 msgid "Failed to write summary cache: "
 msgstr "Commit %s konnte nicht gelesen werden: "
 
-#: common/flatpak-dir.c:11319
+#: common/flatpak-dir.c:11356
 #, fuzzy, c-format
 msgid "No oci summary cached for remote '%s'"
 msgstr "Kein Flatpak-Zwischenspeicher in Zusammenfassung entfernter Quelle"
 
-#: common/flatpak-dir.c:11544
+#: common/flatpak-dir.c:11581
 #, fuzzy, c-format
 msgid "No cached summary for remote '%s'"
 msgstr "Kein Flatpak-Zwischenspeicher in Zusammenfassung entfernter Quelle"
 
-#: common/flatpak-dir.c:11568
+#: common/flatpak-dir.c:11605
 #, fuzzy, c-format
 msgid "Invalid checksum for indexed summary %s read from %s"
 msgstr "Ungültige Prüfsumme für Extradaten %s"
 
-#: common/flatpak-dir.c:11641
+#: common/flatpak-dir.c:11678
 #, c-format
 msgid ""
 "Remote listing for %s not available; server has no summary file. Check the "
 "URL passed to remote-add was valid."
 msgstr ""
 
-#: common/flatpak-dir.c:12016
+#: common/flatpak-dir.c:12053
 #, fuzzy, c-format
 msgid "Invalid checksum for indexed summary %s for remote '%s'"
 msgstr "Ungültige Prüfsumme für Extradaten %s"
 
-#: common/flatpak-dir.c:12639
+#: common/flatpak-dir.c:12676
 #, c-format
 msgid "Multiple branches available for %s, you must specify one of: "
 msgstr ""
 
-#: common/flatpak-dir.c:12705
+#: common/flatpak-dir.c:12742
 #, c-format
 msgid "Nothing matches %s"
 msgstr "Kein Treffer für %s"
 
-#: common/flatpak-dir.c:12813
+#: common/flatpak-dir.c:12850
 #, c-format
 msgid "Can't find ref %s%s%s%s%s"
 msgstr "Referenz %s%s%s%s%s kann nicht gefunden werden"
 
-#: common/flatpak-dir.c:12856
+#: common/flatpak-dir.c:12893
 #, c-format
 msgid "Error searching remote %s: %s"
 msgstr "Fehler bei der Suche nach dem entfernten %s: %s"
 
-#: common/flatpak-dir.c:12953
+#: common/flatpak-dir.c:12990
 #, c-format
 msgid "Error searching local repository: %s"
 msgstr "Fehler beim Suchen der lokalen Quelle: %s"
 
-#: common/flatpak-dir.c:13293
+#: common/flatpak-dir.c:13330
 #, c-format
 msgid "Could not find installation %s"
 msgstr "Installation %s konnte nicht gefunden werden"
 
-#: common/flatpak-dir.c:13895
+#: common/flatpak-dir.c:13932
 #, fuzzy, c-format
 msgid "Invalid file format, no %s group"
 msgstr "Ungültiges Umgebungsformat: %s"
 
-#: common/flatpak-dir.c:13900 common/flatpak-utils.c:2252
+#: common/flatpak-dir.c:13937 common/flatpak-utils.c:2319
 #, fuzzy, c-format
 msgid "Invalid version %s, only 1 supported"
 msgstr "Ungültiger URI-Typ %s, nur http/https werden unterstützt"
 
-#: common/flatpak-dir.c:13905 common/flatpak-dir.c:13910
+#: common/flatpak-dir.c:13942 common/flatpak-dir.c:13947
 #, fuzzy, c-format
 msgid "Invalid file format, no %s specified"
 msgstr "Ungültiges Umgebungsformat: %s"
 
 #. Check some minimal size so we don't get crap
-#: common/flatpak-dir.c:13930
+#: common/flatpak-dir.c:13967
 #, fuzzy
 msgid "Invalid file format, gpg key invalid"
 msgstr "Ungültiges Umgebungsformat: %s"
 
-#: common/flatpak-dir.c:13949 common/flatpak-utils.c:2317
+#: common/flatpak-dir.c:13986 common/flatpak-utils.c:2384
 msgid "Collection ID requires GPG key to be provided"
 msgstr ""
 
-#: common/flatpak-dir.c:13992
+#: common/flatpak-dir.c:14029
 #, c-format
 msgid "Runtime %s, branch %s is already installed"
 msgstr "Laufzeitumgebung %s, Zweig %s ist bereits installiert"
 
-#: common/flatpak-dir.c:13993
+#: common/flatpak-dir.c:14030
 #, c-format
 msgid "App %s, branch %s is already installed"
 msgstr "Anwendung %s, Zweig %s ist bereits installiert"
 
-#: common/flatpak-dir.c:14255
+#: common/flatpak-dir.c:14264
 #, c-format
 msgid "Can't remove remote '%s' with installed ref %s (at least)"
 msgstr ""
 
-#: common/flatpak-dir.c:14354
+#: common/flatpak-dir.c:14363
 #, fuzzy, c-format
 msgid "Invalid character '/' in remote name: %s"
 msgstr "%s konnte nicht in entfernter Quelle %s gefunden werden"
 
-#: common/flatpak-dir.c:14360
+#: common/flatpak-dir.c:14369
 #, c-format
 msgid "No configuration for remote %s specified"
 msgstr ""
 
-#: common/flatpak-dir.c:15982
+#: common/flatpak-dir.c:16013
 #, fuzzy, c-format
 msgid "Skipping deletion of mirror ref (%s, %s)…\n"
 msgstr "Ungültige bereitgestellte Referenz %s: "
@@ -4909,9 +4889,9 @@ msgid "Ref %s not installed"
 msgstr "%s ist nicht installiert"
 
 #: common/flatpak-installation.c:872
-#, fuzzy, c-format
+#, c-format
 msgid "App %s not installed"
-msgstr "%s ist nicht installiert"
+msgstr "Anwendung »%s« nicht installiert"
 
 #: common/flatpak-installation.c:1393
 #, fuzzy, c-format
@@ -4919,9 +4899,9 @@ msgid "Remote '%s' already exists"
 msgstr "Entfernt gelegene Quelle %s existiert bereits"
 
 #: common/flatpak-installation.c:1944
-#, fuzzy, c-format
+#, c-format
 msgid "As requested, %s was only pulled, but not installed"
-msgstr "Angeforderte Erweiterung »%s« ist nur teilweise installiert"
+msgstr "Wie gewünscht, wurde »%s« nur heruntergeladen und nicht installiert"
 
 #: common/flatpak-instance.c:508 common/flatpak-instance.c:667
 #: common/flatpak-instance.c:708
@@ -4976,7 +4956,7 @@ msgstr "Ungültiger Dbus-Name %s\n"
 
 #: common/flatpak-oci-registry.c:1061
 msgid "Authorization failed"
-msgstr ""
+msgstr "Legitimierung gescheitert"
 
 #: common/flatpak-oci-registry.c:1065
 #, c-format
@@ -5102,9 +5082,9 @@ msgid "Invalid remote name"
 msgstr "Keine entfernte Quelle %s"
 
 #: common/flatpak-ref-utils.c:642
-#, fuzzy, c-format
+#, c-format
 msgid "%s is not application or runtime"
-msgstr "Eine Anwendung oder Laufzeitumgebung signieren"
+msgstr "%s ist keine Anwendung oder Laufzeitumgebung"
 
 #: common/flatpak-ref-utils.c:651 common/flatpak-ref-utils.c:668
 #: common/flatpak-ref-utils.c:684
@@ -5143,38 +5123,35 @@ msgstr "»%s« ist kein gültiger Zweig-Name: %s"
 msgid "Wrong number of components in partial ref %s"
 msgstr "Zu viele Argumente"
 
-#: common/flatpak-ref-utils.c:1289
-#, fuzzy
+#: common/flatpak-ref-utils.c:1299
 msgid " development platform"
-msgstr "Entwickler-Laufzeitumgebung verwenden"
+msgstr " Entwicklungsplattform"
 
-#: common/flatpak-ref-utils.c:1291
+#: common/flatpak-ref-utils.c:1301
 msgid " platform"
 msgstr ""
 
-#: common/flatpak-ref-utils.c:1293
-#, fuzzy
+#: common/flatpak-ref-utils.c:1303
 msgid " application base"
-msgstr "Sammlungskennung"
+msgstr "Anwendungsbasis"
 
-#: common/flatpak-ref-utils.c:1296
+#: common/flatpak-ref-utils.c:1306
 msgid " debug symbols"
 msgstr ""
 
-#: common/flatpak-ref-utils.c:1298
+#: common/flatpak-ref-utils.c:1308
 msgid " sourcecode"
 msgstr ""
 
-#: common/flatpak-ref-utils.c:1300
-#, fuzzy
+#: common/flatpak-ref-utils.c:1310
 msgid " translations"
-msgstr "Installiert"
+msgstr " Übersetzungen"
 
-#: common/flatpak-ref-utils.c:1302
+#: common/flatpak-ref-utils.c:1312
 msgid " docs"
 msgstr ""
 
-#: common/flatpak-ref-utils.c:1569
+#: common/flatpak-ref-utils.c:1579
 #, fuzzy, c-format
 msgid "Invalid id %s: %s"
 msgstr "Ungültige Prozesskennung %s"
@@ -5194,348 +5171,348 @@ msgstr "Kein Befehl angegeben"
 msgid "GPG verification must be enabled when a collection ID is set"
 msgstr "GPG-Überprüfung ist erforderlich, wenn Sammlungen aktiviert sind"
 
-#: common/flatpak-run.c:1066
+#: common/flatpak-run.c:1210
 #, fuzzy
 msgid "Failed to open app info file"
 msgstr "Öffnen der Informationsdatei der Anwendung fehlgeschlagen: %s"
 
-#: common/flatpak-run.c:1158
+#: common/flatpak-run.c:1303
 msgid "Unable to create sync pipe"
 msgstr "»Sync-Pipe« konnte nicht erstellt werden"
 
-#: common/flatpak-run.c:1197
+#: common/flatpak-run.c:1342
 msgid "Failed to sync with dbus proxy"
 msgstr "Abgleich mit Dbus-Proxy ist fehlgeschlagen"
 
-#: common/flatpak-run.c:1987
+#: common/flatpak-run.c:2144
 msgid "No systemd user session available, cgroups not available"
 msgstr ""
 
-#: common/flatpak-run.c:2480
+#: common/flatpak-run.c:2637
 #, fuzzy
 msgid "Unable to allocate instance id"
 msgstr "»Sync-Pipe« konnte nicht erstellt werden"
 
-#: common/flatpak-run.c:2616 common/flatpak-run.c:2626
+#: common/flatpak-run.c:2773 common/flatpak-run.c:2783
 #, fuzzy, c-format
 msgid "Failed to open flatpak-info file: %s"
 msgstr "Öffnen der temporären flatpak-Informationsdatei fehlgeschlagen: %s"
 
-#: common/flatpak-run.c:2654
+#: common/flatpak-run.c:2812
 #, fuzzy, c-format
 msgid "Failed to open bwrapinfo.json file: %s"
 msgstr "Öffnen der temporären flatpak-Informationsdatei fehlgeschlagen: %s"
 
-#: common/flatpak-run.c:2679
+#: common/flatpak-run.c:2837
 #, fuzzy, c-format
 msgid "Failed to write to instance id fd: %s"
 msgstr "Commit %s konnte nicht gelesen werden: "
 
-#: common/flatpak-run.c:3065
+#: common/flatpak-run.c:3223
 #, fuzzy
 msgid "Initialize seccomp failed"
 msgstr "Variable anhand angegebener Laufzeit initialisieren"
 
-#: common/flatpak-run.c:3104
+#: common/flatpak-run.c:3262
 #, fuzzy, c-format
 msgid "Failed to add architecture to seccomp filter: %s"
 msgstr "Zusätzliche lokale Daten %s konnten nicht gelesen werden: %s"
 
-#: common/flatpak-run.c:3112
+#: common/flatpak-run.c:3270
 #, fuzzy, c-format
 msgid "Failed to add multiarch architecture to seccomp filter: %s"
 msgstr "Zusätzliche lokale Daten %s konnten nicht gelesen werden: %s"
 
-#: common/flatpak-run.c:3144 common/flatpak-run.c:3166
+#: common/flatpak-run.c:3302 common/flatpak-run.c:3324
 #, fuzzy, c-format
 msgid "Failed to block syscall %d: %s"
 msgstr "Fehler: %s %s ist fehlgeschlagen: %s\n"
 
-#: common/flatpak-run.c:3199
+#: common/flatpak-run.c:3357
 #, fuzzy, c-format
 msgid "Failed to export bpf: %s"
 msgstr "Lesen aus der exportierten Datei fehlgeschlagen"
 
-#: common/flatpak-run.c:3450
+#: common/flatpak-run.c:3608
 #, fuzzy, c-format
 msgid "Failed to open ‘%s’"
 msgstr "Öffnen der temporären flatpak-Informationsdatei fehlgeschlagen: %s"
 
-#: common/flatpak-run.c:3736
+#: common/flatpak-run.c:3894
 #, c-format
 msgid "ldconfig failed, exit status %d"
 msgstr "ldconfig ist fehlgeschlagen, Exit-Status %d"
 
-#: common/flatpak-run.c:3743
+#: common/flatpak-run.c:3901
 #, fuzzy
 msgid "Can't open generated ld.so.cache"
 msgstr "Namensraum %s konnte nicht geöffnet werden: %s"
 
 #. Translators: The placeholder is for an app ref.
-#: common/flatpak-run.c:3854
+#: common/flatpak-run.c:4012
 #, c-format
 msgid "Running %s is not allowed by the policy set by your administrator"
 msgstr ""
 
-#: common/flatpak-run.c:3896
+#: common/flatpak-run.c:4114
 msgid ""
-"\"flatpak run\" is not intended to be run as `sudo flatpak run`, use `sudo -"
-"i` or `su -l` instead and invoke \"flatpak run\" from inside the new shell"
+"\"flatpak run\" is not intended to be run as `sudo flatpak run`. Use `sudo -"
+"i` or `su -l` instead and invoke \"flatpak run\" from inside the new shell."
 msgstr ""
 
-#: common/flatpak-run.c:4154
+#: common/flatpak-run.c:4297
 #, fuzzy, c-format
 msgid "Failed to migrate from %s: %s"
 msgstr "Commit %s konnte nicht gelesen werden: "
 
-#: common/flatpak-run.c:4169
+#: common/flatpak-run.c:4312
 #, c-format
 msgid "Failed to migrate old app data directory %s to new name %s: %s"
 msgstr ""
 
-#: common/flatpak-run.c:4178
+#: common/flatpak-run.c:4321
 #, fuzzy, c-format
 msgid "Failed to create symlink while migrating %s: %s"
 msgstr "Commit %s konnte nicht gelesen werden: "
 
-#: common/flatpak-transaction.c:2079
+#: common/flatpak-transaction.c:2126
 #, fuzzy, c-format
 msgid "Warning: Problem looking for related refs: %s"
 msgstr "Warnung: Problem bei der Suche nach zugehörigen Referenzen: %s\n"
 
-#: common/flatpak-transaction.c:2289
+#: common/flatpak-transaction.c:2336
 #, fuzzy, c-format
 msgid "The application %s requires the runtime %s which was not found"
 msgstr "Anwendung %s Zweig %s ist nicht installiert"
 
-#: common/flatpak-transaction.c:2305
+#: common/flatpak-transaction.c:2352
 #, fuzzy, c-format
 msgid "The application %s requires the runtime %s which is not installed"
 msgstr "Anwendung %s Zweig %s ist nicht installiert"
 
-#: common/flatpak-transaction.c:2403
+#: common/flatpak-transaction.c:2450
 #, c-format
 msgid "Can't uninstall %s which is needed by %s"
 msgstr ""
 
-#: common/flatpak-transaction.c:2473
+#: common/flatpak-transaction.c:2520
 #, c-format
 msgid "Remote %s disabled, ignoring %s update"
 msgstr "Entfernte Quelle %s ist deaktiviert. Aktualisierung %s wird ignoriert"
 
-#: common/flatpak-transaction.c:2506
-#, fuzzy, c-format
+#: common/flatpak-transaction.c:2553
+#, c-format
 msgid "%s is already installed"
-msgstr "%s-Commit %s wurde bereits installiert"
+msgstr "%s wurde bereits installiert"
 
-#: common/flatpak-transaction.c:2509
-#, fuzzy, c-format
+#: common/flatpak-transaction.c:2556
+#, c-format
 msgid "%s is already installed from remote %s"
-msgstr "%s-Commit %s wurde bereits installiert"
+msgstr "%s wurde bereits von der Gegenstelle »%s« installiert"
 
-#: common/flatpak-transaction.c:2699
+#: common/flatpak-transaction.c:2746
 #, fuzzy, c-format
 msgid "Invalid .flatpakref: %s"
 msgstr "Ungültige Commit-Referenz %s: "
 
-#: common/flatpak-transaction.c:2813
+#: common/flatpak-transaction.c:2860
 #, fuzzy, c-format
 msgid "Error updating remote metadata for '%s': %s"
 msgstr "Fehler beim Aktualisieren der Metadaten für »%s«: %s\n"
 
-#: common/flatpak-transaction.c:3276
+#: common/flatpak-transaction.c:3323
 #, c-format
 msgid ""
 "Warning: Treating remote fetch error as non-fatal since %s is already "
 "installed: %s"
 msgstr ""
 
-#: common/flatpak-transaction.c:3600
+#: common/flatpak-transaction.c:3647
 #, fuzzy, c-format
 msgid "No authenticator installed for remote '%s'"
 msgstr "Legitimierung wird benötigt, um Software zu aktualisieren"
 
-#: common/flatpak-transaction.c:3704 common/flatpak-transaction.c:3711
+#: common/flatpak-transaction.c:3751 common/flatpak-transaction.c:3758
 #, fuzzy, c-format
 msgid "Failed to get tokens for ref: %s"
 msgstr "Temporäre Datei konnte nicht geöffnet werden: %s"
 
-#: common/flatpak-transaction.c:3706 common/flatpak-transaction.c:3713
+#: common/flatpak-transaction.c:3753 common/flatpak-transaction.c:3760
 #, fuzzy
 msgid "Failed to get tokens for ref"
 msgstr "Temporäre Datei konnte nicht geöffnet werden: %s"
 
-#: common/flatpak-transaction.c:4037
+#: common/flatpak-transaction.c:4085
 #, c-format
 msgid "Flatpakrepo URL %s not file, HTTP or HTTPS"
 msgstr ""
 
-#: common/flatpak-transaction.c:4043
+#: common/flatpak-transaction.c:4091
 #, fuzzy, c-format
 msgid "Can't load dependent file %s: "
 msgstr "Namensraum %s konnte nicht geöffnet werden: %s"
 
-#: common/flatpak-transaction.c:4051
+#: common/flatpak-transaction.c:4099
 #, fuzzy, c-format
 msgid "Invalid .flatpakrepo: %s"
 msgstr "Ungültige Prozesskennung %s"
 
-#: common/flatpak-transaction.c:4652
+#: common/flatpak-transaction.c:4746
 msgid "Transaction already executed"
 msgstr ""
 
-#: common/flatpak-transaction.c:4667
+#: common/flatpak-transaction.c:4761
 msgid ""
 "Refusing to operate on a user installation as root! This can lead to "
 "incorrect file ownership and permission errors."
 msgstr ""
 
-#: common/flatpak-transaction.c:4759 common/flatpak-transaction.c:4772
+#: common/flatpak-transaction.c:4853 common/flatpak-transaction.c:4866
 msgid "Aborted by user"
-msgstr ""
+msgstr "Abbruch durch Benutzer"
 
-#: common/flatpak-transaction.c:4797
+#: common/flatpak-transaction.c:4891
 #, c-format
 msgid "Skipping %s due to previous error"
 msgstr ""
 
-#: common/flatpak-transaction.c:4851
+#: common/flatpak-transaction.c:4945
 #, c-format
 msgid "Aborted due to failure (%s)"
 msgstr ""
 
-#: common/flatpak-utils.c:793
+#: common/flatpak-utils.c:860
 msgid "Glob can't match apps"
 msgstr ""
 
-#: common/flatpak-utils.c:818
+#: common/flatpak-utils.c:885
 msgid "Empty glob"
 msgstr ""
 
-#: common/flatpak-utils.c:837
+#: common/flatpak-utils.c:904
 #, fuzzy
 msgid "Too many segments in glob"
 msgstr "Zu viele Argumente"
 
-#: common/flatpak-utils.c:858
+#: common/flatpak-utils.c:925
 #, fuzzy, c-format
 msgid "Invalid glob character '%c'"
 msgstr "Ungültige Prozesskennung %s"
 
-#: common/flatpak-utils.c:912
+#: common/flatpak-utils.c:979
 #, c-format
 msgid "Missing glob on line %d"
 msgstr ""
 
-#: common/flatpak-utils.c:916
+#: common/flatpak-utils.c:983
 #, c-format
 msgid "Trailing text on line %d"
 msgstr ""
 
-#: common/flatpak-utils.c:920
+#: common/flatpak-utils.c:987
 #, c-format
 msgid "on line %d"
 msgstr ""
 
-#: common/flatpak-utils.c:942
+#: common/flatpak-utils.c:1009
 #, c-format
 msgid "Unexpected word '%s' on line %d"
 msgstr ""
 
-#: common/flatpak-utils.c:2233
+#: common/flatpak-utils.c:2300
 #, c-format
 msgid "Invalid %s: Missing group ‘%s’"
 msgstr ""
 
-#: common/flatpak-utils.c:2242
+#: common/flatpak-utils.c:2309
 #, c-format
 msgid "Invalid %s: Missing key ‘%s’"
 msgstr ""
 
-#: common/flatpak-utils.c:2292
+#: common/flatpak-utils.c:2359
 msgid "Invalid gpg key"
 msgstr "Ungültiger GPG-Schlüssel"
 
-#: common/flatpak-utils.c:2681
+#: common/flatpak-utils.c:2748
 msgid "No extra data sources"
 msgstr "Keine zusätzlichen Datenquellen"
 
-#: common/flatpak-utils.c:5338
+#: common/flatpak-utils.c:5405
 #, fuzzy, c-format
 msgid "Error copying 64x64 icon for component %s: %s\n"
 msgstr "Fehler bei der Suche nach dem entfernten %s: %s"
 
-#: common/flatpak-utils.c:5344
+#: common/flatpak-utils.c:5411
 #, fuzzy, c-format
 msgid "Error copying 128x128 icon for component %s: %s\n"
 msgstr "Fehler bei der Suche nach dem entfernten %s: %s"
 
-#: common/flatpak-utils.c:5591
+#: common/flatpak-utils.c:5658
 #, c-format
 msgid "%s is end-of-life, ignoring for appstream"
 msgstr ""
 
-#: common/flatpak-utils.c:5626
+#: common/flatpak-utils.c:5693
 #, fuzzy, c-format
 msgid "No appstream data for %s: %s\n"
 msgstr "Fehler beim Aktualisieren der Metadaten für »%s«: %s\n"
 
-#: common/flatpak-utils.c:6589
+#: common/flatpak-utils.c:6663
 #, fuzzy
 msgid "Invalid bundle, no ref in metadata"
 msgstr "Ungültige Prüfsumme für zusätzliche Daten"
 
-#: common/flatpak-utils.c:6690
+#: common/flatpak-utils.c:6764
 #, c-format
 msgid "Collection ‘%s’ of bundle doesn’t match collection ‘%s’ of remote"
 msgstr ""
 
-#: common/flatpak-utils.c:6767
+#: common/flatpak-utils.c:6841
 msgid "Metadata in header and app are inconsistent"
 msgstr ""
 
-#: common/flatpak-utils.c:6852 common/flatpak-utils.c:7011
+#: common/flatpak-utils.c:6926 common/flatpak-utils.c:7085
 msgid "Invalid OCI image config"
 msgstr ""
 
-#: common/flatpak-utils.c:6914 common/flatpak-utils.c:7160
+#: common/flatpak-utils.c:6988 common/flatpak-utils.c:7234
 #, c-format
 msgid "Wrong layer checksum, expected %s, was %s"
 msgstr ""
 
-#: common/flatpak-utils.c:6994
+#: common/flatpak-utils.c:7068
 #, c-format
 msgid "No ref specified for OCI image %s"
 msgstr ""
 
-#: common/flatpak-utils.c:7000
+#: common/flatpak-utils.c:7074
 #, c-format
 msgid "Wrong ref (%s) specified for OCI image %s, expected %s"
 msgstr ""
 
-#: common/flatpak-utils.c:8154
+#: common/flatpak-utils.c:8228
 #, c-format
 msgid "Invalid require-flatpak argument %s"
 msgstr ""
 
-#: common/flatpak-utils.c:8164 common/flatpak-utils.c:8183
+#: common/flatpak-utils.c:8238 common/flatpak-utils.c:8257
 #, c-format
 msgid "%s needs a later flatpak version (%s)"
 msgstr "%s verlangt eine neuere Version von flatpak (%s)"
 
-#: common/flatpak-utils.c:8227
+#: common/flatpak-utils.c:8301
 msgid "Empty string is not a number"
-msgstr ""
+msgstr "Leere Zeichenkette ist keine Zahl"
 
-#: common/flatpak-utils.c:8253
+#: common/flatpak-utils.c:8327
 #, c-format
 msgid "“%s” is not an unsigned number"
-msgstr ""
+msgstr "»%s« ist keine vorzeichenlose Zahl"
 
-#: common/flatpak-utils.c:8263
+#: common/flatpak-utils.c:8337
 #, c-format
 msgid "Number “%s” is out of bounds [%s, %s]"
-msgstr ""
+msgstr "Zahl »%s« ist außerhalb des zulässigen Bereichs [%s, %s]"
 
 #: oci-authenticator/flatpak-oci-authenticator.c:291
 msgid "Not a oci remote, missing summary.xa.oci-repository"
@@ -5557,12 +5534,11 @@ msgstr "Kein Treffer für %s"
 
 #: portal/flatpak-portal.c:2267
 msgid "Deny"
-msgstr ""
+msgstr "Ablehnen"
 
 #: portal/flatpak-portal.c:2269
-#, fuzzy
 msgid "Update"
-msgstr "update"
+msgstr "Aktualisieren"
 
 #: portal/flatpak-portal.c:2274
 #, fuzzy, c-format
@@ -5601,9 +5577,8 @@ msgstr "Signierte Anwendung installieren"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:24
 #: system-helper/org.freedesktop.Flatpak.policy.in:42
-#, fuzzy
 msgid "Authentication is required to install software"
-msgstr "Legitimierung wird benötigt, um Software zu aktualisieren"
+msgstr "Legitimation ist zum Installieren von Software erforderlich"
 
 #. SECURITY:
 #. - Normal users need admin authentication to install software
@@ -5661,10 +5636,8 @@ msgid "Update system repository"
 msgstr "Systemquelle aktualisieren"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:112
-#, fuzzy
 msgid "Authentication is required to modify a system repository"
-msgstr ""
-"Legitimierung wird benötigt, um den System-Softwarebestand zu aktualisieren"
+msgstr "Legitimierung wird benötigt, um ein System-Softwaredepot zu ändern"
 
 #. SECURITY:
 #. - Normal users need admin authentication to install software
@@ -5674,9 +5647,8 @@ msgid "Install bundle"
 msgstr "Bündel installieren"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:127
-#, fuzzy
 msgid "Authentication is required to install software from $(path)"
-msgstr "Legitimierung wird benötigt, um Software zu installieren"
+msgstr "Legitimierung wird benötigt, um Software von $(path) zu installieren"
 
 #. SECURITY:
 #. - Normal users need admin authentication to uninstall software
@@ -5702,9 +5674,8 @@ msgid "Uninstall app"
 msgstr "Anwendung deinstallieren"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:162
-#, fuzzy
 msgid "Authentication is required to uninstall $(ref)"
-msgstr "Legitimierung wird benötigt, um Software zu deinstallieren"
+msgstr "Legitimierung wird benötigt, um $(ref) zu deinstallieren"
 
 #. SECURITY:
 #. - Normal users need admin authentication to configure system-wide
@@ -5714,7 +5685,6 @@ msgid "Configure Remote"
 msgstr "Ferne Quelle einrichten"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:178
-#, fuzzy
 msgid "Authentication is required to configure software repositories"
 msgstr "Legitimierung wird benötigt, um die Softwarequellen zu konfigurieren"
 
@@ -5722,14 +5692,14 @@ msgstr "Legitimierung wird benötigt, um die Softwarequellen zu konfigurieren"
 #. - Normal users need admin authentication to configure the system-wide
 #. Flatpak installation.
 #: system-helper/org.freedesktop.Flatpak.policy.in:192
-#, fuzzy
 msgid "Configure"
-msgstr "Ferne Quelle einrichten"
+msgstr "Konfigurieren"
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:193
-#, fuzzy
 msgid "Authentication is required to configure software installation"
-msgstr "Legitimierung wird benötigt, um die Softwarequellen zu konfigurieren"
+msgstr ""
+"Legitimierung wird benötigt, um die Installation von Software zu "
+"konfigurieren"
 
 #. SECURITY:
 #. - Normal users do not require admin authentication to update
@@ -5815,11 +5785,12 @@ msgid "Override parental controls"
 msgstr ""
 
 #: system-helper/org.freedesktop.Flatpak.policy.in:288
-#, fuzzy
 msgid ""
 "Authentication is required to install software which is restricted by your "
 "parental controls policy"
-msgstr "Legitimierung wird benötigt, um Software zu installieren"
+msgstr ""
+"Legitimierung wird benötigt, um Software zu installieren, welche durch die "
+"Kindersicherung gesperrt ist"
 
 #~ msgid "Invalid deployed ref %s: "
 #~ msgstr "Ungültige bereitgestellte Referenz %s: "

@@ -277,12 +277,19 @@
 <col width="300px" class="properties_name">
 <col width="200px" class="properties_flags">
 </colgroup>
-<tbody><tr>
+<tbody>
+<tr>
 <td class="property_type">
 <a class="link" href="FlatpakInstallation.html" title="FlatpakInstallation"><span class="type">FlatpakInstallation</span></a> *</td>
 <td class="property_name"><a class="link" href="FlatpakTransaction.html#FlatpakTransaction--installation" title="The “installation” property">installation</a></td>
 <td class="property_flags">Read / Write / Construct Only</td>
-</tr></tbody>
+</tr>
+<tr>
+<td class="property_type"><span class="type">gboolean</span></td>
+<td class="property_name"><a class="link" href="FlatpakTransaction.html#FlatpakTransaction--no-interaction" title="The “no-interaction” property">no-interaction</a></td>
+<td class="property_flags">Read / Write</td>
+</tr>
+</tbody>
 </table></div>
 </div>
 <div class="refsect1">
@@ -1610,6 +1617,17 @@ window with a browser, but the user closed it before it was finished.</p>
 <p>The installation that the transaction operates on.</p>
 <p>Owner: FlatpakTransaction</p>
 <p>Flags: Read / Write / Construct Only</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="FlatpakTransaction--no-interaction"></a><h3>The <code class="literal">“no-interaction”</code> property</h3>
+<pre class="programlisting">  “no-interaction”           <span class="type">gboolean</span></pre>
+<p><code class="literal">TRUE</code> if the transaction is not interactive, <code class="literal">FALSE</code> otherwise.</p>
+<p>See <code class="function">flatpak_transaction_set_no_interaction()</code>.</p>
+<p>Owner: FlatpakTransaction</p>
+<p>Flags: Read / Write</p>
+<p>Default value: FALSE</p>
+<p class="since">Since: 1.13.0</p>
 </div>
 </div>
 <div class="refsect1">
