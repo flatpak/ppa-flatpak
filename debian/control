@@ -9,7 +9,7 @@ Build-Depends:
  attr <!nocheck>,
  automake (>= 1.14.1),
  bison,
- bubblewrap (>= 0.4.0),
+ bubblewrap (>= 0.5.0),
  ca-certificates <!nocheck>,
  dbus-daemon,
  debhelper-compat (= 13),
@@ -70,7 +70,7 @@ Package: flatpak
 Architecture: linux-any
 Depends:
  adduser,
- bubblewrap (>= 0.4.0),
+ bubblewrap (>= 0.5.0),
  default-dbus-system-bus | dbus-system-bus,
  xdg-dbus-proxy (>= 0.1.0),
  ${misc:Depends},
@@ -201,7 +201,7 @@ Package: libflatpak0
 Architecture: linux-any
 Section: libs
 Depends:
- bubblewrap (>= 0.4.0),
+ bubblewrap (>= 0.5.0),
  ${misc:Depends},
  ${shlibs:Depends},
 Pre-Depends:
