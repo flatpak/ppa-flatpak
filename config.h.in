@@ -28,6 +28,9 @@
 /* Ignore massive GTimeVal deprecation warnings in 2.62 */
 #undef GLIB_VERSION_MIN_REQUIRED
 
+/* Define if appstream >= 0.14.0 is available */
+#undef HAVE_APPSTREAM_0_14_0
+
 /* Define to 1 if you have the `archive_read_support_filter_all' function. */
 #undef HAVE_ARCHIVE_READ_SUPPORT_FILTER_ALL
 

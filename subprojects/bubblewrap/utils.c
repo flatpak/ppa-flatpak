@@ -1,5 +1,6 @@
 /* bubblewrap
  * Copyright (C) 2016 Alexander Larsson
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,15 +32,33 @@
 #define security_check_context(x) security_check_context ((security_context_t) x)
 #endif
 
+__attribute__((format(printf, 1, 0))) static void
+warnv (const char *format, va_list args)
+{
+  fprintf (stderr, "bwrap: ");
+  vfprintf (stderr, format, args);
+  fprintf (stderr, "\n");
+}
+
+void
+warn (const char *format, ...)
+{
+  va_list args;
+
+  va_start (args, format);
+  warnv (format, args);
+  va_end (args);
+}
+
 void
 die_with_error (const char *format, ...)
 {
   va_list args;
   int errsv;
 
-  fprintf (stderr, "bwrap: ");
-
   errsv = errno;
+
+  fprintf (stderr, "bwrap: ");
 
   va_start (args, format);
   vfprintf (stderr, format, args);
@@ -55,13 +74,9 @@ die (const char *format, ...)
 {
   va_list args;
 
-  fprintf (stderr, "bwrap: ");
-
   va_start (args, format);
-  vfprintf (stderr, format, args);
+  warnv (format, args);
   va_end (args);
-
-  fprintf (stderr, "\n");
 
   exit (1);
 }
@@ -764,7 +779,7 @@ read_pid_from_socket (int socket)
   msg.msg_controllen = control_len_rcv;
 
   if (recvmsg (socket, &msg, 0) < 0)
-    die_with_error ("Cant read pid from socket");
+    die_with_error ("Can't read pid from socket");
 
   if (msg.msg_controllen <= 0)
     die ("Unexpected short read from pid socket");
