@@ -1,0 +1,25 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Wed, 2 Mar 2022 12:29:41 +0000
+Subject: tests: Don't install tap-driver.sh in the installed-tests
+
+This is specifically for running build-time tests in the Autotools build
+system, and is not used when running installed-tests.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/4788
+---
+ tests/Makefile.am.inc | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/tests/Makefile.am.inc b/tests/Makefile.am.inc
+index ae6ac04..a6e7183 100644
+--- a/tests/Makefile.am.inc
++++ b/tests/Makefile.am.inc
+@@ -202,7 +202,6 @@ tests/package_version.txt: Makefile
+ tests/test-basic.sh: tests/package_version.txt
+ 
+ dist_installed_test_extra_scripts += \
+-	buildutil/tap-driver.sh \
+ 	tests/http-utils-test-server.py \
+ 	tests/oci-registry-server.py \
+ 	tests/oci-registry-client.py \

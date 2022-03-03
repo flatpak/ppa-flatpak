@@ -212,10 +212,10 @@ enum {
   LAST_SIGNAL
 };
 
-enum {
-  PROP_0,
-  PROP_INSTALLATION,
-};
+typedef enum {
+  PROP_INSTALLATION = 1,
+  PROP_NO_INTERACTION,
+} FlatpakTransactionProperty;
 
 struct _FlatpakTransactionProgress
 {
@@ -1023,11 +1023,15 @@ flatpak_transaction_set_property (GObject      *object,
   FlatpakTransaction *self = FLATPAK_TRANSACTION (object);
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
 
-  switch (prop_id)
+  switch ((FlatpakTransactionProperty) prop_id)
     {
     case PROP_INSTALLATION:
       g_clear_object (&priv->installation);
       priv->installation = g_value_dup_object (value);
+      break;
+
+    case PROP_NO_INTERACTION:
+      flatpak_transaction_set_no_interaction (self, g_value_get_boolean (value));
       break;
 
     default:
@@ -1061,10 +1065,14 @@ flatpak_transaction_get_property (GObject    *object,
   FlatpakTransaction *self = FLATPAK_TRANSACTION (object);
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
 
-  switch (prop_id)
+  switch ((FlatpakTransactionProperty) prop_id)
     {
     case PROP_INSTALLATION:
       g_value_set_object (value, priv->installation);
+      break;
+
+    case PROP_NO_INTERACTION:
+      g_value_set_boolean (value, flatpak_transaction_get_no_interaction (self));
       break;
 
     default:
@@ -1132,6 +1140,23 @@ flatpak_transaction_class_init (FlatpakTransactionClass *klass)
                                                         "The installation instance",
                                                         FLATPAK_TYPE_INSTALLATION,
                                                         G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
+
+  /**
+   * FlatpakTransaction:no-interaction:
+   *
+   * %TRUE if the transaction is not interactive, %FALSE otherwise.
+   *
+   * See flatpak_transaction_set_no_interaction().
+   *
+   * Since: 1.13.0
+   */
+  g_object_class_install_property (object_class,
+                                   PROP_NO_INTERACTION,
+                                   g_param_spec_boolean ("no-interaction",
+                                                         "No Interaction",
+                                                         "The installation instance",
+                                                         FALSE,
+                                                         G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_EXPLICIT_NOTIFY));
 
   /**
    * FlatpakTransaction::new-operation:
@@ -1743,6 +1768,24 @@ flatpak_transaction_set_reinstall (FlatpakTransaction *self,
 }
 
 /**
+ * flatpak_transaction_get_no_interaction:
+ * @self: a #FlatpakTransaction
+ *
+ * Gets whether the transaction is interactive. See
+ * flatpak_transaction_set_no_interaction().
+ *
+ * Returns: %TRUE if the transaction is not interactive, %FALSE otherwise
+ * Since: 1.13.0
+ */
+gboolean
+flatpak_transaction_get_no_interaction (FlatpakTransaction *self)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+
+  return flatpak_dir_get_no_interaction (priv->dir);
+}
+
+/**
  * flatpak_transaction_set_no_interaction:
  * @self: a #FlatpakTransaction
  * @no_interaction: Whether to disallow interactive authorization for operations
@@ -1761,7 +1804,11 @@ flatpak_transaction_set_no_interaction (FlatpakTransaction *self,
 {
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
 
+  if (no_interaction == flatpak_transaction_get_no_interaction (self))
+    return;
+
   flatpak_dir_set_no_interaction (priv->dir, no_interaction);
+  g_object_notify (G_OBJECT (self), "no-interaction");
 }
 
 /**
@@ -3953,7 +4000,10 @@ remote_is_already_configured (FlatpakTransaction *self,
 }
 
 static gboolean
-handle_suggested_remote_name (FlatpakTransaction *self, GKeyFile *keyfile, GError **error)
+handle_suggested_remote_name (FlatpakTransaction *self,
+                              GKeyFile *keyfile,
+                              GKeyFile *runtime_repo_keyfile, /* nullable */
+                              GError **error)
 {
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
   g_autofree char *suggested_name = NULL;
@@ -3988,7 +4038,16 @@ handle_suggested_remote_name (FlatpakTransaction *self, GKeyFile *keyfile, GErro
                  name, suggested_name, url, &res);
   if (res)
     {
-      config = flatpak_parse_repofile (suggested_name, TRUE, keyfile, &gpg_key, NULL, error);
+      g_autofree char *runtime_repo_url = NULL;
+
+      /* In case the runtime repo is the same repo, use its title, comment,
+       * description, etc. since flatpakref files don't have those fields. */
+      runtime_repo_url = g_key_file_get_string (runtime_repo_keyfile, FLATPAK_REPO_GROUP, FLATPAK_REPO_URL_KEY, NULL);
+      if (runtime_repo_url != NULL && flatpak_uri_equal (runtime_repo_url, url))
+        config = flatpak_parse_repofile (suggested_name, FALSE, runtime_repo_keyfile, &gpg_key, NULL, error);
+      else
+        config = flatpak_parse_repofile (suggested_name, TRUE, keyfile, &gpg_key, NULL, error);
+
       if (config == NULL)
         return FALSE;
 
@@ -4005,28 +4064,17 @@ handle_suggested_remote_name (FlatpakTransaction *self, GKeyFile *keyfile, GErro
 }
 
 static gboolean
-handle_runtime_repo_deps (FlatpakTransaction *self,
-                          const char         *id,
-                          const char         *dep_url,
-                          GCancellable       *cancellable,
-                          GError            **error)
+load_flatpakrepo_file (FlatpakTransaction *self,
+                       const char         *dep_url,
+                       GKeyFile          **out_keyfile,
+                       GCancellable       *cancellable,
+                       GError            **error)
 {
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
   g_autoptr(GBytes) dep_data = NULL;
-  g_autofree char *runtime_url = NULL;
-  g_autofree char *new_remote = NULL;
-  g_autofree char *basename = NULL;
-  g_autoptr(SoupURI) uri = NULL;
-  g_auto(GStrv) remotes = NULL;
-  g_autoptr(GKeyFile) config = NULL;
   g_autoptr(GKeyFile) dep_keyfile = g_key_file_new ();
-  g_autoptr(GBytes) gpg_key = NULL;
-  g_autofree char *group = NULL;
   g_autoptr(GError) local_error = NULL;
   g_autoptr(SoupSession) soup_session = NULL;
-  char *t;
-  int i;
-  gboolean res;
 
   if (priv->disable_deps)
     return TRUE;
@@ -4049,6 +4097,38 @@ handle_runtime_repo_deps (FlatpakTransaction *self,
                                   g_bytes_get_size (dep_data),
                                   0, &local_error))
     return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Invalid .flatpakrepo: %s"), local_error->message);
+
+  if (out_keyfile)
+    *out_keyfile = g_steal_pointer (&dep_keyfile);
+
+  return TRUE;
+}
+
+static gboolean
+handle_runtime_repo_deps (FlatpakTransaction *self,
+                          const char         *id,
+                          const char         *dep_url,
+                          GKeyFile           *dep_keyfile,
+                          GCancellable       *cancellable,
+                          GError            **error)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+  g_autofree char *runtime_url = NULL;
+  g_autofree char *new_remote = NULL;
+  g_autofree char *basename = NULL;
+  g_autoptr(SoupURI) uri = NULL;
+  g_auto(GStrv) remotes = NULL;
+  g_autoptr(GKeyFile) config = NULL;
+  g_autoptr(GBytes) gpg_key = NULL;
+  g_autofree char *group = NULL;
+  char *t;
+  int i;
+  gboolean res;
+
+  if (priv->disable_deps)
+    return TRUE;
+
+  g_assert (dep_keyfile != NULL);
 
   uri = soup_uri_new (dep_url);
   basename = g_path_get_basename (soup_uri_get_path (uri));
@@ -4106,30 +4186,23 @@ handle_runtime_repo_deps (FlatpakTransaction *self,
 
 static gboolean
 handle_runtime_repo_deps_from_keyfile (FlatpakTransaction *self,
-                                       GKeyFile           *keyfile,
+                                       GKeyFile           *flatpakref_keyfile,
+                                       const char         *runtime_repo_url,
+                                       GKeyFile           *runtime_repo_keyfile,
                                        GCancellable       *cancellable,
                                        GError            **error)
 {
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
-  g_autofree char *dep_url = NULL;
   g_autofree char *name = NULL;
 
   if (priv->disable_deps)
     return TRUE;
 
-  dep_url = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP,
-                                   FLATPAK_REF_RUNTIME_REPO_KEY, NULL);
-  if (dep_url == NULL)
-    {
-      g_warning ("Flatpakref file does not contain a %s", FLATPAK_REF_RUNTIME_REPO_KEY);
-      return TRUE;
-    }
-
-  name = g_key_file_get_string (keyfile, FLATPAK_REF_GROUP, FLATPAK_REF_NAME_KEY, NULL);
+  name = g_key_file_get_string (flatpakref_keyfile, FLATPAK_REF_GROUP, FLATPAK_REF_NAME_KEY, NULL);
   if (name == NULL)
     return TRUE;
 
-  return handle_runtime_repo_deps (self, name, dep_url, cancellable, error);
+  return handle_runtime_repo_deps (self, name, runtime_repo_url, runtime_repo_keyfile, cancellable, error);
 }
 
 static gboolean
@@ -4144,13 +4217,30 @@ flatpak_transaction_resolve_flatpakrefs (FlatpakTransaction *self,
     {
       GKeyFile *flatpakref = l->data;
       g_autofree char *remote = NULL;
+      g_autofree char *runtime_repo_url = NULL;
       g_autoptr(FlatpakDecomposed) ref = NULL;
+      g_autoptr(GKeyFile) runtime_repo_keyfile = NULL;
 
-      /* Handle this before the runtime deps, because they might be the same */
-      if (!handle_suggested_remote_name (self, flatpakref, error))
+      if (!priv->disable_deps)
+        {
+          runtime_repo_url = g_key_file_get_string (flatpakref, FLATPAK_REF_GROUP,
+                                                    FLATPAK_REF_RUNTIME_REPO_KEY, NULL);
+          if (runtime_repo_url == NULL)
+            g_warning ("Flatpakref file does not contain a %s", FLATPAK_REF_RUNTIME_REPO_KEY);
+          else if (!load_flatpakrepo_file (self, runtime_repo_url, &runtime_repo_keyfile, cancellable, error))
+            return FALSE;
+        }
+
+      /* Handle SuggestRemoteName before the runtime deps, because they might
+       * be the same. Pass in the RuntimeRepo keyfile so its metadata can be
+       * used in that case. */
+      if (!handle_suggested_remote_name (self, flatpakref, runtime_repo_keyfile, error))
         return FALSE;
 
-      if (!handle_runtime_repo_deps_from_keyfile (self, flatpakref, cancellable, error))
+      if (runtime_repo_keyfile != NULL &&
+          !handle_runtime_repo_deps_from_keyfile (self, flatpakref,
+                                                  runtime_repo_url, runtime_repo_keyfile,
+                                                  cancellable, error))
         return FALSE;
 
       if (!flatpak_dir_create_remote_for_ref_file (priv->dir, flatpakref, priv->default_arch,
@@ -4180,6 +4270,7 @@ handle_runtime_repo_deps_from_bundle (FlatpakTransaction *self,
   g_autofree char *dep_url = NULL;
   g_autoptr(FlatpakDecomposed) ref = NULL;
   g_autoptr(GVariant) metadata = NULL;
+  g_autoptr(GKeyFile) runtime_repo_keyfile = NULL;
   g_autofree char *id = NULL;
 
   if (priv->disable_deps)
@@ -4201,7 +4292,10 @@ handle_runtime_repo_deps_from_bundle (FlatpakTransaction *self,
 
   id = flatpak_decomposed_dup_id (ref);
 
-  return handle_runtime_repo_deps (self, id, dep_url, cancellable, error);
+  if (!load_flatpakrepo_file (self, dep_url, &runtime_repo_keyfile, cancellable, error))
+    return FALSE;
+
+  return handle_runtime_repo_deps (self, id, dep_url, runtime_repo_keyfile, cancellable, error);
 }
 
 static gboolean

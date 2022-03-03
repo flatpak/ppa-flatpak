@@ -1,6 +1,7 @@
 /* -*- mode: C; c-file-style: "gnu"; indent-tabs-mode: nil; -*-
  *
  * Copyright (C) 2014,2015 Colin Walters <walters@verbum.org>.
+ * SPDX-License-Identifier: LGPL-2.0-or-later
  *
  * Portions derived from systemd:
  *  Copyright 2010 Lennart Poettering
@@ -21,7 +22,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include "config.h"
+#include "libglnx-config.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -805,7 +806,9 @@ glnx_regfile_copy_bytes (int fdf, int fdt, off_t max_bytes)
        */
       if (fstat (fdf, &stbuf) < 0)
         return -1;
-      max_bytes = stbuf.st_size;
+
+      if (stbuf.st_size > 0)
+        max_bytes = stbuf.st_size;
     }
 
   while (TRUE)
@@ -816,7 +819,7 @@ glnx_regfile_copy_bytes (int fdf, int fdt, off_t max_bytes)
        * try_copy_file_range() from systemd upstream, which works better since
        * we use POSIX errno style.
        */
-      if (try_cfr)
+      if (try_cfr && max_bytes != (off_t) -1)
         {
           n = copy_file_range (fdf, NULL, fdt, NULL, max_bytes, 0u);
           if (n < 0)
@@ -829,7 +832,7 @@ glnx_regfile_copy_bytes (int fdf, int fdt, off_t max_bytes)
                   have_cfr = 0;
                   try_cfr = false;
                 }
-              else if (G_IN_SET (errno, EXDEV, EOPNOTSUPP))
+              else if (G_IN_SET (errno, EXDEV, EINVAL, EOPNOTSUPP))
                 /* We won't try cfr again for this run, but let's be
                  * conservative and not mark it as available/unavailable until
                  * we know for sure.
@@ -855,7 +858,7 @@ glnx_regfile_copy_bytes (int fdf, int fdt, off_t max_bytes)
       /* Next try sendfile(); this version is also changed from systemd upstream
        * to match the same logic we have for copy_file_range().
        */
-      if (try_sendfile)
+      if (try_sendfile && max_bytes != (off_t) -1)
         {
           n = sendfile (fdt, fdf, NULL, max_bytes);
           if (n < 0)
@@ -1000,8 +1003,11 @@ glnx_file_copy_at (int                   src_dfd,
   if (glnx_regfile_copy_bytes (src_fd, tmp_dest.fd, (off_t) -1) < 0)
     return glnx_throw_errno_prefix (error, "regfile copy");
 
-  if (fchown (tmp_dest.fd, src_stbuf->st_uid, src_stbuf->st_gid) != 0)
-    return glnx_throw_errno_prefix (error, "fchown");
+  if (!(copyflags & GLNX_FILE_COPY_NOCHOWN))
+    {
+      if (fchown (tmp_dest.fd, src_stbuf->st_uid, src_stbuf->st_gid) != 0)
+        return glnx_throw_errno_prefix (error, "fchown");
+    }
 
   if (!(copyflags & GLNX_FILE_COPY_NOXATTRS))
     {

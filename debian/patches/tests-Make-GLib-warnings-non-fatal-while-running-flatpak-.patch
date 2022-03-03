@@ -1,0 +1,44 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Wed, 2 Mar 2022 11:44:19 +0000
+Subject: tests: Make GLib warnings non-fatal while running `flatpak search`
+
+This is a workaround for an assertion failure in libappstream.
+
+Bug: https://github.com/ximion/appstream/issues/384
+Bug-Debian: https://bugs.debian.org/1006684
+Forwarded: not-needed, workaround for a bug that should be fixed elsewhere
+---
+ tests/test-oci-registry.sh | 4 +++-
+ tests/test-repo.sh         | 4 +++-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/tests/test-oci-registry.sh b/tests/test-oci-registry.sh
+index 3beb4a3..dbbaee9 100755
+--- a/tests/test-oci-registry.sh
++++ b/tests/test-oci-registry.sh
+@@ -72,7 +72,9 @@ assert_has_file $icondir/64x64/org.test.Hello.png
+ ok "appstream"
+ 
+ # Test that 'flatpak search' works
+-${FLATPAK} search org.test.Hello > search-results
++# Disabling G_DEBUG=fatal-warnings is a workaround for a libappstream
++# bug: https://bugs.debian.org/1006684
++G_DEBUG='' ${FLATPAK} search org.test.Hello > search-results
+ assert_file_has_content search-results "Print a greeting"
+ 
+ ok "search"
+diff --git a/tests/test-repo.sh b/tests/test-repo.sh
+index 1475c89..902ea9c 100644
+--- a/tests/test-repo.sh
++++ b/tests/test-repo.sh
+@@ -106,7 +106,9 @@ assert_has_file $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml.gz
+ ok "update appstream"
+ 
+ # Test that 'flatpak search' works
+-${FLATPAK} search Hello > search-results
++# Disabling G_DEBUG=fatal-warnings is a workaround for a libappstream
++# bug: https://bugs.debian.org/1006684
++G_DEBUG='' ${FLATPAK} search Hello > search-results
+ assert_file_has_content search-results "Print a greeting"
+ 
+ ok "search"
