@@ -1,2 +1,1 @@
 tests-Make-GLib-warnings-non-fatal-while-running-flatpak-.patch
-tests-Don-t-install-tap-driver.sh-in-the-installed-tests.patch
