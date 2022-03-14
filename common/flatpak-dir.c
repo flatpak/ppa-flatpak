@@ -3919,6 +3919,48 @@ apply_new_flatpakrepo (const char *remote_name,
 }
 
 static gboolean
+system_helper_maybe_ensure_repo (FlatpakDir *self,
+                                 FlatpakHelperEnsureRepoFlags flags,
+                                 gboolean allow_empty,
+                                 GCancellable *cancellable,
+                                 GError **error)
+{
+  g_autoptr(GError) local_error = NULL;
+  const char *installation = flatpak_dir_get_id (self);
+
+  if (!flatpak_dir_system_helper_call_ensure_repo (self,
+                                                   flags,
+                                                   installation ? installation : "",
+                                                   cancellable, &local_error))
+    {
+      if (allow_empty)
+        return TRUE;
+
+      g_propagate_error (error, g_steal_pointer (&local_error));
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+static gboolean
+ensure_repo_opened (OstreeRepo *repo,
+                    GCancellable *cancellable,
+                    GError **error)
+{
+  if (!ostree_repo_open (repo, cancellable, error))
+    {
+      g_autofree char *repopath = NULL;
+
+      repopath = g_file_get_path (ostree_repo_get_path (repo));
+      g_prefix_error (error, _("While opening repository %s: "), repopath);
+      return FALSE;
+    }
+
+  return TRUE;
+}
+
+static gboolean
 _flatpak_dir_ensure_repo (FlatpakDir   *self,
                           gboolean      allow_empty,
                           GCancellable *cancellable,
@@ -3929,28 +3971,21 @@ _flatpak_dir_ensure_repo (FlatpakDir   *self,
   g_autoptr(GError) my_error = NULL;
   g_autoptr(GFile) cache_dir = NULL;
   g_autoptr(GHashTable) flatpakrepos = NULL;
+  FlatpakHelperEnsureRepoFlags ensure_flags = FLATPAK_HELPER_ENSURE_REPO_FLAGS_NONE;
 
   if (self->repo != NULL)
     return TRUE;
+
+  /* Don't trigger polkit prompts if we are just doing this opportunistically */
+  if (allow_empty)
+    ensure_flags |= FLATPAK_HELPER_ENSURE_REPO_FLAGS_NO_INTERACTION;
 
   if (!g_file_query_exists (self->basedir, cancellable))
     {
       if (flatpak_dir_use_system_helper (self, NULL))
         {
-          g_autoptr(GError) local_error = NULL;
-          const char *installation = flatpak_dir_get_id (self);
-
-          if (!flatpak_dir_system_helper_call_ensure_repo (self,
-                                                           FLATPAK_HELPER_ENSURE_REPO_FLAGS_NONE,
-                                                           installation ? installation : "",
-                                                           NULL, &local_error))
-            {
-              if (allow_empty)
-                return TRUE;
-
-              g_propagate_error (error, g_steal_pointer (&local_error));
-              return FALSE;
-            }
+          if (!system_helper_maybe_ensure_repo (self, ensure_flags, allow_empty, cancellable, error))
+            return FALSE;
         }
       else
         {
@@ -3976,34 +4011,51 @@ _flatpak_dir_ensure_repo (FlatpakDir   *self,
          that still user bare-user */
       OstreeRepoMode mode = OSTREE_REPO_MODE_BARE_USER_ONLY;
 
-      if (!ostree_repo_create (repo, mode, cancellable, &my_error))
+      if (flatpak_dir_use_system_helper (self, NULL))
         {
-          flatpak_rm_rf (repodir, cancellable, NULL);
+          if (!system_helper_maybe_ensure_repo (self, ensure_flags, allow_empty, cancellable, error))
+            return FALSE;
 
-          if (allow_empty)
-            return TRUE;
-
-          g_propagate_error (error, g_steal_pointer (&my_error));
-          return FALSE;
+          if (!ensure_repo_opened (repo, cancellable, error))
+            return FALSE;
         }
-
-      /* Create .changed file early to avoid polling non-existing file in monitor */
-      if (!flatpak_dir_mark_changed (self, &my_error))
+      else
         {
-          g_warning ("Error marking directory as changed: %s", my_error->message);
-          g_clear_error (&my_error);
+          if (!ostree_repo_create (repo, mode, cancellable, &my_error))
+            {
+              const char *repo_path = flatpak_file_get_path_cached (repodir);
+
+              flatpak_rm_rf (repodir, cancellable, NULL);
+
+              if (allow_empty)
+                return TRUE;
+
+              /* As of 2022, the error message from libostree is not the most helpful:
+               * Creating repo: mkdirat: Permission denied
+               * If the repository path is in the error message, assume this
+               * has been fixed. If not, add it. */
+              if (strstr (my_error->message, repo_path) != NULL)
+                g_propagate_error (error, g_steal_pointer (&my_error));
+              else
+                g_set_error (error, my_error->domain, my_error->code,
+                             "Unable to create repository at %s (%s)",
+                             repo_path, my_error->message);
+
+              return FALSE;
+            }
+
+          /* Create .changed file early to avoid polling non-existing file in monitor */
+          if (!flatpak_dir_mark_changed (self, &my_error))
+            {
+              g_warning ("Error marking directory as changed: %s", my_error->message);
+              g_clear_error (&my_error);
+            }
         }
     }
   else
     {
-      if (!ostree_repo_open (repo, cancellable, error))
-        {
-          g_autofree char *repopath = NULL;
-
-          repopath = g_file_get_path (repodir);
-          g_prefix_error (error, _("While opening repository %s: "), repopath);
-          return FALSE;
-        }
+      if (!ensure_repo_opened (repo, cancellable, error))
+        return FALSE;
     }
 
   /* In the system-helper case we're directly using the global repo, and we can't write any
@@ -4083,18 +4135,8 @@ _flatpak_dir_ensure_repo (FlatpakDir   *self,
     {
       if (flatpak_dir_use_system_helper (self, NULL))
         {
-          const char *installation = flatpak_dir_get_id (self);
-          if (!flatpak_dir_system_helper_call_ensure_repo (self,
-                                                           FLATPAK_HELPER_ENSURE_REPO_FLAGS_NONE,
-                                                           installation ? installation : "",
-                                                           NULL, &my_error))
-            {
-              if (allow_empty)
-                return TRUE;
-
-              g_propagate_error (error, g_steal_pointer (&my_error));
-              return FALSE;
-            }
+          if (!system_helper_maybe_ensure_repo (self, ensure_flags, allow_empty, cancellable, error))
+            return FALSE;
 
           if (!ostree_repo_reload_config (repo, cancellable, error))
             return FALSE;
@@ -7639,6 +7681,7 @@ flatpak_export_dir (GFile        *source,
     "share/dbus-1/services",               "../../..",
     "share/gnome-shell/search-providers",  "../../..",
     "share/mime/packages",                 "../../..",
+    "share/metainfo",                      "../..",
     "bin",                                 "..",
   };
   int i;
@@ -8363,7 +8406,7 @@ flatpak_dir_deploy (FlatpakDir          *self,
       if (!g_file_make_directory_with_parents (files, cancellable, error))
         return FALSE;
 
-      options.subpath = "/metadata";
+      options.subpath = "metadata";
 
       if (!ostree_repo_checkout_at (self->repo, &options,
                                     AT_FDCWD, checkoutdirpath,
@@ -8376,7 +8419,7 @@ flatpak_dir_deploy (FlatpakDir          *self,
 
       for (i = 0; subpaths[i] != NULL; i++)
         {
-          g_autofree char *subpath = g_build_filename ("/files", subpaths[i], NULL);
+          g_autofree char *subpath = g_build_filename ("files", subpaths[i], NULL);
           g_autofree char *dstpath = g_build_filename (checkoutdirpath, "/files", subpaths[i], NULL);
           g_autofree char *dstpath_parent = g_path_get_dirname (dstpath);
           g_autoptr(GFile) child = NULL;
