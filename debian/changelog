@@ -1,4 +1,4 @@
-flatpak (1.12.7-1) UNRELEASED; urgency=medium
+flatpak (1.12.7-1) unstable; urgency=medium
 
   * New upstream stable release
     - Pass through a remote X11 display if the app has --share=network
@@ -9,8 +9,10 @@ flatpak (1.12.7-1) UNRELEASED; urgency=medium
     - Automatically set up /var/lib/flatpak/repo if required
     - Work around a bug in libostree < 2021.6 when used with GLib >= 2.71
     - Fix some memory leaks in GVariant data processing
+  * d/gbp.conf: Use upstream/1.12.x branch for upstream imports
+  * d/watch: Only watch for upstream stable releases
 
- -- Simon McVittie <smcv@debian.org>  Mon, 14 Mar 2022 17:34:10 +0000
+ -- Simon McVittie <smcv@debian.org>  Mon, 14 Mar 2022 17:37:10 +0000
 
 flatpak (1.12.6-1) unstable; urgency=medium
 
