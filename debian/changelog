@@ -1,3 +1,83 @@
+flatpak (1.13.2-1flatpak1~20.04) focal; urgency=medium
+
+  * Merge 1.13.2 development release from Debian experimental
+  * Changes relative to Debian:
+    - Backport to Ubuntu 20.04 'focal'
+      - Revert libmalcontent integration, only added to Ubuntu after 20.04.
+      - Downgrade dbus from Depends to Recommends.
+        This is necessary for system-wide installations (without --user),
+        but doesn't need to be a hard dependency with libmalcontent
+        disabled.
+      - Revert use of libgdk-pixbuf-2.0-dev.
+        Ubuntu didn't get this until 21.04, and PPAs don't follow
+        alternative build-dependencies.
+      - Roll back to debhelper 12
+      - Reduce libseccomp dependency for compatibility with focal.
+        This only partially prevents use of VFS-manipulating syscalls if a
+        newer kernel is used, but is sufficient for focal's kernel,
+        and in particular still prevents clone3().
+      - Go back to depending on dbus, instead of dbus-daemon.
+        The separate packages didn't exist in Ubuntu, even as Provides,
+        before Ubuntu 21.10 'impish'.
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 14 Mar 2022 16:26:57 +0000
+
+flatpak (1.13.2-1) experimental; urgency=medium
+
+  * New upstream development release
+  * d/p/tests-Don-t-install-tap-driver.sh-in-the-installed-tests.patch:
+    Drop patch that was applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 14 Mar 2022 15:37:10 +0000
+
+flatpak (1.13.1-1flatpak1~20.04) focal; urgency=medium
+
+  * Merge 1.13.1 development release from Debian experimental
+  * Changes relative to Debian:
+    - Backport to Ubuntu 20.04 'focal'
+      - Revert libmalcontent integration, only added to Ubuntu after 20.04.
+      - Downgrade dbus from Depends to Recommends.
+        This is necessary for system-wide installations (without --user),
+        but doesn't need to be a hard dependency with libmalcontent
+        disabled.
+      - Revert use of libgdk-pixbuf-2.0-dev.
+        Ubuntu didn't get this until 21.04, and PPAs don't follow
+        alternative build-dependencies.
+      - Roll back to debhelper 12
+      - Reduce libseccomp dependency for compatibility with focal.
+        This only partially prevents use of VFS-manipulating syscalls if a
+        newer kernel is used, but is sufficient for focal's kernel,
+        and in particular still prevents clone3().
+      - Go back to depending on dbus, instead of dbus-daemon.
+        The separate packages didn't exist in Ubuntu, even as Provides,
+        before Ubuntu 21.10 'impish'.
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 03 Mar 2022 11:07:52 +0000
+
+flatpak (1.13.1-1) experimental; urgency=medium
+
+  * New upstream development release
+  * Build-depend on libappstream-dev instead of libappstream-glib-dev
+  * Increase dependency on bubblewrap
+  * Install fish profile snippet
+  * Add patch to work around #1006684 in libappstream
+  * Update symbols file
+  * Add patch to avoid unnecessarily installing tap-driver.sh.
+    As well as being unnecessary, this file triggers some Lintian
+    false-positives.
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 02 Mar 2022 13:27:15 +0000
+
 flatpak (1.12.6-1flatpak1~18.04) bionic; urgency=medium
 
   * Backport from Ubuntu 20.04 'focal' to 18.04 'bionic'

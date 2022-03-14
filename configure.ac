@@ -11,11 +11,11 @@ AC_PREREQ([2.63])
 # in easier to understand terms:
 #
 # on the stable branch, interface age == micro
-# on the unstable (ie master), interface age = 0
+# on the unstable (ie main), interface age = 0
 
 m4_define([flatpak_major_version], [1])
-m4_define([flatpak_minor_version], [12])
-m4_define([flatpak_micro_version], [6])
+m4_define([flatpak_minor_version], [13])
+m4_define([flatpak_micro_version], [2])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -30,7 +30,7 @@ AC_INIT([Flatpak],
         [http://flatpak.org/])
 
 GLIB_REQS=2.44
-SYSTEM_BWRAP_REQS=0.4.0
+SYSTEM_BWRAP_REQS=0.5.0
 SYSTEM_DBUS_PROXY_REQS=0.1.0
 OSTREE_REQS=2020.8
 
@@ -331,7 +331,10 @@ PKG_CHECK_MODULES(OSTREE, [ostree-1 >= $OSTREE_REQS])
 
 PKG_CHECK_MODULES(JSON, [json-glib-1.0])
 
-PKG_CHECK_MODULES(APPSTREAM_GLIB, [appstream-glib >= 0.5.10])
+PKG_CHECK_MODULES(APPSTREAM, [appstream >= 0.12.0])
+PKG_CHECK_MODULES(APPSTREAM_0_14_0, appstream >= 0.14.0,
+                  [AC_DEFINE([HAVE_APPSTREAM_0_14_0], [1], [Define if appstream >= 0.14.0 is available])],
+                  [true])
 
 PKG_CHECK_MODULES(GDK_PIXBUF, [gdk-pixbuf-2.0])
 

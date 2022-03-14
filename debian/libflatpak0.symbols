@@ -189,6 +189,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_transaction_get_include_unused_uninstall_ops@Base 1.9.1
  flatpak_transaction_get_installation@Base 0.99.3
  flatpak_transaction_get_no_deploy@Base 1.5.2
+ flatpak_transaction_get_no_interaction@Base 1.13.1
  flatpak_transaction_get_no_pull@Base 1.5.2
  flatpak_transaction_get_operations@Base 0.99.1
  flatpak_transaction_get_parent_window@Base 1.5.2

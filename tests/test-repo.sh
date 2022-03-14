@@ -24,7 +24,7 @@ set -euo pipefail
 skip_without_bwrap
 skip_revokefs_without_fuse
 
-echo "1..41"
+echo "1..43"
 
 #Regular repo
 setup_repo
@@ -105,6 +105,12 @@ assert_has_file $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml.gz
 
 ok "update appstream"
 
+# Test that 'flatpak search' works
+${FLATPAK} search Hello > search-results
+assert_file_has_content search-results "Print a greeting"
+
+ok "search"
+
 if [ x${USE_COLLECTIONS_IN_CLIENT-} != xyes ] ; then
     install_repo test-no-gpg
     ok "install without gpg key"
@@ -137,8 +143,8 @@ ${FLATPAK} ${U} uninstall -y org.test.Hello
 ${FLATPAK} ${U} install -y test-repo org.test.Hllo >install-log
 assert_file_has_content install-log "org\.test\.Hello"
 
-${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "org\.test\.Hello"
+${FLATPAK} ${U} list --columns=ref > list-log
+assert_file_has_content list-log "org\.test\.Hello/"
 
 ok "typo correction works for install"
 
@@ -157,8 +163,8 @@ fi
 ${FLATPAK} ${U} install -y org.test.Hello |& tee install-log
 assert_file_has_content install-log "org\.test\.Hello"
 
-${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "org\.test\.Hello"
+${FLATPAK} ${U} list --columns=ref > list-log
+assert_file_has_content list-log "org\.test\.Hello/"
 
 ${FLATPAK} ${U} remote-modify --enable test-missing-gpg-repo
 ${FLATPAK} ${U} remote-modify --enable test-wrong-gpg-repo
@@ -185,7 +191,7 @@ cat << EOF > repos/flatpakref/flatpakref-repo.flatpakrepo
 [Flatpak Repo]
 Version=1
 Url=http://127.0.0.1:$(cat httpd-port)/flatpakref/
-Title=The Title
+Title=The Remote Title
 GPGKey=${FL_GPG_BASE64}
 EOF
 
@@ -198,6 +204,7 @@ cat << EOF > org.test.Hello.flatpakref
 Name=org.test.Hello
 Branch=master
 Url=http://127.0.0.1:$(cat httpd-port)/flatpakref
+SuggestRemoteName=allthegoodstuff
 GPGKey=${FL_GPG_BASE64}
 RuntimeRepo=http://127.0.0.1:$(cat httpd-port)/flatpakref/flatpakref-repo.flatpakrepo
 EOF
@@ -215,6 +222,10 @@ if [ $NUM_REMOTES_AFTER -ne $((NUM_REMOTES_BEFORE + 1)) ]; then
 fi
 
 ok "install flatpakref normalizes remote URL trailing slash"
+
+assert_remote_has_config allthegoodstuff xa.title "The Remote Title"
+
+ok "install flatpakref uses RuntimeRepo metadata for remote"
 
 ${FLATPAK} ${U} uninstall -y org.test.Platform org.test.Hello
 
@@ -356,10 +367,10 @@ ${FLATPAK} repo --branches repos/test > branches-log
 assert_file_has_content branches-log "^app/org\.test\.Hello/.*eol=Reason2"
 
 # eol only visible in remote-ls if -a:
-${FLATPAK} ${U} remote-ls -d test-repo > remote-ls-log
-assert_not_file_has_content remote-ls-log "app/org\.test\.Hello"
+${FLATPAK} ${U} remote-ls --columns=ref test-repo > remote-ls-log
+assert_not_file_has_content remote-ls-log "app/org\.test\.Hello/"
 
-${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
+${FLATPAK} ${U} remote-ls --columns=ref,options -a test-repo > remote-ls-log
 assert_file_has_content remote-ls-log "app/org\.test\.Hello/.*eol=Reason2"
 
 ${FLATPAK} ${U} update -y org.test.Hello > update-log
@@ -369,7 +380,7 @@ assert_file_has_content update-log "Reason2"
 ${FLATPAK} ${U} info org.test.Hello > info-log
 assert_file_has_content info-log "End-of-life: Reason2"
 
-${FLATPAK} ${U} list -d > list-log
+${FLATPAK} ${U} list --columns=ref,options > list-log
 assert_file_has_content list-log "org\.test\.Hello/.*eol=Reason2"
 
 ${FLATPAK} ${U} uninstall -y org.test.Hello
@@ -432,16 +443,16 @@ ${FLATPAK} ${U} pin --remove runtime/org.test.Platform/$ARCH/master 2>/dev/null 
 EXPORT_ARGS="--end-of-life=Reason3" make_updated_runtime
 
 ${FLATPAK} ${U} install -y test-repo org.test.Hello
-${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "org\.test\.Hello"
-assert_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list --columns=ref > list-log
+assert_file_has_content list-log "org\.test\.Hello/"
+assert_file_has_content list-log "org\.test\.Platform/"
 
 ${FLATPAK} ${U} uninstall -y org.test.Hello
 
-${FLATPAK} ${U} list -d -a > list-log
-assert_not_file_has_content list-log "org\.test\.Hello"
-assert_not_file_has_content list-log "org\.test\.Platform"
-assert_not_file_has_content list-log "org\.test\.Platform.Locale"
+${FLATPAK} ${U} list --columns=ref -a > list-log
+assert_not_file_has_content list-log "org\.test\.Hello/"
+assert_not_file_has_content list-log "org\.test\.Platform/"
+assert_not_file_has_content list-log "org\.test\.Platform.Locale/"
 
 ok "eol runtime uninstalled with app"
 
@@ -533,8 +544,8 @@ assert_has_file $FL_DIR/repo/refs/remotes/test-repo/app/org.test.Hello/$ARCH/mas
 ok "mirror ref deletion on update"
 
 ${FLATPAK} ${U} list --arch=$ARCH --columns=ref > list-log
-assert_file_has_content list-log "org\.test\.Hello"
-assert_file_has_content list-log "org\.test\.Platform"
+assert_file_has_content list-log "org\.test\.Hello/"
+assert_file_has_content list-log "org\.test\.Platform/"
 
 ok "flatpak list --arch --columns works"
 
@@ -545,17 +556,17 @@ fi
 # Test that unspecified --user/--system finds the right one, so no ${U}
 ${FLATPAK} uninstall -y org.test.Platform org.test.Hello
 
-${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "org\.test\.Hello"
-assert_not_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list --columns=ref > list-log
+assert_not_file_has_content list-log "org\.test\.Hello/"
+assert_not_file_has_content list-log "org\.test\.Platform/"
 
 ok "uninstall vs installations"
 
 ${FLATPAK} ${U} install -y test-repo org.test.Hello
 
-${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "org\.test\.Hello"
-assert_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list --columns=ref > list-log
+assert_file_has_content list-log "org\.test\.Hello/"
+assert_file_has_content list-log "org\.test\.Platform/"
 
 if ${FLATPAK} ${U} uninstall -y org.test.Platform; then
     assert_not_reached "Should not be able to uninstall ${U} when there is a dependency installed"
@@ -564,9 +575,9 @@ fi
 ${FLATPAK} ${U} uninstall -y org.test.Hello
 ${FLATPAK} ${U} uninstall -y org.test.Platform
 
-${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "org\.test\.Hello"
-assert_not_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list --columns=ref > list-log
+assert_not_file_has_content list-log "org\.test\.Hello/"
+assert_not_file_has_content list-log "org\.test\.Platform/"
 
 ok "uninstall dependencies"
 
@@ -587,9 +598,9 @@ ok "install and uninstall support 'NAME BRANCH' syntax"
 
 ${FLATPAK} ${U} install -y --no-deploy test-repo org.test.Hello
 
-${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "org\.test\.Hello"
-assert_not_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list --columns=ref > list-log
+assert_not_file_has_content list-log "org\.test\.Hello/"
+assert_not_file_has_content list-log "org\.test\.Platform/"
 
 # Disable the remote to make sure we don't do i/o
 port=$(cat httpd-port)
@@ -600,9 +611,9 @@ ${FLATPAK} ${U} install -y --no-pull test-repo org.test.Hello
 # re-enable remote
 ${FLATPAK} ${U} remote-modify --url="http://127.0.0.1:${port}/test" test-repo
 
-${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "org\.test\.Hello"
-assert_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list --columns=ref > list-log
+assert_file_has_content list-log "org\.test\.Hello/"
+assert_file_has_content list-log "org\.test\.Platform/"
 
 ok "install with --no-deploy and then --no-pull"
 
@@ -610,9 +621,9 @@ ${FLATPAK} ${U} uninstall -y org.test.Hello org.test.Platform
 
 ${FLATPAK} ${U} install -y --no-deploy --app test-repo hello
 
-${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "org\.test\.Hello"
-assert_not_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list --columns=ref > list-log
+assert_not_file_has_content list-log "org\.test\.Hello/"
+assert_not_file_has_content list-log "org\.test\.Platform/"
 
 # Disable the remote to make sure we don't do i/o
 port=$(cat httpd-port)
@@ -624,32 +635,32 @@ ${FLATPAK} ${U} install -y --no-pull --app test-repo hello
 # re-enable remote
 ${FLATPAK} ${U} remote-modify --url="http://127.0.0.1:${port}/test" test-repo
 
-${FLATPAK} ${U} list -d > list-log
-assert_file_has_content list-log "org\.test\.Hello"
-assert_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list --columns=ref > list-log
+assert_file_has_content list-log "org\.test\.Hello/"
+assert_file_has_content list-log "org\.test\.Platform/"
 
 ok "install with --no-deploy and then --no-pull works with typo correction"
 
 ${FLATPAK} uninstall -y --all
 
-${FLATPAK} ${U} list -d > list-log
-assert_not_file_has_content list-log "org\.test\.Hello"
-assert_not_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list --columns=ref > list-log
+assert_not_file_has_content list-log "org\.test\.Hello/"
+assert_not_file_has_content list-log "org\.test\.Platform/"
 
 ok "uninstall --all"
 
 ${FLATPAK} ${U} install -y test-repo org.test.Hello
 
-${FLATPAK} ${U} list -a --columns=application > list-log
-assert_file_has_content list-log "org\.test\.Hello"
-assert_file_has_content list-log "org\.test\.Hello\.Locale"
+${FLATPAK} ${U} list -a --columns=ref > list-log
+assert_file_has_content list-log "org\.test\.Hello/"
+assert_file_has_content list-log "org\.test\.Hello\.Locale/"
 
 ${FLATPAK} ${U} remote-delete --force test-repo
 ${FLATPAK} ${U} uninstall -y org.test.Hello
 
-${FLATPAK} ${U} list -a --columns=application > list-log
-assert_not_file_has_content list-log "org\.test\.Hello"
-assert_not_file_has_content list-log "org\.test\.Hello\.Locale"
+${FLATPAK} ${U} list -a --columns=ref > list-log
+assert_not_file_has_content list-log "org\.test\.Hello/"
+assert_not_file_has_content list-log "org\.test\.Hello\.Locale/"
 
 setup_repo
 
@@ -658,20 +669,20 @@ ok "uninstall with missing remote"
 # Remove any pin of the runtime from an earlier test
 ${FLATPAK} ${U} pin --remove runtime/org.test.Platform/$ARCH/master 2>/dev/null || true
 
-${FLATPAK} ${U} list -a --columns=application > list-log
-assert_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list -a --columns=ref > list-log
+assert_file_has_content list-log "org\.test\.Platform/"
 
 ${FLATPAK} ${U} uninstall -y --unused
 
-${FLATPAK} ${U} list -a --columns=application > list-log
-assert_not_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list -a --columns=ref > list-log
+assert_not_file_has_content list-log "org\.test\.Platform/"
 
 ok "uninstall --unused"
 
 ${FLATPAK} ${U} install -y test-repo org.test.Platform
 
-${FLATPAK} ${U} list -a --columns=application > list-log
-assert_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list -a --columns=ref > list-log
+assert_file_has_content list-log "org\.test\.Platform/"
 
 # Check that the runtime won't be removed if it's pinned
 # (which happens during the install above)
@@ -685,14 +696,14 @@ rm pins
 
 ${FLATPAK} ${U} uninstall -y --unused
 
-${FLATPAK} ${U} list -a --columns=application > list-log
-assert_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list -a --columns=ref > list-log
+assert_file_has_content list-log "org\.test\.Platform/"
 
 # Remove the pin and try again
 ${FLATPAK} ${U} pin --remove "runtime/org.test.Platform/$ARCH/master"
 ${FLATPAK} ${U} uninstall -y --unused
-${FLATPAK} ${U} list -a --columns=application > list-log
-assert_not_file_has_content list-log "org\.test\.Platform"
+${FLATPAK} ${U} list -a --columns=ref > list-log
+assert_not_file_has_content list-log "org\.test\.Platform/"
 
 ok "uninstall --unused ignores pinned runtimes"
 
@@ -705,22 +716,22 @@ ok "uninstall --unused ignores pinned runtimes"
 # * system remote, and --user is used
 # * user remote, and --system is used
 if [ x${USE_SYSTEMDIR-} == xyes ]; then
-    ${FLATPAK} --system remote-ls test-repo > repo-list
-    assert_file_has_content repo-list "org\.test\.Hello"
+    ${FLATPAK} --system remote-ls --columns=ref test-repo > repo-list
+    assert_file_has_content repo-list "org\.test\.Hello/"
 
-    ${FLATPAK} remote-ls test-repo > repo-list
-    assert_file_has_content repo-list "org\.test\.Hello"
+    ${FLATPAK} remote-ls --columns=ref test-repo > repo-list
+    assert_file_has_content repo-list "org\.test\.Hello/"
 
     if ${FLATPAK} --user remote-ls test-repo 2> remote-ls-error-log; then
         assert_not_reached "flatpak --user remote-ls should not work for system remotes"
     fi
     assert_file_has_content remote-ls-error-log "Remote \"test-repo\" not found"
 else
-    ${FLATPAK} --user remote-ls test-repo > repo-list
-    assert_file_has_content repo-list "org\.test\.Hello"
+    ${FLATPAK} --user remote-ls --columns=ref test-repo > repo-list
+    assert_file_has_content repo-list "org\.test\.Hello/"
 
-    ${FLATPAK} remote-ls test-repo > repo-list
-    assert_file_has_content repo-list "org\.test\.Hello"
+    ${FLATPAK} remote-ls --columns=ref test-repo > repo-list
+    assert_file_has_content repo-list "org\.test\.Hello/"
 
     if ${FLATPAK} --system remote-ls test-repo 2> remote-ls-error-log; then
         assert_not_reached "flatpak --system remote-ls should not work for user remotes"
@@ -732,8 +743,8 @@ ok "remote-ls"
 
 # Test that remote-ls can take a file:// URI
 ${FLATPAK} build-update-repo  ${BUILD_UPDATE_REPO_FLAGS-} --no-update-appstream repos/test
-${FLATPAK} remote-ls file://`pwd`/repos/test > repo-list
-assert_file_has_content repo-list "org\.test\.Hello"
+${FLATPAK} remote-ls --columns=ref file://`pwd`/repos/test > repo-list
+assert_file_has_content repo-list "org\.test\.Hello/"
 
 ok "remote-ls URI"
 
@@ -831,10 +842,10 @@ ok "remote-delete"
 # * user remote, and --system is used
 if [ x${USE_SYSTEMDIR-} == xyes ]; then
     ${FLATPAK} --system remote-info test-repo org.test.Hello > remote-ref-info
-    assert_file_has_content remote-ref-info "ID: org\.test\.Hello"
+    assert_file_has_content remote-ref-info "ID: org\.test\.Hello$"
 
     ${FLATPAK} remote-info test-repo org.test.Hello > remote-ref-info
-    assert_file_has_content remote-ref-info "ID: org\.test\.Hello"
+    assert_file_has_content remote-ref-info "ID: org\.test\.Hello$"
 
     if ${FLATPAK} --user remote-info test-repo org.test.Hello 2> remote-info-error-log; then
         assert_not_reached "flatpak --user remote-info should not work for system remotes"
@@ -842,10 +853,10 @@ if [ x${USE_SYSTEMDIR-} == xyes ]; then
     assert_file_has_content remote-info-error-log "Remote \"test-repo\" not found"
 else
     ${FLATPAK} --user remote-info test-repo org.test.Hello > remote-ref-info
-    assert_file_has_content remote-ref-info "ID: org\.test\.Hello"
+    assert_file_has_content remote-ref-info "ID: org\.test\.Hello$"
 
     ${FLATPAK} remote-info test-repo org.test.Hello > remote-ref-info
-    assert_file_has_content remote-ref-info "ID: org\.test\.Hello"
+    assert_file_has_content remote-ref-info "ID: org\.test\.Hello$"
 
     if ${FLATPAK} --system remote-info test-repo org.test.Hello 2> remote-info-error-log; then
         assert_not_reached "flatpak --system remote-info should not work for user remotes"
@@ -855,26 +866,26 @@ fi
 
 ok "remote-info"
 
-${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
-assert_file_has_content remote-ls-log "app/org\.test\.Hello"
-assert_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
-assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
+${FLATPAK} ${U} remote-ls --columns=ref -a test-repo > remote-ls-log
+assert_file_has_content remote-ls-log "app/org\.test\.Hello/"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale/"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Platform/"
 
 ${FLATPAK}  ${U} remote-info test-repo org.test.Hello > remote-ref-info
-assert_file_has_content remote-ref-info "ID: org\.test\.Hello"
+assert_file_has_content remote-ref-info "ID: org\.test\.Hello$"
 
 ${FLATPAK} ${U} update --appstream test-repo
-assert_file_has_content $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml "app/org\.test\.Hello"
+assert_file_has_content $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml "app/org\.test\.Hello/"
 
 # Make a copy so we can remove it later
 cp ${test_srcdir}/test.filter test.filter
 ${FLATPAK} ${U} remote-modify test-repo --filter $(pwd)/test.filter
 
-${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
+${FLATPAK} ${U} remote-ls --columns=ref -a test-repo > remote-ls-log
 
-assert_not_file_has_content remote-ls-log "app/org\.test\.Hello"
-assert_not_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
-assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
+assert_not_file_has_content remote-ls-log "app/org\.test\.Hello/"
+assert_not_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale/"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Platform/"
 
 if ${FLATPAK}  ${U} remote-info test-repo org.test.Hello > remote-ref-info 2> /dev/null; then
     assert_not_reached "flatpak remote-info test-repo org.test.Hello should fail due to filter"
@@ -885,14 +896,14 @@ if ${FLATPAK} ${U} install -y test-repo org.test.Hello 2> /dev/null; then
 fi
 
 ${FLATPAK} ${U} update --appstream test-repo
-assert_not_file_has_content $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml "app/org\.test\.Hello"
+assert_not_file_has_content $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml "app/org\.test\.Hello/"
 
 # Ensure that filter works even when the filter file is removed (uses the backup)
 rm -f test.filter
-${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
-assert_not_file_has_content remote-ls-log "app/org\.test\.Hello"
-assert_not_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
-assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
+${FLATPAK} ${U} remote-ls --columns=ref -a test-repo > remote-ls-log
+assert_not_file_has_content remote-ls-log "app/org\.test\.Hello/"
+assert_not_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale/"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Platform/"
 if ${FLATPAK}  ${U} remote-info test-repo org.test.Hello > remote-ref-info; then
     assert_not_reached "flatpak remote-info test-repo org.test.Hello should fail due to filter"
 fi
@@ -901,16 +912,16 @@ if ${FLATPAK} ${U} install -y test-repo org.test.Hello; then
 fi
 
 ${FLATPAK} ${U} update --appstream test-repo
-assert_not_file_has_content $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml "app/org\.test\.Hello"
+assert_not_file_has_content $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml "app/org\.test\.Hello/"
 
 # Remove filter
 
 ${FLATPAK} ${U} remote-modify test-repo --no-filter
 
-${FLATPAK} ${U} remote-ls -d -a test-repo > remote-ls-log
-assert_file_has_content remote-ls-log "app/org\.test\.Hello"
-assert_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale"
-assert_file_has_content remote-ls-log "runtime/org\.test\.Platform"
+${FLATPAK} ${U} remote-ls --columns=ref -a test-repo > remote-ls-log
+assert_file_has_content remote-ls-log "app/org\.test\.Hello/"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Hello\.Locale/"
+assert_file_has_content remote-ls-log "runtime/org\.test\.Platform/"
 
 ok "filter"
 
