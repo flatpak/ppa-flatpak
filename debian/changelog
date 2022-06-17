@@ -1,8 +1,11 @@
-flatpak (1.13.3-1) UNRELEASED; urgency=medium
+flatpak (1.13.3-1) experimental; urgency=medium
 
   * New upstream development release
+  * Drop workaround for #1006684
+  * Continue to use libsoup http backend for now
+  * d/libflatpak0.symbols: Update
 
- -- Simon McVittie <smcv@debian.org>  Fri, 17 Jun 2022 16:56:36 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 17 Jun 2022 17:32:52 +0100
 
 flatpak (1.13.2-1) experimental; urgency=medium
 
