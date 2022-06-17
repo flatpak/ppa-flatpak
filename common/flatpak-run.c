@@ -55,10 +55,9 @@
 #include <glib/gi18n-lib.h>
 
 #include <gio/gio.h>
-#include "libglnx/libglnx.h"
+#include "libglnx.h"
 
 #include "flatpak-run-private.h"
-#include "flatpak-proxy.h"
 #include "flatpak-utils-base-private.h"
 #include "flatpak-dir-private.h"
 #include "flatpak-instance-private.h"
@@ -3653,7 +3652,7 @@ add_rest_args (FlatpakBwrap   *bwrap,
                int             n_args,
                GError        **error)
 {
-  g_autoptr(XdpDbusDocuments) documents = NULL;
+  g_autoptr(AutoXdpDbusDocuments) documents = NULL;
   gboolean forwarding = FALSE;
   gboolean forwarding_uri = FALSE;
   gboolean can_forward = TRUE;

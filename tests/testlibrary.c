@@ -7,10 +7,11 @@
 #include <glib.h>
 #include <ostree.h>
 
-#include "libglnx/libglnx.h"
+#include "libglnx.h"
 #include "flatpak.h"
 
 #include "can-use-fuse.h"
+#include "testlib.h"
 
 static char *testdir;
 static char *flatpak_runtimedir;
@@ -1742,13 +1743,19 @@ test_install_launch_uninstall (void)
   g_ptr_array_unref (refs);
 
   /* first test an error */
-  res = flatpak_installation_launch (inst, "org.test.Hellooo", NULL, NULL, NULL, NULL, &error);
+  {
+    TESTS_SCOPED_STDOUT_TO_STDERR;
+    res = flatpak_installation_launch (inst, "org.test.Hellooo", NULL, NULL, NULL, NULL, &error);
+  }
   g_assert_error (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED);
   g_assert_false (res);
   g_clear_error (&error);
 
   /* now launch the right thing */
-  res = flatpak_installation_launch (inst, "org.test.Hello", NULL, NULL, NULL, NULL, &error);
+  {
+    TESTS_SCOPED_STDOUT_TO_STDERR;
+    res = flatpak_installation_launch (inst, "org.test.Hello", NULL, NULL, NULL, NULL, &error);
+  }
   g_assert_no_error (error);
   g_assert_true (res);
 
@@ -3561,6 +3568,27 @@ add_new_remote3 (FlatpakTransaction             *transaction,
   return TRUE;
 }
 
+static gboolean
+ready_check_get_op (FlatpakTransaction *transaction)
+{
+  g_autoptr(GError) error = NULL;
+  g_autofree char *app = NULL;
+  g_autoptr(FlatpakTransactionOperation) op = NULL;
+
+  app = g_strdup_printf ("app/org.test.Hello/%s/master",
+                         flatpak_get_default_arch ());
+
+  op = flatpak_transaction_get_operation_for_ref (transaction, NULL, app, &error);
+  g_assert_no_error (error);
+  g_assert_nonnull (op);
+
+  g_assert_cmpint (flatpak_transaction_operation_get_operation_type (op), ==, FLATPAK_TRANSACTION_OPERATION_INSTALL);
+  g_assert_cmpstr (flatpak_transaction_operation_get_ref (op), ==, app);
+  g_assert_cmpstr (flatpak_transaction_operation_get_remote (op), ==, "test-without-runtime-repo");
+
+  return TRUE;
+}
+
 /* Test that installing a flatpakref causes both the origin remote and the
  * runtime remote to be created, even if they already exist in another
  * installation */
@@ -3615,6 +3643,7 @@ test_transaction_flatpakref_remote_creation (void)
   g_assert_true (res);
 
   g_signal_connect (transaction, "add-new-remote", G_CALLBACK (add_new_remote3), NULL);
+  g_signal_connect (transaction, "ready", G_CALLBACK (ready_check_get_op), NULL);
 
   res = flatpak_transaction_run (transaction, NULL, &error);
   g_assert_no_error (error);
@@ -4242,8 +4271,11 @@ test_instance (void)
 
   g_clear_object (&transaction);
 
-  res = flatpak_installation_launch_full (inst, FLATPAK_LAUNCH_FLAGS_DO_NOT_REAP,
-                                          "org.test.Hello", NULL, NULL, NULL, &instance, NULL, &error);
+  {
+    TESTS_SCOPED_STDOUT_TO_STDERR;
+    res = flatpak_installation_launch_full (inst, FLATPAK_LAUNCH_FLAGS_DO_NOT_REAP,
+                                            "org.test.Hello", NULL, NULL, NULL, &instance, NULL, &error);
+  }
   g_assert_no_error (error);
   g_assert_true (res);
   g_assert_nonnull (instance);
@@ -4435,7 +4467,10 @@ test_overrides (void)
   g_assert_no_error (error);
   g_assert_nonnull (ref);
 
-  res = flatpak_installation_launch (inst, "org.test.Hello", NULL, "master", NULL, NULL, &error);
+  {
+    TESTS_SCOPED_STDOUT_TO_STDERR;
+    res = flatpak_installation_launch (inst, "org.test.Hello", NULL, "master", NULL, NULL, &error);
+  }
   g_assert_no_error (error);
   g_assert_true (res);
 

@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [1])
 m4_define([flatpak_minor_version], [13])
-m4_define([flatpak_micro_version], [2])
+m4_define([flatpak_micro_version], [3])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -29,7 +29,7 @@ AC_INIT([Flatpak],
         [flatpak],
         [http://flatpak.org/])
 
-GLIB_REQS=2.44
+GLIB_REQS=2.46
 SYSTEM_BWRAP_REQS=0.5.0
 SYSTEM_DBUS_PROXY_REQS=0.1.0
 OSTREE_REQS=2020.8
@@ -222,7 +222,6 @@ POLKIT_GOBJECT_REQUIRED=0.98
 
 PKG_CHECK_MODULES(ARCHIVE, [libarchive >= 2.8.0])
 PKG_CHECK_MODULES(BASE, [glib-2.0 >= $GLIB_REQS gio-2.0 gio-unix-2.0])
-PKG_CHECK_MODULES(SOUP, [libsoup-2.4])
 PKG_CHECK_MODULES(XML, [libxml-2.0 >= 2.4])
 PKG_CHECK_MODULES(ZSTD, [libzstd >= 0.8.1], [have_zstd=yes], [have_zstd=no])
 if test $have_zstd = yes; then
@@ -258,6 +257,23 @@ save_LIBS=$LIBS
 LIBS=$ARCHIVE_LIBS
 AC_CHECK_FUNCS(archive_read_support_filter_all)
 LIBS=$save_LIBS
+
+CURL_DEPENDENCY=7.29.0
+AC_ARG_WITH(curl,
+	    AS_HELP_STRING([--with-curl], [Use libcurl @<:@default=yes@:>@]),
+	    [], [with_curl=yes])
+AS_IF([test x$with_curl != xno ], [
+    PKG_CHECK_MODULES(CURL, libcurl >= $CURL_DEPENDENCY)
+    with_curl=yes
+    http_backend=curl
+    AC_DEFINE([HAVE_CURL], 1, [Define if we have libcurl.pc])
+], [
+   PKG_CHECK_MODULES(SOUP, [libsoup-2.4])
+    AC_DEFINE([HAVE_SOUP], 1, [Define if we have libsoup-2.4.pc])
+    http_backend=soup
+])
+AM_CONDITIONAL(USE_CURL, test x$with_curl != xno)
+AM_CONDITIONAL(USE_SOUP, test x$with_curl == xno)
 
 LIBGPGME_DEPENDENCY="1.1.8"
 PKG_CHECK_MODULES(DEP_GPGME, gpgme-pthread >= $LIBGPGME_DEPENDENCY, have_gpgme=yes, [
@@ -612,4 +628,5 @@ echo "          Use libsystemd:         $have_libsystemd"
 echo "          Use libmalcontent:      $have_libmalcontent"
 echo "          Use libzstd:            $have_zstd"
 echo "          Use auto sideloading:   $enable_auto_sideloading"
+echo "          HTTP backend:           $http_backend"
 echo ""
