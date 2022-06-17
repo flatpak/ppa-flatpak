@@ -13,7 +13,7 @@ Forwarded: not-needed, workaround for a bug that should be fixed elsewhere
  2 files changed, 6 insertions(+), 2 deletions(-)
 
 diff --git a/tests/test-oci-registry.sh b/tests/test-oci-registry.sh
-index 3beb4a3..dbbaee9 100755
+index 8eb154f..ee66295 100755
 --- a/tests/test-oci-registry.sh
 +++ b/tests/test-oci-registry.sh
 @@ -72,7 +72,9 @@ assert_has_file $icondir/64x64/org.test.Hello.png
@@ -28,7 +28,7 @@ index 3beb4a3..dbbaee9 100755
  
  ok "search"
 diff --git a/tests/test-repo.sh b/tests/test-repo.sh
-index 1475c89..902ea9c 100644
+index 404e160..12e7a20 100644
 --- a/tests/test-repo.sh
 +++ b/tests/test-repo.sh
 @@ -106,7 +106,9 @@ assert_has_file $FL_DIR/appstream/test-repo/$ARCH/active/appstream.xml.gz
