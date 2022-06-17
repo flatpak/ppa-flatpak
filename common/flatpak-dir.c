@@ -55,7 +55,7 @@
 #include "flatpak-utils-base-private.h"
 #include "flatpak-variant-private.h"
 #include "flatpak-variant-impl-private.h"
-#include "libglnx/libglnx.h"
+#include "libglnx.h"
 #include "system-helper/flatpak-system-helper.h"
 
 #ifdef HAVE_LIBMALCONTENT
@@ -165,7 +165,7 @@ static gboolean flatpak_dir_lookup_remote_filter (FlatpakDir *self,
                                                   GRegex    **deny_regex,
                                                   GError **error);
 
-static void ensure_soup_session (FlatpakDir *self);
+static void ensure_http_session (FlatpakDir *self);
 
 static void flatpak_dir_log (FlatpakDir *self,
                              const char *file,
@@ -241,7 +241,7 @@ struct FlatpakDir
   GRegex          *masked;
   GRegex          *pinned;
 
-  SoupSession     *soup_session;
+  FlatpakHttpSession *http_session;
 };
 
 G_LOCK_DEFINE_STATIC (config_cache);
@@ -400,7 +400,7 @@ _validate_summary_for_collection_id (GVariant    *summary_v,
   return TRUE;
 }
 
-void
+static void
 flatpak_remote_state_add_sideload_repo (FlatpakRemoteState *self,
                                         GFile *dir)
 {
@@ -440,6 +440,92 @@ flatpak_remote_state_add_sideload_repo (FlatpakRemoteState *self,
           g_debug ("Using sideloaded repo %s for remote %s", flatpak_file_get_path_cached (dir), self->remote_name);
         }
     }
+}
+
+static void add_sideload_subdirs (GPtrArray *res,
+                                  GFile     *parent,
+                                  gboolean   recurse);
+
+static void
+add_sideload_create_usb_subdirs (GPtrArray *res,
+                                 GFile     *parent)
+{
+  g_autoptr(GFile) ostree_repo_subpath = NULL;
+  g_autoptr(GFile) dot_ostree_repo_subpath = NULL;
+  g_autoptr(GFile) dot_ostree_repo_d_subpath = NULL;
+  g_autoptr(OstreeRepo) ostree_repo_subpath_repo = NULL;
+  g_autoptr(OstreeRepo) dot_ostree_repo_subpath_repo = NULL;
+
+  /* This path is not used by "flatpak create-usb" but it's a standard location
+   * recognized by libostree; see the man page ostree create-usb(1)
+   */
+  ostree_repo_subpath = g_file_resolve_relative_path (parent, "ostree/repo");
+  ostree_repo_subpath_repo = ostree_repo_new (ostree_repo_subpath);
+  if (ostree_repo_open (ostree_repo_subpath_repo, NULL, NULL))
+    g_ptr_array_add (res, g_object_ref (ostree_repo_subpath));
+
+  /* These paths are used by "flatpak create-usb" */
+  dot_ostree_repo_subpath = g_file_resolve_relative_path (parent, ".ostree/repo");
+  dot_ostree_repo_subpath_repo = ostree_repo_new (dot_ostree_repo_subpath);
+  if (ostree_repo_open (dot_ostree_repo_subpath_repo, NULL, NULL))
+    g_ptr_array_add (res, g_object_ref (dot_ostree_repo_subpath));
+
+  dot_ostree_repo_d_subpath = g_file_resolve_relative_path (parent, ".ostree/repos.d");
+  add_sideload_subdirs (res, dot_ostree_repo_d_subpath, FALSE);
+}
+
+static void
+add_sideload_subdirs (GPtrArray *res,
+                      GFile     *parent,
+                      gboolean   recurse)
+{
+  g_autoptr(GFileEnumerator) dir_enum = NULL;
+
+  dir_enum = g_file_enumerate_children (parent,
+                                        G_FILE_ATTRIBUTE_STANDARD_NAME ","
+                                        G_FILE_ATTRIBUTE_STANDARD_TYPE,
+                                        G_FILE_QUERY_INFO_NONE,
+                                        NULL, NULL);
+  if (dir_enum == NULL)
+    return;
+
+  while (TRUE)
+    {
+      GFileInfo *info;
+      GFile *path;
+
+      if (!g_file_enumerator_iterate (dir_enum, &info, &path, NULL, NULL) ||
+          info == NULL)
+        break;
+
+      /* Here we support either a plain repo or, if @recurse is TRUE, the root
+       * directory of a USB created with "flatpak create-usb"
+       */
+      if (g_file_info_get_file_type (info) == G_FILE_TYPE_DIRECTORY)
+        {
+          g_autoptr(OstreeRepo) repo = ostree_repo_new (path);
+
+          if (ostree_repo_open (repo, NULL, NULL))
+            g_ptr_array_add (res, g_object_ref (path));
+          else if (recurse)
+            add_sideload_create_usb_subdirs (res, path);
+        }
+    }
+}
+
+void
+flatpak_remote_state_add_sideload_dir (FlatpakRemoteState *self,
+                                       GFile              *dir)
+{
+  g_autoptr(GPtrArray) sideload_paths = g_ptr_array_new_with_free_func (g_object_unref);
+
+  /* The directory could be a repo */
+  flatpak_remote_state_add_sideload_repo (self, dir);
+
+  /* Or it could be a directory with repos in well-known subdirectories */
+  add_sideload_create_usb_subdirs (sideload_paths, dir);
+  for (int i = 0; i < sideload_paths->len; i++)
+    flatpak_remote_state_add_sideload_repo (self, g_ptr_array_index (sideload_paths, i));
 }
 
 gboolean
@@ -1074,14 +1160,14 @@ flatpak_remote_state_fetch_commit_object (FlatpakRemoteState *self,
   if (!ostree_repo_remote_get_url (dir->repo, self->remote_name, &base_url, error))
     return NULL;
 
-  ensure_soup_session (dir);
+  ensure_http_session (dir);
 
   part1 = g_strndup (checksum, 2);
   part2 = g_strdup_printf ("%s.commit", checksum + 2);
 
   object_url = g_build_filename (base_url, "objects", part1, part2, NULL);
 
-  bytes = flatpak_load_uri (dir->soup_session, object_url, 0, token,
+  bytes = flatpak_load_uri (dir->http_session, object_url, 0, token,
                             NULL, NULL, NULL,
                             cancellable, error);
   if (bytes == NULL)
@@ -2500,7 +2586,7 @@ flatpak_dir_finalize (GObject *object)
   if (self->system_helper_bus != (gpointer) 1)
     g_clear_object (&self->system_helper_bus);
 
-  g_clear_object (&self->soup_session);
+  g_clear_pointer (&self->http_session, flatpak_http_session_free);
   g_clear_pointer (&self->summary_cache, g_hash_table_unref);
   g_clear_pointer (&self->remote_filters, g_hash_table_unref);
   g_clear_pointer (&self->masked, g_regex_unref);
@@ -4851,7 +4937,7 @@ flatpak_dir_update_oci_index (FlatpakDir   *self,
   if (index_cache == NULL)
     return NULL;
 
-  ensure_soup_session (self);
+  ensure_http_session (self);
 
   if (!ostree_repo_remote_get_url (self->repo,
                                    remote,
@@ -4859,7 +4945,7 @@ flatpak_dir_update_oci_index (FlatpakDir   *self,
                                    error))
     return NULL;
 
-  if (!flatpak_oci_index_ensure_cached (self->soup_session, oci_uri,
+  if (!flatpak_oci_index_ensure_cached (self->http_session, oci_uri,
                                         index_cache, index_uri_out,
                                         cancellable, &local_error))
     {
@@ -4957,9 +5043,9 @@ flatpak_dir_update_appstream_oci (FlatpakDir          *self,
                        FALSE, &icons_dfd, error))
     return FALSE;
 
-  ensure_soup_session (self);
+  ensure_http_session (self);
 
-  appstream = flatpak_oci_index_make_appstream (self->soup_session,
+  appstream = flatpak_oci_index_make_appstream (self->http_session,
                                                 index_cache,
                                                 index_uri,
                                                 arch,
@@ -5390,15 +5476,15 @@ repo_pull (OstreeRepo                           *self,
 }
 
 static void
-ensure_soup_session (FlatpakDir *self)
+ensure_http_session (FlatpakDir *self)
 {
-  if (g_once_init_enter (&self->soup_session))
+  if (g_once_init_enter (&self->http_session))
     {
-      SoupSession *soup_session;
+      FlatpakHttpSession *http_session;
 
-      soup_session = flatpak_create_soup_session (PACKAGE_STRING);
+      http_session = flatpak_create_http_session (PACKAGE_STRING);
 
-      g_once_init_leave (&self->soup_session, soup_session);
+      g_once_init_leave (&self->http_session, http_session);
     }
 }
 
@@ -5601,8 +5687,8 @@ flatpak_dir_pull_extra_data (FlatpakDir          *self,
         }
       else
         {
-          ensure_soup_session (self);
-          bytes = flatpak_load_uri (self->soup_session, extra_data_uri, 0, NULL,
+          ensure_http_session (self);
+          bytes = flatpak_load_uri (self->http_session, extra_data_uri, 0, NULL,
                                     extra_data_progress_report, progress, NULL,
                                     cancellable, error);
         }
@@ -6352,6 +6438,7 @@ flatpak_dir_make_current_ref (FlatpakDir        *self,
                               GCancellable      *cancellable,
                               GError           **error)
 {
+  g_autoptr(GError) local_error = NULL;
   g_autoptr(GFile) base = NULL;
   g_autoptr(GFile) dir = NULL;
   g_autoptr(GFile) current_link = NULL;
@@ -6368,7 +6455,12 @@ flatpak_dir_make_current_ref (FlatpakDir        *self,
 
   current_link = g_file_get_child (dir, "current");
 
-  g_file_delete (current_link, cancellable, NULL);
+  if (!g_file_delete (current_link, cancellable, &local_error) &&
+      !g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+    {
+      g_propagate_error (error, g_steal_pointer (&local_error));
+      return FALSE;
+    }
 
   rest = flatpak_decomposed_peek_arch (ref, NULL);
   if (!g_file_make_symbolic_link (current_link, rest, cancellable, error))
@@ -8909,6 +9001,201 @@ flatpak_dir_deploy_update (FlatpakDir        *self,
   return TRUE;
 }
 
+static void
+rewrite_one_dynamic_launcher (const char *portal_desktop_dir,
+                              const char *portal_icon_dir,
+                              const char *desktop_name,
+                              const char *old_app_id,
+                              const char *new_app_id)
+{
+  g_autoptr(GKeyFile) old_key_file = NULL;
+  g_autoptr(GKeyFile) new_key_file = NULL;
+  g_autoptr(GFile) link_file = NULL;
+  g_autoptr(GFile) new_link_file = NULL;
+  g_autoptr(GString) data_string = NULL;
+  g_autoptr(GError) local_error = NULL;
+  g_autofree char *old_data = NULL;
+  g_autofree char *desktop_path = NULL;
+  g_autofree char *new_desktop_path = NULL;
+  g_autofree char *icon_path = NULL;
+  g_autofree char *relative_path = NULL;
+  g_autofree char *new_desktop = NULL;
+  const gchar *desktop_suffix;
+
+  g_assert (g_str_has_suffix (desktop_name, ".desktop"));
+  g_assert (g_str_has_prefix (desktop_name, old_app_id));
+
+  desktop_path = g_build_filename (portal_desktop_dir,
+                                   desktop_name, NULL);
+  old_key_file = g_key_file_new ();
+  if (!g_key_file_load_from_file (old_key_file, desktop_path,
+                                  G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS,
+                                  &local_error))
+    {
+      g_warning ("Error encountered loading key file %s: %s", desktop_path, local_error->message);
+      return;
+    }
+  if (!g_key_file_has_key (old_key_file, G_KEY_FILE_DESKTOP_GROUP, "X-Flatpak", NULL))
+    {
+      g_debug ("Ignoring non-Flatpak dynamic launcher: %s", desktop_path);
+      return;
+    }
+
+  /* Fix paths in desktop file with a find-and-replace. The portal handled
+   * quoting the app ID in the Exec line for us.
+   */
+  old_data = g_key_file_to_data (old_key_file, NULL, NULL);
+  data_string = g_string_new ((const char *)old_data);
+  g_string_replace (data_string, old_app_id, new_app_id, 0);
+  new_key_file = g_key_file_new ();
+  if (!g_key_file_load_from_data (new_key_file, data_string->str, -1,
+                                  G_KEY_FILE_KEEP_COMMENTS | G_KEY_FILE_KEEP_TRANSLATIONS,
+                                  &local_error))
+    {
+      g_warning ("Cannot load desktop file %s after rewrite: %s", desktop_path, local_error->message);
+      g_warning ("Key file contents:\n%s\n", (const char *)data_string->str);
+      return;
+    }
+
+  /* Write it out at the new path */
+  desktop_suffix = desktop_name + strlen (old_app_id);
+  new_desktop = g_strconcat (new_app_id, desktop_suffix, NULL);
+  new_desktop_path = g_build_filename (portal_desktop_dir, new_desktop, NULL);
+  if (!g_key_file_save_to_file (new_key_file, new_desktop_path, &local_error))
+    {
+      g_warning ("Couldn't rewrite desktop file from %s to %s: %s",
+                 desktop_path, new_desktop_path, local_error->message);
+      return;
+    }
+
+  /* Fix symlink */
+  link_file = g_file_new_build_filename (g_get_user_data_dir (), "applications", desktop_name, NULL);
+  relative_path = g_build_filename ("..", "xdg-desktop-portal", "applications", new_desktop, NULL);
+  if (!g_file_delete (link_file, NULL, &local_error) &&
+      !g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+    {
+      g_debug ("Unable to delete desktop file link %s: %s", desktop_name, local_error->message);
+      g_clear_error (&local_error);
+    }
+
+  new_link_file = g_file_new_build_filename (g_get_user_data_dir (), "applications", new_desktop, NULL);
+  if (!g_file_make_symbolic_link (new_link_file, relative_path, NULL, &local_error))
+    {
+      g_warning ("Unable to rename desktop file link %s -> %s: %s",
+                 desktop_name, new_desktop, local_error->message);
+      return;
+    }
+
+  /* Delete the old desktop file */
+  unlink (desktop_path);
+
+  /* And rename the icon */
+  icon_path = g_key_file_get_string (old_key_file, G_KEY_FILE_DESKTOP_GROUP, "Icon", NULL);
+  if (g_str_has_prefix (icon_path, portal_icon_dir))
+    {
+      g_autoptr(GFile) icon_file = NULL;
+      g_autofree char *icon_basename = NULL;
+      g_autofree char *new_icon = NULL;
+      gchar *icon_suffix;
+
+      icon_file = g_file_new_for_path (icon_path);
+      icon_basename = g_path_get_basename (icon_path);
+      if (g_str_has_prefix (icon_basename, old_app_id))
+        {
+          icon_suffix = icon_basename + strlen (old_app_id);
+          new_icon = g_strconcat (new_app_id, icon_suffix, NULL);
+          if (!g_file_set_display_name (icon_file, new_icon, NULL, &local_error))
+            {
+              g_warning ("Unable to rename icon file %s -> %s: %s", icon_basename, new_icon,
+                         local_error->message);
+              g_clear_error (&local_error);
+            }
+        }
+    }
+}
+
+static void
+rewrite_dynamic_launchers (FlatpakDecomposed   *ref,
+                           const char * const * previous_ids)
+
+{
+  g_autoptr(GFile) portal_desktop_dir = NULL;
+  g_autofree char *portal_icon_path = NULL;
+  g_autofree char *app_id = NULL;
+  g_autoptr(GFileEnumerator) dir_enum = NULL;
+  g_autoptr(GError) local_error = NULL;
+
+  if (!flatpak_decomposed_is_app (ref))
+    return;
+
+  app_id = flatpak_decomposed_dup_id (ref);
+
+  /* Rename any dynamic launchers written by xdg-desktop-portal. The
+   * portal has its own code for renaming launchers on session start but we
+   * need to do it here as well so the launchers are correct in both cases:
+   * (1) the app rename transaction is being executed by the same user that
+   * has the launchers, or (2) the app is installed system-wide and another
+   * user has launchers.
+   */
+  if (previous_ids != NULL)
+    {
+      portal_desktop_dir = g_file_new_build_filename (g_get_user_data_dir (),
+                                                      "xdg-desktop-portal",
+                                                      "applications", NULL);
+      portal_icon_path = g_build_filename (g_get_user_data_dir (),
+                                           "xdg-desktop-portal", "icons", NULL);
+      dir_enum = g_file_enumerate_children (portal_desktop_dir,
+                                            G_FILE_ATTRIBUTE_STANDARD_NAME,
+                                            G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
+                                            NULL, &local_error);
+    }
+  if (dir_enum == NULL)
+    {
+      if (local_error && !g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+        {
+          g_warning ("Failed to enumerate portal desktop dir %s: %s",
+                     flatpak_file_get_path_cached (portal_desktop_dir),
+                     local_error->message);
+        }
+      g_clear_error (&local_error);
+    }
+  else
+    {
+      g_autoptr(GFileInfo) child_info = NULL;
+      g_auto(GStrv) previous_ids_sorted = NULL;
+
+      /* Sort by decreasing length so we get the longest prefix below */
+      previous_ids_sorted = flatpak_strv_sort_by_length (previous_ids);
+
+      while ((child_info = g_file_enumerator_next_file (dir_enum, NULL, &local_error)) != NULL)
+        {
+          const char *desktop_name;
+          int i;
+
+          desktop_name = g_file_info_get_name (child_info);
+          if (!g_str_has_suffix (desktop_name, ".desktop"))
+            continue;
+
+          for (i = 0; previous_ids_sorted[i] != NULL; i++)
+            {
+              if (g_str_has_prefix (desktop_name, previous_ids_sorted[i]))
+                {
+                  rewrite_one_dynamic_launcher (flatpak_file_get_path_cached (portal_desktop_dir),
+                                                portal_icon_path, desktop_name,
+                                                previous_ids_sorted[i], app_id);
+                  break;
+                }
+            }
+        }
+      if (local_error)
+        {
+          g_warning ("Failed to enumerate portal desktop dir %s: %s",
+                     flatpak_file_get_path_cached (portal_desktop_dir),
+                     local_error->message);
+        }
+    }
+}
+
 static FlatpakOciRegistry *
 flatpak_dir_create_system_child_oci_registry (FlatpakDir   *self,
                                               GLnxLockFile *file_lock,
@@ -9447,6 +9734,13 @@ flatpak_dir_install (FlatpakDir          *self,
       if (child_repo_path && !is_revokefs_pull)
         (void) glnx_shutil_rm_rf_at (AT_FDCWD, child_repo_path, NULL, NULL);
 
+      /* In case the app is being renamed, rewrite any launchers made by
+       * xdg-desktop-portal. This has to be done as the user so can't be in the
+       * system helper.
+       */
+      if (opt_previous_ids)
+        rewrite_dynamic_launchers (ref, opt_previous_ids);
+
       return TRUE;
     }
 
@@ -9464,6 +9758,12 @@ flatpak_dir_install (FlatpakDir          *self,
                                        opt_previous_ids, reinstall, pin_on_deploy,
                                        cancellable, error))
         return FALSE;
+
+      /* In case the app is being renamed, rewrite any launchers made by
+       * xdg-desktop-portal.
+       */
+      if (opt_previous_ids)
+        rewrite_dynamic_launchers (ref, opt_previous_ids);
     }
 
   return TRUE;
@@ -10124,6 +10424,13 @@ flatpak_dir_update (FlatpakDir                           *self,
       if (child_repo_path && !is_revokefs_pull)
         (void) glnx_shutil_rm_rf_at (AT_FDCWD, child_repo_path, NULL, NULL);
 
+      /* In case the app is being renamed, rewrite any launchers made by
+       * xdg-desktop-portal. This has to be done as the user so can't be in the
+       * system helper.
+       */
+      if (opt_previous_ids)
+        rewrite_dynamic_launchers (ref, opt_previous_ids);
+
       return TRUE;
     }
 
@@ -10153,6 +10460,12 @@ flatpak_dir_update (FlatpakDir                           *self,
                                       subpaths, opt_previous_ids,
                                       cancellable, error))
         return FALSE;
+
+      /* In case the app is being renamed, rewrite any launchers made by
+       * xdg-desktop-portal.
+       */
+      if (opt_previous_ids)
+        rewrite_dynamic_launchers (ref, opt_previous_ids);
     }
 
   return TRUE;
@@ -11597,9 +11910,26 @@ flatpak_dir_remote_load_cached_summary (FlatpakDir   *self,
       sha256 = g_compute_checksum_for_bytes (G_CHECKSUM_SHA256, mfile_bytes);
       if (strcmp (sha256, checksum) != 0)
         {
-          g_file_delete (main_cache_file, NULL, NULL);
+          g_autoptr(GError) local_error = NULL;
+
+          if (!g_file_delete (main_cache_file, NULL, &local_error) &&
+              !g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+            {
+              g_autofree char *path = g_file_get_path (main_cache_file);
+              g_debug ("Unable to delete file %s: %s", path, local_error->message);
+              g_clear_error (&local_error);
+            }
+
           if (sig_ext)
-            g_file_delete (sig_cache_file, NULL, NULL);
+            {
+              if (!g_file_delete (sig_cache_file, NULL, &local_error) &&
+                  !g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+                {
+                  g_autofree char *path = g_file_get_path (sig_cache_file);
+                  g_debug ("Unable to delete file %s: %s", path, local_error->message);
+                  g_clear_error (&local_error);
+                }
+            }
 
           return flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA,
                                      _("Invalid checksum for indexed summary %s read from %s"),
@@ -11740,7 +12070,7 @@ remote_verify_signature (OstreeRepo *repo,
 }
 
 static GBytes *
-load_uri_with_fallback (SoupSession           *soup_session,
+load_uri_with_fallback (FlatpakHttpSession    *http_session,
                         const char            *uri,
                         const char            *uri2,
                         FlatpakHTTPFlags       flags,
@@ -11751,7 +12081,7 @@ load_uri_with_fallback (SoupSession           *soup_session,
   g_autoptr(GError) local_error = NULL;
   GBytes *res;
 
-  res = flatpak_load_uri (soup_session, uri, flags, token,
+  res = flatpak_load_uri (http_session, uri, flags, token,
                           NULL, NULL, NULL,
                           cancellable, &local_error);
   if (res)
@@ -11763,7 +12093,7 @@ load_uri_with_fallback (SoupSession           *soup_session,
       return NULL;
     }
 
-  return flatpak_load_uri (soup_session, uri2, flags, token,
+  return flatpak_load_uri (http_session, uri2, flags, token,
                            NULL, NULL, NULL,
                            cancellable, error);
 }
@@ -11787,7 +12117,7 @@ flatpak_dir_remote_fetch_summary_index (FlatpakDir   *self,
   g_autoptr(GBytes) index_sig = NULL;
   gboolean gpg_verify_summary;
 
-  ensure_soup_session (self);
+  ensure_http_session (self);
 
   if (!ostree_repo_remote_get_url (self->repo, name_or_uri, &url, error))
     return FALSE;
@@ -11839,7 +12169,7 @@ flatpak_dir_remote_fetch_summary_index (FlatpakDir   *self,
 
       g_debug ("Fetching summary index file for remote ‘%s’", name_or_uri);
 
-      dl_index = flatpak_load_uri (self->soup_session, index_url, 0, NULL,
+      dl_index = flatpak_load_uri (self->http_session, index_url, 0, NULL,
                                    NULL, NULL, NULL,
                                    cancellable, error);
       if (dl_index == NULL)
@@ -11868,7 +12198,7 @@ flatpak_dir_remote_fetch_summary_index (FlatpakDir   *self,
           g_autoptr(GError) dl_sig_error = NULL;
           g_autoptr (GBytes) dl_index_sig = NULL;
 
-          dl_index_sig = load_uri_with_fallback (self->soup_session, index_sig_url, index_sig_url2, 0, NULL,
+          dl_index_sig = load_uri_with_fallback (self->http_session, index_sig_url, index_sig_url2, 0, NULL,
                                                  cancellable, &dl_sig_error);
           if (dl_index_sig == NULL)
             {
@@ -11937,7 +12267,7 @@ flatpak_dir_remote_fetch_indexed_summary (FlatpakDir   *self,
   g_autofree char *checksum = NULL;
   g_autofree char *cache_name = NULL;
 
-  ensure_soup_session (self);
+  ensure_http_session (self);
 
   if (!ostree_repo_remote_get_url (self->repo, name_or_uri, &url, error))
     return FALSE;
@@ -12010,7 +12340,7 @@ flatpak_dir_remote_fetch_indexed_summary (FlatpakDir   *self,
 
           g_debug ("Fetching indexed summary delta %s for remote ‘%s’", delta_filename, name_or_uri);
 
-          g_autoptr(GBytes) delta = flatpak_load_uri (self->soup_session, delta_url, 0, NULL,
+          g_autoptr(GBytes) delta = flatpak_load_uri (self->http_session, delta_url, 0, NULL,
                                                       NULL, NULL, NULL,
                                                       cancellable, &delta_error);
           if (delta == NULL)
@@ -12037,7 +12367,7 @@ flatpak_dir_remote_fetch_indexed_summary (FlatpakDir   *self,
           g_autofree char *filename = g_strconcat (checksum, ".gz", NULL);
           g_debug ("Fetching indexed summary file %s for remote ‘%s’", filename, name_or_uri);
           g_autofree char *subsummary_url = g_build_filename (url, "summaries", filename, NULL);
-          summary_z = flatpak_load_uri (self->soup_session, subsummary_url, 0, NULL,
+          summary_z = flatpak_load_uri (self->http_session, subsummary_url, 0, NULL,
                                         NULL, NULL, NULL,
                                         cancellable, error);
           if (summary_z == NULL)
@@ -13398,64 +13728,6 @@ flatpak_dir_list_remote_config_keys (FlatpakDir *self,
   return NULL;
 }
 
-static void
-add_subdirs (GPtrArray *res,
-             GFile     *parent,
-             gboolean   recurse)
-{
-  g_autoptr(GFileEnumerator) dir_enum = NULL;
-
-  dir_enum = g_file_enumerate_children (parent,
-                                        G_FILE_ATTRIBUTE_STANDARD_NAME ","
-                                        G_FILE_ATTRIBUTE_STANDARD_TYPE,
-                                        G_FILE_QUERY_INFO_NONE,
-                                        NULL, NULL);
-  if (dir_enum == NULL)
-    return;
-
-  while (TRUE)
-    {
-      GFileInfo *info;
-      GFile *path;
-
-      if (!g_file_enumerator_iterate (dir_enum, &info, &path, NULL, NULL) ||
-          info == NULL)
-        break;
-
-      /* Here we support either a plain repo or, if @recurse is TRUE, the root
-       * directory of a USB created with "flatpak create-usb"
-       */
-      if (g_file_info_get_file_type (info) == G_FILE_TYPE_DIRECTORY)
-        {
-          g_autoptr(OstreeRepo) repo = ostree_repo_new (path);
-
-          if (ostree_repo_open (repo, NULL, NULL))
-            g_ptr_array_add (res, g_object_ref (path));
-          else if (recurse)
-            {
-              g_autoptr(GFile) ostree_repo_subpath = NULL;
-              g_autoptr(GFile) dot_ostree_repo_subpath = NULL;
-              g_autoptr(GFile) dot_ostree_repo_d_subpath = NULL;
-              g_autoptr(OstreeRepo) ostree_repo_subpath_repo = NULL;
-              g_autoptr(OstreeRepo) dot_ostree_repo_subpath_repo = NULL;
-
-              ostree_repo_subpath = g_file_resolve_relative_path (path, "ostree/repo");
-              ostree_repo_subpath_repo = ostree_repo_new (ostree_repo_subpath);
-              if (ostree_repo_open (ostree_repo_subpath_repo, NULL, NULL))
-                g_ptr_array_add (res, g_object_ref (ostree_repo_subpath));
-
-              dot_ostree_repo_subpath = g_file_resolve_relative_path (path, ".ostree/repo");
-              dot_ostree_repo_subpath_repo = ostree_repo_new (dot_ostree_repo_subpath);
-              if (ostree_repo_open (dot_ostree_repo_subpath_repo, NULL, NULL))
-                g_ptr_array_add (res, g_object_ref (dot_ostree_repo_subpath));
-
-              dot_ostree_repo_d_subpath = g_file_resolve_relative_path (path, ".ostree/repos.d");
-              add_subdirs (res, dot_ostree_repo_d_subpath, FALSE);
-            }
-        }
-    }
-}
-
 GPtrArray *
 flatpak_dir_get_sideload_repo_paths (FlatpakDir *self)
 {
@@ -13463,8 +13735,8 @@ flatpak_dir_get_sideload_repo_paths (FlatpakDir *self)
   g_autoptr(GFile) runtime_sideload_repos_dir = flatpak_dir_get_runtime_sideload_repos_dir (self);
   g_autoptr(GPtrArray) res = g_ptr_array_new_with_free_func (g_object_unref);
 
-  add_subdirs (res, sideload_repos_dir, TRUE);
-  add_subdirs (res, runtime_sideload_repos_dir, TRUE);
+  add_sideload_subdirs (res, sideload_repos_dir, TRUE);
+  add_sideload_subdirs (res, runtime_sideload_repos_dir, TRUE);
 
   return g_steal_pointer (&res);
 }
@@ -15530,11 +15802,14 @@ flatpak_dir_find_local_related (FlatpakDir        *self,
       if (deploy_data == NULL)
         return NULL;
 
-      metadata = g_file_get_child (deploy_dir, "metadata");
-      if (!g_file_load_contents (metadata, cancellable, &metadata_contents, NULL, NULL, NULL))
+      if (flatpak_deploy_data_get_extension_of (deploy_data) == NULL)
         {
-          g_debug ("No metadata in local deploy");
-          /* No metadata => no related, but no error */
+          metadata = g_file_get_child (deploy_dir, "metadata");
+          if (!g_file_load_contents (metadata, cancellable, &metadata_contents, NULL, NULL, NULL))
+            {
+              g_debug ("No metadata in local deploy");
+              /* No metadata => no related, but no error */
+            }
         }
     }
   else
