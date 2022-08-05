@@ -1,3 +1,18 @@
+flatpak (1.13.3-2) experimental; urgency=medium
+
+  * Build with libcurl http backend.
+    This avoids library conflicts during the transition to GNOME 43, in
+    which core apps and libraries have switched to libsoup3, which conflicts
+    with libsoup2.4. See #1016589.
+  * d/control: Remove backwards-compat with libgdk-pixbuf2.0-dev.
+    libgdk-pixbuf-2.0-dev was released in bullseye, and official backports
+    to old distributions need to swap the dependency anyway, because of
+    how buildds resolve alternative dependencies.
+  * Set correct Vcs-Git field for experimental branch
+  * Standards-Version: 4.6.1 (no changes required)
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 05 Aug 2022 10:06:16 +0100
+
 flatpak (1.13.3-1) experimental; urgency=medium
 
   * New upstream development release
