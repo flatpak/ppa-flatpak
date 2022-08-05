@@ -32,7 +32,7 @@ Build-Depends:
  libdw-dev,
  libelf-dev,
  libfuse-dev (>= 2.9.2),
- libgdk-pixbuf-2.0-dev | libgdk-pixbuf2.0-dev,
+ libgdk-pixbuf-2.0-dev,
  libgirepository1.0-dev,
  libglib2.0-dev (>= 2.44),
  libgpgme-dev (>= 1.1.8),
