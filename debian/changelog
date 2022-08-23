@@ -1,8 +1,10 @@
-flatpak (1.14.0-1) UNRELEASED; urgency=medium
+flatpak (1.14.0-1) unstable; urgency=medium
 
   * New upstream release
+  * d/copyright: Update
+  * Build with libfuse3
 
- -- Simon McVittie <smcv@debian.org>  Tue, 23 Aug 2022 19:57:05 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 23 Aug 2022 20:26:06 +0100
 
 flatpak (1.13.3-2) experimental; urgency=medium
 
