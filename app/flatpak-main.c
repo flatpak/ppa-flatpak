@@ -28,7 +28,7 @@
 
 #include <glib/gi18n.h>
 #include <gio/gio.h>
-#include "libglnx/libglnx.h"
+#include "libglnx.h"
 
 #ifdef USE_SYSTEM_HELPER
 #include <polkit/polkit.h>
@@ -369,6 +369,16 @@ flatpak_option_context_parse (GOptionContext     *context,
         flatpak_disable_fancy_output ();
     }
 
+  /* sudo flatpak --user ... would operate on the root user's installation,
+   * which is almost certainly not what the user intended so just consider it
+   * an error.
+   */
+  if (opt_user && running_under_sudo ())
+    return flatpak_fail_error (error, FLATPAK_ERROR,
+                               _("Refusing to operate under sudo with --user. "
+                                 "Omit sudo to operate on the user installation, "
+                                 "or use a root shell to operate on the root user's installation."));
+
   if (!(flags & FLATPAK_BUILTIN_FLAG_NO_DIR))
     {
       dirs = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
@@ -591,6 +601,11 @@ install_polkit_agent (void)
   PolkitAgentListener *listener = NULL;
   g_autoptr(GError) local_error = NULL;
   g_autoptr(GDBusConnection) bus = NULL;
+  const char *on_session;
+
+  on_session = g_getenv ("FLATPAK_SYSTEM_HELPER_ON_SESSION");
+  if (on_session != NULL)
+    return NULL;
 
   bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &local_error);
 

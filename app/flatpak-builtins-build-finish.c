@@ -28,7 +28,7 @@
 
 #include <glib/gi18n.h>
 
-#include "libglnx/libglnx.h"
+#include "libglnx.h"
 
 #include "flatpak-builtins.h"
 #include "flatpak-context-private.h"
@@ -235,6 +235,8 @@ collect_exports (GFile          *base,
     "share/icons",                        /* Icons */
     "share/dbus-1/services",              /* D-Bus service files */
     "share/gnome-shell/search-providers", /* Search providers */
+    "share/appdata",                      /* Copy appdata/metainfo files (legacy path) */
+    "share/metainfo",                     /* Copy appdata/metainfo files */
     NULL,
   };
 
@@ -266,7 +268,12 @@ collect_exports (GFile          *base,
           g_debug ("Exporting from %s", path);
           g_autoptr(GFile) dest = NULL;
           g_autoptr(GFile) dest_parent = NULL;
-          dest = g_file_resolve_relative_path (export, path);
+
+          if (strcmp (path, "share/appdata") == 0)
+            dest = g_file_resolve_relative_path (export, "share/metainfo");
+          else
+            dest = g_file_resolve_relative_path (export, path);
+
           dest_parent = g_file_get_parent (dest);
           g_debug ("Ensuring export/%s parent exists", path);
           if (!flatpak_mkdir_p (dest_parent, cancellable, error))

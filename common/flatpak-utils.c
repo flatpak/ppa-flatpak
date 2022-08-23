@@ -51,7 +51,7 @@
 #include "flatpak-utils-base-private.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-variant-impl-private.h"
-#include "libglnx/libglnx.h"
+#include "libglnx.h"
 #include "valgrind-private.h"
 
 /* This is also here so the common code can report these errors to the lib */
@@ -616,6 +616,53 @@ flatpak_get_have_intel_gpu (void)
   return have_intel;
 }
 
+static GHashTable *
+load_kernel_module_list (void)
+{
+  GHashTable *modules = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+  g_autofree char *modules_data = NULL;
+  g_autoptr(GError) error = NULL;
+  char *start, *end;
+  
+  if (!g_file_get_contents ("/proc/modules", &modules_data, NULL, &error))
+    {
+      g_debug ("Failed to read /proc/modules: %s", error->message);
+      return modules;
+    }
+
+  /* /proc/modules is a table of modules.
+   * Columns are split by spaces and rows by newlines.
+   * The first column is the name. */
+  start = modules_data;
+  while (TRUE)
+    {
+      end = strchr (start, ' ');
+      if (end == NULL)
+        break;
+
+      g_hash_table_add (modules, g_strndup (start, (end - start)));
+
+      start = strchr (end, '\n');
+      if (start == NULL)
+        break;
+
+      start++;
+    }
+
+  return modules;
+}
+
+static gboolean
+flatpak_get_have_kernel_module (const char *module_name)
+{
+  static GHashTable *kernel_modules = NULL;
+
+  if (g_once_init_enter (&kernel_modules))
+    g_once_init_leave (&kernel_modules, load_kernel_module_list ());
+
+  return g_hash_table_contains (kernel_modules, module_name);
+}
+
 static const char *
 flatpak_get_gtk_theme (void)
 {
@@ -668,13 +715,28 @@ flatpak_enable_fancy_output (void)
 gboolean
 flatpak_fancy_output (void)
 {
+  static gsize fancy_output_once = 0;
+  enum {
+    PLAIN_OUTPUT = 1,
+    FANCY_OUTPUT = 2
+  };
+
   if (fancy_output != -1)
     return fancy_output;
 
-  if (g_strcmp0 (g_getenv ("FLATPAK_FANCY_OUTPUT"), "0") == 0)
-    return FALSE;
+  if (g_once_init_enter (&fancy_output_once))
+    {
+      if (g_strcmp0 (g_getenv ("FLATPAK_FANCY_OUTPUT"), "0") == 0)
+        g_once_init_leave (&fancy_output_once, PLAIN_OUTPUT);
+      else if (getenv ("G_MESSAGES_DEBUG"))
+        g_once_init_leave (&fancy_output_once, PLAIN_OUTPUT);
+      else if (!isatty (STDOUT_FILENO))
+        g_once_init_leave (&fancy_output_once, PLAIN_OUTPUT);
+      else
+        g_once_init_leave (&fancy_output_once, FANCY_OUTPUT);
+    }
 
-  return isatty (STDOUT_FILENO);
+  return fancy_output_once == FANCY_OUTPUT;
 }
 
 const char *
@@ -733,7 +795,8 @@ flatpak_get_allowed_exports (const char     *source_path,
     {
       g_ptr_array_add (allowed_extensions, g_strdup (".xml"));
     }
-  else if (strcmp (source_path, "share/metainfo") == 0)
+  else if (strcmp (source_path, "share/metainfo") == 0 ||
+           strcmp (source_path, "share/appdata") == 0)
     {
       g_ptr_array_add (allowed_extensions, g_strdup (".xml"));
     }
@@ -3174,7 +3237,7 @@ flatpak_repo_save_digested_summary_delta (OstreeRepo   *repo,
 
 
 gboolean
-is_flatpak_ref (const char *ref)
+flatpak_is_app_runtime_or_appstream_ref (const char *ref)
 {
   return
     g_str_has_prefix (ref, "appstream/") ||
@@ -3289,7 +3352,7 @@ populate_commit_data_cache (OstreeRepo *repo,
           VarVariantRef xa_data_v;
           VarCacheDataRef xa_data;
 
-          if (!is_flatpak_ref (ref))
+          if (!flatpak_is_app_runtime_or_appstream_ref (ref))
             continue;
 
           commit_bytes = var_ref_info_peek_checksum (info, &commit_bytes_len);
@@ -4286,11 +4349,8 @@ generate_summary (OstreeRepo   *repo,
       for (int i = 0; summary_arches[i] != NULL; i++)
         {
           const char *arch = summary_arches[i];
-          const char *compat_arch = flatpak_get_compat_arch (arch);
 
           g_hash_table_add (summary_arches_ht, (char *)arch);
-          if (compat_arch)
-            g_hash_table_add (summary_arches_ht, (char *)compat_arch);
         }
     }
 
@@ -4363,7 +4423,7 @@ generate_summary (OstreeRepo   *repo,
       if (!g_hash_table_contains (commits, rev))
         continue; /* Filter out commit (by arch & subset) */
 
-      if (is_flatpak_ref (ref))
+      if (flatpak_is_app_runtime_or_appstream_ref (ref))
         rev_data = g_hash_table_lookup (commit_data_cache, rev);
 
       if (rev_data != NULL)
@@ -4804,7 +4864,7 @@ flatpak_repo_update (OstreeRepo   *repo,
         g_hash_table_add (arches, g_steal_pointer (&arch));
 
       /* Add CommitData for flatpak refs that we didn't already pre-populate */
-      if (is_flatpak_ref (ref))
+      if (flatpak_is_app_runtime_or_appstream_ref (ref))
         {
           rev_data = g_hash_table_lookup (commit_data_cache, rev);
           if (rev_data == NULL)
@@ -5990,6 +6050,13 @@ flatpak_extension_matches_reason (const char *extension_id,
           if (flatpak_get_have_intel_gpu ())
             return TRUE;
         }
+      else if (g_str_has_prefix (reason, "have-kernel-module-"))
+        {
+          const char *module_name = reason + strlen ("have-kernel-module-");
+
+          if (flatpak_get_have_kernel_module (module_name))
+            return TRUE;
+        }
       else if (g_str_has_prefix (reason, "on-xdg-desktop-"))
         {
           const char *desktop_name = reason + strlen ("on-xdg-desktop-");
@@ -6683,7 +6750,8 @@ flatpak_pull_from_bundle (OstreeRepo   *repo,
   if (metadata == NULL)
     return FALSE;
 
-  metadata_size = strlen (metadata_contents);
+  if (metadata_contents != NULL)
+    metadata_size = strlen (metadata_contents);
 
   if (!ostree_repo_get_remote_option (repo, remote, "collection-id", NULL,
                                       &remote_collection_id, NULL))
@@ -7341,6 +7409,24 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
   return TRUE;
 }
 
+gboolean
+flatpak_allow_fuzzy_matching (const char *term)
+{
+  if (strchr (term, '/') != NULL || strchr (term, '.') != NULL)
+    return FALSE;
+
+  /* This env var is used by the unit tests and only skips the tty test not the
+   * check above.
+   */
+  if (g_strcmp0 (g_getenv ("FLATPAK_FORCE_ALLOW_FUZZY_MATCHING"), "1") == 0)
+    return TRUE;
+
+  if (!isatty (STDIN_FILENO) || !isatty (STDOUT_FILENO))
+    return FALSE;
+
+  return TRUE;
+}
+
 char *
 flatpak_prompt (gboolean allow_empty,
                 const char *prompt, ...)
@@ -7648,6 +7734,35 @@ flatpak_format_choices (const char **choices,
   for (i = 0; choices[i]; i++)
     g_print ("  %2d) %s\n", i + 1, choices[i]);
   g_print ("\n");
+}
+
+static gint
+string_length_compare_func (gconstpointer a,
+                            gconstpointer b)
+{
+  return strlen (*(char * const *) a) - strlen (*(char * const *) b);
+}
+
+/* Sort a string array by decreasing length */
+char **
+flatpak_strv_sort_by_length (const char * const *strv)
+{
+  GPtrArray *array;
+  int i;
+
+  if (strv == NULL)
+    return NULL;
+
+  /* Combine both */
+  array = g_ptr_array_new ();
+
+  for (i = 0; strv[i] != NULL; i++)
+    g_ptr_array_add (array, g_strdup (strv[i]));
+
+  g_ptr_array_sort (array, string_length_compare_func);
+
+  g_ptr_array_add (array, NULL);
+  return (char **) g_ptr_array_free (array, FALSE);
 }
 
 char **
@@ -8403,13 +8518,25 @@ flatpak_get_cursor_pos (int * row, int *col)
 void
 flatpak_hide_cursor (void)
 {
-  write (STDOUT_FILENO, FLATPAK_ANSI_HIDE_CURSOR, strlen (FLATPAK_ANSI_HIDE_CURSOR));
+  const size_t flatpak_hide_cursor_len = strlen (FLATPAK_ANSI_HIDE_CURSOR);
+  const ssize_t write_ret = write (STDOUT_FILENO, FLATPAK_ANSI_HIDE_CURSOR,
+                                   flatpak_hide_cursor_len);
+
+  if (write_ret < 0)
+    g_warning ("write() failed: %zd = write(STDOUT_FILENO, FLATPAK_ANSI_HIDE_CURSOR, %zu)",
+               write_ret, flatpak_hide_cursor_len);
 }
 
 void
 flatpak_show_cursor (void)
 {
-  write (STDOUT_FILENO, FLATPAK_ANSI_SHOW_CURSOR, strlen (FLATPAK_ANSI_SHOW_CURSOR));
+  const size_t flatpak_show_cursor_len = strlen (FLATPAK_ANSI_SHOW_CURSOR);
+  const ssize_t write_ret = write (STDOUT_FILENO, FLATPAK_ANSI_SHOW_CURSOR,
+                                   flatpak_show_cursor_len);
+
+  if (write_ret < 0)
+    g_warning ("write() failed: %zd = write(STDOUT_FILENO, FLATPAK_ANSI_SHOW_CURSOR, %zu)",
+               write_ret, flatpak_show_cursor_len);
 }
 
 void
@@ -9037,3 +9164,93 @@ flatpak_str_is_integer (const char *s)
 
   return TRUE;
 }
+
+gboolean
+flatpak_uri_equal (const char *uri1,
+                   const char *uri2)
+{
+  g_autofree char *uri1_norm = NULL;
+  g_autofree char *uri2_norm = NULL;
+  gsize uri1_len = strlen (uri1);
+  gsize uri2_len = strlen (uri2);
+
+  /* URIs handled by libostree are equivalent with or without a trailing slash,
+   * but this isn't otherwise guaranteed to be the case.
+   */
+  if (g_str_has_prefix (uri1, "oci+") || g_str_has_prefix (uri2, "oci+"))
+    return g_strcmp0 (uri1, uri2) == 0;
+
+  if (g_str_has_suffix (uri1, "/"))
+    uri1_norm = g_strndup (uri1, uri1_len - 1);
+  else
+    uri1_norm = g_strdup (uri1);
+
+  if (g_str_has_suffix (uri2, "/"))
+    uri2_norm = g_strndup (uri2, uri2_len - 1);
+  else
+    uri2_norm = g_strdup (uri2);
+
+  return g_strcmp0 (uri1_norm, uri2_norm) == 0;
+}
+
+gboolean
+running_under_sudo (void)
+{
+  const char *sudo_command_env = g_getenv ("SUDO_COMMAND");
+  g_auto(GStrv) split_command = NULL;
+
+  if (!sudo_command_env)
+    return FALSE;
+
+  /* SUDO_COMMAND could be a value like `/usr/bin/flatpak run foo` */
+  split_command = g_strsplit (sudo_command_env, " ", 2);
+  if (g_str_has_suffix (split_command[0], "flatpak"))
+    return TRUE;
+
+  return FALSE;
+}
+
+#if !GLIB_CHECK_VERSION (2, 68, 0)
+/* All this code is backported directly from glib */
+guint
+g_string_replace (GString     *string,
+                  const gchar *find,
+                  const gchar *replace,
+                  guint        limit)
+{
+  gsize f_len, r_len, pos;
+  gchar *cur, *next;
+  guint n = 0;
+
+  g_return_val_if_fail (string != NULL, 0);
+  g_return_val_if_fail (find != NULL, 0);
+  g_return_val_if_fail (replace != NULL, 0);
+
+  f_len = strlen (find);
+  r_len = strlen (replace);
+  cur = string->str;
+
+  while ((next = strstr (cur, find)) != NULL)
+    {
+      pos = next - string->str;
+      g_string_erase (string, pos, f_len);
+      g_string_insert (string, pos, replace);
+      cur = string->str + pos + r_len;
+      n++;
+      /* Only match the empty string once at any given position, to
+       * avoid infinite loops */
+      if (f_len == 0)
+        {
+          if (cur[0] == '\0')
+            break;
+          else
+            cur++;
+        }
+      if (n == limit)
+        break;
+    }
+
+  return n;
+}
+
+#endif /* GLIB_CHECK_VERSION (2, 68, 0) */
