@@ -14,8 +14,8 @@ AC_PREREQ([2.63])
 # on the unstable (ie main), interface age = 0
 
 m4_define([flatpak_major_version], [1])
-m4_define([flatpak_minor_version], [13])
-m4_define([flatpak_micro_version], [3])
+m4_define([flatpak_minor_version], [14])
+m4_define([flatpak_micro_version], [0])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -315,7 +315,14 @@ AC_ARG_ENABLE([auto-sideloading],
               [enable_auto_sideloading=no])
 AM_CONDITIONAL(BUILD_AUTO_SIDELOADING, test x$enable_auto_sideloading = xyes)
 
-PKG_CHECK_MODULES(FUSE, fuse >= 2.9.2)
+PKG_CHECK_MODULES([FUSE3], [fuse3 >= 3.1.1],
+                  [
+                    FUSE_USE_VERSION=31
+                    FUSE_CFLAGS="$FUSE3_CFLAGS"
+                    FUSE_LIBS="$FUSE3_LIBS"
+                  ],
+                  [PKG_CHECK_MODULES([FUSE], [fuse >= 2.9.2], [FUSE_USE_VERSION=26])])
+AC_DEFINE_UNQUOTED([FUSE_USE_VERSION], [$FUSE_USE_VERSION], [Define to the FUSE API version])
 
 AC_ARG_ENABLE([xauth],
               AC_HELP_STRING([--disable-xauth],

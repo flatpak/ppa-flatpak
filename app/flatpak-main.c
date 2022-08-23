@@ -1,4 +1,4 @@
-/*
+/* vi:set et sw=2 sts=2 cin cino=t0,f0,(0,{s,>2s,n-s,^-s,e-s:
  * Copyright © 2014 Red Hat, Inc
  *
  * This program is free software; you can redistribute it and/or
@@ -176,7 +176,7 @@ static GOptionEntry empty_entries[] = {
 };
 
 GOptionEntry user_entries[] = {
-  { "user", 0, 0, G_OPTION_ARG_NONE, &opt_user, N_("Work on the user installation"), NULL },
+  { "user", 'u', 0, G_OPTION_ARG_NONE, &opt_user, N_("Work on the user installation"), NULL },
   { "system", 0, 0, G_OPTION_ARG_NONE, &opt_system, N_("Work on the system-wide installation (default)"), NULL },
   { "installation", 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_installations, N_("Work on a non-default system-wide installation"), N_("NAME") },
   { NULL }
