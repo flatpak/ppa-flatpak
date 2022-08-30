@@ -1,4 +1,4 @@
-/*
+/* vi:set et sw=2 sts=2 cin cino=t0,f0,(0,{s,>2s,n-s,^-s,e-s:
  * Copyright © 1995-1998 Free Software Foundation, Inc.
  * Copyright © 2014-2019 Red Hat, Inc
  *
@@ -51,7 +51,7 @@
 #include "flatpak-utils-base-private.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-variant-impl-private.h"
-#include "libglnx/libglnx.h"
+#include "libglnx.h"
 #include "valgrind-private.h"
 
 /* This is also here so the common code can report these errors to the lib */
@@ -79,6 +79,8 @@ static const GDBusErrorEntry flatpak_error_entries[] = {
   {FLATPAK_ERROR_NOT_CACHED,            "org.freedesktop.Flatpak.Error.NotCached"}, /* Since: 1.3.3 */
   {FLATPAK_ERROR_REF_NOT_FOUND,         "org.freedesktop.Flatpak.Error.RefNotFound"}, /* Since: 1.4.0 */
   {FLATPAK_ERROR_PERMISSION_DENIED,     "org.freedesktop.Flatpak.Error.PermissionDenied"}, /* Since: 1.5.1 */
+  {FLATPAK_ERROR_AUTHENTICATION_FAILED, "org.freedesktop.Flatpak.Error.AuthenticationFailed"}, /* Since: 1.7.3 */
+  {FLATPAK_ERROR_NOT_AUTHORIZED,        "org.freedesktop.Flatpak.Error.NotAuthorized"}, /* Since: 1.7.3 */
 };
 
 typedef struct archive FlatpakAutoArchiveRead;
@@ -2262,6 +2264,20 @@ flatpak_summary_lookup_ref (GVariant      *summary_v,
   return TRUE;
 }
 
+char *
+flatpak_keyfile_get_string_non_empty (GKeyFile   *keyfile,
+                                      const char *group,
+                                      const char *key)
+{
+  g_autofree char *value = NULL;
+
+  value = g_key_file_get_string (keyfile, group, key, NULL);
+  if (value != NULL && *value == '\0')
+    g_clear_pointer (&value, g_free);
+
+  return g_steal_pointer (&value);
+}
+
 GKeyFile *
 flatpak_parse_repofile (const char   *remote_name,
                         gboolean      from_ref,
@@ -2368,15 +2384,23 @@ flatpak_parse_repofile (const char   *remote_name,
       g_key_file_set_boolean (config, group, "gpg-verify", FALSE);
     }
 
-  collection_id = g_key_file_get_string (keyfile, source_group,
-                                         FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY, NULL);
-  if (collection_id != NULL && *collection_id == '\0')
-    g_clear_pointer (&collection_id, g_free);
+  /* We have a hierarchy of keys for setting the collection ID, which all have
+   * the same effect. The only difference is which versions of Flatpak support
+   * them, and therefore what P2P implementation is enabled by them:
+   * DeploySideloadCollectionID: supported by Flatpak >= 1.12.8 (1.7.1
+   *   introduced sideload support but this key was added late)
+   * DeployCollectionID: supported by Flatpak >= 1.0.6 (but fully supported in
+   *   >= 1.2.0)
+   * CollectionID: supported by Flatpak >= 0.9.8
+   */
+  collection_id = flatpak_keyfile_get_string_non_empty (keyfile, source_group,
+                                                        FLATPAK_REPO_DEPLOY_SIDELOAD_COLLECTION_ID_KEY);
   if (collection_id == NULL)
-    collection_id = g_key_file_get_string (keyfile, source_group,
-                                           FLATPAK_REPO_COLLECTION_ID_KEY, NULL);
-  if (collection_id != NULL && *collection_id == '\0')
-    g_clear_pointer (&collection_id, g_free);
+    collection_id = flatpak_keyfile_get_string_non_empty (keyfile, source_group,
+                                                          FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY);
+  if (collection_id == NULL)
+    collection_id = flatpak_keyfile_get_string_non_empty (keyfile, source_group,
+                                                          FLATPAK_REPO_COLLECTION_ID_KEY);
   if (collection_id != NULL)
     {
       if (gpg_key == NULL)
@@ -4349,11 +4373,8 @@ generate_summary (OstreeRepo   *repo,
       for (int i = 0; summary_arches[i] != NULL; i++)
         {
           const char *arch = summary_arches[i];
-          const char *compat_arch = flatpak_get_compat_arch (arch);
 
           g_hash_table_add (summary_arches_ht, (char *)arch);
-          if (compat_arch)
-            g_hash_table_add (summary_arches_ht, (char *)compat_arch);
         }
     }
 
@@ -6753,7 +6774,8 @@ flatpak_pull_from_bundle (OstreeRepo   *repo,
   if (metadata == NULL)
     return FALSE;
 
-  metadata_size = strlen (metadata_contents);
+  if (metadata_contents != NULL)
+    metadata_size = strlen (metadata_contents);
 
   if (!ostree_repo_get_remote_option (repo, remote, "collection-id", NULL,
                                       &remote_collection_id, NULL))
@@ -7411,6 +7433,24 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
   return TRUE;
 }
 
+gboolean
+flatpak_allow_fuzzy_matching (const char *term)
+{
+  if (strchr (term, '/') != NULL || strchr (term, '.') != NULL)
+    return FALSE;
+
+  /* This env var is used by the unit tests and only skips the tty test not the
+   * check above.
+   */
+  if (g_strcmp0 (g_getenv ("FLATPAK_FORCE_ALLOW_FUZZY_MATCHING"), "1") == 0)
+    return TRUE;
+
+  if (!isatty (STDIN_FILENO) || !isatty (STDOUT_FILENO))
+    return FALSE;
+
+  return TRUE;
+}
+
 char *
 flatpak_prompt (gboolean allow_empty,
                 const char *prompt, ...)
@@ -7718,6 +7758,35 @@ flatpak_format_choices (const char **choices,
   for (i = 0; choices[i]; i++)
     g_print ("  %2d) %s\n", i + 1, choices[i]);
   g_print ("\n");
+}
+
+static gint
+string_length_compare_func (gconstpointer a,
+                            gconstpointer b)
+{
+  return strlen (*(char * const *) a) - strlen (*(char * const *) b);
+}
+
+/* Sort a string array by decreasing length */
+char **
+flatpak_strv_sort_by_length (const char * const *strv)
+{
+  GPtrArray *array;
+  int i;
+
+  if (strv == NULL)
+    return NULL;
+
+  /* Combine both */
+  array = g_ptr_array_new ();
+
+  for (i = 0; strv[i] != NULL; i++)
+    g_ptr_array_add (array, g_strdup (strv[i]));
+
+  g_ptr_array_sort (array, string_length_compare_func);
+
+  g_ptr_array_add (array, NULL);
+  return (char **) g_ptr_array_free (array, FALSE);
 }
 
 char **
@@ -9164,3 +9233,65 @@ running_under_sudo (void)
 
   return FALSE;
 }
+
+#if !GLIB_CHECK_VERSION (2, 62, 0)
+void
+g_ptr_array_extend (GPtrArray  *array_to_extend,
+                    GPtrArray  *array,
+                    GCopyFunc   func,
+                    gpointer    user_data)
+{
+  for (gsize i = 0; i < array->len; i++)
+    {
+      if (func)
+        g_ptr_array_add (array_to_extend, func (g_ptr_array_index (array, i), user_data));
+      else
+        g_ptr_array_add (array_to_extend, g_ptr_array_index (array, i));
+    }
+}
+#endif
+
+#if !GLIB_CHECK_VERSION (2, 68, 0)
+/* All this code is backported directly from glib */
+guint
+g_string_replace (GString     *string,
+                  const gchar *find,
+                  const gchar *replace,
+                  guint        limit)
+{
+  gsize f_len, r_len, pos;
+  gchar *cur, *next;
+  guint n = 0;
+
+  g_return_val_if_fail (string != NULL, 0);
+  g_return_val_if_fail (find != NULL, 0);
+  g_return_val_if_fail (replace != NULL, 0);
+
+  f_len = strlen (find);
+  r_len = strlen (replace);
+  cur = string->str;
+
+  while ((next = strstr (cur, find)) != NULL)
+    {
+      pos = next - string->str;
+      g_string_erase (string, pos, f_len);
+      g_string_insert (string, pos, replace);
+      cur = string->str + pos + r_len;
+      n++;
+      /* Only match the empty string once at any given position, to
+       * avoid infinite loops */
+      if (f_len == 0)
+        {
+          if (cur[0] == '\0')
+            break;
+          else
+            cur++;
+        }
+      if (n == limit)
+        break;
+    }
+
+  return n;
+}
+
+#endif /* GLIB_CHECK_VERSION (2, 68, 0) */

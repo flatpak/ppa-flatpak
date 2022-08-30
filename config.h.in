@@ -22,6 +22,9 @@
 /* defines how to decorate public symbols while building */
 #undef FLATPAK_EXTERN
 
+/* Define to the FUSE API version */
+#undef FUSE_USE_VERSION
+
 /* gettext domain */
 #undef GETTEXT_PACKAGE
 
@@ -41,6 +44,9 @@
 /* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
    the CoreFoundation framework. */
 #undef HAVE_CFPREFERENCESCOPYAPPVALUE
+
+/* Define if we have libcurl.pc */
+#undef HAVE_CURL
 
 /* Define if the GNU dcgettext() function is already present or preinstalled.
    */
@@ -84,6 +90,9 @@
 
 /* Define to 1 if you have the <minix/config.h> header file. */
 #undef HAVE_MINIX_CONFIG_H
+
+/* Define if we have libsoup-2.4.pc */
+#undef HAVE_SOUP
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
