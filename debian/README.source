@@ -28,7 +28,7 @@ Version numbering
 -----------------
 
 If the version has already been packaged in Debian, for example as
-1.11.2-1, version it like 1.11.2-1flatpak1~20.04 in the PPA.
+1.14.0-1, version it like 1.14.0-1flatpak1~22.04.1 in the PPA.
 
 If the version has not already been packaged in Debian,
-version it like 1.11.2-0flatpak1~20.04 in the PPA.
+version it like 1.14.0-0flatpak1~22.04.1 in the PPA.
