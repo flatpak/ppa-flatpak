@@ -9,6 +9,8 @@ usr/lib/systemd/user/flatpak-oci-authenticator.service
 usr/lib/systemd/user/flatpak-portal.service
 usr/lib/systemd/user/flatpak-session-helper.service
 usr/lib/sysusers.d
+usr/libexec/flatpak-bwrap
+usr/libexec/flatpak-dbus-proxy
 usr/libexec/flatpak-oci-authenticator
 usr/libexec/flatpak-portal
 usr/libexec/flatpak-session-helper

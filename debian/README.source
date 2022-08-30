@@ -1,0 +1,34 @@
+Maintaining this backport
+=========================
+
+You'll want the official Debian packaging as a git remote:
+
+git remote add salsa https://salsa.debian.org/debian/flatpak.git
+
+Ideally import new versions into Debian experimental, but directly into
+this repository is OK too.
+
+First, import/merge new versions into the branch corresponding to the newest
+Ubuntu branch, currently ppa/jammy for Ubuntu 22.04.
+
+If you have merged updated packaging from Debian, you might need to adjust
+it for compatibility with jammy.
+
+Then merge the ppa/jammy branch into ppa/focal, and adjust as necessary
+for compatibility with focal.
+
+Next, merge the ppa/focal branch into ppa/bionic, and so on.
+
+The advantage of this approach is that the package in each branch is as
+modern as possible: changes that were necessary to be compatible with
+bionic will automatically disappear if we stop maintaining a backport
+to bionic, and so on.
+
+Version numbering
+-----------------
+
+If the version has already been packaged in Debian, for example as
+1.11.2-1, version it like 1.11.2-1flatpak1~20.04 in the PPA.
+
+If the version has not already been packaged in Debian,
+version it like 1.11.2-0flatpak1~20.04 in the PPA.
