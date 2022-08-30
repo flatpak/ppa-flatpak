@@ -1,3 +1,14 @@
+flatpak (1.14.0-1flatpak1~18.04.1) UNRELEASED; urgency=medium
+
+  * Backport from Ubuntu 20.04 'focal' to 18.04 'bionic'
+    - Roll back to debhelper compat level 11
+    - Reinstate --libexecdir
+    - Go back to libfuse version 2
+    - d/p/uri-Don-t-rely-on-g_time_zone_new_offset.patch:
+      Add proposed patch to avoid a GLib 2.58 dependency
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 30 Aug 2022 18:52:17 +0100
+
 flatpak (1.14.0-1flatpak1~20.04.1) focal; urgency=medium
 
   * Backport to Ubuntu 20.04 'focal'
