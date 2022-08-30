@@ -1,4 +1,4 @@
-/*
+/* vi:set et sw=2 sts=2 cin cino=t0,f0,(0,{s,>2s,n-s,^-s,e-s:
  * Copyright © 2019 Red Hat, Inc
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +33,7 @@ FlatpakAuthenticator *authenticator;
 static GMainLoop *main_loop = NULL;
 static guint name_owner_id = 0;
 static gboolean no_idle_exit = FALSE;
-static SoupSession *http_session = NULL;
+static FlatpakHttpSession *http_session = NULL;
 
 #define IDLE_TIMEOUT_SECS 10 * 60
 
@@ -769,7 +769,7 @@ main (int    argc,
 
   g_debug ("Started flatpak-authenticator");
 
-  http_session = flatpak_create_soup_session (PACKAGE_STRING);
+  http_session = flatpak_create_http_session (PACKAGE_STRING);
 
   session_bus = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
   if (session_bus == NULL)
