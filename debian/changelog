@@ -1,4 +1,4 @@
-flatpak (1.14.0-1flatpak1~20.04.1) UNRELEASED; urgency=medium
+flatpak (1.14.0-1flatpak1~20.04.1) focal; urgency=medium
 
   * Backport to Ubuntu 20.04 'focal'
     - Revert libmalcontent integration, only added to Ubuntu after 20.04.
@@ -18,7 +18,7 @@ flatpak (1.14.0-1flatpak1~20.04.1) UNRELEASED; urgency=medium
       The separate packages didn't exist in Ubuntu, even as Provides,
       before Ubuntu 21.10 'impish'.
 
- -- Simon McVittie <smcv@debian.org>  Tue, 30 Aug 2022 12:36:10 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 30 Aug 2022 14:42:12 +0100
 
 flatpak (1.14.0-1flatpak1~22.04.1) jammy; urgency=medium
 
