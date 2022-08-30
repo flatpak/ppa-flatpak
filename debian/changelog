@@ -1,4 +1,4 @@
-flatpak (1.14.0-1flatpak1~22.04.1) UNRELEASED; urgency=medium
+flatpak (1.14.0-1flatpak1~22.04.1) jammy; urgency=medium
 
   * Merge 1.14.0 stable release from Debian, and PPA packaging for
     Ubuntu 20.04 'focal', into a new branch for Ubuntu 22.04 'jammy'
@@ -9,7 +9,7 @@ flatpak (1.14.0-1flatpak1~22.04.1) UNRELEASED; urgency=medium
     - Set changelog merge driver for debian/changelog
     - Add PPA backport notes to debian/README.source
 
- -- Simon McVittie <smcv@debian.org>  Tue, 30 Aug 2022 12:43:13 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 30 Aug 2022 12:45:39 +0100
 
 flatpak (1.14.0-1) unstable; urgency=medium
 
