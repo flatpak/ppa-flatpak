@@ -9,6 +9,10 @@ flatpak (1.14.0-2flatpak1~20.04.1) UNRELEASED; urgency=medium
     - Go back to depending on dbus, instead of dbus-daemon
     - Go back to depending on policykit-1.
       Ubuntu 20.04 doesn't have the polkitd package.
+    - Go back to using libfuse version 2.
+      Ubuntu 20.04 has both, but version 2 is the one used by desktop
+      components like gvfs-fuse and ntfs-3g, so sticking to that version
+      avoids scary messages from apt.
 
  -- Simon McVittie <smcv@debian.org>  Fri, 02 Sep 2022 09:38:56 +0100
 
