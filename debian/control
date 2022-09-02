@@ -67,6 +67,7 @@ Package: flatpak
 Architecture: linux-any
 Depends:
  adduser,
+ fuse3,
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
@@ -114,7 +115,6 @@ Depends:
  ca-certificates,
  desktop-file-utils,
  flatpak (= ${binary:Version}),
- fuse3,
  gnupg,
  gtk-update-icon-cache,
  hicolor-icon-theme,
