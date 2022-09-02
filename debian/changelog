@@ -1,4 +1,4 @@
-flatpak (1.14.0-2flatpak1~20.04.1) UNRELEASED; urgency=medium
+flatpak (1.14.0-2flatpak1~20.04.1) focal; urgency=medium
 
   * Backport to Ubuntu 20.04 'focal'
     - Revert libmalcontent integration
@@ -14,7 +14,7 @@ flatpak (1.14.0-2flatpak1~20.04.1) UNRELEASED; urgency=medium
       components like gvfs-fuse and ntfs-3g, so sticking to that version
       avoids scary messages from apt.
 
- -- Simon McVittie <smcv@debian.org>  Fri, 02 Sep 2022 09:38:56 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 02 Sep 2022 09:41:18 +0100
 
 flatpak (1.14.0-2flatpak1~22.04.1) jammy; urgency=medium
 
