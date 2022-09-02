@@ -1,3 +1,17 @@
+flatpak (1.14.0-2flatpak1~20.04.1) UNRELEASED; urgency=medium
+
+  * Backport to Ubuntu 20.04 'focal'
+    - Revert libmalcontent integration
+    - Downgrade dbus from Depends to Recommends
+    - Revert use of libgdk-pixbuf-2.0-dev
+    - Roll back to debhelper 12
+    - Reduce libseccomp dependency for compatibility with focal
+    - Go back to depending on dbus, instead of dbus-daemon
+    - Go back to depending on policykit-1.
+      Ubuntu 20.04 doesn't have the polkitd package.
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 02 Sep 2022 09:38:56 +0100
+
 flatpak (1.14.0-2flatpak1~22.04.1) jammy; urgency=medium
 
   * Merge from Debian
