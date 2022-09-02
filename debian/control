@@ -67,6 +67,7 @@ Package: flatpak
 Architecture: linux-any
 Depends:
  adduser,
+ fuse,
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
