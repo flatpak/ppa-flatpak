@@ -1,12 +1,12 @@
-flatpak (1.14.0-1~bpo11+1) UNRELEASED; urgency=medium
+flatpak (1.14.0-1~bpo11+1) bullseye-backports; urgency=medium
 
   * Rebuild for bullseye-backports
     - d/control: Relax libseccomp build-dependency to 2.5.0
     - d/control, d/gbp.conf: Adjust git branch for bullseye-backports
     - d/p/uri-Don-t-do-scheme-based-normalization-with-GLib-2.66.x.patch:
-      Add proposed patch to fix FTBFS with GLib 2.66.x
+      Add patch from upstream git to fix FTBFS with GLib 2.66.x
 
- -- Simon McVittie <smcv@debian.org>  Tue, 30 Aug 2022 19:47:39 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Sep 2022 17:22:39 +0100
 
 flatpak (1.14.0-1) unstable; urgency=medium
 
