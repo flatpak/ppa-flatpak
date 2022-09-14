@@ -15,6 +15,7 @@ Neither of these normalizations seems particularly critical for Flatpak.
 Bug: https://github.com/flatpak/flatpak/issues/5062
 Signed-off-by: Simon McVittie <smcv@collabora.com>
 Forwarded: https://github.com/flatpak/flatpak/pull/5064
+Applied-upstream: upstream, 1.15.0, commit:8c51650662938ad9c73d97c486217d810cb1b1ac
 ---
  common/flatpak-uri-private.h | 5 +++++
  1 file changed, 5 insertions(+)
