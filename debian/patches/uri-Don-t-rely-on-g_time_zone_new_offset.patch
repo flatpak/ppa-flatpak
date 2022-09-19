@@ -9,6 +9,7 @@ reimplement it in terms of the deprecated g_time_zone_new().
 
 Signed-off-by: Simon McVittie <smcv@collabora.com>
 Forwarded: https://github.com/flatpak/flatpak/pull/5066
+Applied-upstream: 1.15.0, commit:3591ba08f673bcfb99c8da4fa3c6960cf5e776b7
 ---
  common/flatpak-uri.c | 37 ++++++++++++++++++++++++++++++++++++-
  1 file changed, 36 insertions(+), 1 deletion(-)
