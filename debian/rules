@@ -8,7 +8,7 @@ include /usr/share/dpkg/default.mk
 binaries := $(shell dh_listpackages)
 
 %:
-	dh $@ --with=gir
+	dh $@ --buildsystem=meson --with=gir
 
 override_dh_clean:
 	dh_clean
@@ -16,52 +16,42 @@ override_dh_clean:
 	rm -fr debian/XDG_RUNTIME_DIR
 
 override_dh_autoreconf:
-	NOCONFIGURE=1 \
-	dh_autoreconf \
-		--as-needed \
-		./autogen.sh \
-		-- \
-		$(NULL)
 
 configure_options =
 
 ifneq ($(filter nodoc,$(DEB_BUILD_OPTIONS)),)
-configure_options += --disable-docbook-docs
-configure_options += --disable-documentation
+configure_options += -Ddocbook_docs=disabled
 else
-configure_options += --enable-docbook-docs
-configure_options += --enable-documentation
+configure_options += -Ddocbook_docs=enabled
 endif
 
 ifneq ($(filter libflatpak-doc,$(binaries)),)
-configure_options += --enable-gtk-doc
+configure_options += -Dgtkdoc=enabled
 else
-configure_options += --disable-gtk-doc
+configure_options += -Dgtkdoc=disabled
 endif
 
 override_dh_auto_configure:
 	rm -f app/parse-datetime.c
 	dh_auto_configure -- \
-		--disable-auto-sideloading \
-		--disable-selinux-module \
-		--enable-gdm-env-file \
-		--enable-installed-tests \
-		--with-curl=yes \
-		--with-dbus-config-dir=/usr/share/dbus-1/system.d \
-		--with-priv-mode=none \
-		--with-privileged-group=sudo \
-		--with-run-media-dir=/media \
-		--with-system-bubblewrap=bwrap \
-		--with-system-dbus-proxy=xdg-dbus-proxy \
-		--with-systemdsystemunitdir=/lib/systemd/system \
-		--with-system-helper-user=_flatpak \
+		-Dauto_sideloading=false \
+		-Ddbus_config_dir=/usr/share/dbus-1/system.d \
+		-Dgdm_env_file=true \
+		-Dhttp_backend=curl \
+		-Dinstalled_tests=true \
+		-Dprivileged_group=sudo \
+		-Drun_media_dir=/media \
+		-Dselinux_module=disabled \
+		-Dsystem_bubblewrap=bwrap \
+		-Dsystem_dbus_proxy=xdg-dbus-proxy \
+		-Dsystem_helper_user=_flatpak \
+		-Dsystemdsystemunitdir=/lib/systemd/system \
 		$(configure_options)
 
 override_dh_install:
 	install -d debian/tmp/etc/X11/Xsession.d
 	install -m644 debian/tmp/etc/profile.d/flatpak.sh \
 		debian/tmp/etc/X11/Xsession.d/20flatpak
-	find debian/tmp -name '*.la' -print -delete
 	dh_install
 
 # debhelper >= 13.4 makes all of /usr/libexec executable, which is not
