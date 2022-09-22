@@ -22,10 +22,11 @@ Build-Depends:
  gtk-doc-tools,
  gtk-update-icon-cache <!nocheck>,
  hicolor-icon-theme <!nocheck>,
- libappstream-glib-dev (>= 0.5.10),
+ libappstream-dev (>= 0.12.0),
  libarchive-dev (>= 2.8.0),
  libattr1-dev,
  libcap-dev,
+ libcurl4-gnutls-dev | libcurl-dev,
  libdconf-dev,
  libdw-dev,
  libelf-dev,
@@ -39,7 +40,6 @@ Build-Depends:
  libpolkit-agent-1-dev,
  libpolkit-gobject-1-dev,
  libseccomp-dev,
- libsoup2.4-dev,
  libsystemd-dev,
  libxau-dev,
  libxml2-dev (>= 2.4),
@@ -57,7 +57,7 @@ Build-Depends:
 Build-Depends-Indep:
  libglib2.0-doc,
  libostree-doc,
-Standards-Version: 4.6.0
+Standards-Version: 4.6.1
 Homepage: https://flatpak.org/
 Vcs-Git: https://salsa.debian.org/debian/flatpak.git
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
@@ -67,6 +67,7 @@ Package: flatpak
 Architecture: linux-any
 Depends:
  adduser,
+ fuse,
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:

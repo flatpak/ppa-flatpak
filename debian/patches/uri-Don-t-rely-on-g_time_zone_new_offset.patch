@@ -1,0 +1,71 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Tue, 30 Aug 2022 18:49:54 +0100
+Subject: uri: Don't rely on g_time_zone_new_offset()
+
+g_time_zone_new_offset() was new in GLib 2.58, but Ubuntu 18.04 'bionic'
+only has GLib 2.56, and in theory we still claim to support versions
+all the way back to GLib 2.46. If that function isn't available,
+reimplement it in terms of the deprecated g_time_zone_new().
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Forwarded: https://github.com/flatpak/flatpak/pull/5066
+Applied-upstream: 1.15.0, commit:3591ba08f673bcfb99c8da4fa3c6960cf5e776b7
+---
+ common/flatpak-uri.c | 37 ++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 36 insertions(+), 1 deletion(-)
+
+diff --git a/common/flatpak-uri.c b/common/flatpak-uri.c
+index c66e56c..7ec6606 100644
+--- a/common/flatpak-uri.c
++++ b/common/flatpak-uri.c
+@@ -1614,6 +1614,41 @@ parse_time (int *hour, int *minute, int *second, const char **date_string)
+   return TRUE;
+ }
+ 
++static inline GTimeZone *
++time_zone_new_offset (gint32 offset)
++{
++#if GLIB_CHECK_VERSION (2, 58, 0)
++  return g_time_zone_new_offset (offset);
++#else
++  g_autofree char *id = NULL;
++  gint hours, minutes;
++  gint seconds = offset;
++  GTimeZone *tz;
++  char sign = '+';
++
++  if (seconds == 0)
++    return g_time_zone_new_utc ();
++
++  if (seconds < 0)
++    {
++      seconds = -seconds;
++      sign = '-';
++    }
++
++  hours = seconds / 3600;
++  seconds = seconds % 3600;
++  minutes = seconds / 60;
++  seconds = seconds % 60;
++
++  id = g_strdup_printf ("%c%02d:%02d:%02d", sign, hours, minutes, seconds);
++  tz = g_time_zone_new (id);
++  /* If this assertion fails, we'll log a critical but still return tz,
++   * which is documented to be UTC if the time zone could not be parsed */
++  g_return_val_if_fail (g_time_zone_get_offset (tz, 0) == offset, tz);
++  return tz;
++#endif
++}
++
+ static inline gboolean
+ parse_timezone (GTimeZone **timezone_out, const char **date_string)
+ {
+@@ -1664,7 +1699,7 @@ parse_timezone (GTimeZone **timezone_out, const char **date_string)
+   if (utc)
+     *timezone_out = g_time_zone_new_utc ();
+   else
+-    *timezone_out = g_time_zone_new_offset (offset_minutes * 60);
++    *timezone_out = time_zone_new_offset (offset_minutes * 60);
+ 
+   return TRUE;
+ }
