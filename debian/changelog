@@ -1,3 +1,13 @@
+flatpak (1.14.0-2~bpo11+1) bullseye-backports; urgency=medium
+
+  * Rebuild for bullseye-backports
+    - d/control: Relax libseccomp build-dependency to 2.5.0
+    - d/control, d/gbp.conf: Adjust git branch for bullseye-backports
+    - d/p/uri-Don-t-do-scheme-based-normalization-with-GLib-2.66.x.patch:
+      Add patch from upstream git to fix FTBFS with GLib 2.66.x
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 28 Sep 2022 11:17:36 +0100
+
 flatpak (1.14.0-2) unstable; urgency=medium
 
   * d/control: Add dependency on fuse3, for fusermount3.
