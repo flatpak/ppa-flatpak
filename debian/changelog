@@ -1,3 +1,15 @@
+flatpak (1.14.0-2) unstable; urgency=medium
+
+  * d/control: Add dependency on fuse3, for fusermount3.
+    Strictly speaking this is only needed for system installations, but
+    those are the default, and a missing fusermount3 produces unclear
+    symptoms.
+  * d/control: Depend on polkitd in preference to transitional policykit-1.
+    This package doesn't need pkexec.
+  * Update Lintian overrides
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 02 Sep 2022 08:59:06 +0100
+
 flatpak (1.14.0-1~bpo11+1) bullseye-backports; urgency=medium
 
   * Rebuild for bullseye-backports
