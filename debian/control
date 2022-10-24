@@ -17,7 +17,7 @@ Build-Depends:
  dh-exec (>= 0.23~),
  docbook-xml <!nodoc>,
  docbook-xsl <!nodoc>,
- fuse <!nocheck>,
+ fuse3 <!nocheck>,
  gnupg <!nocheck>,
  gobject-introspection (>= 1.54.1-2~),
  gtk-doc-tools,
@@ -31,7 +31,7 @@ Build-Depends:
  libdconf-dev,
  libdw-dev,
  libelf-dev,
- libfuse-dev (>= 2.9.2),
+ libfuse3-dev (>= 3.1.1),
  libgdk-pixbuf-2.0-dev,
  libgirepository1.0-dev,
  libglib2.0-dev (>= 2.44),
@@ -48,7 +48,7 @@ Build-Depends:
  libxml2-utils,
  libzstd-dev,
  ostree (>= 2020.8) <!nocheck>,
- policykit-1 <!nocheck>,
+ polkitd <!nocheck> | policykit-1 <!nocheck>,
  procps,
  python3:any,
  python3-pyparsing,
@@ -62,7 +62,7 @@ Build-Depends-Indep:
  libostree-doc,
 Standards-Version: 4.6.1
 Homepage: https://flatpak.org/
-Vcs-Git: https://salsa.debian.org/debian/flatpak.git -b debian/experimental
+Vcs-Git: https://salsa.debian.org/debian/flatpak.git
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
 Rules-Requires-Root: no
 
@@ -72,6 +72,7 @@ Depends:
  adduser,
  bubblewrap (>= 0.5.0),
  default-dbus-system-bus | dbus-system-bus,
+ fuse3,
  xdg-dbus-proxy (>= 0.1.0),
  ${misc:Depends},
  ${shlibs:Depends},
@@ -82,7 +83,7 @@ Recommends:
  gtk-update-icon-cache,
  libpam-systemd,
  p11-kit,
- policykit-1,
+ polkitd | policykit-1,
  shared-mime-info,
  xdg-desktop-portal (>= 1.6),
  xdg-desktop-portal-gtk (>= 1.6) | xdg-desktop-portal-backend,
@@ -121,12 +122,11 @@ Depends:
  dbus-daemon,
  desktop-file-utils,
  flatpak (= ${binary:Version}),
- fuse,
  gnupg,
  gtk-update-icon-cache,
  hicolor-icon-theme,
  ostree (>= 2020.8),
- policykit-1,
+ polkitd | policykit-1,
  shared-mime-info,
  socat,
  ${misc:Depends},
