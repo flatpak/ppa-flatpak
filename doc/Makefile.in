@@ -278,6 +278,8 @@ FLATPAK_MAJOR_VERSION = @FLATPAK_MAJOR_VERSION@
 FLATPAK_MICRO_VERSION = @FLATPAK_MICRO_VERSION@
 FLATPAK_MINOR_VERSION = @FLATPAK_MINOR_VERSION@
 FLATPAK_VERSION = @FLATPAK_VERSION@
+FUSE3_CFLAGS = @FUSE3_CFLAGS@
+FUSE3_LIBS = @FUSE3_LIBS@
 FUSE_CFLAGS = @FUSE_CFLAGS@
 FUSE_LIBS = @FUSE_LIBS@
 GDBUS_CODEGEN = @GDBUS_CODEGEN@
@@ -438,6 +440,7 @@ host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
 htmldir = @htmldir@
+http_backend = @http_backend@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
@@ -549,6 +552,7 @@ EXTRA_DIST = \
 	$(xml_files) 		\
 	docbook.css		\
 	flatpak-docs.xml.in	\
+	meson.build		\
 	xmlto-config.xsl	\
 	$(NULL)
 

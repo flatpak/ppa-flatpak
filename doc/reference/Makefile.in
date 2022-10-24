@@ -412,6 +412,8 @@ FLATPAK_MAJOR_VERSION = @FLATPAK_MAJOR_VERSION@
 FLATPAK_MICRO_VERSION = @FLATPAK_MICRO_VERSION@
 FLATPAK_MINOR_VERSION = @FLATPAK_MINOR_VERSION@
 FLATPAK_VERSION = @FLATPAK_VERSION@
+FUSE3_CFLAGS = @FUSE3_CFLAGS@
+FUSE3_LIBS = @FUSE3_LIBS@
 FUSE_CFLAGS = @FUSE_CFLAGS@
 FUSE_LIBS = @FUSE_LIBS@
 GDBUS_CODEGEN = @GDBUS_CODEGEN@
@@ -572,6 +574,7 @@ host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
 htmldir = @htmldir@
+http_backend = @http_backend@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
@@ -694,7 +697,7 @@ SETUP_FILES = \
 	$(DOC_MODULE)-sections.txt	\
 	$(DOC_MODULE)-overrides.txt
 
-EXTRA_DIST = $(HTML_IMAGES) $(SETUP_FILES) version.xml.in
+EXTRA_DIST = $(HTML_IMAGES) $(SETUP_FILES) meson.build version.xml.in
 DOC_STAMPS = setup-build.stamp scan-build.stamp sgml-build.stamp \
 	html-build.stamp pdf-build.stamp \
 	sgml.stamp html.stamp pdf.stamp

@@ -1,4 +1,4 @@
-/*
+/* vi:set et sw=2 sts=2 cin cino=t0,f0,(0,{s,>2s,n-s,^-s,e-s:
  * Copyright © 2014-2019 Red Hat, Inc
  *
  * This program is free software; you can redistribute it and/or
@@ -49,8 +49,11 @@ do_atexit (void)
 static void
 handle_sigterm (int signum)
 {
+  struct sigaction action = { 0 };
   do_atexit ();
-  _exit (1);
+  action.sa_handler = SIG_DFL;
+  sigaction (signum, &action, NULL);
+  raise (signum);
 }
 
 typedef struct

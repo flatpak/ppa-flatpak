@@ -1,4 +1,4 @@
-/*
+/* vi:set et sw=2 sts=2 cin cino=t0,f0,(0,{s,>2s,n-s,^-s,e-s:
  * Copyright © 2014-2018 Red Hat, Inc
  *
  * This program is free software; you can redistribute it and/or
@@ -61,6 +61,7 @@ const char *flatpak_context_sockets[] = {
   "ssh-auth",
   "pcsc",
   "cups",
+  "gpg-agent",
   NULL
 };
 
@@ -2361,7 +2362,10 @@ flatpak_context_add_bus_filters (FlatpakContext *context,
           flatpak_bwrap_add_arg_printf (bwrap, "--own=org.mpris.MediaPlayer2.%s.*", app_id);
         }
       else
-        flatpak_bwrap_add_arg_printf (bwrap, "--own=%s.Sandboxed.*", app_id);
+        {
+          flatpak_bwrap_add_arg_printf (bwrap, "--own=%s.Sandboxed.*", app_id);
+          flatpak_bwrap_add_arg_printf (bwrap, "--own=org.mpris.MediaPlayer2.%s.Sandboxed.*", app_id);
+        }
     }
 
   if (session_bus)

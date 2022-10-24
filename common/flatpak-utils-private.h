@@ -359,6 +359,13 @@ g_hash_table_steal_extended (GHashTable    *hash_table,
 }
 #endif
 
+#if !GLIB_CHECK_VERSION (2, 62, 0)
+void g_ptr_array_extend (GPtrArray        *array_to_extend,
+                         GPtrArray        *array,
+                         GCopyFunc         func,
+                         gpointer          user_data);
+#endif
+
 #if !GLIB_CHECK_VERSION (2, 68, 0)
 guint g_string_replace (GString     *string,
                         const gchar *find,
@@ -406,6 +413,10 @@ flatpak_auto_lock_helper (GMutex *mutex)
 gboolean flatpak_switch_symlink_and_remove (const char *symlink_path,
                                             const char *target,
                                             GError    **error);
+
+char *flatpak_keyfile_get_string_non_empty (GKeyFile *keyfile,
+                                            const char *group,
+                                            const char *key);
 
 GKeyFile * flatpak_parse_repofile (const char   *remote_name,
                                    gboolean      from_ref,

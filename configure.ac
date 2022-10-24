@@ -14,8 +14,8 @@ AC_PREREQ([2.63])
 # on the unstable (ie main), interface age = 0
 
 m4_define([flatpak_major_version], [1])
-m4_define([flatpak_minor_version], [13])
-m4_define([flatpak_micro_version], [3])
+m4_define([flatpak_minor_version], [14])
+m4_define([flatpak_micro_version], [99])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -274,6 +274,7 @@ AS_IF([test x$with_curl != xno ], [
 ])
 AM_CONDITIONAL(USE_CURL, test x$with_curl != xno)
 AM_CONDITIONAL(USE_SOUP, test x$with_curl == xno)
+AC_SUBST(http_backend)
 
 LIBGPGME_DEPENDENCY="1.1.8"
 PKG_CHECK_MODULES(DEP_GPGME, gpgme-pthread >= $LIBGPGME_DEPENDENCY, have_gpgme=yes, [
@@ -315,7 +316,14 @@ AC_ARG_ENABLE([auto-sideloading],
               [enable_auto_sideloading=no])
 AM_CONDITIONAL(BUILD_AUTO_SIDELOADING, test x$enable_auto_sideloading = xyes)
 
-PKG_CHECK_MODULES(FUSE, fuse >= 2.9.2)
+PKG_CHECK_MODULES([FUSE3], [fuse3 >= 3.1.1],
+                  [
+                    FUSE_USE_VERSION=31
+                    FUSE_CFLAGS="$FUSE3_CFLAGS"
+                    FUSE_LIBS="$FUSE3_LIBS"
+                  ],
+                  [PKG_CHECK_MODULES([FUSE], [fuse >= 2.9.2], [FUSE_USE_VERSION=26])])
+AC_DEFINE_UNQUOTED([FUSE_USE_VERSION], [$FUSE_USE_VERSION], [Define to the FUSE API version])
 
 AC_ARG_ENABLE([xauth],
               AC_HELP_STRING([--disable-xauth],

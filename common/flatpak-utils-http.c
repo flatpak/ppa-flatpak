@@ -1,4 +1,4 @@
-/*
+/* vi:set et sw=2 sts=2 cin cino=t0,f0,(0,{s,>2s,n-s,^-s,e-s:
  * Copyright © 2018 Red Hat, Inc
  *
  * This program is free software; you can redistribute it and/or
@@ -243,6 +243,7 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (auto_curl_slist, curl_slist_free_all)
 
 struct FlatpakHttpSession {
   CURL *curl;
+  GMutex lock;
 };
 
 static void
@@ -369,6 +370,8 @@ flatpak_create_http_session (const char *user_agent)
   session->curl = curl = curl_easy_init();
   g_assert (session->curl != NULL);
 
+  g_mutex_init (&session->lock);
+
   curl_easy_setopt (curl, CURLOPT_USERAGENT, user_agent);
   rc = curl_easy_setopt (curl, CURLOPT_PROTOCOLS, (long)(CURLPROTO_HTTP | CURLPROTO_HTTPS));
   g_assert_cmpint (rc, ==, CURLM_OK);
@@ -385,8 +388,10 @@ flatpak_create_http_session (const char *user_agent)
    * libcurl 7.43.0.
    */
 #if CURL_AT_LEAST_VERSION(7, 51, 0)
-  rc = curl_easy_setopt (curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
-  g_assert_cmpint (rc, ==, CURLM_OK);
+  if ((curl_version_info (CURLVERSION_NOW))->features & CURL_VERSION_HTTP2) {
+    rc = curl_easy_setopt (curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_2_0);
+    g_assert_cmpint (rc, ==, CURLM_OK);
+  }
 #endif
   /* https://github.com/curl/curl/blob/curl-7_53_0/docs/examples/http2-download.c */
 #if (CURLPIPE_MULTIPLEX > 0)
@@ -406,7 +411,10 @@ flatpak_create_http_session (const char *user_agent)
 void
 flatpak_http_session_free (FlatpakHttpSession* session)
 {
+  g_mutex_lock (&session->lock);
   curl_easy_cleanup (session->curl);
+  g_mutex_unlock (&session->lock);
+  g_mutex_clear (&session->lock);
   g_free (session);
 }
 
@@ -447,6 +455,7 @@ flatpak_download_http_uri_once (FlatpakHttpSession    *session,
   g_autofree char *auth_header = NULL;
   g_autofree char *cache_header = NULL;
   g_autoptr(auto_curl_slist) header_list = NULL;
+  g_autoptr(GMutexLocker) curl_lock = g_mutex_locker_new (&session->lock);
   long response;
   CURL *curl = session->curl;
 
@@ -540,6 +549,9 @@ flatpak_download_http_uri_once (FlatpakHttpSession    *session,
     return FALSE;
 
   g_debug ("Received %" G_GUINT64_FORMAT " bytes", data->downloaded_bytes);
+
+  /* This is not really needed, but the auto-pointer confuses some compilers in the CI */
+  g_clear_pointer (&curl_lock, g_mutex_locker_free);
 
   return TRUE;
 }
