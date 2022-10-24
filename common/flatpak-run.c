@@ -1,4 +1,4 @@
-/*
+/* vi:set et sw=2 sts=2 cin cino=t0,f0,(0,{s,>2s,n-s,^-s,e-s:
  * Copyright © 2014-2019 Red Hat, Inc
  *
  * This program is free software; you can redistribute it and/or
@@ -163,7 +163,6 @@ static void
 write_xauth (int family,
              const char *remote_host,
              const char *number,
-             const char *replace_number,
              FILE       *output)
 {
   Xauth *xa, local_xa;
@@ -191,11 +190,6 @@ write_xauth (int family,
                                         unames.nodename, number))
         {
           local_xa = *xa;
-          if (local_xa.number != NULL && replace_number != NULL)
-            {
-              local_xa.number = (char *) replace_number;
-              local_xa.number_length = strlen (replace_number);
-            }
 
           if (local_xa.family == FamilyLocal &&
               !auth_streq (unames.nodename, local_xa.address, local_xa.address_length))
@@ -326,12 +320,11 @@ flatpak_run_add_x11_args (FlatpakBwrap         *bwrap,
   if (display != NULL)
     {
       g_autofree char *remote_host = NULL;
-      g_autofree char *original_display_nr = NULL;
-      const char *replace_display_nr = NULL;
+      g_autofree char *display_nr = NULL;
       int family = -1;
 
       if (!flatpak_run_parse_x11_display (display, &family, &x11_socket,
-                                          &remote_host, &original_display_nr,
+                                          &remote_host, &display_nr,
                                           &local_error))
         {
           g_warning ("%s", local_error->message);
@@ -339,16 +332,16 @@ flatpak_run_add_x11_args (FlatpakBwrap         *bwrap,
           return;
         }
 
-      g_assert (original_display_nr != NULL);
+      g_assert (display_nr != NULL);
 
       if (x11_socket != NULL
           && g_file_test (x11_socket, G_FILE_TEST_EXISTS))
         {
+          g_assert (g_str_has_prefix (x11_socket, "/tmp/.X11-unix/X"));
           flatpak_bwrap_add_args (bwrap,
-                                  "--ro-bind", x11_socket, "/tmp/.X11-unix/X99",
+                                  "--ro-bind", x11_socket, x11_socket,
                                   NULL);
-          flatpak_bwrap_set_env (bwrap, "DISPLAY", ":99.0", TRUE);
-          replace_display_nr = "99";
+          flatpak_bwrap_set_env (bwrap, "DISPLAY", display, TRUE);
         }
       else if ((shares & FLATPAK_CONTEXT_SHARED_NETWORK) == 0)
         {
@@ -393,8 +386,7 @@ flatpak_run_add_x11_args (FlatpakBwrap         *bwrap,
                 {
                   static const char dest[] = "/run/flatpak/Xauthority";
 
-                  write_xauth (family, remote_host, original_display_nr,
-                               replace_display_nr, output);
+                  write_xauth (family, remote_host, display_nr, output);
                   flatpak_bwrap_add_args_data_fd (bwrap, "--ro-bind-data", tmp_fd, dest);
 
                   flatpak_bwrap_set_env (bwrap, "XAUTHORITY", dest, TRUE);
@@ -606,6 +598,46 @@ flatpak_run_add_cups_args (FlatpakBwrap *bwrap)
 
   flatpak_bwrap_add_args (bwrap,
                           "--ro-bind", cups_server_name, sandbox_server_name,
+                          NULL);
+}
+
+static void
+flatpak_run_add_gpg_agent_args (FlatpakBwrap *bwrap)
+{
+  const char * agent_socket;
+  g_autofree char * sandbox_agent_socket = NULL;
+  g_autoptr(GError) gpgconf_error = NULL;
+  g_autoptr(GSubprocess) process = NULL;
+  g_autoptr(GInputStream) base_stream = NULL;
+  g_autoptr(GDataInputStream) data_stream = NULL;
+
+  process = g_subprocess_new (G_SUBPROCESS_FLAGS_STDOUT_PIPE,
+                    &gpgconf_error,
+                    "gpgconf", "--list-dir", "agent-socket", NULL);
+
+  if (gpgconf_error)
+    {
+      g_debug ("GPG-Agent directories: %s", gpgconf_error->message);
+      return;
+    }
+
+  base_stream = g_subprocess_get_stdout_pipe (process);
+  data_stream = g_data_input_stream_new (base_stream);
+
+  agent_socket = g_data_input_stream_read_line (data_stream,
+                                                NULL, NULL,
+                                                &gpgconf_error);
+
+  if (!agent_socket || gpgconf_error)
+    {
+      g_debug ("GPG-Agent directories: %s", gpgconf_error->message);
+      return;
+    }
+
+  sandbox_agent_socket = g_strdup_printf ("/run/user/%d/gnupg/S.gpg-agent", getuid ());
+
+  flatpak_bwrap_add_args (bwrap,
+                          "--ro-bind-try", agent_socket, sandbox_agent_socket,
                           NULL);
 }
 
@@ -921,6 +953,19 @@ flatpak_run_add_pulseaudio_args (FlatpakBwrap         *bwrap,
    */
   if (!remote && g_file_test ("/dev/snd", G_FILE_TEST_IS_DIR))
     flatpak_bwrap_add_args (bwrap, "--dev-bind", "/dev/snd", "/dev/snd", NULL);
+}
+
+static void
+flatpak_run_add_gssproxy_args (FlatpakBwrap *bwrap)
+{
+  /* We only expose the gssproxy user service. The gssproxy system service is
+   * not intended to be exposed to sandboxed environments.
+   */
+  g_autofree char *gssproxy_host_dir = g_build_filename (g_get_user_runtime_dir (), "gssproxy", NULL);
+  const char *gssproxy_sandboxed_dir = "/run/flatpak/gssproxy/";
+
+  if (g_file_test (gssproxy_host_dir, G_FILE_TEST_EXISTS))
+    flatpak_bwrap_add_args (bwrap, "--ro-bind", gssproxy_host_dir, gssproxy_sandboxed_dir, NULL);
 }
 
 static void
@@ -1791,6 +1836,11 @@ flatpak_run_add_environment_args (FlatpakBwrap    *bwrap,
       flatpak_run_add_cups_args (bwrap);
     }
 
+  if (context->sockets & FLATPAK_CONTEXT_SOCKET_GPG_AGENT)
+    {
+      flatpak_run_add_gpg_agent_args (bwrap);
+    }
+
   flatpak_run_add_session_dbus_args (bwrap, proxy_arg_bwrap, context, flags, app_id);
   flatpak_run_add_system_dbus_args (bwrap, proxy_arg_bwrap, context, flags);
   flatpak_run_add_a11y_dbus_args (bwrap, proxy_arg_bwrap, context, flags);
@@ -1837,7 +1887,8 @@ static const ExportData default_exports[] = {
   {"XDG_RUNTIME_DIR", NULL},
 
   /* Some env vars are common enough and will affect the sandbox badly
-     if set on the host. We clear these always. */
+     if set on the host. We clear these always. If updating this list,
+     also update the list in flatpak-run.xml. */
   {"PYTHONPATH", NULL},
   {"PERLLIB", NULL},
   {"PERL5LIB", NULL},
@@ -1854,6 +1905,7 @@ static const ExportData default_exports[] = {
   {"GST_PTP_HELPER", NULL},
   {"GST_PTP_HELPER_1_0", NULL},
   {"GST_INSTALL_PLUGINS_HELPER", NULL},
+  {"KRB5CCNAME", NULL},
 };
 
 static const ExportData no_ld_so_cache_exports[] = {
@@ -3127,9 +3179,6 @@ setup_seccomp (FlatpakBwrap   *bwrap,
     {SCMP_SYS (uselib), EPERM},
     /* Don't allow disabling accounting */
     {SCMP_SYS (acct), EPERM},
-    /* 16-bit code is unnecessary in the sandbox, and modify_ldt is a
-       historic source of interesting information leaks. */
-    {SCMP_SYS (modify_ldt), EPERM},
     /* Don't allow reading current quota use */
     {SCMP_SYS (quotactl), EPERM},
 
@@ -3294,6 +3343,23 @@ setup_seccomp (FlatpakBwrap   *bwrap,
        * when trying to filter them on a non-native architecture, because
        * libseccomp cannot map the syscall number to a name and back to a
        * number for the non-native architecture. */
+      if (r == -EFAULT)
+        flatpak_debug2 ("Unable to block syscall %d: syscall not known to libseccomp?",
+                        scall);
+      else if (r < 0)
+        return flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Failed to block syscall %d: %s"), scall, flatpak_seccomp_strerror (r));
+    }
+
+  if (!multiarch)
+    {
+      /* modify_ldt is a historic source of interesting information leaks,
+       * so it's disabled as a hardening measure.
+       * However, it is required to run old 16-bit applications
+       * as well as some Wine patches, so it's allowed in multiarch. */
+      int scall = SCMP_SYS (modify_ldt);
+      r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO (EPERM), scall, 0);
+
+      /* See above for the meaning of EFAULT. */
       if (r == -EFAULT)
         flatpak_debug2 ("Unable to block syscall %d: syscall not known to libseccomp?",
                         scall);
@@ -4560,7 +4626,10 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
     }
 
   if ((app_context->shares & FLATPAK_CONTEXT_SHARED_NETWORK) != 0)
-    flatpak_run_add_resolved_args (bwrap);
+    {
+      flatpak_run_add_gssproxy_args (bwrap);
+      flatpak_run_add_resolved_args (bwrap);
+    }
 
   flatpak_run_add_journal_args (bwrap);
   add_font_path_args (bwrap);

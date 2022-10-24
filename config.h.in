@@ -22,6 +22,9 @@
 /* defines how to decorate public symbols while building */
 #undef FLATPAK_EXTERN
 
+/* Define to the FUSE API version */
+#undef FUSE_USE_VERSION
+
 /* gettext domain */
 #undef GETTEXT_PACKAGE
 

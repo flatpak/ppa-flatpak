@@ -1,4 +1,4 @@
-/*
+/* vi:set et sw=2 sts=2 cin cino=t0,f0,(0,{s,>2s,n-s,^-s,e-s:
  * Copyright © 1995-1998 Free Software Foundation, Inc.
  * Copyright © 2014-2019 Red Hat, Inc
  *
@@ -79,6 +79,8 @@ static const GDBusErrorEntry flatpak_error_entries[] = {
   {FLATPAK_ERROR_NOT_CACHED,            "org.freedesktop.Flatpak.Error.NotCached"}, /* Since: 1.3.3 */
   {FLATPAK_ERROR_REF_NOT_FOUND,         "org.freedesktop.Flatpak.Error.RefNotFound"}, /* Since: 1.4.0 */
   {FLATPAK_ERROR_PERMISSION_DENIED,     "org.freedesktop.Flatpak.Error.PermissionDenied"}, /* Since: 1.5.1 */
+  {FLATPAK_ERROR_AUTHENTICATION_FAILED, "org.freedesktop.Flatpak.Error.AuthenticationFailed"}, /* Since: 1.7.3 */
+  {FLATPAK_ERROR_NOT_AUTHORIZED,        "org.freedesktop.Flatpak.Error.NotAuthorized"}, /* Since: 1.7.3 */
 };
 
 typedef struct archive FlatpakAutoArchiveRead;
@@ -2262,6 +2264,20 @@ flatpak_summary_lookup_ref (GVariant      *summary_v,
   return TRUE;
 }
 
+char *
+flatpak_keyfile_get_string_non_empty (GKeyFile   *keyfile,
+                                      const char *group,
+                                      const char *key)
+{
+  g_autofree char *value = NULL;
+
+  value = g_key_file_get_string (keyfile, group, key, NULL);
+  if (value != NULL && *value == '\0')
+    g_clear_pointer (&value, g_free);
+
+  return g_steal_pointer (&value);
+}
+
 GKeyFile *
 flatpak_parse_repofile (const char   *remote_name,
                         gboolean      from_ref,
@@ -2368,15 +2384,23 @@ flatpak_parse_repofile (const char   *remote_name,
       g_key_file_set_boolean (config, group, "gpg-verify", FALSE);
     }
 
-  collection_id = g_key_file_get_string (keyfile, source_group,
-                                         FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY, NULL);
-  if (collection_id != NULL && *collection_id == '\0')
-    g_clear_pointer (&collection_id, g_free);
+  /* We have a hierarchy of keys for setting the collection ID, which all have
+   * the same effect. The only difference is which versions of Flatpak support
+   * them, and therefore what P2P implementation is enabled by them:
+   * DeploySideloadCollectionID: supported by Flatpak >= 1.12.8 (1.7.1
+   *   introduced sideload support but this key was added late)
+   * DeployCollectionID: supported by Flatpak >= 1.0.6 (but fully supported in
+   *   >= 1.2.0)
+   * CollectionID: supported by Flatpak >= 0.9.8
+   */
+  collection_id = flatpak_keyfile_get_string_non_empty (keyfile, source_group,
+                                                        FLATPAK_REPO_DEPLOY_SIDELOAD_COLLECTION_ID_KEY);
   if (collection_id == NULL)
-    collection_id = g_key_file_get_string (keyfile, source_group,
-                                           FLATPAK_REPO_COLLECTION_ID_KEY, NULL);
-  if (collection_id != NULL && *collection_id == '\0')
-    g_clear_pointer (&collection_id, g_free);
+    collection_id = flatpak_keyfile_get_string_non_empty (keyfile, source_group,
+                                                          FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY);
+  if (collection_id == NULL)
+    collection_id = flatpak_keyfile_get_string_non_empty (keyfile, source_group,
+                                                          FLATPAK_REPO_COLLECTION_ID_KEY);
   if (collection_id != NULL)
     {
       if (gpg_key == NULL)
@@ -9209,6 +9233,23 @@ running_under_sudo (void)
 
   return FALSE;
 }
+
+#if !GLIB_CHECK_VERSION (2, 62, 0)
+void
+g_ptr_array_extend (GPtrArray  *array_to_extend,
+                    GPtrArray  *array,
+                    GCopyFunc   func,
+                    gpointer    user_data)
+{
+  for (gsize i = 0; i < array->len; i++)
+    {
+      if (func)
+        g_ptr_array_add (array_to_extend, func (g_ptr_array_index (array, i), user_data));
+      else
+        g_ptr_array_add (array_to_extend, g_ptr_array_index (array, i));
+    }
+}
+#endif
 
 #if !GLIB_CHECK_VERSION (2, 68, 0)
 /* All this code is backported directly from glib */

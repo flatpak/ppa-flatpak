@@ -1,4 +1,4 @@
-/*
+/* vi:set et sw=2 sts=2 cin cino=t0,f0,(0,{s,>2s,n-s,^-s,e-s:
  * Copyright © 2016 Red Hat, Inc
  *
  * This program is free software; you can redistribute it and/or
@@ -704,12 +704,13 @@ flatpak_transaction_operation_get_decomposed (FlatpakTransactionOperation *self)
  * flatpak_transaction_operation_get_related_to_ops:
  * @self: a #FlatpakTransactionOperation
  *
- * Gets the operations which caused this operation to be added to the
- * transaction. In the case of a runtime, it's the apps whose runtime it is (and
- * this could be multiple apps, if they all require the same runtime). In
- * the case of a related ref such as an extension, it's the main app or
- * runtime. In the case of a main app or something added to the transaction by
- * flatpak_transaction_add_ref(), %NULL or an empty array will be returned.
+ * Gets the operation(s) which caused this operation to be added to the
+ * transaction. In the case of a runtime, it's the app(s) whose runtime it is,
+ * and/or a runtime extension in the special case of an extra-data extension
+ * that doesn't define the "NoRuntime" key. In the case of a related ref such
+ * as an extension, it's the main app or runtime. In the case of a main app or
+ * something added to the transaction by e.g. flatpak_transaction_add_install()
+ * and which is not otherwise needed, %NULL or an empty array will be returned.
  *
  * Note that an op will be returned even if it’s marked as to be skipped when
  * the transaction is run. Check that using
@@ -1317,15 +1318,17 @@ flatpak_transaction_class_init (FlatpakTransactionClass *klass)
    * FlatpakTransaction::ready-pre-auth:
    * @object: A #FlatpakTransaction
    *
-   * The ::ready-pre-auth signal is emitted when all the refs involved in the transaction
-   * have been resolved to commits, but we might not necessarily have asked for authenticaion
-   * for all their required operations. This is very similar to the ::ready signal, and you can
-   * chose which one (or both) to use depending on how you want to handle authentication in your user
+   * The ::ready-pre-auth signal is emitted when all the refs involved in the
+   * transaction have been resolved to commits, but we might not necessarily
+   * have asked for authentication for all their required operations. This is
+   * very similar to the ::ready signal, and you can choose which one (or both)
+   * to use depending on how you want to handle authentication in your user
    * interface.
    *
-   * At this point flatpak_transaction_get_operations() will return all the operations
-   * that will be executed as part of the transaction. You can call flatpak_transaction_operation_get_requires_authentication()
-   * to see which will require authentication.
+   * At this point flatpak_transaction_get_operations() will return all the
+   * operations that will be executed as part of the transaction. You can call
+   * flatpak_transaction_operation_get_requires_authentication() to see which
+   * will require authentication.
    *
    * Returns: %TRUE to carry on with the transaction, %FALSE to abort
    *
