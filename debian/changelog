@@ -1,4 +1,4 @@
-flatpak (1.15.0-1) UNRELEASED; urgency=medium
+flatpak (1.15.0-1) experimental; urgency=medium
 
   * d/gbp.conf, d/control: Branch for experimental
   * New upstream development release
@@ -7,7 +7,7 @@ flatpak (1.15.0-1) UNRELEASED; urgency=medium
     Meson is more thorough about including private dependencies in the
     Requires.private field.
 
- -- Simon McVittie <smcv@debian.org>  Mon, 24 Oct 2022 18:42:16 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 24 Oct 2022 19:29:56 +0100
 
 flatpak (1.14.0-2) unstable; urgency=medium
 
