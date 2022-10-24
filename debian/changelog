@@ -1,3 +1,14 @@
+flatpak (1.14.99+git20221024-1) UNRELEASED; urgency=medium
+
+  * d/gbp.conf, d/control: Branch for experimental
+  * New upstream git snapshot
+  * Build using Meson
+  * d/control: Add more -dev dependencies to libflatpak-dev.
+    Meson is more thorough about including private dependencies in the
+    Requires.private field.
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 24 Oct 2022 18:42:16 +0100
+
 flatpak (1.14.0-2) unstable; urgency=medium
 
   * d/control: Add dependency on fuse3, for fusermount3.
