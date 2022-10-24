@@ -1,7 +1,7 @@
-flatpak (1.14.99+git20221024-1) UNRELEASED; urgency=medium
+flatpak (1.15.0-1) UNRELEASED; urgency=medium
 
   * d/gbp.conf, d/control: Branch for experimental
-  * New upstream git snapshot
+  * New upstream development release
   * Build using Meson
   * d/control: Add more -dev dependencies to libflatpak-dev.
     Meson is more thorough about including private dependencies in the
