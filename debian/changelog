@@ -1,9 +1,9 @@
-flatpak (1.15.0-2) UNRELEASED; urgency=medium
+flatpak (1.15.0-2) experimental; urgency=medium
 
   * d/p/revokefs-Use-correct-format-string-for-a-ssize_t.patch:
     Fix the build on ILP32 architectures
 
- -- Simon McVittie <smcv@debian.org>  Tue, 25 Oct 2022 09:37:31 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 25 Oct 2022 09:37:58 +0100
 
 flatpak (1.15.0-1) experimental; urgency=medium
 
