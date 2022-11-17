@@ -23,10 +23,6 @@ fi
 e=0
 $adverb dh_auto_test || e=$?
 
-find . -name 'test*.log' \
--not -name test-suite.log \
--print0 | xargs -0 tail -v -c1M
-
 echo "Killing gpg-agent processes:"
 pgrep --list-full --full "gpg-agent --homedir /var/tmp/test-flatpak-.*" >&2 || :
 pgrep --list-full --full "gpg-agent --homedir /var/tmp/flatpak-test-.*" >&2 || :
