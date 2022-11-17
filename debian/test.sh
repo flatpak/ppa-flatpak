@@ -1,17 +1,6 @@
 #!/bin/sh
 set -eu
 
-export HOME="$(pwd)/debian/HOME"
-# Put these back to their defaults if we are not running with a clean
-# environment, so that they are based on the temporary $HOME above.
-unset XDG_CACHE_HOME
-unset XDG_CONFIG_DIRS
-unset XDG_CONFIG_HOME
-unset XDG_DATA_HOME
-unset XDG_DATA_DIRS
-# dconf assumes this directory exists and is writable
-export XDG_RUNTIME_DIR="$(pwd)/debian/XDG_RUNTIME_DIR"
-
 adverb=
 
 if [ "$DEB_HOST_ARCH_BITS" = 64 ]; then
