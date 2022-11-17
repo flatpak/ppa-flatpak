@@ -2,6 +2,7 @@
 set -eu
 
 adverb=
+test_timeout_multiplier=3
 
 if [ "$DEB_HOST_ARCH_BITS" = 64 ]; then
     # reprotest sometimes uses linux32 even for x86_64 builds, and
@@ -10,7 +11,7 @@ if [ "$DEB_HOST_ARCH_BITS" = 64 ]; then
 fi
 
 e=0
-$adverb dh_auto_test || e=$?
+$adverb dh_auto_test -- --timeout-multiplier "${test_timeout_multiplier}" || e=$?
 
 echo "Killing gpg-agent processes:"
 pgrep --list-full --full "gpg-agent --homedir /var/tmp/test-flatpak-.*" >&2 || :
