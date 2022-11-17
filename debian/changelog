@@ -1,8 +1,15 @@
-flatpak (1.15.1-1) UNRELEASED; urgency=medium
+flatpak (1.15.1-1) experimental; urgency=medium
 
   * New upstream development release
+  * d/test.sh: Don't try to show Autotools test logs.
+    We're using Meson now, so this is not applicable.
+  * d/rules, d/test.sh: Rely on debhelper to set HOME, XDG_RUNTIME_DIR etc.
+  * d/test.sh: Extend test timeout to cope better with slow buildds.
+    The upstream test timeouts assume a relatively non-loaded system, but
+    on a buildd we might be sharing the machine with other processes.
+  * Drop the only patch, applied upstream
 
- -- Simon McVittie <smcv@debian.org>  Thu, 17 Nov 2022 18:50:52 +0000
+ -- Simon McVittie <smcv@debian.org>  Thu, 17 Nov 2022 19:06:05 +0000
 
 flatpak (1.15.0-2) experimental; urgency=medium
 
