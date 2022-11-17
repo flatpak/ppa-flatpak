@@ -351,7 +351,8 @@ libflatpak_common_base_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(libflatpak_common_base_la_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 libflatpak_common_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
@@ -1510,6 +1511,8 @@ DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DEP_GPGME_CFLAGS = @DEP_GPGME_CFLAGS@
 DEP_GPGME_LIBS = @DEP_GPGME_LIBS@
+DEP_GPGME_PTHREAD_CFLAGS = @DEP_GPGME_PTHREAD_CFLAGS@
+DEP_GPGME_PTHREAD_LIBS = @DEP_GPGME_PTHREAD_LIBS@
 DLLTOOL = @DLLTOOL@
 DSYMUTIL = @DSYMUTIL@
 DUMPBIN = @DUMPBIN@
@@ -1900,10 +1903,11 @@ dist_triggers_SCRIPTS = \
 
 
 # This canonicalizes the PKG_CHECK_MODULES or AM_PATH_GPGME results
-INTERNAL_GPGME_CFLAGS = $(DEP_GPGME_CFLAGS) $(GPGME_PTHREAD_CFLAGS)
-INTERNAL_GPGME_LIBS = $(DEP_GPGME_LIBS) $(GPGME_PTHREAD_LIBS)
+INTERNAL_GPGME_CFLAGS = $(DEP_GPGME_CFLAGS) $(DEP_GPGME_PTHREAD_CFLAGS) $(GPGME_PTHREAD_CFLAGS)
+INTERNAL_GPGME_LIBS = $(DEP_GPGME_LIBS) $(DEP_GPGME_PTHREAD_LIBS) $(GPGME_PTHREAD_LIBS)
 lib_LTLIBRARIES = libflatpak.la
 libglnx_srcpath := $(srcdir)/subprojects/libglnx
+# This intentionally does not include AM_CFLAGS, libglnx always uses those
 libglnx_cflags := \
 	$(BASE_CFLAGS) \
 	"-I$(libglnx_srcpath)" \
@@ -2383,12 +2387,12 @@ flatpak_oci_authenticator_CFLAGS = \
 flatpak_oci_authenticator_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/oci-authenticator
 flatpak_validate_icon_SOURCES = icon-validator/validate-icon.c
 flatpak_validate_icon_LDADD = $(GDK_PIXBUF_LIBS)
-flatpak_validate_icon_CFLAGS = $(GDK_PIXBUF_CFLAGS) -DLIBEXECDIR=\"$(libexecdir)\"
+flatpak_validate_icon_CFLAGS = $(AM_CFLAGS) $(GDK_PIXBUF_CFLAGS) -DLIBEXECDIR=\"$(libexecdir)\"
 revokefs_fuse_SOURCES = revokefs/main.c revokefs/writer.c revokefs/writer.h
-revokefs_fuse_CFLAGS = $(BASE_CFLAGS) -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 $(FUSE_CFLAGS) -I$(srcdir)/libglnx
+revokefs_fuse_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 $(FUSE_CFLAGS)
 revokefs_fuse_LDADD = libglnx.la $(BASE_LIBS) $(FUSE_LIBS)
 revokefs_demo_SOURCES = revokefs/demo.c
-revokefs_demo_CFLAGS = $(BASE_CFLAGS)
+revokefs_demo_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
 revokefs_demo_LDADD = $(BASE_LIBS)
 @BUILD_SELINUX_MODULE_TRUE@selinux_moduledir = ${datadir}/selinux/packages
 @BUILD_SELINUX_MODULE_TRUE@selinux_module_DATA = $(NULL) \
