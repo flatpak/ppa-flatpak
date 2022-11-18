@@ -1,3 +1,43 @@
+flatpak (1.14.1-1flatpak1~20.04.1) focal; urgency=medium
+
+  * Backport to Ubuntu 20.04 'focal'
+    - Revert libmalcontent integration
+    - Downgrade dbus from Depends to Recommends
+    - Roll back to debhelper 12
+      + Don't rely on debhelper to create a temporary $HOME for tests
+    - Reduce libseccomp dependency for compatibility with focal
+    - Go back to using libfuse version 2.
+      Ubuntu 20.04 has both, but version 2 is the one used by desktop
+      components like gvfs-fuse and ntfs-3g, so sticking to that version
+      avoids scary messages from apt.
+    - Go back to old dependency package names
+      + libgdk-pixbuf-2.0-dev -> libgdk-pixbuf2.0-dev
+      + dbus-daemon -> dbus
+      + polkitd -> policykit-1
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 02 Sep 2022 09:41:18 +0100
+
+flatpak (1.14.1-1flatpak1~22.04.1) jammy; urgency=medium
+
+  * Merge from Debian
+  * Remaining changes relative to Debian:
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 02 Sep 2022 09:35:25 +0100
+
+flatpak (1.14.1-1) unstable; urgency=medium
+
+  * New upstream stable release
+  * Remove obsolete maintscript entries
+  * Avoid explicitly specifying -Wl,--as-needed linker flag, which is
+    the default with newer toolchains
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 18 Nov 2022 13:45:56 +0000
+
 flatpak (1.14.0-2flatpak1~18.04.1) bionic; urgency=medium
 
   * Backport from Ubuntu 20.04 'focal' to 18.04 'bionic'
