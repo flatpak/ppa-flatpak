@@ -7,7 +7,6 @@ Uploaders:
  Simon McVittie <smcv@debian.org>,
 Build-Depends:
  attr <!nocheck>,
- automake (>= 1.14.1),
  bison,
  ca-certificates <!nocheck>,
  dbus-daemon,
@@ -46,6 +45,7 @@ Build-Depends:
  libxml2-dev (>= 2.4),
  libxml2-utils,
  libzstd-dev,
+ meson (>= 0.53.0),
  ostree (>= 2020.8) <!nocheck>,
  polkitd <!nocheck> | policykit-1 <!nocheck>,
  procps,
@@ -60,7 +60,7 @@ Build-Depends-Indep:
  libostree-doc,
 Standards-Version: 4.6.1
 Homepage: https://flatpak.org/
-Vcs-Git: https://salsa.debian.org/debian/flatpak.git
+Vcs-Git: https://salsa.debian.org/debian/flatpak.git -b debian/experimental
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
 Rules-Requires-Root: no
 
@@ -156,10 +156,21 @@ Section: libdevel
 Depends:
  gir1.2-glib-2.0,
  gir1.2-flatpak-1.0 (= ${binary:Version}),
+ libarchive-dev (>= 2.8.0),
+ libcurl4-gnutls-dev | libcurl-dev,
+ libdconf-dev,
  libflatpak0 (= ${binary:Version}),
  libglib2.0-dev,
+ libgpgme-dev (>= 1.1.8),
+ libjson-glib-dev,
+ libmalcontent-0-dev (>= 0.4.0),
  libostree-dev (>= 2020.8),
+ libpolkit-agent-1-dev,
+ libseccomp-dev (>= 2.5.2),
+ libsystemd-dev,
+ libxau-dev,
  libxml2-dev (>= 2.4),
+ libzstd-dev,
  pkg-config,
  python3:any,
  ${misc:Depends},

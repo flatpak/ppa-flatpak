@@ -207,14 +207,15 @@ subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/subprojects/libglnx/libglnx.m4 \
 	$(top_srcdir)/m4/attributes.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/glibtests.m4 $(top_srcdir)/m4/iconv.m4 \
-	$(top_srcdir)/m4/intlmacosx.m4 $(top_srcdir)/m4/lib-ld.m4 \
-	$(top_srcdir)/m4/lib-link.m4 $(top_srcdir)/m4/lib-prefix.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/ltoptions.m4 \
-	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/nls.m4 \
-	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
-	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/glibtests.m4 $(top_srcdir)/m4/gtk-doc.m4 \
+	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/intlmacosx.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/po.m4 \
+	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(top_srcdir)/configure \
@@ -350,7 +351,8 @@ libflatpak_common_base_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(libflatpak_common_base_la_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 libflatpak_common_la_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
@@ -466,6 +468,7 @@ libflatpak_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 libglnx_la_DEPENDENCIES = $(am__DEPENDENCIES_3)
 am_libglnx_la_OBJECTS =  \
+	subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo \
 	subprojects/libglnx/libglnx_la-glnx-backports.lo \
 	subprojects/libglnx/libglnx_la-glnx-local-alloc.lo \
 	subprojects/libglnx/libglnx_la-glnx-errors.lo \
@@ -1021,6 +1024,7 @@ am__depfiles_remade =  \
 	subprojects/bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po \
 	subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po \
 	subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Po \
+	subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Plo \
 	subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo \
 	subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo \
 	subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo \
@@ -1507,6 +1511,8 @@ DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DEP_GPGME_CFLAGS = @DEP_GPGME_CFLAGS@
 DEP_GPGME_LIBS = @DEP_GPGME_LIBS@
+DEP_GPGME_PTHREAD_CFLAGS = @DEP_GPGME_PTHREAD_CFLAGS@
+DEP_GPGME_PTHREAD_LIBS = @DEP_GPGME_PTHREAD_LIBS@
 DLLTOOL = @DLLTOOL@
 DSYMUTIL = @DSYMUTIL@
 DUMPBIN = @DUMPBIN@
@@ -1542,7 +1548,14 @@ GPGME_CONFIG = @GPGME_CONFIG@
 GPGME_PTHREAD_CFLAGS = @GPGME_PTHREAD_CFLAGS@
 GPGME_PTHREAD_LIBS = @GPGME_PTHREAD_LIBS@
 GREP = @GREP@
+GTKDOC_CHECK = @GTKDOC_CHECK@
+GTKDOC_CHECK_PATH = @GTKDOC_CHECK_PATH@
+GTKDOC_DEPS_CFLAGS = @GTKDOC_DEPS_CFLAGS@
+GTKDOC_DEPS_LIBS = @GTKDOC_DEPS_LIBS@
+GTKDOC_MKPDF = @GTKDOC_MKPDF@
+GTKDOC_REBASE = @GTKDOC_REBASE@
 HIDDEN_VISIBILITY_CFLAGS = @HIDDEN_VISIBILITY_CFLAGS@
+HTML_DIR = @HTML_DIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -1678,6 +1691,7 @@ host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
 htmldir = @htmldir@
+http_backend = @http_backend@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
@@ -1749,27 +1763,37 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	subprojects/libglnx/LICENSES/LGPL-2.1-or-later.txt \
 	subprojects/libglnx/libglnx.m4 $(NULL) \
 	common/flatpak-enum-types.c.template \
-	common/flatpak-enum-types.h.template \
-	data/org.freedesktop.portal.Documents.xml \
+	common/flatpak-enum-types.h.template common/meson.build \
+	data/meson.build data/org.freedesktop.portal.Documents.xml \
 	data/org.freedesktop.impl.portal.PermissionStore.xml \
 	data/org.freedesktop.systemd1.xml \
 	data/org.freedesktop.Flatpak.xml \
 	data/org.freedesktop.Flatpak.Authenticator.xml \
 	data/org.freedesktop.portal.Flatpak.xml \
 	data/flatpak-docker-seccomp.json data/flatpak-variants.gv \
-	$(NULL) app/parse-datetime.y \
+	$(NULL) app/meson.build app/parse-datetime.y \
+	session-helper/meson.build portal/meson.build \
 	system-helper/org.freedesktop.Flatpak.policy.in \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.conf \
 	system-helper/org.freedesktop.Flatpak.rules.in \
 	system-helper/org.freedesktop.Flatpak.SystemHelper.service.in \
 	system-helper/flatpak-system-helper.service.in \
-	system-helper/flatpak.conf.in selinux/build-selinux.sh \
+	system-helper/flatpak.conf.in system-helper/meson.build \
+	oci-authenticator/meson.build icon-validator/meson.build \
+	revokefs/meson.build selinux/build-selinux.sh \
 	selinux/flatpak.te selinux/flatpak.fc selinux/flatpak.if \
-	$(NULL) \
+	selinux/meson.build $(NULL) \
 	sideload-repos-systemd/flatpak-sideload-usb-repo.path.in \
 	sideload-repos-systemd/flatpak-sideload-usb-repo.service.in \
+	sideload-repos-systemd/meson.build \
 	tests/Makefile-test-matrix.am.inc tests/expand-test-matrix.sh \
-	tests/flatpak.supp tests/glib.supp tests/make-runtime-repos \
+	tests/flatpak.supp tests/glib.supp \
+	tests/installed-services/meson.build tests/make-runtime-repos \
+	tests/meson.build tests/package_version.txt.in \
+	tests/services/meson.build \
+	tests/share/xdg-desktop-portal/portals/meson.build \
+	tests/tap.test.in tests/test-keyring/meson.build \
+	tests/test-keyring2/meson.build tests/test-matrix/meson.build \
 	tests/test-wrapper.sh tests/update-test-matrix $(NULL) \
 	$(bashcompletion_DATA) $(zshcompletion_DATA) \
 	$(fishcompletion_DATA) $(profile_DATA) $(fishconf_DATA) \
@@ -1777,7 +1801,17 @@ EXTRA_DIST = buildutil/tap-driver.sh buildutil/tap-test \
 	env.d/60-flatpak-system-only flatpak.pc.in \
 	scripts/flatpak-bisect scripts/flatpak-coredumpctl \
 	subprojects/variant-schema-compiler/variant-schema-compiler \
-	autogen.sh README.md flatpak.png
+	autogen.sh README.md flatpak.png completion/meson.build \
+	env.d/meson.build meson.build meson_options.txt po/meson.build \
+	profile/meson.build scripts/meson.build \
+	subprojects/bubblewrap/meson.build \
+	subprojects/bubblewrap/meson_options.txt \
+	subprojects/dbus-proxy/meson.build \
+	subprojects/dbus-proxy/meson_options.txt \
+	subprojects/libglnx/meson.build \
+	subprojects/libglnx/meson_options.txt \
+	subprojects/libglnx/tests/meson.build triggers/meson.build \
+	$(NULL)
 TESTS_ENVIRONMENT = \
 	G_TEST_SRCDIR="$(abs_srcdir)/tests"	\
 	G_TEST_BUILDDIR="$(abs_builddir)/tests"	\
@@ -1869,10 +1903,11 @@ dist_triggers_SCRIPTS = \
 
 
 # This canonicalizes the PKG_CHECK_MODULES or AM_PATH_GPGME results
-INTERNAL_GPGME_CFLAGS = $(DEP_GPGME_CFLAGS) $(GPGME_PTHREAD_CFLAGS)
-INTERNAL_GPGME_LIBS = $(DEP_GPGME_LIBS) $(GPGME_PTHREAD_LIBS)
+INTERNAL_GPGME_CFLAGS = $(DEP_GPGME_CFLAGS) $(DEP_GPGME_PTHREAD_CFLAGS) $(GPGME_PTHREAD_CFLAGS)
+INTERNAL_GPGME_LIBS = $(DEP_GPGME_LIBS) $(DEP_GPGME_PTHREAD_LIBS) $(GPGME_PTHREAD_LIBS)
 lib_LTLIBRARIES = libflatpak.la
 libglnx_srcpath := $(srcdir)/subprojects/libglnx
+# This intentionally does not include AM_CFLAGS, libglnx always uses those
 libglnx_cflags := \
 	$(BASE_CFLAGS) \
 	"-I$(libglnx_srcpath)" \
@@ -1885,6 +1920,8 @@ libglnx_la_SOURCES = \
 	subprojects/libglnx/glnx-macros.h \
 	subprojects/libglnx/glnx-backport-autocleanups.h \
 	subprojects/libglnx/glnx-backport-autoptr.h \
+	subprojects/libglnx/glnx-backport-testutils.h \
+	subprojects/libglnx/glnx-backport-testutils.c \
 	subprojects/libglnx/glnx-backports.h \
 	subprojects/libglnx/glnx-backports.c \
 	subprojects/libglnx/glnx-local-alloc.h \
@@ -2350,12 +2387,12 @@ flatpak_oci_authenticator_CFLAGS = \
 flatpak_oci_authenticator_CPPFLAGS = $(AM_CPPFLAGS) -I$(builddir)/oci-authenticator
 flatpak_validate_icon_SOURCES = icon-validator/validate-icon.c
 flatpak_validate_icon_LDADD = $(GDK_PIXBUF_LIBS)
-flatpak_validate_icon_CFLAGS = $(GDK_PIXBUF_CFLAGS) -DLIBEXECDIR=\"$(libexecdir)\"
+flatpak_validate_icon_CFLAGS = $(AM_CFLAGS) $(GDK_PIXBUF_CFLAGS) -DLIBEXECDIR=\"$(libexecdir)\"
 revokefs_fuse_SOURCES = revokefs/main.c revokefs/writer.c revokefs/writer.h
-revokefs_fuse_CFLAGS = $(BASE_CFLAGS) -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 $(FUSE_CFLAGS) -I$(srcdir)/libglnx
+revokefs_fuse_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS) -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 $(FUSE_CFLAGS)
 revokefs_fuse_LDADD = libglnx.la $(BASE_LIBS) $(FUSE_LIBS)
 revokefs_demo_SOURCES = revokefs/demo.c
-revokefs_demo_CFLAGS = $(BASE_CFLAGS)
+revokefs_demo_CFLAGS = $(AM_CFLAGS) $(BASE_CFLAGS)
 revokefs_demo_LDADD = $(BASE_LIBS)
 @BUILD_SELINUX_MODULE_TRUE@selinux_moduledir = ${datadir}/selinux/packages
 @BUILD_SELINUX_MODULE_TRUE@selinux_module_DATA = $(NULL) \
@@ -3150,6 +3187,9 @@ subprojects/libglnx/$(am__dirstamp):
 subprojects/libglnx/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) subprojects/libglnx/$(DEPDIR)
 	@: > subprojects/libglnx/$(DEPDIR)/$(am__dirstamp)
+subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo:  \
+	subprojects/libglnx/$(am__dirstamp) \
+	subprojects/libglnx/$(DEPDIR)/$(am__dirstamp)
 subprojects/libglnx/libglnx_la-glnx-backports.lo:  \
 	subprojects/libglnx/$(am__dirstamp) \
 	subprojects/libglnx/$(DEPDIR)/$(am__dirstamp)
@@ -3930,6 +3970,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@subprojects/bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo@am__quote@ # am--include-marker
@@ -4272,6 +4313,13 @@ common/libflatpak_la-flatpak.lo: common/flatpak.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak.c' object='common/libflatpak_la-flatpak.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_la-flatpak.lo `test -f 'common/flatpak.c' || echo '$(srcdir)/'`common/flatpak.c
+
+subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo: subprojects/libglnx/glnx-backport-testutils.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo -MD -MP -MF subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Tpo -c -o subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo `test -f 'subprojects/libglnx/glnx-backport-testutils.c' || echo '$(srcdir)/'`subprojects/libglnx/glnx-backport-testutils.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Tpo subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='subprojects/libglnx/glnx-backport-testutils.c' object='subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo `test -f 'subprojects/libglnx/glnx-backport-testutils.c' || echo '$(srcdir)/'`subprojects/libglnx/glnx-backport-testutils.c
 
 subprojects/libglnx/libglnx_la-glnx-backports.lo: subprojects/libglnx/glnx-backports.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT subprojects/libglnx/libglnx_la-glnx-backports.lo -MD -MP -MF subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Tpo -c -o subprojects/libglnx/libglnx_la-glnx-backports.lo `test -f 'subprojects/libglnx/glnx-backports.c' || echo '$(srcdir)/'`subprojects/libglnx/glnx-backports.c
@@ -7103,6 +7151,7 @@ distcheck: dist
 	test -d $(distdir)/_build || exit 0; \
 	dc_install_base=`$(am__cd) $(distdir)/_inst && pwd | sed -e 's,^[^:\\/]:[\\/],/,'` \
 	  && dc_destdir="$${TMPDIR-/tmp}/am-dc-$$$$/" \
+	  && $(MAKE) $(AM_MAKEFLAGS) distcheck-hook \
 	  && am__cwd=`pwd` \
 	  && $(am__cd) $(distdir)/_build/sub \
 	  && ../../configure \
@@ -7372,6 +7421,7 @@ distclean: distclean-recursive
 	-rm -f subprojects/bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po
 	-rm -f subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po
 	-rm -f subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Po
+	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Plo
 	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo
 	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo
 	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo
@@ -7588,6 +7638,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f subprojects/bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po
 	-rm -f subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po
 	-rm -f subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Po
+	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Plo
 	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo
 	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo
 	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo
@@ -7949,6 +8000,17 @@ lcov-clean:
 genlcov:
 	$(AM_V_GEN) $(LCOV) --directory $(top_builddir) --capture --output-file coverage.info
 	$(AM_V_GEN) $(GENHTML) --prefix $(top_builddir) --output-directory coverage coverage.info
+
+distcheck-hook: distcheck-hook-meson
+distcheck-hook-meson:
+	set -e; if command -v meson > /dev/null; then \
+		cd $(distdir); \
+		pwd; \
+		meson _build/meson; \
+		meson compile -C _build/meson -v; \
+		meson test -C _build/meson -v; \
+		rm -fr _build/meson; \
+	fi
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

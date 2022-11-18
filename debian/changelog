@@ -1,3 +1,34 @@
+flatpak (1.15.1-1) experimental; urgency=medium
+
+  * New upstream development release
+  * d/test.sh: Don't try to show Autotools test logs.
+    We're using Meson now, so this is not applicable.
+  * d/rules, d/test.sh: Rely on debhelper to set HOME, XDG_RUNTIME_DIR etc.
+  * d/test.sh: Extend test timeout to cope better with slow buildds.
+    The upstream test timeouts assume a relatively non-loaded system, but
+    on a buildd we might be sharing the machine with other processes.
+  * Drop the only patch, applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 17 Nov 2022 19:06:05 +0000
+
+flatpak (1.15.0-2) experimental; urgency=medium
+
+  * d/p/revokefs-Use-correct-format-string-for-a-ssize_t.patch:
+    Fix the build on ILP32 architectures
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 25 Oct 2022 09:37:58 +0100
+
+flatpak (1.15.0-1) experimental; urgency=medium
+
+  * d/gbp.conf, d/control: Branch for experimental
+  * New upstream development release
+  * Build using Meson
+  * d/control: Add more -dev dependencies to libflatpak-dev.
+    Meson is more thorough about including private dependencies in the
+    Requires.private field.
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 24 Oct 2022 19:29:56 +0100
+
 flatpak (1.14.0-2flatpak1~22.04.1) jammy; urgency=medium
 
   * Merge from Debian

@@ -956,6 +956,19 @@ flatpak_run_add_pulseaudio_args (FlatpakBwrap         *bwrap,
 }
 
 static void
+flatpak_run_add_gssproxy_args (FlatpakBwrap *bwrap)
+{
+  /* We only expose the gssproxy user service. The gssproxy system service is
+   * not intended to be exposed to sandboxed environments.
+   */
+  g_autofree char *gssproxy_host_dir = g_build_filename (g_get_user_runtime_dir (), "gssproxy", NULL);
+  const char *gssproxy_sandboxed_dir = "/run/flatpak/gssproxy/";
+
+  if (g_file_test (gssproxy_host_dir, G_FILE_TEST_EXISTS))
+    flatpak_bwrap_add_args (bwrap, "--ro-bind", gssproxy_host_dir, gssproxy_sandboxed_dir, NULL);
+}
+
+static void
 flatpak_run_add_resolved_args (FlatpakBwrap *bwrap)
 {
   const char *resolved_socket = "/run/systemd/resolve/io.systemd.Resolve";
@@ -1867,14 +1880,19 @@ static const ExportData default_exports[] = {
   {"XDG_CONFIG_DIRS", "/app/etc/xdg:/etc/xdg"},
   {"XDG_DATA_DIRS", "/app/share:/usr/share"},
   {"SHELL", "/bin/sh"},
-  {"TMPDIR", NULL}, /* Unset TMPDIR as it may not exist in the sandbox */
+  /* Unset temporary file paths as they may not exist in the sandbox */
+  {"TEMP", NULL},
+  {"TEMPDIR", NULL},
+  {"TMP", NULL},
+  {"TMPDIR", NULL},
   /* We always use /run/user/UID, even if the user's XDG_RUNTIME_DIR
    * outside the sandbox is somewhere else. Don't allow a different
    * setting from outside the sandbox to overwrite this. */
   {"XDG_RUNTIME_DIR", NULL},
 
   /* Some env vars are common enough and will affect the sandbox badly
-     if set on the host. We clear these always. */
+     if set on the host. We clear these always. If updating this list,
+     also update the list in flatpak-run.xml. */
   {"PYTHONPATH", NULL},
   {"PERLLIB", NULL},
   {"PERL5LIB", NULL},
@@ -1891,6 +1909,7 @@ static const ExportData default_exports[] = {
   {"GST_PTP_HELPER", NULL},
   {"GST_PTP_HELPER_1_0", NULL},
   {"GST_INSTALL_PLUGINS_HELPER", NULL},
+  {"KRB5CCNAME", NULL},
 };
 
 static const ExportData no_ld_so_cache_exports[] = {
@@ -3164,9 +3183,6 @@ setup_seccomp (FlatpakBwrap   *bwrap,
     {SCMP_SYS (uselib), EPERM},
     /* Don't allow disabling accounting */
     {SCMP_SYS (acct), EPERM},
-    /* 16-bit code is unnecessary in the sandbox, and modify_ldt is a
-       historic source of interesting information leaks. */
-    {SCMP_SYS (modify_ldt), EPERM},
     /* Don't allow reading current quota use */
     {SCMP_SYS (quotactl), EPERM},
 
@@ -3331,6 +3347,23 @@ setup_seccomp (FlatpakBwrap   *bwrap,
        * when trying to filter them on a non-native architecture, because
        * libseccomp cannot map the syscall number to a name and back to a
        * number for the non-native architecture. */
+      if (r == -EFAULT)
+        flatpak_debug2 ("Unable to block syscall %d: syscall not known to libseccomp?",
+                        scall);
+      else if (r < 0)
+        return flatpak_fail_error (error, FLATPAK_ERROR_SETUP_FAILED, _("Failed to block syscall %d: %s"), scall, flatpak_seccomp_strerror (r));
+    }
+
+  if (!multiarch)
+    {
+      /* modify_ldt is a historic source of interesting information leaks,
+       * so it's disabled as a hardening measure.
+       * However, it is required to run old 16-bit applications
+       * as well as some Wine patches, so it's allowed in multiarch. */
+      int scall = SCMP_SYS (modify_ldt);
+      r = seccomp_rule_add (seccomp, SCMP_ACT_ERRNO (EPERM), scall, 0);
+
+      /* See above for the meaning of EFAULT. */
       if (r == -EFAULT)
         flatpak_debug2 ("Unable to block syscall %d: syscall not known to libseccomp?",
                         scall);
@@ -4597,7 +4630,10 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
     }
 
   if ((app_context->shares & FLATPAK_CONTEXT_SHARED_NETWORK) != 0)
-    flatpak_run_add_resolved_args (bwrap);
+    {
+      flatpak_run_add_gssproxy_args (bwrap);
+      flatpak_run_add_resolved_args (bwrap);
+    }
 
   flatpak_run_add_journal_args (bwrap);
   add_font_path_args (bwrap);

@@ -1,6 +1,7 @@
 /* -*- mode: C; c-file-style: "gnu"; indent-tabs-mode: nil; -*-
  *
  * Copyright (C) 2015 Colin Walters <walters@verbum.org>
+ * Copyright 2017 Emmanuele Bassi
  * SPDX-License-Identifier: LGPL-2.0-or-later
  * 
  * GLIB - Library of useful routines for C programming
@@ -48,6 +49,10 @@ G_BEGIN_DECLS
   } G_STMT_END
 #endif
 
+#if !GLIB_CHECK_VERSION(2, 40, 0)
+#define g_info(...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, __VA_ARGS__)
+#endif
+
 #if !GLIB_CHECK_VERSION(2, 44, 0)
 
 #define g_strv_contains glnx_strv_contains
@@ -64,16 +69,42 @@ gboolean              glnx_set_object  (GObject **object_ptr,
 
 #endif /* !GLIB_CHECK_VERSION(2, 44, 0) */
 
-#ifndef g_assert_nonnull
-#define g_assert_nonnull(x) g_assert (x != NULL)
+#if !GLIB_CHECK_VERSION(2, 38, 0)
+#define G_SPAWN_DEFAULT ((GSpawnFlags) 0)
 #endif
 
-#ifndef g_assert_null
-#define g_assert_null(x) g_assert (x == NULL)
+#if !GLIB_CHECK_VERSION(2, 42, 0)
+#define G_OPTION_FLAG_NONE ((GOptionFlags) 0)
 #endif
 
-#if !GLIB_CHECK_VERSION (2, 38, 0)
-#define g_test_skip(s) g_test_message ("SKIP: %s", s)
+#ifndef G_DBUS_METHOD_INVOCATION_HANDLED    /* added in 2.68 */
+#define G_DBUS_METHOD_INVOCATION_HANDLED TRUE
+#endif
+
+#ifndef G_DBUS_METHOD_INVOCATION_UNHANDLED  /* added in 2.68 */
+#define G_DBUS_METHOD_INVOCATION_UNHANDLED FALSE
+#endif
+
+#ifndef G_OPTION_ENTRY_NULL   /* added in 2.70 */
+#define G_OPTION_ENTRY_NULL { NULL, 0, 0, 0, NULL, NULL, NULL }
+#endif
+
+#ifndef G_APPROX_VALUE  /* added in 2.58 */
+#define G_APPROX_VALUE(a, b, epsilon) \
+  (((a) > (b) ? (a) - (b) : (b) - (a)) < (epsilon))
+#endif
+
+#if !GLIB_CHECK_VERSION(2, 74, 0)
+#define G_APPLICATION_DEFAULT_FLAGS ((GApplicationFlags) 0)
+#define G_CONNECT_DEFAULT ((GConnectFlags) 0)
+#define G_IO_FLAG_NONE ((GIOFlags) 0)
+#define G_MARKUP_DEFAULT_FLAGS ((GMarkupParseFlags) 0)
+#define G_REGEX_DEFAULT ((GRegexCompileFlags) 0)
+#define G_REGEX_MATCH_DEFAULT ((GRegexMatchFlags) 0)
+#define G_TEST_SUBPROCESS_DEFAULT ((GTestSubprocessFlags) 0)
+#define G_TEST_TRAP_DEFAULT ((GTestTrapFlags) 0)
+#define G_TLS_CERTIFICATE_NO_FLAGS ((GTlsCertificateFlags) 0)
+#define G_TYPE_FLAG_NONE ((GTypeFlags) 0)
 #endif
 
 G_END_DECLS
