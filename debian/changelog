@@ -1,3 +1,9 @@
+flatpak (1.14.1-1) UNRELEASED; urgency=medium
+
+  * New upstream stable release
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 18 Nov 2022 13:44:53 +0000
+
 flatpak (1.14.0-2) unstable; urgency=medium
 
   * d/control: Add dependency on fuse3, for fusermount3.
