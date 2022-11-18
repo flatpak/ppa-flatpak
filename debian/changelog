@@ -1,10 +1,10 @@
-flatpak (1.14.1-1flatpak1~18.04.1) UNRELEASED; urgency=medium
+flatpak (1.14.1-1flatpak1~18.04.1) bionic; urgency=medium
 
   * Backport from Ubuntu 20.04 'focal' to 18.04 'bionic'
     - Roll back to debhelper compat level 11
     - Reinstate --libexecdir
 
- -- Simon McVittie <smcv@debian.org>  Fri, 18 Nov 2022 18:51:39 +0000
+ -- Simon McVittie <smcv@debian.org>  Fri, 18 Nov 2022 18:52:47 +0000
 
 flatpak (1.14.1-1flatpak1~20.04.1) focal; urgency=medium
 
