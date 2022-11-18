@@ -1,4 +1,4 @@
-flatpak (1.15.1-1flatpak1~22.04.1) UNRELEASED; urgency=medium
+flatpak (1.15.1-1flatpak1~22.04.1) jammy; urgency=medium
 
   * Merge from Debian
   * Remaining changes relative to Debian:
@@ -8,7 +8,7 @@ flatpak (1.15.1-1flatpak1~22.04.1) UNRELEASED; urgency=medium
     - Set changelog merge driver for debian/changelog
     - Add PPA backport notes to debian/README.source
 
- -- Simon McVittie <smcv@debian.org>  Fri, 18 Nov 2022 12:53:05 +0000
+ -- Simon McVittie <smcv@debian.org>  Fri, 18 Nov 2022 12:54:16 +0000
 
 flatpak (1.15.1-1) experimental; urgency=medium
 
