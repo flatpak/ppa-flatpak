@@ -1,7 +1,6 @@
 #!/usr/bin/make -f
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
 include /usr/share/dpkg/default.mk
 
@@ -9,11 +8,6 @@ binaries := $(shell dh_listpackages)
 
 %:
 	dh $@ --with=gir
-
-override_dh_clean:
-	dh_clean
-	rm -fr debian/HOME
-	rm -fr debian/XDG_RUNTIME_DIR
 
 override_dh_autoreconf:
 	NOCONFIGURE=1 \
