@@ -1,7 +1,7 @@
 project(
   'bubblewrap',
   'c',
-  version : '0.6.2',
+  version : '0.7.0',
   meson_version : '>=0.49.0',
   default_options : [
     'warning_level=2',
@@ -121,8 +121,10 @@ bwrap = executable(
     'network.c',
     'utils.c',
   ],
+  build_rpath : get_option('build_rpath'),
   install : true,
   install_dir : bwrapdir,
+  install_rpath : get_option('install_rpath'),
   dependencies : [selinux_dep, libcap_dep],
 )
 

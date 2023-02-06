@@ -102,9 +102,6 @@ gboolean flatpak_fail_error (GError     **error,
                              const char  *fmt,
                              ...) G_GNUC_PRINTF (3, 4);
 
-void flatpak_debug2 (const char *format,
-                     ...) G_GNUC_PRINTF (1, 2);
-
 gint flatpak_strcmp0_ptr (gconstpointer a,
                           gconstpointer b);
 
@@ -132,6 +129,7 @@ gboolean flatpak_extension_matches_reason (const char *extension_id,
                                            gboolean    default_value);
 
 const char * flatpak_get_bwrap (void);
+gboolean flatpak_bwrap_is_unprivileged (void);
 
 char **flatpak_strv_sort_by_length (const char * const *strv);
 char **flatpak_strv_merge (char   **strv1,
