@@ -1,3 +1,15 @@
+flatpak (1.15.2-1flatpak1~22.04.1) UNRELEASED; urgency=medium
+
+  * Merge from Debian
+  * Remaining changes relative to Debian:
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 06 Feb 2023 14:47:01 +0000
+
 flatpak (1.15.2-1) experimental; urgency=medium
 
   * New upstream development release
