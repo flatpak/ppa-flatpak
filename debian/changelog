@@ -1,8 +1,9 @@
-flatpak (1.15.2-1) UNRELEASED; urgency=medium
+flatpak (1.15.2-1) experimental; urgency=medium
 
   * New upstream development release
+  * Update standards version to 4.6.2 (no changes needed)
 
- -- Simon McVittie <smcv@debian.org>  Mon, 06 Feb 2023 14:12:52 +0000
+ -- Simon McVittie <smcv@debian.org>  Mon, 06 Feb 2023 14:15:47 +0000
 
 flatpak (1.15.1-1) experimental; urgency=medium
 
