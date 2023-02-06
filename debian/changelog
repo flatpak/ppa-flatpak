@@ -1,3 +1,12 @@
+flatpak (1.15.2-2) UNRELEASED; urgency=medium
+
+  * Merge packaging changes from unstable
+    - Remove obsolete maintscript entries
+    - Avoid explicitly specifying -Wl,--as-needed linker flag, which is
+      the default with newer toolchains
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 06 Feb 2023 14:42:49 +0000
+
 flatpak (1.15.2-1) experimental; urgency=medium
 
   * New upstream development release
