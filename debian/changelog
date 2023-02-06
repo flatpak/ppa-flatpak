@@ -36,6 +36,15 @@ flatpak (1.15.0-1) experimental; urgency=medium
 
  -- Simon McVittie <smcv@debian.org>  Mon, 24 Oct 2022 19:29:56 +0100
 
+flatpak (1.14.1-1) unstable; urgency=medium
+
+  * New upstream stable release
+  * Remove obsolete maintscript entries
+  * Avoid explicitly specifying -Wl,--as-needed linker flag, which is
+    the default with newer toolchains
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 18 Nov 2022 13:45:56 +0000
+
 flatpak (1.14.0-2) unstable; urgency=medium
 
   * d/control: Add dependency on fuse3, for fusermount3.
