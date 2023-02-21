@@ -1,3 +1,37 @@
+Changes in 1.15.3
+~~~~~~~~~~~~~~~~~
+Released: 2023-02-21
+
+Build system:
+
+* Building this version of Flatpak with Meson is recommended. The source
+  release flatpak-1.15.3.tar.xz no longer contains Autotools-generated
+  files, although this version can still be built using Autotools after
+  running `./autogen.sh`. Future versions are likely to remove the
+  Autotools build system.
+
+Bug fixes:
+
+* When splitting an upgrade into two steps (download without installing, and
+  then upgrade without allowing further downloads) like GNOME Software does,
+  if an app is marked EOL and superseded by a replacement, don't remove the
+  superseded app in the first step, which would result in the replacement
+  incorrectly not being installed (#5172)
+* Fix a crash when --socket=gpg-agent is used (#5095)
+* Fix a crash when listing apps if one of them is broken or misconfigured
+  (#5293)
+* If an app has invalid syntax in its overrides or metadata, mention the
+  filename in the error message (#5293)
+* Unset $GDK_BACKEND for apps, ensuring GTK apps with --socket=fallback-x11
+  can work (#5303)
+* Fix a deprecation warning when compiled with curl >= 7.85 (#5284)
+* Translation updates: es, ru (#5266, #5312, #5313)
+
+Internal changes:
+
+* Better diagnostic messages for why runtimes are or are not considered
+  unused (#5237)
+
 Changes in 1.15.2
 ~~~~~~~~~~~~~~~~~
 Released: 2023-02-06
