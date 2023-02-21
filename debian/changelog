@@ -1,4 +1,4 @@
-flatpak (1.15.3-1) UNRELEASED; urgency=medium
+flatpak (1.15.3-1) experimental; urgency=medium
 
   * New upstream development release
   * Merge packaging changes from unstable
@@ -6,7 +6,7 @@ flatpak (1.15.3-1) UNRELEASED; urgency=medium
     - Avoid explicitly specifying -Wl,--as-needed linker flag, which is
       the default with newer toolchains
 
- -- Simon McVittie <smcv@debian.org>  Mon, 06 Feb 2023 14:42:49 +0000
+ -- Simon McVittie <smcv@debian.org>  Tue, 21 Feb 2023 10:44:05 +0000
 
 flatpak (1.15.2-1) experimental; urgency=medium
 
