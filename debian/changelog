@@ -1,3 +1,13 @@
+flatpak (1.15.3-1) experimental; urgency=medium
+
+  * New upstream development release
+  * Merge packaging changes from unstable
+    - Remove obsolete maintscript entries
+    - Avoid explicitly specifying -Wl,--as-needed linker flag, which is
+      the default with newer toolchains
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 21 Feb 2023 10:44:05 +0000
+
 flatpak (1.15.2-1flatpak1~22.04.1) jammy; urgency=medium
 
   * Merge from Debian
@@ -59,6 +69,15 @@ flatpak (1.15.0-1) experimental; urgency=medium
     Requires.private field.
 
  -- Simon McVittie <smcv@debian.org>  Mon, 24 Oct 2022 19:29:56 +0100
+
+flatpak (1.14.1-1) unstable; urgency=medium
+
+  * New upstream stable release
+  * Remove obsolete maintscript entries
+  * Avoid explicitly specifying -Wl,--as-needed linker flag, which is
+    the default with newer toolchains
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 18 Nov 2022 13:45:56 +0000
 
 flatpak (1.14.0-2flatpak1~22.04.1) jammy; urgency=medium
 
