@@ -778,7 +778,8 @@ set on failure.</p>
 flatpak_transaction_add_uninstall (<em class="parameter"><code><a class="link" href="FlatpakTransaction.html" title="FlatpakTransaction"><span class="type">FlatpakTransaction</span></a> *self</code></em>,
                                    <em class="parameter"><code>const <span class="type">char</span> *ref</code></em>,
                                    <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
-<p>Adds uninstalling the given ref to this transaction.</p>
+<p>Adds uninstalling the given ref to this transaction. If the transaction is
+set to not deploy updates, the request is ignored.</p>
 <div class="refsect3">
 <a name="flatpak-transaction-add-uninstall.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
