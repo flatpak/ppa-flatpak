@@ -1,4 +1,4 @@
-flatpak (1.14.3-1) UNRELEASED; urgency=medium
+flatpak (1.14.3-1) unstable; urgency=medium
 
   * New upstream stable release
     - Fix handling of apps superseded by an app of a different name
@@ -15,7 +15,7 @@ flatpak (1.14.3-1) UNRELEASED; urgency=medium
     - Show a warning when a --filesystem exists but cannot be shared with
       the sandbox (flatpak#1357, flatpak#5035, flatpak#5205, flatpak#5207)
 
- -- Simon McVittie <smcv@debian.org>  Mon, 27 Feb 2023 12:48:08 +0000
+ -- Simon McVittie <smcv@debian.org>  Mon, 27 Feb 2023 12:52:48 +0000
 
 flatpak (1.14.2-1) unstable; urgency=medium
 
