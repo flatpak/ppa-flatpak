@@ -608,7 +608,7 @@ flatpak_run_add_gpg_agent_args (FlatpakBwrap *bwrap)
   g_autofree char * sandbox_agent_socket = NULL;
   g_autoptr(GError) gpgconf_error = NULL;
   g_autoptr(GSubprocess) process = NULL;
-  g_autoptr(GInputStream) base_stream = NULL;
+  GInputStream *base_stream = NULL;
   g_autoptr(GDataInputStream) data_stream = NULL;
 
   process = g_subprocess_new (G_SUBPROCESS_FLAGS_STDOUT_PIPE,
@@ -1878,7 +1878,8 @@ static const ExportData default_exports[] = {
   {"XDG_RUNTIME_DIR", NULL},
 
   /* Some env vars are common enough and will affect the sandbox badly
-     if set on the host. We clear these always. */
+     if set on the host. We clear these always. If updating this list,
+     also update the list in flatpak-run.xml. */
   {"PYTHONPATH", NULL},
   {"PERLLIB", NULL},
   {"PERL5LIB", NULL},
@@ -1895,6 +1896,10 @@ static const ExportData default_exports[] = {
   {"GST_PTP_HELPER", NULL},
   {"GST_PTP_HELPER_1_0", NULL},
   {"GST_INSTALL_PLUGINS_HELPER", NULL},
+  {"KRB5CCNAME", NULL},
+  {"XKB_CONFIG_ROOT", NULL},
+  {"GIO_EXTRA_MODULES", NULL},
+  {"GDK_BACKEND", NULL},
 };
 
 static const ExportData no_ld_so_cache_exports[] = {

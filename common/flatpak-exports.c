@@ -52,7 +52,15 @@
    flatpak_abs_usrmerged_dirs get the same treatment without having to be listed
    here. */
 const char *dont_export_in[] = {
-  "/usr", "/etc", "/app", "/dev", "/proc", NULL
+  "/.flatpak-info",
+  "/app",
+  "/dev",
+  "/etc",
+  "/proc",
+  "/run/flatpak",
+  "/run/host",
+  "/usr",
+  NULL
 };
 
 static char *
@@ -861,12 +869,18 @@ check_if_autofs_works (FlatpakExports *exports,
   return TRUE;
 }
 
-/* We use level to avoid infinite recursion */
+/* We use level to avoid infinite recursion.
+ *
+ * Note that some of the errors produced by this function are "real errors"
+ * and should show up as a user-visible warning, but others are relatively
+ * uninteresting, and in general none are actually fatal: we prefer to
+ * continue with fewer paths exposed rather than failing to run. */
 static gboolean
 _exports_path_expose (FlatpakExports *exports,
                       int             mode,
                       const char     *path,
-                      int             level)
+                      int             level,
+                      GError        **error)
 {
   g_autofree char *canonical = NULL;
   struct stat st;
@@ -881,13 +895,15 @@ _exports_path_expose (FlatpakExports *exports,
 
   if (level > 40) /* 40 is the current kernel ELOOP check */
     {
-      g_debug ("Expose too deep, bail");
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_TOO_MANY_LINKS,
+                   "%s", g_strerror (ELOOP));
       return FALSE;
     }
 
   if (!g_path_is_absolute (path))
     {
-      g_debug ("Not exposing relative path %s", path);
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_FILENAME,
+                   _("An absolute path is required"));
       return FALSE;
     }
 
@@ -896,34 +912,38 @@ _exports_path_expose (FlatpakExports *exports,
 
   if (o_path_fd == -1)
     {
-      g_debug ("Unable to open path %s to %s: %s",
-               path, export_mode_to_verb (mode), g_strerror (errno));
+      int saved_errno = errno;
+
+      /* Intentionally using G_IO_ERROR_NOT_FOUND even if errno is
+       * something different, so callers can suppress the warning in this
+       * relatively likely and uninteresting case: we don't particularly
+       * care whether this is happening as a result of ENOENT or EACCES
+       * or any other reason. */
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                   _("Unable to open path \"%s\": %s"),
+                   path, g_strerror (saved_errno));
       return FALSE;
     }
 
   if (fstat (o_path_fd, &st) != 0)
-    {
-      g_debug ("Unable to get file type of %s: %s", path, g_strerror (errno));
-      return FALSE;
-    }
+    return glnx_throw (error,
+                       _("Unable to get file type of \"%s\": %s"),
+                       path, g_strerror (errno));
 
   /* Don't expose weird things */
   if (!(S_ISDIR (st.st_mode) ||
         S_ISREG (st.st_mode) ||
         S_ISLNK (st.st_mode) ||
         S_ISSOCK (st.st_mode)))
-    {
-      g_debug ("%s has unsupported file type 0o%o", path, st.st_mode & S_IFMT);
-      return FALSE;
-    }
+    return glnx_throw (error,
+                       _("File \"%s\" has unsupported type 0o%o"),
+                       path, st.st_mode & S_IFMT);
 
   /* O_PATH + fstatfs is the magic that we need to statfs without automounting the target */
   if (fstatfs (o_path_fd, &stfs) != 0)
-    {
-      g_debug ("Unable to get filesystem information for %s: %s",
-               path, g_strerror (errno));
-      return FALSE;
-    }
+    return glnx_throw (error,
+                       _("Unable to get filesystem information for \"%s\": %s"),
+                       path, g_strerror (errno));
 
   if (stfs.f_type == AUTOFS_SUPER_MAGIC ||
       (G_UNLIKELY (exports->test_flags & FLATPAK_EXPORTS_TEST_FLAGS_AUTOFS) &&
@@ -931,7 +951,8 @@ _exports_path_expose (FlatpakExports *exports,
     {
       if (!check_if_autofs_works (exports, path))
         {
-          g_debug ("ignoring blocking autofs path %s", path);
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK,
+                       _("Ignoring blocking autofs path \"%s\""), path);
           return FALSE;
         }
     }
@@ -946,17 +967,35 @@ _exports_path_expose (FlatpakExports *exports,
          create the parents for them anyway */
       if (flatpak_has_path_prefix (path, dont_export_in[i]))
         {
-          g_debug ("skipping export for path %s in unsupported prefix", path);
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_MOUNTABLE_FILE,
+                       _("Path \"%s\" is reserved by Flatpak"),
+                       dont_export_in[i]);
+          return FALSE;
+        }
+
+      /* Also don't expose directories that are a parent of a directory
+       * that is "owned" by the sandboxing framework. For example, because
+       * Flatpak controls /run/host and /run/flatpak, we cannot allow
+       * --filesystem=/run, which would prevent us from creating the
+       * contents of /run/host and /run/flatpak. */
+      if (flatpak_has_path_prefix (dont_export_in[i], path))
+        {
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_MOUNTABLE_FILE,
+                       _("Path \"%s\" is reserved by Flatpak"),
+                       dont_export_in[i]);
           return FALSE;
         }
     }
 
   for (i = 0; flatpak_abs_usrmerged_dirs[i] != NULL; i++)
     {
-      /* Same as /usr, but for the directories that get merged into /usr */
+      /* Same as /usr, but for the directories that get merged into /usr.
+       * Keep the translatable string here the same as the one above */
       if (flatpak_has_path_prefix (path, flatpak_abs_usrmerged_dirs[i]))
         {
-          g_debug ("skipping export for path %s in a /usr-merged directory", path);
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_MOUNTABLE_FILE,
+                       _("Path \"%s\" is reserved by Flatpak"),
+                       flatpak_abs_usrmerged_dirs[i]);
           return FALSE;
         }
     }
@@ -980,8 +1019,8 @@ _exports_path_expose (FlatpakExports *exports,
         }
       else
         {
-          g_autoptr(GError) error = NULL;
-          g_autofree char *resolved = flatpak_exports_resolve_link_in_host (exports, path, &error);
+          g_autoptr(GError) local_error = NULL;
+          g_autofree char *resolved = flatpak_exports_resolve_link_in_host (exports, path, &local_error);
           g_autofree char *new_target = NULL;
 
           if (resolved)
@@ -995,7 +1034,7 @@ _exports_path_expose (FlatpakExports *exports,
 
               flatpak_debug2 ("Trying to export the target instead: %s", new_target);
 
-              if (_exports_path_expose (exports, mode, new_target, level + 1))
+              if (_exports_path_expose (exports, mode, new_target, level + 1, &local_error))
                 {
                   do_export_path (exports, path, FAKE_MODE_SYMLINK);
                   return TRUE;
@@ -1003,12 +1042,14 @@ _exports_path_expose (FlatpakExports *exports,
 
               flatpak_debug2 ("Could not export target %s, so ignoring %s",
                               new_target, path);
+              g_propagate_error (error, g_steal_pointer (&local_error));
               return FALSE;
             }
           else
             {
-              flatpak_debug2 ("%s is a symlink but we were unable to resolve it: %s",
-                              path, error->message);
+              g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
+                           _("Unable to resolve symbolic link \"%s\": %s"),
+                           path, local_error->message);
               return FALSE;
             }
         }
@@ -1022,42 +1063,46 @@ _exports_path_expose (FlatpakExports *exports,
   return TRUE;
 }
 
-void
-flatpak_exports_add_path_expose (FlatpakExports       *exports,
-                                 FlatpakFilesystemMode mode,
-                                 const char           *path)
+gboolean
+flatpak_exports_add_path_expose (FlatpakExports         *exports,
+                                 FlatpakFilesystemMode   mode,
+                                 const char             *path,
+                                 GError                **error)
 {
-  g_return_if_fail (mode > FLATPAK_FILESYSTEM_MODE_NONE);
-  g_return_if_fail (mode <= FLATPAK_FILESYSTEM_MODE_LAST);
-  _exports_path_expose (exports, mode, path, 0);
+  g_return_val_if_fail (mode > FLATPAK_FILESYSTEM_MODE_NONE, FALSE);
+  g_return_val_if_fail (mode <= FLATPAK_FILESYSTEM_MODE_LAST, FALSE);
+  return _exports_path_expose (exports, mode, path, 0, error);
 }
 
-void
-flatpak_exports_add_path_tmpfs (FlatpakExports *exports,
-                                const char     *path)
+gboolean
+flatpak_exports_add_path_tmpfs (FlatpakExports  *exports,
+                                const char      *path,
+                                GError         **error)
 {
-  _exports_path_expose (exports, FAKE_MODE_TMPFS, path, 0);
+  return _exports_path_expose (exports, FAKE_MODE_TMPFS, path, 0, error);
 }
 
-void
-flatpak_exports_add_path_expose_or_hide (FlatpakExports       *exports,
-                                         FlatpakFilesystemMode mode,
-                                         const char           *path)
+gboolean
+flatpak_exports_add_path_expose_or_hide (FlatpakExports        *exports,
+                                         FlatpakFilesystemMode  mode,
+                                         const char            *path,
+                                         GError               **error)
 {
-  g_return_if_fail (mode >= FLATPAK_FILESYSTEM_MODE_NONE);
-  g_return_if_fail (mode <= FLATPAK_FILESYSTEM_MODE_LAST);
+  g_return_val_if_fail (mode >= FLATPAK_FILESYSTEM_MODE_NONE, FALSE);
+  g_return_val_if_fail (mode <= FLATPAK_FILESYSTEM_MODE_LAST, FALSE);
 
   if (mode == FLATPAK_FILESYSTEM_MODE_NONE)
-    flatpak_exports_add_path_tmpfs (exports, path);
+    return flatpak_exports_add_path_tmpfs (exports, path, error);
   else
-    flatpak_exports_add_path_expose (exports, mode, path);
+    return flatpak_exports_add_path_expose (exports, mode, path, error);
 }
 
-void
-flatpak_exports_add_path_dir (FlatpakExports *exports,
-                              const char     *path)
+gboolean
+flatpak_exports_add_path_dir (FlatpakExports  *exports,
+                              const char      *path,
+                              GError         **error)
 {
-  _exports_path_expose (exports, FAKE_MODE_DIR, path, 0);
+  return _exports_path_expose (exports, FAKE_MODE_DIR, path, 0, error);
 }
 
 void

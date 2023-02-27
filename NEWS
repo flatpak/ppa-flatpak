@@ -1,3 +1,53 @@
+Changes in 1.14.3
+~~~~~~~~~~~~~~~~~
+Released: 2023-02-27
+
+Bug fixes:
+
+* When splitting an upgrade into two steps (download without installing, and
+  then upgrade without allowing further downloads) like GNOME Software does,
+  if an app is marked EOL and superseded by a replacement, don't remove the
+  superseded app in the first step, which would result in the replacement
+  incorrectly not being installed (#5172)
+* Fix a crash when --socket=gpg-agent is used (#5095)
+* Fix a crash when listing apps if one of them is broken or misconfigured
+  (#5293)
+* If an app has invalid syntax in its overrides or metadata, mention the
+  filename in the error message (#5293)
+* Unset $GDK_BACKEND for apps, ensuring GTK apps with --socket=fallback-x11
+  can work (#5303)
+* Never try to export a parent of reserved directories as a --filesystem,
+  for example /run, which would prevent the app from starting (#5205, #5207)
+* Never try to export a --filesystem below /run/flatpak or /run/host,
+  which could similarly prevent the app from starting
+* The above change also fixes apps not starting if a --filesystem is a
+  symlink to the root directory (#1357)
+* Show a warning when the --filesystem exists but cannot be shared with
+  the sandbox (#1357, #5035, #5205, #5207)
+
+Changes in 1.14.2
+~~~~~~~~~~~~~~~~~
+Released: 2023-02-06
+
+Bug fixes:
+
+* Display the intended messages for `flatpak repair` (#5204)
+* Exporting an app to an existing repository on a CIFS filesystem
+  now works as intended (#5257)
+* Unset $GIO_EXTRA_MODULES for apps, avoiding misbehaviour in some GLib
+  apps when set to a path on the host (#5206)
+* Unset $XKB_CONFIG_ROOT for apps, avoiding crashes in GTK and Qt apps
+  under Wayland when this variable is set to a path not available in the
+  sandbox (#5194)
+* Unset $KRB5CCNAME for apps
+* When using the fish shell, avoid duplicate XDG_DATA_DIRS entries if the
+  profile script is sourced more than once (#5198)
+
+Internal changes:
+
+* The INFO log level is now treated the same as the DEBUG log level
+  by `flatpak -v`, to make backports from 1.15.x simpler
+
 Changes in 1.14.1
 ~~~~~~~~~~~~~~~~~
 Released: 2022-11-18
