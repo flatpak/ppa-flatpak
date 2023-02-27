@@ -1,3 +1,34 @@
+flatpak (1.14.3-1flatpak1~22.04.1) jammy; urgency=medium
+
+  * Merge from Debian
+  * Remaining changes relative to Debian:
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 27 Feb 2023 18:54:10 +0000
+
+flatpak (1.14.3-1) unstable; urgency=medium
+
+  * New upstream stable release
+    - Fix handling of apps superseded by an app of a different name
+      in GNOME Software (flatpak#5172)
+    - Fix a crash when an app has --socket=gpg-agent permission
+      (flatpak#5095)
+    - Fix a crash when listing broken or misconfigured apps (flatpak#5293)
+    - If an app has invalid syntax in its overrides or metadata, mention
+      the filename in the error message (flatpak#5293)
+    - Unset $GDK_BACKEND so that GTK apps with --socket=fallback-x11
+      work reliably (flatpak#5303)
+    - Ignore some --filesystem permissions which would otherwise prevent
+      all apps from starting (flatpak#1357, flatpak#5205, flatpak#5207)
+    - Show a warning when a --filesystem exists but cannot be shared with
+      the sandbox (flatpak#1357, flatpak#5035, flatpak#5205, flatpak#5207)
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 27 Feb 2023 12:52:48 +0000
+
 flatpak (1.14.2-1flatpak1~20.04.1) focal; urgency=medium
 
   * Backport to Ubuntu 20.04 'focal'
