@@ -1,3 +1,11 @@
+flatpak (1.14.3-1~bpo11+1) bullseye-backports; urgency=medium
+
+  * Rebuild for bullseye-backports
+    - d/control: Relax libseccomp build-dependency to 2.5.0
+    - d/control, d/gbp.conf: Adjust git branch for bullseye-backports
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 14 Mar 2023 09:17:34 +0000
+
 flatpak (1.14.3-1) unstable; urgency=medium
 
   * New upstream stable release
