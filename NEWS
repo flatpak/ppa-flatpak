@@ -1,3 +1,30 @@
+Changes in 1.14.3
+~~~~~~~~~~~~~~~~~
+Released: 2023-02-27
+
+Bug fixes:
+
+* When splitting an upgrade into two steps (download without installing, and
+  then upgrade without allowing further downloads) like GNOME Software does,
+  if an app is marked EOL and superseded by a replacement, don't remove the
+  superseded app in the first step, which would result in the replacement
+  incorrectly not being installed (#5172)
+* Fix a crash when --socket=gpg-agent is used (#5095)
+* Fix a crash when listing apps if one of them is broken or misconfigured
+  (#5293)
+* If an app has invalid syntax in its overrides or metadata, mention the
+  filename in the error message (#5293)
+* Unset $GDK_BACKEND for apps, ensuring GTK apps with --socket=fallback-x11
+  can work (#5303)
+* Never try to export a parent of reserved directories as a --filesystem,
+  for example /run, which would prevent the app from starting (#5205, #5207)
+* Never try to export a --filesystem below /run/flatpak or /run/host,
+  which could similarly prevent the app from starting
+* The above change also fixes apps not starting if a --filesystem is a
+  symlink to the root directory (#1357)
+* Show a warning when the --filesystem exists but cannot be shared with
+  the sandbox (#1357, #5035, #5205, #5207)
+
 Changes in 1.14.2
 ~~~~~~~~~~~~~~~~~
 Released: 2023-02-06
