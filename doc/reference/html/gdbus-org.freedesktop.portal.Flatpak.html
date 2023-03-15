@@ -68,15 +68,18 @@
 </div>
 <div class="refsect1">
 <a name="gdbus-interface-org-freedesktop-portal-Flatpak"></a><h2>Description</h2>
-<p>      The flatpak portal exposes some interactions with flatpak on the
-      host to the sandbox. For example, it allows you to restart the
-      applications or start a more sandboxed instance.
+<p>
+The flatpak portal exposes some interactions with flatpak on the
+host to the sandbox. For example, it allows you to restart the
+applications or start a more sandboxed instance.
 </p>
-<p>      This portal is available on the D-Bus session bus under the
-      bus name org.freedesktop.portal.Flatpak and the object path
-      /org/freedesktop/portal/Flatpak.
+<p>
+This portal is available on the D-Bus session bus under the
+bus name org.freedesktop.portal.Flatpak and the object path
+/org/freedesktop/portal/Flatpak.
 </p>
-<p>      This documentation describes version 5 of this interface.
+<p>
+This documentation describes version 5 of this interface.
 </p>
 </div>
 <div class="refsect1">
@@ -92,11 +95,13 @@ Spawn (IN  ay    cwd_path,
        IN  a{sv} options,
        OUT u     pid);
 </pre>
-<p>         This method lets you start a new instance of your
-         application, optionally enabling a tighter sandbox.
+<p>
+This method lets you start a new instance of your
+application, optionally enabling a tighter sandbox.
 </p>
-<p>         The following flags values are supported:
-         </p>
+<p>
+The following flags values are supported:
+</p>
 <div class="variablelist"><table border="0" class="variablelist">
 <colgroup>
 <col align="left" valign="top">
@@ -106,80 +111,82 @@ Spawn (IN  ay    cwd_path,
 <tr>
 <td><p><span class="term">1 (FLATPAK_SPAWN_FLAGS_CLEAR_ENV)</span></p></td>
 <td><p>
-               Clear the environment.
-             </p></td>
+Clear the environment.
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term">2 (FLATPAK_SPAWN_FLAGS_LATEST_VERSION)</span></p></td>
 <td><p>
-               Spawn the latest version of the app.
-             </p></td>
+Spawn the latest version of the app.
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term">4 (FLATPAK_SPAWN_FLAGS_SANDBOX)</span></p></td>
 <td><p>
-               Spawn in a sandbox (equivalent of the sandbox option of flatpak run).
-             </p></td>
+Spawn in a sandbox (equivalent of the sandbox option of flatpak run).
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term">8 (FLATPAK_SPAWN_FLAGS_NO_NETWORK)</span></p></td>
 <td><p>
-               Spawn without network (equivalent of the unshare=network option of flatpak run).
-             </p></td>
+Spawn without network (equivalent of the unshare=network option of flatpak run).
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term">16 (FLATPAK_SPAWN_FLAGS_WATCH_BUS)</span></p></td>
 <td><p>
-               Kill the sandbox when the caller disappears from the session bus.
-             </p></td>
+Kill the sandbox when the caller disappears from the session bus.
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term">32 (FLATPAK_SPAWN_FLAGS_EXPOSE_PIDS)</span></p></td>
 <td>
 <p>
-               Expose the sandbox pids in the callers sandbox, only supported if using user namespaces for containers (not setuid), see the support property.
-               </p>
+Expose the sandbox pids in the callers sandbox, only supported if using user namespaces for containers (not setuid), see the support property.
+</p>
 <p>
-               This was added in version 3 of this interface (available from flatpak 1.6.0 and later).
-             </p>
+This was added in version 3 of this interface (available from flatpak 1.6.0 and later).
+</p>
 </td>
 </tr>
 <tr>
 <td><p><span class="term">64 (FLATPAK_SPAWN_FLAGS_NOTIFY_START)</span></p></td>
 <td>
 <p>
-               Emit a SpawnStarted signal once the sandboxed process has been
-               fully started.
-               </p>
+Emit a SpawnStarted signal once the sandboxed process has been
+fully started.
+</p>
 <p>
-               This was added in version 4 of this interface (available from flatpak 1.8.0 and later).
-             </p>
+This was added in version 4 of this interface (available from flatpak 1.8.0 and later).
+</p>
 </td>
 </tr>
 <tr>
 <td><p><span class="term">128 (FLATPAK_SPAWN_FLAGS_SHARE_PIDS)</span></p></td>
 <td>
 <p>
-              Expose the sandbox process IDs in the caller's sandbox and
-              the caller's process IDs in the new sandbox. Only supported
-              if using user namespaces for containers (not setuid), see the
-              support property.
-             </p>
+Expose the sandbox process IDs in the caller's sandbox and
+the caller's process IDs in the new sandbox. Only supported
+if using user namespaces for containers (not setuid), see the
+support property.
+</p>
 <p>
-               This was added in version 5 of this interface (available from flatpak 1.10.0 and later).
-             </p>
+This was added in version 5 of this interface (available from flatpak 1.10.0 and later).
+</p>
 </td>
 </tr>
 </tbody>
 </table></div>
 <p>
 </p>
-<p>        Unknown (unsupported) flags are an error and will cause Spawn()
-        to fail.
+<p>
+Unknown (unsupported) flags are an error and will cause Spawn()
+to fail.
 </p>
-<p>        Unknown (unsupported) options are ignored.
-        The following options are supported:
-         </p>
+<p>
+Unknown (unsupported) options are ignored.
+The following options are supported:
+</p>
 <div class="variablelist"><table border="0" class="variablelist">
 <colgroup>
 <col align="left" valign="top">
@@ -190,61 +197,61 @@ Spawn (IN  ay    cwd_path,
 <td><p><span class="term">sandbox-expose as</span></p></td>
 <td>
 <p>
-               A list of filenames for files inside the sandbox that will be exposed
-               to the new sandbox, for reading and writing. Note that absolute paths
-               or subdirectories are not allowed.
-             </p>
+A list of filenames for files inside the sandbox that will be exposed
+to the new sandbox, for reading and writing. Note that absolute paths
+or subdirectories are not allowed.
+</p>
 <p>
-               The files must be in the <code class="filename">sandbox</code> subdirectory of
-               the instance directory (i.e. <code class="filename">~/.var/app/$APP_ID/sandbox</code>).
-             </p>
+The files must be in the <code class="filename">sandbox</code> subdirectory of
+the instance directory (i.e. <code class="filename">~/.var/app/$APP_ID/sandbox</code>).
+</p>
 </td>
 </tr>
 <tr>
 <td><p><span class="term">sandbox-expose-ro as</span></p></td>
 <td>
 <p>
-               A list of filenames for files inside the sandbox that will be exposed
-               to the new sandbox, readonly. Note that absolute paths or subdirectories
-               are not allowed.
-             </p>
+A list of filenames for files inside the sandbox that will be exposed
+to the new sandbox, readonly. Note that absolute paths or subdirectories
+are not allowed.
+</p>
 <p>
-               The files must be in the <code class="filename">sandbox</code> subdirectory of
-               the instance directory (i.e. <code class="filename">~/.var/app/$APP_ID/sandbox</code>).
-             </p>
+The files must be in the <code class="filename">sandbox</code> subdirectory of
+the instance directory (i.e. <code class="filename">~/.var/app/$APP_ID/sandbox</code>).
+</p>
 </td>
 </tr>
 <tr>
 <td><p><span class="term">sandbox-expose-fd ah</span></p></td>
 <td>
 <p>
-               A list of file descriptor for files inside the sandbox that will be exposed
-               to the new sandbox, for reading and writing (if the caller has write access).
-               The file descriptors must be opened with O_PATH and O_NOFOLLOW and cannot be symlinks.
-             </p>
+A list of file descriptor for files inside the sandbox that will be exposed
+to the new sandbox, for reading and writing (if the caller has write access).
+The file descriptors must be opened with O_PATH and O_NOFOLLOW and cannot be symlinks.
+</p>
 <p>
-               This was added in version 3 of this interface (available from flatpak 1.6.0 and later).
-             </p>
+This was added in version 3 of this interface (available from flatpak 1.6.0 and later).
+</p>
 </td>
 </tr>
 <tr>
 <td><p><span class="term">sandbox-expose-fd-ro ah</span></p></td>
 <td>
 <p>
-               A list of file descriptor for files inside the sandbox that will be exposed
-               to the new sandbox, readonly. The file descriptors must be opened with O_PATH and O_NOFOLLOW and cannot be symlinks.
-             </p>
+A list of file descriptor for files inside the sandbox that will be exposed
+to the new sandbox, readonly. The file descriptors must be opened with O_PATH and O_NOFOLLOW and cannot be symlinks.
+</p>
 <p>
-               This was added in version 3 of this interface (available from flatpak 1.6.0 and later).
-             </p>
+This was added in version 3 of this interface (available from flatpak 1.6.0 and later).
+</p>
 </td>
 </tr>
 <tr>
 <td><p><span class="term">sandbox-flags u</span></p></td>
 <td>
 <p>
-             Flags affecting the created sandbox. The following flags values are supported:
-             </p>
+Flags affecting the created sandbox. The following flags values are supported:
+</p>
 <div class="variablelist"><table border="0" class="variablelist">
 <colgroup>
 <col align="left" valign="top">
@@ -254,52 +261,53 @@ Spawn (IN  ay    cwd_path,
 <tr>
 <td><p><span class="term">1</span></p></td>
 <td><p>
-                   Share the display access (X11, wayland) with the caller.
-                 </p></td>
+Share the display access (X11, wayland) with the caller.
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term">2</span></p></td>
 <td><p>
-                   Share the sound access (pulseaudio) with the caller.
-                 </p></td>
+Share the sound access (pulseaudio) with the caller.
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term">4</span></p></td>
 <td><p>
-                   Share the gpu access with the caller.
-                 </p></td>
+Share the gpu access with the caller.
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term">8</span></p></td>
 <td><p>
-                   Allow sandbox access to (filtered) session bus.
-                 </p></td>
+Allow sandbox access to (filtered) session bus.
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term">16</span></p></td>
 <td><p>
-                   Allow sandbox access to accessibility bus.
-                 </p></td>
+Allow sandbox access to accessibility bus.
+</p></td>
 </tr>
 </tbody>
 </table></div>
 <p>
 </p>
-<p>             </p>
 <p>
-             This was added in version 3 of this interface (available from flatpak 1.6.0 and later).
-             </p>
+</p>
+<p>
+This was added in version 3 of this interface (available from flatpak 1.6.0 and later).
+</p>
 </td>
 </tr>
 <tr>
 <td><p><span class="term">unset-env as</span></p></td>
 <td>
 <p>
-             A list of environment variables to unset (remove from the environment).
-             </p>
+A list of environment variables to unset (remove from the environment).
+</p>
 <p>
-             This was added in version 5 of this interface (available from flatpak 1.10.0 and later).
-             </p>
+This was added in version 5 of this interface (available from flatpak 1.10.0 and later).
+</p>
 </td>
 </tr>
 </tbody>
@@ -314,31 +322,45 @@ Spawn (IN  ay    cwd_path,
 <tbody>
 <tr>
 <td><p><span class="term"><code class="literal">IN ay <em class="parameter"><code>cwd_path</code></em></code>:</span></p></td>
-<td><p>the working directory for the new process</p></td>
+<td><p>
+the working directory for the new process
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="literal">IN aay <em class="parameter"><code>argv</code></em></code>:</span></p></td>
-<td><p>the argv for the new process, starting with the executable to launch</p></td>
+<td><p>
+the argv for the new process, starting with the executable to launch
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="literal">IN a{uh} <em class="parameter"><code>fds</code></em></code>:</span></p></td>
-<td><p>an array of file descriptors to pass to the new process</p></td>
+<td><p>
+an array of file descriptors to pass to the new process
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="literal">IN a{ss} <em class="parameter"><code>envs</code></em></code>:</span></p></td>
-<td><p>an array of variable/value pairs for the environment of the new process</p></td>
+<td><p>
+an array of variable/value pairs for the environment of the new process
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="literal">IN u <em class="parameter"><code>flags</code></em></code>:</span></p></td>
-<td><p>flags</p></td>
+<td><p>
+flags
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="literal">IN a{sv} <em class="parameter"><code>options</code></em></code>:</span></p></td>
-<td><p>Vardict with optional further information</p></td>
+<td><p>
+Vardict with optional further information
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="literal">OUT u <em class="parameter"><code>pid</code></em></code>:</span></p></td>
-<td><p>the PID of the new process</p></td>
+<td><p>
+the PID of the new process
+</p></td>
 </tr>
 </tbody>
 </table></div>
@@ -351,11 +373,12 @@ SpawnSignal (IN  u pid,
              IN  u signal,
              IN  b to_process_group);
 </pre>
-<p>        This method lets you send a Unix signal to a process
-        that was started with <a class="link" href="gdbus-org.freedesktop.portal.Flatpak.html#gdbus-method-org-freedesktop-portal-Flatpak.Spawn" title="The Spawn() method">Spawn()</a>.
-        The <em class="parameter"><code>pid</code></em> argument here should be the PID that is returned
-        by the Spawn() call: it is not necessarily valid in the caller's
-        PID namespace.
+<p>
+This method lets you send a Unix signal to a process
+that was started with <a class="link" href="gdbus-org.freedesktop.portal.Flatpak.html#gdbus-method-org-freedesktop-portal-Flatpak.Spawn" title="The Spawn() method">Spawn()</a>.
+The <em class="parameter"><code>pid</code></em> argument here should be the PID that is returned
+by the Spawn() call: it is not necessarily valid in the caller's
+PID namespace.
 </p>
 <div class="variablelist"><table border="0" class="variablelist">
 <colgroup>
@@ -365,15 +388,21 @@ SpawnSignal (IN  u pid,
 <tbody>
 <tr>
 <td><p><span class="term"><code class="literal">IN u <em class="parameter"><code>pid</code></em></code>:</span></p></td>
-<td><p>the PID inside the container to signal</p></td>
+<td><p>
+the PID inside the container to signal
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="literal">IN u <em class="parameter"><code>signal</code></em></code>:</span></p></td>
-<td><p>the signal to send (see <span class="citerefentry"><span class="refentrytitle">signal</span>(7)</span>)</p></td>
+<td><p>
+the signal to send (see <span class="citerefentry"><span class="refentrytitle">signal</span>(7)</span>)
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="literal">IN b <em class="parameter"><code>to_process_group</code></em></code>:</span></p></td>
-<td><p>whether to send the signal to the process group</p></td>
+<td><p>
+whether to send the signal to the process group
+</p></td>
 </tr>
 </tbody>
 </table></div>
@@ -385,18 +414,22 @@ SpawnSignal (IN  u pid,
 CreateUpdateMonitor (IN  a{sv} options,
                      OUT o     handle);
 </pre>
-<p>        Creates an update monitor object that will emit
-        signals when an update for the caller becomes
-        available, and can be used to install it.
+<p>
+Creates an update monitor object that will emit
+signals when an update for the caller becomes
+available, and can be used to install it.
 </p>
-<p>        The handle will be of the form /org/freedesktop/portal/Flatpak/update_monitor/SENDER/TOKEN,
-        where SENDER is the caller's unique name, with the initial ':' removed and
-        all '.' replaced by '_', and TOKEN is a unique token that the caller can optionally provide
-        with the 'handle_token' key in the options vardict.
+<p>
+The handle will be of the form /org/freedesktop/portal/Flatpak/update_monitor/SENDER/TOKEN,
+where SENDER is the caller's unique name, with the initial ':' removed and
+all '.' replaced by '_', and TOKEN is a unique token that the caller can optionally provide
+with the 'handle_token' key in the options vardict.
 </p>
-<p>        Currently, no other options are accepted.
+<p>
+Currently, no other options are accepted.
 </p>
-<p>        This was added in version 2 of this interface (available from flatpak 1.5.0 and later).
+<p>
+This was added in version 2 of this interface (available from flatpak 1.5.0 and later).
 </p>
 <div class="variablelist"><table border="0" class="variablelist">
 <colgroup>
@@ -406,11 +439,15 @@ CreateUpdateMonitor (IN  a{sv} options,
 <tbody>
 <tr>
 <td><p><span class="term"><code class="literal">IN a{sv} <em class="parameter"><code>options</code></em></code>:</span></p></td>
-<td><p>Vardict with optional further information</p></td>
+<td><p>
+Vardict with optional further information
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="literal">OUT o <em class="parameter"><code>handle</code></em></code>:</span></p></td>
-<td><p>Object path for the <a class="link" href="gdbus-org.freedesktop.portal.Flatpak.UpdateMonitor.html#gdbus-interface-org-freedesktop-portal-Flatpak-UpdateMonitor.top_of_page">org.freedesktop.portal.Flatpak.UpdateMonitor</a> object</p></td>
+<td><p>
+Object path for the <a class="link" href="gdbus-org.freedesktop.portal.Flatpak.UpdateMonitor.html#gdbus-interface-org-freedesktop-portal-Flatpak-UpdateMonitor.top_of_page">org.freedesktop.portal.Flatpak.UpdateMonitor</a> object
+</p></td>
 </tr>
 </tbody>
 </table></div>
@@ -424,19 +461,22 @@ CreateUpdateMonitor (IN  a{sv} options,
 SpawnStarted (u pid,
               u relpid);
 </pre>
-<p>        This is only non-zero if the expose PIDs flag (32) or the share
-        PIDs flag (128) was passed to
-        <a class="link" href="gdbus-org.freedesktop.portal.Flatpak.html#gdbus-method-org-freedesktop-portal-Flatpak.Spawn" title="The Spawn() method">Spawn()</a>, and it may still be zero if
-        the process exits before its relative PID could be read.
+<p>
+This is only non-zero if the expose PIDs flag (32) or the share
+PIDs flag (128) was passed to
+<a class="link" href="gdbus-org.freedesktop.portal.Flatpak.html#gdbus-method-org-freedesktop-portal-Flatpak.Spawn" title="The Spawn() method">Spawn()</a>, and it may still be zero if
+the process exits before its relative PID could be read.
 </p>
-<p>        Emitted when a process started by <a class="link" href="gdbus-org.freedesktop.portal.Flatpak.html#gdbus-method-org-freedesktop-portal-Flatpak.Spawn" title="The Spawn() method">Spawn()</a>
-        has fully started. In other words, <a class="link" href="gdbus-org.freedesktop.portal.Flatpak.html#gdbus-method-org-freedesktop-portal-Flatpak.Spawn" title="The Spawn() method">Spawn()</a> returns once the sandbox
-        has been started, and this signal is emitted once the process inside
-        itself is started.
+<p>
+Emitted when a process started by <a class="link" href="gdbus-org.freedesktop.portal.Flatpak.html#gdbus-method-org-freedesktop-portal-Flatpak.Spawn" title="The Spawn() method">Spawn()</a>
+has fully started. In other words, <a class="link" href="gdbus-org.freedesktop.portal.Flatpak.html#gdbus-method-org-freedesktop-portal-Flatpak.Spawn" title="The Spawn() method">Spawn()</a> returns once the sandbox
+has been started, and this signal is emitted once the process inside
+itself is started.
 </p>
-<p>        Only emitted by version 4 of this interface (available from flatpak
-        1.8.0 and later) and if the notify start flag (64) was passed to
-        <a class="link" href="gdbus-org.freedesktop.portal.Flatpak.html#gdbus-method-org-freedesktop-portal-Flatpak.Spawn" title="The Spawn() method">Spawn()</a>.
+<p>
+Only emitted by version 4 of this interface (available from flatpak
+1.8.0 and later) and if the notify start flag (64) was passed to
+<a class="link" href="gdbus-org.freedesktop.portal.Flatpak.html#gdbus-method-org-freedesktop-portal-Flatpak.Spawn" title="The Spawn() method">Spawn()</a>.
 </p>
 <div class="variablelist"><table border="0" class="variablelist">
 <colgroup>
@@ -446,11 +486,15 @@ SpawnStarted (u pid,
 <tbody>
 <tr>
 <td><p><span class="term"><code class="literal">u <em class="parameter"><code>pid</code></em></code>:</span></p></td>
-<td><p>the PID of the process that has been started</p></td>
+<td><p>
+the PID of the process that has been started
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="literal">u <em class="parameter"><code>relpid</code></em></code>:</span></p></td>
-<td><p>the PID of the process relative to the current namespace.</p></td>
+<td><p>
+the PID of the process relative to the current namespace.
+</p></td>
 </tr>
 </tbody>
 </table></div>
@@ -462,16 +506,18 @@ SpawnStarted (u pid,
 SpawnExited (u pid,
              u exit_status);
 </pre>
-<p>        Emitted when a process started by <a class="link" href="gdbus-org.freedesktop.portal.Flatpak.html#gdbus-method-org-freedesktop-portal-Flatpak.Spawn" title="The Spawn() method">Spawn()</a>
-        exits.
-        Use g_spawn_check_exit_status(), or the macros such as
-        WIFEXITED documented in
-        <span class="citerefentry"><span class="refentrytitle">waitpid</span>(2)</span>,
-        to interpret the <em class="parameter"><code>exit_status</code></em>.
+<p>
+Emitted when a process started by <a class="link" href="gdbus-org.freedesktop.portal.Flatpak.html#gdbus-method-org-freedesktop-portal-Flatpak.Spawn" title="The Spawn() method">Spawn()</a>
+exits.
+Use g_spawn_check_exit_status(), or the macros such as
+WIFEXITED documented in
+<span class="citerefentry"><span class="refentrytitle">waitpid</span>(2)</span>,
+to interpret the <em class="parameter"><code>exit_status</code></em>.
 </p>
-<p>        This signal is not emitted for processes that were not launched
-        directly by Spawn(), for example if a process launched by
-        Spawn() runs foreground or background child processes.
+<p>
+This signal is not emitted for processes that were not launched
+directly by Spawn(), for example if a process launched by
+Spawn() runs foreground or background child processes.
 </p>
 <div class="variablelist"><table border="0" class="variablelist">
 <colgroup>
@@ -481,11 +527,15 @@ SpawnExited (u pid,
 <tbody>
 <tr>
 <td><p><span class="term"><code class="literal">u <em class="parameter"><code>pid</code></em></code>:</span></p></td>
-<td><p>the PID of the process that has ended</p></td>
+<td><p>
+the PID of the process that has ended
+</p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="literal">u <em class="parameter"><code>exit_status</code></em></code>:</span></p></td>
-<td><p>the wait status (see <span class="citerefentry"><span class="refentrytitle">waitpid</span>(2)</span>)</p></td>
+<td><p>
+the wait status (see <span class="citerefentry"><span class="refentrytitle">waitpid</span>(2)</span>)
+</p></td>
 </tr>
 </tbody>
 </table></div>
@@ -498,7 +548,10 @@ SpawnExited (u pid,
 <pre class="programlisting">
 version  readable   u
 </pre>
-<p></p>
+<p>
+</p>
+<p>
+</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -506,9 +559,10 @@ version  readable   u
 <pre class="programlisting">
 supports  readable   u
 </pre>
-<p>        Flags marking what optional features are available.
-         The following flags values are supported:
-         </p>
+<p>
+Flags marking what optional features are available.
+The following flags values are supported:
+</p>
 <div class="variablelist"><table border="0" class="variablelist">
 <colgroup>
 <col align="left" valign="top">
@@ -517,15 +571,16 @@ supports  readable   u
 <tbody><tr>
 <td><p><span class="term">1 (FLATPAK_SPAWN_SUPPORT_FLAGS_EXPOSE_PIDS)</span></p></td>
 <td><p>
-              Supports the expose sandbox pids flag of Spawn.
-              If the version of this interface is 5 or later, this also
-              indicates that the share sandbox pids flag is available.
-             </p></td>
+Supports the expose sandbox pids flag of Spawn.
+If the version of this interface is 5 or later, this also
+indicates that the share sandbox pids flag is available.
+</p></td>
 </tr></tbody>
 </table></div>
 <p>
 </p>
-<p>         This was added in version 3 of this interface (available from flatpak 1.6.0 and later).
+<p>
+This was added in version 3 of this interface (available from flatpak 1.6.0 and later).
 </p>
 </div>
 </div>

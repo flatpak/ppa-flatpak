@@ -1,6 +1,25 @@
+Changes in 1.10.8
+~~~~~~~~~~~~~~~~~
+Not released yet
+
+ * If an app update is blocked by parental controls policies, clean up the
+   temporary deploy directory (#5146)
+ * Fix Autotools build with versions of gpgme that no longer provide
+   gpgme-config(1) (#5173)
+ * Fix regressions in `flatpak history` since 1.9.1
+   - Don't display the appstream branch used internally
+   - Don't display temporary repositories used internally
+   - Ignore transaction log entries with empty REF field
+   - Warn instead of failing if other non-app, non-runtime refs are found
+   - Don't set up an unnecessary polkit agent for `flatpak history`
+   - Add test coverage
+ * Fix a typo in an error message
+ * Fix incorrect year in NEWS for 1.10.7 release
+ * Translation update: pl
+
 Changes in 1.10.7
 ~~~~~~~~~~~~~~~~~
-Released: 2021-01-18
+Released: 2022-01-18
 
 This is a regression fix update, reverting non-backwards-compatible
 behaviour changes in the solution previously chosen for CVE-2022-21682.
