@@ -1,4 +1,4 @@
-flatpak (1.15.4-1) UNRELEASED; urgency=medium
+flatpak (1.15.4-1) experimental; urgency=medium
 
   * New upstream development release
     - Escape special characters when displaying permissions and metadata,
@@ -11,7 +11,7 @@ flatpak (1.15.4-1) UNRELEASED; urgency=medium
       as xterm, gnome-terminal or Konsole.
   * Merge packaging from unstable
 
- -- Simon McVittie <smcv@debian.org>  Thu, 16 Mar 2023 10:35:54 +0000
+ -- Simon McVittie <smcv@debian.org>  Thu, 16 Mar 2023 10:41:58 +0000
 
 flatpak (1.15.3-1) experimental; urgency=medium
 
