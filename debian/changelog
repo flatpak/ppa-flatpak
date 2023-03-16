@@ -1,3 +1,9 @@
+flatpak (1.14.4-1~flatpak1~20.04.1) focal; urgency=high
+
+  * New upstream security fix release
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 16 Mar 2023 13:27:24 +0000
+
 flatpak (1.14.4-1~flatpak1~22.04.1) jammy; urgency=high
 
   * New upstream security fix release
