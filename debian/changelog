@@ -1,3 +1,18 @@
+flatpak (1.15.4-1) experimental; urgency=medium
+
+  * New upstream development release
+    - Escape special characters when displaying permissions and metadata,
+      preventing malicious apps from manipulating the appearance of the
+      permissions list using crafted metadata (CVE-2023-28101)
+    - If a Flatpak app is run on a Linux virtual console (tty1, etc.),
+      don't allow copy/paste via the TIOCLINUX ioctl (CVE-2023-28100).
+      Note that this is specific to virtual consoles: Flatpak is not
+      vulnerable to this if run from a graphical terminal emulator such
+      as xterm, gnome-terminal or Konsole.
+  * Merge packaging from unstable
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 16 Mar 2023 10:41:58 +0000
+
 flatpak (1.15.3-1flatpak1~22.04.1) jammy; urgency=medium
 
   * Merge from Debian
@@ -84,6 +99,47 @@ flatpak (1.15.0-1) experimental; urgency=medium
     Requires.private field.
 
  -- Simon McVittie <smcv@debian.org>  Mon, 24 Oct 2022 19:29:56 +0100
+
+flatpak (1.14.4-1) unstable; urgency=high
+
+  * New upstream security fix release
+    - Escape special characters when displaying permissions and metadata,
+      preventing malicious apps from manipulating the appearance of the
+      permissions list using crafted metadata (CVE-2023-28101)
+    - If a Flatpak app is run on a Linux virtual console (tty1, etc.),
+      don't allow copy/paste via the TIOCLINUX ioctl (CVE-2023-28100).
+      Note that this is specific to virtual consoles: Flatpak is not
+      vulnerable to this if run from a graphical terminal emulator such
+      as xterm, gnome-terminal or Konsole.
+    - Translation update: pl
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 16 Mar 2023 10:39:01 +0000
+
+flatpak (1.14.3-1) unstable; urgency=medium
+
+  * New upstream stable release
+    - Fix handling of apps superseded by an app of a different name
+      in GNOME Software (flatpak#5172)
+    - Fix a crash when an app has --socket=gpg-agent permission
+      (flatpak#5095)
+    - Fix a crash when listing broken or misconfigured apps (flatpak#5293)
+    - If an app has invalid syntax in its overrides or metadata, mention
+      the filename in the error message (flatpak#5293)
+    - Unset $GDK_BACKEND so that GTK apps with --socket=fallback-x11
+      work reliably (flatpak#5303)
+    - Ignore some --filesystem permissions which would otherwise prevent
+      all apps from starting (flatpak#1357, flatpak#5205, flatpak#5207)
+    - Show a warning when a --filesystem exists but cannot be shared with
+      the sandbox (flatpak#1357, flatpak#5035, flatpak#5205, flatpak#5207)
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 27 Feb 2023 12:52:48 +0000
+
+flatpak (1.14.2-1) unstable; urgency=medium
+
+  * New upstream stable release
+  * Update standards version to 4.6.2 (no changes needed)
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 06 Feb 2023 17:21:47 +0000
 
 flatpak (1.14.1-1) unstable; urgency=medium
 
