@@ -1,4 +1,4 @@
-flatpak (1.12.7-1flatpak1~16.04) UNRELEASED; urgency=medium
+flatpak (1.12.8-1~flatpak1~16.04.1) xenial; urgency=medium
 
   * Backport to Ubuntu 16.04 'xenial'
   * Remaining changes:
@@ -21,8 +21,12 @@ flatpak (1.12.7-1flatpak1~16.04) UNRELEASED; urgency=medium
     - Use libgpgme11-dev instead of libgpgme-dev
     - d/p/Don-t-rely-on-AS_BUNDLE_KIND_FLATPAK-existing.patch:
       Cope with older appstream-glib
+  * New upstream security fix release 1.12.8
+  * d/p/app-Print-a-warning-message-about-xenial-being-EOL.patch:
+    Add a patch to show a warning when flatpak is run.
+    xenial is EOL and this backport is unlikely to be updated further.
 
- -- Simon McVittie <smcv@debian.org>  Tue, 15 Mar 2022 10:39:28 +0000
+ -- Simon McVittie <smcv@debian.org>  Thu, 16 Mar 2023 15:14:46 +0000
 
 flatpak (1.12.7-1flatpak1~18.04) bionic; urgency=medium
 
