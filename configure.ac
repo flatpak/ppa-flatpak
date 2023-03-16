@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [1])
 m4_define([flatpak_minor_version], [12])
-m4_define([flatpak_micro_version], [7])
+m4_define([flatpak_micro_version], [8])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -260,10 +260,16 @@ AC_CHECK_FUNCS(archive_read_support_filter_all)
 LIBS=$save_LIBS
 
 LIBGPGME_DEPENDENCY="1.1.8"
-PKG_CHECK_MODULES(DEP_GPGME, gpgme-pthread >= $LIBGPGME_DEPENDENCY, have_gpgme=yes, [
-    m4_ifdef([AM_PATH_GPGME_PTHREAD], [
-       AM_PATH_GPGME_PTHREAD($LIBGPGME_DEPENDENCY, have_gpgme=yes, have_gpgme=no)
-    ],[ have_gpgme=no ])
+PKG_CHECK_MODULES([DEP_GPGME], [gpgme >= 1.8.0], [have_gpgme=yes], [
+    PKG_CHECK_MODULES([DEP_GPGME_PTHREAD], [gpgme-pthread >= $LIBGPGME_DEPENDENCY], [
+        have_gpgme=yes
+    ], [
+        m4_ifdef([AM_PATH_GPGME_PTHREAD], [
+            AM_PATH_GPGME_PTHREAD([$LIBGPGME_DEPENDENCY], [have_gpgme=yes], [have_gpgme=no])
+        ], [
+            have_gpgme=no
+        ])
+    ])
 ])
 AS_IF([ test x$have_gpgme = xno ], [
    AC_MSG_ERROR([Need GPGME_PTHREAD version $LIBGPGME_DEPENDENCY or later])
