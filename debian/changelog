@@ -1,3 +1,9 @@
+flatpak (1.14.4-1~flatpak1~18.04.1) bionic; urgency=high
+
+  * New upstream security fix release
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 16 Mar 2023 14:29:30 +0000
+
 flatpak (1.14.4-1~flatpak1~20.04.1) focal; urgency=high
 
   * New upstream security fix release
