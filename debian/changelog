@@ -1,4 +1,4 @@
-flatpak (1.14.4-1) UNRELEASED; urgency=high
+flatpak (1.14.4-1) unstable; urgency=high
 
   * New upstream security fix release
     - Escape special characters when displaying permissions and metadata,
@@ -11,7 +11,7 @@ flatpak (1.14.4-1) UNRELEASED; urgency=high
       as xterm, gnome-terminal or Konsole.
     - Translation update: pl
 
- -- Simon McVittie <smcv@debian.org>  Thu, 16 Mar 2023 10:37:31 +0000
+ -- Simon McVittie <smcv@debian.org>  Thu, 16 Mar 2023 10:39:01 +0000
 
 flatpak (1.14.3-1) unstable; urgency=medium
 
