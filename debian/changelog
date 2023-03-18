@@ -1,11 +1,19 @@
+flatpak (1.14.4-2) UNRELEASED; urgency=medium
+
+  * Mention #1033098, #1033099 in previous changelog entry
+
+ -- Simon McVittie <smcv@debian.org>  Sat, 18 Mar 2023 15:32:30 +0000
+
 flatpak (1.14.4-1) unstable; urgency=high
 
   * New upstream security fix release
     - Escape special characters when displaying permissions and metadata,
       preventing malicious apps from manipulating the appearance of the
-      permissions list using crafted metadata (CVE-2023-28101)
+      permissions list using crafted metadata
+      (Closes: #1033098; CVE-2023-28101)
     - If a Flatpak app is run on a Linux virtual console (tty1, etc.),
-      don't allow copy/paste via the TIOCLINUX ioctl (CVE-2023-28100).
+      don't allow copy/paste via the TIOCLINUX ioctl
+      (Closes: #1033099; CVE-2023-28100).
       Note that this is specific to virtual consoles: Flatpak is not
       vulnerable to this if run from a graphical terminal emulator such
       as xterm, gnome-terminal or Konsole.
