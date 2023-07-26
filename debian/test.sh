@@ -1,6 +1,15 @@
 #!/bin/sh
 set -eu
 
+# Some build/test infrastructure provides internet access via a proxy.
+# libostree doesn't always support no_proxy (and in any case
+# reproducible-builds.org doesn't set it), so tests will try to use the
+# proxy for localhost, and fail to reach the test server.
+unset ftp_proxy
+unset http_proxy
+unset https_proxy
+unset no_proxy
+
 adverb=
 
 if [ "$DEB_HOST_ARCH_BITS" = 64 ]; then
