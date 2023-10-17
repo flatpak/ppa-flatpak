@@ -39,7 +39,7 @@ override_dh_auto_configure:
 		-Dsystem_bubblewrap=bwrap \
 		-Dsystem_dbus_proxy=xdg-dbus-proxy \
 		-Dsystem_helper_user=_flatpak \
-		-Dsystemdsystemunitdir=/lib/systemd/system \
+		-Dsystemdsystemunitdir=/usr/lib/systemd/system \
 		$(configure_options)
 
 override_dh_install:
