@@ -1,8 +1,13 @@
 flatpak (1.15.4-2) UNRELEASED; urgency=medium
 
   * Mention #1033098, #1033099 in previous changelog entry
+  * d/control: (Build-)depend on pkgconf in preference to pkg-config
+  * Install systemd system unit into /usr/lib/systemd/system.
+    This was allowed by TC resolution #1053901.
+    Build-depend on debhelper 13.11.6~ to ensure that the unit is still
+    picked up by dh_installsystemd.
 
- -- Simon McVittie <smcv@debian.org>  Sat, 18 Mar 2023 15:33:08 +0000
+ -- Simon McVittie <smcv@debian.org>  Sun, 22 Oct 2023 23:54:25 +0100
 
 flatpak (1.15.4-1) experimental; urgency=medium
 
