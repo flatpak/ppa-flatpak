@@ -178,6 +178,7 @@ Depends:
  libpolkit-agent-1-dev,
  libseccomp-dev (>= 2.5.2),
  libsystemd-dev,
+ libwayland-dev,
  libxau-dev,
  libxml2-dev (>= 2.4),
  libzstd-dev,
