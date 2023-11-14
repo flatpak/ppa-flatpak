@@ -3,6 +3,7 @@
  * Copyright 1998 Manish Singh
  * Copyright 1998 Tim Janik
  * Copyright (C) 2015 Colin Walters <walters@verbum.org>
+ * Copyright (C) 2018 Endless OS Foundation, LLC
  * Copyright 2017 Emmanuele Bassi
  * SPDX-License-Identifier: LGPL-2.1-or-later
  * 
@@ -79,6 +80,12 @@ gboolean              glnx_set_object  (GObject **object_ptr,
 #define G_OPTION_FLAG_NONE ((GOptionFlags) 0)
 #endif
 
+#if !GLIB_CHECK_VERSION(2, 60, 0)
+#define g_strv_equal _glnx_strv_equal
+gboolean _glnx_strv_equal (const gchar * const *strv1,
+                           const gchar * const *strv2);
+#endif
+
 #ifndef G_DBUS_METHOD_INVOCATION_HANDLED    /* added in 2.68 */
 #define G_DBUS_METHOD_INVOCATION_HANDLED TRUE
 #endif
@@ -116,6 +123,17 @@ _glnx_memdup2 (gconstpointer mem,
 #ifndef G_APPROX_VALUE  /* added in 2.58 */
 #define G_APPROX_VALUE(a, b, epsilon) \
   (((a) > (b) ? (a) - (b) : (b) - (a)) < (epsilon))
+#endif
+
+#if !GLIB_CHECK_VERSION(2, 70, 0)
+#define g_steal_fd _glnx_steal_fd
+static inline int
+_glnx_steal_fd (int *fdp)
+{
+  int fd = *fdp;
+  *fdp = -1;
+  return fd;
+}
 #endif
 
 #if !GLIB_CHECK_VERSION(2, 74, 0)

@@ -57,6 +57,7 @@ typedef enum {
   FLATPAK_CONTEXT_DEVICE_ALL         = 1 << 1,
   FLATPAK_CONTEXT_DEVICE_KVM         = 1 << 2,
   FLATPAK_CONTEXT_DEVICE_SHM         = 1 << 3,
+  FLATPAK_CONTEXT_DEVICE_INPUT       = 1 << 4,
 } FlatpakContextDevices;
 
 typedef enum {
@@ -167,5 +168,8 @@ gboolean flatpak_context_parse_env_fd (FlatpakContext *context,
                                        GError **error);
 
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakContext, flatpak_context_free)
+
+GFile *flatpak_get_user_base_dir_location (void);
+GFile *flatpak_get_data_dir (const char *app_id);
 
 #endif /* __FLATPAK_CONTEXT_H__ */

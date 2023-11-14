@@ -4,7 +4,7 @@
 project(
   'flatpak',
   'c',
-  version : '1.15.4',
+  version : '1.15.6',
   default_options: [
     'warning_level=2',
   ],
@@ -13,7 +13,7 @@ project(
 
 flatpak_major_version = 1
 flatpak_minor_version = 15
-flatpak_micro_version = 4
+flatpak_micro_version = 6
 flatpak_extra_version = ''
 
 flatpak_interface_age = 0
@@ -33,7 +33,7 @@ if '@0@.@1@.@2@@3@'.format(
 endif
 
 required_glib = '2.46'
-required_bwrap = '0.5.0'
+required_bwrap = '0.8.0'
 required_dbus_proxy = '0.1.0'
 required_libostree = '2020.8'
 
@@ -206,6 +206,11 @@ gir_dep = dependency('gobject-introspection-1.0', version : '>=1.40.0', required
 gtkdoc_dep = dependency('gtk-doc', required : get_option('gtkdoc'))
 build_gtk_doc = gtkdoc_dep.found()
 
+wayland_client = dependency('wayland-client', required : get_option('wayland_security_context'))
+wayland_scanner = dependency('wayland-scanner', version : '>= 1.15', required : get_option('wayland_security_context'))
+wayland_protocols = dependency('wayland-protocols', version : '>= 1.32', required : get_option('wayland_security_context'))
+build_wayland_security_context = wayland_client.found() and wayland_scanner.found() and wayland_protocols.found()
+
 base_deps = [glib_dep, gio_dep, gio_unix_dep]
 
 gpgme_dep = dependency('gpgme', version : '>=1.8.0')
@@ -363,10 +368,6 @@ if glib_dep.version().version_compare('>=2.60')
   cdata.set('GLIB_VERSION_MIN_REQUIRED', 'GLIB_VERSION_2_60')
 endif
 
-if appstream_dep.version().version_compare('>=0.14.0')
-  cdata.set('HAVE_APPSTREAM_0_14_0', 1)
-endif
-
 if dconf_dep.found()
   cdata.set('HAVE_DCONF', 1)
 endif
@@ -397,6 +398,10 @@ endif
 
 if xau_dep.found()
   cdata.set('ENABLE_XAUTH', 1)
+endif
+
+if build_wayland_security_context
+  cdata.set('ENABLE_WAYLAND_SECURITY_CONTEXT', 1)
 endif
 
 if not get_option('sandboxed_triggers')
@@ -436,6 +441,7 @@ summary(
     'Use libmalcontent' : malcontent_dep.found(),
     'Use libzstd' : libzstd_dep.found(),
     'Use auto sideloading' : get_option('auto_sideloading'),
+    'Wayland security context' : build_wayland_security_context,
   },
   bool_yn : true,
 )

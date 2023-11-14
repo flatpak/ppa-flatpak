@@ -50,6 +50,7 @@
 #include "flatpak-appdata-private.h"
 #include "flatpak-dir-private.h"
 #include "flatpak-error.h"
+#include "flatpak-locale-utils-private.h"
 #include "flatpak-oci-registry-private.h"
 #include "flatpak-ref.h"
 #include "flatpak-run-private.h"
@@ -4194,9 +4195,9 @@ _flatpak_dir_ensure_repo (FlatpakDir   *self,
       /* Scrap previously written min-free-space-percent=0 and replace it with min-free-space-size */
       if (orig_min_free_space_size == NULL &&
           orig_min_free_space_percent != NULL &&
-          flatpak_utils_ascii_string_to_unsigned (orig_min_free_space_percent, 10,
-                                                  0, G_MAXUINT64,
-                                                  &min_free_space_percent_int, &my_error))
+          g_ascii_string_to_unsigned (orig_min_free_space_percent, 10,
+                                      0, G_MAXUINT64,
+                                      &min_free_space_percent_int, &my_error))
         {
           if (min_free_space_percent_int == 0)
             {
@@ -4402,7 +4403,7 @@ flatpak_dir_config_append_pattern (FlatpakDir *self,
                                    GError    **error)
 {
   g_autoptr(GPtrArray) patterns = flatpak_dir_get_config_patterns (self, key);
-  g_autofree char *regexp;
+  g_autofree char *regexp = NULL;
   gboolean already_present;
   g_autofree char *merged_patterns = NULL;
 
@@ -8328,14 +8329,21 @@ apply_extra_data (FlatpakDir   *self,
                           "--cap-drop", "ALL",
                           NULL);
 
-  /* Might need multiarch in apply_extra (see e.g. #3742).
-   * Should be pretty safe in this limited context */
-  run_flags = (FLATPAK_RUN_FLAG_MULTIARCH |
+  /* Run flags which equal flatpak run --sandbox */
+  run_flags = (FLATPAK_RUN_FLAG_SANDBOX |
                FLATPAK_RUN_FLAG_NO_SESSION_HELPER |
-               FLATPAK_RUN_FLAG_NO_PROC |
                FLATPAK_RUN_FLAG_NO_SESSION_BUS_PROXY |
                FLATPAK_RUN_FLAG_NO_SYSTEM_BUS_PROXY |
                FLATPAK_RUN_FLAG_NO_A11Y_BUS_PROXY);
+
+  /* Might need multiarch in apply_extra (see e.g. #3742).
+   * Should be pretty safe in this limited context. */
+  run_flags |= FLATPAK_RUN_FLAG_MULTIARCH;
+
+  /* This sandbox is run as root and /proc/self/exe can sometimes be used to
+   * access outside files (see cd21428).
+   * Disable /proc entirely in this context. */
+  run_flags |= FLATPAK_RUN_FLAG_NO_PROC;
 
   if (!flatpak_run_setup_base_argv (bwrap, runtime_files, NULL, runtime_arch,
                                     run_flags, error))
@@ -8345,7 +8353,7 @@ apply_extra_data (FlatpakDir   *self,
 
   if (!flatpak_run_add_environment_args (bwrap, NULL, run_flags, id,
                                          app_context, NULL, NULL, -1,
-                                         NULL, cancellable, error))
+                                         NULL, NULL, cancellable, error))
     return FALSE;
 
   flatpak_bwrap_populate_runtime_dir (bwrap, NULL);
@@ -10292,26 +10300,15 @@ flatpak_dir_install_bundle (FlatpakDir         *self,
 }
 
 static gboolean
-_g_strv_equal0 (gchar **a, gchar **b)
+_g_strv_equal0 (const char * const *a, const char * const *b)
 {
-  gboolean ret = FALSE;
-  guint n;
-
   if (a == NULL && b == NULL)
-    {
-      ret = TRUE;
-      goto out;
-    }
+    return TRUE;
+
   if (a == NULL || b == NULL)
-    goto out;
-  if (g_strv_length (a) != g_strv_length (b))
-    goto out;
-  for (n = 0; a[n] != NULL; n++)
-    if (g_strcmp0 (a[n], b[n]) != 0)
-      goto out;
-  ret = TRUE;
-out:
-  return ret;
+    return FALSE;
+
+  return g_strv_equal (a, b);
 }
 
 gboolean
@@ -10374,7 +10371,7 @@ flatpak_dir_needs_update_for_commit_and_subpaths (FlatpakDir        *self,
   /* target commit is the same as current, but maybe something else that is different? */
 
   /* Same commit, but different subpaths => update */
-  if (!_g_strv_equal0 ((char **) subpaths, (char **) old_subpaths))
+  if (!_g_strv_equal0 (subpaths, old_subpaths))
     return TRUE;
 
   /* Same subpaths and commit, no need to update */
@@ -12565,6 +12562,8 @@ flatpak_dir_remote_fetch_indexed_summary (FlatpakDir   *self,
           if (flatpak_dir_remote_load_cached_summary (self, old_cache_name, old_checksum, ".sub", NULL,
                                                       &old_summary, NULL, cancellable, NULL))
             break;
+
+          g_clear_pointer (&old_checksum, g_free);
         }
 
       if (old_summary)
@@ -16098,137 +16097,6 @@ flatpak_dir_get_remote_auto_install_authenticator_ref (FlatpakDir         *self,
   return g_steal_pointer (&ref);
 }
 
-
-static GDBusProxy *
-get_localed_dbus_proxy (void)
-{
-  const char *localed_bus_name = "org.freedesktop.locale1";
-  const char *localed_object_path = "/org/freedesktop/locale1";
-  const char *localed_interface_name = localed_bus_name;
-
-  return g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
-                                        G_DBUS_PROXY_FLAGS_NONE,
-                                        NULL,
-                                        localed_bus_name,
-                                        localed_object_path,
-                                        localed_interface_name,
-                                        NULL,
-                                        NULL);
-}
-
-static void
-get_locale_langs_from_localed_dbus (GDBusProxy *proxy, GPtrArray *langs)
-{
-  g_autoptr(GVariant) locale_variant = NULL;
-  g_autofree const gchar **strv = NULL;
-  gsize i, j;
-
-  locale_variant = g_dbus_proxy_get_cached_property (proxy, "Locale");
-  if (locale_variant == NULL)
-    return;
-
-  strv = g_variant_get_strv (locale_variant, NULL);
-
-  for (i = 0; strv[i]; i++)
-    {
-      const gchar *locale = NULL;
-      g_autofree char *lang = NULL;
-
-      const char * const *categories = flatpak_get_locale_categories ();
-
-      for (j = 0; categories[j]; j++)
-        {
-          g_autofree char *prefix = g_strdup_printf ("%s=", categories[j]);
-          if (g_str_has_prefix (strv[i], prefix))
-            {
-              locale = strv[i] + strlen (prefix);
-              break;
-            }
-        }
-
-      if (locale == NULL || strcmp (locale, "") == 0)
-        continue;
-
-      lang = flatpak_get_lang_from_locale (locale);
-      if (lang != NULL && !flatpak_g_ptr_array_contains_string (langs, lang))
-        g_ptr_array_add (langs, g_steal_pointer (&lang));
-    }
-}
-
-static GDBusProxy *
-get_accounts_dbus_proxy (void)
-{
-  const char *accounts_bus_name = "org.freedesktop.Accounts";
-  const char *accounts_object_path = "/org/freedesktop/Accounts";
-  const char *accounts_interface_name = accounts_bus_name;
-
-  return g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
-                                        G_DBUS_PROXY_FLAGS_NONE,
-                                        NULL,
-                                        accounts_bus_name,
-                                        accounts_object_path,
-                                        accounts_interface_name,
-                                        NULL,
-                                        NULL);
-}
-
-static void
-get_locale_langs_from_accounts_dbus (GDBusProxy *proxy, GPtrArray *langs)
-{
-  const char *accounts_bus_name = "org.freedesktop.Accounts";
-  const char *accounts_interface_name = "org.freedesktop.Accounts.User";
-  g_auto(GStrv) object_paths = NULL;
-  int i;
-  g_autoptr(GVariant) ret = NULL;
-
-  ret = g_dbus_proxy_call_sync (G_DBUS_PROXY (proxy),
-                                "ListCachedUsers",
-                                g_variant_new ("()"),
-                                G_DBUS_CALL_FLAGS_NONE,
-                                -1,
-                                NULL,
-                                NULL);
-  if (ret != NULL)
-    g_variant_get (ret,
-                   "(^ao)",
-                   &object_paths);
-
-  if (object_paths != NULL)
-    {
-      for (i = 0; object_paths[i] != NULL; i++)
-        {
-          g_autoptr(GDBusProxy) accounts_proxy = NULL;
-          g_autoptr(GVariant) value = NULL;
-
-          accounts_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
-                                                          G_DBUS_PROXY_FLAGS_NONE,
-                                                          NULL,
-                                                          accounts_bus_name,
-                                                          object_paths[i],
-                                                          accounts_interface_name,
-                                                          NULL,
-                                                          NULL);
-
-          if (accounts_proxy)
-            {
-              value = g_dbus_proxy_get_cached_property (accounts_proxy, "Language");
-              if (value != NULL)
-                {
-                  const char *locale = g_variant_get_string (value, NULL);
-                  g_autofree char *lang = NULL;
-
-                  if (strcmp (locale, "") == 0)
-                    continue; /* This user wants the system default locale */
-
-                  lang = flatpak_get_lang_from_locale (locale);
-                  if (lang != NULL && !flatpak_g_ptr_array_contains_string (langs, lang))
-                    g_ptr_array_add (langs, g_steal_pointer (&lang));
-                }
-            }
-        }
-    }
-}
-
 static int
 cmpstringp (const void *p1, const void *p2)
 {
@@ -16259,36 +16127,6 @@ flatpak_dir_get_config_strv (FlatpakDir *self, char *key)
   return NULL;
 }
 
-static const GPtrArray *
-get_system_locales (FlatpakDir *self)
-{
-  static GPtrArray *cached = NULL;
-
-  if (g_once_init_enter (&cached))
-    {
-      GPtrArray *langs = g_ptr_array_new_with_free_func (g_free);
-      g_autoptr(GDBusProxy) localed_proxy = NULL;
-      g_autoptr(GDBusProxy) accounts_proxy = NULL;
-
-      /* Get the system default locales */
-      localed_proxy = get_localed_dbus_proxy ();
-      if (localed_proxy != NULL)
-        get_locale_langs_from_localed_dbus (localed_proxy, langs);
-
-      /* Now add the user account locales from AccountsService. If accounts_proxy is
-       * not NULL, it means that AccountsService exists */
-      accounts_proxy = get_accounts_dbus_proxy ();
-      if (accounts_proxy != NULL)
-        get_locale_langs_from_accounts_dbus (accounts_proxy, langs);
-
-      g_ptr_array_add (langs, NULL);
-
-      g_once_init_leave (&cached, langs);
-    }
-
-  return (const GPtrArray *)cached;
-}
-
 char **
 flatpak_dir_get_default_locales (FlatpakDir *self)
 {
@@ -16300,12 +16138,16 @@ flatpak_dir_get_default_locales (FlatpakDir *self)
   if (flatpak_dir_is_user (self))
     {
       g_auto(GStrv) locale_langs = flatpak_get_current_locale_langs ();
+      g_auto(GStrv) merged = NULL;
 
-      return sort_strv (flatpak_strv_merge (extra_languages, locale_langs));
+      langs = flatpak_get_user_locales ();
+      merged = flatpak_strv_merge (extra_languages, (char **) langs->pdata);
+
+      return sort_strv (flatpak_strv_merge (merged, locale_langs));
     }
 
   /* Then get the system default locales */
-  langs = get_system_locales (self);
+  langs = flatpak_get_system_locales ();
 
   return sort_strv (flatpak_strv_merge (extra_languages, (char **) langs->pdata));
 }
@@ -16329,12 +16171,16 @@ flatpak_dir_get_default_locale_languages (FlatpakDir *self)
   if (flatpak_dir_is_user (self))
     {
       g_auto(GStrv) locale_langs = flatpak_get_current_locale_langs ();
+      g_auto(GStrv) merged = NULL;
 
-      return sort_strv (flatpak_strv_merge (extra_languages, locale_langs));
+      langs = flatpak_get_user_locales ();
+      merged = flatpak_strv_merge (extra_languages, (char **) langs->pdata);
+
+      return sort_strv (flatpak_strv_merge (merged, locale_langs));
     }
 
   /* Then get the system default locales */
-  langs = get_system_locales (self);
+  langs = flatpak_get_system_locales ();
 
   return sort_strv (flatpak_strv_merge (extra_languages, (char **) langs->pdata));
 }
