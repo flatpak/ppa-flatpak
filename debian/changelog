@@ -6,8 +6,14 @@ flatpak (1.15.4-2) UNRELEASED; urgency=medium
     This was allowed by TC resolution #1053901.
     Build-depend on debhelper 13.11.6~ to ensure that the unit is still
     picked up by dh_installsystemd.
+  * d/test.sh: Disable http proxy if used, to ensure we can reach localhost.
+    Some reproducible.org builders set http_proxy, which makes attempts
+    to access our temporary http server on localhost fail with a 503 error.
+  * d/control: Build-depend on required GIR XML files (Helps: #1030223)
+  * d/control: Add ${gir:Depends}, ${gir:Provides} to -dev package
+    (Helps: #1030223)
 
- -- Simon McVittie <smcv@debian.org>  Sun, 22 Oct 2023 23:54:25 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 14 Nov 2023 15:41:07 +0000
 
 flatpak (1.15.4-1) experimental; urgency=medium
 
