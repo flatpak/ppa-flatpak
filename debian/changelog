@@ -1,4 +1,4 @@
-flatpak (1.15.6-1) UNRELEASED; urgency=medium
+flatpak (1.15.6-1) experimental; urgency=medium
 
   * New upstream development release
   * Mention #1033098, #1033099 in previous changelog entry
@@ -13,8 +13,12 @@ flatpak (1.15.6-1) UNRELEASED; urgency=medium
   * d/control: Build-depend on required GIR XML files (Helps: #1030223)
   * d/control: Add ${gir:Depends}, ${gir:Provides} to -dev package
     (Helps: #1030223)
+  * d/control: Build-Depend on Wayland components for new security context
+    extension
+  * d/flatpak.install: Install new tmpfiles.d snippet
+  * d/copyright: Update
 
- -- Simon McVittie <smcv@debian.org>  Tue, 14 Nov 2023 15:41:07 +0000
+ -- Simon McVittie <smcv@debian.org>  Tue, 14 Nov 2023 19:03:23 +0000
 
 flatpak (1.15.4-1) experimental; urgency=medium
 
