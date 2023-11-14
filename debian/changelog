@@ -1,4 +1,4 @@
-flatpak (1.15.6-1) experimental; urgency=medium
+flatpak (1.15.6-1) UNRELEASED; urgency=medium
 
   * New upstream development release
   * Mention #1033098, #1033099 in previous changelog entry
