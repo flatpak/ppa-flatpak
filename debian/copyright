@@ -7,12 +7,17 @@ Files:
 Copyright:
  © 1995-2017 Free Software Foundation, Inc.
  © 1995-1997 Peter Mattis, Spencer Kimball and Josh MacDonald
+ © 2004-2022 Red Hat, Inc
+ © 2004-2010 Christian Persch
+ © 2004 Hidetoshi Tajima
  © 2010-2011 Lennart Poettering
  © 2010 Codethink Limited
  © 2010 Lennart Poettering
  © 2011-2019 Colin Walters
+ © 2013-2023 Collabora Ltd.
+ © 2013 Allison Karlitskaya
  © 2014-2018 Alexander Larsson
- © 2008-2022 Red Hat, Inc
+ © 2016-2018 Canonical Ltd.
  © 2016 Piotr Drag
  © 2016 Aviary.pl
  © 2016 Zbigniew Jędrzejewski-Szmek
@@ -25,9 +30,10 @@ Copyright:
  © 2018-2019 Endless Mobile, Inc.
  © 2017-2020 Endless OS Foundation LLC
  © 2019 Matthias Clasen
+ © 2019 Emmanuel Fleury
  © 2019-2021 Matthew Leeds
  © 2021 Simon McVittie
- © 2022 Collabora Ltd.
+ © 2021 Joshua Lee
 License: LGPL-2+ and LGPL-2.1+
 
 Files:
@@ -55,7 +61,7 @@ Files:
  debian/*
 Copyright:
  © 2015 David King <amigadave@amigadave.com>
- © 2016-2022 Collabora Ltd.
+ © 2016-2023 Collabora Ltd.
 License: LGPL-2.1+
 
 License: GPL-2+ with Autoconf exception
