@@ -181,6 +181,7 @@ Depends:
  libzstd-dev,
  pkgconf,
  python3:any,
+ ${gir:Depends},
  ${misc:Depends},
 Recommends:
  flatpak,
@@ -189,6 +190,8 @@ Suggests:
  ostree,
  python3-gi,
  systemd-coredump,
+Provides:
+ ${gir:Provides},
 Description: Application deployment framework for desktop apps (development)
  Flatpak installs, manages and runs sandboxed desktop application bundles.
  See the flatpak package for a more comprehensive description.
