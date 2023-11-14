@@ -1,4 +1,4 @@
-flatpak (1.15.6-1) UNRELEASED; urgency=medium
+flatpak (1.15.6-1) experimental; urgency=medium
 
   * New upstream development release
   * Mention #1033098, #1033099 in previous changelog entry
@@ -13,12 +13,19 @@ flatpak (1.15.6-1) UNRELEASED; urgency=medium
   * d/control: Build-depend on required GIR XML files (Helps: #1030223)
   * d/control: Add ${gir:Depends}, ${gir:Provides} to -dev package
     (Helps: #1030223)
-  * d/control: Build-Depend on Wayland components for new security context
+  * d/control: Require bubblewrap 0.8.0
+  * d/control: (Build-)depend on Wayland components for new security context
     extension
   * d/flatpak.install: Install new tmpfiles.d snippet
   * d/copyright: Update
+  * d/libflatpak0.symbols: Update
+  * d/libflatpak0.symbols: Reduce entropy.
+    For each symbol introduced in a development branch older than the
+    current one, behave as if the symbol was added in the stable release
+    that followed the development branch: this will generate slightly more
+    conservative dependencies. For 0.x versions, use 1.0.
 
- -- Simon McVittie <smcv@debian.org>  Tue, 14 Nov 2023 19:03:23 +0000
+ -- Simon McVittie <smcv@debian.org>  Tue, 14 Nov 2023 19:52:48 +0000
 
 flatpak (1.15.4-1) experimental; urgency=medium
 
