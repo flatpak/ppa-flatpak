@@ -1,5 +1,6 @@
-flatpak (1.15.4-2) UNRELEASED; urgency=medium
+flatpak (1.15.6-1) UNRELEASED; urgency=medium
 
+  * New upstream development release
   * Mention #1033098, #1033099 in previous changelog entry
   * d/control: (Build-)depend on pkgconf in preference to pkg-config
   * Install systemd system unit into /usr/lib/systemd/system.
