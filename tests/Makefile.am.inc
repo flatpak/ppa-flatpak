@@ -59,7 +59,7 @@ testlibrary_SOURCES = \
 	tests/testlibrary.c \
 	$(NULL)
 
-testcommon_CFLAGS = \
+testapp_CFLAGS = \
 	$(AM_CFLAGS) \
 	$(BASE_CFLAGS) \
 	$(OSTREE_CFLAGS) \
@@ -70,13 +70,34 @@ testcommon_CFLAGS = \
 	-I$(srcdir)/app \
 	-I$(builddir)/app \
 	$(NULL)
-testcommon_LDADD = \
+testapp_LDADD = \
 	$(AM_LDADD) \
 	$(BASE_LIBS) \
 	$(OSTREE_LIBS) \
 	$(JSON_LIBS) \
 	$(APPSTREAM_LIBS) \
 	libflatpak-app.la \
+	libflatpak-common.la \
+	libflatpak-common-base.la \
+	libglnx.la \
+	$(NULL)
+testapp_SOURCES = tests/testapp.c
+
+testcommon_CFLAGS = \
+	$(AM_CFLAGS) \
+	$(BASE_CFLAGS) \
+	$(OSTREE_CFLAGS) \
+	$(JSON_CFLAGS) \
+	$(APPSTREAM_CFLAGS) \
+	-DFLATPAK_COMPILATION \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
+	$(NULL)
+testcommon_LDADD = \
+	$(AM_LDADD) \
+	$(BASE_LIBS) \
+	$(OSTREE_LIBS) \
+	$(JSON_LIBS) \
+	$(APPSTREAM_LIBS) \
 	libflatpak-common.la \
 	libflatpak-common-base.la \
 	libglnx.la \
@@ -98,6 +119,10 @@ test_instance_SOURCES = \
 	subprojects/libglnx/tests/libglnx-testlib.h \
 	tests/test-instance.c \
 	$(NULL)
+
+test_locale_utils_CFLAGS = $(testcommon_CFLAGS)
+test_locale_utils_LDADD = $(testcommon_LDADD) libtestlib.la
+test_locale_utils_SOURCES = tests/test-locale-utils.c
 
 test_portal_CFLAGS = $(testcommon_CFLAGS)
 test_portal_LDADD = $(testcommon_LDADD) libtestlib.la
@@ -279,7 +304,9 @@ test_programs = \
 	test-context \
 	test-exports \
 	test-instance \
+	test-locale-utils \
 	test-portal \
+	testapp \
 	testcommon \
 	testlibrary \
 	$(NULL)

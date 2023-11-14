@@ -46,7 +46,6 @@
 #include "flatpak-dir-private.h"
 #include "flatpak-error.h"
 #include "flatpak-oci-registry-private.h"
-#include "flatpak-progress-private.h"
 #include "flatpak-run-private.h"
 #include "flatpak-utils-base-private.h"
 #include "flatpak-utils-private.h"
@@ -118,73 +117,6 @@ flatpak_fail_error (GError **error, FlatpakError code, const char *fmt, ...)
   va_end (args);
   g_propagate_error (error, g_steal_pointer (&new));
   return FALSE;
-}
-
-gboolean
-flatpak_write_update_checksum (GOutputStream *out,
-                               gconstpointer  data,
-                               gsize          len,
-                               gsize         *out_bytes_written,
-                               GChecksum     *checksum,
-                               GCancellable  *cancellable,
-                               GError       **error)
-{
-  if (out)
-    {
-      if (!g_output_stream_write_all (out, data, len, out_bytes_written,
-                                      cancellable, error))
-        return FALSE;
-    }
-  else if (out_bytes_written)
-    {
-      *out_bytes_written = len;
-    }
-
-  if (checksum)
-    g_checksum_update (checksum, data, len);
-
-  return TRUE;
-}
-
-gboolean
-flatpak_splice_update_checksum (GOutputStream         *out,
-                                GInputStream          *in,
-                                GChecksum             *checksum,
-                                FlatpakLoadUriProgress progress,
-                                gpointer               progress_data,
-                                GCancellable          *cancellable,
-                                GError               **error)
-{
-  gsize bytes_read, bytes_written;
-  char buf[32 * 1024];
-  guint64 downloaded_bytes = 0;
-  gint64 progress_start;
-
-  progress_start = g_get_monotonic_time ();
-  do
-    {
-      if (!g_input_stream_read_all (in, buf, sizeof buf, &bytes_read, cancellable, error))
-        return FALSE;
-
-      if (!flatpak_write_update_checksum (out, buf, bytes_read, &bytes_written, checksum,
-                                          cancellable, error))
-        return FALSE;
-
-      downloaded_bytes += bytes_read;
-
-      if (progress &&
-          g_get_monotonic_time () - progress_start >  5 * 1000000)
-        {
-          progress (downloaded_bytes, progress_data);
-          progress_start = g_get_monotonic_time ();
-        }
-    }
-  while (bytes_read > 0);
-
-  if (progress)
-    progress (downloaded_bytes, progress_data);
-
-  return TRUE;
 }
 
 GBytes *
@@ -686,47 +618,6 @@ flatpak_get_gtk_theme (void)
     }
 
   return (const char *) gtk_theme;
-}
-
-static int fancy_output = -1;
-
-void
-flatpak_disable_fancy_output (void)
-{
-  fancy_output = FALSE;
-}
-
-void
-flatpak_enable_fancy_output (void)
-{
-  fancy_output = TRUE;
-}
-
-gboolean
-flatpak_fancy_output (void)
-{
-  static gsize fancy_output_once = 0;
-  enum {
-    PLAIN_OUTPUT = 1,
-    FANCY_OUTPUT = 2
-  };
-
-  if (fancy_output != -1)
-    return fancy_output;
-
-  if (g_once_init_enter (&fancy_output_once))
-    {
-      if (g_strcmp0 (g_getenv ("FLATPAK_FANCY_OUTPUT"), "0") == 0)
-        g_once_init_leave (&fancy_output_once, PLAIN_OUTPUT);
-      else if (getenv ("G_MESSAGES_DEBUG"))
-        g_once_init_leave (&fancy_output_once, PLAIN_OUTPUT);
-      else if (!isatty (STDOUT_FILENO))
-        g_once_init_leave (&fancy_output_once, PLAIN_OUTPUT);
-      else
-        g_once_init_leave (&fancy_output_once, FANCY_OUTPUT);
-    }
-
-  return fancy_output_once == FANCY_OUTPUT;
 }
 
 const char *
@@ -1966,7 +1857,7 @@ flatpak_buffer_to_sealed_memfd_or_tmpfile (GLnxTmpfile *tmpf,
           fcntl (memfd, F_ADD_SEALS, F_SEAL_SHRINK | F_SEAL_GROW | F_SEAL_WRITE | F_SEAL_SEAL) < 0)
         return glnx_throw_errno_prefix (error, "fcntl(F_ADD_SEALS)");
       /* The other values can stay default */
-      tmpf->fd = glnx_steal_fd (&memfd);
+      tmpf->fd = g_steal_fd (&memfd);
       tmpf->initialized = TRUE;
     }
   return TRUE;
@@ -3260,16 +3151,6 @@ flatpak_repo_save_digested_summary_delta (OstreeRepo   *repo,
   return TRUE;
 }
 
-
-gboolean
-flatpak_is_app_runtime_or_appstream_ref (const char *ref)
-{
-  return
-    g_str_has_prefix (ref, "appstream/") ||
-    g_str_has_prefix (ref, "appstream2/") ||
-    g_str_has_prefix (ref, "app/") ||
-    g_str_has_prefix (ref, "runtime/");
-}
 
 typedef struct
 {
@@ -5056,6 +4937,7 @@ flatpak_mtree_create_symlink (OstreeRepo         *repo,
 
   g_file_info_set_name (file_info, filename);
   g_file_info_set_file_type (file_info, G_FILE_TYPE_SYMBOLIC_LINK);
+  g_file_info_set_size (file_info, 0);
   g_file_info_set_attribute_uint32 (file_info, "unix::uid", 0);
   g_file_info_set_attribute_uint32 (file_info, "unix::gid", 0);
   g_file_info_set_attribute_uint32 (file_info, "unix::mode", S_IFLNK | 0777);
@@ -7192,7 +7074,7 @@ flatpak_pull_from_oci (OstreeRepo            *repo,
         }
       else
         {
-          layer_fd = glnx_steal_fd (&blob_fd);
+          layer_fd = g_steal_fd (&blob_fd);
           expected_digest = layer->digest;
         }
 
@@ -7231,7 +7113,7 @@ flatpak_pull_from_oci (OstreeRepo            *repo,
         }
       else
         {
-          layer_fd = glnx_steal_fd (&blob_fd);
+          layer_fd = g_steal_fd (&blob_fd);
         }
 
       a = archive_read_new ();
@@ -7386,7 +7268,7 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
 
       /* We found an existing tmpdir which we managed to lock */
       tmpdir_name = g_strdup (dent->d_name);
-      tmpdir_fd = glnx_steal_fd (&existing_tmpdir_fd);
+      tmpdir_fd = g_steal_fd (&existing_tmpdir_fd);
       reusing_dir = TRUE;
     }
 
@@ -7430,339 +7312,12 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
     *tmpdir_name_out = g_steal_pointer (&tmpdir_name);
 
   if (tmpdir_fd_out)
-    *tmpdir_fd_out = glnx_steal_fd (&tmpdir_fd);
+    *tmpdir_fd_out = g_steal_fd (&tmpdir_fd);
 
   if (reusing_dir_out)
     *reusing_dir_out = reusing_dir;
 
   return TRUE;
-}
-
-gboolean
-flatpak_allow_fuzzy_matching (const char *term)
-{
-  if (strchr (term, '/') != NULL || strchr (term, '.') != NULL)
-    return FALSE;
-
-  /* This env var is used by the unit tests and only skips the tty test not the
-   * check above.
-   */
-  if (g_strcmp0 (g_getenv ("FLATPAK_FORCE_ALLOW_FUZZY_MATCHING"), "1") == 0)
-    return TRUE;
-
-  if (!isatty (STDIN_FILENO) || !isatty (STDOUT_FILENO))
-    return FALSE;
-
-  return TRUE;
-}
-
-char *
-flatpak_prompt (gboolean allow_empty,
-                const char *prompt, ...)
-{
-  char buf[512];
-  va_list var_args;
-  g_autofree char *s = NULL;
-
-
-  va_start (var_args, prompt);
-  s = g_strdup_vprintf (prompt, var_args);
-  va_end (var_args);
-
-  while (TRUE)
-    {
-      g_print ("%s: ", s);
-
-      if (!isatty (STDIN_FILENO) || !isatty (STDOUT_FILENO))
-        {
-          g_print ("n\n");
-          return NULL;
-        }
-
-      if (fgets (buf, sizeof (buf), stdin) == NULL)
-        return NULL;
-
-      g_strstrip (buf);
-
-      if (buf[0] != 0 || allow_empty)
-        return g_strdup (buf);
-    }
-}
-
-char *
-flatpak_password_prompt (const char *prompt, ...)
-{
-  char buf[512];
-  va_list var_args;
-  g_autofree char *s = NULL;
-  gboolean was_echo;
-
-
-  va_start (var_args, prompt);
-  s = g_strdup_vprintf (prompt, var_args);
-  va_end (var_args);
-
-  while (TRUE)
-    {
-      g_print ("%s: ", s);
-
-      if (!isatty (STDIN_FILENO) || !isatty (STDOUT_FILENO))
-        return NULL;
-
-      was_echo = flatpak_set_tty_echo (FALSE);
-
-      if (fgets (buf, sizeof (buf), stdin) == NULL)
-        return NULL;
-
-      flatpak_set_tty_echo (was_echo);
-
-      g_strstrip (buf);
-
-      /* We stole the return, so manual new line */
-      g_print ("\n");
-      return g_strdup (buf);
-    }
-}
-
-
-gboolean
-flatpak_yes_no_prompt (gboolean default_yes, const char *prompt, ...)
-{
-  char buf[512];
-  va_list var_args;
-  g_autofree char *s = NULL;
-
-
-  va_start (var_args, prompt);
-  s = g_strdup_vprintf (prompt, var_args);
-  va_end (var_args);
-
-  while (TRUE)
-    {
-      g_print ("%s %s: ", s, default_yes ? "[Y/n]" : "[y/n]");
-
-      if (!isatty (STDIN_FILENO) || !isatty (STDOUT_FILENO))
-        {
-          g_print ("n\n");
-          return FALSE;
-        }
-
-      if (fgets (buf, sizeof (buf), stdin) == NULL)
-        return FALSE;
-
-      g_strstrip (buf);
-
-      if (default_yes && strlen (buf) == 0)
-        return TRUE;
-
-      if (g_ascii_strcasecmp (buf, "y") == 0 ||
-          g_ascii_strcasecmp (buf, "yes") == 0)
-        return TRUE;
-
-      if (g_ascii_strcasecmp (buf, "n") == 0 ||
-          g_ascii_strcasecmp (buf, "no") == 0)
-        return FALSE;
-    }
-}
-
-static gboolean
-is_number (const char *s)
-{
-  if (*s == '\0')
-    return FALSE;
-
-  while (*s != 0)
-    {
-      if (!g_ascii_isdigit (*s))
-        return FALSE;
-      s++;
-    }
-
-  return TRUE;
-}
-
-long
-flatpak_number_prompt (gboolean default_yes, int min, int max, const char *prompt, ...)
-{
-  char buf[512];
-  va_list var_args;
-  g_autofree char *s = NULL;
-
-  va_start (var_args, prompt);
-  s = g_strdup_vprintf (prompt, var_args);
-  va_end (var_args);
-
-  while (TRUE)
-    {
-      g_print ("%s [%d-%d]: ", s, min, max);
-
-      if (!isatty (STDIN_FILENO) || !isatty (STDOUT_FILENO))
-        {
-          g_print ("0\n");
-          return 0;
-        }
-
-      if (fgets (buf, sizeof (buf), stdin) == NULL)
-        return 0;
-
-      g_strstrip (buf);
-
-      if (default_yes && strlen (buf) == 0 &&
-          max - min == 1 && min == 0)
-        return 1;
-
-      if (is_number (buf))
-        {
-          long res = strtol (buf, NULL, 10);
-
-          if (res >= min && res <= max)
-            return res;
-        }
-    }
-}
-
-static gboolean
-parse_range (const char *s, int *a, int *b)
-{
-  char *p;
-
-  p = strchr (s, '-');
-  if (!p)
-    return FALSE;
-
-  p++;
-  p[-1] = '\0';
-
-  if (is_number (s) && is_number (p))
-    {
-      *a = (int) strtol (s, NULL, 10);
-      *b = (int) strtol (p, NULL, 10);
-      p[-1] = '-';
-      return TRUE;
-    }
-
-  p[-1] = '-';
-  return FALSE;
-}
-
-static void
-add_number (GArray *numbers,
-            int     num)
-{
-  int i;
-
-  for (i = 0; i < numbers->len; i++)
-    {
-      if (g_array_index (numbers, int, i) == num)
-        return;
-    }
-
-  g_array_append_val (numbers, num);
-}
-
-int *
-flatpak_parse_numbers (const char *buf,
-                       int         min,
-                       int         max)
-{
-  g_autoptr(GArray) numbers = g_array_new (FALSE, FALSE, sizeof (int));
-  g_auto(GStrv) parts = g_strsplit_set (buf, " ,", 0);
-  int i, j;
-
-  for (i = 0; parts[i]; i++)
-    {
-      int a, b;
-
-      g_strstrip (parts[i]);
-
-      if (parse_range (parts[i], &a, &b) &&
-          min <= a && a <= max &&
-          min <= b && b <= max)
-        {
-          for (j = a; j <= b; j++)
-            add_number (numbers, j);
-        }
-      else if (is_number (parts[i]))
-        {
-          int res = (int) strtol (parts[i], NULL, 10);
-          if (min <= res && res <= max)
-            add_number (numbers, res);
-          else
-            return NULL;
-        }
-      else
-        return NULL;
-    }
-
-  j = 0;
-  g_array_append_val (numbers, j);
-
-  return (int *) g_array_free (g_steal_pointer (&numbers), FALSE);
-}
-
-/* Returns a 0-terminated array of ints. Free with g_free */
-int *
-flatpak_numbers_prompt (gboolean default_yes, int min, int max, const char *prompt, ...)
-{
-  char buf[512];
-  va_list var_args;
-  g_autofree char *s = NULL;
-  g_autofree int *choice = g_new0 (int, 2);
-  int *numbers;
-
-  va_start (var_args, prompt);
-  s = g_strdup_vprintf (prompt, var_args);
-  va_end (var_args);
-
-  while (TRUE)
-    {
-      g_print ("%s [%d-%d]: ", s, min, max);
-
-      if (!isatty (STDIN_FILENO) || !isatty (STDOUT_FILENO))
-        {
-          g_print ("0\n");
-          choice[0] = 0;
-          return g_steal_pointer (&choice);
-        }
-
-      if (fgets (buf, sizeof (buf), stdin) == NULL)
-        {
-          choice[0] = 0;
-          return g_steal_pointer (&choice);
-        }
-
-      g_strstrip (buf);
-
-      if (default_yes && strlen (buf) == 0 &&
-          max - min == 1 && min == 0)
-        {
-          choice[0] = 0;
-          return g_steal_pointer (&choice);
-        }
-
-      numbers = flatpak_parse_numbers (buf, min, max);
-      if (numbers)
-        return numbers;
-    }
-}
-
-void
-flatpak_format_choices (const char **choices,
-                        const char  *prompt,
-                        ...)
-{
-  va_list var_args;
-  g_autofree char *s = NULL;
-  int i;
-
-  va_start (var_args, prompt);
-  s = g_strdup_vprintf (prompt, var_args);
-  va_end (var_args);
-
-  g_print ("%s\n\n", s);
-  for (i = 0; choices[i]; i++)
-    g_print ("  %2d) %s\n", i + 1, choices[i]);
-  g_print ("\n");
 }
 
 static gint
@@ -7846,42 +7401,6 @@ flatpak_subpaths_merge (char **subpaths1,
   return res;
 }
 
-const char * const *
-flatpak_get_locale_categories (void)
-{
-  /* See locale(7) for these categories */
-  static const char * const categories[] = {
-    "LANG", "LC_ALL", "LC_MESSAGES", "LC_ADDRESS", "LC_COLLATE", "LC_CTYPE",
-    "LC_IDENTIFICATION", "LC_MONETARY", "LC_MEASUREMENT", "LC_NAME", "LC_NUMERIC",
-    "LC_PAPER", "LC_TELEPHONE", "LC_TIME",
-    NULL
-  };
-
-  return categories;
-}
-
-char *
-flatpak_get_lang_from_locale (const char *locale)
-{
-  g_autofree char *lang = g_strdup (locale);
-  char *c;
-
-  c = strchr (lang, '@');
-  if (c != NULL)
-    *c = 0;
-  c = strchr (lang, '_');
-  if (c != NULL)
-    *c = 0;
-  c = strchr (lang, '.');
-  if (c != NULL)
-    *c = 0;
-
-  if (strcmp (lang, "C") == 0)
-    return NULL;
-
-  return g_steal_pointer (&lang);
-}
-
 gboolean
 flatpak_g_ptr_array_contains_string (GPtrArray *array, const char *str)
 {
@@ -7893,347 +7412,6 @@ flatpak_g_ptr_array_contains_string (GPtrArray *array, const char *str)
         return TRUE;
     }
   return FALSE;
-}
-
-#if !GLIB_CHECK_VERSION (2, 58, 0)
-/* All this code is backported directly from glib 2.66 */
-
-typedef struct _GLanguageNamesCache GLanguageNamesCache;
-
-struct _GLanguageNamesCache {
-  gchar *languages;
-  gchar **language_names;
-};
-
-static void
-language_names_cache_free (gpointer data)
-{
-  GLanguageNamesCache *cache = data;
-  g_free (cache->languages);
-  g_strfreev (cache->language_names);
-  g_free (cache);
-}
-
-/* read an alias file for the locales */
-static void
-read_aliases (const gchar *file,
-              GHashTable  *alias_table)
-{
-  FILE *fp;
-  char buf[256];
-
-  fp = fopen (file,"r");
-  if (!fp)
-    return;
-  while (fgets (buf, 256, fp))
-    {
-      char *p, *q;
-
-      g_strstrip (buf);
-
-      /* Line is a comment */
-      if ((buf[0] == '#') || (buf[0] == '\0'))
-        continue;
-
-      /* Reads first column */
-      for (p = buf, q = NULL; *p; p++) {
-        if ((*p == '\t') || (*p == ' ') || (*p == ':')) {
-          *p = '\0';
-          q = p+1;
-          while ((*q == '\t') || (*q == ' ')) {
-            q++;
-          }
-          break;
-        }
-      }
-      /* The line only had one column */
-      if (!q || *q == '\0')
-        continue;
-
-      /* Read second column */
-      for (p = q; *p; p++) {
-        if ((*p == '\t') || (*p == ' ')) {
-          *p = '\0';
-          break;
-        }
-      }
-
-      /* Add to alias table if necessary */
-      if (!g_hash_table_lookup (alias_table, buf)) {
-        g_hash_table_insert (alias_table, g_strdup (buf), g_strdup (q));
-      }
-    }
-  fclose (fp);
-}
-
-static char *
-unalias_lang (char *lang)
-{
-  static GHashTable *alias_table = NULL;
-  char *p;
-  int i;
-
-  if (g_once_init_enter (&alias_table))
-    {
-      GHashTable *table = g_hash_table_new (g_str_hash, g_str_equal);
-      read_aliases ("/usr/share/locale/locale.alias", table);
-      g_once_init_leave (&alias_table, table);
-    }
-
-  i = 0;
-  while ((p = g_hash_table_lookup (alias_table, lang)) && (strcmp (p, lang) != 0))
-    {
-      lang = p;
-      if (i++ == 30)
-        {
-          static gboolean said_before = FALSE;
-          if (!said_before)
-            g_warning ("Too many alias levels for a locale, "
-                       "may indicate a loop");
-          said_before = TRUE;
-          return lang;
-        }
-    }
-  return lang;
-}
-
-/* Mask for components of locale spec. The ordering here is from
- * least significant to most significant
- */
-enum
-{
-  COMPONENT_CODESET =   1 << 0,
-  COMPONENT_TERRITORY = 1 << 1,
-  COMPONENT_MODIFIER =  1 << 2
-};
-
-/* Break an X/Open style locale specification into components
- */
-static guint
-explode_locale (const gchar *locale,
-                gchar      **language,
-                gchar      **territory,
-                gchar      **codeset,
-                gchar      **modifier)
-{
-  const gchar *uscore_pos;
-  const gchar *at_pos;
-  const gchar *dot_pos;
-
-  guint mask = 0;
-
-  uscore_pos = strchr (locale, '_');
-  dot_pos = strchr (uscore_pos ? uscore_pos : locale, '.');
-  at_pos = strchr (dot_pos ? dot_pos : (uscore_pos ? uscore_pos : locale), '@');
-
-  if (at_pos)
-    {
-      mask |= COMPONENT_MODIFIER;
-      *modifier = g_strdup (at_pos);
-    }
-  else
-    at_pos = locale + strlen (locale);
-
-  if (dot_pos)
-    {
-      mask |= COMPONENT_CODESET;
-      *codeset = g_strndup (dot_pos, at_pos - dot_pos);
-    }
-  else
-    dot_pos = at_pos;
-
-  if (uscore_pos)
-    {
-      mask |= COMPONENT_TERRITORY;
-      *territory = g_strndup (uscore_pos, dot_pos - uscore_pos);
-    }
-  else
-    uscore_pos = dot_pos;
-
-  *language = g_strndup (locale, uscore_pos - locale);
-
-  return mask;
-}
-
-/*
- * Compute all interesting variants for a given locale name -
- * by stripping off different components of the value.
- *
- * For simplicity, we assume that the locale is in
- * X/Open format: language[_territory][.codeset][@modifier]
- *
- * TODO: Extend this to handle the CEN format (see the GNUlibc docs)
- *       as well. We could just copy the code from glibc wholesale
- *       but it is big, ugly, and complicated, so I'm reluctant
- *       to do so when this should handle 99% of the time...
- */
-static void
-append_locale_variants (GPtrArray *array,
-                        const gchar *locale)
-{
-  gchar *language = NULL;
-  gchar *territory = NULL;
-  gchar *codeset = NULL;
-  gchar *modifier = NULL;
-
-  guint mask;
-  guint i, j;
-
-  g_return_if_fail (locale != NULL);
-
-  mask = explode_locale (locale, &language, &territory, &codeset, &modifier);
-
-  /* Iterate through all possible combinations, from least attractive
-   * to most attractive.
-   */
-  for (j = 0; j <= mask; ++j)
-    {
-      i = mask - j;
-
-      if ((i & ~mask) == 0)
-        {
-          gchar *val = g_strconcat (language,
-                                    (i & COMPONENT_TERRITORY) ? territory : "",
-                                    (i & COMPONENT_CODESET) ? codeset : "",
-                                    (i & COMPONENT_MODIFIER) ? modifier : "",
-                                    NULL);
-          g_ptr_array_add (array, val);
-        }
-    }
-
-  g_free (language);
-  if (mask & COMPONENT_CODESET)
-    g_free (codeset);
-  if (mask & COMPONENT_TERRITORY)
-    g_free (territory);
-  if (mask & COMPONENT_MODIFIER)
-    g_free (modifier);
-}
-
-/* The following is (partly) taken from the gettext package.
-   Copyright (C) 1995, 1996, 1997, 1998 Free Software Foundation, Inc.  */
-
-static const gchar *
-guess_category_value (const gchar *category_name)
-{
-  const gchar *retval;
-
-  /* The highest priority value is the 'LANGUAGE' environment
-     variable.  This is a GNU extension.  */
-  retval = g_getenv ("LANGUAGE");
-  if ((retval != NULL) && (retval[0] != '\0'))
-    return retval;
-
-  /* 'LANGUAGE' is not set.  So we have to proceed with the POSIX
-     methods of looking to 'LC_ALL', 'LC_xxx', and 'LANG'.  On some
-     systems this can be done by the 'setlocale' function itself.  */
-
-  /* Setting of LC_ALL overwrites all other.  */
-  retval = g_getenv ("LC_ALL");
-  if ((retval != NULL) && (retval[0] != '\0'))
-    return retval;
-
-  /* Next comes the name of the desired category.  */
-  retval = g_getenv (category_name);
-  if ((retval != NULL) && (retval[0] != '\0'))
-    return retval;
-
-  /* Last possibility is the LANG environment variable.  */
-  retval = g_getenv ("LANG");
-  if ((retval != NULL) && (retval[0] != '\0'))
-    return retval;
-
-#ifdef G_PLATFORM_WIN32
-  /* g_win32_getlocale() first checks for LC_ALL, LC_MESSAGES and
-   * LANG, which we already did above. Oh well. The main point of
-   * calling g_win32_getlocale() is to get the thread's locale as used
-   * by Windows and the Microsoft C runtime (in the "English_United
-   * States" format) translated into the Unixish format.
-   */
-  {
-    char *locale = g_win32_getlocale ();
-    retval = g_intern_string (locale);
-    g_free (locale);
-    return retval;
-  }
-#endif
-
-  return NULL;
-}
-
-static const gchar * const *
-g_get_language_names_with_category (const gchar *category_name)
-{
-  static GPrivate cache_private = G_PRIVATE_INIT ((void (*)(gpointer)) g_hash_table_unref);
-  GHashTable *cache = g_private_get (&cache_private);
-  const gchar *languages;
-  GLanguageNamesCache *name_cache;
-
-  g_return_val_if_fail (category_name != NULL, NULL);
-
-  if (!cache)
-    {
-      cache = g_hash_table_new_full (g_str_hash, g_str_equal,
-                                     g_free, language_names_cache_free);
-      g_private_set (&cache_private, cache);
-    }
-
-  languages = guess_category_value (category_name);
-  if (!languages)
-    languages = "C";
-
-  name_cache = (GLanguageNamesCache *) g_hash_table_lookup (cache, category_name);
-  if (!(name_cache && name_cache->languages &&
-        strcmp (name_cache->languages, languages) == 0))
-    {
-      GPtrArray *array;
-      gchar **alist, **a;
-
-      g_hash_table_remove (cache, category_name);
-
-      array = g_ptr_array_sized_new (8);
-
-      alist = g_strsplit (languages, ":", 0);
-      for (a = alist; *a; a++)
-        append_locale_variants (array, unalias_lang (*a));
-      g_strfreev (alist);
-      g_ptr_array_add (array, g_strdup ("C"));
-      g_ptr_array_add (array, NULL);
-
-      name_cache = g_new0 (GLanguageNamesCache, 1);
-      name_cache->languages = g_strdup (languages);
-      name_cache->language_names = (gchar **) g_ptr_array_free (array, FALSE);
-      g_hash_table_insert (cache, g_strdup (category_name), name_cache);
-    }
-
-  return (const gchar * const *) name_cache->language_names;
-}
-
-#endif
-
-char **
-flatpak_get_current_locale_langs (void)
-{
-  const char * const *categories = flatpak_get_locale_categories ();
-  GPtrArray *langs = g_ptr_array_new ();
-  int i;
-
-  for (; categories != NULL && *categories != NULL; categories++)
-    {
-      const gchar * const *locales = g_get_language_names_with_category (*categories);
-
-      for (i = 0; locales[i] != NULL; i++)
-        {
-          g_autofree char *lang = flatpak_get_lang_from_locale (locales[i]);
-          if (lang != NULL && !flatpak_g_ptr_array_contains_string (langs, lang))
-            g_ptr_array_add (langs, g_steal_pointer (&lang));
-        }
-    }
-
-  g_ptr_array_sort (langs, flatpak_strcmp0_ptr);
-  g_ptr_array_add (langs, NULL);
-
-  return (char **) g_ptr_array_free (langs, FALSE);
 }
 
 void
@@ -8334,91 +7512,6 @@ flatpak_check_required_version (const char *ref,
   return TRUE;
 }
 
-static gboolean
-str_has_sign (const gchar *str)
-{
-  return str[0] == '-' || str[0] == '+';
-}
-
-static gboolean
-str_has_hex_prefix (const gchar *str)
-{
-  return str[0] == '0' && g_ascii_tolower (str[1]) == 'x';
-}
-
-/* Copied from glib-2.54.0 to avoid the Glib's version bump.
- * Function name in glib: g_ascii_string_to_unsigned
- * If this is being dropped(migration to g_ascii_string_to_unsigned)
- * make sure to remove str_has_hex_prefix and str_has_sign helpers too.
- */
-gboolean
-flatpak_utils_ascii_string_to_unsigned (const gchar *str,
-                                        guint        base,
-                                        guint64      min,
-                                        guint64      max,
-                                        guint64     *out_num,
-                                        GError     **error)
-{
-  guint64 number;
-  const gchar *end_ptr = NULL;
-  gint saved_errno = 0;
-
-  g_return_val_if_fail (str != NULL, FALSE);
-  g_return_val_if_fail (base >= 2 && base <= 36, FALSE);
-  g_return_val_if_fail (min <= max, FALSE);
-  g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
-
-  if (str[0] == '\0')
-    {
-      g_set_error_literal (error,
-                           G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
-                           _("Empty string is not a number"));
-      return FALSE;
-    }
-
-  errno = 0;
-  number = g_ascii_strtoull (str, (gchar **) &end_ptr, base);
-  saved_errno = errno;
-
-  if (/* We do not allow leading whitespace, but g_ascii_strtoull
-       * accepts it and just skips it, so we need to check for it
-       * ourselves.
-       */
-    g_ascii_isspace (str[0]) ||
-    /* Unsigned number should have no sign.
-     */
-    str_has_sign (str) ||
-    /* We don't support hexadecimal numbers prefixed with 0x or
-     * 0X.
-     */
-    (base == 16 && str_has_hex_prefix (str)) ||
-    (saved_errno != 0 && saved_errno != ERANGE) ||
-    end_ptr == NULL ||
-    *end_ptr != '\0')
-    {
-      g_set_error (error,
-                   G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
-                   _("“%s” is not an unsigned number"), str);
-      return FALSE;
-    }
-  if (saved_errno == ERANGE || number < min || number > max)
-    {
-      gchar *min_str = g_strdup_printf ("%" G_GUINT64_FORMAT, min);
-      gchar *max_str = g_strdup_printf ("%" G_GUINT64_FORMAT, max);
-
-      g_set_error (error,
-                   G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
-                   _("Number “%s” is out of bounds [%s, %s]"),
-                   str, min_str, max_str);
-      g_free (min_str);
-      g_free (max_str);
-      return FALSE;
-    }
-  if (out_num != NULL)
-    *out_num = number;
-  return TRUE;
-}
-
 static int
 dist (const char *s, int ls, const char *t, int lt, int i, int j, int *d)
 {
@@ -8472,124 +7565,6 @@ flatpak_levenshtein_distance (const char *s,
       d[i * (lt + 1) + j] = -1;
 
   return dist (s, ls, t, lt, 0, 0, d);
-}
-
-void
-flatpak_get_window_size (int *rows, int *cols)
-{
-  struct winsize w;
-
-  if (ioctl (STDOUT_FILENO, TIOCGWINSZ, &w) == 0)
-    {
-      /* For whatever reason, in buildbot this returns 0, 0 so add a fallback */
-      if (w.ws_row == 0)
-        w.ws_row = 24;
-      if (w.ws_col == 0)
-        w.ws_col = 80;
-      *rows = w.ws_row;
-      *cols = w.ws_col;
-    }
-  else
-    {
-      *rows = 24;
-      *cols = 80;
-    }
-}
-
-gboolean
-flatpak_set_tty_echo (gboolean echo)
-{
-  struct termios term;
-  gboolean was;
-
-  tcgetattr (STDIN_FILENO, &term);
-  was = (term.c_lflag & ECHO) != 0;
-
-  if (echo)
-    term.c_lflag |= ECHO;
-  else
-    term.c_lflag &= ~ECHO;
-  tcsetattr (STDIN_FILENO, TCSANOW, &term);
-
-  return was;
-}
-
-gboolean
-flatpak_get_cursor_pos (int * row, int *col)
-{
-  fd_set readset;
-  struct timeval time;
-  struct termios term, initial_term;
-  int res = 0;
-
-  tcgetattr (STDIN_FILENO, &initial_term);
-  term = initial_term;
-  term.c_lflag &= ~ICANON;
-  term.c_lflag &= ~ECHO;
-  tcsetattr (STDIN_FILENO, TCSANOW, &term);
-
-  printf ("\033[6n");
-  fflush (stdout);
-
-  FD_ZERO (&readset);
-  FD_SET (STDIN_FILENO, &readset);
-  time.tv_sec = 0;
-  time.tv_usec = 100000;
-
-  if (select (STDIN_FILENO + 1, &readset, NULL, NULL, &time) == 1)
-    res = scanf ("\033[%d;%dR", row, col);
-
-  tcsetattr (STDIN_FILENO, TCSADRAIN, &initial_term);
-
-  return res == 2;
-}
-
-void
-flatpak_hide_cursor (void)
-{
-  const size_t flatpak_hide_cursor_len = strlen (FLATPAK_ANSI_HIDE_CURSOR);
-  const ssize_t write_ret = write (STDOUT_FILENO, FLATPAK_ANSI_HIDE_CURSOR,
-                                   flatpak_hide_cursor_len);
-
-  if (write_ret < 0)
-    g_warning ("write() failed: %zd = write(STDOUT_FILENO, FLATPAK_ANSI_HIDE_CURSOR, %zu)",
-               write_ret, flatpak_hide_cursor_len);
-}
-
-void
-flatpak_show_cursor (void)
-{
-  const size_t flatpak_show_cursor_len = strlen (FLATPAK_ANSI_SHOW_CURSOR);
-  const ssize_t write_ret = write (STDOUT_FILENO, FLATPAK_ANSI_SHOW_CURSOR,
-                                   flatpak_show_cursor_len);
-
-  if (write_ret < 0)
-    g_warning ("write() failed: %zd = write(STDOUT_FILENO, FLATPAK_ANSI_SHOW_CURSOR, %zu)",
-               write_ret, flatpak_show_cursor_len);
-}
-
-void
-flatpak_enable_raw_mode (void)
-{
-  struct termios raw;
-
-  tcgetattr (STDIN_FILENO, &raw);
-
-  raw.c_lflag &= ~(ECHO | ICANON);
-
-  tcsetattr (STDIN_FILENO, TCSAFLUSH, &raw);
-}
-
-void
-flatpak_disable_raw_mode (void)
-{
-  struct termios raw;
-
-  tcgetattr (STDIN_FILENO, &raw);
-
-  raw.c_lflag |= (ECHO | ICANON);
-
-  tcsetattr (STDIN_FILENO, TCSAFLUSH, &raw);
 }
 
 /* Wrapper that uses ostree_repo_resolve_collection_ref() and on failure falls
@@ -8654,357 +7629,6 @@ flatpak_repo_resolve_rev (OstreeRepo    *repo,
 
   return TRUE;
 }
-
-
-#if !GLIB_CHECK_VERSION (2, 56, 0)
-/* All this code is backported directly from glib */
-
-static void
-g_date_time_get_week_number (GDateTime *datetime,
-                             gint      *week_number,
-                             gint      *day_of_week,
-                             gint      *day_of_year)
-{
-  gint a, b, c, d, e, f, g, n, s, month, day, year;
-
-  g_date_time_get_ymd (datetime, &year, &month, &day);
-
-  if (month <= 2)
-    {
-      a = g_date_time_get_year (datetime) - 1;
-      b = (a / 4) - (a / 100) + (a / 400);
-      c = ((a - 1) / 4) - ((a - 1) / 100) + ((a - 1) / 400);
-      s = b - c;
-      e = 0;
-      f = day - 1 + (31 * (month - 1));
-    }
-  else
-    {
-      a = year;
-      b = (a / 4) - (a / 100) + (a / 400);
-      c = ((a - 1) / 4) - ((a - 1) / 100) + ((a - 1) / 400);
-      s = b - c;
-      e = s + 1;
-      f = day + (((153 * (month - 3)) + 2) / 5) + 58 + s;
-    }
-
-  g = (a + b) % 7;
-  d = (f + g - e) % 7;
-  n = f + 3 - d;
-
-  if (week_number)
-    {
-      if (n < 0)
-        *week_number = 53 - ((g - s) / 5);
-      else if (n > 364 + s)
-        *week_number = 1;
-      else
-        *week_number = (n / 7) + 1;
-    }
-
-  if (day_of_week)
-    *day_of_week = d + 1;
-
-  if (day_of_year)
-    *day_of_year = f + 1;
-}
-
-#define GREGORIAN_LEAP(y)    ((((y) % 4) == 0) && (!((((y) % 100) == 0) && (((y) % 400) != 0))))
-
-/* Parse integers in the form d (week days), dd (hours etc), ddd (ordinal days) or dddd (years) */
-static gboolean
-get_iso8601_int (const gchar *text, gsize length, gint *value)
-{
-  gint i, v = 0;
-
-  if (length < 1 || length > 4)
-    return FALSE;
-
-  for (i = 0; i < length; i++)
-    {
-      const gchar c = text[i];
-      if (c < '0' || c > '9')
-        return FALSE;
-      v = v * 10 + (c - '0');
-    }
-
-  *value = v;
-  return TRUE;
-}
-
-/* Parse seconds in the form ss or ss.sss (variable length decimal) */
-static gboolean
-get_iso8601_seconds (const gchar *text, gsize length, gdouble *value)
-{
-  gint i;
-  gdouble divisor = 1, v = 0;
-
-  if (length < 2)
-    return FALSE;
-
-  for (i = 0; i < 2; i++)
-    {
-      const gchar c = text[i];
-      if (c < '0' || c > '9')
-        return FALSE;
-      v = v * 10 + (c - '0');
-    }
-
-  if (length > 2 && !(text[i] == '.' || text[i] == ','))
-    return FALSE;
-  i++;
-  if (i == length)
-    return FALSE;
-
-  for (; i < length; i++)
-    {
-      const gchar c = text[i];
-      if (c < '0' || c > '9')
-        return FALSE;
-      v = v * 10 + (c - '0');
-      divisor *= 10;
-    }
-
-  *value = v / divisor;
-  return TRUE;
-}
-
-static GDateTime *
-g_date_time_new_ordinal (GTimeZone *tz, gint year, gint ordinal_day, gint hour, gint minute, gdouble seconds)
-{
-  GDateTime *dt, *dt2;
-
-  if (ordinal_day < 1 || ordinal_day > (GREGORIAN_LEAP (year) ? 366 : 365))
-    return NULL;
-
-  dt = g_date_time_new (tz, year, 1, 1, hour, minute, seconds);
-  dt2 = g_date_time_add_days (dt, ordinal_day - 1);
-  g_date_time_unref (dt);
-
-  return dt2;
-}
-
-static GDateTime *
-g_date_time_new_week (GTimeZone *tz, gint year, gint week, gint week_day, gint hour, gint minute, gdouble seconds)
-{
-  gint64 p;
-  gint max_week, jan4_week_day, ordinal_day;
-  GDateTime *dt;
-
-  p = (year * 365 + (year / 4) - (year / 100) + (year / 400)) % 7;
-  max_week = p == 4 ? 53 : 52;
-
-  if (week < 1 || week > max_week || week_day < 1 || week_day > 7)
-    return NULL;
-
-  dt = g_date_time_new (tz, year, 1, 4, 0, 0, 0);
-  g_date_time_get_week_number (dt, NULL, &jan4_week_day, NULL);
-  g_date_time_unref (dt);
-
-  ordinal_day = (week * 7) + week_day - (jan4_week_day + 3);
-  if (ordinal_day < 0)
-    {
-      year--;
-      ordinal_day += GREGORIAN_LEAP (year) ? 366 : 365;
-    }
-  else if (ordinal_day > (GREGORIAN_LEAP (year) ? 366 : 365))
-    {
-      ordinal_day -= (GREGORIAN_LEAP (year) ? 366 : 365);
-      year++;
-    }
-
-  return g_date_time_new_ordinal (tz, year, ordinal_day, hour, minute, seconds);
-}
-
-static GDateTime *
-parse_iso8601_date (const gchar *text, gsize length,
-                    gint hour, gint minute, gdouble seconds, GTimeZone *tz)
-{
-  /* YYYY-MM-DD */
-  if (length == 10 && text[4] == '-' && text[7] == '-')
-    {
-      int year, month, day;
-      if (!get_iso8601_int (text, 4, &year) ||
-          !get_iso8601_int (text + 5, 2, &month) ||
-          !get_iso8601_int (text + 8, 2, &day))
-        return NULL;
-      return g_date_time_new (tz, year, month, day, hour, minute, seconds);
-    }
-  /* YYYY-DDD */
-  else if (length == 8 && text[4] == '-')
-    {
-      gint year, ordinal_day;
-      if (!get_iso8601_int (text, 4, &year) ||
-          !get_iso8601_int (text + 5, 3, &ordinal_day))
-        return NULL;
-      return g_date_time_new_ordinal (tz, year, ordinal_day, hour, minute, seconds);
-    }
-  /* YYYY-Www-D */
-  else if (length == 10 && text[4] == '-' && text[5] == 'W' && text[8] == '-')
-    {
-      gint year, week, week_day;
-      if (!get_iso8601_int (text, 4, &year) ||
-          !get_iso8601_int (text + 6, 2, &week) ||
-          !get_iso8601_int (text + 9, 1, &week_day))
-        return NULL;
-      return g_date_time_new_week (tz, year, week, week_day, hour, minute, seconds);
-    }
-  /* YYYYWwwD */
-  else if (length == 8 && text[4] == 'W')
-    {
-      gint year, week, week_day;
-      if (!get_iso8601_int (text, 4, &year) ||
-          !get_iso8601_int (text + 5, 2, &week) ||
-          !get_iso8601_int (text + 7, 1, &week_day))
-        return NULL;
-      return g_date_time_new_week (tz, year, week, week_day, hour, minute, seconds);
-    }
-  /* YYYYMMDD */
-  else if (length == 8)
-    {
-      int year, month, day;
-      if (!get_iso8601_int (text, 4, &year) ||
-          !get_iso8601_int (text + 4, 2, &month) ||
-          !get_iso8601_int (text + 6, 2, &day))
-        return NULL;
-      return g_date_time_new (tz, year, month, day, hour, minute, seconds);
-    }
-  /* YYYYDDD */
-  else if (length == 7)
-    {
-      gint year, ordinal_day;
-      if (!get_iso8601_int (text, 4, &year) ||
-          !get_iso8601_int (text + 4, 3, &ordinal_day))
-        return NULL;
-      return g_date_time_new_ordinal (tz, year, ordinal_day, hour, minute, seconds);
-    }
-  else
-    return FALSE;
-}
-
-static GTimeZone *
-parse_iso8601_timezone (const gchar *text, gsize length, gssize *tz_offset)
-{
-  gint i, tz_length, offset_sign = 1, offset_hours, offset_minutes;
-  GTimeZone *tz;
-
-  /* UTC uses Z suffix  */
-  if (length > 0 && text[length - 1] == 'Z')
-    {
-      *tz_offset = length - 1;
-      return g_time_zone_new_utc ();
-    }
-
-  /* Look for '+' or '-' of offset */
-  for (i = length - 1; i >= 0; i--)
-    if (text[i] == '+' || text[i] == '-')
-      {
-        offset_sign = text[i] == '-' ? -1 : 1;
-        break;
-      }
-  if (i < 0)
-    return NULL;
-  tz_length = length - i;
-
-  /* +hh:mm or -hh:mm */
-  if (tz_length == 6 && text[i + 3] == ':')
-    {
-      if (!get_iso8601_int (text + i + 1, 2, &offset_hours) ||
-          !get_iso8601_int (text + i + 4, 2, &offset_minutes))
-        return NULL;
-    }
-  /* +hhmm or -hhmm */
-  else if (tz_length == 5)
-    {
-      if (!get_iso8601_int (text + i + 1, 2, &offset_hours) ||
-          !get_iso8601_int (text + i + 3, 2, &offset_minutes))
-        return NULL;
-    }
-  /* +hh or -hh */
-  else if (tz_length == 3)
-    {
-      if (!get_iso8601_int (text + i + 1, 2, &offset_hours))
-        return NULL;
-      offset_minutes = 0;
-    }
-  else
-    return NULL;
-
-  *tz_offset = i;
-  tz = g_time_zone_new (text + i);
-
-  /* Double-check that the GTimeZone matches our interpretation of the timezone.
-   * Failure would indicate a bug either here of in the GTimeZone code. */
-  g_assert (g_time_zone_get_offset (tz, 0) == offset_sign * (offset_hours * 3600 + offset_minutes * 60));
-
-  return tz;
-}
-
-static gboolean
-parse_iso8601_time (const gchar *text, gsize length,
-                    gint *hour, gint *minute, gdouble *seconds, GTimeZone **tz)
-{
-  gssize tz_offset = -1;
-
-  /* Check for timezone suffix */
-  *tz = parse_iso8601_timezone (text, length, &tz_offset);
-  if (tz_offset >= 0)
-    length = tz_offset;
-
-  /* hh:mm:ss(.sss) */
-  if (length >= 8 && text[2] == ':' && text[5] == ':')
-    {
-      return get_iso8601_int (text, 2, hour) &&
-             get_iso8601_int (text + 3, 2, minute) &&
-             get_iso8601_seconds (text + 6, length - 6, seconds);
-    }
-  /* hhmmss(.sss) */
-  else if (length >= 6)
-    {
-      return get_iso8601_int (text, 2, hour) &&
-             get_iso8601_int (text + 2, 2, minute) &&
-             get_iso8601_seconds (text + 4, length - 4, seconds);
-    }
-  else
-    return FALSE;
-}
-
-
-GDateTime *
-flatpak_g_date_time_new_from_iso8601 (const gchar *text, GTimeZone *default_tz)
-{
-  gint length, date_length = -1;
-  gint hour = 0, minute = 0;
-  gdouble seconds = 0.0;
-  GTimeZone *tz = NULL;
-  GDateTime *datetime = NULL;
-
-  g_return_val_if_fail (text != NULL, NULL);
-
-  /* Count length of string and find date / time separator ('T', 't', or ' ') */
-  for (length = 0; text[length] != '\0'; length++)
-    {
-      if (date_length < 0 && (text[length] == 'T' || text[length] == 't' || text[length] == ' '))
-        date_length = length;
-    }
-
-  if (date_length < 0)
-    return NULL;
-
-  if (!parse_iso8601_time (text + date_length + 1, length - (date_length + 1),
-                           &hour, &minute, &seconds, &tz))
-    goto out;
-  if (tz == NULL && default_tz == NULL)
-    return NULL;
-
-  datetime = parse_iso8601_date (text, date_length, hour, minute, seconds, tz ? tz : default_tz);
-
-out:
-  if (tz != NULL)
-    g_time_zone_unref (tz);
-  return datetime;
-}
-#endif
 
 /* Convert an app id to a dconf path in the obvious way.
  */
@@ -9104,6 +7728,48 @@ flatpak_dconf_path_is_similar (const char *path1,
     return FALSE;
 
   return (path1[i1] == '\0');
+}
+
+GStrv
+flatpak_parse_env_block (const char  *data,
+                         gsize        length,
+                         GError     **error)
+{
+  g_autoptr(GPtrArray) env_vars = g_ptr_array_new_with_free_func (g_free);
+  const char *p = data;
+  gsize remaining = length;
+
+  /* env_block might not be \0-terminated */
+  while (remaining > 0)
+    {
+      size_t len = strnlen (p, remaining);
+      const char *equals;
+
+      g_assert (len <= remaining);
+
+      equals = memchr (p, '=', len);
+
+      if (equals == NULL || equals == p)
+        return glnx_null_throw (error,
+                                "Environment variable must be in the form VARIABLE=VALUE, not %.*s", (int) len, p);
+
+      g_ptr_array_add (env_vars,
+                       g_strndup (p, len));
+
+      p += len;
+      remaining -= len;
+
+      if (remaining > 0)
+        {
+          g_assert (*p == '\0');
+          p += 1;
+          remaining -= 1;
+        }
+    }
+
+  g_ptr_array_add (env_vars, NULL);
+
+  return (GStrv) g_ptr_array_free (g_steal_pointer (&env_vars), FALSE);
 }
 
 /**
@@ -9301,14 +7967,6 @@ flatpak_escape_string (const char        *s,
   return g_string_free (g_steal_pointer (&res), FALSE);
 }
 
-void
-flatpak_print_escaped_string (const char        *s,
-                              FlatpakEscapeFlags flags)
-{
-  g_autofree char *escaped = flatpak_escape_string (s, flags);
-  g_print ("%s", escaped);
-}
-
 gboolean
 flatpak_validate_path_characters (const char *path,
                                   GError    **error)
@@ -9357,65 +8015,3 @@ running_under_sudo (void)
 
   return FALSE;
 }
-
-#if !GLIB_CHECK_VERSION (2, 62, 0)
-void
-g_ptr_array_extend (GPtrArray  *array_to_extend,
-                    GPtrArray  *array,
-                    GCopyFunc   func,
-                    gpointer    user_data)
-{
-  for (gsize i = 0; i < array->len; i++)
-    {
-      if (func)
-        g_ptr_array_add (array_to_extend, func (g_ptr_array_index (array, i), user_data));
-      else
-        g_ptr_array_add (array_to_extend, g_ptr_array_index (array, i));
-    }
-}
-#endif
-
-#if !GLIB_CHECK_VERSION (2, 68, 0)
-/* All this code is backported directly from glib */
-guint
-g_string_replace (GString     *string,
-                  const gchar *find,
-                  const gchar *replace,
-                  guint        limit)
-{
-  gsize f_len, r_len, pos;
-  gchar *cur, *next;
-  guint n = 0;
-
-  g_return_val_if_fail (string != NULL, 0);
-  g_return_val_if_fail (find != NULL, 0);
-  g_return_val_if_fail (replace != NULL, 0);
-
-  f_len = strlen (find);
-  r_len = strlen (replace);
-  cur = string->str;
-
-  while ((next = strstr (cur, find)) != NULL)
-    {
-      pos = next - string->str;
-      g_string_erase (string, pos, f_len);
-      g_string_insert (string, pos, replace);
-      cur = string->str + pos + r_len;
-      n++;
-      /* Only match the empty string once at any given position, to
-       * avoid infinite loops */
-      if (f_len == 0)
-        {
-          if (cur[0] == '\0')
-            break;
-          else
-            cur++;
-        }
-      if (n == limit)
-        break;
-    }
-
-  return n;
-}
-
-#endif /* GLIB_CHECK_VERSION (2, 68, 0) */

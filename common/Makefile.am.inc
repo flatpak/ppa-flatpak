@@ -69,6 +69,18 @@ common/flatpak-systemd-dbus-generated.c: data/org.freedesktop.systemd1.xml Makef
 common/%-dbus-generated.h: common/%-dbus-generated.c
 	@true # Built as a side-effect of the rules for the .c
 
+if ENABLE_WAYLAND_SECURITY_CONTEXT
+wayland_built_sources = common/security-context-v1-protocol.c common/security-context-v1-protocol.h
+endif
+
+wl_security_context_xml = $(WAYLAND_PROTOCOLS_DATADIR)/staging/security-context/security-context-v1.xml
+
+common/security-context-v1-protocol.c: $(wl_security_context_xml)
+	$(AM_V_GEN) $(WAYLAND_SCANNER) private-code $(wl_security_context_xml) $(builddir)/common/security-context-v1-protocol.c
+
+common/security-context-v1-protocol.h: $(wl_security_context_xml)
+	$(AM_V_GEN) $(WAYLAND_SCANNER) client-header $(wl_security_context_xml) $(builddir)/common/security-context-v1-protocol.h
+
 nodist_libflatpak_common_base_la_SOURCES = \
 	$(dbus_built_sources)		\
 	$(NULL)
@@ -106,6 +118,7 @@ libflatpak_common_base_la_LIBADD = $(AM_LIBADD) $(BASE_LIBS)
 nodist_libflatpak_common_la_SOURCES = \
 	$(nodist_flatpakinclude_HEADERS)    \
 	$(systemd_dbus_built_sources)	\
+	$(wayland_built_sources)	\
 	$(xdp_dbus_built_sources) \
 	common/flatpak-enum-types.c \
 	common/flatpak-variant-private.h \
@@ -134,16 +147,22 @@ libflatpak_common_la_SOURCES = \
 	common/flatpak-error.c \
 	common/flatpak-exports-private.h \
 	common/flatpak-exports.c \
+	common/flatpak-glib-backports-private.h \
+	common/flatpak-glib-backports.c \
 	common/flatpak-installation-private.h \
 	common/flatpak-installation.c \
 	common/flatpak-installed-ref-private.h \
 	common/flatpak-installed-ref.c \
 	common/flatpak-instance-private.h \
 	common/flatpak-instance.c \
+	common/flatpak-json-backports-private.h \
 	common/flatpak-json-oci-private.h \
 	common/flatpak-json-oci.c \
 	common/flatpak-json-private.h \
 	common/flatpak-json.c \
+	common/flatpak-locale-utils-private.h \
+	common/flatpak-locale-utils.c \
+	common/flatpak-metadata-private.h \
 	common/flatpak-oci-registry-private.h \
 	common/flatpak-oci-registry.c \
 	common/flatpak-portal-error.c \
@@ -161,6 +180,18 @@ libflatpak_common_la_SOURCES = \
 	common/flatpak-remote.c \
 	common/flatpak-run-private.h \
 	common/flatpak-run.c \
+	common/flatpak-run-cups-private.h \
+	common/flatpak-run-cups.c \
+	common/flatpak-run-dbus-private.h \
+	common/flatpak-run-dbus.c \
+	common/flatpak-run-pulseaudio-private.h \
+	common/flatpak-run-pulseaudio.c \
+	common/flatpak-run-sockets-private.h \
+	common/flatpak-run-sockets.c \
+	common/flatpak-run-wayland-private.h \
+	common/flatpak-run-wayland.c \
+	common/flatpak-run-x11-private.h \
+	common/flatpak-run-x11.c \
 	common/flatpak-syscalls-private.h \
 	common/flatpak-transaction-private.h \
 	common/flatpak-transaction.c \
@@ -204,6 +235,7 @@ libflatpak_common_la_CFLAGS = \
 	$(SOUP_CFLAGS) \
 	$(SYSTEMD_CFLAGS) \
 	$(XAUTH_CFLAGS) \
+	$(WAYLAND_CLIENT_CFLAGS) \
 	$(XML_CFLAGS) \
 	$(NULL)
 libflatpak_common_la_LIBADD = \
@@ -222,6 +254,7 @@ libflatpak_common_la_LIBADD = \
 	$(SOUP_LIBS) \
 	$(SYSTEMD_LIBS) \
 	$(XAUTH_LIBS) \
+	$(WAYLAND_CLIENT_LIBS) \
 	$(XML_LIBS) \
 	$(NULL)
 

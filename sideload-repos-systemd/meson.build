@@ -22,6 +22,6 @@ configure_file(
 )
 
 install_data(
-  'flatpak-sideload-repos.conf',
-  install_dir : 'lib/tmpfiles.d',
+  'tmpfiles.d/flatpak-sideload-repos.conf',
+  install_dir : get_option('tmpfilesdir'),
 )

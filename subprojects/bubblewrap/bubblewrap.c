@@ -73,6 +73,8 @@ static const char *opt_file_label = NULL;
 static bool opt_as_pid_1;
 
 const char *opt_chdir_path = NULL;
+bool opt_assert_userns_disabled = FALSE;
+bool opt_disable_userns = FALSE;
 bool opt_unshare_user = FALSE;
 bool opt_unshare_user_try = FALSE;
 bool opt_unshare_pid = FALSE;
@@ -286,7 +288,15 @@ seccomp_programs_apply (void)
   for (program = seccomp_programs; program != NULL; program = program->next)
     {
       if (prctl (PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &program->program) != 0)
-        die_with_error ("prctl(PR_SET_SECCOMP)");
+        {
+          if (errno == EINVAL)
+            die ("Unable to set up system call filtering as requested: "
+                 "prctl(PR_SET_SECCOMP) reported EINVAL. "
+                 "(Hint: this requires a kernel configured with "
+                 "CONFIG_SECCOMP and CONFIG_SECCOMP_FILTER.)");
+
+          die_with_error ("prctl(PR_SET_SECCOMP)");
+        }
     }
 }
 
@@ -311,6 +321,8 @@ usage (int ecode, FILE *out)
            "    --unshare-cgroup-try         Create new cgroup namespace if possible else continue by skipping it\n"
            "    --userns FD                  Use this user namespace (cannot combine with --unshare-user)\n"
            "    --userns2 FD                 After setup switch to this user namespace, only useful with --userns\n"
+           "    --disable-userns             Disable further use of user namespaces inside sandbox\n"
+           "    --assert-userns-disabled     Fail unless further use of user namespace inside sandbox is disabled\n"
            "    --pidns FD                   Use this pid namespace (as parent namespace if using --unshare-pid)\n"
            "    --uid UID                    Custom uid in the sandbox (requires --unshare-user or --userns)\n"
            "    --gid GID                    Custom gid in the sandbox (requires --unshare-user or --userns)\n"
@@ -1777,6 +1789,14 @@ parse_args_recurse (int          *argcp,
           argv++;
           argc--;
         }
+      else if (strcmp (arg, "--disable-userns") == 0)
+        {
+          opt_disable_userns = TRUE;
+        }
+      else if (strcmp (arg, "--assert-userns-disabled") == 0)
+        {
+          opt_assert_userns_disabled = TRUE;
+        }
       else if (strcmp (arg, "--remount-ro") == 0)
         {
           if (argc < 2)
@@ -2677,6 +2697,12 @@ main (int    argc,
   if (opt_userns_fd != -1 && opt_unshare_user_try)
     die ("--userns not compatible --unshare-user-try");
 
+  if (opt_disable_userns && !opt_unshare_user)
+    die ("--disable-userns requires --unshare-user");
+
+  if (opt_disable_userns && opt_userns_block_fd != -1)
+    die ("--disable-userns is not compatible with  --userns-block-fd");
+
   /* Technically using setns() is probably safe even in the privileged
    * case, because we got passed in a file descriptor to the
    * namespace, and that can only be gotten if you have ptrace
@@ -3155,13 +3181,34 @@ main (int    argc,
   if (opt_userns2_fd > 0 && setns (opt_userns2_fd, CLONE_NEWUSER) != 0)
     die_with_error ("Setting userns2 failed");
 
-  if (opt_unshare_user &&
-      (ns_uid != opt_sandbox_uid || ns_gid != opt_sandbox_gid) &&
-      opt_userns_block_fd == -1)
+  if (opt_unshare_user && opt_userns_block_fd == -1 &&
+      (ns_uid != opt_sandbox_uid || ns_gid != opt_sandbox_gid ||
+       opt_disable_userns))
     {
-      /* Now that devpts is mounted and we've no need for mount
-         permissions we can create a new userspace and map our uid
-         1:1 */
+      /* Here we create a second level userns inside the first one. This is
+         used for one or more of these reasons:
+
+         * The 1st level namespace has a different uid/gid than the
+           requested due to requirements of beeing root in the first
+           level due for mounting devpts (opt_needs_devpts).
+
+         * To disable user namespaces we set max_user_namespaces and then
+           create the second namespace so that the sandbox cannot undo this
+           change.
+      */
+
+      if (opt_disable_userns)
+        {
+          cleanup_fd int sysctl_fd = -1;
+
+          sysctl_fd = openat (proc_fd, "sys/user/max_user_namespaces", O_WRONLY);
+
+          if (sysctl_fd < 0)
+            die_with_error ("cannot open /proc/sys/user/max_user_namespaces");
+
+          if (write_to_fd (sysctl_fd, "1", 1) < 0)
+            die_with_error ("sysctl user.max_user_namespaces = 1");
+        }
 
       if (unshare (CLONE_NEWUSER))
         die_with_error ("unshare user ns");
@@ -3172,6 +3219,15 @@ main (int    argc,
       write_uid_gid_map (opt_sandbox_uid, ns_uid,
                          opt_sandbox_gid, ns_gid,
                          -1, FALSE, FALSE);
+    }
+
+  if (opt_disable_userns || opt_assert_userns_disabled)
+    {
+      /* Verify that we can't make a new userns again */
+      res = unshare (CLONE_NEWUSER);
+
+      if (res == 0)
+        die ("creation of new user namespaces was not disabled as requested");
     }
 
   /* All privileged ops are done now, so drop caps we don't need */

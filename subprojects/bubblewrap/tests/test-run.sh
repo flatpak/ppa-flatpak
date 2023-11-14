@@ -8,7 +8,7 @@ srcd=$(cd $(dirname "$0") && pwd)
 
 bn=$(basename "$0")
 
-echo "1..57"
+echo "1..58"
 
 # Test help
 ${BWRAP} --help > help.txt
@@ -112,6 +112,7 @@ echo "ok exec failure doesn't include exit-code in json-status"
 if test -n "${bwrap_is_suid:-}"; then
     echo "ok - # SKIP no --cap-add support"
     echo "ok - # SKIP no --cap-add support"
+    echo "ok - # SKIP no --disable-userns"
 else
     BWRAP_RECURSE="$BWRAP --unshare-user --uid 0 --gid 0 --cap-add ALL --bind / / --bind /proc /proc"
 
@@ -123,6 +124,15 @@ else
     $BWRAP_RECURSE -- /proc/self/exe --unshare-all ${BWRAP_RO_HOST_ARGS} findmnt > recursive-newroot.txt
     assert_file_has_content recursive-newroot.txt "/usr"
     echo "ok - can pivot to new rootfs recursively"
+
+    $BWRAP --dev-bind / / -- true
+    ! $BWRAP --assert-userns-disabled --dev-bind / / -- true
+    $BWRAP --unshare-user --disable-userns --dev-bind / / -- true
+    ! $BWRAP --unshare-user --disable-userns --dev-bind / / -- $BWRAP --dev-bind / / -- true
+    $BWRAP --unshare-user --disable-userns --dev-bind / / -- sh -c "echo 2 > /proc/sys/user/max_user_namespaces || true; ! $BWRAP --dev-bind / / -- true"
+    $BWRAP --unshare-user --disable-userns --dev-bind / / -- sh -c "echo 100 > /proc/sys/user/max_user_namespaces || true; ! $BWRAP --dev-bind / / -- true"
+    $BWRAP --unshare-user --disable-userns --dev-bind / / -- sh -c "! $BWRAP --dev-bind / / --assert-userns-disabled -- true"
+    echo "ok - can disable nested userns"
 fi
 
 # Test error prefixing
@@ -143,10 +153,11 @@ if ! ${is_uidzero}; then
     done
     echo "ok - we have no caps as uid != 0"
 else
-    capsh --print > caps.orig
+    capsh --print | sed -e 's/no-new-privs=0/no-new-privs=1/' > caps.expected
+
     for OPT in "" "--as-pid-1"; do
         $RUN $OPT --unshare-pid capsh --print >caps.test
-        diff -u caps.orig caps.test
+        diff -u caps.expected caps.test
     done
     # And test that we can drop all, as well as specific caps
     $RUN $OPT --cap-drop ALL --unshare-pid capsh --print >caps.test
@@ -406,27 +417,39 @@ assert_file_has_content dir-permissions '^755$'
 echo "ok - tmpfs has expected permissions"
 
 # 1048576 = 1 MiB
-$RUN \
-    --size 1048576 --tmpfs "$(pwd -P)" \
-    df --output=size --block-size=1K "$(pwd -P)" > dir-size
-assert_file_has_content dir-size '^ *1024$'
-$RUN \
-    --size 1048576 --perms 01777 --tmpfs "$(pwd -P)" \
-    stat -c '%a' "$(pwd -P)" > dir-permissions
-assert_file_has_content dir-permissions '^1777$'
-$RUN \
-    --size 1048576 --perms 01777 --tmpfs "$(pwd -P)" \
-    df --output=size --block-size=1K "$(pwd -P)" > dir-size
-assert_file_has_content dir-size '^ *1024$'
-$RUN \
-    --perms 01777 --size 1048576 --tmpfs "$(pwd -P)" \
-    stat -c '%a' "$(pwd -P)" > dir-permissions
-assert_file_has_content dir-permissions '^1777$'
-$RUN \
-    --perms 01777 --size 1048576 --tmpfs "$(pwd -P)" \
-    df --output=size --block-size=1K "$(pwd -P)" > dir-size
-assert_file_has_content dir-size '^ *1024$'
-echo "ok - tmpfs has expected size"
+if test -n "${bwrap_is_suid:-}"; then
+    if $RUN --size 1048576 --tmpfs "$(pwd -P)" true; then
+        assert_not_reached "Should not allow --size --tmpfs when setuid"
+    fi
+    echo "ok - --size --tmpfs is not allowed when setuid"
+elif df --output=size --block-size=1K "$(pwd -P)" >/dev/null 2>/dev/null; then
+    $RUN \
+        --size 1048576 --tmpfs "$(pwd -P)" \
+        df --output=size --block-size=1K "$(pwd -P)" > dir-size
+    assert_file_has_content dir-size '^ *1024$'
+    $RUN \
+        --size 1048576 --perms 01777 --tmpfs "$(pwd -P)" \
+        stat -c '%a' "$(pwd -P)" > dir-permissions
+    assert_file_has_content dir-permissions '^1777$'
+    $RUN \
+        --size 1048576 --perms 01777 --tmpfs "$(pwd -P)" \
+        df --output=size --block-size=1K "$(pwd -P)" > dir-size
+    assert_file_has_content dir-size '^ *1024$'
+    $RUN \
+        --perms 01777 --size 1048576 --tmpfs "$(pwd -P)" \
+        stat -c '%a' "$(pwd -P)" > dir-permissions
+    assert_file_has_content dir-permissions '^1777$'
+    $RUN \
+        --perms 01777 --size 1048576 --tmpfs "$(pwd -P)" \
+        df --output=size --block-size=1K "$(pwd -P)" > dir-size
+    assert_file_has_content dir-size '^ *1024$'
+    echo "ok - tmpfs has expected size"
+else
+    $RUN --size 1048576 --tmpfs "$(pwd -P)" true
+    $RUN --perms 01777 --size 1048576 --tmpfs "$(pwd -P)" true
+    $RUN --size 1048576 --perms 01777 --tmpfs "$(pwd -P)" true
+    echo "ok # SKIP df is too old, cannot test --size --tmpfs fully"
+fi
 
 $RUN \
     --file 0 /tmp/file \
