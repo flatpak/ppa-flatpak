@@ -1,4 +1,4 @@
-flatpak (1.14.5-1) UNRELEASED; urgency=medium
+flatpak (1.14.5-1) unstable; urgency=medium
 
   * New upstream stable release
   * Drop patches cherry-picked in 1.14.4-2, applied upstream
@@ -15,7 +15,7 @@ flatpak (1.14.5-1) UNRELEASED; urgency=medium
     Build-depend on debhelper 13.11.6~ to ensure that the unit is still
     picked up by dh_installsystemd.
 
- -- Simon McVittie <smcv@debian.org>  Fri, 08 Dec 2023 12:20:52 +0000
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Dec 2023 12:25:50 +0000
 
 flatpak (1.14.4-2) unstable; urgency=medium
 
