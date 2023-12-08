@@ -1,5 +1,6 @@
-flatpak (1.14.4-3) UNRELEASED; urgency=medium
+flatpak (1.14.5-1) UNRELEASED; urgency=medium
 
+  * New upstream stable release
   * d/test.sh: Disable http proxy if used, to ensure we can reach localhost.
     Some reproducible.org builders set http_proxy, which makes attempts
     to access our temporary http server on localhost fail with a 503 error.
