@@ -1,3 +1,19 @@
+flatpak (1.14.4-3) UNRELEASED; urgency=medium
+
+  * d/test.sh: Disable http proxy if used, to ensure we can reach localhost.
+    Some reproducible.org builders set http_proxy, which makes attempts
+    to access our temporary http server on localhost fail with a 503 error.
+  * d/control: (Build-)depend on pkgconf in preference to pkg-config
+  * d/control: Add ${gir:Depends}, ${gir:Provides} to -dev package
+    (Helps: #1030223)
+  * d/control: Build-depend on required GIR XML files (Helps: #1030223)
+  * Install systemd system unit into /usr/lib/systemd/system.
+    This was allowed by TC resolution #1053901.
+    Build-depend on debhelper 13.11.6~ to ensure that the unit is still
+    picked up by dh_installsystemd.
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Dec 2023 12:20:52 +0000
+
 flatpak (1.14.4-2) unstable; urgency=medium
 
   * Team upload
