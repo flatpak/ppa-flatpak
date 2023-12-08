@@ -1,6 +1,8 @@
 flatpak (1.14.5-1) UNRELEASED; urgency=medium
 
   * New upstream stable release
+  * Drop patches cherry-picked in 1.14.4-2, applied upstream
+  * d/flatpak.install: Install new tmpfiles.d snippet
   * d/test.sh: Disable http proxy if used, to ensure we can reach localhost.
     Some reproducible.org builders set http_proxy, which makes attempts
     to access our temporary http server on localhost fail with a 503 error.
