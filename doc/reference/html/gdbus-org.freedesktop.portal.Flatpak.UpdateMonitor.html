@@ -74,7 +74,9 @@ Update (IN  s     parent_window,
         IN  a{sv} options);
 </pre>
 <p>
-see Common Conventions
+</p>
+<p>
+  see Common Conventions
 <em class="parameter"><code>options</code></em>: Vardict with optional further information
 </p>
 <p>
@@ -144,23 +146,23 @@ The following information may be included in the
 <tr>
 <td><p><span class="term">running-commit s</span></p></td>
 <td><p>
-The commit of the currently running instance.
-</p></td>
+      The commit of the currently running instance.
+    </p></td>
 </tr>
 <tr>
 <td><p><span class="term">local-commit s</span></p></td>
 <td><p>
-The commit that is currently installed. Restarting
-the application will cause this commit to be used.
-</p></td>
+      The commit that is currently installed. Restarting
+      the application will cause this commit to be used.
+    </p></td>
 </tr>
 <tr>
 <td><p><span class="term">remote-commit s</span></p></td>
 <td><p>
-The commit that is available as an update from the
-remote. Updating the application will deploy this
-commit.
-</p></td>
+      The commit that is available as an update from the
+      remote. Updating the application will deploy this
+      commit.
+    </p></td>
 </tr>
 </tbody>
 </table></div>
@@ -194,7 +196,7 @@ one (and only one) signal with progress 100.
 </p>
 <p>
 The following fields may be included in the info:
-</p>
+   </p>
 <div class="variablelist"><table border="0" class="variablelist">
 <colgroup>
 <col align="left" valign="top">
@@ -204,30 +206,30 @@ The following fields may be included in the info:
 <tr>
 <td><p><span class="term">n_ops u</span></p></td>
 <td><p>
-The number of operations that the update
-consists of.
-</p></td>
+         The number of operations that the update
+         consists of.
+       </p></td>
 </tr>
 <tr>
 <td><p><span class="term">op u</span></p></td>
 <td><p>
-The position of the currently active
-operation.
-</p></td>
+         The position of the currently active
+         operation.
+       </p></td>
 </tr>
 <tr>
 <td><p><span class="term">progress u</span></p></td>
 <td><p>
-The progress of the currently active
-operation, as a number between 0 and 100.
-</p></td>
+         The progress of the currently active
+         operation, as a number between 0 and 100.
+       </p></td>
 </tr>
 <tr>
 <td><p><span class="term">status u</span></p></td>
 <td>
 <p>
-The overall status of the update.
-</p>
+         The overall status of the update.
+         </p>
 <table border="0" summary="Simple list" class="simplelist">
 <tr><td>0: Running</td></tr>
 <tr><td>1: Empty. No update to install</td></tr>
@@ -235,20 +237,20 @@ The overall status of the update.
 <tr><td>3: Failed</td></tr>
 </table>
 <p>
-</p>
+       </p>
 </td>
 </tr>
 <tr>
 <td><p><span class="term">error s</span></p></td>
 <td><p>
-The error name, sent when status is Failed
-</p></td>
+         The error name, sent when status is Failed
+       </p></td>
 </tr>
 <tr>
 <td><p><span class="term">error_message s</span></p></td>
 <td><p>
-The error message, sent when status is Failed
-</p></td>
+         The error message, sent when status is Failed
+       </p></td>
 </tr>
 </tbody>
 </table></div>
