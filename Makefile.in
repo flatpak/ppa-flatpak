@@ -194,15 +194,16 @@ check_PROGRAMS = $(am__EXEEXT_5) $(am__EXEEXT_6)
 @BUILD_AUTO_SIDELOADING_TRUE@am__append_27 = sideload-repos-systemd/flatpak-sideload-usb-repo.service.in
 @BUILD_AUTO_SIDELOADING_TRUE@am__append_28 = sideload-repos-systemd/flatpak-sideload-usb-repo.service \
 @BUILD_AUTO_SIDELOADING_TRUE@	sideload-repos-systemd/flatpak-sideload-usb-repo.path
-@WITH_SYSTEM_DBUS_PROXY_TRUE@am__append_29 = FLATPAK_DBUSPROXY=$(DBUS_PROXY)
-@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_30 = FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && pwd)/flatpak-dbus-proxy
-@WITH_SYSTEM_BWRAP_TRUE@am__append_31 = FLATPAK_BWRAP=$(BWRAP)
-@WITH_SYSTEM_BWRAP_FALSE@am__append_32 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
-@ENABLE_INSTALLED_TESTS_TRUE@am__append_33 = -rpath $(installed_testdir)
-@ENABLE_INSTALLED_TESTS_FALSE@am__append_34 = -rpath  ${abs_builddir}
-@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_35 = flatpak-dbus-proxy
+@BUILD_AUTO_SIDELOADING_TRUE@am__append_29 = sideload-repos-systemd/tmpfiles.d/flatpak-sideload-repos.conf
+@WITH_SYSTEM_DBUS_PROXY_TRUE@am__append_30 = FLATPAK_DBUSPROXY=$(DBUS_PROXY)
+@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_31 = FLATPAK_DBUSPROXY=$$(cd $(top_builddir) && pwd)/flatpak-dbus-proxy
+@WITH_SYSTEM_BWRAP_TRUE@am__append_32 = FLATPAK_BWRAP=$(BWRAP)
+@WITH_SYSTEM_BWRAP_FALSE@am__append_33 = FLATPAK_BWRAP=$$(cd $(top_builddir) && pwd)/flatpak-bwrap
+@ENABLE_INSTALLED_TESTS_TRUE@am__append_34 = -rpath $(installed_testdir)
+@ENABLE_INSTALLED_TESTS_FALSE@am__append_35 = -rpath  ${abs_builddir}
+@WITH_SYSTEM_DBUS_PROXY_FALSE@am__append_36 = flatpak-dbus-proxy
 @WITH_SYSTEM_BWRAP_FALSE@bwrap_PROGRAMS = flatpak-bwrap$(EXEEXT)
-@INSTALL_GDM_ENV_FILE_TRUE@am__append_36 = flatpak.env
+@INSTALL_GDM_ENV_FILE_TRUE@am__append_37 = flatpak.env
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/subprojects/libglnx/libglnx.m4 \
@@ -1154,7 +1155,7 @@ am__dist_installed_test_keyring_DATA_DIST = tests/test-keyring/README \
 am__dist_installed_test_keyring2_DATA_DIST =  \
 	tests/test-keyring2/README tests/test-keyring2/pubring.gpg \
 	tests/test-keyring2/secring.gpg
-am__dist_tmpfiles_DATA_DIST =  \
+am__dist_tmpfiles_DATA_DIST = data/tmpfiles.d/flatpak.conf \
 	sideload-repos-systemd/tmpfiles.d/flatpak-sideload-repos.conf
 DATA = $(bashcompletion_DATA) $(dbus_service_DATA) \
 	$(dbussystemservice_DATA) $(dist_dbusconf_DATA) \
@@ -1473,8 +1474,6 @@ distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
-APPSTREAM_0_14_0_CFLAGS = @APPSTREAM_0_14_0_CFLAGS@
-APPSTREAM_0_14_0_LIBS = @APPSTREAM_0_14_0_LIBS@
 APPSTREAM_CFLAGS = @APPSTREAM_CFLAGS@
 APPSTREAM_LIBS = @APPSTREAM_LIBS@
 AR = @AR@
@@ -1718,6 +1717,7 @@ systemduserenvgendir = @systemduserenvgendir@
 systemduserunitdir = @systemduserunitdir@
 sysusersdir = @sysusersdir@
 target_alias = @target_alias@
+tmpfilesdir = @tmpfilesdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
@@ -1855,6 +1855,8 @@ systemduserunit_DATA = $(NULL) \
 	portal/flatpak-portal.service \
 	oci-authenticator/flatpak-oci-authenticator.service \
 	$(am__append_28)
+dist_tmpfiles_DATA = $(NULL) data/tmpfiles.d/flatpak.conf \
+	$(am__append_29)
 FLATPAK_BINDIR = $(bindir)
 ACLOCAL_AMFLAGS = -I m4 -I subprojects/libglnx ${ACLOCAL_FLAGS}
 AM_CPPFLAGS = -DFLATPAK_BINDIR=\"$(FLATPAK_BINDIR)\" \
@@ -2379,8 +2381,6 @@ revokefs_demo_LDADD = $(BASE_LIBS)
 @BUILD_SELINUX_MODULE_TRUE@	selinux/flatpak.if
 @BUILD_AUTO_SIDELOADING_TRUE@dist_libexec_SCRIPTS = sideload-repos-systemd/flatpak-create-sideload-symlinks.sh
 @BUILD_AUTO_SIDELOADING_TRUE@path_in_files = sideload-repos-systemd/flatpak-sideload-usb-repo.path.in
-@BUILD_AUTO_SIDELOADING_TRUE@tmpfilesdir = $(prefix)/lib/tmpfiles.d
-@BUILD_AUTO_SIDELOADING_TRUE@dist_tmpfiles_DATA = sideload-repos-systemd/tmpfiles.d/flatpak-sideload-repos.conf
 AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 \
 	FLATPAK_CONFIG_DIR=/dev/null FLATPAK_PORTAL=$$(cd \
 	$(top_builddir) && pwd)/flatpak-portal \
@@ -2391,8 +2391,8 @@ AM_TESTS_ENVIRONMENT = FLATPAK_TESTS_DEBUG=1 \
 	$(top_builddir) && pwd)$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH} \
 	LD_LIBRARY_PATH=$$(cd $(top_builddir)/.libs && \
 	pwd)$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH} PATH=$$(cd \
-	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_29) \
-	$(am__append_30) $(am__append_31) $(am__append_32)
+	$(top_builddir) && pwd):$${PATH} $(NULL) $(am__append_30) \
+	$(am__append_31) $(am__append_32) $(am__append_33)
 libtestlib_la_CFLAGS = \
 	$(AM_CFLAGS) \
 	$(BASE_CFLAGS) \
@@ -2539,7 +2539,7 @@ dist_installed_test_data = \
 test_ltlibraries = tests/libpreload.la
 tests_libpreload_la_SOURCES = tests/libpreload.c
 tests_libpreload_la_LDFLAGS = -avoid-version -module -no-undefined \
-	$(NULL) $(am__append_33) $(am__append_34)
+	$(NULL) $(am__append_34) $(am__append_35)
 installed_test_keyringdir = $(installed_testdir)/test-keyring
 installed_test_keyring2dir = $(installed_testdir)/test-keyring2
 @ENABLE_INSTALLED_TESTS_TRUE@dist_installed_test_keyring_DATA = \
@@ -2678,7 +2678,7 @@ profile_DATA = profile/flatpak.sh
 fishconfdir = $(datadir)/fish/vendor_conf.d
 fishconf_DATA = profile/flatpak.fish
 envdir = $(datadir)/gdm/env.d
-env_DATA = $(am__append_36)
+env_DATA = $(am__append_37)
 systemenvgendir = $(systemdsystemenvgendir)
 systemenvgen_SCRIPTS = env.d/60-flatpak-system-only
 userenvgendir = $(systemduserenvgendir)
