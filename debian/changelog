@@ -1,9 +1,12 @@
-flatpak (1.15.7-1) UNRELEASED; urgency=medium
+flatpak (1.15.7-1) experimental; urgency=medium
 
   * New upstream development release
   * d/copyright: Update
+  * d/flatpak.lintian-overrides: Remove an obsolete Lintian override
+  * d/control, d/rules: Activate dh-sequence-gir declaratively
+  * d/patches: Add a patch to fix the "as-installed" tests
 
- -- Simon McVittie <smcv@debian.org>  Wed, 27 Mar 2024 14:59:16 +0000
+ -- Simon McVittie <smcv@debian.org>  Wed, 27 Mar 2024 15:35:47 +0000
 
 flatpak (1.15.6-1) experimental; urgency=medium
 
