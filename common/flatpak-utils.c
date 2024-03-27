@@ -633,7 +633,7 @@ flatpak_get_bwrap (void)
 gboolean
 flatpak_bwrap_is_unprivileged (void)
 {
-  const char *path = g_find_program_in_path (flatpak_get_bwrap ());
+  g_autofree char *path = g_find_program_in_path (flatpak_get_bwrap ());
   struct stat st;
 
   /* Various features are supported only if bwrap exists and is not setuid */
@@ -3300,8 +3300,9 @@ populate_commit_data_cache (OstreeRepo *repo,
                       strcmp (m_key, "xa.data") != 0)
                     {
                       VarVariantRef v = var_metadata_entry_get_value (m);
-                      GVariant *vv = var_variant_dup_to_gvariant (v);
-                      g_variant_builder_add (&sparse_builder, "{sv}", m_key, g_variant_get_child_value (vv, 0));
+                      g_autoptr(GVariant) vv = g_variant_ref_sink (var_variant_dup_to_gvariant (v));
+                      g_autoptr(GVariant) child = g_variant_get_child_value (vv, 0);
+                      g_variant_builder_add (&sparse_builder, "{sv}", m_key, child);
                       has_sparse = TRUE;
                     }
                 }
@@ -3530,6 +3531,7 @@ _ostree_repo_static_delta_superblock_digest (OstreeRepo    *repo,
   glnx_autofd int fd = -1;
   guint8 digest[OSTREE_SHA256_DIGEST_LEN];
   gsize len;
+  gpointer data = NULL;
 
   if (!glnx_openat_rdonly (ostree_repo_get_dfd (repo), superblock, TRUE, &fd, error))
     return NULL;
@@ -3543,9 +3545,10 @@ _ostree_repo_static_delta_superblock_digest (OstreeRepo    *repo,
   len = sizeof digest;
   g_checksum_get_digest (checksum, digest, &len);
 
+  data = g_memdup2 (digest, len);
   return g_variant_new_from_data (G_VARIANT_TYPE ("ay"),
-                                  g_memdup2 (digest, len), len,
-                                  FALSE, g_free, FALSE);
+                                  data, len,
+                                  FALSE, g_free, data);
 }
 
 static char *
@@ -4630,7 +4633,7 @@ flatpak_repo_gc_digested_summaries (OstreeRepo *repo,
         {
           if (strcmp (ext, ".gz") == 0 && strlen (dent->d_name) == 64 + 3)
             {
-              char *sha256 = g_strndup (dent->d_name, 64);
+              g_autofree char *sha256 = g_strndup (dent->d_name, 64);
 
               /* Keep all the referenced summaries */
               if (g_hash_table_contains (digested_summary_cache, sha256))
@@ -4646,7 +4649,7 @@ flatpak_repo_gc_digested_summaries (OstreeRepo *repo,
               const char *dash = strchr (dent->d_name, '-');
               if (dash != NULL && dash < ext && (ext - dash) == 1 + 64)
                 {
-                  char *to_sha256 = g_strndup (dash + 1, 64);
+                  g_autofree char *to_sha256 = g_strndup (dash + 1, 64);
 
                   /* Only keep deltas going to a generated summary */
                   if (g_hash_table_contains (digested_summaries, to_sha256))

@@ -237,7 +237,7 @@ parse_mountinfo (int  proc_fd,
   MountInfo *end_tab;
   int n_mounts;
   char *line;
-  int i;
+  unsigned int i;
   int max_id;
   unsigned int n_lines;
   int root;
@@ -247,7 +247,7 @@ parse_mountinfo (int  proc_fd,
     die_with_error ("Can't open /proc/self/mountinfo");
 
   n_lines = count_lines (mountinfo);
-  lines = xcalloc (n_lines * sizeof (MountInfoLine));
+  lines = xcalloc (n_lines, sizeof (MountInfoLine));
 
   max_id = 0;
   line = mountinfo;
@@ -310,11 +310,11 @@ parse_mountinfo (int  proc_fd,
 
   if (root == -1)
     {
-      mount_tab = xcalloc (sizeof (MountInfo) * (1));
+      mount_tab = xcalloc (1, sizeof (MountInfo));
       return steal_pointer (&mount_tab);
     }
 
-  by_id = xcalloc ((max_id + 1) * sizeof (MountInfoLine*));
+  by_id = xcalloc (max_id + 1, sizeof (MountInfoLine*));
   for (i = 0; i < n_lines; i++)
     by_id[lines[i].id] = &lines[i];
 
@@ -366,7 +366,7 @@ parse_mountinfo (int  proc_fd,
     }
 
   n_mounts = count_mounts (&lines[root]);
-  mount_tab = xcalloc (sizeof (MountInfo) * (n_mounts + 1));
+  mount_tab = xcalloc (n_mounts + 1, sizeof (MountInfo));
 
   end_tab = collect_mounts (&mount_tab[0], &lines[root]);
   assert (end_tab == &mount_tab[n_mounts]);
@@ -571,7 +571,24 @@ die_with_bind_result (bind_mount_result res,
   /* message is leaked, but we're exiting unsuccessfully anyway, so ignore */
 
   if (want_errno)
-    fprintf (stderr, ": %s", strerror (saved_errno));
+    {
+      switch (res)
+        {
+          case BIND_MOUNT_ERROR_MOUNT:
+          case BIND_MOUNT_ERROR_REMOUNT_DEST:
+          case BIND_MOUNT_ERROR_REMOUNT_SUBMOUNT:
+            fprintf (stderr, ": %s", mount_strerror (saved_errno));
+            break;
+
+          case BIND_MOUNT_ERROR_REALPATH_DEST:
+          case BIND_MOUNT_ERROR_REOPEN_DEST:
+          case BIND_MOUNT_ERROR_READLINK_DEST_PROC_FD:
+          case BIND_MOUNT_ERROR_FIND_DEST_MOUNT:
+          case BIND_MOUNT_SUCCESS:
+          default:
+            fprintf (stderr, ": %s", strerror (saved_errno));
+        }
+    }
 
   fprintf (stderr, "\n");
   exit (1);

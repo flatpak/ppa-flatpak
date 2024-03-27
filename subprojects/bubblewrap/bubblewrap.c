@@ -72,35 +72,36 @@ static const char *opt_exec_label = NULL;
 static const char *opt_file_label = NULL;
 static bool opt_as_pid_1;
 
-const char *opt_chdir_path = NULL;
-bool opt_assert_userns_disabled = FALSE;
-bool opt_disable_userns = FALSE;
-bool opt_unshare_user = FALSE;
-bool opt_unshare_user_try = FALSE;
-bool opt_unshare_pid = FALSE;
-bool opt_unshare_ipc = FALSE;
-bool opt_unshare_net = FALSE;
-bool opt_unshare_uts = FALSE;
-bool opt_unshare_cgroup = FALSE;
-bool opt_unshare_cgroup_try = FALSE;
-bool opt_needs_devpts = FALSE;
-bool opt_new_session = FALSE;
-bool opt_die_with_parent = FALSE;
-uid_t opt_sandbox_uid = -1;
-gid_t opt_sandbox_gid = -1;
-int opt_sync_fd = -1;
-int opt_block_fd = -1;
-int opt_userns_block_fd = -1;
-int opt_info_fd = -1;
-int opt_json_status_fd = -1;
-int opt_seccomp_fd = -1;
-const char *opt_sandbox_hostname = NULL;
-char *opt_args_data = NULL;  /* owned */
-int opt_userns_fd = -1;
-int opt_userns2_fd = -1;
-int opt_pidns_fd = -1;
-int next_perms = -1;
-size_t next_size_arg = 0;
+static const char *opt_argv0 = NULL;
+static const char *opt_chdir_path = NULL;
+static bool opt_assert_userns_disabled = FALSE;
+static bool opt_disable_userns = FALSE;
+static bool opt_unshare_user = FALSE;
+static bool opt_unshare_user_try = FALSE;
+static bool opt_unshare_pid = FALSE;
+static bool opt_unshare_ipc = FALSE;
+static bool opt_unshare_net = FALSE;
+static bool opt_unshare_uts = FALSE;
+static bool opt_unshare_cgroup = FALSE;
+static bool opt_unshare_cgroup_try = FALSE;
+static bool opt_needs_devpts = FALSE;
+static bool opt_new_session = FALSE;
+static bool opt_die_with_parent = FALSE;
+static uid_t opt_sandbox_uid = -1;
+static gid_t opt_sandbox_gid = -1;
+static int opt_sync_fd = -1;
+static int opt_block_fd = -1;
+static int opt_userns_block_fd = -1;
+static int opt_info_fd = -1;
+static int opt_json_status_fd = -1;
+static int opt_seccomp_fd = -1;
+static const char *opt_sandbox_hostname = NULL;
+static char *opt_args_data = NULL;  /* owned */
+static int opt_userns_fd = -1;
+static int opt_userns2_fd = -1;
+static int opt_pidns_fd = -1;
+static int next_perms = -1;
+static size_t next_size_arg = 0;
 
 #define CAP_TO_MASK_0(x) (1L << ((x) & 31))
 #define CAP_TO_MASK_1(x) CAP_TO_MASK_0(x - 32)
@@ -212,7 +213,7 @@ static Type *last_ ## name = NULL; \
 static inline Type * \
 _ ## name ## _append_new (void) \
 { \
-  Type *self = xcalloc (sizeof (Type)); \
+  Type *self = xcalloc (1, sizeof (Type)); \
 \
   if (last_ ## name != NULL) \
     last_ ## name ->next = self; \
@@ -309,6 +310,7 @@ usage (int ecode, FILE *out)
            "    --help                       Print this help\n"
            "    --version                    Print version\n"
            "    --args FD                    Parse NUL-separated args from FD\n"
+           "    --argv0 VALUE                Set argv[0] to the value VALUE before running the program\n"
            "    --unshare-all                Unshare every namespace we support by default\n"
            "    --share-net                  Retain the network namespace (can only combine with --unshare-all)\n"
            "    --unshare-user               Create new user namespace (may be automatically implied if not setuid)\n"
@@ -496,7 +498,7 @@ monitor_child (int event_fd, pid_t child_pid, int setup_finished_fd)
   int num_fds;
   struct signalfd_siginfo fdsi;
   int dont_close[] = {-1, -1, -1, -1};
-  int j = 0;
+  unsigned int j = 0;
   int exitc;
   pid_t died_pid;
   int died_status;
@@ -944,14 +946,6 @@ drop_privs (bool keep_requested_caps,
     die_with_error ("can't set dumpable");
 }
 
-static char *
-get_newroot_path (const char *path)
-{
-  while (*path == '/')
-    path++;
-  return strconcat ("/newroot/", path);
-}
-
 static void
 write_uid_gid_map (uid_t sandbox_uid,
                    uid_t parent_uid,
@@ -965,7 +959,7 @@ write_uid_gid_map (uid_t sandbox_uid,
   cleanup_free char *gid_map = NULL;
   cleanup_free char *dir = NULL;
   cleanup_fd int dir_fd = -1;
-  uid_t old_fsuid = -1;
+  uid_t old_fsuid = (uid_t)-1;
 
   if (pid == -1)
     dir = xstrdup ("self");
@@ -1014,7 +1008,7 @@ write_uid_gid_map (uid_t sandbox_uid,
   if (is_privileged)
     {
       setfsuid (old_fsuid);
-      if (setfsuid (-1) != real_uid)
+      if ((uid_t) setfsuid (-1) != real_uid)
         die ("Unable to re-set fsuid");
     }
 }
@@ -1065,7 +1059,7 @@ privileged_op (int         privileged_op_socket,
       if (arg2 != NULL)
         strcpy ((char *) buffer + arg2_offset, arg2);
 
-      if (write (privileged_op_socket, buffer, buffer_size) != buffer_size)
+      if (write (privileged_op_socket, buffer, buffer_size) != (ssize_t)buffer_size)
         die ("Can't write to privileged_op_socket");
 
       if (read (privileged_op_socket, buffer, 1) != 1)
@@ -1119,7 +1113,7 @@ privileged_op (int         privileged_op_socket,
 
     case PRIV_SEP_OP_PROC_MOUNT:
       if (mount ("proc", arg1, "proc", MS_NOSUID | MS_NOEXEC | MS_NODEV, NULL) != 0)
-        die_with_error ("Can't mount proc on %s", arg1);
+        die_with_mount_error ("Can't mount proc on %s", arg1);
       break;
 
     case PRIV_SEP_OP_TMPFS_MOUNT:
@@ -1138,19 +1132,19 @@ privileged_op (int         privileged_op_socket,
 
         cleanup_free char *opt = label_mount (mode, opt_file_label);
         if (mount ("tmpfs", arg1, "tmpfs", MS_NOSUID | MS_NODEV, opt) != 0)
-          die_with_error ("Can't mount tmpfs on %s", arg1);
+          die_with_mount_error ("Can't mount tmpfs on %s", arg1);
         break;
       }
 
     case PRIV_SEP_OP_DEVPTS_MOUNT:
       if (mount ("devpts", arg1, "devpts", MS_NOSUID | MS_NOEXEC,
                  "newinstance,ptmxmode=0666,mode=620") != 0)
-        die_with_error ("Can't mount devpts on %s", arg1);
+        die_with_mount_error ("Can't mount devpts on %s", arg1);
       break;
 
     case PRIV_SEP_OP_MQUEUE_MOUNT:
       if (mount ("mqueue", arg1, "mqueue", 0, NULL) != 0)
-        die_with_error ("Can't mount mqueue on %s", arg1);
+        die_with_mount_error ("Can't mount mqueue on %s", arg1);
       break;
 
     case PRIV_SEP_OP_SET_HOSTNAME:
@@ -1182,7 +1176,7 @@ setup_newroot (bool unshare_pid,
       cleanup_free char *source = NULL;
       cleanup_free char *dest = NULL;
       int source_mode = 0;
-      int i;
+      unsigned int i;
 
       if (op->source &&
           op->type != SETUP_MAKE_SYMLINK)
@@ -1207,12 +1201,12 @@ setup_newroot (bool unshare_pid,
            * inaccessible by that group. */
           if (op->perms >= 0 &&
               (op->perms & 0070) == 0)
-            parent_mode &= ~0050;
+            parent_mode &= ~0050U;
 
           /* The same, but for users other than the owner and group. */
           if (op->perms >= 0 &&
               (op->perms & 0007) == 0)
-            parent_mode &= ~0005;
+            parent_mode &= ~0005U;
 
           dest = get_newroot_path (op->dest);
           if (mkdir_with_parents (dest, parent_mode, FALSE) != 0)
@@ -1474,7 +1468,25 @@ setup_newroot (bool unshare_pid,
         case SETUP_MAKE_SYMLINK:
           assert (op->source != NULL);  /* guaranteed by the constructor */
           if (symlink (op->source, dest) != 0)
-            die_with_error ("Can't make symlink at %s", op->dest);
+            {
+              if (errno == EEXIST)
+                {
+                  cleanup_free char *existing = readlink_malloc (dest);
+                  if (existing == NULL)
+                    {
+                      if (errno == EINVAL)
+                        die ("Can't make symlink at %s: destination exists and is not a symlink", op->dest);
+                      else
+                        die_with_error ("Can't make symlink at %s: destination exists, and cannot read symlink target", op->dest);
+                    }
+
+                  if (strcmp (existing, op->source) == 0)
+                    break;
+
+                  die ("Can't make symlink at %s: existing destination is %s", op->dest, existing);
+                }
+              die_with_error ("Can't make symlink at %s", op->dest);
+            }
           break;
 
         case SETUP_SET_HOSTNAME:
@@ -1593,7 +1605,7 @@ read_priv_sec_op (int          read_socket,
   if (rec_len == 0)
     exit (1); /* Privileged helper died and printed error, so exit silently */
 
-  if (rec_len < sizeof (PrivSepOp))
+  if ((size_t)rec_len < sizeof (PrivSepOp))
     die ("Invalid size %zd from unprivileged helper", rec_len);
 
   /* Guarantee zero termination of any strings */
@@ -1647,7 +1659,7 @@ parse_args_recurse (int          *argcp,
    * I picked 9000 because the Internet told me to and it was hard to
    * resist.
    */
-  static const uint32_t MAX_ARGS = 9000;
+  static const int32_t MAX_ARGS = 9000;
 
   if (*total_parsed_argc_p > MAX_ARGS)
     die ("Exceeded maximum number of arguments %u", MAX_ARGS);
@@ -1708,7 +1720,7 @@ parse_args_recurse (int          *argcp,
                 p++;
             }
 
-          data_argv = xcalloc (sizeof (char *) * (data_argc + 1));
+          data_argv = xcalloc (data_argc + 1, sizeof (char *));
 
           i = 0;
           p = opt_args_data;
@@ -1727,6 +1739,18 @@ parse_args_recurse (int          *argcp,
 
           argv += 1;
           argc -= 1;
+        }
+      else if (strcmp (arg, "--argv0") == 0)
+        {
+          if (argc < 2)
+            die ("--argv0 takes one argument");
+
+          if (opt_argv0 != NULL)
+            die ("--argv0 used multiple times");
+
+          opt_argv0 = argv[1];
+          argv++;
+          argc--;
         }
       else if (strcmp (arg, "--unshare-all") == 0)
         {
@@ -2300,7 +2324,7 @@ parse_args_recurse (int          *argcp,
           if (argc < 2)
             die ("--uid takes an argument");
 
-          if (opt_sandbox_uid != -1)
+          if (opt_sandbox_uid != (uid_t)-1)
             warn_only_last_option ("--uid");
 
           the_uid = strtol (argv[1], &endptr, 10);
@@ -2320,7 +2344,7 @@ parse_args_recurse (int          *argcp,
           if (argc < 2)
             die ("--gid takes an argument");
 
-          if (opt_sandbox_gid != -1)
+          if (opt_sandbox_gid != (gid_t)-1)
             warn_only_last_option ("--gid");
 
           the_gid = strtol (argv[1], &endptr, 10);
@@ -2641,6 +2665,7 @@ main (int    argc,
   int res UNUSED;
   cleanup_free char *args_data UNUSED = NULL;
   int intermediate_pids_sockets[2] = {-1, -1};
+  const char *exec_path = NULL;
 
   /* Handle --version early on before we try to acquire/drop
    * any capabilities so it works in a build environment;
@@ -2768,9 +2793,9 @@ main (int    argc,
 
   __debug__ (("Creating root mount point\n"));
 
-  if (opt_sandbox_uid == -1)
+  if (opt_sandbox_uid == (uid_t)-1)
     opt_sandbox_uid = real_uid;
-  if (opt_sandbox_gid == -1)
+  if (opt_sandbox_gid == (gid_t)-1)
     opt_sandbox_gid = real_gid;
 
   if (!opt_unshare_user && opt_userns_fd == -1 && opt_sandbox_uid != real_uid)
@@ -3053,11 +3078,11 @@ main (int    argc,
    * receive mounts from the real root, but don't
    * propagate mounts to the real root. */
   if (mount (NULL, "/", NULL, MS_SILENT | MS_SLAVE | MS_REC, NULL) < 0)
-    die_with_error ("Failed to make / slave");
+    die_with_mount_error ("Failed to make / slave");
 
   /* Create a tmpfs which we will use as / in the namespace */
   if (mount ("tmpfs", base_path, "tmpfs", MS_NODEV | MS_NOSUID, NULL) != 0)
-    die_with_error ("Failed to mount tmpfs");
+    die_with_mount_error ("Failed to mount tmpfs");
 
   old_cwd = get_current_dir_name ();
 
@@ -3076,7 +3101,7 @@ main (int    argc,
     die_with_error ("Creating newroot failed");
 
   if (mount ("newroot", "newroot", NULL, MS_SILENT | MS_MGC_VAL | MS_BIND | MS_REC, NULL) < 0)
-    die_with_error ("setting up newroot bind");
+    die_with_mount_error ("setting up newroot bind");
 
   if (mkdir ("oldroot", 0755))
     die_with_error ("Creating oldroot failed");
@@ -3142,7 +3167,7 @@ main (int    argc,
 
   /* The old root better be rprivate or we will send unmount events to the parent namespace */
   if (mount ("oldroot", "oldroot", NULL, MS_SILENT | MS_REC | MS_PRIVATE, NULL) != 0)
-    die_with_error ("Failed to make old root rprivate");
+    die_with_mount_error ("Failed to make old root rprivate");
 
   if (umount2 ("oldroot", MNT_DETACH))
     die_with_error ("unmount old root");
@@ -3351,7 +3376,11 @@ main (int    argc,
          we don't want to error out here */
     }
 
-  if (execvp (argv[0], argv) == -1)
+  exec_path = argv[0];
+  if (opt_argv0 != NULL)
+    argv[0] = (char *) opt_argv0;
+
+  if (execvp (exec_path, argv) == -1)
     {
       if (setup_finished_pipe[1] != -1)
         {
@@ -3362,7 +3391,7 @@ main (int    argc,
           /* Ignore res, if e.g. the parent died and closed setup_finished_pipe[0]
              we don't want to error out here */
         }
-      die_with_error ("execvp %s", argv[0]);
+      die_with_error ("execvp %s", exec_path);
     }
 
   return 0;

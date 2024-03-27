@@ -6,7 +6,7 @@
 
 <refentryinfo>
   <title>bwrap</title>
-  <productname>Project Atomic</productname>
+  <productname>Containers</productname>
   <authorgroup>
     <author>
       <contrib>Developer</contrib>
@@ -42,7 +42,8 @@
 
 <refsect1><title>Description</title>
 <para>
-  <command>bwrap</command> is a privileged helper for container setup. You
+  <command>bwrap</command> is a unprivileged low-level sandboxing tool
+  (optionally setuid on older distributions). You
   are unlikely to use it directly from the commandline, although that is possible.
 </para>
 <para>
@@ -90,6 +91,10 @@
         This option can be used multiple times to parse options from
         multiple sources.
       </para></listitem>
+    </varlistentry>
+    <varlistentry>
+      <term><option>--argv0 <arg choice="plain">VALUE</arg></option></term>
+      <listitem><para>Set argv[0] to the value <arg choice="plain">VALUE</arg> before running the program</para></listitem>
     </varlistentry>
   </variablelist>
   <para>Options related to kernel namespaces:</para>
@@ -359,7 +364,16 @@
     </varlistentry>
     <varlistentry>
       <term><option>--symlink <arg choice="plain">SRC</arg> <arg choice="plain">DEST</arg></option></term>
-      <listitem><para>Create a symlink at <arg choice="plain">DEST</arg> with target <arg choice="plain">SRC</arg></para></listitem>
+      <listitem>
+        <para>Create a symlink at <arg choice="plain">DEST</arg> with target
+          <arg choice="plain">SRC</arg>.</para>
+        <para>Since version 0.9.0, it is not considered to be an error if
+          <arg choice="plain">DEST</arg> already exists as a symbolic link and its
+          target is exactly <arg choice="plain">SRC</arg>.</para>
+        <para>Before version 0.9.0, if <arg choice="plain">DEST</arg> already
+          existed, this would be treated as an error (even if its target
+          was identical to <arg choice="plain">SRC</arg>).</para>
+      </listitem>
     </varlistentry>
     <varlistentry>
       <term><option>--chmod <arg choice="plain">OCTAL</arg> <arg choice="plain">PATH</arg></option></term>
@@ -463,7 +477,9 @@
         </para><para>
         Note: In a general sandbox, if you don't use --new-session, it is
         recommended to use seccomp to disallow the TIOCSTI ioctl, otherwise
-        the application can feed keyboard input to the terminal.
+        the application can feed keyboard input to the terminal
+        which can e.g. lead to out-of-sandbox command execution
+        (see CVE-2017-5226).
       </para></listitem>
     </varlistentry>
     <varlistentry>
@@ -484,7 +500,8 @@
     <varlistentry>
       <term><option>--cap-add <arg choice="plain">CAP</arg></option></term>
       <listitem><para>
-        Add the specified capability when running as privileged user.  It accepts
+        Add the specified capability <arg choice="plain">CAP</arg>, e.g.
+        CAP_DAC_READ_SEARCH, when running as privileged user.  It accepts
         the special value ALL to add all the permitted caps.
       </para></listitem>
     </varlistentry>
