@@ -34,6 +34,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <glib-unix.h>
+
 #include "flatpak-dbus-generated.h"
 #include "flatpak-dir-private.h"
 #include "flatpak-error.h"
@@ -144,6 +146,7 @@ ongoing_pull_free (OngoingPull *pull)
   close (pull->client_socket);
   close (pull->backend_exit_socket);
 
+  g_clear_object (&pull->cancellable);
   g_slice_free (OngoingPull, pull);
 }
 
@@ -1495,7 +1498,7 @@ revokefs_fuse_backend_child_setup (gpointer user_data)
   /* We use 5 instead of 3 here, because fd 3 is the inherited SOCK_SEQPACKET
    * socket and fd 4 is the --close-with-fd pipe; both were dup2()'d into place
    * before this by GSubprocess */
-  flatpak_close_fds_workaround (5);
+  g_fdwalk_set_cloexec (5);
 
   if (setgid (passwd->pw_gid) == -1)
     {
@@ -1580,7 +1583,8 @@ ongoing_pull_new (FlatpakSystemHelper   *object,
       return NULL;
     }
 
-  /* We use INHERIT_FDS to work around dead-lock, see flatpak_close_fds_workaround */
+  /* We use INHERIT_FDS and close them in the child_setup
+   * to work around a deadlock in GLib < 2.60 */
   launcher = g_subprocess_launcher_new (G_SUBPROCESS_FLAGS_INHERIT_FDS);
   g_subprocess_launcher_set_child_setup (launcher, revokefs_fuse_backend_child_setup, passwd, NULL);
   g_subprocess_launcher_take_fd (launcher, sockets[0], 3);
@@ -2314,7 +2318,7 @@ main (int    argc,
   gboolean replace;
   gboolean show_version;
   GBusNameOwnerFlags flags;
-  GOptionContext *context;
+  g_autoptr(GOptionContext) context = NULL;
   g_autoptr(GError) error = NULL;
   const GOptionEntry options[] = {
     { "replace", 'r', 0, G_OPTION_ARG_NONE, &replace,  "Replace old daemon.", NULL },

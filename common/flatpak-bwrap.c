@@ -34,6 +34,7 @@
 
 #include <glib/gi18n-lib.h>
 
+#include <glib-unix.h>
 #include <gio/gio.h>
 #include "libglnx.h"
 
@@ -81,6 +82,7 @@ flatpak_bwrap_free (FlatpakBwrap *bwrap)
   g_array_unref (bwrap->noinherit_fds);
   g_array_unref (bwrap->fds);
   g_strfreev (bwrap->envp);
+  g_clear_pointer (&bwrap->runtime_dir_members, g_ptr_array_unref);
   g_free (bwrap);
 }
 
@@ -498,8 +500,14 @@ flatpak_bwrap_child_setup (GArray *fd_array,
 {
   int i;
 
+  /* There is a dead-lock in glib versions before 2.60 when it closes
+   * the fds. See:  https://gitlab.gnome.org/GNOME/glib/merge_requests/490
+   * This was hitting the test-suite a lot, so we work around it by using
+   * the G_SPAWN_LEAVE_DESCRIPTORS_OPEN/G_SUBPROCESS_FLAGS_INHERIT_FDS flag
+   * and setting CLOEXEC ourselves.
+   */
   if (close_fd_workaround)
-    flatpak_close_fds_workaround (3);
+    g_fdwalk_set_cloexec (3);
 
   /* If no fd_array was specified, don't care. */
   if (fd_array == NULL)
@@ -528,6 +536,16 @@ flatpak_bwrap_child_setup_cb (gpointer user_data)
   GArray *fd_array = user_data;
 
   flatpak_bwrap_child_setup (fd_array, TRUE);
+}
+
+/* Unset FD_CLOEXEC on the array of fds passed in @user_data,
+ * but do not set FD_CLOEXEC on all other fds */
+void
+flatpak_bwrap_child_setup_inherit_fds_cb (gpointer user_data)
+{
+  GArray *fd_array = user_data;
+
+  flatpak_bwrap_child_setup (fd_array, FALSE);
 }
 
 /* Add a --sync-fd argument for bwrap(1). Returns the write end of the pipe on

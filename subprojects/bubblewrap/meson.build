@@ -1,7 +1,7 @@
 project(
   'bubblewrap',
   'c',
-  version : '0.8.0',
+  version : '0.9.0',
   meson_version : '>=0.49.0',
   default_options : [
     'warning_level=2',
@@ -36,11 +36,6 @@ add_project_arguments(
     # Extra warnings specific to bubblewrap
     '-Werror=switch-default',
     '-Wswitch-enum',
-
-    # Meson warning_level=2 would do this, but we are not fully
-    # signedness-safe yet
-    '-Wno-sign-compare',
-    '-Wno-error=sign-compare',
 
     # Deliberately not warning about these, ability to zero-initialize
     # a struct is a feature

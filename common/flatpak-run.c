@@ -534,6 +534,9 @@ static const ExportData default_exports[] = {
    * outside the sandbox is somewhere else. Don't allow a different
    * setting from outside the sandbox to overwrite this. */
   {"XDG_RUNTIME_DIR", NULL},
+  /* Ensure our container environment variable takes precedence over the one
+   * set by a container manager. */
+  {"container", NULL},
 
   /* Some env vars are common enough and will affect the sandbox badly
      if set on the host. We clear these always. If updating this list,
@@ -2640,7 +2643,8 @@ regenerate_ld_cache (GPtrArray    *base_argv_array,
   g_array_append_vals (combined_fd_array, base_fd_array->data, base_fd_array->len);
   g_array_append_vals (combined_fd_array, bwrap->fds->data, bwrap->fds->len);
 
-  /* We use LEAVE_DESCRIPTORS_OPEN to work around dead-lock, see flatpak_close_fds_workaround */
+  /* We use LEAVE_DESCRIPTORS_OPEN and close them in the child_setup
+   * to work around a deadlock in GLib < 2.60 */
   if (!g_spawn_sync (NULL,
                      (char **) bwrap->argv->pdata,
                      bwrap->envp,
@@ -2707,15 +2711,27 @@ check_parental_controls (FlatpakDecomposed *app_ref,
   g_autoptr(GDesktopAppInfo) app_info = NULL;
   gboolean allowed = FALSE;
 
-  system_bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, error);
+  system_bus = g_bus_get_sync (G_BUS_TYPE_SYSTEM, NULL, &local_error);
   if (system_bus == NULL)
-    return FALSE;
+    {
+      /* Since the checks below allow access when malcontent or
+       * accounts-service aren't available on the bus, this whole routine can
+       * be trivially bypassed by setting DBUS_SYSTEM_BUS_ADDRESS to a
+       * temporary dbus-daemon. Not being able to connect to the system bus is
+       * basically equivalent.
+       */
+      g_debug ("Skipping parental controls check for %s since D-Bus system "
+               "bus connection failed: %s",
+               flatpak_decomposed_get_ref (app_ref),
+               local_error ? local_error->message : "unknown reason");
+      return TRUE;
+    }
 
   manager = mct_manager_new (system_bus);
   app_filter = mct_manager_get_app_filter (manager, getuid (),
-                                           MCT_GET_APP_FILTER_FLAGS_INTERACTIVE,
+                                           MCT_MANAGER_GET_VALUE_FLAGS_INTERACTIVE,
                                            cancellable, &local_error);
-  if (g_error_matches (local_error, MCT_APP_FILTER_ERROR, MCT_APP_FILTER_ERROR_DISABLED))
+  if (g_error_matches (local_error, MCT_MANAGER_ERROR, MCT_MANAGER_ERROR_DISABLED))
     {
       g_info ("Skipping parental controls check for %s since parental "
               "controls are disabled globally", flatpak_decomposed_get_ref (app_ref));
@@ -3075,6 +3091,12 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
             {
               do_migrate = FALSE; /* Don't migrate older things, they are likely symlinks to this dir */
 
+              /* Don't migrate a symlink pointing to the new data dir. It was likely left over
+               * from a previous migration and would end up pointing to itself */
+              if (g_file_info_get_is_symlink (previous_app_id_dir_info) &&
+                  g_strcmp0 (g_file_info_get_symlink_target (previous_app_id_dir_info), app_id) == 0)
+                break;
+
               if (!flatpak_file_rename (previous_app_id_dir, real_app_id_dir, cancellable, &local_error))
                 {
                   g_warning (_("Failed to migrate old app data directory %s to new name %s: %s"),
@@ -3426,13 +3448,21 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
       char pid_str[64];
       g_autofree char *pid_path = NULL;
       GSpawnFlags spawn_flags;
+      GSpawnChildSetupFunc child_setup;
 
       spawn_flags = G_SPAWN_SEARCH_PATH;
       if (flags & FLATPAK_RUN_FLAG_DO_NOT_REAP ||
           (flags & FLATPAK_RUN_FLAG_BACKGROUND) == 0)
         spawn_flags |= G_SPAWN_DO_NOT_REAP_CHILD;
 
-      /* We use LEAVE_DESCRIPTORS_OPEN to work around dead-lock, see flatpak_close_fds_workaround */
+      if (flags & FLATPAK_RUN_FLAG_BACKGROUND)
+        child_setup = flatpak_bwrap_child_setup_cb;
+      else
+        child_setup = flatpak_bwrap_child_setup_inherit_fds_cb;
+
+      /* Even in the case where we want them closed, we use
+       * LEAVE_DESCRIPTORS_OPEN and close them in the child_setup
+       * to work around a deadlock in GLib < 2.60 */
       spawn_flags |= G_SPAWN_LEAVE_DESCRIPTORS_OPEN;
 
       /* flatpak_bwrap_envp_to_args() moved the environment variables to
@@ -3445,7 +3475,7 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
                           (char **) bwrap->argv->pdata,
                           bwrap->envp,
                           spawn_flags,
-                          flatpak_bwrap_child_setup_cb, bwrap->fds,
+                          child_setup, bwrap->fds,
                           &child_pid,
                           error))
         return FALSE;
