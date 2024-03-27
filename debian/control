@@ -15,6 +15,7 @@ Build-Depends:
  debhelper-compat (= 13),
  desktop-file-utils <!nocheck>,
  dh-exec (>= 0.23~),
+ dh-sequence-gir,
  docbook-xml <!nodoc>,
  docbook-xsl <!nodoc>,
  fuse3 <!nocheck>,

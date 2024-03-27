@@ -7,7 +7,7 @@ include /usr/share/dpkg/default.mk
 binaries := $(shell dh_listpackages)
 
 %:
-	dh $@ --buildsystem=meson --with=gir
+	dh $@ --buildsystem=meson
 
 override_dh_autoreconf:
 
