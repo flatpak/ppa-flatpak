@@ -1,4 +1,4 @@
-flatpak (1.15.8-1) UNRELEASED; urgency=high
+flatpak (1.15.8-1) experimental; urgency=high
 
   * New upstream development release
     - Don't allow an executable name to be misinterpreted as a command-line
@@ -7,7 +7,7 @@ flatpak (1.15.8-1) UNRELEASED; urgency=high
       file with access to files outside the sandbox. (CVE-2024-32462)
   * Merge packaging from unstable
 
- -- Simon McVittie <smcv@debian.org>  Wed, 17 Apr 2024 20:01:27 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 17 Apr 2024 20:17:44 +0100
 
 flatpak (1.15.7-1) experimental; urgency=medium
 
