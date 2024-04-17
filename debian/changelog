@@ -1,5 +1,11 @@
-flatpak (1.14.5-2) UNRELEASED; urgency=medium
+flatpak (1.14.6-1) UNRELEASED; urgency=high
 
+  * New upstream stable release 1.14.6
+    - Don't allow an executable name to be misinterpreted as a command-line
+      option for bwrap(1). This prevents a sandbox escape where a malicious
+      or compromised app could ask xdg-desktop-portal to generate a .desktop
+      file with access to files outside the sandbox. (CVE-2024-32462)
+    - Don't parse `<developer><name/></developer>` as the application name
   * d/control: Drop alternative dependencies on transitional policykit-1.
     polkitd was released in Debian 12 and Ubuntu 22.04.
 
