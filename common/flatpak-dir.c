@@ -7155,6 +7155,7 @@ flatpak_dir_run_triggers (FlatpakDir   *self,
                                   "--proc", "/proc",
                                   "--dev", "/dev",
                                   "--bind", basedir, basedir,
+                                  "--",
                                   NULL);
 #endif
           flatpak_bwrap_add_args (bwrap,
@@ -8384,7 +8385,7 @@ apply_extra_data (FlatpakDir   *self,
 
   flatpak_bwrap_envp_to_args (bwrap);
 
-  flatpak_bwrap_add_arg (bwrap, "/app/bin/apply_extra");
+  flatpak_bwrap_add_args (bwrap, "--", "/app/bin/apply_extra", NULL);
 
   flatpak_bwrap_finish (bwrap);
 
