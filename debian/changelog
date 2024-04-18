@@ -1,4 +1,4 @@
-flatpak (1.14.6-1~flatpak1~20.04.1) UNRELEASED; urgency=medium
+flatpak (1.14.6-1~flatpak1~20.04.1) focal; urgency=high
 
   * Backport to Ubuntu 20.04 'focal'
     - Revert libmalcontent integration
@@ -15,7 +15,7 @@ flatpak (1.14.6-1~flatpak1~20.04.1) UNRELEASED; urgency=medium
       + dbus-daemon -> dbus
       + polkitd -> policykit-1
 
- -- Simon McVittie <smcv@debian.org>  Thu, 18 Apr 2024 20:28:33 +0100
+ -- Simon McVittie <smcv@debian.org>  Thu, 18 Apr 2024 20:59:59 +0100
 
 flatpak (1.14.6-1~flatpak1~22.04.1) jammy; urgency=high
 
