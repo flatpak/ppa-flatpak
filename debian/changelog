@@ -1,4 +1,4 @@
-flatpak (1.14.6-1~flatpak1~22.04.1) UNRELEASED; urgency=high
+flatpak (1.14.6-1~flatpak1~22.04.1) jammy; urgency=high
 
   * New upstream security fix release
   * Remaining changes relative to Debian:
@@ -10,7 +10,7 @@ flatpak (1.14.6-1~flatpak1~22.04.1) UNRELEASED; urgency=high
     - Set changelog merge driver for debian/changelog
     - Add PPA backport notes to debian/README.source
 
- -- Simon McVittie <smcv@debian.org>  Thu, 18 Apr 2024 19:20:52 +0100
+ -- Simon McVittie <smcv@debian.org>  Thu, 18 Apr 2024 20:19:22 +0100
 
 flatpak (1.14.6-1) unstable; urgency=high
 
