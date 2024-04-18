@@ -1,3 +1,9 @@
+flatpak (1.12.9-0+flatpak1~16.04.1) UNRELEASED; urgency=medium
+
+  * New upstream security fix release 1.12.9
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 18 Apr 2024 23:19:40 +0100
+
 flatpak (1.12.8-1~flatpak1~16.04.1) xenial; urgency=medium
 
   * Backport to Ubuntu 16.04 'xenial'
