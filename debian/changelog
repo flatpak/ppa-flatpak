@@ -1,3 +1,16 @@
+flatpak (1.14.6-1~flatpak1~22.04.1) UNRELEASED; urgency=high
+
+  * New upstream security fix release
+  * Remaining changes relative to Debian:
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Move systemd unit back to /lib/systemd/system
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 18 Apr 2024 19:20:52 +0100
+
 flatpak (1.14.6-1) unstable; urgency=high
 
   * New upstream stable release 1.14.6
