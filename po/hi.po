@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: flatpak master\n"
 "Report-Msgid-Bugs-To: https://github.com/flatpak/flatpak/issues\n"
-"POT-Creation-Date: 2023-03-16 09:40+0000\n"
+"POT-Creation-Date: 2024-04-17 19:07+0100\n"
 "PO-Revision-Date: 2021-09-11 01:37+0700\n"
 "Last-Translator: Dmitry <dmitrydmitry761@gmail.com>\n"
 "Language-Team: Hindi - Hindi <gnome-hi-list@gnome.org>\n"
@@ -29,7 +29,7 @@ msgstr "के लिए एक बंडल के लिए वास्तु
 #: app/flatpak-builtins-build-bundle.c:58
 #: app/flatpak-builtins-build-export.c:61 app/flatpak-builtins-build-init.c:53
 #: app/flatpak-builtins-build-sign.c:41 app/flatpak-builtins-create-usb.c:45
-#: app/flatpak-builtins-info.c:55 app/flatpak-builtins-install.c:65
+#: app/flatpak-builtins-info.c:55 app/flatpak-builtins-install.c:66
 #: app/flatpak-builtins-list.c:49 app/flatpak-builtins-make-current.c:38
 #: app/flatpak-builtins-remote-info.c:53 app/flatpak-builtins-remote-ls.c:54
 #: app/flatpak-builtins-run.c:66 app/flatpak-builtins-search.c:36
@@ -46,8 +46,8 @@ msgstr "रेपो के लिए URL"
 #: app/flatpak-builtins-build-update-repo.c:67
 #: app/flatpak-builtins-build-update-repo.c:71
 #: app/flatpak-builtins-build-update-repo.c:72
-#: app/flatpak-builtins-history.c:67 app/flatpak-builtins-remote-add.c:77
-#: app/flatpak-builtins-remote-add.c:78 app/flatpak-builtins-remote-list.c:51
+#: app/flatpak-builtins-history.c:67 app/flatpak-builtins-remote-add.c:78
+#: app/flatpak-builtins-remote-add.c:79 app/flatpak-builtins-remote-list.c:51
 #: app/flatpak-builtins-remote-modify.c:69
 #: app/flatpak-builtins-remote-modify.c:84
 #: app/flatpak-builtins-remote-modify.c:85
@@ -65,8 +65,8 @@ msgstr "फ़ाइल से GPG कुंजी जोड़ें (के �
 #: app/flatpak-builtins-build-bundle.c:61 app/flatpak-builtins-build.c:54
 #: app/flatpak-builtins-build-export.c:66
 #: app/flatpak-builtins-build-update-repo.c:82
-#: app/flatpak-builtins-install.c:78 app/flatpak-builtins-remote-add.c:81
-#: app/flatpak-builtins-remote-add.c:82 app/flatpak-builtins-remote-modify.c:88
+#: app/flatpak-builtins-install.c:79 app/flatpak-builtins-remote-add.c:82
+#: app/flatpak-builtins-remote-add.c:83 app/flatpak-builtins-remote-modify.c:88
 #: app/flatpak-builtins-remote-modify.c:90
 msgid "FILE"
 msgstr "फ़ाइल"
@@ -135,14 +135,14 @@ msgstr "स्थान, फ़ाइल नाम और नाम निर्
 #: app/flatpak-builtins-document-list.c:182
 #: app/flatpak-builtins-document-unexport.c:70
 #: app/flatpak-builtins-history.c:480 app/flatpak-builtins-info.c:130
-#: app/flatpak-builtins-install.c:147 app/flatpak-builtins-install.c:216
-#: app/flatpak-builtins-list.c:420 app/flatpak-builtins-make-current.c:72
+#: app/flatpak-builtins-install.c:148 app/flatpak-builtins-install.c:217
+#: app/flatpak-builtins-list.c:417 app/flatpak-builtins-make-current.c:72
 #: app/flatpak-builtins-override.c:73
 #: app/flatpak-builtins-permission-list.c:157
 #: app/flatpak-builtins-permission-remove.c:132
-#: app/flatpak-builtins-remote-add.c:316
+#: app/flatpak-builtins-remote-add.c:317
 #: app/flatpak-builtins-remote-delete.c:68
-#: app/flatpak-builtins-remote-list.c:239 app/flatpak-builtins-remote-ls.c:407
+#: app/flatpak-builtins-remote-list.c:239 app/flatpak-builtins-remote-ls.c:404
 msgid "Too many arguments"
 msgstr "बहुत ज़्यादा बहस"
 
@@ -160,14 +160,14 @@ msgid "'%s' is not a valid repository: "
 msgstr "'%s' एक मान्य भंडार नहीं है: "
 
 #: app/flatpak-builtins-build-bundle.c:660 app/flatpak-builtins-build-sign.c:87
-#: common/flatpak-dir.c:13147
+#: common/flatpak-dir.c:13171
 #, c-format
 msgid "'%s' is not a valid name: %s"
 msgstr "'%s' मान्य नाम नहीं है: %s"
 
 #: app/flatpak-builtins-build-bundle.c:663
 #: app/flatpak-builtins-build-export.c:864 app/flatpak-builtins-build-sign.c:90
-#: common/flatpak-dir.c:13153
+#: common/flatpak-dir.c:13177
 #, c-format
 msgid "'%s' is not a valid branch name: %s"
 msgstr "'%s' मान्य शाखा नाम नहीं है: %s"
@@ -228,34 +228,34 @@ msgstr "सत्र बस कॉल लॉग करें"
 msgid "Log system bus calls"
 msgstr "सत्र बस कॉल लॉग करें"
 
-#: app/flatpak-builtins-build.c:207
+#: app/flatpak-builtins-build.c:208
 msgid "DIRECTORY [COMMAND [ARGUMENT…]] - Build in directory"
 msgstr "निर्देशिका [कमांड [तर्क…]] - निर्देशिका में बनाएँ"
 
-#: app/flatpak-builtins-build.c:230 app/flatpak-builtins-build-finish.c:653
+#: app/flatpak-builtins-build.c:231 app/flatpak-builtins-build-finish.c:653
 msgid "DIRECTORY must be specified"
 msgstr "निर्देश निर्दिष्ट किया जाना चाहिए"
 
-#: app/flatpak-builtins-build.c:241 app/flatpak-builtins-build-export.c:886
+#: app/flatpak-builtins-build.c:242 app/flatpak-builtins-build-export.c:886
 #, c-format
 msgid "Build directory %s not initialized, use flatpak build-init"
 msgstr "निर्देशिका बनाएँ %s आरंभीकृत नहीं, फ्लैटपैक बिल्ड-इनिट का उपयोग करें"
 
-#: app/flatpak-builtins-build.c:260
+#: app/flatpak-builtins-build.c:261
 msgid "metadata invalid, not application or runtime"
 msgstr "मेटाडेटा अमान्य, एप्लिकेशन या रनटाइम नहीं"
 
-#: app/flatpak-builtins-build.c:391
+#: app/flatpak-builtins-build.c:392
 #, c-format
 msgid "No extension point matching %s in %s"
 msgstr "कोई विस्तार बिंदु मिलान नहीं %s में %s"
 
-#: app/flatpak-builtins-build.c:566
+#: app/flatpak-builtins-build.c:568
 #, c-format
 msgid "Missing '=' in bind mount option '%s'"
 msgstr "बाइंड माउंट विकल्प में '=' गुम '%s'"
 
-#: app/flatpak-builtins-build.c:606 common/flatpak-run.c:4803
+#: app/flatpak-builtins-build.c:609 common/flatpak-run.c:3526
 #, c-format
 msgid "Unable to start app"
 msgstr "ऐप शुरू करने में असमर्थ"
@@ -447,7 +447,7 @@ msgid "Mark build as end-of-life, to be replaced with the given ID"
 msgstr "दिए गए आईडी से प्रतिस्थापित करने के लिए, जीवन के अंत के रूप में मार्क का निर्माण करें"
 
 #: app/flatpak-builtins-build-export.c:73
-#: app/flatpak-builtins-document-list.c:47 app/flatpak-cli-transaction.c:1370
+#: app/flatpak-builtins-document-list.c:47 app/flatpak-cli-transaction.c:1356
 msgid "ID"
 msgstr "आईडी"
 
@@ -457,7 +457,7 @@ msgstr "कमिट के टाइमस्टैम्प को ओवर�
 
 #: app/flatpak-builtins-build-export.c:76
 #: app/flatpak-builtins-build-update-repo.c:74
-#: app/flatpak-builtins-remote-add.c:80 app/flatpak-builtins-remote-list.c:52
+#: app/flatpak-builtins-remote-add.c:81 app/flatpak-builtins-remote-list.c:52
 #: app/flatpak-builtins-remote-modify.c:87
 msgid "Collection ID"
 msgstr "आईडी का संग्रह"
@@ -533,7 +533,7 @@ msgid "LOCATION and DIRECTORY must be specified"
 msgstr "स्थान और निर्देशिका निर्दिष्ट की जानी चाहिए"
 
 #: app/flatpak-builtins-build-export.c:858
-#: app/flatpak-builtins-remote-add.c:320
+#: app/flatpak-builtins-remote-add.c:321
 #, c-format
 msgid "‘%s’ is not a valid collection ID: %s"
 msgstr "‘%s’ एक मान्य संग्रह आईडी नहीं है: %s"
@@ -612,7 +612,7 @@ msgstr "विस्तार बिंदु जानकारी निका
 
 #: app/flatpak-builtins-build-finish.c:56
 #: app/flatpak-builtins-build-update-repo.c:78 app/flatpak-builtins-info.c:58
-#: app/flatpak-builtins-remote-add.c:84 app/flatpak-builtins-remote-modify.c:92
+#: app/flatpak-builtins-remote-add.c:85 app/flatpak-builtins-remote-modify.c:92
 #: app/flatpak-main.c:181
 msgid "NAME"
 msgstr "नाम"
@@ -878,13 +878,13 @@ msgstr "'%s' मान्य एप्लिकेशन नाम नहीं 
 msgid "Build directory %s already initialized"
 msgstr "निर्देशिका बनाएँ %s पहले से ही आरंभिक"
 
-#: app/flatpak-builtins-build-sign.c:41 app/flatpak-builtins-install.c:65
+#: app/flatpak-builtins-build-sign.c:41 app/flatpak-builtins-install.c:66
 #: app/flatpak-builtins-remote-info.c:53
 msgid "Arch to install for"
 msgstr "स्थापित करने के लिए वास्तुकला"
 
 #: app/flatpak-builtins-build-sign.c:42 app/flatpak-builtins-create-usb.c:47
-#: app/flatpak-builtins-install.c:72 app/flatpak-builtins-remote-info.c:55
+#: app/flatpak-builtins-install.c:73 app/flatpak-builtins-remote-info.c:55
 #: app/flatpak-builtins-uninstall.c:58 app/flatpak-builtins-update.c:64
 msgid "Look for runtime with the specified name"
 msgstr "निर्दिष्ट नाम के साथ रन समय देखें"
@@ -895,7 +895,7 @@ msgstr "स्थान [आईडी [शाखा]] - एक आवेदन �
 
 #: app/flatpak-builtins-build-sign.c:72
 #: app/flatpak-builtins-build-update-repo.c:498
-#: app/flatpak-builtins-remote-add.c:313 app/flatpak-builtins-repo.c:735
+#: app/flatpak-builtins-remote-add.c:314 app/flatpak-builtins-repo.c:735
 msgid "LOCATION must be specified"
 msgstr "स्थान निर्दिष्ट किया जाना चाहिए"
 
@@ -912,7 +912,7 @@ msgid "A nice name to use for this repository"
 msgstr "इस भंडार के लिए उपयोग करने के लिए एक अच्छा नाम है"
 
 #: app/flatpak-builtins-build-update-repo.c:68
-#: app/flatpak-builtins-remote-add.c:74 app/flatpak-builtins-remote-modify.c:81
+#: app/flatpak-builtins-remote-add.c:75 app/flatpak-builtins-remote-modify.c:81
 msgid "TITLE"
 msgstr "टाइटिल"
 
@@ -921,7 +921,7 @@ msgid "A one-line comment for this repository"
 msgstr "इस रिपॉजिटरी के लिए एक-लाइन टिप्पणी"
 
 #: app/flatpak-builtins-build-update-repo.c:69
-#: app/flatpak-builtins-remote-add.c:75 app/flatpak-builtins-remote-modify.c:82
+#: app/flatpak-builtins-remote-add.c:76 app/flatpak-builtins-remote-modify.c:82
 msgid "COMMENT"
 msgstr "टिप्पणी"
 
@@ -930,7 +930,7 @@ msgid "A full-paragraph description for this repository"
 msgstr "इस रिपॉजिटरी के लिए एक पूर्ण-पैरा विवरण"
 
 #: app/flatpak-builtins-build-update-repo.c:70
-#: app/flatpak-builtins-remote-add.c:76 app/flatpak-builtins-remote-modify.c:83
+#: app/flatpak-builtins-remote-add.c:77 app/flatpak-builtins-remote-modify.c:83
 msgid "DESCRIPTION"
 msgstr "विवरण"
 
@@ -947,14 +947,14 @@ msgid "Default branch to use for this repository"
 msgstr "इस भंडार के लिए उपयोग करने के लिए डिफ़ॉल्ट शाखा"
 
 #: app/flatpak-builtins-build-update-repo.c:73
-#: app/flatpak-builtins-remote-add.c:79 app/flatpak-builtins-remote-modify.c:86
+#: app/flatpak-builtins-remote-add.c:80 app/flatpak-builtins-remote-modify.c:86
 #: app/flatpak-builtins-repo.c:710 app/flatpak-builtins-repo.c:711
 #: app/flatpak-builtins-run.c:69
 msgid "BRANCH"
 msgstr "शाखा"
 
 #: app/flatpak-builtins-build-update-repo.c:74
-#: app/flatpak-builtins-remote-add.c:80 app/flatpak-builtins-remote-modify.c:87
+#: app/flatpak-builtins-remote-add.c:81 app/flatpak-builtins-remote-modify.c:87
 msgid "COLLECTION-ID"
 msgstr "संकलन-आईडी"
 
@@ -983,12 +983,12 @@ msgid "Don't autoinstall authenticator for this repository"
 msgstr "इस रिपॉजिटरी के लिए ऑटोनॉस्टॉल ऑथेंटाइटर न करें"
 
 #: app/flatpak-builtins-build-update-repo.c:81
-#: app/flatpak-builtins-remote-add.c:85
+#: app/flatpak-builtins-remote-add.c:86
 msgid "Authenticator option"
 msgstr "ऑथेंटिकेटर ऑप्शन"
 
 #: app/flatpak-builtins-build-update-repo.c:81
-#: app/flatpak-builtins-remote-add.c:85 app/flatpak-builtins-remote-modify.c:93
+#: app/flatpak-builtins-remote-add.c:86 app/flatpak-builtins-remote-modify.c:93
 msgid "KEY=VALUE"
 msgstr "कुंजी=मूल्य"
 
@@ -1152,7 +1152,7 @@ msgstr "में से केवल एक का उपयोग किया
 msgid "Must specify one of --list, --get, --set or --unset"
 msgstr "विकल्पों में से एक बनाना होगा --list, --get, --set या --unset"
 
-#: app/flatpak-builtins-create-usb.c:44 app/flatpak-builtins-install.c:73
+#: app/flatpak-builtins-create-usb.c:44 app/flatpak-builtins-install.c:74
 #: app/flatpak-builtins-remote-info.c:56 app/flatpak-builtins-uninstall.c:59
 #: app/flatpak-builtins-update.c:65
 msgid "Look for app with the specified name"
@@ -1198,7 +1198,7 @@ msgstr ""
 msgid "Warning: Omitting related ref ‘%s’ because it's extra-data.\n"
 msgstr "चेतावनी: संबंधित रेफरी '%s' को छोड़ना क्योंकि यह अतिरिक्त डेटा है।\n"
 
-#: app/flatpak-builtins-create-usb.c:261 app/flatpak-builtins-create-usb.c:635
+#: app/flatpak-builtins-create-usb.c:261 app/flatpak-builtins-create-usb.c:636
 #, c-format
 msgid ""
 "Remote ‘%s’ does not have a collection ID set, which is required for P2P "
@@ -1210,26 +1210,26 @@ msgstr "रिमोट ‘%s’ का संग्रह ID सेट नह�
 msgid "Warning: Omitting ref ‘%s’ (runtime of ‘%s’) because it's extra-data.\n"
 msgstr "चेतावनी: रेफरी '%s' ('%s' का रनटाइम) को छोड़ना क्योंकि यह अतिरिक्त डेटा है।\n"
 
-#: app/flatpak-builtins-create-usb.c:482
+#: app/flatpak-builtins-create-usb.c:483
 msgid "MOUNT-PATH [REF…] - Copy apps or runtimes onto removable media"
 msgstr ""
 "माउंट-पैच [रेफ…] - हटाने योग्य मीडिया पर एप्लिकेशन या रनटाइम्स की प्रतिलिपि बनाएँ"
 
-#: app/flatpak-builtins-create-usb.c:491
+#: app/flatpak-builtins-create-usb.c:492
 msgid "MOUNT-PATH and REF must be specified"
 msgstr "माउंट-पैच और रेफ को निर्दिष्ट किया जाना चाहिए"
 
-#: app/flatpak-builtins-create-usb.c:605
+#: app/flatpak-builtins-create-usb.c:606
 #, c-format
 msgid "Ref ‘%s’ found in multiple installations: %s. You must specify one."
 msgstr "रेफरी ‘%s’ कई प्रतिष्ठानों में पाया गया: %s. आपको एक निर्दिष्ट करना होगा।"
 
-#: app/flatpak-builtins-create-usb.c:618
+#: app/flatpak-builtins-create-usb.c:619
 #, c-format
 msgid "Refs must all be in the same installation (found in %s and %s)."
 msgstr "सभी को एक ही इंस्टालेशन में पाया जाना चाहिए %s तथा %s)."
 
-#: app/flatpak-builtins-create-usb.c:668
+#: app/flatpak-builtins-create-usb.c:669
 #, c-format
 msgid ""
 "Warning: Ref ‘%s’ is partially installed. Use --allow-partial to suppress "
@@ -1238,17 +1238,17 @@ msgstr ""
 "चेतावनी: संदर्भ '%s' आंशिक रूप से संस्थापित है। इस संदेश को दबाने के लिए --allow-partial "
 "का प्रयोग करें।\n"
 
-#: app/flatpak-builtins-create-usb.c:679
+#: app/flatpak-builtins-create-usb.c:680
 #, c-format
 msgid "Installed ref ‘%s’ is extra-data, and cannot be distributed offline"
 msgstr "स्थापित रेफरी '%s' अतिरिक्त डेटा है, और ऑफ़लाइन वितरित नहीं किया जा सकता"
 
-#: app/flatpak-builtins-create-usb.c:719
+#: app/flatpak-builtins-create-usb.c:720
 #, c-format
 msgid "Warning: Couldn't update repo metadata for remote ‘%s’: %s\n"
 msgstr "चेतावनी: दूरस्थ के लिए रेपो मेटाडेटा अद्यतन नहीं कर सका ‘%s’: %s\n"
 
-#: app/flatpak-builtins-create-usb.c:749
+#: app/flatpak-builtins-create-usb.c:750
 #, c-format
 msgid "Warning: Couldn't update appstream data for remote ‘%s’ arch ‘%s’: %s\n"
 msgstr ""
@@ -1256,14 +1256,14 @@ msgstr ""
 "%s\n"
 
 #. Print a warning if both appstream and appstream2 are missing
-#: app/flatpak-builtins-create-usb.c:782
+#: app/flatpak-builtins-create-usb.c:783
 #, c-format
 msgid ""
 "Warning: Couldn't find appstream data for remote ‘%s’ arch ‘%s’: %s; %s\n"
 msgstr "चेतावनी: दूरस्थ के लिए स्रोत डेटा नहीं मिल सका ‘%s’ वास्तुकला ‘%s’: %s; %s\n"
 
 #. Appstream2 is only for efficiency, so just print a debug message
-#: app/flatpak-builtins-create-usb.c:788
+#: app/flatpak-builtins-create-usb.c:789
 #, c-format
 msgid "Couldn't find appstream2 data for remote ‘%s’ arch ‘%s’: %s\n"
 msgstr "रिमोट के लिए appstream2 डेटा नहीं मिल सका ‘%s’ वास्तुकला ‘%s’: %s\n"
@@ -1522,7 +1522,7 @@ msgstr "एप्लिकेशन / रनटाइम आईडी दिख�
 
 #: app/flatpak-builtins-history.c:61 app/flatpak-builtins-list.c:62
 #: app/flatpak-builtins-ps.c:51 app/flatpak-builtins-remote-ls.c:70
-#: app/flatpak-cli-transaction.c:1378
+#: app/flatpak-cli-transaction.c:1364
 msgid "Arch"
 msgstr "वास्तुकला"
 
@@ -1533,7 +1533,7 @@ msgstr "वास्तुकला दिखाएं"
 
 #: app/flatpak-builtins-history.c:62 app/flatpak-builtins-list.c:61
 #: app/flatpak-builtins-ps.c:52 app/flatpak-builtins-remote-ls.c:69
-#: app/flatpak-builtins-search.c:46 app/flatpak-cli-transaction.c:1381
+#: app/flatpak-builtins-search.c:46 app/flatpak-cli-transaction.c:1367
 msgid "Branch"
 msgstr "डाली"
 
@@ -1550,7 +1550,7 @@ msgstr "स्थापना"
 msgid "Show the affected installation"
 msgstr "प्रभावित स्थापना दिखाएं"
 
-#: app/flatpak-builtins-history.c:64 app/flatpak-cli-transaction.c:1395
+#: app/flatpak-builtins-history.c:64 app/flatpak-cli-transaction.c:1381
 msgid "Remote"
 msgstr "रिमोट"
 
@@ -1579,7 +1579,7 @@ msgstr "दिखाएँ पिछले प्रतिबद्ध"
 msgid "Show the remote URL"
 msgstr "दूरस्थ URL दिखाएं"
 
-#: app/flatpak-builtins-history.c:68 app/flatpak-cli-transaction.c:684
+#: app/flatpak-builtins-history.c:68 app/flatpak-cli-transaction.c:685
 msgid "User"
 msgstr "उपयोगकर्ता"
 
@@ -1681,8 +1681,8 @@ msgstr "अनुमतियां दिखाएं"
 msgid "Query file access"
 msgstr "क्वेरी फ़ाइल एक्सेस"
 
-#: app/flatpak-builtins-info.c:67 app/flatpak-builtins-install.c:79
-#: app/flatpak-builtins-install.c:85 app/flatpak-builtins-run.c:90
+#: app/flatpak-builtins-info.c:67 app/flatpak-builtins-install.c:80
+#: app/flatpak-builtins-install.c:86 app/flatpak-builtins-run.c:90
 #: app/flatpak-builtins-run.c:91 app/flatpak-builtins-update.c:67
 #: app/flatpak-builtins-update.c:71
 msgid "PATH"
@@ -1700,7 +1700,7 @@ msgstr "स्थान दिखाएं"
 msgid "NAME [BRANCH] - Get info about an installed app or runtime"
 msgstr "नाम [शाखा] - एक स्थापित एप्लिकेशन या रनटाइम के बारे में जानकारी प्राप्त करें"
 
-#: app/flatpak-builtins-info.c:123 app/flatpak-builtins-remote-add.c:310
+#: app/flatpak-builtins-info.c:123 app/flatpak-builtins-remote-add.c:311
 #: app/flatpak-builtins-remote-delete.c:63
 msgid "NAME must be specified"
 msgstr "नाम निर्दिष्ट किया जाना चाहिए"
@@ -1715,7 +1715,7 @@ msgid "Warning: Commit has no flatpak metadata\n"
 msgstr "चेतावनी: कमिट में कोई फ्लैटपैक मेटाडेटा नहीं है\n"
 
 #: app/flatpak-builtins-info.c:217 app/flatpak-builtins-info.c:259
-#: app/flatpak-builtins-info.c:455 app/flatpak-builtins-info.c:502
+#: app/flatpak-builtins-info.c:455 app/flatpak-builtins-info.c:513
 #: app/flatpak-builtins-remote-info.c:235
 #: app/flatpak-builtins-remote-info.c:270
 msgid "ID:"
@@ -1758,11 +1758,12 @@ msgid "Collection:"
 msgstr "संग्रह:"
 
 #: app/flatpak-builtins-info.c:227 app/flatpak-builtins-info.c:270
+#: app/flatpak-builtins-info.c:458 app/flatpak-builtins-info.c:516
 msgid "Installation:"
 msgstr "स्थापना:"
 
 #: app/flatpak-builtins-info.c:228 app/flatpak-builtins-info.c:271
-#: app/flatpak-builtins-info.c:458 app/flatpak-builtins-info.c:505
+#: app/flatpak-builtins-info.c:459 app/flatpak-builtins-info.c:517
 #: app/flatpak-builtins-remote-info.c:248
 #: app/flatpak-builtins-remote-info.c:283
 msgid "Installed:"
@@ -1801,7 +1802,7 @@ msgid "Latest commit:"
 msgstr "नवीनतम कमिट श:"
 
 #: app/flatpak-builtins-info.c:244 app/flatpak-builtins-info.c:303
-#: app/flatpak-builtins-info.c:457 app/flatpak-builtins-info.c:504
+#: app/flatpak-builtins-info.c:457 app/flatpak-builtins-info.c:515
 #: app/flatpak-builtins-remote-info.c:258
 #: app/flatpak-builtins-remote-info.c:297
 msgid "Commit:"
@@ -1834,146 +1835,146 @@ msgid "Subdirectories:"
 msgstr "उपनिर्देशिकाएँ:"
 
 #: app/flatpak-builtins-info.c:255 app/flatpak-builtins-info.c:454
-#: app/flatpak-builtins-info.c:501
+#: app/flatpak-builtins-info.c:512
 msgid "Extension:"
 msgstr "एक्सटेंशन:"
 
 #: app/flatpak-builtins-info.c:267 app/flatpak-builtins-info.c:456
-#: app/flatpak-builtins-info.c:503
+#: app/flatpak-builtins-info.c:514
 msgid "Origin:"
 msgstr "मूल:"
 
-#: app/flatpak-builtins-info.c:459 app/flatpak-builtins-info.c:510
+#: app/flatpak-builtins-info.c:460 app/flatpak-builtins-info.c:522
 msgid "Subpaths:"
 msgstr "विषय पथ:"
 
-#: app/flatpak-builtins-info.c:476
+#: app/flatpak-builtins-info.c:478
 msgid "unmaintained"
 msgstr "संयुक्त राष्ट्र बनाए रखा"
 
-#: app/flatpak-builtins-info.c:479
+#: app/flatpak-builtins-info.c:480 app/flatpak-builtins-info.c:482
 msgid "unknown"
 msgstr "अनजान"
 
-#: app/flatpak-builtins-install.c:66
+#: app/flatpak-builtins-install.c:67
 msgid "Don't pull, only install from local cache"
 msgstr "पुल न करें, केवल स्थानीय कैश से इंस्टॉल करें"
 
-#: app/flatpak-builtins-install.c:67 app/flatpak-builtins-update.c:60
+#: app/flatpak-builtins-install.c:68 app/flatpak-builtins-update.c:60
 msgid "Don't deploy, only download to local cache"
 msgstr "तैनात न करें, केवल स्थानीय कैश में डाउनलोड करें"
 
-#: app/flatpak-builtins-install.c:68
+#: app/flatpak-builtins-install.c:69
 msgid "Don't install related refs"
 msgstr "लिंक किए गए लिंक स्थापित मत"
 
-#: app/flatpak-builtins-install.c:69 app/flatpak-builtins-update.c:62
+#: app/flatpak-builtins-install.c:70 app/flatpak-builtins-update.c:62
 msgid "Don't verify/install runtime dependencies"
 msgstr "रनटाइम निर्भरता की जांच / स्थापित न करें"
 
-#: app/flatpak-builtins-install.c:70
+#: app/flatpak-builtins-install.c:71
 msgid "Don't automatically pin explicit installs"
 msgstr "स्वचालित रूप से स्पष्ट इंस्टॉल पिन न करें"
 
-#: app/flatpak-builtins-install.c:71 app/flatpak-builtins-update.c:63
+#: app/flatpak-builtins-install.c:72 app/flatpak-builtins-update.c:63
 msgid "Don't use static deltas"
 msgstr "स्थिर डेल्टा का उपयोग न करें"
 
-#: app/flatpak-builtins-install.c:74
+#: app/flatpak-builtins-install.c:75
 msgid "Additionally install the SDK used to build the given refs"
 msgstr ""
 
-#: app/flatpak-builtins-install.c:75
+#: app/flatpak-builtins-install.c:76
 msgid ""
 "Additionally install the debug info for the given refs and their dependencies"
 msgstr ""
 
-#: app/flatpak-builtins-install.c:76
+#: app/flatpak-builtins-install.c:77
 msgid "Assume LOCATION is a .flatpak single-file bundle"
 msgstr "मान लें कि एक .flatpak एकल-फ़ाइल बंडल है"
 
-#: app/flatpak-builtins-install.c:77
+#: app/flatpak-builtins-install.c:78
 msgid "Assume LOCATION is a .flatpakref application description"
 msgstr "मान लें कि एक .flatpakref एप्लिकेशन विवरण है"
 
-#: app/flatpak-builtins-install.c:78
+#: app/flatpak-builtins-install.c:79
 msgid "Check bundle signatures with GPG key from FILE (- for stdin)"
 msgstr "फ़ाइल से GPG कुंजी के साथ बंडल हस्ताक्षर जांचें (- स्टडिन के लिए)"
 
-#: app/flatpak-builtins-install.c:79
+#: app/flatpak-builtins-install.c:80
 msgid "Only install this subpath"
 msgstr "केवल इस सब-पाथ स्थापित करें"
 
-#: app/flatpak-builtins-install.c:80 app/flatpak-builtins-uninstall.c:63
+#: app/flatpak-builtins-install.c:81 app/flatpak-builtins-uninstall.c:63
 #: app/flatpak-builtins-update.c:68
 msgid "Automatically answer yes for all questions"
 msgstr "सभी प्रश्नों के लिए स्वचालित रूप से उत्तर हां"
 
-#: app/flatpak-builtins-install.c:81
+#: app/flatpak-builtins-install.c:82
 msgid "Uninstall first if already installed"
 msgstr "पहले से स्थापित होने पर पहले अनइंस्टॉल करें"
 
-#: app/flatpak-builtins-install.c:82 app/flatpak-builtins-uninstall.c:64
+#: app/flatpak-builtins-install.c:83 app/flatpak-builtins-uninstall.c:64
 #: app/flatpak-builtins-update.c:69
 msgid "Produce minimal output and don't ask questions"
 msgstr "न्यूनतम उत्पादन करें और सवाल न पूछें"
 
-#: app/flatpak-builtins-install.c:83
+#: app/flatpak-builtins-install.c:84
 msgid "Update install if already installed"
 msgstr "अगर पहले से इंस्टॉल है तो अपडेट इंस्टॉल करें"
 
 #. Translators: A sideload is when you install from a local USB drive rather than the Internet.
-#: app/flatpak-builtins-install.c:85 app/flatpak-builtins-update.c:71
+#: app/flatpak-builtins-install.c:86 app/flatpak-builtins-update.c:71
 msgid "Use this local repo for sideloads"
 msgstr "साइडलोड के लिए इस स्थानीय रेपो का उपयोग करें"
 
-#: app/flatpak-builtins-install.c:144
+#: app/flatpak-builtins-install.c:145
 msgid "Bundle filename must be specified"
 msgstr "बंडल फ़ाइल नाम निर्दिष्ट किया जाना चाहिए"
 
-#: app/flatpak-builtins-install.c:154
+#: app/flatpak-builtins-install.c:155
 msgid "Remote bundles are not supported"
 msgstr "दूरस्थ बंडलों का समर्थन नहीं किया जाता है"
 
-#: app/flatpak-builtins-install.c:213
+#: app/flatpak-builtins-install.c:214
 msgid "Filename or uri must be specified"
 msgstr "फ़ाइलनाम या uri निर्दिष्ट किया जाना चाहिए"
 
-#: app/flatpak-builtins-install.c:295
+#: app/flatpak-builtins-install.c:296
 msgid "[LOCATION/REMOTE] [REF…] - Install applications or runtimes"
 msgstr "[स्थान/रिमोट] [आरईएफ…] - एप्लिकेशन या रनटाइम इंस्टॉल करें"
 
-#: app/flatpak-builtins-install.c:321
+#: app/flatpak-builtins-install.c:322
 msgid "At least one REF must be specified"
 msgstr "कम से कम एक आरईएफ निर्दिष्ट किया जाना चाहिए"
 
-#: app/flatpak-builtins-install.c:335
+#: app/flatpak-builtins-install.c:336
 #, c-format
 msgid "Looking for matches…\n"
 msgstr "मैचों की तलाश...\n"
 
-#: app/flatpak-builtins-install.c:456
+#: app/flatpak-builtins-install.c:457
 #, fuzzy, c-format
 msgid "No remote refs found for ‘%s’"
 msgstr "कोई दूरस्थ रेफरी के समान नहीं मिला ‘%s’"
 
-#: app/flatpak-builtins-install.c:532 app/flatpak-builtins-uninstall.c:405
-#: common/flatpak-ref-utils.c:686 common/flatpak-ref-utils.c:1592
+#: app/flatpak-builtins-install.c:533 app/flatpak-builtins-uninstall.c:405
+#: common/flatpak-ref-utils.c:687 common/flatpak-ref-utils.c:1593
 #, c-format
 msgid "Invalid branch %s: %s"
 msgstr "अमान्य शाखा %s: %s"
 
-#: app/flatpak-builtins-install.c:565
+#: app/flatpak-builtins-install.c:566
 #, c-format
 msgid "Nothing matches %s in local repository for remote %s"
 msgstr "कुछ भी मेल नहीं खाता %s रिमोट के लिए स्थानीय भंडार में %s"
 
-#: app/flatpak-builtins-install.c:567
+#: app/flatpak-builtins-install.c:568
 #, c-format
 msgid "Nothing matches %s in remote %s"
 msgstr "कुछ भी मेल नहीं खाता %s रिमोट में %s"
 
-#: app/flatpak-builtins-install.c:588
+#: app/flatpak-builtins-install.c:589
 #, c-format
 msgid "Skipping: %s\n"
 msgstr "लंघन: %s\n"
@@ -1987,7 +1988,7 @@ msgstr "%s नहीं चल रहा है"
 msgid "INSTANCE - Stop a running application"
 msgstr "इंस्टेंस - एक चल रहे एप्लिकेशन को रोकें"
 
-#: app/flatpak-builtins-kill.c:90 app/flatpak-builtins-ps.c:252
+#: app/flatpak-builtins-kill.c:90 app/flatpak-builtins-ps.c:254
 msgid "Extra arguments given"
 msgstr "अतिरिक्त तर्क दिए गए"
 
@@ -2105,17 +2106,17 @@ msgstr "विकल्प"
 msgid "Show options"
 msgstr "विकल्प दिखाएं"
 
-#: app/flatpak-builtins-list.c:179
+#: app/flatpak-builtins-list.c:178
 #, fuzzy, c-format
 msgid "Unable to load details of %s: %s"
 msgstr "रिमोट से मेटाडेटा लोड करने में असमर्थ  %s: %s"
 
-#: app/flatpak-builtins-list.c:189
+#: app/flatpak-builtins-list.c:188
 #, fuzzy, c-format
 msgid "Unable to inspect current version of %s: %s"
 msgstr "सिंक पाइप बनाने में असमर्थ"
 
-#: app/flatpak-builtins-list.c:409
+#: app/flatpak-builtins-list.c:406
 msgid " - List installed apps and/or runtimes"
 msgstr " - इंस्टॉल किए गए ऐप्स और/या रनटाइम की सूची दें"
 
@@ -2127,7 +2128,7 @@ msgstr "पुरालेख के लिए वर्तमान बना�
 msgid "APP BRANCH - Make branch of application current"
 msgstr "एपीपी शाखा - आवेदन की वर्तमान शाखा बनाओ"
 
-#: app/flatpak-builtins-make-current.c:69 app/flatpak-builtins-run.c:156
+#: app/flatpak-builtins-make-current.c:69 app/flatpak-builtins-run.c:158
 msgid "APP must be specified"
 msgstr "एपीपी निर्दिष्ट किया जाना चाहिए"
 
@@ -2324,128 +2325,128 @@ msgstr "पृष्ठभूमि"
 msgid "Show whether the app is background"
 msgstr "दिखाओ कि क्या ऐप बैकग्राउंड है"
 
-#: app/flatpak-builtins-ps.c:242
+#: app/flatpak-builtins-ps.c:244
 msgid " - Enumerate running sandboxes"
 msgstr " - सैंडबॉक्स चलाने वाली सूची"
 
-#: app/flatpak-builtins-remote-add.c:63
+#: app/flatpak-builtins-remote-add.c:64
 msgid "Do nothing if the provided remote exists"
 msgstr "यदि उपलब्ध रिमोट मौजूद है तो कुछ भी न करें"
 
-#: app/flatpak-builtins-remote-add.c:64
+#: app/flatpak-builtins-remote-add.c:65
 msgid "LOCATION specifies a configuration file, not the repo location"
 msgstr "स्थान कॉन्फ़िगरेशन फ़ाइल निर्दिष्ट करता है, न कि रेपो स्थान"
 
-#: app/flatpak-builtins-remote-add.c:69 app/flatpak-builtins-remote-modify.c:77
+#: app/flatpak-builtins-remote-add.c:70 app/flatpak-builtins-remote-modify.c:77
 msgid "Disable GPG verification"
 msgstr "GPG सत्यापन अक्षम करें"
 
-#: app/flatpak-builtins-remote-add.c:70 app/flatpak-builtins-remote-modify.c:78
+#: app/flatpak-builtins-remote-add.c:71 app/flatpak-builtins-remote-modify.c:78
 msgid "Mark the remote as don't enumerate"
 msgstr "रिमोट को चिन्हित न करें"
 
-#: app/flatpak-builtins-remote-add.c:71 app/flatpak-builtins-remote-modify.c:79
+#: app/flatpak-builtins-remote-add.c:72 app/flatpak-builtins-remote-modify.c:79
 msgid "Mark the remote as don't use for deps"
 msgstr "रिमोट को चिह्नित करें क्योंकि डीईपीएस के लिए उपयोग न करें"
 
-#: app/flatpak-builtins-remote-add.c:72 app/flatpak-builtins-remote-modify.c:80
+#: app/flatpak-builtins-remote-add.c:73 app/flatpak-builtins-remote-modify.c:80
 msgid "Set priority (default 1, higher is more prioritized)"
 msgstr "प्राथमिकता निर्धारित करें (डिफ़ॉल्ट 1, प्राथमिकता जितनी अधिक होगी)"
 
-#: app/flatpak-builtins-remote-add.c:72 app/flatpak-builtins-remote-modify.c:80
+#: app/flatpak-builtins-remote-add.c:73 app/flatpak-builtins-remote-modify.c:80
 msgid "PRIORITY"
 msgstr "प्राथमिकता"
 
-#: app/flatpak-builtins-remote-add.c:73
+#: app/flatpak-builtins-remote-add.c:74
 msgid "The named subset to use for this remote"
 msgstr "इस रिमोट कंट्रोल का उपयोग करने के लिए नामित नाम"
 
-#: app/flatpak-builtins-remote-add.c:73 app/flatpak-builtins-remote-modify.c:70
+#: app/flatpak-builtins-remote-add.c:74 app/flatpak-builtins-remote-modify.c:70
 msgid "SUBSET"
 msgstr "सबसेट"
 
-#: app/flatpak-builtins-remote-add.c:74 app/flatpak-builtins-remote-modify.c:81
+#: app/flatpak-builtins-remote-add.c:75 app/flatpak-builtins-remote-modify.c:81
 msgid "A nice name to use for this remote"
 msgstr "इस रिमोट के लिए उपयोग करने के लिए एक अच्छा नाम है"
 
-#: app/flatpak-builtins-remote-add.c:75 app/flatpak-builtins-remote-modify.c:82
+#: app/flatpak-builtins-remote-add.c:76 app/flatpak-builtins-remote-modify.c:82
 msgid "A one-line comment for this remote"
 msgstr "इस रिमोट के लिए एक-लाइन टिप्पणी"
 
-#: app/flatpak-builtins-remote-add.c:76 app/flatpak-builtins-remote-modify.c:83
+#: app/flatpak-builtins-remote-add.c:77 app/flatpak-builtins-remote-modify.c:83
 msgid "A full-paragraph description for this remote"
 msgstr "इस रिमोट कंट्रोल का पूरा विवरण"
 
-#: app/flatpak-builtins-remote-add.c:77 app/flatpak-builtins-remote-modify.c:84
+#: app/flatpak-builtins-remote-add.c:78 app/flatpak-builtins-remote-modify.c:84
 msgid "URL for a website for this remote"
 msgstr "इस रिमोट के लिए एक वेबसाइट के लिए URL"
 
-#: app/flatpak-builtins-remote-add.c:78 app/flatpak-builtins-remote-modify.c:85
+#: app/flatpak-builtins-remote-add.c:79 app/flatpak-builtins-remote-modify.c:85
 msgid "URL for an icon for this remote"
 msgstr "इस रिमोट के लिए एक आइकन के लिए URL"
 
-#: app/flatpak-builtins-remote-add.c:79 app/flatpak-builtins-remote-modify.c:86
+#: app/flatpak-builtins-remote-add.c:80 app/flatpak-builtins-remote-modify.c:86
 msgid "Default branch to use for this remote"
 msgstr "इस रिमोट का उपयोग करने के लिए डिफ़ॉल्ट शाखा"
 
-#: app/flatpak-builtins-remote-add.c:81 app/flatpak-builtins-remote-modify.c:88
+#: app/flatpak-builtins-remote-add.c:82 app/flatpak-builtins-remote-modify.c:88
 msgid "Import GPG key from FILE (- for stdin)"
 msgstr "फ़ाइल से आयात GPG कुंजी (- स्टड के लिए)"
 
-#: app/flatpak-builtins-remote-add.c:82 app/flatpak-builtins-remote-modify.c:90
+#: app/flatpak-builtins-remote-add.c:83 app/flatpak-builtins-remote-modify.c:90
 msgid "Set path to local filter FILE"
 msgstr "स्थानीय फ़िल्टर फ़ाइल पर पथ सेट करें"
 
-#: app/flatpak-builtins-remote-add.c:83 app/flatpak-builtins-remote-modify.c:91
+#: app/flatpak-builtins-remote-add.c:84 app/flatpak-builtins-remote-modify.c:91
 msgid "Disable the remote"
 msgstr "दूरस्थ अक्षम करें"
 
-#: app/flatpak-builtins-remote-add.c:84 app/flatpak-builtins-remote-modify.c:92
+#: app/flatpak-builtins-remote-add.c:85 app/flatpak-builtins-remote-modify.c:92
 msgid "Name of authenticator"
 msgstr "प्रमाणक का नाम"
 
-#: app/flatpak-builtins-remote-add.c:86 app/flatpak-builtins-remote-modify.c:94
+#: app/flatpak-builtins-remote-add.c:87 app/flatpak-builtins-remote-modify.c:94
 msgid "Autoinstall authenticator"
 msgstr "ऑटोनस्टॉल प्रमाणक"
 
-#: app/flatpak-builtins-remote-add.c:87 app/flatpak-builtins-remote-modify.c:95
+#: app/flatpak-builtins-remote-add.c:88 app/flatpak-builtins-remote-modify.c:95
 msgid "Don't autoinstall authenticator"
 msgstr "स्वप्रमाणित प्रमाणक न करें"
 
-#: app/flatpak-builtins-remote-add.c:88 app/flatpak-builtins-remote-modify.c:97
+#: app/flatpak-builtins-remote-add.c:89 app/flatpak-builtins-remote-modify.c:97
 msgid "Don't follow the redirect set in the summary file"
 msgstr "सारांश फ़ाइल में अनुप्रेषित सेट का पालन न करें"
 
-#: app/flatpak-builtins-remote-add.c:254 app/flatpak-builtins-remote-add.c:261
+#: app/flatpak-builtins-remote-add.c:255 app/flatpak-builtins-remote-add.c:262
 #, c-format
 msgid "Can't load uri %s: %s\n"
 msgstr "uri लोड नहीं कर सकता %s: %s\n"
 
-#: app/flatpak-builtins-remote-add.c:269 common/flatpak-dir.c:3968
+#: app/flatpak-builtins-remote-add.c:270 common/flatpak-dir.c:3968
 #, c-format
 msgid "Can't load file %s: %s\n"
 msgstr "फ़ाइल लोड नहीं कर सकता %s: %s\n"
 
-#: app/flatpak-builtins-remote-add.c:297
+#: app/flatpak-builtins-remote-add.c:298
 msgid "NAME LOCATION - Add a remote repository"
 msgstr "स्थान का नाम - एक दूरस्थ भंडार जोड़ें"
 
-#: app/flatpak-builtins-remote-add.c:324
+#: app/flatpak-builtins-remote-add.c:325
 msgid "GPG verification is required if collections are enabled"
 msgstr "यदि संग्रह सक्षम हैं तो GPG सत्यापन आवश्यक है"
 
-#: app/flatpak-builtins-remote-add.c:386
+#: app/flatpak-builtins-remote-add.c:387
 #, c-format
 msgid "Remote %s already exists"
 msgstr "रिमोट %s पहले से ही मौजूद है"
 
-#: app/flatpak-builtins-remote-add.c:398
+#: app/flatpak-builtins-remote-add.c:399
 #: app/flatpak-builtins-remote-modify.c:332
 #, c-format
 msgid "Invalid authenticator name %s"
 msgstr "अमान्य प्रमाणक नाम %s"
 
-#: app/flatpak-builtins-remote-add.c:415
+#: app/flatpak-builtins-remote-add.c:416
 #, c-format
 msgid "Warning: Could not update extra metadata for '%s': %s\n"
 msgstr "चेतावनी: के लिए अतिरिक्त मेटाडेटा अद्यतन नहीं किया जा सका '%s': %s\n"
@@ -2641,7 +2642,7 @@ msgstr "डाउनलोड का आकार"
 msgid "Show the download size"
 msgstr "अपलोड आकार दिखाएं"
 
-#: app/flatpak-builtins-remote-ls.c:391
+#: app/flatpak-builtins-remote-ls.c:388
 msgid " [REMOTE or URI] - Show available runtimes and applications"
 msgstr " [रिमोट या यूआरआई] - उपलब्ध रनटाइम और एप्लिकेशन दिखाएं"
 
@@ -2954,7 +2955,7 @@ msgstr "%zd सारांश शाखाएँ\n"
 msgid "Installed"
 msgstr "इंस्टॉल"
 
-#: app/flatpak-builtins-repo.c:335 app/flatpak-cli-transaction.c:1404
+#: app/flatpak-builtins-repo.c:335 app/flatpak-cli-transaction.c:1390
 msgid "Download"
 msgstr "डाउनलोड"
 
@@ -3086,11 +3087,11 @@ msgstr ""
 msgid "Use PATH instead of the runtime's /usr"
 msgstr ""
 
-#: app/flatpak-builtins-run.c:114
+#: app/flatpak-builtins-run.c:117
 msgid "APP [ARGUMENT…] - Run an app"
 msgstr "एपीपी [तर्क…] - एक ऐप चलाएं"
 
-#: app/flatpak-builtins-run.c:264
+#: app/flatpak-builtins-run.c:268
 #, c-format
 msgid "runtime/%s/%s/%s not installed"
 msgstr "रनटाइम/%s/%s/%s स्थापित नहीं है"
@@ -3107,15 +3108,15 @@ msgstr "रिमोट"
 msgid "Show the remotes"
 msgstr "रिमोट दिखाएँ"
 
-#: app/flatpak-builtins-search.c:245
+#: app/flatpak-builtins-search.c:242
 msgid "TEXT - Search remote apps/runtimes for text"
 msgstr "पाठ - दूरस्थ अनुप्रयोगों / रनटाइम में पाठ खोजें।"
 
-#: app/flatpak-builtins-search.c:256
+#: app/flatpak-builtins-search.c:253
 msgid "TEXT must be specified"
 msgstr "पाठ निर्दिष्ट किया जाना चाहिए"
 
-#: app/flatpak-builtins-search.c:329
+#: app/flatpak-builtins-search.c:335
 msgid "No matches found"
 msgstr "कोई मेल नहीं मिले"
 
@@ -3276,23 +3277,23 @@ msgstr "अपडेट करने में असमर्थ %s: %s\n"
 msgid "Nothing to do.\n"
 msgstr "कुछ भी नहीं करना।\n"
 
-#: app/flatpak-builtins-utils.c:341
+#: app/flatpak-builtins-utils.c:342
 #, c-format
 msgid "Remote ‘%s’ found in multiple installations:"
 msgstr "रिमोट ‘%s’ कई प्रतिष्ठानों में पाया गया:"
 
-#: app/flatpak-builtins-utils.c:342 app/flatpak-builtins-utils.c:433
-#: app/flatpak-builtins-utils.c:525 app/flatpak-builtins-utils.c:527
-#: app/flatpak-builtins-utils.c:594
+#: app/flatpak-builtins-utils.c:343 app/flatpak-builtins-utils.c:434
+#: app/flatpak-builtins-utils.c:526 app/flatpak-builtins-utils.c:528
+#: app/flatpak-builtins-utils.c:595
 msgid "Which do you want to use (0 to abort)?"
 msgstr "आप क्या उपयोग करना चाहते हैं? (0 - रुकावट के लिए)"
 
-#: app/flatpak-builtins-utils.c:344
+#: app/flatpak-builtins-utils.c:345
 #, c-format
 msgid "No remote chosen to resolve ‘%s’ which exists in multiple installations"
 msgstr "कोई रिमोट नहीं चुना गया ‘%s’ जो कई प्रतिष्ठानों में मौजूद है"
 
-#: app/flatpak-builtins-utils.c:353
+#: app/flatpak-builtins-utils.c:354
 #, c-format
 msgid ""
 "Remote \"%s\" not found\n"
@@ -3301,13 +3302,13 @@ msgstr ""
 "रिमोट \"%s\" पता नहीं चला\n"
 "संकेत: रिमोट जोड़ने के लिए flatpak रिमोट-ऐड का उपयोग करें"
 
-#: app/flatpak-builtins-utils.c:359
+#: app/flatpak-builtins-utils.c:360
 #, c-format
 msgid "Remote \"%s\" not found in the %s installation"
 msgstr "रिमोट \"%s\" पता नहीं चला में %s स्थापना"
 
 #. default to yes on Enter
-#: app/flatpak-builtins-utils.c:421
+#: app/flatpak-builtins-utils.c:422
 #, c-format
 msgid ""
 "Found ref ‘%s’ in remote ‘%s’ (%s).\n"
@@ -3316,35 +3317,35 @@ msgstr ""
 "आरईएफ ने पाया ‘%s’ रिमोट में ‘%s’ (%s).\n"
 "इस रेफ का उपयोग करें?"
 
-#: app/flatpak-builtins-utils.c:425 app/flatpak-builtins-utils.c:435
-#: app/flatpak-builtins-utils.c:509 app/flatpak-builtins-utils.c:530
+#: app/flatpak-builtins-utils.c:426 app/flatpak-builtins-utils.c:436
+#: app/flatpak-builtins-utils.c:510 app/flatpak-builtins-utils.c:531
 #, c-format
 msgid "No ref chosen to resolve matches for ‘%s’"
 msgstr "के लिए मैचों को हल करने के लिए कोई रेफरी नहीं चुना गया ‘%s’"
 
-#: app/flatpak-builtins-utils.c:431
+#: app/flatpak-builtins-utils.c:432
 #, c-format
 msgid "Similar refs found for ‘%s’ in remote ‘%s’ (%s):"
 msgstr "इसी तरह के refs के लिए मिला ‘%s’ रिमोट में ‘%s’ (%s):"
 
 #. default to yes on Enter
-#: app/flatpak-builtins-utils.c:505
+#: app/flatpak-builtins-utils.c:506
 #, c-format
 msgid "Found installed ref ‘%s’ (%s). Is this correct?"
 msgstr "स्थापित ref ‘%s’ (%s). क्या यह सही है?"
 
-#: app/flatpak-builtins-utils.c:521
+#: app/flatpak-builtins-utils.c:522
 #, c-format
 msgid "All of the above"
 msgstr "ऊपर के सभी"
 
-#: app/flatpak-builtins-utils.c:522
+#: app/flatpak-builtins-utils.c:523
 #, c-format
 msgid "Similar installed refs found for ‘%s’:"
 msgstr "इसी तरह के स्थापित refs के लिए मिला ‘%s’:"
 
 #. default to yes on Enter
-#: app/flatpak-builtins-utils.c:579
+#: app/flatpak-builtins-utils.c:580
 #, c-format
 msgid ""
 "Found similar ref(s) for ‘%s’ in remote ‘%s’ (%s).\n"
@@ -3353,101 +3354,101 @@ msgstr ""
 "पाया समान रेफरी (रों) ‘%s’ रिमोट में ‘%s’ (%s).\n"
 "इस रिमोट का उपयोग करें?"
 
-#: app/flatpak-builtins-utils.c:583 app/flatpak-builtins-utils.c:596
+#: app/flatpak-builtins-utils.c:584 app/flatpak-builtins-utils.c:597
 #, c-format
 msgid "No remote chosen to resolve matches for ‘%s’"
 msgstr "मैचों के समाधान के लिए कोई रिमोट नहीं चुना गया ‘%s’"
 
-#: app/flatpak-builtins-utils.c:593
+#: app/flatpak-builtins-utils.c:594
 #, c-format
 msgid "Remotes found with refs similar to ‘%s’:"
 msgstr "लिंक के समान पाए गए उपाय ‘%s’:"
 
-#: app/flatpak-builtins-utils.c:693 app/flatpak-builtins-utils.c:696
+#: app/flatpak-builtins-utils.c:694 app/flatpak-builtins-utils.c:697
 #, c-format
 msgid "Updating appstream data for user remote %s"
 msgstr "उपयोगकर्ता दूरस्थ के लिए अद्यतन कर रहा है appstream डेटा %s"
 
-#: app/flatpak-builtins-utils.c:703 app/flatpak-builtins-utils.c:706
+#: app/flatpak-builtins-utils.c:704 app/flatpak-builtins-utils.c:707
 #, c-format
 msgid "Updating appstream data for remote %s"
 msgstr "दूरदराज के लिए अद्यतन कर रहा है appstream डेटा %s"
 
-#: app/flatpak-builtins-utils.c:714 app/flatpak-builtins-utils.c:716
+#: app/flatpak-builtins-utils.c:715 app/flatpak-builtins-utils.c:717
 msgid "Error updating"
 msgstr "अपडेट करने में त्रुटि हुई"
 
-#: app/flatpak-builtins-utils.c:752
+#: app/flatpak-builtins-utils.c:753
 #, c-format
 msgid "Remote \"%s\" not found"
 msgstr "रिमोट \"%s\" पता नहीं चला"
 
-#: app/flatpak-builtins-utils.c:793
+#: app/flatpak-builtins-utils.c:794
 #, c-format
 msgid "Ambiguous suffix: '%s'."
 msgstr "प्रत्यय अस्पष्ट है: '%s'."
 
 #. Translators: don't translate the values
-#: app/flatpak-builtins-utils.c:795 app/flatpak-builtins-utils.c:810
+#: app/flatpak-builtins-utils.c:796 app/flatpak-builtins-utils.c:811
 msgid "Possible values are :s[tart], :m[iddle], :e[nd] or :f[ull]"
 msgstr "संभावित मान हैं: s[tart], m[iddle],: e[nd] या: f[ull]"
 
-#: app/flatpak-builtins-utils.c:808
+#: app/flatpak-builtins-utils.c:809
 #, c-format
 msgid "Invalid suffix: '%s'."
 msgstr "अमान्य प्रत्यय: '%s'."
 
-#: app/flatpak-builtins-utils.c:843
+#: app/flatpak-builtins-utils.c:844
 #, c-format
 msgid "Ambiguous column: %s"
 msgstr "स्तंभ अस्पष्ट है: %s"
 
-#: app/flatpak-builtins-utils.c:856
+#: app/flatpak-builtins-utils.c:857
 #, c-format
 msgid "Unknown column: %s"
 msgstr "अज्ञात स्तंभ: %s"
 
-#: app/flatpak-builtins-utils.c:914
+#: app/flatpak-builtins-utils.c:915
 msgid "Available columns:\n"
 msgstr "उपलब्ध कॉलम:\n"
 
-#: app/flatpak-builtins-utils.c:924
+#: app/flatpak-builtins-utils.c:925
 msgid "Show all columns"
 msgstr "सभी कॉलम दिखाएं"
 
-#: app/flatpak-builtins-utils.c:925
+#: app/flatpak-builtins-utils.c:926
 msgid "Show available columns"
 msgstr "उपलब्ध कॉलम दिखाएं"
 
-#: app/flatpak-builtins-utils.c:928
+#: app/flatpak-builtins-utils.c:929
 msgid "Append :s[tart], :m[iddle], :e[nd] or :f[ull] to change ellipsization"
 msgstr "परिशिष्ट: s[tart]: m[iddle], e[nd] या: f[ull] दीर्घवृत्ताकार बदलने के लिए"
 
-#: app/flatpak-cli-transaction.c:93 app/flatpak-cli-transaction.c:99
+#: app/flatpak-cli-transaction.c:94 app/flatpak-cli-transaction.c:100
 #, c-format
 msgid "Required runtime for %s (%s) found in remote %s\n"
 msgstr "के लिए आवश्यक रनटाइम %s (%s) रिमोट में मिला %s\n"
 
-#: app/flatpak-cli-transaction.c:101
+#: app/flatpak-cli-transaction.c:102
 msgid "Do you want to install it?"
 msgstr "क्या आप इसे स्थापित करना चाहते हैं?"
 
-#: app/flatpak-cli-transaction.c:107
+#: app/flatpak-cli-transaction.c:108
 #, c-format
 msgid "Required runtime for %s (%s) found in remotes:"
 msgstr "के लिए आवश्यक रनटाइम %s (%s) रिमोट में पाया:"
 
-#: app/flatpak-cli-transaction.c:109
+#: app/flatpak-cli-transaction.c:110
 msgid "Which do you want to install (0 to abort)?"
 msgstr "आप क्या स्थापित करना चाहते हैं? (0 रद्द करने के लिए)"
 
-#: app/flatpak-cli-transaction.c:129
+#: app/flatpak-cli-transaction.c:130
 #, fuzzy, c-format
 msgid "Configuring %s as new remote '%s'\n"
 msgstr "विन्यास कर रहा है %s एक नए रिमोट की तरह '%s'"
 
 #. default to yes on Enter
-#: app/flatpak-cli-transaction.c:136
+#: app/flatpak-cli-transaction.c:137
 #, c-format
 msgid ""
 "The remote '%s', referred to by '%s' at location %s contains additional "
@@ -3458,7 +3459,7 @@ msgstr ""
 "क्या भविष्य के प्रतिष्ठानों के लिए रिमोट रखा जाना चाहिए?"
 
 #. default to yes on Enter
-#: app/flatpak-cli-transaction.c:144
+#: app/flatpak-cli-transaction.c:145
 #, c-format
 msgid ""
 "The application %s depends on runtimes from:\n"
@@ -3469,128 +3470,128 @@ msgstr ""
 "  %s\n"
 "नए रिमोट के रूप में इस विन्यस्त करें '%s'"
 
-#: app/flatpak-cli-transaction.c:407
+#: app/flatpak-cli-transaction.c:408
 msgid "Installing…"
 msgstr "स्थापित कर रहा है..."
 
-#: app/flatpak-cli-transaction.c:409
+#: app/flatpak-cli-transaction.c:410
 #, c-format
 msgid "Installing %d/%d…"
 msgstr "स्थापित कर रहा है %d/%d…"
 
-#: app/flatpak-cli-transaction.c:414
+#: app/flatpak-cli-transaction.c:415
 msgid "Updating…"
 msgstr "अपडेट हो रहा है ..."
 
-#: app/flatpak-cli-transaction.c:416
+#: app/flatpak-cli-transaction.c:417
 #, c-format
 msgid "Updating %d/%d…"
 msgstr "अद्यतन कर रहा है %d/%d…"
 
-#: app/flatpak-cli-transaction.c:421
+#: app/flatpak-cli-transaction.c:422
 msgid "Uninstalling…"
 msgstr "स्थापना रद्द कर रहा है ..."
 
-#: app/flatpak-cli-transaction.c:423
+#: app/flatpak-cli-transaction.c:424
 #, c-format
 msgid "Uninstalling %d/%d…"
 msgstr "स्थापना रद्द करना %d/%d…"
 
-#: app/flatpak-cli-transaction.c:489 app/flatpak-quiet-transaction.c:161
+#: app/flatpak-cli-transaction.c:490 app/flatpak-quiet-transaction.c:161
 #, c-format
 msgid "Info: %s was skipped"
 msgstr "जानकारी: %s छूट गया था"
 
-#: app/flatpak-cli-transaction.c:512
+#: app/flatpak-cli-transaction.c:513
 #, fuzzy, c-format
 msgid "Warning: %s%s%s already installed"
 msgstr "%s पहले से स्थापित"
 
-#: app/flatpak-cli-transaction.c:515
+#: app/flatpak-cli-transaction.c:516
 #, fuzzy, c-format
 msgid "Error: %s%s%s already installed"
 msgstr "%s पहले से स्थापित"
 
-#: app/flatpak-cli-transaction.c:521
+#: app/flatpak-cli-transaction.c:522
 #, fuzzy, c-format
 msgid "Warning: %s%s%s not installed"
 msgstr "चेतावनी: %s स्थापित नहीं किया गया\n"
 
-#: app/flatpak-cli-transaction.c:524
+#: app/flatpak-cli-transaction.c:525
 #, fuzzy, c-format
 msgid "Error: %s%s%s not installed"
 msgstr "%s/%s/%s स्थापित नहीं है"
 
-#: app/flatpak-cli-transaction.c:530
+#: app/flatpak-cli-transaction.c:531
 #, fuzzy, c-format
 msgid "Warning: %s%s%s needs a later flatpak version"
 msgstr "%s Flatpak के बाद के संस्करण की आवश्यकता है"
 
-#: app/flatpak-cli-transaction.c:533
+#: app/flatpak-cli-transaction.c:534
 #, fuzzy, c-format
 msgid "Error: %s%s%s needs a later flatpak version"
 msgstr "%s Flatpak के बाद के संस्करण की आवश्यकता है"
 
-#: app/flatpak-cli-transaction.c:539
+#: app/flatpak-cli-transaction.c:540
 #, fuzzy
 msgid "Warning: Not enough disk space to complete this operation"
 msgstr "इस ऑपरेशन को पूरा करने के लिए अपर्याप्त डिस्क स्थान"
 
-#: app/flatpak-cli-transaction.c:541
+#: app/flatpak-cli-transaction.c:542
 #, fuzzy
 msgid "Error: Not enough disk space to complete this operation"
 msgstr "इस ऑपरेशन को पूरा करने के लिए अपर्याप्त डिस्क स्थान"
 
-#: app/flatpak-cli-transaction.c:546
+#: app/flatpak-cli-transaction.c:547
 #, fuzzy, c-format
 msgid "Warning: %s"
 msgstr "चेतावनी: "
 
-#: app/flatpak-cli-transaction.c:548
+#: app/flatpak-cli-transaction.c:549
 #, fuzzy, c-format
 msgid "Error: %s"
 msgstr "त्रुटि:"
 
-#: app/flatpak-cli-transaction.c:563
+#: app/flatpak-cli-transaction.c:564
 #, fuzzy, c-format
 msgid "Failed to install %s%s%s: "
 msgstr "रीबेस करने में विफल %s को %s: "
 
-#: app/flatpak-cli-transaction.c:570
+#: app/flatpak-cli-transaction.c:571
 #, fuzzy, c-format
 msgid "Failed to update %s%s%s: "
 msgstr "करने में विफल %s %s: "
 
-#: app/flatpak-cli-transaction.c:577
+#: app/flatpak-cli-transaction.c:578
 #, fuzzy, c-format
 msgid "Failed to install bundle %s%s%s: "
 msgstr "रीबेस करने में विफल %s को %s: "
 
-#: app/flatpak-cli-transaction.c:584
+#: app/flatpak-cli-transaction.c:585
 #, fuzzy, c-format
 msgid "Failed to uninstall %s%s%s: "
 msgstr "रीबेस करने में विफल %s को %s: "
 
-#: app/flatpak-cli-transaction.c:626
+#: app/flatpak-cli-transaction.c:627
 #, c-format
 msgid "Authentication required for remote '%s'\n"
 msgstr "रिमोट के लिए प्रमाणीकरण आवश्यक है '%s'\n"
 
-#: app/flatpak-cli-transaction.c:627
+#: app/flatpak-cli-transaction.c:628
 msgid "Open browser?"
 msgstr "खुला ब्राउज़र?"
 
-#: app/flatpak-cli-transaction.c:683
+#: app/flatpak-cli-transaction.c:684
 #, c-format
 msgid "Login required remote %s (realm %s)\n"
 msgstr "लॉगिन आवश्यक रिमोट %s (दायरे %s)\n"
 
-#: app/flatpak-cli-transaction.c:688
+#: app/flatpak-cli-transaction.c:689
 msgid "Password"
 msgstr "पासवर्ड"
 
 #. Only runtimes can be pinned
-#: app/flatpak-cli-transaction.c:743
+#: app/flatpak-cli-transaction.c:744
 #, fuzzy, c-format
 msgid ""
 "\n"
@@ -3598,7 +3599,7 @@ msgid ""
 "%s%s%s branch %s%s%s\n"
 msgstr "जानकारी: (पिन किए गए) %s//%s जीवन का अंत है, के पक्ष में %s\n"
 
-#: app/flatpak-cli-transaction.c:749
+#: app/flatpak-cli-transaction.c:750
 #, fuzzy, c-format
 msgid ""
 "\n"
@@ -3606,7 +3607,7 @@ msgid ""
 "%s%s%s\n"
 msgstr "जानकारी: %s//%s जीवन के अंत के पक्ष में है %s\n"
 
-#: app/flatpak-cli-transaction.c:752
+#: app/flatpak-cli-transaction.c:753
 #, fuzzy, c-format
 msgid ""
 "\n"
@@ -3615,114 +3616,109 @@ msgid ""
 msgstr "जानकारी: %s//%s जीवन के अंत के पक्ष में है %s\n"
 
 #. Only runtimes can be pinned
-#: app/flatpak-cli-transaction.c:764
+#: app/flatpak-cli-transaction.c:765
 #, fuzzy, c-format
 msgid ""
 "\n"
 "Info: (pinned) runtime %s%s%s branch %s%s%s is end-of-life, with reason:\n"
 msgstr "जानकारी: (पिन किए गए) %s//%s कारण के साथ जीवन का अंत है:\n"
 
-#: app/flatpak-cli-transaction.c:770
+#: app/flatpak-cli-transaction.c:771
 #, fuzzy, c-format
 msgid ""
 "\n"
 "Info: runtime %s%s%s branch %s%s%s is end-of-life, with reason:\n"
 msgstr "जानकारी: %s//%s कारण के साथ जीवन का अंत है:\n"
 
-#: app/flatpak-cli-transaction.c:773
+#: app/flatpak-cli-transaction.c:774
 #, fuzzy, c-format
 msgid ""
 "\n"
 "Info: app %s%s%s branch %s%s%s is end-of-life, with reason:\n"
 msgstr "जानकारी: %s//%s कारण के साथ जीवन का अंत है:\n"
 
-#: app/flatpak-cli-transaction.c:947
+#: app/flatpak-cli-transaction.c:948
 #, fuzzy, c-format
 msgid "Info: applications using this extension:\n"
 msgstr "इस रनटाइम का उपयोग करने वाले अनुप्रयोग:\n"
 
-#: app/flatpak-cli-transaction.c:949
+#: app/flatpak-cli-transaction.c:950
 #, fuzzy, c-format
 msgid "Info: applications using this runtime:\n"
 msgstr "इस रनटाइम का उपयोग करने वाले अनुप्रयोग:\n"
 
-#: app/flatpak-cli-transaction.c:968
+#: app/flatpak-cli-transaction.c:969
 msgid "Replace?"
 msgstr ""
 
-#: app/flatpak-cli-transaction.c:971 app/flatpak-quiet-transaction.c:247
+#: app/flatpak-cli-transaction.c:972 app/flatpak-quiet-transaction.c:247
 #, c-format
 msgid "Updating to rebased version\n"
 msgstr "अद्यतन संस्करण में अपग्रेड करें\n"
 
-#: app/flatpak-cli-transaction.c:995
+#: app/flatpak-cli-transaction.c:996
 #, c-format
 msgid "Failed to rebase %s to %s: "
 msgstr "रीबेस करने में विफल %s को %s: "
 
-#: app/flatpak-cli-transaction.c:1009
-#, fuzzy, c-format
-msgid "Failed to uninstall %s for rebase to %s: "
-msgstr "रीबेस करने में विफल %s को %s: "
-
-#: app/flatpak-cli-transaction.c:1222
+#: app/flatpak-cli-transaction.c:1208
 #, fuzzy, c-format
 msgid "New %s%s%s permissions:"
 msgstr "नया %s अनुमतियाँ:"
 
-#: app/flatpak-cli-transaction.c:1224
+#: app/flatpak-cli-transaction.c:1210
 #, fuzzy, c-format
 msgid "%s%s%s permissions:"
 msgstr "%s अनुमतियाँ:"
 
-#: app/flatpak-cli-transaction.c:1286
+#: app/flatpak-cli-transaction.c:1272
 msgid "Warning: "
 msgstr "चेतावनी: "
 
 #. translators: This is short for operation, the title of a one-char column
-#: app/flatpak-cli-transaction.c:1385
+#: app/flatpak-cli-transaction.c:1371
 msgid "Op"
 msgstr "पर"
 
 #. Avoid resizing the download column too much,
 #. * by making the title as long as typical content
 #.
-#: app/flatpak-cli-transaction.c:1401 app/flatpak-cli-transaction.c:1445
+#: app/flatpak-cli-transaction.c:1387 app/flatpak-cli-transaction.c:1431
 msgid "partial"
 msgstr "आंशिक"
 
-#: app/flatpak-cli-transaction.c:1477
+#: app/flatpak-cli-transaction.c:1463
 msgid "Proceed with these changes to the user installation?"
 msgstr "उपयोगकर्ता स्थापना के लिए इन परिवर्तनों के साथ आगे बढ़ें?"
 
-#: app/flatpak-cli-transaction.c:1479
+#: app/flatpak-cli-transaction.c:1465
 msgid "Proceed with these changes to the system installation?"
 msgstr "सिस्टम स्थापना के लिए इन परिवर्तनों के साथ आगे बढ़ें?"
 
-#: app/flatpak-cli-transaction.c:1481
+#: app/flatpak-cli-transaction.c:1467
 #, c-format
 msgid "Proceed with these changes to the %s?"
 msgstr "इन बदलावों को करते रहें %s?"
 
-#: app/flatpak-cli-transaction.c:1655
+#: app/flatpak-cli-transaction.c:1638
 msgid "Changes complete."
 msgstr "परिवर्तन पूर्ण।"
 
-#: app/flatpak-cli-transaction.c:1657
+#: app/flatpak-cli-transaction.c:1640
 msgid "Uninstall complete."
 msgstr "हटाने पूरा हो गया है।"
 
-#: app/flatpak-cli-transaction.c:1659
+#: app/flatpak-cli-transaction.c:1642
 msgid "Installation complete."
 msgstr "स्थापना पूर्ण।"
 
-#: app/flatpak-cli-transaction.c:1661
+#: app/flatpak-cli-transaction.c:1644
 msgid "Updates complete."
 msgstr "अद्यतन पूर्ण है।"
 
 #. For updates/!stop_on_first_error we already printed all errors so we make up
 #. a different one.
-#: app/flatpak-cli-transaction.c:1694
+#: app/flatpak-cli-transaction.c:1677
 msgid "There were one or more errors"
 msgstr "एक या अधिक त्रुटियां हुई हैं"
 
@@ -4063,7 +4059,7 @@ msgstr "'%s' एक flatpak कमांड नहीं है"
 msgid "No command specified"
 msgstr "कोई कमांड निर्दिष्ट"
 
-#: app/flatpak-main.c:976
+#: app/flatpak-main.c:974
 msgid "error:"
 msgstr "त्रुटि:"
 
@@ -4122,16 +4118,16 @@ msgstr "चेतावनी: करने में विफल %s %s: %s\n"
 msgid "Error: Failed to uninstall %s: %s\n"
 msgstr "त्रुटि: करने में विफल %s %s: %s\n"
 
-#: app/flatpak-quiet-transaction.c:166 common/flatpak-dir.c:10404
+#: app/flatpak-quiet-transaction.c:166 common/flatpak-dir.c:10426
 #, c-format
 msgid "%s already installed"
 msgstr "%s पहले से स्थापित"
 
 #: app/flatpak-quiet-transaction.c:168 common/flatpak-dir.c:2970
-#: common/flatpak-dir.c:3669 common/flatpak-dir.c:15752
-#: common/flatpak-dir.c:16042 common/flatpak-transaction.c:2663
-#: common/flatpak-transaction.c:2718 common/flatpak-utils.c:1194
-#: common/flatpak-utils.c:1287
+#: common/flatpak-dir.c:3669 common/flatpak-dir.c:15776
+#: common/flatpak-dir.c:16066 common/flatpak-transaction.c:2669
+#: common/flatpak-transaction.c:2724 common/flatpak-utils.c:1085
+#: common/flatpak-utils.c:1178
 #, c-format
 msgid "%s not installed"
 msgstr "%s स्थापित नहीं है"
@@ -4160,59 +4156,54 @@ msgstr "जानकारी: %s यह जीवन का अंत है, �
 msgid "Failed to rebase %s to %s: %s\n"
 msgstr "रीबेस करने में विफल %s पर %s: %s\n"
 
-#: app/flatpak-quiet-transaction.c:264
-#, fuzzy, c-format
-msgid "Failed to uninstall %s for rebase to %s: %s\n"
-msgstr "रीबेस करने में विफल %s पर %s: %s\n"
-
 #: common/flatpak-auth.c:58
 #, c-format
 msgid "No authenticator configured for remote `%s`"
 msgstr "प्रमाणीकरणकर्ता रिमोट के लिए कॉन्फ़िगर नहीं किया गया है `%s`"
 
-#: common/flatpak-context.c:192
+#: common/flatpak-context.c:193
 #, c-format
 msgid "Unknown share type %s, valid types are: %s"
 msgstr "अज्ञात शेयर प्रकार %s, मान्य प्रकार हैं: %s"
 
-#: common/flatpak-context.c:227
+#: common/flatpak-context.c:228
 #, c-format
 msgid "Unknown policy type %s, valid types are: %s"
 msgstr "अज्ञात नीति प्रकार %s, मान्य प्रकार हैं: %s"
 
-#: common/flatpak-context.c:265
+#: common/flatpak-context.c:266
 #, c-format
 msgid "Invalid dbus name %s"
 msgstr "अमान्य dbus नाम %s"
 
-#: common/flatpak-context.c:278
+#: common/flatpak-context.c:279
 #, c-format
 msgid "Unknown socket type %s, valid types are: %s"
 msgstr "अज्ञात सॉकेट प्रकार %s, मान्य प्रकार हैं: %s"
 
-#: common/flatpak-context.c:307
+#: common/flatpak-context.c:308
 #, c-format
 msgid "Unknown device type %s, valid types are: %s"
 msgstr "अज्ञात डिवाइस प्रकार %s, मान्य प्रकार हैं: %s"
 
-#: common/flatpak-context.c:335
+#: common/flatpak-context.c:336
 #, c-format
 msgid "Unknown feature type %s, valid types are: %s"
 msgstr "अज्ञात सुविधा प्रकार %s, मान्य प्रकार हैं: %s"
 
-#: common/flatpak-context.c:880
+#: common/flatpak-context.c:881
 #, c-format
 msgid "Filesystem location \"%s\" contains \"..\""
 msgstr "फाइलसिस्टम स्थान \"%s\" शामिल \"..\""
 
-#: common/flatpak-context.c:918
+#: common/flatpak-context.c:919
 #, c-format
 msgid ""
 "--filesystem=/ is not available, use --filesystem=host for a similar result"
 msgstr ""
 "--filesystem=/ उपलब्ध नहीं है, समान परिणाम के लिए --filesystem = होस्ट का उपयोग करें"
 
-#: common/flatpak-context.c:952
+#: common/flatpak-context.c:953
 #, c-format
 msgid ""
 "Unknown filesystem location %s, valid locations are: host, host-os, host-"
@@ -4221,185 +4212,185 @@ msgstr ""
 "अज्ञात फ़ाइल सिस्टम स्थान %s, मान्य स्थान हैं: होस्ट, होस्ट-ओएस, होस्ट-आदि, घर, xdg-"
 "*[/…], ~/dir, /dir"
 
-#: common/flatpak-context.c:1232
+#: common/flatpak-context.c:1233
 #, c-format
 msgid "Invalid env format %s"
 msgstr "अमान्य env प्रारूप %s"
 
-#: common/flatpak-context.c:1335
+#: common/flatpak-context.c:1321
 #, c-format
 msgid "Environment variable name must not contain '=': %s"
 msgstr "पर्यावरण पर नाम में नहीं होना चाहिए '=': %s"
 
-#: common/flatpak-context.c:1448 common/flatpak-context.c:1456
+#: common/flatpak-context.c:1434 common/flatpak-context.c:1442
 #, c-format
 msgid "--add-policy arguments must be in the form SUBSYSTEM.KEY=VALUE"
 msgstr "--add-policy तर्क SUBSYSTEM.KEY=VALUE के रूप में होना चाहिए"
 
-#: common/flatpak-context.c:1463
+#: common/flatpak-context.c:1449
 #, c-format
 msgid "--add-policy values can't start with \"!\""
 msgstr "--add-policy मान इसके साथ शुरू नहीं हो सकते \"!\""
 
-#: common/flatpak-context.c:1488 common/flatpak-context.c:1496
+#: common/flatpak-context.c:1474 common/flatpak-context.c:1482
 #, c-format
 msgid "--remove-policy arguments must be in the form SUBSYSTEM.KEY=VALUE"
 msgstr "--remove-policy तर्क SUBSYSTEM.KEY=VALUE . रूप में होने चाहिए"
 
-#: common/flatpak-context.c:1503
+#: common/flatpak-context.c:1489
 #, c-format
 msgid "--remove-policy values can't start with \"!\""
 msgstr "--remove-policy मान से प्रारंभ नहीं हो सकते"
 
-#: common/flatpak-context.c:1528
+#: common/flatpak-context.c:1514
 msgid "Share with host"
 msgstr "मेजबान के साथ साझा करें"
 
-#: common/flatpak-context.c:1528 common/flatpak-context.c:1529
+#: common/flatpak-context.c:1514 common/flatpak-context.c:1515
 msgid "SHARE"
 msgstr "शेयर"
 
-#: common/flatpak-context.c:1529
+#: common/flatpak-context.c:1515
 msgid "Unshare with host"
 msgstr "होस्ट के साथ अनशेयर करें"
 
-#: common/flatpak-context.c:1530
+#: common/flatpak-context.c:1516
 msgid "Expose socket to app"
 msgstr "ऐप को सॉकेट एक्सपोज़ करें"
 
-#: common/flatpak-context.c:1530 common/flatpak-context.c:1531
+#: common/flatpak-context.c:1516 common/flatpak-context.c:1517
 msgid "SOCKET"
 msgstr "सॉकेट"
 
-#: common/flatpak-context.c:1531
+#: common/flatpak-context.c:1517
 msgid "Don't expose socket to app"
 msgstr "एप्लिकेशन को सॉकेट उजागर न करें"
 
-#: common/flatpak-context.c:1532
+#: common/flatpak-context.c:1518
 msgid "Expose device to app"
 msgstr "एप्लिकेशन को उपकरण दिखाएं"
 
-#: common/flatpak-context.c:1532 common/flatpak-context.c:1533
+#: common/flatpak-context.c:1518 common/flatpak-context.c:1519
 msgid "DEVICE"
 msgstr "डिवाइस"
 
-#: common/flatpak-context.c:1533
+#: common/flatpak-context.c:1519
 msgid "Don't expose device to app"
 msgstr "डिवाइस को ऐप में उजागर न करें"
 
-#: common/flatpak-context.c:1534
+#: common/flatpak-context.c:1520
 msgid "Allow feature"
 msgstr "सुविधा की अनुमति दें"
 
-#: common/flatpak-context.c:1534 common/flatpak-context.c:1535
+#: common/flatpak-context.c:1520 common/flatpak-context.c:1521
 msgid "FEATURE"
 msgstr "सुविधा"
 
-#: common/flatpak-context.c:1535
+#: common/flatpak-context.c:1521
 msgid "Don't allow feature"
 msgstr "सुविधा की अनुमति न दें"
 
-#: common/flatpak-context.c:1536
+#: common/flatpak-context.c:1522
 msgid "Expose filesystem to app (:ro for read-only)"
 msgstr "एप्लिकेशन के लिए फाइल सिस्टम को उजागर करें (:केवल पढ़ने के लिए ro)"
 
-#: common/flatpak-context.c:1536
+#: common/flatpak-context.c:1522
 msgid "FILESYSTEM[:ro]"
 msgstr "फाइल सिस्टम[:ro]"
 
-#: common/flatpak-context.c:1537
+#: common/flatpak-context.c:1523
 msgid "Don't expose filesystem to app"
 msgstr "एप्लिकेशन के लिए फ़ाइल सिस्टम को उजागर न करें"
 
-#: common/flatpak-context.c:1537
+#: common/flatpak-context.c:1523
 msgid "FILESYSTEM"
 msgstr "फाइल सिस्टम"
 
-#: common/flatpak-context.c:1538
+#: common/flatpak-context.c:1524
 msgid "Set environment variable"
 msgstr "पर्यावरण चर सेट करें"
 
-#: common/flatpak-context.c:1538
+#: common/flatpak-context.c:1524
 msgid "VAR=VALUE"
 msgstr "VAR=VALUE"
 
-#: common/flatpak-context.c:1539
+#: common/flatpak-context.c:1525
 msgid "Read environment variables in env -0 format from FD"
 msgstr "एफडी से पर्यावरण चर env -0 प्रारूप में पढ़ें"
 
-#: common/flatpak-context.c:1539
+#: common/flatpak-context.c:1525
 msgid "FD"
 msgstr "FD"
 
-#: common/flatpak-context.c:1540
+#: common/flatpak-context.c:1526
 msgid "Remove variable from environment"
 msgstr "पर्यावरण से चर निकालें"
 
-#: common/flatpak-context.c:1540
+#: common/flatpak-context.c:1526
 msgid "VAR"
 msgstr "VAR"
 
-#: common/flatpak-context.c:1541
+#: common/flatpak-context.c:1527
 msgid "Allow app to own name on the session bus"
 msgstr "सत्र बस में ऐप को स्वयं के नाम की अनुमति दें"
 
-#: common/flatpak-context.c:1541 common/flatpak-context.c:1542
-#: common/flatpak-context.c:1543 common/flatpak-context.c:1544
-#: common/flatpak-context.c:1545 common/flatpak-context.c:1546
+#: common/flatpak-context.c:1527 common/flatpak-context.c:1528
+#: common/flatpak-context.c:1529 common/flatpak-context.c:1530
+#: common/flatpak-context.c:1531 common/flatpak-context.c:1532
 msgid "DBUS_NAME"
 msgstr "DBUS_नाम"
 
-#: common/flatpak-context.c:1542
+#: common/flatpak-context.c:1528
 msgid "Allow app to talk to name on the session bus"
 msgstr "सत्र बस में नाम करने के लिए बात करने के लिए एप्लिकेशन की अनुमति दें"
 
-#: common/flatpak-context.c:1543
+#: common/flatpak-context.c:1529
 msgid "Don't allow app to talk to name on the session bus"
 msgstr "सत्र बस में नाम पर बात करने के लिए एप्लिकेशन को अनुमति न दें"
 
-#: common/flatpak-context.c:1544
+#: common/flatpak-context.c:1530
 msgid "Allow app to own name on the system bus"
 msgstr "एप्लिकेशन को सिस्टम बस पर स्वयं के नाम की अनुमति दें"
 
-#: common/flatpak-context.c:1545
+#: common/flatpak-context.c:1531
 msgid "Allow app to talk to name on the system bus"
 msgstr "एप्लिकेशन को सिस्टम बस में नाम से बात करने की अनुमति दें"
 
-#: common/flatpak-context.c:1546
+#: common/flatpak-context.c:1532
 msgid "Don't allow app to talk to name on the system bus"
 msgstr "सिस्टम बस में नाम से बात करने से आवेदन को रोकें"
 
-#: common/flatpak-context.c:1547
+#: common/flatpak-context.c:1533
 msgid "Add generic policy option"
 msgstr "जेनेरिक पॉलिसी विकल्प जोड़ें"
 
-#: common/flatpak-context.c:1547 common/flatpak-context.c:1548
+#: common/flatpak-context.c:1533 common/flatpak-context.c:1534
 msgid "SUBSYSTEM.KEY=VALUE"
 msgstr "SUBSYSTEM.KEY=VALUE"
 
-#: common/flatpak-context.c:1548
+#: common/flatpak-context.c:1534
 msgid "Remove generic policy option"
 msgstr "जेनेरिक पॉलिसी का विकल्प निकालें"
 
-#: common/flatpak-context.c:1549
+#: common/flatpak-context.c:1535
 msgid "Persist home directory subpath"
 msgstr "उप निर्देशिका को घर निर्देशिका में सहेजें"
 
-#: common/flatpak-context.c:1549
+#: common/flatpak-context.c:1535
 msgid "FILENAME"
 msgstr "फ़ाइल का नाम"
 
 #. This is not needed/used anymore, so hidden, but we accept it for backwards compat
-#: common/flatpak-context.c:1551
+#: common/flatpak-context.c:1537
 msgid "Don't require a running session (no cgroups creation)"
 msgstr "वर्तमान सत्र (कोई [cgroups] निर्माण) की आवश्यकता नहीं है"
 
-#: common/flatpak-context.c:2505
+#: common/flatpak-context.c:2491
 #, c-format
 msgid "Not replacing \"%s\" with tmpfs: %s"
 msgstr ""
 
-#: common/flatpak-context.c:2513
+#: common/flatpak-context.c:2499
 #, c-format
 msgid "Not sharing \"%s\" with sandbox: %s"
 msgstr ""
@@ -4408,92 +4399,92 @@ msgstr ""
 #. * the path not existing, it seems reasonable to make more of a fuss
 #. * about the home directory not existing or otherwise being unusable,
 #. * so this is intentionally not using cannot_export()
-#: common/flatpak-context.c:2609
+#: common/flatpak-context.c:2595
 #, c-format
 msgid "Not allowing home directory access: %s"
 msgstr ""
 
-#: common/flatpak-context.c:2828
+#: common/flatpak-context.c:2823
 #, fuzzy, c-format
 msgid "Unable to provide a temporary home directory in the sandbox: %s"
 msgstr "परिनियोजन निर्देशिका बनाने में असमर्थ"
 
-#: common/flatpak-dir.c:399
+#: common/flatpak-dir.c:400
 #, c-format
 msgid "Configured collection ID ‘%s’ not in summary file"
 msgstr "कॉन्फ़िगर किया गया संग्रह आईडी ‘%s’ सारांश फ़ाइल में नहीं"
 
-#: common/flatpak-dir.c:537
+#: common/flatpak-dir.c:538
 #, c-format
 msgid "Unable to load summary from remote %s: %s"
 msgstr "रिमोट से सारांश लोड करने में असमर्थ %s: %s"
 
-#: common/flatpak-dir.c:686 common/flatpak-dir.c:758
+#: common/flatpak-dir.c:687 common/flatpak-dir.c:759
 #, c-format
 msgid "No such ref '%s' in remote %s"
 msgstr "ऐसी कोई कड़ी नहीं '%s' रिमोट में %s"
 
-#: common/flatpak-dir.c:743 common/flatpak-dir.c:880 common/flatpak-dir.c:909
+#: common/flatpak-dir.c:744 common/flatpak-dir.c:881 common/flatpak-dir.c:910
 #, c-format
 msgid "No entry for %s in remote '%s' summary flatpak cache "
 msgstr "के लिए कोई प्रविष्टि नहीं %s रिमोट में '%s' सारांश flatpak कैश "
 
-#: common/flatpak-dir.c:898
+#: common/flatpak-dir.c:899
 #, c-format
 msgid "No summary or Flatpak cache available for remote %s"
 msgstr "रिमोट के लिए कोई सारांश या flatpak कैश उपलब्ध नहीं है %s"
 
-#: common/flatpak-dir.c:921
+#: common/flatpak-dir.c:922
 #, c-format
 msgid "No entry for %s in remote '%s' summary cache "
 msgstr "के लिए कोई प्रविष्टि नहीं %s रिमोट में '%s' सारांश कैश "
 
-#: common/flatpak-dir.c:926
+#: common/flatpak-dir.c:927
 #, c-format
 msgid "Missing xa.data in summary for remote %s"
 msgstr "दूरस्थ के लिए सारांश में xa.data गुम %s"
 
-#: common/flatpak-dir.c:932 common/flatpak-dir.c:1349
+#: common/flatpak-dir.c:933 common/flatpak-dir.c:1350
 #, c-format
 msgid "Unsupported summary version %d for remote %s"
 msgstr "असमर्थित सारांश संस्करण %d रिमोट के लिए %s"
 
-#: common/flatpak-dir.c:1019
+#: common/flatpak-dir.c:1020
 msgid "Remote OCI index has no registry uri"
 msgstr "रिमोट ओसीआई सूचकांक कोई रजिस्ट्री यूआरआई है"
 
-#: common/flatpak-dir.c:1088
+#: common/flatpak-dir.c:1089
 #, c-format
 msgid "Couldn't find ref %s in remote %s"
 msgstr "लिंक नहीं मिला %s रिमोट में %s"
 
-#: common/flatpak-dir.c:1105 common/flatpak-dir.c:5960
-#: common/flatpak-utils.c:6934 common/flatpak-utils.c:6939
+#: common/flatpak-dir.c:1106 common/flatpak-dir.c:5960
+#: common/flatpak-utils.c:6819 common/flatpak-utils.c:6824
 msgid "Image is not a manifest"
 msgstr "छवि एक प्रकट नहीं है"
 
-#: common/flatpak-dir.c:1126 common/flatpak-dir.c:1199
+#: common/flatpak-dir.c:1127 common/flatpak-dir.c:1200
 #, c-format
 msgid "Commit has no requested ref ‘%s’ in ref binding metadata"
 msgstr "प्रतिबद्ध के पास अनुरोधित लिंक नहीं है ‘%s’ रेफरी बाध्यकारी मेटाडाटा में"
 
-#: common/flatpak-dir.c:1230
+#: common/flatpak-dir.c:1231
 #, c-format
 msgid "Configured collection ID ‘%s’ not in binding metadata"
 msgstr "कॉन्फ़िगर किया गया संग्रह आईडी ‘%s’ मेटाडेटा को बाध्य करने में नहीं"
 
-#: common/flatpak-dir.c:1266 common/flatpak-dir.c:4948
+#: common/flatpak-dir.c:1267 common/flatpak-dir.c:4948
 #: common/flatpak-dir.c:5869 common/flatpak-dir.c:5937
 #, c-format
 msgid "Couldn't find latest checksum for ref %s in remote %s"
 msgstr "रेफरी के लिए नवीनतम चेकसम नहीं मिला %s रिमोट में %s"
 
-#: common/flatpak-dir.c:1319 common/flatpak-dir.c:1355
+#: common/flatpak-dir.c:1320 common/flatpak-dir.c:1356
 #, fuzzy, c-format
 msgid "No entry for %s in remote %s summary flatpak sparse cache"
 msgstr "के लिए कोई प्रविष्टि नहीं %s दूरस्थ सारांश में flatpak विरल कैश "
 
-#: common/flatpak-dir.c:1908
+#: common/flatpak-dir.c:1909
 #, c-format
 msgid "Commit metadata for %s not matching expected metadata"
 msgstr "के लिए मेटा डेटा कमिट %s अपेक्षित मेटाडेटा से मेल नहीं खाता है"
@@ -4546,7 +4537,7 @@ msgid "No appstream commit to deploy"
 msgstr "कोई appstream को तैनात करने के लिए प्रतिबद्ध"
 
 #: common/flatpak-dir.c:5244 common/flatpak-dir.c:6294
-#: common/flatpak-dir.c:9829 common/flatpak-dir.c:10546
+#: common/flatpak-dir.c:9862 common/flatpak-dir.c:10568
 msgid "Can't pull from untrusted non-gpg verified remote"
 msgstr "अविश्वसनीय गैर- gpg सत्यापित रिमोट से नहीं खींच सकते"
 
@@ -4594,8 +4585,8 @@ msgstr "अतिरिक्त डेटा के लिए गलत आक�
 msgid "Invalid checksum for extra data %s"
 msgstr "अतिरिक्त डेटा के लिए अमान्य चेकसम %s"
 
-#: common/flatpak-dir.c:5877 common/flatpak-dir.c:8679
-#: common/flatpak-dir.c:10424
+#: common/flatpak-dir.c:5877 common/flatpak-dir.c:8712
+#: common/flatpak-dir.c:10446
 #, c-format
 msgid "%s commit %s already installed"
 msgstr "%s प्रतिबद्ध है %s पहले से स्थापित"
@@ -4605,7 +4596,7 @@ msgstr "%s प्रतिबद्ध है %s पहले से स्थ�
 msgid "While pulling %s from remote %s: "
 msgstr "खींचते समय %s रिमोट से %s: "
 
-#: common/flatpak-dir.c:6318 common/flatpak-utils.c:6831
+#: common/flatpak-dir.c:6318 common/flatpak-utils.c:6716
 msgid "GPG signatures found, but none are in trusted keyring"
 msgstr "GPG हस्ताक्षर पाए गए, लेकिन कोई भी विश्वसनीय कीरिंग में नहीं हैं"
 
@@ -4623,204 +4614,204 @@ msgstr "के लिए प्रतिबद्ध है ‘%s’ में �
 msgid "Only applications can be made current"
 msgstr "केवल ऐप्स ही अपडेट किए जा सकते हैं"
 
-#: common/flatpak-dir.c:7193
+#: common/flatpak-dir.c:7219
 msgid "Not enough memory"
 msgstr "पर्याप्त स्मृति नहीं"
 
-#: common/flatpak-dir.c:7212
+#: common/flatpak-dir.c:7238
 msgid "Failed to read from exported file"
 msgstr "निर्यात की गई फ़ाइल से पढ़ने में विफल"
 
-#: common/flatpak-dir.c:7402
+#: common/flatpak-dir.c:7428
 msgid "Error reading mimetype xml file"
 msgstr "Mimetype xml फ़ाइल पढ़ने में त्रुटि"
 
-#: common/flatpak-dir.c:7407
+#: common/flatpak-dir.c:7433
 msgid "Invalid mimetype xml file"
 msgstr "अमान्य mimetype xml फ़ाइल"
 
-#: common/flatpak-dir.c:7496
+#: common/flatpak-dir.c:7522
 #, c-format
 msgid "D-Bus service file '%s' has wrong name"
 msgstr "[D-Bus] सेवा फ़ाइल '%s' गलत नाम है"
 
-#: common/flatpak-dir.c:7639
+#: common/flatpak-dir.c:7665
 #, c-format
 msgid "Invalid Exec argument %s"
 msgstr "अमान्य निष्पादन तर्क %s"
 
-#: common/flatpak-dir.c:8105
+#: common/flatpak-dir.c:8131
 msgid "While getting detached metadata: "
 msgstr "अलग होने के दौरान मेटाडेटा: "
 
-#: common/flatpak-dir.c:8110 common/flatpak-dir.c:8115
-#: common/flatpak-dir.c:8119
+#: common/flatpak-dir.c:8136 common/flatpak-dir.c:8141
+#: common/flatpak-dir.c:8145
 msgid "Extra data missing in detached metadata"
 msgstr "अतिरिक्त मेटाडेटा में अनुपलब्ध डेटा"
 
-#: common/flatpak-dir.c:8123
+#: common/flatpak-dir.c:8149
 msgid "While creating extradir: "
 msgstr "extradir बनाते समय: "
 
-#: common/flatpak-dir.c:8144 common/flatpak-dir.c:8177
+#: common/flatpak-dir.c:8170 common/flatpak-dir.c:8203
 msgid "Invalid checksum for extra data"
 msgstr "अतिरिक्त डेटा के लिए अमान्य चेकसम"
 
-#: common/flatpak-dir.c:8173
+#: common/flatpak-dir.c:8199
 msgid "Wrong size for extra data"
 msgstr "अतिरिक्त डेटा के लिए गलत आकार"
 
-#: common/flatpak-dir.c:8186
+#: common/flatpak-dir.c:8212
 #, c-format
 msgid "While writing extra data file '%s': "
 msgstr "अतिरिक्त डेटा फ़ाइल लिखते समय '%s': "
 
-#: common/flatpak-dir.c:8194
+#: common/flatpak-dir.c:8220
 #, c-format
 msgid "Extra data %s missing in detached metadata"
 msgstr "अतिरिक्त डेटा %s अलग मेटाडाटा में लापता"
 
-#: common/flatpak-dir.c:8391
+#: common/flatpak-dir.c:8424
 #, c-format
 msgid "apply_extra script failed, exit status %d"
 msgstr "apply_extra स्क्रिप्ट विफल, स्थिति से बाहर निकलें %d"
 
 #. Translators: The placeholder is for an app ref.
-#: common/flatpak-dir.c:8557
+#: common/flatpak-dir.c:8590
 #, c-format
 msgid "Installing %s is not allowed by the policy set by your administrator"
 msgstr "इंस्टॉल %s आपके व्यवस्थापक द्वारा निर्धारित नीति द्वारा अनुमति नहीं है"
 
-#: common/flatpak-dir.c:8655
+#: common/flatpak-dir.c:8688
 #, c-format
 msgid "While trying to resolve ref %s: "
 msgstr "जब अनुमति देने के लिए कोशिश कर रहा ref %s: "
 
-#: common/flatpak-dir.c:8667
+#: common/flatpak-dir.c:8700
 #, c-format
 msgid "%s is not available"
 msgstr "%s उपलब्ध नहीं है"
 
-#: common/flatpak-dir.c:8686
+#: common/flatpak-dir.c:8719
 msgid "Can't create deploy directory"
 msgstr "परिनियोजन निर्देशिका बनाने में असमर्थ"
 
-#: common/flatpak-dir.c:8694
+#: common/flatpak-dir.c:8727
 #, c-format
 msgid "Failed to read commit %s: "
 msgstr "प्रतिबद्ध पढ़ने में विफल %s: "
 
-#: common/flatpak-dir.c:8715
+#: common/flatpak-dir.c:8748
 #, c-format
 msgid "While trying to checkout %s into %s: "
 msgstr "जब एक आदेश देने की कोशिश की जा रही है %s में %s: "
 
-#: common/flatpak-dir.c:8734
+#: common/flatpak-dir.c:8767
 msgid "While trying to checkout metadata subpath: "
 msgstr "मेटाडेटा उपपथ की जांच करने की कोशिश करते हुए: "
 
-#: common/flatpak-dir.c:8766
+#: common/flatpak-dir.c:8799
 #, c-format
 msgid "While trying to checkout subpath ‘%s’: "
 msgstr "सब-पाथ चेकआउट करने की कोशिश में ‘%s’: "
 
-#: common/flatpak-dir.c:8776
+#: common/flatpak-dir.c:8809
 msgid "While trying to remove existing extra dir: "
 msgstr "मौजूदा अतिरिक्त निर्देशिका को निकालने का प्रयास करते समय: "
 
-#: common/flatpak-dir.c:8787
+#: common/flatpak-dir.c:8820
 msgid "While trying to apply extra data: "
 msgstr "अतिरिक्त डेटा को लागू करने का प्रयास करते समय: "
 
-#: common/flatpak-dir.c:8814
+#: common/flatpak-dir.c:8847
 #, c-format
 msgid "Invalid commit ref %s: "
 msgstr "अमान्य प्रतिबद्ध संदर्भ %s: "
 
-#: common/flatpak-dir.c:8822 common/flatpak-dir.c:8834
+#: common/flatpak-dir.c:8855 common/flatpak-dir.c:8867
 #, c-format
 msgid "Deployed ref %s does not match commit (%s)"
 msgstr "विस्तृ लिंक %s कमिट से मेल नहीं खाता (%s)"
 
-#: common/flatpak-dir.c:8828
+#: common/flatpak-dir.c:8861
 #, c-format
 msgid "Deployed ref %s branch does not match commit (%s)"
 msgstr "तैनात ref %s शाखा प्रतिबद्ध से मेल नहीं खाती (%s)"
 
-#: common/flatpak-dir.c:9087 common/flatpak-installation.c:1909
+#: common/flatpak-dir.c:9120 common/flatpak-installation.c:1912
 #, c-format
 msgid "%s branch %s already installed"
 msgstr "%s डाली %s पहले से स्थापित"
 
-#: common/flatpak-dir.c:9933
+#: common/flatpak-dir.c:9966
 #, c-format
 msgid "Could not unmount revokefs-fuse filesystem at %s: "
 msgstr "सकता है पर नहीं अनमाउंट revokefs-फ्यूज फाइल सिस्टम %s: "
 
-#: common/flatpak-dir.c:10220
+#: common/flatpak-dir.c:10253
 #, c-format
 msgid "This version of %s is already installed"
 msgstr "का यह संस्करण %s पहले से ही स्थापित किया गया है"
 
-#: common/flatpak-dir.c:10227
+#: common/flatpak-dir.c:10260
 #, c-format
 msgid "Can't change remote during bundle install"
 msgstr "पैकेज की स्थापना के दौरान रिमोट को बदल नहीं सकते"
 
-#: common/flatpak-dir.c:10499
+#: common/flatpak-dir.c:10521
 msgid "Can't update to a specific commit without root permissions"
 msgstr "रूट विशेषाधिकार के बिना विशिष्ट प्रतिबंध में अपग्रेड करने में असमर्थ"
 
-#: common/flatpak-dir.c:10779
+#: common/flatpak-dir.c:10801
 #, c-format
 msgid "Can't remove %s, it is needed for: %s"
 msgstr "निकाल नहीं सकते %s, यह आवश्यक है: %s"
 
-#: common/flatpak-dir.c:10835 common/flatpak-installation.c:2065
+#: common/flatpak-dir.c:10857 common/flatpak-installation.c:2068
 #, c-format
 msgid "%s branch %s is not installed"
 msgstr "%s डाली %s स्थापित नहीं किया गया"
 
-#: common/flatpak-dir.c:11088
+#: common/flatpak-dir.c:11110
 #, c-format
 msgid "%s commit %s not installed"
 msgstr "%s प्रतिबद्ध है %s स्थापित नहीं है"
 
-#: common/flatpak-dir.c:11424
+#: common/flatpak-dir.c:11446
 #, c-format
 msgid "Pruning repo failed: %s"
 msgstr "प्रूनिंग रेपो विफल: %s"
 
-#: common/flatpak-dir.c:11592 common/flatpak-dir.c:11598
+#: common/flatpak-dir.c:11614 common/flatpak-dir.c:11620
 #, c-format
 msgid "Failed to load filter '%s'"
 msgstr "फ़िल्टर लोड करने में विफल '%s'"
 
-#: common/flatpak-dir.c:11604
+#: common/flatpak-dir.c:11626
 #, c-format
 msgid "Failed to parse filter '%s'"
 msgstr "फ़िल्टर पार्स करने में विफल '%s'"
 
-#: common/flatpak-dir.c:11886
+#: common/flatpak-dir.c:11908
 msgid "Failed to write summary cache: "
 msgstr "सारांश कैश लिखने में विफल: "
 
-#: common/flatpak-dir.c:11905
+#: common/flatpak-dir.c:11927
 #, c-format
 msgid "No oci summary cached for remote '%s'"
 msgstr "रिमोट के लिए कैश नहीं oci सारांश '%s'"
 
-#: common/flatpak-dir.c:12130
+#: common/flatpak-dir.c:12152
 #, c-format
 msgid "No cached summary for remote '%s'"
 msgstr "रिमोट के लिए कोई कैश्ड सारांश नहीं '%s'"
 
-#: common/flatpak-dir.c:12171
+#: common/flatpak-dir.c:12193
 #, fuzzy, c-format
 msgid "Invalid checksum for indexed summary %s read from %s"
 msgstr "अनुक्रमित सारांश के लिए अमान्य चेकसम %s रिमोट के लिये '%s'"
 
-#: common/flatpak-dir.c:12244
+#: common/flatpak-dir.c:12266
 #, c-format
 msgid ""
 "Remote listing for %s not available; server has no summary file. Check the "
@@ -4829,188 +4820,197 @@ msgstr ""
 "के लिए दूरस्थ सूची %s उपलब्ध नहीं है; सर्वर में कोई सारांश फ़ाइल नहीं है। रिमोट-ऐड में पास "
 "किया गया URL मान्य था।"
 
-#: common/flatpak-dir.c:12619
+#: common/flatpak-dir.c:12643
 #, c-format
 msgid "Invalid checksum for indexed summary %s for remote '%s'"
 msgstr "अनुक्रमित सारांश के लिए अमान्य चेकसम %s रिमोट के लिये '%s'"
 
-#: common/flatpak-dir.c:13242
+#: common/flatpak-dir.c:13266
 #, c-format
 msgid "Multiple branches available for %s, you must specify one of: "
 msgstr "के लिए कई शाखाएँ उपलब्ध हैं %s, आपको एक निर्दिष्ट करना होगा: "
 
-#: common/flatpak-dir.c:13308
+#: common/flatpak-dir.c:13332
 #, c-format
 msgid "Nothing matches %s"
 msgstr "कुछ भी मेल नहीं खाता %s"
 
-#: common/flatpak-dir.c:13416
+#: common/flatpak-dir.c:13440
 #, c-format
 msgid "Can't find ref %s%s%s%s%s"
 msgstr "रेफरी नहीं मिल रहा %s%s%s%s%s"
 
-#: common/flatpak-dir.c:13459
+#: common/flatpak-dir.c:13483
 #, c-format
 msgid "Error searching remote %s: %s"
 msgstr "रिमोट खोजने में त्रुटि %s: %s"
 
-#: common/flatpak-dir.c:13556
+#: common/flatpak-dir.c:13580
 #, c-format
 msgid "Error searching local repository: %s"
 msgstr "स्थानीय रिपॉजिटरी खोजने में त्रुटि: %s"
 
-#: common/flatpak-dir.c:13693
+#: common/flatpak-dir.c:13717
 #, c-format
 msgid "%s/%s/%s not installed"
 msgstr "%s/%s/%s स्थापित नहीं है"
 
-#: common/flatpak-dir.c:13896
+#: common/flatpak-dir.c:13920
 #, c-format
 msgid "Could not find installation %s"
 msgstr "स्थापना नहीं मिल सकी %s"
 
-#: common/flatpak-dir.c:14440
+#: common/flatpak-dir.c:14464
 #, c-format
 msgid "Invalid file format, no %s group"
 msgstr "अमान्य फ़ाइल प्रारूप, नहीं %s समूह"
 
-#: common/flatpak-dir.c:14445 common/flatpak-utils.c:2336
+#: common/flatpak-dir.c:14469 common/flatpak-utils.c:2227
 #, c-format
 msgid "Invalid version %s, only 1 supported"
 msgstr "अमान्य संस्करण %s, केवल 1 समर्थित"
 
-#: common/flatpak-dir.c:14450 common/flatpak-dir.c:14455
+#: common/flatpak-dir.c:14474 common/flatpak-dir.c:14479
 #, c-format
 msgid "Invalid file format, no %s specified"
 msgstr "अमान्य फ़ाइल प्रारूप, नहीं %s निर्दिष्ट"
 
 #. Check some minimal size so we don't get crap
-#: common/flatpak-dir.c:14475
+#: common/flatpak-dir.c:14499
 msgid "Invalid file format, gpg key invalid"
 msgstr "अमान्य फ़ाइल प्रारूप, gpg कुंजी अमान्य है"
 
-#: common/flatpak-dir.c:14503 common/flatpak-utils.c:2409
+#: common/flatpak-dir.c:14527 common/flatpak-utils.c:2300
 msgid "Collection ID requires GPG key to be provided"
 msgstr "संग्रह आईडी के लिए GPG कुंजी प्रदान करनी होगी"
 
-#: common/flatpak-dir.c:14546
+#: common/flatpak-dir.c:14570
 #, c-format
 msgid "Runtime %s, branch %s is already installed"
 msgstr "रनटाइम %s, डाली %s पहले से ही स्थापित किया गया है"
 
-#: common/flatpak-dir.c:14547
+#: common/flatpak-dir.c:14571
 #, c-format
 msgid "App %s, branch %s is already installed"
 msgstr "ऐप %s, डाली %s पहले से स्थापित है"
 
-#: common/flatpak-dir.c:14781
+#: common/flatpak-dir.c:14805
 #, c-format
 msgid "Can't remove remote '%s' with installed ref %s (at least)"
 msgstr "रिमोट नहीं निकाल सकते '%s' स्थापित रेफरी के साथ %s (कम से कम)"
 
-#: common/flatpak-dir.c:14880
+#: common/flatpak-dir.c:14904
 #, c-format
 msgid "Invalid character '/' in remote name: %s"
 msgstr "दूरस्थ नाम में अमान्य वर्ण '/': %s"
 
-#: common/flatpak-dir.c:14886
+#: common/flatpak-dir.c:14910
 #, c-format
 msgid "No configuration for remote %s specified"
 msgstr "रिमोट के लिए कोई कॉन्फ़िगरेशन नहीं %s संकेत दिया"
 
-#: common/flatpak-dir.c:16533
+#: common/flatpak-dir.c:16404
 #, c-format
 msgid "Skipping deletion of mirror ref (%s, %s)…\n"
 msgstr "आईना रेफरी को स्किप करना (%s, %s)…\n"
 
-#: common/flatpak-exports.c:906
+#: common/flatpak-exports.c:918
 #, c-format
 msgid "An absolute path is required"
 msgstr ""
 
-#: common/flatpak-exports.c:923
+#: common/flatpak-exports.c:935
 #, fuzzy, c-format
 msgid "Unable to open path \"%s\": %s"
 msgstr "अपडेट करने में असमर्थ %s: %s\n"
 
-#: common/flatpak-exports.c:930
+#: common/flatpak-exports.c:942
 #, fuzzy, c-format
 msgid "Unable to get file type of \"%s\": %s"
 msgstr "सिंक पाइप बनाने में असमर्थ"
 
-#: common/flatpak-exports.c:939
+#: common/flatpak-exports.c:951
 #, c-format
 msgid "File \"%s\" has unsupported type 0o%o"
 msgstr ""
 
-#: common/flatpak-exports.c:945
+#: common/flatpak-exports.c:957
 #, c-format
 msgid "Unable to get filesystem information for \"%s\": %s"
 msgstr ""
 
-#: common/flatpak-exports.c:955
+#: common/flatpak-exports.c:967
 #, c-format
 msgid "Ignoring blocking autofs path \"%s\""
 msgstr ""
 
-#: common/flatpak-exports.c:971 common/flatpak-exports.c:984
-#: common/flatpak-exports.c:997
+#: common/flatpak-exports.c:983 common/flatpak-exports.c:996
+#: common/flatpak-exports.c:1009
 #, c-format
 msgid "Path \"%s\" is reserved by Flatpak"
 msgstr ""
 
-#: common/flatpak-exports.c:1051
+#: common/flatpak-exports.c:1063
 #, fuzzy, c-format
 msgid "Unable to resolve symbolic link \"%s\": %s"
 msgstr "अपडेट करने में असमर्थ %s: %s\n"
 
-#: common/flatpak-installation.c:831
+#: common/flatpak-glib-backports.c:69
+msgid "Empty string is not a number"
+msgstr "खाली स्ट्रिंग एक संख्या नहीं है"
+
+#: common/flatpak-glib-backports.c:95
+#, c-format
+msgid "“%s” is not an unsigned number"
+msgstr "“%s” एक अहस्ताक्षरित संख्या नहीं है"
+
+#: common/flatpak-glib-backports.c:105
+#, c-format
+msgid "Number “%s” is out of bounds [%s, %s]"
+msgstr "नंबर “%s” चलता ही जाए [%s, %s]"
+
+#: common/flatpak-installation.c:835
 #, c-format
 msgid "Ref %s not installed"
 msgstr "संदर्भ %s स्थापित नहीं है"
 
-#: common/flatpak-installation.c:872
+#: common/flatpak-installation.c:876
 #, c-format
 msgid "App %s not installed"
 msgstr "ऐप %s स्थापित नहीं है"
 
-#: common/flatpak-installation.c:1393
+#: common/flatpak-installation.c:1396
 #, c-format
 msgid "Remote '%s' already exists"
 msgstr "रिमोट '%s' पहले से ही मौजूद है"
 
-#: common/flatpak-installation.c:1944
+#: common/flatpak-installation.c:1947
 #, c-format
 msgid "As requested, %s was only pulled, but not installed"
 msgstr "के रूप में अनुरोध किया, %s केवल खींचा गया था, लेकिन स्थापित नहीं किया गया था"
 
-#: common/flatpak-instance.c:508 common/flatpak-instance.c:667
-#: common/flatpak-instance.c:708
+#: common/flatpak-instance.c:533 common/flatpak-instance.c:687
+#: common/flatpak-instance.c:728
 #, fuzzy, c-format
 msgid "Unable to create directory %s"
 msgstr "सिंक पाइप बनाने में असमर्थ"
 
-#: common/flatpak-instance.c:529
+#: common/flatpak-instance.c:554
 #, fuzzy, c-format
 msgid "Unable to lock %s"
 msgstr "कुंजी आईडी नहीं मिल रही है %s: %d)"
 
-#: common/flatpak-instance.c:581
-#, fuzzy, c-format
-msgid "Unable to open directory %s"
-msgstr "सिस्टम बस से कनेक्ट करने में असमर्थ"
-
-#: common/flatpak-instance.c:607
+#: common/flatpak-instance.c:627
 #, fuzzy, c-format
 msgid "Unable to create temporary directory in %s"
 msgstr "परिनियोजन निर्देशिका बनाने में असमर्थ"
 
-#: common/flatpak-instance.c:619
+#: common/flatpak-instance.c:639
 #, fuzzy, c-format
 msgid "Unable to create file %s"
 msgstr "सिंक पाइप बनाने में असमर्थ"
 
-#: common/flatpak-instance.c:626
+#: common/flatpak-instance.c:646
 #, fuzzy, c-format
 msgid "Unable to update symbolic link %s/%s"
 msgstr "अपडेट करने में असमर्थ %s: %s\n"
@@ -5086,147 +5086,147 @@ msgstr "अतिरिक्त डेटा डाउनलोड करना
 msgid "Downloading files: %d/%d %s"
 msgstr "डाउनलोडिंग फाइलें: %d/%d %s"
 
-#: common/flatpak-ref-utils.c:119
+#: common/flatpak-ref-utils.c:120
 msgid "Name can't be empty"
 msgstr "नाम खाली नहीं हो सकता"
 
-#: common/flatpak-ref-utils.c:126
+#: common/flatpak-ref-utils.c:127
 msgid "Name can't be longer than 255 characters"
 msgstr "नाम 255 वर्णों से अधिक लंबा नहीं हो सकता है"
 
-#: common/flatpak-ref-utils.c:139
+#: common/flatpak-ref-utils.c:140
 msgid "Name can't start with a period"
 msgstr "नाम एक अवधि के साथ शुरू नहीं हो सकता"
 
-#: common/flatpak-ref-utils.c:145
+#: common/flatpak-ref-utils.c:146
 #, c-format
 msgid "Name can't start with %c"
 msgstr "नाम से शुरू नहीं हो सकता %c"
 
-#: common/flatpak-ref-utils.c:161
+#: common/flatpak-ref-utils.c:162
 msgid "Name can't end with a period"
 msgstr "नाम एक अवधि के साथ समाप्त नहीं हो सकता"
 
-#: common/flatpak-ref-utils.c:168 common/flatpak-ref-utils.c:180
+#: common/flatpak-ref-utils.c:169 common/flatpak-ref-utils.c:181
 msgid "Only last name segment can contain -"
 msgstr "अनुभाग में केवल एक उपनाम हो सकता है -"
 
-#: common/flatpak-ref-utils.c:171
+#: common/flatpak-ref-utils.c:172
 #, c-format
 msgid "Name segment can't start with %c"
 msgstr "नाम खंड के साथ शुरू नहीं हो सकता %c"
 
-#: common/flatpak-ref-utils.c:183
+#: common/flatpak-ref-utils.c:184
 #, c-format
 msgid "Name can't contain %c"
 msgstr "नाम नहीं हो सकता %c"
 
-#: common/flatpak-ref-utils.c:192
+#: common/flatpak-ref-utils.c:193
 msgid "Names must contain at least 2 periods"
 msgstr "नाम कम से कम 2 अवधि शामिल होना चाहिए"
 
-#: common/flatpak-ref-utils.c:309
+#: common/flatpak-ref-utils.c:310
 msgid "Arch can't be empty"
 msgstr "वास्तुकला खाली नहीं हो सकती"
 
-#: common/flatpak-ref-utils.c:320
+#: common/flatpak-ref-utils.c:321
 #, c-format
 msgid "Arch can't contain %c"
 msgstr "यह वास्तुकला में नहीं हो सकता %c"
 
-#: common/flatpak-ref-utils.c:382
+#: common/flatpak-ref-utils.c:383
 msgid "Branch can't be empty"
 msgstr "शाखा खाली नहीं हो सकती"
 
-#: common/flatpak-ref-utils.c:392
+#: common/flatpak-ref-utils.c:393
 #, c-format
 msgid "Branch can't start with %c"
 msgstr "शाखा एक के साथ शुरू नहीं हो सकता %c"
 
-#: common/flatpak-ref-utils.c:402
+#: common/flatpak-ref-utils.c:403
 #, c-format
 msgid "Branch can't contain %c"
 msgstr "शाखा में नहीं हो सकता %c"
 
-#: common/flatpak-ref-utils.c:612 common/flatpak-ref-utils.c:862
+#: common/flatpak-ref-utils.c:613 common/flatpak-ref-utils.c:863
 msgid "Ref too long"
 msgstr "लिंक बहुत लंबा है"
 
-#: common/flatpak-ref-utils.c:624
+#: common/flatpak-ref-utils.c:625
 msgid "Invalid remote name"
 msgstr "अमान्य दूरस्थ नाम"
 
-#: common/flatpak-ref-utils.c:638
+#: common/flatpak-ref-utils.c:639
 #, c-format
 msgid "%s is not application or runtime"
 msgstr "%s कोई ऐप या रनटाइम नहीं"
 
-#: common/flatpak-ref-utils.c:647 common/flatpak-ref-utils.c:664
-#: common/flatpak-ref-utils.c:680
+#: common/flatpak-ref-utils.c:648 common/flatpak-ref-utils.c:665
+#: common/flatpak-ref-utils.c:681
 #, c-format
 msgid "Wrong number of components in %s"
 msgstr "में घटकों की गलत संख्या %s"
 
-#: common/flatpak-ref-utils.c:653
+#: common/flatpak-ref-utils.c:654
 #, c-format
 msgid "Invalid name %.*s: %s"
 msgstr "अमान्य नाम %.*s: %s"
 
-#: common/flatpak-ref-utils.c:670
+#: common/flatpak-ref-utils.c:671
 #, c-format
 msgid "Invalid arch: %.*s: %s"
 msgstr "अमान्य मेहराब: %.*s: %s"
 
-#: common/flatpak-ref-utils.c:813
+#: common/flatpak-ref-utils.c:814
 #, c-format
 msgid "Invalid name %s: %s"
 msgstr "अमान्य नाम %s: %s"
 
-#: common/flatpak-ref-utils.c:831
+#: common/flatpak-ref-utils.c:832
 #, c-format
 msgid "Invalid arch: %s: %s"
 msgstr "अमान्य मेहराब: %s: %s"
 
-#: common/flatpak-ref-utils.c:850
+#: common/flatpak-ref-utils.c:851
 #, c-format
 msgid "Invalid branch: %s: %s"
 msgstr "अमान्य शाखा: %s: %s"
 
-#: common/flatpak-ref-utils.c:959 common/flatpak-ref-utils.c:967
-#: common/flatpak-ref-utils.c:975
+#: common/flatpak-ref-utils.c:960 common/flatpak-ref-utils.c:968
+#: common/flatpak-ref-utils.c:976
 #, c-format
 msgid "Wrong number of components in partial ref %s"
 msgstr "आंशिक रेफरी में घटकों की गलत संख्या %s"
 
-#: common/flatpak-ref-utils.c:1295
+#: common/flatpak-ref-utils.c:1296
 msgid " development platform"
 msgstr " विकास मंच"
 
-#: common/flatpak-ref-utils.c:1297
+#: common/flatpak-ref-utils.c:1298
 msgid " platform"
 msgstr " मंच"
 
-#: common/flatpak-ref-utils.c:1299
+#: common/flatpak-ref-utils.c:1300
 msgid " application base"
 msgstr " आवेदन आधार"
 
-#: common/flatpak-ref-utils.c:1302
+#: common/flatpak-ref-utils.c:1303
 msgid " debug symbols"
 msgstr " डिबग प्रतीकों"
 
-#: common/flatpak-ref-utils.c:1304
+#: common/flatpak-ref-utils.c:1305
 msgid " sourcecode"
 msgstr " सोर्सकोड"
 
-#: common/flatpak-ref-utils.c:1306
+#: common/flatpak-ref-utils.c:1307
 msgid " translations"
 msgstr " अनुवाद"
 
-#: common/flatpak-ref-utils.c:1308
+#: common/flatpak-ref-utils.c:1309
 msgid " docs"
 msgstr " डॉक्स"
 
-#: common/flatpak-ref-utils.c:1575
+#: common/flatpak-ref-utils.c:1576
 #, c-format
 msgid "Invalid id %s: %s"
 msgstr "अमान्य पहचान पत्र %s: %s"
@@ -5244,154 +5244,154 @@ msgstr "कोई url निर्दिष्ट नहीं है"
 msgid "GPG verification must be enabled when a collection ID is set"
 msgstr "यदि संग्रह ID सेट है, तो GPG सत्यापन सक्षम होना चाहिए"
 
-#: common/flatpak-run.c:1254
-msgid "Failed to open app info file"
-msgstr "एप्लिकेशन जानकारी फ़ाइल खोलने में विफल"
-
-#: common/flatpak-run.c:1347
-msgid "Unable to create sync pipe"
-msgstr "सिंक पाइप बनाने में असमर्थ"
-
-#: common/flatpak-run.c:1386
-msgid "Failed to sync with dbus proxy"
-msgstr "dbus प्रॉक्सी के साथ सिंक करने में विफल"
-
-#: common/flatpak-run.c:2202
+#: common/flatpak-run.c:812
 msgid "No systemd user session available, cgroups not available"
 msgstr "कोई systemd उपयोगकर्ता सत्र उपलब्ध नहीं है, cgroups उपलब्ध नहीं है"
 
-#: common/flatpak-run.c:2695
+#: common/flatpak-run.c:1347
 msgid "Unable to allocate instance id"
 msgstr "उदाहरण आईडी आवंटित करने में असमर्थ"
 
-#: common/flatpak-run.c:2831 common/flatpak-run.c:2841
+#: common/flatpak-run.c:1483 common/flatpak-run.c:1493
 #, c-format
 msgid "Failed to open flatpak-info file: %s"
 msgstr "Flatpak-info फ़ाइल खोलने में विफल: %s"
 
-#: common/flatpak-run.c:2870
+#: common/flatpak-run.c:1522
 #, c-format
 msgid "Failed to open bwrapinfo.json file: %s"
 msgstr "bwrapinfo.json फ़ाइल खोलने में विफल: %s"
 
-#: common/flatpak-run.c:2895
+#: common/flatpak-run.c:1547
 #, c-format
 msgid "Failed to write to instance id fd: %s"
 msgstr "आईडी fd लिखने में विफल: %s"
 
-#: common/flatpak-run.c:3282
+#: common/flatpak-run.c:1940
 msgid "Initialize seccomp failed"
 msgstr "प्रारंभिक seccomp विफल रहा"
 
-#: common/flatpak-run.c:3321
+#: common/flatpak-run.c:1979
 #, fuzzy, c-format
 msgid "Failed to add architecture to seccomp filter: %s"
 msgstr "Seccomp फ़िल्टर में आर्किटेक्चर जोड़ने में विफल"
 
-#: common/flatpak-run.c:3329
+#: common/flatpak-run.c:1987
 #, fuzzy, c-format
 msgid "Failed to add multiarch architecture to seccomp filter: %s"
 msgstr "Seccomp फ़िल्टर में मल्टीकार आर्किटेक्चर जोड़ने में विफल"
 
-#: common/flatpak-run.c:3361 common/flatpak-run.c:3378
-#: common/flatpak-run.c:3400
+#: common/flatpak-run.c:2019 common/flatpak-run.c:2036
+#: common/flatpak-run.c:2058
 #, fuzzy, c-format
 msgid "Failed to block syscall %d: %s"
 msgstr "Syscall को ब्लॉक करने में विफल %d"
 
-#: common/flatpak-run.c:3433
+#: common/flatpak-run.c:2091
 #, fuzzy, c-format
 msgid "Failed to export bpf: %s"
 msgstr "bpf निर्यात करने में विफल"
 
-#: common/flatpak-run.c:3684
+#: common/flatpak-run.c:2374
 #, c-format
 msgid "Failed to open ‘%s’"
 msgstr "खोलने में असफल हुआ ‘%s’"
 
-#: common/flatpak-run.c:3970
+#: common/flatpak-run.c:2661
 #, c-format
 msgid "ldconfig failed, exit status %d"
 msgstr "ldconfig विफल, स्थिति से बाहर निकलें %d"
 
-#: common/flatpak-run.c:3977
+#: common/flatpak-run.c:2668
 msgid "Can't open generated ld.so.cache"
 msgstr "जेनरेट नहीं किया जा सकता ld.so.cache"
 
 #. Translators: The placeholder is for an app ref.
-#: common/flatpak-run.c:4088
+#: common/flatpak-run.c:2791
 #, c-format
 msgid "Running %s is not allowed by the policy set by your administrator"
 msgstr "रनिंग %s आपके व्यवस्थापक द्वारा नीति सेट द्वारा अनुमति नहीं"
 
-#: common/flatpak-run.c:4190
+#: common/flatpak-run.c:2898
 msgid ""
 "\"flatpak run\" is not intended to be run as `sudo flatpak run`. Use `sudo -"
 "i` or `su -l` instead and invoke \"flatpak run\" from inside the new shell."
 msgstr ""
 
-#: common/flatpak-run.c:4373
+#: common/flatpak-run.c:3081
 #, c-format
 msgid "Failed to migrate from %s: %s"
 msgstr "से विस्थापित होने में विफल %s: %s"
 
-#: common/flatpak-run.c:4388
+#: common/flatpak-run.c:3102
 #, c-format
 msgid "Failed to migrate old app data directory %s to new name %s: %s"
 msgstr ""
 "पुराने एप्लिकेशन डेटा निर्देशिका को स्थानांतरित करने में विफल %s नए नाम के लिए %s: %s"
 
-#: common/flatpak-run.c:4397
+#: common/flatpak-run.c:3111
 #, c-format
 msgid "Failed to create symlink while migrating %s: %s"
 msgstr "प्रवास के दौरान प्रतीकात्मक लिंक बनाने में विफल %s: %s"
 
-#: common/flatpak-transaction.c:2208
+#: common/flatpak-run-dbus.c:46
+msgid "Failed to open app info file"
+msgstr "एप्लिकेशन जानकारी फ़ाइल खोलने में विफल"
+
+#: common/flatpak-run-dbus.c:149
+msgid "Unable to create sync pipe"
+msgstr "सिंक पाइप बनाने में असमर्थ"
+
+#: common/flatpak-run-dbus.c:185
+msgid "Failed to sync with dbus proxy"
+msgstr "dbus प्रॉक्सी के साथ सिंक करने में विफल"
+
+#: common/flatpak-transaction.c:2209
 #, c-format
 msgid "Warning: Problem looking for related refs: %s"
 msgstr "चेतावनी: संबंधित लिंक खोजने में समस्या: %s"
 
-#: common/flatpak-transaction.c:2427
+#: common/flatpak-transaction.c:2428
 #, c-format
 msgid "The application %s requires the runtime %s which was not found"
 msgstr "यह एप %s रनटाइम की आवश्यकता है %s जो नहीं मिला"
 
-#: common/flatpak-transaction.c:2443
+#: common/flatpak-transaction.c:2444
 #, c-format
 msgid "The application %s requires the runtime %s which is not installed"
 msgstr "एप %s रनटाइम की आवश्यकता है %s जो स्थापित नहीं है"
 
-#: common/flatpak-transaction.c:2575
+#: common/flatpak-transaction.c:2576
 #, c-format
 msgid "Can't uninstall %s which is needed by %s"
 msgstr "स्थापना रद्द नहीं कर सकते %s क्या आवश्यक है %s"
 
-#: common/flatpak-transaction.c:2667
+#: common/flatpak-transaction.c:2673
 #, c-format
 msgid "Remote %s disabled, ignoring %s update"
 msgstr "रिमोट %s विकलांग, उपेक्षित %s अपडेट करें"
 
-#: common/flatpak-transaction.c:2700
+#: common/flatpak-transaction.c:2706
 #, c-format
 msgid "%s is already installed"
 msgstr "%s पहले से ही स्थापित किया गया है"
 
-#: common/flatpak-transaction.c:2703
+#: common/flatpak-transaction.c:2709
 #, c-format
 msgid "%s is already installed from remote %s"
 msgstr "%s पहले से ही दूरस्थ से स्थापित है %s"
 
-#: common/flatpak-transaction.c:2898
+#: common/flatpak-transaction.c:3020
 #, c-format
 msgid "Invalid .flatpakref: %s"
 msgstr "अमान्य .flatpakref: %s"
 
-#: common/flatpak-transaction.c:3013
+#: common/flatpak-transaction.c:3135
 #, c-format
 msgid "Error updating remote metadata for '%s': %s"
 msgstr "के लिए दूरस्थ मेटाडेटा अद्यतन करने में त्रुटि '%s': %s"
 
-#: common/flatpak-transaction.c:3502
+#: common/flatpak-transaction.c:3624
 #, c-format
 msgid ""
 "Warning: Treating remote fetch error as non-fatal since %s is already "
@@ -5399,55 +5399,55 @@ msgid ""
 msgstr ""
 "चेतावनी: तब से गैर-घातक के रूप में दूरस्थ लाने में त्रुटि का इलाज %s पहले से स्थापित है: %s"
 
-#: common/flatpak-transaction.c:3826
+#: common/flatpak-transaction.c:3950
 #, c-format
 msgid "No authenticator installed for remote '%s'"
 msgstr "रिमोट के लिए कोई प्रमाणिक स्थापित नहीं किया गया '%s'"
 
-#: common/flatpak-transaction.c:3930 common/flatpak-transaction.c:3937
+#: common/flatpak-transaction.c:4054 common/flatpak-transaction.c:4061
 #, c-format
 msgid "Failed to get tokens for ref: %s"
 msgstr "लिंक के लिए टोकन प्राप्त करने में विफल: %s"
 
-#: common/flatpak-transaction.c:3932 common/flatpak-transaction.c:3939
+#: common/flatpak-transaction.c:4056 common/flatpak-transaction.c:4063
 msgid "Failed to get tokens for ref"
 msgstr "लिंक के लिए टोकन प्राप्त करने में विफल"
 
-#: common/flatpak-transaction.c:4196
+#: common/flatpak-transaction.c:4321
 #, c-format
 msgid "Ref %s from %s matches more than one transaction operation"
 msgstr ""
 
-#: common/flatpak-transaction.c:4197 common/flatpak-transaction.c:4207
+#: common/flatpak-transaction.c:4322 common/flatpak-transaction.c:4332
 #, fuzzy
 msgid "any remote"
 msgstr "रिमोट"
 
-#: common/flatpak-transaction.c:4206
+#: common/flatpak-transaction.c:4331
 #, c-format
 msgid "No transaction operation found for ref %s from %s"
 msgstr ""
 
-#: common/flatpak-transaction.c:4329
+#: common/flatpak-transaction.c:4454
 #, c-format
 msgid "Flatpakrepo URL %s not file, HTTP or HTTPS"
 msgstr "FlatpakRepo यूआरएल %s फ़ाइल नहीं, HTTP या HTTPS"
 
-#: common/flatpak-transaction.c:4335
+#: common/flatpak-transaction.c:4460
 #, c-format
 msgid "Can't load dependent file %s: "
 msgstr "निर्भर फ़ाइल लोड नहीं की जा सकती %s: "
 
-#: common/flatpak-transaction.c:4343
+#: common/flatpak-transaction.c:4468
 #, c-format
 msgid "Invalid .flatpakrepo: %s"
 msgstr "अमान्य .flatpakrepo: %s"
 
-#: common/flatpak-transaction.c:4996
+#: common/flatpak-transaction.c:5121
 msgid "Transaction already executed"
 msgstr "लेन-देन पहले ही पूरा हो चुका है"
 
-#: common/flatpak-transaction.c:5011
+#: common/flatpak-transaction.c:5136
 msgid ""
 "Refusing to operate on a user installation as root! This can lead to "
 "incorrect file ownership and permission errors."
@@ -5455,16 +5455,16 @@ msgstr ""
 "रूट के रूप में उपयोगकर्ता संस्थापन पर काम करने से इंकार करना! इससे गलत फ़ाइल स्वामित्व और "
 "अनुमति त्रुटियां हो सकती हैं।"
 
-#: common/flatpak-transaction.c:5103 common/flatpak-transaction.c:5116
+#: common/flatpak-transaction.c:5228 common/flatpak-transaction.c:5241
 msgid "Aborted by user"
 msgstr "उपयोगकर्ता द्वारा रद्द"
 
-#: common/flatpak-transaction.c:5141
+#: common/flatpak-transaction.c:5266
 #, c-format
 msgid "Skipping %s due to previous error"
 msgstr "लंघन %s पिछली त्रुटि के कारण है"
 
-#: common/flatpak-transaction.c:5195
+#: common/flatpak-transaction.c:5320
 #, c-format
 msgid "Aborted due to failure (%s)"
 msgstr "विफलता के कारण बाधित (%s)"
@@ -5511,137 +5511,123 @@ msgstr ""
 msgid "URI is not absolute, and no base URI was provided"
 msgstr ""
 
-#: common/flatpak-utils.c:863
+#: common/flatpak-utils.c:754
 msgid "Glob can't match apps"
 msgstr "Glob अनुप्रयोगों से मेल नहीं खा सकता है"
 
-#: common/flatpak-utils.c:888
+#: common/flatpak-utils.c:779
 msgid "Empty glob"
 msgstr "खाली glob"
 
-#: common/flatpak-utils.c:907
+#: common/flatpak-utils.c:798
 msgid "Too many segments in glob"
 msgstr "बहुत सारे सेगमेंट glob में"
 
-#: common/flatpak-utils.c:928
+#: common/flatpak-utils.c:819
 #, c-format
 msgid "Invalid glob character '%c'"
 msgstr "अमान्य glob चरित्र '%c'"
 
-#: common/flatpak-utils.c:982
+#: common/flatpak-utils.c:873
 #, c-format
 msgid "Missing glob on line %d"
 msgstr "लापता glob लाइन पर %d"
 
-#: common/flatpak-utils.c:986
+#: common/flatpak-utils.c:877
 #, c-format
 msgid "Trailing text on line %d"
 msgstr "लाइन पर पाठ अनुगामी %d"
 
-#: common/flatpak-utils.c:990
+#: common/flatpak-utils.c:881
 #, c-format
 msgid "on line %d"
 msgstr "रेख पर %d"
 
-#: common/flatpak-utils.c:1012
+#: common/flatpak-utils.c:903
 #, c-format
 msgid "Unexpected word '%s' on line %d"
 msgstr "अनपेक्षित शब्द '%s' रेख पर %d"
 
-#: common/flatpak-utils.c:2317
+#: common/flatpak-utils.c:2208
 #, c-format
 msgid "Invalid %s: Missing group ‘%s’"
 msgstr "अमान्य %s: गुम समूह ‘%s’"
 
-#: common/flatpak-utils.c:2326
+#: common/flatpak-utils.c:2217
 #, c-format
 msgid "Invalid %s: Missing key ‘%s’"
 msgstr "अमान्य %s: गुम कुंजी ‘%s’"
 
-#: common/flatpak-utils.c:2376
+#: common/flatpak-utils.c:2267
 msgid "Invalid gpg key"
 msgstr "अमान्य gpg कुंजी"
 
-#: common/flatpak-utils.c:2773
+#: common/flatpak-utils.c:2664
 #, c-format
 msgid "No extra data sources"
 msgstr "कोई अतिरिक्त डेटा स्रोत नहीं"
 
-#: common/flatpak-utils.c:5431
+#: common/flatpak-utils.c:5316
 #, c-format
 msgid "Error copying 64x64 icon for component %s: %s\n"
 msgstr "घटक के लिए 64x64 आइकन कॉपी करने में त्रुटि %s: %s\n"
 
-#: common/flatpak-utils.c:5437
+#: common/flatpak-utils.c:5322
 #, c-format
 msgid "Error copying 128x128 icon for component %s: %s\n"
 msgstr "घटक के लिए 128x128 आइकन कॉपी करने में त्रुटि %s: %s\n"
 
-#: common/flatpak-utils.c:5684
+#: common/flatpak-utils.c:5569
 #, c-format
 msgid "%s is end-of-life, ignoring for appstream"
 msgstr "%s जीवन का अंत है, appstream के लिए अनदेखी"
 
-#: common/flatpak-utils.c:5719
+#: common/flatpak-utils.c:5604
 #, c-format
 msgid "No appstream data for %s: %s\n"
 msgstr "के लिए कोई appstream डेटा नहीं %s: %s\n"
 
-#: common/flatpak-utils.c:6689
+#: common/flatpak-utils.c:6574
 msgid "Invalid bundle, no ref in metadata"
 msgstr "अमान्य पैकेज, मेटाडेटा में कोई लिंक नहीं"
 
-#: common/flatpak-utils.c:6791
+#: common/flatpak-utils.c:6676
 #, c-format
 msgid "Collection ‘%s’ of bundle doesn’t match collection ‘%s’ of remote"
 msgstr "संग्रह ‘%s’ बंडल का संग्रह से मेल नहीं खाता ‘%s’ दूरस्थ के"
 
-#: common/flatpak-utils.c:6868
+#: common/flatpak-utils.c:6753
 msgid "Metadata in header and app are inconsistent"
 msgstr "हेडर और ऐप में मेटाडेटा असंगत हैं"
 
-#: common/flatpak-utils.c:6953 common/flatpak-utils.c:7112
+#: common/flatpak-utils.c:6838 common/flatpak-utils.c:6997
 msgid "Invalid OCI image config"
 msgstr "अमान्य OCI छवि विन्यास"
 
-#: common/flatpak-utils.c:7015 common/flatpak-utils.c:7261
+#: common/flatpak-utils.c:6900 common/flatpak-utils.c:7146
 #, c-format
 msgid "Wrong layer checksum, expected %s, was %s"
 msgstr "गलत परत चेकसम, अपेक्षित %s, था %s"
 
-#: common/flatpak-utils.c:7095
+#: common/flatpak-utils.c:6980
 #, c-format
 msgid "No ref specified for OCI image %s"
 msgstr "रेफरी ओसीआई छवि के लिए निर्दिष्ट नहीं है %s"
 
-#: common/flatpak-utils.c:7101
+#: common/flatpak-utils.c:6986
 #, c-format
 msgid "Wrong ref (%s) specified for OCI image %s, expected %s"
 msgstr "गलत रेफ (%s) ओसीआई छवि के लिए निर्दिष्ट %s, अपेक्षित %s"
 
-#: common/flatpak-utils.c:8302
+#: common/flatpak-utils.c:7483
 #, c-format
 msgid "Invalid require-flatpak argument %s"
 msgstr "अमान्य require-flatpak तर्क %s"
 
-#: common/flatpak-utils.c:8312 common/flatpak-utils.c:8331
+#: common/flatpak-utils.c:7493 common/flatpak-utils.c:7512
 #, c-format
 msgid "%s needs a later flatpak version (%s)"
 msgstr "%s बाद के संस्करण की आवश्यकता है flatpak (%s)"
-
-#: common/flatpak-utils.c:8375
-msgid "Empty string is not a number"
-msgstr "खाली स्ट्रिंग एक संख्या नहीं है"
-
-#: common/flatpak-utils.c:8401
-#, c-format
-msgid "“%s” is not an unsigned number"
-msgstr "“%s” एक अहस्ताक्षरित संख्या नहीं है"
-
-#: common/flatpak-utils.c:8411
-#, c-format
-msgid "Number “%s” is out of bounds [%s, %s]"
-msgstr "नंबर “%s” चलता ही जाए [%s, %s]"
 
 #: oci-authenticator/flatpak-oci-authenticator.c:291
 msgid "Not a oci remote, missing summary.xa.oci-repository"
@@ -5655,43 +5641,43 @@ msgstr "रिमोट OCI नहीं"
 msgid "Invalid token"
 msgstr "अमान्य टोकन"
 
-#: portal/flatpak-portal.c:2261
+#: portal/flatpak-portal.c:2308
 #, c-format
 msgid "No portal support found"
 msgstr "कोई पोर्टल समर्थन नहीं मिला"
 
-#: portal/flatpak-portal.c:2267
+#: portal/flatpak-portal.c:2314
 msgid "Deny"
 msgstr "मना"
 
-#: portal/flatpak-portal.c:2269
+#: portal/flatpak-portal.c:2316
 msgid "Update"
 msgstr "अपडेट"
 
-#: portal/flatpak-portal.c:2274
+#: portal/flatpak-portal.c:2321
 #, c-format
 msgid "Update %s?"
 msgstr "अपडेट %s?"
 
-#: portal/flatpak-portal.c:2286
+#: portal/flatpak-portal.c:2333
 msgid "The application wants to update itself."
 msgstr "एप्लिकेशन खुद को अपडेट करना चाहता है।"
 
-#: portal/flatpak-portal.c:2287
+#: portal/flatpak-portal.c:2334
 msgid "Update access can be changed any time from the privacy settings."
 msgstr "किसी भी समय गोपनीयता सेटिंग्स से अपडेट एक्सेस को बदला जा सकता है।"
 
-#: portal/flatpak-portal.c:2312
+#: portal/flatpak-portal.c:2359
 #, c-format
 msgid "Application update not allowed"
 msgstr "एप्लिकेशन अपडेट की अनुमति नहीं है"
 
-#: portal/flatpak-portal.c:2469
+#: portal/flatpak-portal.c:2516
 #, c-format
 msgid "Self update not supported, new version requires new permissions"
 msgstr "स्व अद्यतन समर्थित नहीं है, नए संस्करण के लिए नई अनुमतियों की आवश्यकता है"
 
-#: portal/flatpak-portal.c:2651 portal/flatpak-portal.c:2668
+#: portal/flatpak-portal.c:2698 portal/flatpak-portal.c:2715
 #, c-format
 msgid "Update ended unexpectedly"
 msgstr "अपडेट अप्रत्याशित रूप से समाप्त हो गया"
@@ -5913,6 +5899,18 @@ msgid ""
 msgstr ""
 "सॉफ़्टवेयर को स्थापित करने के लिए प्रमाणीकरण की आवश्यकता होती है जो आपकी पैतृक नियंत्रण "
 "नीति द्वारा प्रतिबंधित है"
+
+#, fuzzy, c-format
+#~ msgid "Failed to uninstall %s for rebase to %s: "
+#~ msgstr "रीबेस करने में विफल %s को %s: "
+
+#, fuzzy, c-format
+#~ msgid "Failed to uninstall %s for rebase to %s: %s\n"
+#~ msgstr "रीबेस करने में विफल %s पर %s: %s\n"
+
+#, fuzzy, c-format
+#~ msgid "Unable to open directory %s"
+#~ msgstr "सिस्टम बस से कनेक्ट करने में असमर्थ"
 
 #~ msgid "install"
 #~ msgstr "इंस्टॉल"

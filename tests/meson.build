@@ -21,6 +21,7 @@ tests_environment.set(
   'FLATPAK_VALIDATE_ICON',
   project_build_root / 'icon-validator' / 'flatpak-validate-icon',
 )
+tests_environment.set('FUSERMOUNT', fusermount)
 tests_environment.set('G_TEST_BUILDDIR', meson.current_build_dir())
 tests_environment.set('G_TEST_SRCDIR', meson.current_source_dir())
 tests_environment.prepend('GI_TYPELIB_PATH', project_build_root / 'common')
@@ -37,6 +38,17 @@ if get_option('system_dbus_proxy') == ''
   tests_environment.set('FLATPAK_DBUSPROXY', project_build_root / 'subprojects' / 'dbus-proxy' / 'flatpak-dbus-proxy')
 else
   tests_environment.set('FLATPAK_DBUSPROXY', get_option('system_dbus_proxy'))
+endif
+
+if get_option('installed_tests')
+  configure_file(
+    input : 'installed-tests.sh.in',
+    output : 'installed-tests.sh',
+    configuration : {
+      'FUSERMOUNT' : fusermount,
+    },
+    install_dir : installed_testdir,
+  )
 endif
 
 # Explicitly doing a find_program() for this avoids lots of output with
@@ -81,6 +93,11 @@ libtestlib_dep = declare_dependency(
 )
 
 c_tests = [
+  ['testapp', {
+    'extra_dependencies' : [
+      libflatpak_app_dep,
+    ],
+  }],
   ['testcommon', {}],
   ['testlibrary', {
     'dependencies' : [
@@ -103,6 +120,7 @@ c_tests = [
       libglnx_testlib_dep,
     ],
   }],
+  ['test-locale-utils', {}],
   ['test-portal', {
     'extra_sources' : [
       portal_gdbus[0],
@@ -121,7 +139,6 @@ foreach testcase : c_tests
       base_deps,
       appstream_dep,
       json_glib_dep,
-      libflatpak_app_dep,
       libflatpak_common_dep,
       libflatpak_common_base_dep,
       libglnx_dep,

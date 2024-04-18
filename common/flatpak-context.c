@@ -19,6 +19,7 @@
  */
 
 #include "config.h"
+#include "flatpak-context-private.h"
 
 #include <string.h>
 #include <fcntl.h>
@@ -37,11 +38,9 @@
 #include <gio/gio.h>
 #include "libglnx.h"
 
-#include "flatpak-run-private.h"
-#include "flatpak-utils-private.h"
-#include "flatpak-dir-private.h"
-#include "flatpak-systemd-dbus-generated.h"
 #include "flatpak-error.h"
+#include "flatpak-metadata-private.h"
+#include "flatpak-utils-private.h"
 
 /* Same order as enum */
 const char *flatpak_context_shares[] = {
@@ -62,6 +61,7 @@ const char *flatpak_context_sockets[] = {
   "pcsc",
   "cups",
   "gpg-agent",
+  "inherit-wayland-socket",
   NULL
 };
 
@@ -70,6 +70,7 @@ const char *flatpak_context_devices[] = {
   "all",
   "kvm",
   "shm",
+  "input",
   NULL
 };
 
@@ -1243,37 +1244,22 @@ flatpak_context_parse_env_block (FlatpakContext *context,
                                  gsize length,
                                  GError **error)
 {
-  const char *p = data;
-  gsize remaining = length;
+  g_auto(GStrv) env_vars = NULL;
+  int i;
 
-  /* env_block might not be \0-terminated */
-  while (remaining > 0)
+  env_vars = flatpak_parse_env_block (data, length, error);
+  if (env_vars == NULL)
+    return FALSE;
+
+  for (i = 0; env_vars[i] != NULL; i++)
     {
-      size_t len = strnlen (p, remaining);
-      const char *equals;
-      g_autofree char *env_var = NULL;
-      g_autofree char *env_value = NULL;
+      g_auto(GStrv) split = g_strsplit (env_vars[i], "=", 2);
 
-      g_assert (len <= remaining);
+      g_assert (g_strv_length (split) == 2);
+      g_assert (split[0][0] != '\0');
 
-      equals = memchr (p, '=', len);
-
-      if (equals == NULL || equals == p)
-        return glnx_throw (error,
-                           "Environment variable must be given in the form VARIABLE=VALUE, not %.*s", (int) len, p);
-
-      env_var = g_strndup (p, equals - p);
-      env_value = g_strndup (equals + 1, len - (equals - p) - 1);
-      flatpak_context_set_env_var (context, env_var, env_value);
-      p += len;
-      remaining -= len;
-
-      if (remaining > 0)
-        {
-          g_assert (*p == '\0');
-          p += 1;
-          remaining -= 1;
-        }
+      flatpak_context_set_env_var (context,
+                                   split[0], split[1]);
     }
 
   return TRUE;
@@ -2759,6 +2745,15 @@ flatpak_context_export (FlatpakContext *context,
     }
 }
 
+GFile *
+flatpak_get_data_dir (const char *app_id)
+{
+  g_autoptr(GFile) home = g_file_new_for_path (g_get_home_dir ());
+  g_autoptr(GFile) var_app = g_file_resolve_relative_path (home, ".var/app");
+
+  return g_file_get_child (var_app, app_id);
+}
+
 FlatpakExports *
 flatpak_context_get_exports (FlatpakContext *context,
                              const char     *app_id)
@@ -2834,6 +2829,37 @@ flatpak_context_get_exports_full (FlatpakContext *context,
   return g_steal_pointer (&exports);
 }
 
+static void
+flatpak_context_apply_env_appid (FlatpakBwrap *bwrap,
+                                 GFile        *app_dir)
+{
+  g_autoptr(GFile) app_dir_data = NULL;
+  g_autoptr(GFile) app_dir_config = NULL;
+  g_autoptr(GFile) app_dir_cache = NULL;
+  g_autoptr(GFile) app_dir_state = NULL;
+
+  app_dir_data = g_file_get_child (app_dir, "data");
+  app_dir_config = g_file_get_child (app_dir, "config");
+  app_dir_cache = g_file_get_child (app_dir, "cache");
+  /* Yes, this is inconsistent with data, config and cache. However, using
+   * this path lets apps provide backwards-compatibility with older Flatpak
+   * versions by using `--persist=.local/state --unset-env=XDG_STATE_DIR`. */
+  app_dir_state = g_file_get_child (app_dir, ".local/state");
+  flatpak_bwrap_set_env (bwrap, "XDG_DATA_HOME", flatpak_file_get_path_cached (app_dir_data), TRUE);
+  flatpak_bwrap_set_env (bwrap, "XDG_CONFIG_HOME", flatpak_file_get_path_cached (app_dir_config), TRUE);
+  flatpak_bwrap_set_env (bwrap, "XDG_CACHE_HOME", flatpak_file_get_path_cached (app_dir_cache), TRUE);
+  flatpak_bwrap_set_env (bwrap, "XDG_STATE_HOME", flatpak_file_get_path_cached (app_dir_state), TRUE);
+
+  if (g_getenv ("XDG_DATA_HOME"))
+    flatpak_bwrap_set_env (bwrap, "HOST_XDG_DATA_HOME", g_getenv ("XDG_DATA_HOME"), TRUE);
+  if (g_getenv ("XDG_CONFIG_HOME"))
+    flatpak_bwrap_set_env (bwrap, "HOST_XDG_CONFIG_HOME", g_getenv ("XDG_CONFIG_HOME"), TRUE);
+  if (g_getenv ("XDG_CACHE_HOME"))
+    flatpak_bwrap_set_env (bwrap, "HOST_XDG_CACHE_HOME", g_getenv ("XDG_CACHE_HOME"), TRUE);
+  if (g_getenv ("XDG_STATE_HOME"))
+    flatpak_bwrap_set_env (bwrap, "HOST_XDG_STATE_HOME", g_getenv ("XDG_STATE_HOME"), TRUE);
+}
+
 void
 flatpak_context_append_bwrap_filesystem (FlatpakContext  *context,
                                          FlatpakBwrap    *bwrap,
@@ -2847,7 +2873,7 @@ flatpak_context_append_bwrap_filesystem (FlatpakContext  *context,
   gpointer key, value;
 
   if (app_id_dir != NULL)
-    flatpak_run_apply_env_appid (bwrap, app_id_dir);
+    flatpak_context_apply_env_appid (bwrap, app_id_dir);
 
   if (!home_access)
     {

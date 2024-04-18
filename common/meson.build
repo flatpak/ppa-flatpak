@@ -100,6 +100,13 @@ flatpak_variant = custom_target(
   command : variant_schema_compiler_command,
 )
 
+libflatpak_common_base_deps = base_deps + [libglnx_dep]
+
+libflatpak_common_base_sources = [
+  'flatpak-utils-base.c',
+  'flatpak-utils-base-private.h',
+] + flatpak_gdbus + flatpak_document_gdbus
+
 built_headers = [
   enums[1],
   flatpak_version_macros,
@@ -109,16 +116,40 @@ built_headers = [
   flatpak_variant[1],
 ]
 
+libflatpak_common_deps = []
+built_sources = []
+
+if build_wayland_security_context
+  wayland_scanner_prog = find_program(wayland_scanner.get_variable(pkgconfig: 'wayland_scanner'))
+  wayland_protocols_dir = wayland_protocols.get_variable(pkgconfig: 'pkgdatadir')
+  wl_security_context_xml = wayland_protocols_dir / 'staging/security-context/security-context-v1.xml'
+  wl_security_context = [
+    custom_target(
+      'security-context-v1-protocol.c',
+      input : wl_security_context_xml,
+      output : 'security-context-v1-protocol.c',
+      command : [wayland_scanner_prog, 'private-code', '@INPUT@', '@OUTPUT@'],
+    ),
+    custom_target(
+      'security-context-v1-protocol.h',
+      input : wl_security_context_xml,
+      output : 'security-context-v1-protocol.h',
+      command : [wayland_scanner_prog, 'client-header', '@INPUT@', '@OUTPUT@'],
+    ),
+  ]
+
+  libflatpak_common_deps += [wayland_client]
+  built_sources += [wl_security_context]
+  built_headers += [wl_security_context[1]]
+endif
+
 libflatpak_common_base = static_library(
   'flatpak-common-base',
-  dependencies : base_deps + [libglnx_dep],
+  dependencies : libflatpak_common_base_deps,
   gnu_symbol_visibility : 'hidden',
   include_directories : [common_include_directories],
   install : false,
-  sources : [
-    'flatpak-utils-base.c',
-    'flatpak-utils-base-private.h',
-  ] + flatpak_gdbus + flatpak_document_gdbus,
+  sources : libflatpak_common_base_sources,
 )
 libflatpak_common_base_dep = declare_dependency(
   dependencies : base_deps + [libglnx_dep],
@@ -139,11 +170,13 @@ sources = [
   'flatpak-dir.c',
   'flatpak-error.c',
   'flatpak-exports.c',
+  'flatpak-glib-backports.c',
   'flatpak-installation.c',
   'flatpak-installed-ref.c',
   'flatpak-instance.c',
   'flatpak-json-oci.c',
   'flatpak-json.c',
+  'flatpak-locale-utils.c',
   'flatpak-oci-registry.c',
   'flatpak-portal-error.c',
   'flatpak-progress.c',
@@ -154,6 +187,12 @@ sources = [
   'flatpak-remote-ref.c',
   'flatpak-remote.c',
   'flatpak-run.c',
+  'flatpak-run-cups.c',
+  'flatpak-run-dbus.c',
+  'flatpak-run-pulseaudio.c',
+  'flatpak-run-sockets.c',
+  'flatpak-run-wayland.c',
+  'flatpak-run-x11.c',
   'flatpak-transaction.c',
   'flatpak-utils-http.c',
   'flatpak-utils.c',
@@ -175,6 +214,7 @@ libflatpak_common = static_library(
     libarchive_dep,
     libcurl_dep,
     libflatpak_common_base_dep,
+    libflatpak_common_deps,
     libglnx_dep,
     libostree_dep,
     libseccomp_dep,
@@ -189,7 +229,7 @@ libflatpak_common = static_library(
   gnu_symbol_visibility : 'hidden',
   include_directories : [common_include_directories],
   install : false,
-  sources : enums + public_headers + sources + systemd_gdbus + [
+  sources : enums + public_headers + sources + built_sources + systemd_gdbus + [
     flatpak_variant[0],
     flatpak_variant[1],
   ],
@@ -213,7 +253,7 @@ libflatpak = library(
   gnu_symbol_visibility : 'hidden',
   include_directories : [common_include_directories],
   install : true,
-  link_args : ['-export-dynamic'],
+  link_args : ['-Wl,--export-dynamic'],
   link_whole : [
     libflatpak_common_base,
     libflatpak_common,

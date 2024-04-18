@@ -1,3 +1,225 @@
+Changes in 1.15.8
+~~~~~~~~~~~~~~~~~
+
+Security fixes:
+
+ * Don't allow an executable name to be misinterpreted as a command-line
+   option for bwrap(1). This prevents a sandbox escape where a malicious
+   or compromised app could ask xdg-desktop-portal to generate a .desktop
+   file with access to files outside the sandbox. (CVE-2024-32462)
+
+Other bug fixes:
+
+ * Pass the -export-dynamic linker option as -Wl,-export-dynamic,
+   fixing build failures with clang 18 and lld 18 (#5760)
+
+ * Fix a double-free when installation is cancelled (#5763)
+
+ * Fix installed-tests failure with "FUSERMOUNT: unbound variable"
+   (#5751)
+
+ * Translation updates: pt_BR (#5762), tr (#5761)
+
+Changes in 1.15.7
+~~~~~~~~~~~~~~~~~
+Released: 2024-03-27
+
+Dependencies:
+
+ * The Meson build system is now required.
+   Compiling with Autotools is no longer possible.
+
+ * In distributions that compile Flatpak to use a separate bubblewrap (bwrap)
+   executable, version 0.9.0 is recommended. Several of the bug fixes listed
+   below will not be active if an older version is used.
+
+ * In distributions that compile Flatpak to use a separate xdg-dbus-proxy
+   executable, version 0.1.5 is recommended.
+
+ * If libmalcontent (parental controls) is enabled, it must be version 0.5.0
+   or later.
+
+New features:
+
+ * Automatically remove obsolete driver versions and other autopruned refs
+   (#5632)
+
+ * `--socket=inherit-wayland-socket` (#5614)
+
+ * Automatically reload D-Bus session bus configuration after installing
+   or upgrading apps, to pick up any exported D-Bus services (#3342)
+
+Bug fixes:
+
+ * Update included copy of bubblewrap to version 0.9.0:
+
+     * `--symlink` is now idempotent, meaning it succeeds if the
+       symlink already exists and already has the desired target
+       (#2387, #3477, #5255)
+     * Report a better error message if `mount(2)` fails with `ENOSPC`
+     * Fix a double-close on error reading from `--args`, `--seccomp` or
+       `--add-seccomp-fd` argument
+     * Improve memory allocation behaviour
+     * Silence various compiler warnings
+
+ * Update included copy of bubblewrap to version 0.1.5:
+
+     * Fix handling of long object paths
+
+ * Don't parse `<developer><name/></developer>` as the application name
+   (#5700)
+
+ * Don't refuse to start apps when there is no D-Bus system bus available
+   (#5076)
+
+ * Don't try to repeat migration of apps whose data was migrated to a new
+   name and then deleted (#5668)
+
+ * Improve handling of mixed locales on systems with systemd-localed (#5497)
+
+ * Improve display of ellipsized columns in wide terminals (#5722)
+
+ * Make `flatpak info -e` look for extensions in all installations (#5670)
+
+ * Fix warnings from newer GLib versions (#5660, #5737)
+
+ * Always set the `container` environment variable (#5610)
+
+ * Always let the app inherit redirected file descriptors (#5626)
+
+ * In `flatpak ps`, add xdg-desktop-portal-gnome to the list of backends
+   we'll use to learn which apps are running in the background (#5729)
+
+ * Don't use `WAYLAND_SOCKET` unless given `--socket=inherit-wayland-socket`
+   (#5614)
+
+ * Use `fusermount3` if compiled with FUSE 3, overridable with
+   `-Dsystem_fusermount` compile-time option (#5104)
+
+ * Avoid leaking a temporary variable from /etc/profile.d/flatpak.sh into
+   the shell environment (#5574)
+
+ * Improve async-signal safety (#5687)
+
+ * Fix various memory leaks (#5683, #5690, #5691)
+
+ * Avoid undefined behaviour of signed left-shift when storing object IDs
+   in a hash table (#5738)
+
+ * Detect the correct gtk-doc when cross-compiling (#5650)
+
+ * Detect the correct wayland-scanner when cross-compiling (#5596)
+
+ * Documentation improvements (#5659, #5677, #5682, #5664, #5719)
+
+ * Skip more tests when FUSE isn't available (#5611)
+
+ * Translation updates (#5602, #5707)
+
+Changes in 1.15.6
+~~~~~~~~~~~~~~~~~
+Released: 2023-11-14
+
+Dependencies:
+
+ * In distributions that compile Flatpak to use a separate bubblewrap (bwrap)
+   executable, version 0.8.0 is now required.
+
+ * Enabling the optional Wayland security context feature requires
+   libwayland-client, wayland-scanner >= 1.15 and wayland-protocols >= 1.32.
+
+ * Ubuntu 18.04 is no longer routinely tested. Support for dependency
+   versions included in Ubuntu 18.04 should be considered "at risk".
+
+Features:
+
+ * Add --device=input, for access to evdev devices in /dev/input (#5481)
+
+ * Update bundled copy of bubblewrap to version 0.8.0, and rely on its
+   features:
+     * Improve error message if seccomp is disabled in kernel config
+     * Security hardening: set user namespace limit to 0, to prevent creation
+       of nested user namespaces in a more robust way (#5084)
+
+ * For subsandboxes started by flatpak-portal, inherit environment
+   variables from the `flatpak run` that started the original instance
+   rather than from flatpak-portal, fixing behaviour of FLATPAK_GL_DRIVERS
+   and similar features (#5278)
+
+ * Stop http transfers if a download in progress becomes very slow (#5519)
+
+ * Make it easier to configure extra languages, by picking them up from
+   AccountsService if configured there (#5006)
+
+ * Add new flatpak_transaction_add_rebase_and_uninstall() API,
+   allowing end-of-life apps to be replaced by their intended replacement
+   more reliably (#3991)
+
+ * Create a private Wayland socket with the "security context" extension
+   if available, allowing the compositor to identify connections from
+   sandboxed apps as belonging to the sandbox (#4920, #5507, #5558)
+
+ * Update libglnx to 2023-08-29
+     * Use features of newer GLib versions if available
+     * Turn off system-level crash reporting infrastructure during
+       some unit tests that involve intentional assertion failures
+
+ * Add anchors to link to sections of flatpak-metadata documentation (#5582)
+
+ * New translations: ka, nl.
+
+Bug fixes:
+
+ * Avoid warnings processing symbolic links with GLib >= 2.77.0, and
+   with GLib 2.76.0 (GLib 2.76.1 or later silences these warnings)
+
+ * Bypass page cache for backend requests in revokefs, fixing installation
+   errors with libostree 2023.4 (#5452)
+
+ * Show AppStream metadata in `flatpak remote-info` as intended
+   (#5523; regression in 1.9.1)
+
+ * Don't let Flatpak apps inherit VK_DRIVER_FILES or VK_ICD_FILENAMES
+   from the host system, which would be wrong for the sandbox (#5553)
+
+ * Fix build failure with prereleases of libappstream 0.17.x (#5472)
+
+ * Forward-compatibility with libappstream 1.0 (#5563)
+
+ * Fix installation with Meson if configured with -Dauto_sideloading=true
+   (#5495)
+
+ * Fix a memory leak (#5329)
+
+ * Fix compiler warnings (#5362, #5366)
+
+ * Make the tests fail more comprehensibly if a required tool is missing
+   (#5020)
+
+ * Clean up `/var/tmp/flatpak-cache-*` directories on boot (#1119)
+
+ * Don't force `GIO_USE_VFS=local` for programs launched via flatpak-spawn
+   (#5567)
+
+ * Clarify documentation for D-Bus name ownership (#5582)
+
+ * Translation updates: id, tr, zh_CN
+   (#5332, #5565)
+
+Internal changes:
+
+ * Split up large source files into smaller modules, reducing internal
+   circular dependencies (#5410, #5411, #5415, #5419, #5416, #5414)
+
+ * Re-synchronize code backported from GLib with the version in GLib
+   (#5410)
+
+ * Make the flags used to apply "extra data" clearer (#5466)
+
+ * Use glnx_opendirat() where possible (#5527)
+
+ * CI improvements (#5374, #5381)
+
 Changes in 1.15.4
 ~~~~~~~~~~~~~~~~~
 Released: 2023-03-16

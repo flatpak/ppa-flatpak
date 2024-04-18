@@ -95,13 +95,14 @@ static GOptionEntry options[] = {
 gboolean
 flatpak_builtin_run (int argc, char **argv, GCancellable *cancellable, GError **error)
 {
+  g_auto(GStrv) run_environ = NULL;
   g_autoptr(GOptionContext) context = NULL;
   g_autoptr(FlatpakDeploy) app_deploy = NULL;
   g_autoptr(FlatpakDecomposed) app_ref = NULL;
   g_autoptr(FlatpakDecomposed) runtime_ref = NULL;
   const char *pref;
   int i;
-  int rest_argv_start, rest_argc;
+  int rest_argv_start = 0, rest_argc = 0;
   g_autoptr(FlatpakContext) arg_context = NULL;
   g_autofree char *id = NULL;
   g_autofree char *arch = NULL;
@@ -111,10 +112,11 @@ flatpak_builtin_run (int argc, char **argv, GCancellable *cancellable, GError **
   g_autoptr(GPtrArray) dirs = NULL;
   FlatpakRunFlags flags = 0;
 
+  run_environ = g_get_environ ();
+
   context = g_option_context_new (_("APP [ARGUMENT…] - Run an app"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
 
-  rest_argc = 0;
   for (i = 1; i < argc; i++)
     {
       /* The non-option is the command, take it out of the arguments */
@@ -155,6 +157,8 @@ flatpak_builtin_run (int argc, char **argv, GCancellable *cancellable, GError **
   if (rest_argc == 0)
     return usage_error (context, _("APP must be specified"), error);
 
+  /* If we get here, then rest_argv_start must have been set >= 1 */
+  g_assert (rest_argv_start > 0);
   pref = argv[rest_argv_start];
 
   if (!flatpak_split_partial_ref_arg (pref, FLATPAK_KINDS_APP | FLATPAK_KINDS_RUNTIME,
@@ -320,6 +324,7 @@ flatpak_builtin_run (int argc, char **argv, GCancellable *cancellable, GError **
                         &argv[rest_argv_start + 1],
                         rest_argc - 1,
                         opt_instance_id_fd,
+                        (const char * const *) run_environ,
                         NULL,
                         cancellable,
                         error))

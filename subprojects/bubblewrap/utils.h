@@ -56,6 +56,8 @@ void  warn (const char *format,
             ...) __attribute__((format (printf, 1, 2)));
 void  die_with_error (const char *format,
                       ...) __attribute__((__noreturn__)) __attribute__((format (printf, 1, 2)));
+void  die_with_mount_error (const char *format,
+                            ...) __attribute__((__noreturn__)) __attribute__((format (printf, 1, 2)));
 void  die (const char *format,
            ...) __attribute__((__noreturn__)) __attribute__((format (printf, 1, 2)));
 void  die_oom (void) __attribute__((__noreturn__));
@@ -64,7 +66,7 @@ void  die_unless_label_valid (const char *label);
 void  fork_intermediate_child (void);
 
 void *xmalloc (size_t size);
-void *xcalloc (size_t size);
+void *xcalloc (size_t nmemb, size_t size);
 void *xrealloc (void  *ptr,
                 size_t size);
 char *xstrdup (const char *str);
@@ -115,12 +117,13 @@ int   ensure_dir (const char *path,
                   mode_t      mode);
 int   get_file_mode (const char *pathname);
 int   mkdir_with_parents (const char *pathname,
-                          int         mode,
+                          mode_t      mode,
                           bool        create_last);
 void create_pid_socketpair (int sockets[2]);
 void send_pid_on_socket (int socket);
 int  read_pid_from_socket (int socket);
 char *get_oldroot_path (const char *path);
+char *get_newroot_path (const char *path);
 char *readlink_malloc (const char *pathname);
 
 /* syscall wrappers */
@@ -132,6 +135,8 @@ char *label_mount (const char *opt,
                    const char *mount_label);
 int   label_exec (const char *exec_label);
 int   label_create_file (const char *file_label);
+
+const char *mount_strerror (int errsv);
 
 static inline void
 cleanup_freep (void *p)

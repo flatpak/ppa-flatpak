@@ -22,7 +22,7 @@
 #include <glib.h>
 #include "flatpak.h"
 #include "flatpak-context-private.h"
-#include "flatpak-run-private.h"
+#include "flatpak-metadata-private.h"
 #include "flatpak-utils-private.h"
 
 #include "tests/testlib.h"
@@ -158,7 +158,7 @@ context_parse_args (FlatpakContext *context,
 
   oc = g_option_context_new ("");
   group = flatpak_context_get_options (context);
-  g_option_context_add_group (oc, group);
+  g_option_context_add_group (oc, g_steal_pointer (&group));
   g_option_context_parse_strv (oc, &argv, error);
 }
 

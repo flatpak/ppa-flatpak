@@ -4,7 +4,7 @@
 project(
   'flatpak',
   'c',
-  version : '1.15.4',
+  version : '1.15.8',
   default_options: [
     'warning_level=2',
   ],
@@ -13,7 +13,7 @@ project(
 
 flatpak_major_version = 1
 flatpak_minor_version = 15
-flatpak_micro_version = 4
+flatpak_micro_version = 8
 flatpak_extra_version = ''
 
 flatpak_interface_age = 0
@@ -33,7 +33,7 @@ if '@0@.@1@.@2@@3@'.format(
 endif
 
 required_glib = '2.46'
-required_bwrap = '0.5.0'
+required_bwrap = '0.8.0'
 required_dbus_proxy = '0.1.0'
 required_libostree = '2020.8'
 
@@ -183,17 +183,30 @@ libxml_dep = dependency('libxml-2.0', version : '>=2.4')
 libzstd_dep = dependency('libzstd', version : '>=0.8.1', required : get_option('libzstd'))
 dconf_dep = dependency('dconf', version : '>=0.26', required : get_option('dconf'))
 libsystemd_dep = dependency('libsystemd', required : get_option('systemd'))
-malcontent_dep = dependency('malcontent-0', required : get_option('malcontent'))
+malcontent_dep = dependency('malcontent-0', version : '>=0.5.0', required : get_option('malcontent'))
 polkit_agent_dep = dependency('polkit-agent-1', version : '>=0.98', required : get_option('system_helper'))
 build_system_helper = polkit_agent_dep.found()
 
 fuse_dep = dependency('fuse3', version : '>=3.1.1', required : false)
-
 if fuse_dep.found()
   fuse_api = 31
 else
   fuse_dep = dependency('fuse', version : '>=2.9.2')
   fuse_api = 26
+endif
+
+fusermount = get_option('system_fusermount')
+if fusermount == ''
+  if fuse_api >= 30
+    fusermount_program = find_program('fusermount3', required: true)
+  else
+    fusermount_program = find_program('fusermount', required: true)
+  endif
+  if meson.version().version_compare('>=0.55')
+    fusermount = fusermount_program.full_path()
+  else
+    fusermount = fusermount_program.path()
+  endif
 endif
 
 xau_dep = dependency('xau', required : get_option('xauth'))
@@ -203,8 +216,13 @@ appstream_dep = dependency('appstream', version : '>=0.12.0')
 gdk_pixbuf_dep = dependency('gdk-pixbuf-2.0')
 libseccomp_dep = dependency('libseccomp', required : get_option('seccomp'))
 gir_dep = dependency('gobject-introspection-1.0', version : '>=1.40.0', required : get_option('gir'))
-gtkdoc_dep = dependency('gtk-doc', required : get_option('gtkdoc'))
+gtkdoc_dep = dependency('gtk-doc', required : get_option('gtkdoc'), native : true)
 build_gtk_doc = gtkdoc_dep.found()
+
+wayland_client = dependency('wayland-client', required : get_option('wayland_security_context'))
+wayland_scanner = dependency('wayland-scanner', version : '>= 1.15', required : get_option('wayland_security_context'), native : true)
+wayland_protocols = dependency('wayland-protocols', version : '>= 1.32', required : get_option('wayland_security_context'))
+build_wayland_security_context = wayland_client.found() and wayland_scanner.found() and wayland_protocols.found()
 
 base_deps = [glib_dep, gio_dep, gio_unix_dep]
 
@@ -342,6 +360,7 @@ cdata.set_quoted(
 cdata.set_quoted('G_LOG_DOMAIN', 'flatpak')
 cdata.set_quoted('GETTEXT_PACKAGE', 'flatpak')
 cdata.set('FUSE_USE_VERSION', fuse_api)
+cdata.set_quoted('FUSERMOUNT', fusermount)
 
 if get_option('system_bubblewrap') == ''
   cdata.set_quoted('HELPER', get_option('prefix') / get_option('libexecdir') / 'flatpak-bwrap')
@@ -361,10 +380,6 @@ cdata.set('FLATPAK_EXTERN', '__attribute__((visibility("default"))) extern')
 if glib_dep.version().version_compare('>=2.60')
   # Ignore massive GTimeVal deprecation warnings in 2.62
   cdata.set('GLIB_VERSION_MIN_REQUIRED', 'GLIB_VERSION_2_60')
-endif
-
-if appstream_dep.version().version_compare('>=0.14.0')
-  cdata.set('HAVE_APPSTREAM_0_14_0', 1)
 endif
 
 if dconf_dep.found()
@@ -399,6 +414,10 @@ if xau_dep.found()
   cdata.set('ENABLE_XAUTH', 1)
 endif
 
+if build_wayland_security_context
+  cdata.set('ENABLE_WAYLAND_SECURITY_CONTEXT', 1)
+endif
+
 if not get_option('sandboxed_triggers')
   cdata.set('DISABLE_SANDBOXED_TRIGGERS', 1)
 endif
@@ -428,6 +447,7 @@ summary(
     'Build selinux module' : build_selinux_module,
     'Build bubblewrap' : (get_option('system_bubblewrap') == ''),
     'Build dbus-proxy' : (get_option('system_dbus_proxy') == ''),
+    'fusermount executable' : fusermount,
     'Use sandboxed triggers' : get_option('sandboxed_triggers'),
     'Use seccomp' : libseccomp_dep.found(),
     'Privileged group' : get_option('privileged_group'),
@@ -436,6 +456,7 @@ summary(
     'Use libmalcontent' : malcontent_dep.found(),
     'Use libzstd' : libzstd_dep.found(),
     'Use auto sideloading' : get_option('auto_sideloading'),
+    'Wayland security context' : build_wayland_security_context,
   },
   bool_yn : true,
 )

@@ -7,7 +7,7 @@ include /usr/share/dpkg/default.mk
 binaries := $(shell dh_listpackages)
 
 %:
-	dh $@ --buildsystem=meson --with=gir
+	dh $@ --buildsystem=meson
 
 override_dh_autoreconf:
 
@@ -37,7 +37,7 @@ override_dh_auto_configure:
 		-Drun_media_dir=/media \
 		-Dselinux_module=disabled \
 		-Dsystem_helper_user=_flatpak \
-		-Dsystemdsystemunitdir=/lib/systemd/system \
+		-Dsystemdsystemunitdir=/usr/lib/systemd/system \
 		$(configure_options)
 
 override_dh_install:

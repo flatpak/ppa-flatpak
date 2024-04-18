@@ -63,7 +63,7 @@
             systemd unit files or application .desktop files.
         </para>
 
-        <refsect2>
+        <refsect2 id="application-runtime-metadata">
             <title>[Application] or [Runtime]</title>
 
             <para>
@@ -128,7 +128,7 @@
                 </varlistentry>
             </variablelist>
         </refsect2>
-        <refsect2>
+        <refsect2 id="context-metadata">
             <title>[Context]</title>
             <para>
                 This group determines various system resources that may be shared
@@ -152,7 +152,7 @@
                     <listitem><para>
                         List of well-known sockets to make available in the sandbox.
                         Possible sockets: x11, wayland, fallback-x11, pulseaudio, session-bus, system-bus,
-                        ssh-auth, pcsc, cups.
+                        ssh-auth, pcsc, cups, gpg-agent, inherit-wayland-socket.
                         When making a socket available, flatpak also sets
                         well-known environment variables like DISPLAY or
                         DBUS_SYSTEM_BUS_ADDRESS to let the application
@@ -173,6 +173,13 @@
                                 Graphics direct rendering
                                 (<filename>/dev/dri</filename>).
                                 Available since 0.3.
+                            </para></listitem></varlistentry>
+
+                            <varlistentry><term><option>input</option></term>
+                            <listitem><para>
+                                Input devices
+                                (<filename>/dev/input</filename>).
+                                Available since 1.15.6.
                             </para></listitem></varlistentry>
 
                             <varlistentry><term><option>kvm</option></term>
@@ -510,7 +517,7 @@
                 </varlistentry>
             </variablelist>
         </refsect2>
-        <refsect2>
+        <refsect2 id="instance-metadata">
             <title>[Instance]</title>
             <para>
                 This group only appears in <filename>/.flatpak-info</filename>
@@ -543,15 +550,13 @@
                         The absolute path on the host system of the app's
                         app files, as mounted at <filename>/app</filename>
                         inside the container. Available since 0.6.10.
-                    </para></listitem>
-                    <listitem><para>
+                    </para><para>
                         Since 1.12.0, if <command>flatpak run</command>
                         was run with the <option>--app-path</option> option,
                         this key gives the absolute path of whatever files
                         were mounted on <filename>/app</filename>, even if
                         that differs from the app's normal app files.
-                    </para></listitem>
-                    <listitem><para>
+                    </para><para>
                         If <command>flatpak run</command> was run with
                         <option>--app-path=</option> (resulting in an
                         empty directory being mounted on
@@ -567,8 +572,7 @@
                         the absolute path of the app's original files,
                         as mounted at <filename>/run/parent/app</filename>
                         inside the container. Available since 1.12.0.
-                    </para></listitem>
-                    <listitem><para>
+                    </para><para>
                         If this key is missing, the app files are given
                         by <option>app-path</option>.
                     </para></listitem>
@@ -621,8 +625,7 @@
                         The absolute path on the host system of the app's
                         runtime files, as mounted at <filename>/usr</filename>
                         inside the container. Available since 0.6.10.
-                    </para></listitem>
-                    <listitem><para>
+                    </para><para>
                         Since 1.12.0, if <command>flatpak run</command>
                         was run with the <option>--usr-path</option> option,
                         this key gives the absolute path of whatever files
@@ -638,8 +641,7 @@
                         the absolute path of the app's original runtime,
                         as mounted at <filename>/run/parent/usr</filename>
                         inside the container. Available since 1.12.0.
-                    </para></listitem>
-                    <listitem><para>
+                    </para><para>
                         If this key is missing, the runtime files are given
                         by <option>runtime-path</option>.
                     </para></listitem>
@@ -707,7 +709,7 @@
                 </varlistentry>
             </variablelist>
         </refsect2>
-        <refsect2>
+        <refsect2 id="session-bus-policy-metadata">
             <title>[Session Bus Policy]</title>
             <para>
                 If the <option>sockets</option> key is not allowing full access
@@ -715,12 +717,14 @@
             </para>
             <para>
                 The default policy for the session bus only allows the
-                application to own its own application ID and
-                subnames. For instance if the app is called
-                "org.my.App", it can only own "org.my.App" and
-                "org.my.App.*". Its also only allowed to talk to the
-                bus itself (org.freedesktop.DBus) and the portal APIs
-                APIs (bus names of the form org.freedesktop.portal.*).
+                application to own its own application ID, its
+                subnames and its own application id as a subname of 
+                "org.mpris.MediaPlayer2". For instance if the app is called
+                "org.my.App", it can only own "org.my.App", "org.my.App.*"
+                and "org.mpris.MediaPlayer2.org.my.App".
+                It is only allowed to talk to names matching those patterns, plus
+                the bus itself (org.freedesktop.DBus)
+                and the portal APIs (bus names of the form org.freedesktop.portal.*).
             </para>
             <para>
                 Additionally the app is always allowed to reply to
@@ -772,7 +776,7 @@
                 </varlistentry>
             </variablelist>
         </refsect2>
-        <refsect2>
+        <refsect2 id="system-bus-policy-metadata">
             <title>[System Bus Policy]</title>
             <para>
                 If the <option>sockets</option> key is not allowing full access
@@ -785,7 +789,7 @@
                 However, the app has no permissions by default.
             </para>
         </refsect2>
-        <refsect2>
+        <refsect2 id="environment-metadata">
             <title>[Environment]</title>
             <para>
                 The [Environment] group specifies environment variables to set
@@ -803,7 +807,7 @@
                 [Context] group.
               </para>
         </refsect2>
-        <refsect2>
+        <refsect2 id="extension-metadata">
             <title>[Extension NAME]</title>
             <para>
                 Runtimes and applications can define extension points, which allow
@@ -875,40 +879,40 @@
                         <variablelist>
                             <varlistentry>
                                 <term><option>active-gl-driver</option></term>
-                                <para>
+                                <listitem><para>
                                     Is true if the name of the active GL driver matches the
                                     extension point basename. Available since 0.9.1, and backported to
                                     the 0.8.x branch in 0.8.3.
-                                </para>
+                                </para></listitem>
                             </varlistentry>
                             <varlistentry>
                                 <term><option>active-gtk-theme</option></term>
-                                <para>
+                                <listitem><para>
                                     Is true if the name of the current GTK theme
                                     (via org.gnome.desktop.interface GSetting) matches the extension point
                                     basename. Added 0.10.1.
-                                </para>
+                                </para></listitem>
                             </varlistentry>
                             <varlistentry>
                                 <term><option>have-intel-gpu</option></term>
-                                <para>Is true if the i915 kernel module is loaded. Added 0.10.1.</para>
+                                <listitem><para>Is true if the i915 kernel module is loaded. Added 0.10.1.</para></listitem>
                             </varlistentry>
                             <varlistentry>
                                 <term><option>have-kernel-module-*</option></term>
-                                <para>
+                                <listitem><para>
                                     Is true if the suffix (case-sensitive) is found in <literal>/proc/modules</literal>.
                                     For example <literal>have-kernel-module-nvidia</literal>.
                                     Added 1.13.1.
-                                </para>
+                                </para></listitem>
                             </varlistentry>
                             <varlistentry>
                                 <term><option>on-xdg-desktop-*</option></term>
-                                <para>
+                                <listitem><para>
                                     Is true if the suffix (case-insensitively) is in the
                                     <literal>XDG_CURRENT_DESKTOP</literal> env var.
                                     For example <literal>on-xdg-desktop-GNOME-classic</literal>.
                                     Added 1.1.1.
-                                </para>
+                                </para></listitem>
                             </varlistentry>
                         </variablelist>
                     </listitem>
@@ -917,10 +921,10 @@
                     <term><option>autoprune-unless</option> (string)</term>
                     <listitem><para>
                         A condition that must be false for the extension to be considered unused when
-                        pruning. For example, <command>flatpak uninstall --unused</command> uses
-                        this information. The only currently recognized value is active-gl-driver,
-                        which is true if the name of the active GL driver matches the extension
-                        point basename. Available since 0.11.8.
+                        pruning. For example, <command>flatpak uninstall --unused</command> and
+                        <command>flatpak update</command> use this information. The only currently
+                        recognized value is active-gl-driver, which is true if the name of the active
+                        GL driver matches the extension point basename. Available since 0.11.8.
                     </para></listitem>
                 </varlistentry>
                 <varlistentry>
@@ -989,7 +993,7 @@
                 </varlistentry>
             </variablelist>
         </refsect2>
-        <refsect2>
+        <refsect2 id="extension-of-metadata">
             <title>[ExtensionOf]</title>
             <para>
                 This optional group may be present if the runtime is an extension.
@@ -1028,7 +1032,7 @@
                 </varlistentry>
             </variablelist>
         </refsect2>
-        <refsect2>
+        <refsect2 id="extra-data-metadata">
             <title>[Extra Data]</title>
             <para>
                 This optional group may be present if the runtime or application uses
@@ -1075,7 +1079,7 @@
                 </varlistentry>
             </variablelist>
         </refsect2>
-        <refsect2>
+        <refsect2 id="policy-metadata">
           <title>[Policy SUBSYSTEM]</title>
           <para>
             Subsystems can define their own policies to be placed in a group

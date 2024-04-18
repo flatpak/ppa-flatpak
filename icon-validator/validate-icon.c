@@ -39,7 +39,7 @@ validate_icon (const char *arg_width,
   GdkPixbufFormat *format;
   int max_width, max_height;
   int width, height;
-  const char *name;
+  g_autofree char *name = NULL;
   const char *allowed_formats[] = { "png", "jpeg", "svg", NULL };
   g_autoptr(GdkPixbuf) pixbuf = NULL;
   g_autoptr(GError) error = NULL;
@@ -228,7 +228,7 @@ rerun_in_sandbox (const char *arg_width,
   if (g_getenv ("G_MESSAGES_PREFIXED"))
     add_args (args, "--setenv", "G_MESSAGES_PREFIXED", g_getenv ("G_MESSAGES_PREFIXED"), NULL);
 
-  add_args (args, validate_icon, arg_width, arg_height, filename, NULL);
+  add_args (args, "--", validate_icon, arg_width, arg_height, filename, NULL);
   g_ptr_array_add (args, NULL);
 
   {
@@ -252,7 +252,7 @@ static GOptionEntry entries[] = {
 int
 main (int argc, char *argv[])
 {
-  GOptionContext *context;
+  g_autoptr(GOptionContext) context = NULL;
   GError *error = NULL;
 
   context = g_option_context_new ("WIDTH HEIGHT PATH");

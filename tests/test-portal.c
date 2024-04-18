@@ -78,7 +78,7 @@ launcher_stdout_to_our_stderr (GSubprocessLauncher *launcher)
   stderr_copy = dup (STDERR_FILENO);
   g_assert_no_errno (stderr_copy);
   g_assert_no_errno (fcntl (stderr_copy, F_SETFD, FD_CLOEXEC));
-  g_subprocess_launcher_take_stdout_fd (launcher, glnx_steal_fd (&stderr_copy));
+  g_subprocess_launcher_take_stdout_fd (launcher, g_steal_fd (&stderr_copy));
 }
 
 static GSubprocessLauncher *
@@ -466,6 +466,7 @@ teardown (Fixture *f,
   tests_dbus_daemon_teardown (&f->dbus_daemon);
   g_clear_object (&f->portal);
   g_free (f->portal_path);
+  g_free (f->mock_flatpak);
 }
 
 int

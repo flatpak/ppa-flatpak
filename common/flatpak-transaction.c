@@ -24,10 +24,12 @@
 #include <glib/gi18n-lib.h>
 
 #include "flatpak-auth-private.h"
+#include "flatpak-dir-private.h"
 #include "flatpak-error.h"
 #include "flatpak-installation-private.h"
 #include "flatpak-progress-private.h"
 #include "flatpak-transaction-private.h"
+#include "flatpak-utils-http-private.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-uri-private.h"
 #include "flatpak-variant-impl-private.h"
@@ -128,7 +130,7 @@ struct _FlatpakTransactionOperation
   int                             run_after_prio; /* Higher => run later (when it becomes runnable). Used to run related ops (runtime extensions) before deps (apps using the runtime) */
   GList                          *run_before_ops;
   gboolean                        run_last;  /* Run this after all the other apps that are not run_last */
-  FlatpakTransactionOperation    *fail_if_op_fails; /* main app/runtime for related extensions, runtime for apps */
+  FlatpakTransactionOperation    *fail_if_op_fails; /* main app/runtime for related extensions, runtime for apps, install/update for uninstalls of eol-rebase apps */
   /* main app/runtime for related extensions, app for runtimes; could be multiple
    * related-to-ops if this op is for a runtime which is needed by multiple apps
    * in the transaction: */
@@ -1275,9 +1277,8 @@ flatpak_transaction_class_init (FlatpakTransactionClass *klass)
    * ref.
    *
    * If the caller wants to install the rebased ref, they should call
-   * flatpak_transaction_add_uninstall() on @ref,
-   * flatpak_transaction_add_rebase() on @rebased_to_ref, and return %TRUE.
-   * Otherwise %FALSE may be returned.
+   * flatpak_transaction_add_rebase_and_uninstall() on @rebased_to_ref and @ref,
+   * and return %TRUE. Otherwise %FALSE may be returned.
    *
    * Returns: %TRUE if the operation on this end-of-lifed ref should
    * be skipped (e.g. because the rebased ref has been added to the
@@ -2605,6 +2606,7 @@ add_deps (FlatpakTransaction          *self,
   return TRUE;
 }
 
+/* @out_op may return %NULL even when this function returns %TRUE. It’s (transfer none). */
 static gboolean
 flatpak_transaction_add_ref (FlatpakTransaction             *self,
                              const char                     *remote,
@@ -2616,6 +2618,7 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
                              GFile                          *bundle,
                              const char                     *external_metadata,
                              gboolean                        pin_on_deploy,
+                             FlatpakTransactionOperation   **out_op,
                              GError                        **error)
 {
   FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
@@ -2625,6 +2628,9 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
   g_autofree char *origin_remote = NULL;
   g_autoptr(FlatpakRemoteState) state = NULL;
   FlatpakTransactionOperation *op;
+
+  if (out_op != NULL)
+    *out_op = NULL;
 
   if (remote_name_is_file (remote))
     {
@@ -2740,6 +2746,9 @@ flatpak_transaction_add_ref (FlatpakTransaction             *self,
   if (external_metadata)
     op->external_metadata = g_bytes_new (external_metadata, strlen (external_metadata));
 
+  if (out_op != NULL)
+    *out_op = op;
+
   return TRUE;
 }
 
@@ -2787,7 +2796,7 @@ flatpak_transaction_add_install (FlatpakTransaction *self,
 
   if (!flatpak_transaction_add_ref (self, remote, decomposed, subpaths, NULL, NULL,
                                     FLATPAK_TRANSACTION_OPERATION_INSTALL,
-                                    NULL, NULL, pin_on_deploy, error))
+                                    NULL, NULL, pin_on_deploy, NULL, error))
     return FALSE;
 
   return TRUE;
@@ -2808,6 +2817,10 @@ flatpak_transaction_add_install (FlatpakTransaction *self,
  * installing the @ref if it was not already present or updating it. This will
  * treat @ref as the result of following an eol-rebase, and data migration from
  * the refs in @previous_ids will be set up.
+ *
+ * If you want to rebase the ref and uninstall the old version of it, consider
+ * using flatpak_transaction_add_rebase_and_uninstall() instead. It will add
+ * appropriate dependencies between the rebase and uninstall operations.
  *
  * See flatpak_transaction_add_install() for a description of @remote.
  *
@@ -2843,7 +2856,116 @@ flatpak_transaction_add_rebase (FlatpakTransaction *self,
   if (dir_ref_is_installed (priv->dir, decomposed, &installed_origin, NULL))
     remote = installed_origin;
 
-  return flatpak_transaction_add_ref (self, remote, decomposed, subpaths, previous_ids, NULL, FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE, NULL, NULL, FALSE, error);
+  return flatpak_transaction_add_ref (self, remote, decomposed, subpaths, previous_ids, NULL, FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE, NULL, NULL, FALSE, NULL, error);
+}
+
+/**
+ * flatpak_transaction_add_rebase_and_uninstall:
+ * @self: a #FlatpakTransaction
+ * @remote: the name of the remote
+ * @new_ref: the ref to rebase to
+ * @old_ref: the ref to uninstall
+ * @subpaths: (nullable): the subpaths to include, or %NULL to install the complete ref
+ * @previous_ids: (nullable) (array zero-terminated=1): Previous ids to add to the
+ *     given ref. These should simply be the ids, not the full ref names (e.g. org.foo.Bar,
+ *     not org.foo.Bar/x86_64/master).
+ * @error: return location for a #GError
+ *
+ * Adds updating the @previous_ids of the given @new_ref to this transaction,
+ * via either installing the @new_ref if it was not already present or updating
+ * it. This will treat @new_ref as the result of following an eol-rebase, and
+ * data migration from the refs in @previous_ids will be set up.
+ *
+ * Also adds an operation to uninstall @old_ref to this transaction. This
+ * operation will only be run if the operation to install/update @new_ref
+ * succeeds.
+ *
+ * If @old_ref is not already installed (which can happen if requesting to
+ * install an EOLed app, rather than update one which is already installed), the
+ * uninstall operation will silently not be added, and this function will behave
+ * similarly to flatpak_transaction_add_rebase().
+ *
+ * See flatpak_transaction_add_install() for a description of @remote.
+ *
+ * Returns: %TRUE on success; %FALSE with @error set on failure.
+ * Since: 1.15.4
+ */
+gboolean
+flatpak_transaction_add_rebase_and_uninstall (FlatpakTransaction  *self,
+                                              const char          *remote,
+                                              const char          *new_ref,
+                                              const char          *old_ref,
+                                              const char         **subpaths,
+                                              const char         **previous_ids,
+                                              GError             **error)
+{
+  FlatpakTransactionPrivate *priv = flatpak_transaction_get_instance_private (self);
+  const char *all_paths[] = { NULL };
+  g_autoptr(FlatpakDecomposed) old_decomposed = NULL;
+  g_autoptr(FlatpakDecomposed) new_decomposed = NULL;
+  g_autofree char *installed_origin = NULL;
+  g_autoptr(GError) local_error = NULL;
+  FlatpakTransactionOperation *rebase_op = NULL, *uninstall_op = NULL;
+
+  g_return_val_if_fail (new_ref != NULL, FALSE);
+  g_return_val_if_fail (old_ref != NULL, FALSE);
+  g_return_val_if_fail (remote != NULL, FALSE);
+  /* flatpak_transaction_add_rebase_and_uninstall() without previous_ids doesn't make sense */
+  g_return_val_if_fail (previous_ids != NULL, FALSE);
+
+  new_decomposed = flatpak_decomposed_new_from_ref (new_ref, error);
+  if (new_decomposed == NULL)
+    return FALSE;
+
+  old_decomposed = flatpak_decomposed_new_from_ref (old_ref, error);
+  if (old_decomposed == NULL)
+    return FALSE;
+
+  /* If we install with no special args pull all subpaths */
+  if (subpaths == NULL)
+    subpaths = all_paths;
+
+  if (dir_ref_is_installed (priv->dir, new_decomposed, &installed_origin, NULL))
+    remote = installed_origin;
+
+  /* Add the install/update and uninstall ops. */
+  if (!flatpak_transaction_add_ref (self, remote, new_decomposed, subpaths,
+                                    previous_ids, NULL,
+                                    FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE,
+                                    NULL, NULL, FALSE, &rebase_op, error))
+    return FALSE;
+
+  if (!flatpak_transaction_add_ref (self, NULL, old_decomposed, NULL, NULL, NULL,
+                                    FLATPAK_TRANSACTION_OPERATION_UNINSTALL,
+                                    NULL, NULL, FALSE, &uninstall_op, &local_error))
+    {
+      /* If the user is trying to install an eol-rebased app from scratch, the
+       * @old_ref can’t be uninstalled because it’s not installed already.
+       * Silently ignore that. */
+      if (g_error_matches (local_error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED))
+        {
+          g_clear_error (&local_error);
+        }
+      else
+        {
+          g_propagate_error (error, g_steal_pointer (&local_error));
+          return FALSE;
+        }
+    }
+
+  /* Link the ops together so that the install/update is done first, and if
+   * that fails then the uninstall is skipped. @uninstall_op might be %NULL even
+   * if the flatpak_transaction_add_ref() call succeeded above, as this might be
+   * a no-deploy transaction. */
+  if (uninstall_op != NULL)
+    {
+      uninstall_op->non_fatal = TRUE;
+      uninstall_op->fail_if_op_fails = rebase_op;
+      flatpak_transaction_operation_add_related_to_op (uninstall_op, rebase_op);
+      run_operation_before (rebase_op, uninstall_op, 1);
+    }
+
+  return TRUE;
 }
 
 /**
@@ -2937,7 +3059,7 @@ flatpak_transaction_add_update (FlatpakTransaction *self,
     return FALSE;
 
   /* Note: we implement the merge when subpaths == NULL in flatpak_transaction_add_ref() */
-  return flatpak_transaction_add_ref (self, NULL, decomposed, subpaths, NULL, commit, FLATPAK_TRANSACTION_OPERATION_UPDATE, NULL, NULL, FALSE, error);
+  return flatpak_transaction_add_ref (self, NULL, decomposed, subpaths, NULL, commit, FLATPAK_TRANSACTION_OPERATION_UPDATE, NULL, NULL, FALSE, NULL, error);
 }
 
 /**
@@ -2964,7 +3086,7 @@ flatpak_transaction_add_uninstall (FlatpakTransaction *self,
   if (decomposed == NULL)
     return FALSE;
 
-  return flatpak_transaction_add_ref (self, NULL, decomposed, NULL, NULL, NULL, FLATPAK_TRANSACTION_OPERATION_UNINSTALL, NULL, NULL, FALSE, error);
+  return flatpak_transaction_add_ref (self, NULL, decomposed, NULL, NULL, NULL, FLATPAK_TRANSACTION_OPERATION_UNINSTALL, NULL, NULL, FALSE, NULL, error);
 }
 
 static gboolean
@@ -3076,7 +3198,7 @@ flatpak_transaction_add_auto_install (FlatpakTransaction *self,
 
                   if (!flatpak_transaction_add_ref (self, remote, auto_install_ref, NULL, NULL, NULL,
                                                     FLATPAK_TRANSACTION_OPERATION_INSTALL_OR_UPDATE,
-                                                    NULL, NULL, FALSE,
+                                                    NULL, NULL, FALSE, NULL,
                                                     &local_error))
                     g_info ("Failed to add auto-install ref %s: %s", flatpak_decomposed_get_ref (auto_install_ref),
                              local_error->message);
@@ -3819,9 +3941,11 @@ request_tokens_for_remote (FlatpakTransaction *self,
       g_autoptr(GFile) deploy = NULL;
       deploy = flatpak_dir_get_if_deployed (priv->dir, auto_install_ref, NULL, cancellable);
       if (deploy == NULL)
-        g_signal_emit (self, signals[INSTALL_AUTHENTICATOR], 0,
-                       remote, flatpak_decomposed_get_ref (auto_install_ref));
-      deploy = flatpak_dir_get_if_deployed (priv->dir, auto_install_ref, NULL, cancellable);
+        {
+          g_signal_emit (self, signals[INSTALL_AUTHENTICATOR], 0,
+                         remote, flatpak_decomposed_get_ref (auto_install_ref));
+          deploy = flatpak_dir_get_if_deployed (priv->dir, auto_install_ref, NULL, cancellable);
+        }
       if (deploy == NULL)
         return flatpak_fail (error, _("No authenticator installed for remote '%s'"), remote);
     }
@@ -3902,7 +4026,7 @@ request_tokens_for_remote (FlatpakTransaction *self,
   g_assert (priv->active_request_id == 0); /* No outstanding requests */
   priv->active_request = NULL;
 
-  results = data.results; /* Make sure its freed as needed */
+  results = data.results; /* Make sure it's freed as needed */
 
   {
     g_autofree char *results_str = results != NULL ? g_variant_print (results, FALSE) : g_strdup ("NULL");
@@ -3960,6 +4084,7 @@ request_tokens_for_remote (FlatpakTransaction *self,
               token = token_for_refs;
               break;
             }
+          g_clear_pointer (&refs_strv, g_free);
         }
 
       if (token == NULL)
@@ -4576,7 +4701,7 @@ flatpak_transaction_resolve_bundles (FlatpakTransaction *self,
 
       if (!flatpak_transaction_add_ref (self, remote, ref, NULL, NULL, commit,
                                         FLATPAK_TRANSACTION_OPERATION_INSTALL_BUNDLE,
-                                        data->file, metadata, FALSE, error))
+                                        data->file, metadata, FALSE, NULL, error))
         return FALSE;
     }
 
@@ -4878,7 +5003,7 @@ add_uninstall_unused_ops (FlatpakTransaction  *self,
                                                       NULL, /* metadata_injection */
                                                       NULL, /* eol_injection */
                                                       NULL, /* exclude_refs */
-                                                      TRUE, /* filter_by_eol */
+                                                      FLATPAK_DIR_FILTER_EOL | FLATPAK_DIR_FILTER_AUTOPRUNE,
                                                       cancellable, error);
       if (old_unused_refs == NULL)
         return FALSE;
@@ -4935,7 +5060,7 @@ add_uninstall_unused_ops (FlatpakTransaction  *self,
                                               metadata_injection,
                                               eol_injection,
                                               to_be_excluded_strv,
-                                              TRUE, /* filter_by_eol */
+                                              FLATPAK_DIR_FILTER_EOL | FLATPAK_DIR_FILTER_AUTOPRUNE,
                                               cancellable, error);
   if (unused_refs == NULL)
     return FALSE;

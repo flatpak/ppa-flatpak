@@ -26,8 +26,9 @@
 #include "flatpak-bwrap-private.h"
 #include "flatpak-context-private.h"
 #include "flatpak-exports-private.h"
-#include "flatpak-run-private.h"
+#include "flatpak-metadata-private.h"
 #include "flatpak-utils-base-private.h"
+#include "flatpak-utils-private.h"
 
 #include "tests/testlib.h"
 
@@ -225,7 +226,7 @@ test_full_context (void)
                         FLATPAK_METADATA_GROUP_CONTEXT,
                         FLATPAK_METADATA_KEY_SOCKETS,
                         "x11;wayland;pulseaudio;session-bus;system-bus;"
-                        "fallback-x11;ssh-auth;pcsc;cups;");
+                        "fallback-x11;ssh-auth;pcsc;cups;inherit-wayland-socket;");
   g_key_file_set_value (keyfile,
                         FLATPAK_METADATA_GROUP_CONTEXT,
                         FLATPAK_METADATA_KEY_DEVICES,
@@ -280,6 +281,7 @@ test_full_context (void)
   g_assert_cmpuint (context->sockets, ==,
                     (FLATPAK_CONTEXT_SOCKET_X11 |
                      FLATPAK_CONTEXT_SOCKET_WAYLAND |
+                     FLATPAK_CONTEXT_SOCKET_INHERIT_WAYLAND_SOCKET |
                      FLATPAK_CONTEXT_SOCKET_PULSEAUDIO |
                      FLATPAK_CONTEXT_SOCKET_SESSION_BUS |
                      FLATPAK_CONTEXT_SOCKET_SYSTEM_BUS |
@@ -374,6 +376,7 @@ test_full_context (void)
   i = 0;
   g_assert_cmpstr (strv[i++], ==, "cups");
   g_assert_cmpstr (strv[i++], ==, "fallback-x11");
+  g_assert_cmpstr (strv[i++], ==, "inherit-wayland-socket");
   g_assert_cmpstr (strv[i++], ==, "pcsc");
   g_assert_cmpstr (strv[i++], ==, "pulseaudio");
   g_assert_cmpstr (strv[i++], ==, "session-bus");
@@ -1007,7 +1010,7 @@ test_host_exports_setup (const FakeFile *files,
   glnx_openat_rdonly (AT_FDCWD, host, TRUE, &fd, &error);
   g_assert_no_error (error);
   g_assert_cmpint (fd, >=, 0);
-  flatpak_exports_take_host_fd (exports, glnx_steal_fd (&fd));
+  flatpak_exports_take_host_fd (exports, g_steal_fd (&fd));
 
   if (etc_mode > FLATPAK_FILESYSTEM_MODE_NONE)
     flatpak_exports_add_host_etc_expose (exports, etc_mode);
@@ -1477,9 +1480,8 @@ main (int argc, char *argv[])
   /* Do not call setlocale() here: some tests look at untranslated error
    * messages. */
 
-  isolated_test_dir_global_setup ();
-
   g_test_init (&argc, &argv, NULL);
+  isolated_test_dir_global_setup ();
 
   g_test_add_func ("/context/empty", test_empty_context);
   g_test_add_func ("/context/filesystems", test_filesystems);

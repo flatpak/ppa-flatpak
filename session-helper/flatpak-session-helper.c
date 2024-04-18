@@ -32,6 +32,7 @@
 #include "flatpak-session-helper.h"
 #include "flatpak-utils-base-private.h"
 
+static GStrv original_environ = NULL;
 static char *monitor_dir;
 static char *p11_kit_server_socket_path;
 static int p11_kit_server_pid = 0;
@@ -310,7 +311,7 @@ handle_host_command (FlatpakDevelopment    *object,
       env = g_strdupv (empty);
     }
   else
-    env = g_get_environ ();
+    env = g_strdupv (original_environ);
 
   n_envs = g_variant_n_children (arg_envs);
   for (i = 0; i < n_envs; i++)
@@ -625,7 +626,7 @@ file_monitor_do (MonitorData *data)
       /* We can't update the /etc/localtime symlink at runtime, nor can we make it a of the
        * correct form "../usr/share/zoneinfo/$timezone". So, instead we use the old debian
        * /etc/timezone file for telling the sandbox the timezone. */
-      char *dest = g_build_filename (monitor_dir, "timezone", NULL);
+      g_autofree char *dest = g_build_filename (monitor_dir, "timezone", NULL);
       g_autofree char *raw_timezone = flatpak_get_timezone ();
       g_autofree char *timezone_content = g_strdup_printf ("%s\n", raw_timezone);
 
@@ -766,8 +767,9 @@ main (int    argc,
   gboolean replace;
   gboolean verbose;
   gboolean show_version;
-  GOptionContext *context;
+  g_autoptr(GOptionContext) context = NULL;
   GBusNameOwnerFlags flags;
+  g_autofree char *pk11_program = NULL;
   g_autofree char *flatpak_dir = NULL;
   g_autoptr(GError) error = NULL;
   const GOptionEntry options[] = {
@@ -782,6 +784,10 @@ main (int    argc,
                          m_gai_conf = NULL,
                          m_localtime = NULL;
   struct sigaction action;
+
+  /* Save the enviroment before changing anything, so that subprocesses
+   * can get the unchanged version */
+  original_environ = g_get_environ ();
 
   atexit (do_atexit);
 
@@ -815,9 +821,10 @@ main (int    argc,
       g_printerr ("Try \"%s --help\" for more information.",
                   g_get_prgname ());
       g_printerr ("\n");
-      g_option_context_free (context);
       return 1;
     }
+
+  g_clear_pointer (&context, g_option_context_free);
 
   if (show_version)
     {
@@ -844,7 +851,8 @@ main (int    argc,
       exit (1);
     }
 
-  if (g_find_program_in_path ("p11-kit"))
+  pk11_program = g_find_program_in_path ("p11-kit");
+  if (pk11_program)
     start_p11_kit_server (flatpak_dir);
   else
     g_info ("p11-kit not found");
@@ -880,5 +888,6 @@ main (int    argc,
 
   g_bus_unown_name (owner_id);
 
+  g_strfreev (original_environ);
   return 0;
 }

@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <glib-unix.h>
 #include <glib/gi18n-lib.h>
 #include <gio/gio.h>
 #include <gio/gunixfdlist.h>
@@ -63,6 +64,7 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (PortalFlatpakUpdateMonitorSkeleton, g_object_unre
 /* Should be roughly 2 seconds */
 #define CHILD_STATUS_CHECK_ATTEMPTS 20
 
+static GStrv original_environ = NULL;
 static GHashTable *client_pid_data_hash = NULL;
 static GDBusConnection *session_bus = NULL;
 static GNetworkMonitor *network_monitor = NULL;
@@ -481,7 +483,7 @@ child_setup_func (gpointer user_data)
   sigset_t set;
   gsize i;
 
-  flatpak_close_fds_workaround (3);
+  g_fdwalk_set_cloexec (3);
 
   if (data->instance_id_fd != -1)
     drop_cloexec (data->instance_id_fd);
@@ -773,6 +775,7 @@ handle_spawn (PortalFlatpak         *object,
   g_auto(GStrv) runtime_parts = NULL;
   g_autofree char *runtime_commit = NULL;
   g_autofree char *instance_path = NULL;
+  g_autofree char *instance_id = NULL;
   g_auto(GStrv) extra_args = NULL;
   g_auto(GStrv) shares = NULL;
   g_auto(GStrv) sockets = NULL;
@@ -780,6 +783,7 @@ handle_spawn (PortalFlatpak         *object,
   g_auto(GStrv) unset_env = NULL;
   g_auto(GStrv) sandbox_expose = NULL;
   g_auto(GStrv) sandbox_expose_ro = NULL;
+  g_autoptr(FlatpakInstance) instance = NULL;
   g_autoptr(GVariant) sandbox_expose_fd = NULL;
   g_autoptr(GVariant) sandbox_expose_fd_ro = NULL;
   g_autoptr(GVariant) app_fd = NULL;
@@ -988,8 +992,36 @@ handle_spawn (PortalFlatpak         *object,
       max_fd = MAX (max_fd, fd_map_entry.from);
     }
 
-  /* TODO: Ideally we should let `flatpak run` inherit the portal's
-   * environment, in case e.g. a LD_LIBRARY_PATH is needed to be able
+  if (testing)
+    {
+      instance_id = g_strdup ("11223344");
+    }
+  else
+    {
+      instance_id = g_key_file_get_string (app_info,
+                                           FLATPAK_METADATA_GROUP_INSTANCE,
+                                           FLATPAK_METADATA_KEY_INSTANCE_ID, NULL);
+    }
+
+  if (!instance_id)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                             G_DBUS_ERROR_INVALID_ARGS,
+                                             "Caller has no instance id");
+      return G_DBUS_METHOD_INVOCATION_HANDLED;
+    }
+
+  instance = flatpak_instance_new_for_id (instance_id);
+  if (!instance)
+    {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                             G_DBUS_ERROR_FAILED,
+                                             "Could not access caller instance");
+      return G_DBUS_METHOD_INVOCATION_HANDLED;
+    }
+
+  /* TODO: Ideally we should let `flatpak run` inherit the run environment
+   * of the instance, in case e.g. a LD_LIBRARY_PATH is needed to be able
    * to run `flatpak run`, but tell it to start from a blank environment
    * when running the Flatpak app; but this isn't currently possible, so
    * for now we preserve existing behaviour. */
@@ -999,7 +1031,31 @@ handle_spawn (PortalFlatpak         *object,
       env = g_strdupv (empty);
     }
   else
-    env = g_get_environ ();
+    {
+      static const char * const mock_run_environ[] = { "FOO=bar", NULL };
+
+      if (testing)
+        env = g_strdupv ((GStrv) mock_run_environ);
+      else
+        env = flatpak_instance_get_run_environ (instance, &error);
+
+      if (env == NULL)
+        {
+          if (g_error_matches (error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
+            {
+              g_warning ("Environment for \"flatpak run\" was not found, falling back to current environment");
+              env = g_strdupv (original_environ);
+            }
+          else
+            {
+              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                                     G_DBUS_ERROR_INVALID_ARGS,
+                                                     "Could not load environment for \"flatpak run\": %s",
+                                                     error->message);
+              return G_DBUS_METHOD_INVOCATION_HANDLED;
+            }
+        }
+    }
 
   if ((flatpak = g_getenv ("FLATPAK_PORTAL_MOCK_FLATPAK")) != NULL)
     g_ptr_array_add (flatpak_argv, g_strdup (flatpak));
@@ -1125,7 +1181,7 @@ handle_spawn (PortalFlatpak         *object,
           return G_DBUS_METHOD_INVOCATION_HANDLED;
         }
 
-      env_fd = glnx_steal_fd (&env_tmpf.fd);
+      env_fd = g_steal_fd (&env_tmpf.fd);
 
       /* Use a fd that hasn't been used yet. We might have to reshuffle
        * fd_map_entry.to, a bit later. */
@@ -1167,7 +1223,6 @@ handle_spawn (PortalFlatpak         *object,
 
   if (expose_pids || share_pids)
     {
-      g_autofree char *instance_id = NULL;
       int sender_pid1 = 0;
 
       if (!(supports & FLATPAK_SPAWN_SUPPORT_FLAGS_EXPOSE_PIDS))
@@ -1178,16 +1233,7 @@ handle_spawn (PortalFlatpak         *object,
           return G_DBUS_METHOD_INVOCATION_HANDLED;
         }
 
-      instance_id = g_key_file_get_string (app_info,
-                                           FLATPAK_METADATA_GROUP_INSTANCE,
-                                           FLATPAK_METADATA_KEY_INSTANCE_ID, NULL);
-
-      if (instance_id)
-        {
-          g_autoptr(FlatpakInstance) instance = flatpak_instance_new_for_id (instance_id);
-          sender_pid1 = flatpak_instance_get_child_pid (instance);
-        }
-
+      sender_pid1 = flatpak_instance_get_child_pid (instance);
       if (sender_pid1 == 0)
         {
           g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
@@ -1473,7 +1519,8 @@ handle_spawn (PortalFlatpak         *object,
   child_setup_data.fd_map = &g_array_index (fd_map, FdMapEntry, 0);
   child_setup_data.fd_map_len = fd_map->len;
 
-  /* We use LEAVE_DESCRIPTORS_OPEN to work around dead-lock, see flatpak_close_fds_workaround */
+  /* We use LEAVE_DESCRIPTORS_OPEN and close them in the child_setup
+   * to work around a deadlock in GLib < 2.60 */
   if (!g_spawn_async_with_pipes (NULL,
                                  (char **) flatpak_argv->pdata,
                                  env,
@@ -2567,7 +2614,7 @@ update_child_setup_func (gpointer user_data)
   int *socket = user_data;
 
   dup2 (*socket, 3);
-  flatpak_close_fds_workaround (4);
+  g_fdwalk_set_cloexec (4);
 }
 
 /* This is the meat of the update process, its run out of process (via
@@ -2968,7 +3015,7 @@ main (int    argc,
   ssize_t exe_path_len;
   gboolean replace;
   gboolean show_version;
-  GOptionContext *context;
+  g_autoptr(GOptionContext) context = NULL;
   GBusNameOwnerFlags flags;
   g_autoptr(GError) error = NULL;
   const GOptionEntry options[] = {
@@ -2980,6 +3027,10 @@ main (int    argc,
     { "poll-when-metered", 0, 0, G_OPTION_ARG_NONE, &opt_poll_when_metered, "Whether to check for updates on metered networks",  NULL },
     { NULL }
   };
+
+  /* Save the enviroment before changing anything, so that subprocesses
+   * can get the unchanged version */
+  original_environ = g_get_environ ();
 
   setlocale (LC_ALL, "");
 
@@ -3083,5 +3134,6 @@ main (int    argc,
   main_loop = g_main_loop_new (NULL, FALSE);
   g_main_loop_run (main_loop);
 
+  g_strfreev (original_environ);
   return 0;
 }

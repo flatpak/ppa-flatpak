@@ -141,6 +141,12 @@ option(
   value : '',
 )
 option(
+  'system_fusermount',
+  type : 'string',
+  description : 'system fusermount executable, or empty string to auto-select based on fuse version',
+  value : '',
+)
+option(
   'system_font_cache_dirs',
   type : 'array',
   description : 'directory where the system font cache is',
@@ -209,6 +215,12 @@ option(
   value : 'lib/sysusers.d'
 )
 option(
+  'tmpfilesdir',
+  type : 'string',
+  description : 'directory for systemd tmpfiles.d configuration files',
+  value : 'lib/tmpfiles.d'
+)
+option(
   'tests',
   type : 'boolean',
   description : 'build tests',
@@ -219,6 +231,12 @@ option(
   type : 'feature',
   description : 'enable Xauth use',
   value : 'enabled',
+)
+option(
+  'wayland_security_context',
+  type : 'feature',
+  description : 'enable wayland security-context protocol support',
+  value : 'auto',
 )
 option(
   'xmlto_flags',

@@ -38,6 +38,10 @@ else
     test_builddir=$(dirname $0)
 fi
 
+if [ -e "$test_srcdir/installed-tests.sh" ]; then
+    . "$test_srcdir/installed-tests.sh"
+fi
+
 # All the asserts and ok functions below are wrapped such that they
 # don't output any set -x traces of their internals (but still echo
 # errors to stderr). This way the log output focuses on tracing what
@@ -542,7 +546,7 @@ skip_one_without_bwrap () {
 }
 
 skip_without_fuse () {
-    fusermount --version >/dev/null 2>&1 || skip "no fusermount"
+    "${FUSERMOUNT}" --version >/dev/null 2>&1 || skip "no fusermount"
 
     capsh --print | grep -q 'Bounding set.*[^a-z]cap_sys_admin' || \
         skip "No cap_sys_admin in bounding set, can't use FUSE"
@@ -608,7 +612,7 @@ commit_to_path () {
 cleanup () {
     /bin/kill -9 $DBUS_SESSION_BUS_PID
     gpg-connect-agent --homedir "${FL_GPG_HOMEDIR}" killagent /bye >&2 || true
-    fusermount -u $XDG_RUNTIME_DIR/doc >&2 || :
+    "${FUSERMOUNT}" -u $XDG_RUNTIME_DIR/doc >&2 || :
     kill $(jobs -p) &> /dev/null || true
     if test -n "${TEST_SKIP_CLEANUP:-}"; then
         echo "# Skipping cleanup of ${TEST_DATA_DIR}"

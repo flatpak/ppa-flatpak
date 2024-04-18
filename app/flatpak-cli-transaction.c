@@ -25,6 +25,7 @@
 #include "flatpak-installation-private.h"
 #include "flatpak-run-private.h"
 #include "flatpak-table-printer.h"
+#include "flatpak-tty-utils-private.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-error.h"
 #include <glib/gi18n.h>
@@ -158,7 +159,7 @@ install_authenticator (FlatpakTransaction            *old_transaction,
   FlatpakCliTransaction *old_cli = FLATPAK_CLI_TRANSACTION (old_transaction);
   g_autoptr(FlatpakTransaction)  transaction2 = NULL;
   g_autoptr(GError) local_error = NULL;
-  FlatpakInstallation *installation = flatpak_transaction_get_installation (old_transaction);
+  g_autoptr(FlatpakInstallation) installation = flatpak_transaction_get_installation (old_transaction);
   FlatpakDir *dir = flatpak_installation_get_dir (installation, NULL);
 
   if (dir == NULL)
@@ -887,7 +888,7 @@ end_of_lifed_with_rebase (FlatpakTransaction *transaction,
   EolAction action = EOL_UNDECIDED;
   EolAction old_action = EOL_UNDECIDED;
   gboolean can_rebase = rebased_to_ref != NULL && remote != NULL;
-  FlatpakInstallation *installation = flatpak_transaction_get_installation (transaction);
+  g_autoptr(FlatpakInstallation) installation = flatpak_transaction_get_installation (transaction);
   FlatpakDir *dir = flatpak_installation_get_dir (installation, NULL);
 
   if (ref == NULL)
@@ -988,28 +989,13 @@ end_of_lifed_with_rebase (FlatpakTransaction *transaction,
     {
       g_autoptr(GError) error = NULL;
 
-      if (!flatpak_transaction_add_rebase (transaction, remote, rebased_to_ref, NULL, previous_ids, &error))
+      if (!flatpak_transaction_add_rebase_and_uninstall (transaction, remote, rebased_to_ref, ref_str, NULL, previous_ids, &error))
         {
           g_propagate_prefixed_error (&self->first_operation_error,
                                       g_error_copy (error),
                                       _("Failed to rebase %s to %s: "),
                                       name, rebased_to_ref);
           return FALSE;
-        }
-
-      if (!flatpak_transaction_add_uninstall (transaction, ref_str, &error))
-        {
-          /* NOT_INSTALLED error is expected in case the op that triggered this was install not update */
-          if (g_error_matches (error, FLATPAK_ERROR, FLATPAK_ERROR_NOT_INSTALLED))
-            g_clear_error (&error);
-          else
-            {
-              g_propagate_prefixed_error (&self->first_operation_error,
-                                          g_error_copy (error),
-                                          _("Failed to uninstall %s for rebase to %s: "),
-                                          name, rebased_to_ref);
-              return FALSE;
-            }
         }
 
       return TRUE; /* skip install/update op of end-of-life ref */
@@ -1301,7 +1287,7 @@ static gboolean
 transaction_ready_pre_auth (FlatpakTransaction *transaction)
 {
   FlatpakCliTransaction *self = FLATPAK_CLI_TRANSACTION (transaction);
-  GList *ops = flatpak_transaction_get_operations (transaction);
+  g_autolist(FlatpakTransactionOperation) ops = flatpak_transaction_get_operations (transaction);
   GList *l;
   int i;
   FlatpakTablePrinter *printer;
@@ -1481,10 +1467,7 @@ transaction_ready_pre_auth (FlatpakTransaction *transaction)
         ret = flatpak_yes_no_prompt (TRUE, _("Proceed with these changes to the %s?"), name);
 
       if (!ret)
-        {
-          g_list_free_full (ops, g_object_unref);
-          return FALSE;
-        }
+        return FALSE;
     }
   else
     g_print ("\n\n");
