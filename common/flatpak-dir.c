@@ -4402,7 +4402,7 @@ flatpak_dir_config_append_pattern (FlatpakDir *self,
                                    GError    **error)
 {
   g_autoptr(GPtrArray) patterns = flatpak_dir_get_config_patterns (self, key);
-  g_autofree char *regexp;
+  g_autofree char *regexp = NULL;
   gboolean already_present;
   g_autofree char *merged_patterns = NULL;
 
@@ -7071,6 +7071,7 @@ flatpak_dir_run_triggers (FlatpakDir   *self,
                                   "--proc", "/proc",
                                   "--dev", "/dev",
                                   "--bind", basedir, basedir,
+                                  "--",
                                   NULL);
 #endif
           flatpak_bwrap_add_args (bwrap,
@@ -12493,6 +12494,8 @@ flatpak_dir_remote_fetch_indexed_summary (FlatpakDir   *self,
           if (flatpak_dir_remote_load_cached_summary (self, old_cache_name, old_checksum, ".sub", NULL,
                                                       &old_summary, NULL, cancellable, NULL))
             break;
+
+          g_clear_pointer (&old_checksum, g_free);
         }
 
       if (old_summary)

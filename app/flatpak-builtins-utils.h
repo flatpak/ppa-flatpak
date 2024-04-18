@@ -28,6 +28,12 @@
 #include "flatpak-dir-private.h"
 #include "flatpak-permission-dbus-generated.h"
 
+/* AS_CHECK_VERSION was introduced in 0.14.0; we still support 0.12.0, so
+ * behave as though versions without this macro are arbitrarily old */
+#ifndef AS_CHECK_VERSION
+#define AS_CHECK_VERSION(major, minor, micro) (0)
+#endif
+
 /* Appstream data expires after a day */
 #define FLATPAK_APPSTREAM_TTL 86400
 
@@ -154,16 +160,16 @@ void print_aligned_take (int         len,
                          const char *title,
                          char       *value);
 
-AsComponent *as_store_find_app (AsMetadata *mdata,
-                                const char *ref);
-const char *as_app_get_version (AsComponent *component);
+AsComponent *metadata_find_component (AsMetadata *mdata,
+                                         const char *ref);
+const char *component_get_version_latest (AsComponent *component);
 
-gboolean    flatpak_dir_load_appstream_store (FlatpakDir   *self,
-                                              const gchar  *remote_name,
-                                              const gchar  *arch,
-                                              AsMetadata   *mdata,
-                                              GCancellable *cancellable,
-                                              GError      **error);
+gboolean    flatpak_dir_load_appstream_data (FlatpakDir   *self,
+                                             const gchar  *remote_name,
+                                             const gchar  *arch,
+                                             AsMetadata   *mdata,
+                                             GCancellable *cancellable,
+                                             GError      **error);
 
 int         cell_width (const char *text);
 const char *cell_advance (const char *text,

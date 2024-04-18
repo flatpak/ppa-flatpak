@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [1])
 m4_define([flatpak_minor_version], [14])
-m4_define([flatpak_micro_version], [4])
+m4_define([flatpak_micro_version], [6])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -362,9 +362,6 @@ PKG_CHECK_MODULES(OSTREE, [ostree-1 >= $OSTREE_REQS])
 PKG_CHECK_MODULES(JSON, [json-glib-1.0])
 
 PKG_CHECK_MODULES(APPSTREAM, [appstream >= 0.12.0])
-PKG_CHECK_MODULES(APPSTREAM_0_14_0, appstream >= 0.14.0,
-                  [AC_DEFINE([HAVE_APPSTREAM_0_14_0], [1], [Define if appstream >= 0.14.0 is available])],
-                  [true])
 
 PKG_CHECK_MODULES(GDK_PIXBUF, [gdk-pixbuf-2.0])
 
@@ -424,6 +421,13 @@ AC_ARG_WITH([sysusersdir],
     dnl .../lib, never .../lib64 or .../lib/x86_64-linux-gnu
     [with_sysusersdir='${prefix}/lib/sysusers.d'])
 AC_SUBST([sysusersdir], [$with_sysusersdir])
+
+AC_ARG_WITH([tmpfilesdir],
+            [AS_HELP_STRING([--with-tmpfilesdir=DIR],
+                            [Directory for systemd tmpfiles.d configuration files (default=PREFIX/lib/tmpfiles.d)])],
+    [],
+    [with_tmpfilesdir='${prefix}/lib/tmpfiles.d'])
+AC_SUBST([tmpfilesdir], [$with_tmpfilesdir])
 
 AC_ARG_WITH(system-helper-user,
            [AS_HELP_STRING([--with-system-helper-user=USERNAME],
