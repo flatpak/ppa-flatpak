@@ -1,3 +1,17 @@
+flatpak (1.15.8-1~flatpak1~22.04.1) UNRELEASED; urgency=high
+
+  * Merge security fix from Debian
+  * Remaining changes relative to Debian:
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+    - d/p/tests-Make-GLib-warnings-non-fatal-while-running-flatpak-.patch:
+      Add patch to work around #1006684 in libappstream (again)
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 19 Apr 2024 00:57:20 +0100
+
 flatpak (1.15.8-1) experimental; urgency=high
 
   * New upstream development release
