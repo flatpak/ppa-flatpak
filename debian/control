@@ -46,6 +46,7 @@ Build-Depends:
  libxml2-utils,
  libzstd-dev,
  ostree (>= 2020.8) <!nocheck>,
+ pkg-config,
  policykit-1 <!nocheck>,
  procps,
  python3:any,
@@ -157,8 +158,9 @@ Depends:
  libglib2.0-dev,
  libostree-dev (>= 2020.8),
  libxml2-dev (>= 2.4),
- pkg-config,
+ pkgconf,
  python3:any,
+ ${gir:Depends},
  ${misc:Depends},
 Recommends:
  flatpak,
@@ -167,6 +169,8 @@ Suggests:
  ostree,
  python3-gi,
  systemd-coredump,
+Provides:
+ ${gir:Provides},
 Description: Application deployment framework for desktop apps (development)
  Flatpak installs, manages and runs sandboxed desktop application bundles.
  See the flatpak package for a more comprehensive description.
