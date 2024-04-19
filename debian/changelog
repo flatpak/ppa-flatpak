@@ -1,6 +1,6 @@
-flatpak (1.15.8-1~flatpak1~22.04.1) UNRELEASED; urgency=high
+flatpak (1.15.8-1~flatpak1~22.04.1) jammy; urgency=medium
 
-  * Merge security fix from Debian
+  * Merge security fix from Debian (CVE-2024-32462)
   * Remaining changes relative to Debian:
     - Don't rely on system bwrap/dbus-proxy.
       This is easier for a PPA: it avoids needing to backport bubblewrap
@@ -12,7 +12,7 @@ flatpak (1.15.8-1~flatpak1~22.04.1) UNRELEASED; urgency=high
     - Move systemd unit back to /lib/systemd/system
     - Revert build-dependency on gir1.2-*.dev
 
- -- Simon McVittie <smcv@debian.org>  Fri, 19 Apr 2024 00:57:20 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 19 Apr 2024 10:47:53 +0100
 
 flatpak (1.15.8-1) experimental; urgency=high
 
