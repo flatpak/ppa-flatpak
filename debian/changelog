@@ -1,3 +1,9 @@
+flatpak (1.14.6-1~deb12u1) UNRELEASED; urgency=medium
+
+  * Backport upstream stable release for Debian 12
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Apr 2024 12:40:30 +0100
+
 flatpak (1.14.4-1+deb12u1) bookworm-security; urgency=high
 
   * d/p/When-starting-non-static-command-using-bwrap-use.patch,
