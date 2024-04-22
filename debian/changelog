@@ -10,14 +10,60 @@ flatpak (1.14.4-1+deb12u1) bookworm-security; urgency=high
 
  -- Simon McVittie <smcv@debian.org>  Wed, 17 Apr 2024 19:39:48 +0100
 
+flatpak (1.14.6-1) unstable; urgency=high
+
+  * New upstream stable release 1.14.6
+    - Don't allow an executable name to be misinterpreted as a command-line
+      option for bwrap(1). This prevents a sandbox escape where a malicious
+      or compromised app could ask xdg-desktop-portal to generate a .desktop
+      file with access to files outside the sandbox. (CVE-2024-32462)
+    - Don't parse `<developer><name/></developer>` as the application name
+  * d/control: Drop alternative dependencies on transitional policykit-1.
+    polkitd was released in Debian 12 and Ubuntu 22.04.
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 17 Apr 2024 19:34:28 +0100
+
+flatpak (1.14.5-1) unstable; urgency=medium
+
+  * New upstream stable release
+  * Drop patches cherry-picked in 1.14.4-2, applied upstream
+  * d/flatpak.install: Install new tmpfiles.d snippet
+  * d/test.sh: Disable http proxy if used, to ensure we can reach localhost.
+    Some reproducible.org builders set http_proxy, which makes attempts
+    to access our temporary http server on localhost fail with a 503 error.
+  * d/control: (Build-)depend on pkgconf in preference to pkg-config
+  * d/control: Add ${gir:Depends}, ${gir:Provides} to -dev package
+    (Helps: #1030223)
+  * d/control: Build-depend on required GIR XML files (Helps: #1030223)
+  * Install systemd system unit into /usr/lib/systemd/system.
+    This was allowed by TC resolution #1053901.
+    Build-depend on debhelper 13.11.6~ to ensure that the unit is still
+    picked up by dh_installsystemd.
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 08 Dec 2023 12:25:50 +0000
+
+flatpak (1.14.4-2) unstable; urgency=medium
+
+  * Team upload
+
+  [ Simon McVittie ]
+  * Mention #1033098, #1033099 in previous changelog entry
+
+  [ Jeremy Bicha ]
+  * Cherry-pick 2 patches for compatibility with glib 2.77
+
+ -- Jeremy Bícha <jbicha@ubuntu.com>  Tue, 18 Jul 2023 17:05:30 -0400
+
 flatpak (1.14.4-1) unstable; urgency=high
 
   * New upstream security fix release
     - Escape special characters when displaying permissions and metadata,
       preventing malicious apps from manipulating the appearance of the
-      permissions list using crafted metadata (CVE-2023-28101)
+      permissions list using crafted metadata
+      (Closes: #1033098; CVE-2023-28101)
     - If a Flatpak app is run on a Linux virtual console (tty1, etc.),
-      don't allow copy/paste via the TIOCLINUX ioctl (CVE-2023-28100).
+      don't allow copy/paste via the TIOCLINUX ioctl
+      (Closes: #1033099; CVE-2023-28100).
       Note that this is specific to virtual consoles: Flatpak is not
       vulnerable to this if run from a graphical terminal emulator such
       as xterm, gnome-terminal or Konsole.

@@ -1299,6 +1299,9 @@ add_bwrap_wrapper (FlatpakBwrap *bwrap,
   if (!flatpak_bwrap_bundle_args (bwrap, 1, -1, FALSE, error))
     return FALSE;
 
+  /* End of options: the next argument will be the executable name */
+  flatpak_bwrap_add_arg (bwrap, "--");
+
   return TRUE;
 }
 
@@ -1900,6 +1903,8 @@ static const ExportData default_exports[] = {
   {"XKB_CONFIG_ROOT", NULL},
   {"GIO_EXTRA_MODULES", NULL},
   {"GDK_BACKEND", NULL},
+  {"VK_DRIVER_FILES", NULL},
+  {"VK_ICD_FILENAMES", NULL},
 };
 
 static const ExportData no_ld_so_cache_exports[] = {
@@ -4680,7 +4685,7 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
   if (!flatpak_bwrap_bundle_args (bwrap, 1, -1, FALSE, error))
     return FALSE;
 
-  flatpak_bwrap_add_arg (bwrap, command);
+  flatpak_bwrap_add_args (bwrap, "--", command, NULL);
 
   if (!add_rest_args (bwrap, app_id,
                       exports, (flags & FLATPAK_RUN_FLAG_FILE_FORWARDING) != 0,
