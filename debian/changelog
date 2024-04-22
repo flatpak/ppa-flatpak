@@ -1,6 +1,39 @@
 flatpak (1.14.6-1~deb12u1) UNRELEASED; urgency=medium
 
   * Backport upstream stable release for Debian 12
+  * Changes relative to 1.14.4-1+deb12u1 in bookworm-security:
+    - New upstream stable release
+      + Don't parse `<developer><name/></developer>` as though it was
+        the application name
+      + Install a tmpfiles.d snippet to clean up /var/tmp/flatpak-cache-*
+        during boot
+      + Stop http transfers if a download in progress becomes very slow
+      + Silence warnings when using GLib 2.77.0 or later
+      + Bypass page cache for backend requests in revokefs, fixing
+        installation errors with libostree 2023.4 or later
+      + Show AppStream metadata in `flatpak remote-info` as intended,
+        fixing a regression in 1.9.1
+      + Don't let Flatpak apps inherit $VK_DRIVER_FILES or $VK_ICD_FILENAMES
+        from the host system, which would be wrong in the sandbox
+      + Fix forward-compatibility with libappstream 0.17.x and 1.0
+      + Fix a memory leak
+      + Fix some compiler warnings
+      + Make the test failure produce a clearer message if a required tool
+        is missing
+      + Don't force `GIO_USE_VFS=local` for programs launched via
+        flatpak-spawn
+      + Documentation improvements
+    - Drop CVE-2024-32462 patches, included in the upstream stable release
+    - debian/test.sh: Disable http proxy if used, to ensure we can reach
+      a HTTP server on localhost during automated tests
+  * Changes relative to 1.14.6-1 in unstable:
+    - Revert polkitd dependencies to polkitd | policykit-1 as previously
+      used in bookworm
+    - Revert pkgconf dependencies to pkg-config as previously used in
+      bookworm
+    - Revert location of systemd unit to /lib/systemd/system as previously
+      used in bookworm, dropping versioned dependency on debhelper 13.11.6~
+    - Revert changes related to Debian 13 GIR XML packaging policy
 
  -- Simon McVittie <smcv@debian.org>  Mon, 22 Apr 2024 12:40:30 +0100
 
