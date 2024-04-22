@@ -48,7 +48,6 @@ Build-Depends:
  libxml2-utils,
  libzstd-dev,
  ostree (>= 2020.8) <!nocheck>,
- pkgconf,
  polkitd <!nocheck> | policykit-1 <!nocheck>,
  procps,
  python3:any,
@@ -165,7 +164,7 @@ Depends:
  libglib2.0-dev,
  libostree-dev (>= 2020.8),
  libxml2-dev (>= 2.4),
- pkgconf,
+ pkg-config,
  python3:any,
  ${misc:Depends},
 Recommends:
