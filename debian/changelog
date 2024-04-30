@@ -1,3 +1,9 @@
+flatpak (1.14.6-1~deb13u1) trixie; urgency=high
+
+  * Rebuild for trixie
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 19 Apr 2024 11:00:13 +0100
+
 flatpak (1.14.6-1) unstable; urgency=high
 
   * New upstream stable release 1.14.6
