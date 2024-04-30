@@ -1,4 +1,4 @@
-flatpak (1.14.7-1) UNRELEASED; urgency=medium
+flatpak (1.14.8-1) UNRELEASED; urgency=medium
 
   * New upstream stable release 1.14.7
     - Automatically reload D-Bus session bus configuration when apps are
@@ -27,6 +27,8 @@ flatpak (1.14.7-1) UNRELEASED; urgency=medium
     - Fix a misleading comment in the test for CVE-2024-32462
     - Fix a double-free in the test suite
     - Skip more tests if bubblewrap works but FUSE doesn't
+  * New upstream stable release 1.14.8
+    - Respin of 1.14.7 reverting unintended submodule changes
   * d/control: Replace one more polkitd|policykit-1 dependency with polkitd
 
  -- Simon McVittie <smcv@debian.org>  Tue, 30 Apr 2024 13:26:41 +0100
