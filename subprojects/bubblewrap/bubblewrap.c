@@ -23,7 +23,6 @@
 #include <sched.h>
 #include <pwd.h>
 #include <grp.h>
-#include <ctype.h>
 #include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
@@ -53,12 +52,6 @@
        __result; }))
 #endif
 
-/* We limit the size of a tmpfs to half the architecture's address space,
- * to avoid hitting arbitrary limits in the kernel.
- * For example, on at least one x86_64 machine, the actual limit seems to be
- * 2^64 - 2^12. */
-#define MAX_TMPFS_BYTES ((size_t) (SIZE_MAX >> 1))
-
 /* Globals to avoid having to use getuid(), since the uid/gid changes during runtime */
 static uid_t real_uid;
 static gid_t real_gid;
@@ -73,8 +66,6 @@ static const char *opt_file_label = NULL;
 static bool opt_as_pid_1;
 
 const char *opt_chdir_path = NULL;
-bool opt_assert_userns_disabled = FALSE;
-bool opt_disable_userns = FALSE;
 bool opt_unshare_user = FALSE;
 bool opt_unshare_user_try = FALSE;
 bool opt_unshare_pid = FALSE;
@@ -100,7 +91,6 @@ int opt_userns_fd = -1;
 int opt_userns2_fd = -1;
 int opt_pidns_fd = -1;
 int next_perms = -1;
-size_t next_size_arg = 0;
 
 #define CAP_TO_MASK_0(x) (1L << ((x) & 31))
 #define CAP_TO_MASK_1(x) CAP_TO_MASK_0(x - 32)
@@ -159,7 +149,6 @@ struct _SetupOp
   int         fd;
   SetupOpFlag flags;
   int         perms;
-  size_t      size;  /* number of bytes, zero means unset/default */
   SetupOp    *next;
 };
 
@@ -188,7 +177,6 @@ typedef struct
   uint32_t op;
   uint32_t flags;
   uint32_t perms;
-  size_t   size_arg;
   uint32_t arg1_offset;
   uint32_t arg2_offset;
 } PrivSepOp;
@@ -288,15 +276,7 @@ seccomp_programs_apply (void)
   for (program = seccomp_programs; program != NULL; program = program->next)
     {
       if (prctl (PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &program->program) != 0)
-        {
-          if (errno == EINVAL)
-            die ("Unable to set up system call filtering as requested: "
-                 "prctl(PR_SET_SECCOMP) reported EINVAL. "
-                 "(Hint: this requires a kernel configured with "
-                 "CONFIG_SECCOMP and CONFIG_SECCOMP_FILTER.)");
-
-          die_with_error ("prctl(PR_SET_SECCOMP)");
-        }
+        die_with_error ("prctl(PR_SET_SECCOMP)");
     }
 }
 
@@ -321,9 +301,7 @@ usage (int ecode, FILE *out)
            "    --unshare-cgroup-try         Create new cgroup namespace if possible else continue by skipping it\n"
            "    --userns FD                  Use this user namespace (cannot combine with --unshare-user)\n"
            "    --userns2 FD                 After setup switch to this user namespace, only useful with --userns\n"
-           "    --disable-userns             Disable further use of user namespaces inside sandbox\n"
-           "    --assert-userns-disabled     Fail unless further use of user namespace inside sandbox is disabled\n"
-           "    --pidns FD                   Use this pid namespace (as parent namespace if using --unshare-pid)\n"
+           "    --pidns FD                   Use this user namespace (as parent namespace if using --unshare-pid)\n"
            "    --uid UID                    Custom uid in the sandbox (requires --unshare-user or --userns)\n"
            "    --gid GID                    Custom gid in the sandbox (requires --unshare-user or --userns)\n"
            "    --hostname NAME              Custom hostname in the sandbox (requires --unshare-uts)\n"
@@ -363,7 +341,6 @@ usage (int ecode, FILE *out)
            "    --cap-add CAP                Add cap CAP when running as privileged user\n"
            "    --cap-drop CAP               Drop cap CAP when running as privileged user\n"
            "    --perms OCTAL                Set permissions of next argument (--bind-data, --file, etc.)\n"
-           "    --size BYTES                 Set size of next argument (only for --tmpfs)\n"
            "    --chmod OCTAL PATH           Change permissions of PATH (must already exist)\n"
           );
   exit (ecode);
@@ -1024,12 +1001,10 @@ privileged_op (int         privileged_op_socket,
                uint32_t    op,
                uint32_t    flags,
                uint32_t    perms,
-               size_t      size_arg,
                const char *arg1,
                const char *arg2)
 {
   bind_mount_result bind_result;
-  char *failing_path = NULL;
 
   if (privileged_op_socket != -1)
     {
@@ -1057,7 +1032,6 @@ privileged_op (int         privileged_op_socket,
       op_buffer->op = op;
       op_buffer->flags = flags;
       op_buffer->perms = perms;
-      op_buffer->size_arg = size_arg;
       op_buffer->arg1_offset = arg1_offset;
       op_buffer->arg2_offset = arg2_offset;
       if (arg1 != NULL)
@@ -1096,25 +1070,23 @@ privileged_op (int         privileged_op_socket,
       break;
 
     case PRIV_SEP_OP_REMOUNT_RO_NO_RECURSIVE:
-      bind_result = bind_mount (proc_fd, NULL, arg2, BIND_READONLY, &failing_path);
+      bind_result = bind_mount (proc_fd, NULL, arg2, BIND_READONLY);
 
       if (bind_result != BIND_MOUNT_SUCCESS)
-        die_with_bind_result (bind_result, errno, failing_path,
+        die_with_bind_result (bind_result, errno,
                               "Can't remount readonly on %s", arg2);
 
-      assert (failing_path == NULL);    /* otherwise we would have died */
       break;
 
     case PRIV_SEP_OP_BIND_MOUNT:
       /* We always bind directories recursively, otherwise this would let us
          access files that are otherwise covered on the host */
-      bind_result = bind_mount (proc_fd, arg1, arg2, BIND_RECURSIVE | flags, &failing_path);
+      bind_result = bind_mount (proc_fd, arg1, arg2, BIND_RECURSIVE | flags);
 
       if (bind_result != BIND_MOUNT_SUCCESS)
-        die_with_bind_result (bind_result, errno, failing_path,
+        die_with_bind_result (bind_result, errno,
                               "Can't bind mount %s on %s", arg1, arg2);
 
-      assert (failing_path == NULL);    /* otherwise we would have died */
       break;
 
     case PRIV_SEP_OP_PROC_MOUNT:
@@ -1124,18 +1096,7 @@ privileged_op (int         privileged_op_socket,
 
     case PRIV_SEP_OP_TMPFS_MOUNT:
       {
-        cleanup_free char *mode = NULL;
-
-        /* This check should be unnecessary since we checked this when parsing
-         * the --size option as well. However, better be safe than sorry. */
-        if (size_arg > MAX_TMPFS_BYTES)
-          die_with_error ("Specified tmpfs size too large (%zu > %zu)", size_arg, MAX_TMPFS_BYTES);
-
-        if (size_arg != 0)
-          mode = xasprintf ("mode=%#o,size=%zu", perms, size_arg);
-        else
-          mode = xasprintf ("mode=%#o", perms);
-
+        cleanup_free char *mode = xasprintf ("mode=%#o", perms);
         cleanup_free char *opt = label_mount (mode, opt_file_label);
         if (mount ("tmpfs", arg1, "tmpfs", MS_NOSUID | MS_NODEV, opt) != 0)
           die_with_error ("Can't mount tmpfs on %s", arg1);
@@ -1236,12 +1197,12 @@ setup_newroot (bool unshare_pid,
                          PRIV_SEP_OP_BIND_MOUNT,
                          (op->type == SETUP_RO_BIND_MOUNT ? BIND_READONLY : 0) |
                          (op->type == SETUP_DEV_BIND_MOUNT ? BIND_DEVICES : 0),
-                         0, 0, source, dest);
+                         0, source, dest);
           break;
 
         case SETUP_REMOUNT_RO_NO_RECURSIVE:
           privileged_op (privileged_op_socket,
-                         PRIV_SEP_OP_REMOUNT_RO_NO_RECURSIVE, 0, 0, 0, NULL, dest);
+                         PRIV_SEP_OP_REMOUNT_RO_NO_RECURSIVE, 0, 0, NULL, dest);
           break;
 
         case SETUP_MOUNT_PROC:
@@ -1252,14 +1213,14 @@ setup_newroot (bool unshare_pid,
             {
               /* Our own procfs */
               privileged_op (privileged_op_socket,
-                             PRIV_SEP_OP_PROC_MOUNT, 0, 0, 0,
+                             PRIV_SEP_OP_PROC_MOUNT, 0, 0,
                              dest, NULL);
             }
           else
             {
               /* Use system procfs, as we share pid namespace anyway */
               privileged_op (privileged_op_socket,
-                             PRIV_SEP_OP_BIND_MOUNT, 0, 0, 0,
+                             PRIV_SEP_OP_BIND_MOUNT, 0, 0,
                              "oldroot/proc", dest);
             }
 
@@ -1281,7 +1242,7 @@ setup_newroot (bool unshare_pid,
                 }
 
               privileged_op (privileged_op_socket,
-                             PRIV_SEP_OP_BIND_MOUNT, BIND_READONLY, 0, 0,
+                             PRIV_SEP_OP_BIND_MOUNT, BIND_READONLY, 0,
                              subdir, subdir);
             }
 
@@ -1292,7 +1253,7 @@ setup_newroot (bool unshare_pid,
             die_with_error ("Can't mkdir %s", op->dest);
 
           privileged_op (privileged_op_socket,
-                         PRIV_SEP_OP_TMPFS_MOUNT, 0, 0755, 0,
+                         PRIV_SEP_OP_TMPFS_MOUNT, 0, 0755,
                          dest, NULL);
 
           static const char *const devnodes[] = { "null", "zero", "full", "random", "urandom", "tty" };
@@ -1303,7 +1264,7 @@ setup_newroot (bool unshare_pid,
               if (create_file (node_dest, 0444, NULL) != 0)
                 die_with_error ("Can't create file %s/%s", op->dest, devnodes[i]);
               privileged_op (privileged_op_socket,
-                             PRIV_SEP_OP_BIND_MOUNT, BIND_DEVICES, 0, 0,
+                             PRIV_SEP_OP_BIND_MOUNT, BIND_DEVICES, 0,
                              node_src, node_dest);
             }
 
@@ -1337,7 +1298,7 @@ setup_newroot (bool unshare_pid,
             if (mkdir (pts, 0755) == -1)
               die_with_error ("Can't create %s/devpts", op->dest);
             privileged_op (privileged_op_socket,
-                           PRIV_SEP_OP_DEVPTS_MOUNT, 0, 0, 0, pts, NULL);
+                           PRIV_SEP_OP_DEVPTS_MOUNT, 0, 0, pts, NULL);
 
             if (symlink ("pts/ptmx", ptmx) != 0)
               die_with_error ("Can't make symlink at %s/ptmx", op->dest);
@@ -1357,7 +1318,7 @@ setup_newroot (bool unshare_pid,
                 die_with_error ("creating %s/console", op->dest);
 
               privileged_op (privileged_op_socket,
-                             PRIV_SEP_OP_BIND_MOUNT, BIND_DEVICES, 0, 0,
+                             PRIV_SEP_OP_BIND_MOUNT, BIND_DEVICES, 0,
                              src_tty_dev, dest_console);
             }
 
@@ -1372,7 +1333,7 @@ setup_newroot (bool unshare_pid,
             die_with_error ("Can't mkdir %s", op->dest);
 
           privileged_op (privileged_op_socket,
-                         PRIV_SEP_OP_TMPFS_MOUNT, 0, op->perms, op->size,
+                         PRIV_SEP_OP_TMPFS_MOUNT, 0, op->perms,
                          dest, NULL);
           break;
 
@@ -1381,7 +1342,7 @@ setup_newroot (bool unshare_pid,
             die_with_error ("Can't mkdir %s", op->dest);
 
           privileged_op (privileged_op_socket,
-                         PRIV_SEP_OP_MQUEUE_MOUNT, 0, 0, 0,
+                         PRIV_SEP_OP_MQUEUE_MOUNT, 0, 0,
                          dest, NULL);
           break;
 
@@ -1462,7 +1423,7 @@ setup_newroot (bool unshare_pid,
             privileged_op (privileged_op_socket,
                            PRIV_SEP_OP_BIND_MOUNT,
                            (op->type == SETUP_MAKE_RO_BIND_FILE ? BIND_READONLY : 0),
-                           0, 0, tempfile, dest);
+                           0, tempfile, dest);
 
             /* Remove the file so we're sure the app can't get to it in any other way.
                Its outside the container chroot, so it shouldn't be possible, but lets
@@ -1480,7 +1441,7 @@ setup_newroot (bool unshare_pid,
         case SETUP_SET_HOSTNAME:
           assert (op->dest != NULL);  /* guaranteed by the constructor */
           privileged_op (privileged_op_socket,
-                         PRIV_SEP_OP_SET_HOSTNAME, 0, 0, 0,
+                         PRIV_SEP_OP_SET_HOSTNAME, 0, 0,
                          op->dest, NULL);
           break;
 
@@ -1489,7 +1450,7 @@ setup_newroot (bool unshare_pid,
         }
     }
   privileged_op (privileged_op_socket,
-                 PRIV_SEP_OP_DONE, 0, 0, 0, NULL, NULL);
+                 PRIV_SEP_OP_DONE, 0, 0, NULL, NULL);
 }
 
 /* Do not leak file descriptors already used by setup_newroot () */
@@ -1576,7 +1537,6 @@ read_priv_sec_op (int          read_socket,
                   size_t       buffer_size,
                   uint32_t    *flags,
                   uint32_t    *perms,
-                  size_t      *size_arg,
                   const char **arg1,
                   const char **arg2)
 {
@@ -1601,7 +1561,6 @@ read_priv_sec_op (int          read_socket,
 
   *flags = op->flags;
   *perms = op->perms;
-  *size_arg = op->size_arg;
   *arg1 = resolve_string_offset (buffer, rec_len, op->arg1_offset);
   *arg2 = resolve_string_offset (buffer, rec_len, op->arg2_offset);
 
@@ -1616,10 +1575,25 @@ print_version_and_exit (void)
 }
 
 static int
-is_modifier_option (const char *option)
+takes_perms (const char *next_option)
 {
-  return strcmp (option, "--perms") == 0
-         || strcmp(option, "--size") == 0;
+  static const char *const options_that_take_perms[] =
+  {
+    "--bind-data",
+    "--dir",
+    "--file",
+    "--ro-bind-data",
+    "--tmpfs",
+  };
+  size_t i;
+
+  for (i = 0; i < N_ELEMENTS (options_that_take_perms); i++)
+    {
+      if (strcmp (options_that_take_perms[i], next_option) == 0)
+        return 1;
+    }
+
+  return 0;
 }
 
 static void
@@ -1655,6 +1629,9 @@ parse_args_recurse (int          *argcp,
   while (argc > 0)
     {
       const char *arg = argv[0];
+
+      if (next_perms >= 0 && !takes_perms (arg))
+        die ("--perms must be followed by an option that creates a file");
 
       if (strcmp (arg, "--help") == 0)
         {
@@ -1789,14 +1766,6 @@ parse_args_recurse (int          *argcp,
           argv++;
           argc--;
         }
-      else if (strcmp (arg, "--disable-userns") == 0)
-        {
-          opt_disable_userns = TRUE;
-        }
-      else if (strcmp (arg, "--assert-userns-disabled") == 0)
-        {
-          opt_assert_userns_disabled = TRUE;
-        }
       else if (strcmp (arg, "--remount-ro") == 0)
         {
           if (argc < 2)
@@ -1921,13 +1890,6 @@ parse_args_recurse (int          *argcp,
             op->perms = 0755;
 
           next_perms = -1;
-
-          /* If the option is unset, next_size_arg is zero, which results in
-           * the default tmpfs size. This is exactly what we want. */
-          op->size = next_size_arg;
-
-          next_size_arg = 0;
-
           argv += 1;
           argc -= 1;
         }
@@ -2421,9 +2383,6 @@ parse_args_recurse (int          *argcp,
           if (argc < 2)
             die ("--perms takes an argument");
 
-          if (next_perms != -1)
-            die ("--perms given twice for the same action");
-
           perms = strtoul (argv[1], &endptr, 8);
 
           if (argv[1][0] == '\0'
@@ -2433,42 +2392,6 @@ parse_args_recurse (int          *argcp,
             die ("--perms takes an octal argument <= 07777");
 
           next_perms = (int) perms;
-
-          argv += 1;
-          argc -= 1;
-        }
-      else if (strcmp (arg, "--size") == 0)
-        {
-          unsigned long long size;
-          char *endptr = NULL;
-
-          if (is_privileged)
-            die ("The --size option is not permitted in setuid mode");
-
-          if (argc < 2)
-            die ("--size takes an argument");
-
-          if (next_size_arg != 0)
-            die ("--size given twice for the same action");
-
-          errno = 0;  /* reset errno so we can detect ERANGE from strtoull */
-
-          size = strtoull (argv[1], &endptr, 0);
-
-          /* isdigit: Not only check that the first digit is not '\0', but
-           * simultaneously guard against negative numbers or preceding
-           * spaces. */
-          if (errno != 0  /* from strtoull */
-              || !isdigit(argv[1][0])
-              || endptr == NULL
-              || *endptr != '\0'
-              || size == 0)
-            die ("--size takes a non-zero number of bytes");
-
-          if (size > MAX_TMPFS_BYTES)
-            die ("--size (for tmpfs) is limited to %zu", MAX_TMPFS_BYTES);
-
-          next_size_arg = (size_t) size;
 
           argv += 1;
           argc -= 1;
@@ -2511,16 +2434,6 @@ parse_args_recurse (int          *argcp,
         {
           break;
         }
-
-      /* If --perms was set for the current action but the current action
-       * didn't consume the setting, apparently --perms wasn't suitable for
-       * this action. */
-      if (!is_modifier_option(arg) && next_perms >= 0)
-        die ("--perms must be followed by an option that creates a file");
-
-      /* Similarly for --size. */
-      if (!is_modifier_option(arg) && next_size_arg != 0)
-        die ("--size must be followed by --tmpfs");
 
       argv++;
       argc--;
@@ -2696,12 +2609,6 @@ main (int    argc,
 
   if (opt_userns_fd != -1 && opt_unshare_user_try)
     die ("--userns not compatible --unshare-user-try");
-
-  if (opt_disable_userns && !opt_unshare_user)
-    die ("--disable-userns requires --unshare-user");
-
-  if (opt_disable_userns && opt_userns_block_fd != -1)
-    die ("--disable-userns is not compatible with  --userns-block-fd");
 
   /* Technically using setns() is probably safe even in the privileged
    * case, because we got passed in a file descriptor to the
@@ -2882,9 +2789,6 @@ main (int    argc,
           else if (errno == EPERM && !is_privileged)
             die ("No permissions to creating new namespace, likely because the kernel does not allow non-privileged user namespaces. On e.g. debian this can be enabled with 'sysctl kernel.unprivileged_userns_clone=1'.");
         }
-
-      if (errno == ENOSPC)
-        die ("Creating new namespace failed: nesting depth or /proc/sys/user/max_*_namespaces exceeded (ENOSPC)");
 
       die_with_error ("Creating new namespace failed");
     }
@@ -3112,7 +3016,6 @@ main (int    argc,
           int status;
           uint32_t buffer[2048];  /* 8k, but is int32 to guarantee nice alignment */
           uint32_t op, flags, perms;
-          size_t size_arg;
           const char *arg1, *arg2;
           cleanup_fd int unpriv_socket = -1;
 
@@ -3122,8 +3025,8 @@ main (int    argc,
           do
             {
               op = read_priv_sec_op (unpriv_socket, buffer, sizeof (buffer),
-                                     &flags, &perms, &size_arg, &arg1, &arg2);
-              privileged_op (-1, op, flags, perms, size_arg, arg1, arg2);
+                                     &flags, &perms, &arg1, &arg2);
+              privileged_op (-1, op, flags, perms, arg1, arg2);
               if (write (unpriv_socket, buffer, 1) != 1)
                 die ("Can't write to op_socket");
             }
@@ -3181,34 +3084,13 @@ main (int    argc,
   if (opt_userns2_fd > 0 && setns (opt_userns2_fd, CLONE_NEWUSER) != 0)
     die_with_error ("Setting userns2 failed");
 
-  if (opt_unshare_user && opt_userns_block_fd == -1 &&
-      (ns_uid != opt_sandbox_uid || ns_gid != opt_sandbox_gid ||
-       opt_disable_userns))
+  if (opt_unshare_user &&
+      (ns_uid != opt_sandbox_uid || ns_gid != opt_sandbox_gid) &&
+      opt_userns_block_fd == -1)
     {
-      /* Here we create a second level userns inside the first one. This is
-         used for one or more of these reasons:
-
-         * The 1st level namespace has a different uid/gid than the
-           requested due to requirements of beeing root in the first
-           level due for mounting devpts (opt_needs_devpts).
-
-         * To disable user namespaces we set max_user_namespaces and then
-           create the second namespace so that the sandbox cannot undo this
-           change.
-      */
-
-      if (opt_disable_userns)
-        {
-          cleanup_fd int sysctl_fd = -1;
-
-          sysctl_fd = openat (proc_fd, "sys/user/max_user_namespaces", O_WRONLY);
-
-          if (sysctl_fd < 0)
-            die_with_error ("cannot open /proc/sys/user/max_user_namespaces");
-
-          if (write_to_fd (sysctl_fd, "1", 1) < 0)
-            die_with_error ("sysctl user.max_user_namespaces = 1");
-        }
+      /* Now that devpts is mounted and we've no need for mount
+         permissions we can create a new userspace and map our uid
+         1:1 */
 
       if (unshare (CLONE_NEWUSER))
         die_with_error ("unshare user ns");
@@ -3219,15 +3101,6 @@ main (int    argc,
       write_uid_gid_map (opt_sandbox_uid, ns_uid,
                          opt_sandbox_gid, ns_gid,
                          -1, FALSE, FALSE);
-    }
-
-  if (opt_disable_userns || opt_assert_userns_disabled)
-    {
-      /* Verify that we can't make a new userns again */
-      res = unshare (CLONE_NEWUSER);
-
-      if (res == 0)
-        die ("creation of new user namespaces was not disabled as requested");
     }
 
   /* All privileged ops are done now, so drop caps we don't need */

@@ -29,7 +29,6 @@ G_BEGIN_DECLS
 #include <glnx-missing.h>
 #include <glnx-local-alloc.h>
 #include <glnx-backport-autocleanups.h>
-#include <glnx-backport-testutils.h>
 #include <glnx-backports.h>
 #include <glnx-lockfile.h>
 #include <glnx-errors.h>

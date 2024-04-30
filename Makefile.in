@@ -469,7 +469,6 @@ libflatpak_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 libglnx_la_DEPENDENCIES = $(am__DEPENDENCIES_3)
 am_libglnx_la_OBJECTS =  \
-	subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo \
 	subprojects/libglnx/libglnx_la-glnx-backports.lo \
 	subprojects/libglnx/libglnx_la-glnx-local-alloc.lo \
 	subprojects/libglnx/libglnx_la-glnx-errors.lo \
@@ -1025,7 +1024,6 @@ am__depfiles_remade =  \
 	subprojects/bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po \
 	subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po \
 	subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Po \
-	subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Plo \
 	subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo \
 	subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo \
 	subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo \
@@ -1903,8 +1901,6 @@ libglnx_la_SOURCES = \
 	subprojects/libglnx/glnx-macros.h \
 	subprojects/libglnx/glnx-backport-autocleanups.h \
 	subprojects/libglnx/glnx-backport-autoptr.h \
-	subprojects/libglnx/glnx-backport-testutils.h \
-	subprojects/libglnx/glnx-backport-testutils.c \
 	subprojects/libglnx/glnx-backports.h \
 	subprojects/libglnx/glnx-backports.c \
 	subprojects/libglnx/glnx-local-alloc.h \
@@ -3168,9 +3164,6 @@ subprojects/libglnx/$(am__dirstamp):
 subprojects/libglnx/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) subprojects/libglnx/$(DEPDIR)
 	@: > subprojects/libglnx/$(DEPDIR)/$(am__dirstamp)
-subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo:  \
-	subprojects/libglnx/$(am__dirstamp) \
-	subprojects/libglnx/$(DEPDIR)/$(am__dirstamp)
 subprojects/libglnx/libglnx_la-glnx-backports.lo:  \
 	subprojects/libglnx/$(am__dirstamp) \
 	subprojects/libglnx/$(DEPDIR)/$(am__dirstamp)
@@ -3951,7 +3944,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@subprojects/bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo@am__quote@ # am--include-marker
@@ -4294,13 +4286,6 @@ common/libflatpak_la-flatpak.lo: common/flatpak.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='common/flatpak.c' object='common/libflatpak_la-flatpak.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libflatpak_la_CFLAGS) $(CFLAGS) -c -o common/libflatpak_la-flatpak.lo `test -f 'common/flatpak.c' || echo '$(srcdir)/'`common/flatpak.c
-
-subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo: subprojects/libglnx/glnx-backport-testutils.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo -MD -MP -MF subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Tpo -c -o subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo `test -f 'subprojects/libglnx/glnx-backport-testutils.c' || echo '$(srcdir)/'`subprojects/libglnx/glnx-backport-testutils.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Tpo subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='subprojects/libglnx/glnx-backport-testutils.c' object='subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -c -o subprojects/libglnx/libglnx_la-glnx-backport-testutils.lo `test -f 'subprojects/libglnx/glnx-backport-testutils.c' || echo '$(srcdir)/'`subprojects/libglnx/glnx-backport-testutils.c
 
 subprojects/libglnx/libglnx_la-glnx-backports.lo: subprojects/libglnx/glnx-backports.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libglnx_la_CFLAGS) $(CFLAGS) -MT subprojects/libglnx/libglnx_la-glnx-backports.lo -MD -MP -MF subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Tpo -c -o subprojects/libglnx/libglnx_la-glnx-backports.lo `test -f 'subprojects/libglnx/glnx-backports.c' || echo '$(srcdir)/'`subprojects/libglnx/glnx-backports.c
@@ -7401,7 +7386,6 @@ distclean: distclean-recursive
 	-rm -f subprojects/bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po
 	-rm -f subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po
 	-rm -f subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Po
-	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Plo
 	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo
 	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo
 	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo
@@ -7618,7 +7602,6 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f subprojects/bubblewrap/$(DEPDIR)/flatpak_bwrap-utils.Po
 	-rm -f subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-dbus-proxy.Po
 	-rm -f subprojects/dbus-proxy/$(DEPDIR)/flatpak_dbus_proxy-flatpak-proxy.Po
-	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backport-testutils.Plo
 	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-backports.Plo
 	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-console.Plo
 	-rm -f subprojects/libglnx/$(DEPDIR)/libglnx_la-glnx-dirfd.Plo
