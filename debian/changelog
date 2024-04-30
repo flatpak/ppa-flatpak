@@ -2,7 +2,7 @@ flatpak (1.14.8-1~deb12u1) UNRELEASED; urgency=medium
 
   * Backport upstream stable release for Debian 12
   * Changes relative to 1.14.4-1+deb12u1 in bookworm-security:
-    - New upstream stable release
+    - New upstream stable release 1.14.6
       + Don't parse `<developer><name/></developer>` as though it was
         the application name
       + Install a tmpfiles.d snippet to clean up /var/tmp/flatpak-cache-*
@@ -23,10 +23,42 @@ flatpak (1.14.8-1~deb12u1) UNRELEASED; urgency=medium
       + Don't force `GIO_USE_VFS=local` for programs launched via
         flatpak-spawn
       + Documentation improvements
+    - New upstream stable release 1.14.7
+      + Automatically reload D-Bus session bus configuration when apps are
+        installed or upgraded, ensuring that any new .service files get
+        picked up
+      + Allow apps to be run if the D-Bus system bus is missing or
+        non-functional
+      + Add several more environment variables to the list not inherited
+        into the sandbox:
+        * $LD_AUDIT, $LD_PRELOAD for ld.so
+        * $__EGL_VENDOR_LIBRARY_DIRS, etc. for EGL
+        * $VK_ADD_DRIVER_FILES, etc. for Vulkan
+        * $container, when running Flatpak inside a container manager
+      + Use xdg-desktop-portal-gnome, if installed, to detect whether apps
+        are running in the background
+      + If an app's data is migrated to a new name and then deleted, don't
+        try to migrate it again, avoiding a recursive symlink loop
+      + Don't leak temporary variable $new_dirs from /etc/profile.d/flatpak.sh
+        into user shell sessions
+      + Avoid an out-of-bounds left-shift (which is technically undefined
+        behaviour) when hashing object names
+      + Fix critical warnings "GFileInfo created without
+        standard::is-symlink" when using /var/lib/flatpak/extension with
+        testing/unstable glib2.0
+      + Fix validation of documentation against Docbook DTD
+      + Fix a misleading comment in the test for CVE-2024-32462
+      + Fix a double-free in the test suite
+      + Skip more tests if bubblewrap works but FUSE doesn't
+    - New upstream stable release 1.14.8
+      + Respin of 1.14.7 reverting unintended submodule changes
+    - d/control: Move dbus-system-bus from Depends to Recommends.
+      `flatpak run` no longer has a working system bus as a hard requirement
+      (verified in `podman run --privileged --rm -it debian:sid-slim`)
     - Drop CVE-2024-32462 patches, included in the upstream stable release
     - debian/test.sh: Disable http proxy if used, to ensure we can reach
       a HTTP server on localhost during automated tests
-  * Changes relative to 1.14.6-1 in unstable:
+  * Changes relative to 1.14.8-1 in unstable:
     - Revert polkitd dependencies to polkitd | policykit-1 as previously
       used in bookworm
     - Revert pkgconf dependencies to pkg-config as previously used in
