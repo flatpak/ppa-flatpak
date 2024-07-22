@@ -49,6 +49,7 @@ app/flatpak-main.c
 app/flatpak-quiet-transaction.c
 common/flatpak-auth.c
 common/flatpak-context.c
+common/flatpak-dir-utils.c
 common/flatpak-dir.c
 common/flatpak-exports.c
 common/flatpak-glib-backports.c
@@ -58,6 +59,7 @@ common/flatpak-oci-registry.c
 common/flatpak-progress.c
 common/flatpak-ref-utils.c
 common/flatpak-remote.c
+common/flatpak-repo-utils.c
 common/flatpak-run.c
 common/flatpak-run-dbus.c
 common/flatpak-transaction.c

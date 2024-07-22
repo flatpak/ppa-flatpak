@@ -53,11 +53,13 @@
 #include <gio/gio.h>
 #include "libglnx.h"
 
+#include "flatpak-dbus-generated.h"
 #include "flatpak-run-dbus-private.h"
 #include "flatpak-run-private.h"
 #include "flatpak-run-sockets-private.h"
 #include "flatpak-utils-base-private.h"
 #include "flatpak-dir-private.h"
+#include "flatpak-dir-utils-private.h"
 #include "flatpak-instance-private.h"
 #include "flatpak-systemd-dbus-generated.h"
 #include "flatpak-document-dbus-generated.h"
@@ -65,6 +67,12 @@
 #include "session-helper/flatpak-session-helper.h"
 
 #define DEFAULT_SHELL "/bin/sh"
+
+typedef FlatpakSessionHelper AutoFlatpakSessionHelper;
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (AutoFlatpakSessionHelper, g_object_unref)
+
+typedef XdpDbusDocuments AutoXdpDbusDocuments;
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (AutoXdpDbusDocuments, g_object_unref)
 
 static int
 flatpak_extension_compare_by_path (gconstpointer _a,
@@ -518,10 +526,13 @@ typedef struct
 
 static const ExportData default_exports[] = {
   {"PATH", "/app/bin:/usr/bin"},
-  /* We always want to unset LD_LIBRARY_PATH to avoid inheriting weird
-   * dependencies from the host. But if not using ld.so.cache this is
-   * later set. */
+  /* We always want to unset LD variables to avoid inheriting weird
+   * dependencies from the host. But if not using ld.so.cache LD_LIBRARY_PATH
+   is later set. */
   {"LD_LIBRARY_PATH", NULL},
+  {"LD_PRELOAD", NULL},
+  {"LD_AUDIT", NULL},
+
   {"XDG_CONFIG_DIRS", "/app/etc/xdg:/etc/xdg"},
   {"XDG_DATA_DIRS", "/app/share:/usr/share"},
   {"SHELL", "/bin/sh"},
@@ -561,8 +572,15 @@ static const ExportData default_exports[] = {
   {"XKB_CONFIG_ROOT", NULL},
   {"GIO_EXTRA_MODULES", NULL},
   {"GDK_BACKEND", NULL},
+  {"VK_ADD_DRIVER_FILES", NULL},
+  {"VK_ADD_LAYER_PATH", NULL},
   {"VK_DRIVER_FILES", NULL},
   {"VK_ICD_FILENAMES", NULL},
+  {"VK_LAYER_PATH", NULL},
+  {"__EGL_EXTERNAL_PLATFORM_CONFIG_DIRS", NULL},
+  {"__EGL_EXTERNAL_PLATFORM_CONFIG_FILENAMES", NULL},
+  {"__EGL_VENDOR_LIBRARY_DIRS", NULL},
+  {"__EGL_VENDOR_LIBRARY_FILENAMES", NULL},
 };
 
 static const ExportData no_ld_so_cache_exports[] = {
@@ -1587,12 +1605,14 @@ add_tzdata_args (FlatpakBwrap *bwrap,
   /* Check for runtime /usr/share/zoneinfo */
   if (runtime_zoneinfo != NULL && g_file_query_exists (runtime_zoneinfo, NULL))
     {
+      const char *tzdir = flatpak_get_tzdir ();
+
       /* Check for host /usr/share/zoneinfo */
-      if (g_file_test ("/usr/share/zoneinfo", G_FILE_TEST_IS_DIR))
+      if (g_file_test (tzdir, G_FILE_TEST_IS_DIR))
         {
           /* Here we assume the host timezone file exist in the host data */
           flatpak_bwrap_add_args (bwrap,
-                                  "--ro-bind", "/usr/share/zoneinfo", "/usr/share/zoneinfo",
+                                  "--ro-bind", tzdir, "/usr/share/zoneinfo",
                                   "--symlink", localtime_content, "/etc/localtime",
                                   NULL);
         }
@@ -2140,6 +2160,16 @@ flatpak_run_setup_usr_links (FlatpakBwrap *bwrap,
     }
 }
 
+/* Directories in /sys to share with the sandbox if accessible. */
+static const char *const sysfs_dirs[] =
+{
+  "/sys/block",
+  "/sys/bus",
+  "/sys/class",
+  "/sys/dev",
+  "/sys/devices"
+};
+
 gboolean
 flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
                              GFile          *runtime_files,
@@ -2159,6 +2189,7 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
   gboolean parent_expose_pids = (flags & FLATPAK_RUN_FLAG_PARENT_EXPOSE_PIDS) != 0;
   gboolean parent_share_pids = (flags & FLATPAK_RUN_FLAG_PARENT_SHARE_PIDS) != 0;
   gboolean bwrap_unprivileged = flatpak_bwrap_is_unprivileged ();
+  gsize i;
 
   /* Disable recursive userns for all flatpak processes, as we need this
    * to guarantee that the sandbox can't restructure the filesystem.
@@ -2227,15 +2258,20 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
                           "--perms", "0700", "--dir", run_dir,
                           "--setenv", "XDG_RUNTIME_DIR", run_dir,
                           "--symlink", "../run", "/var/run",
-                          "--ro-bind", "/sys/block", "/sys/block",
-                          "--ro-bind", "/sys/bus", "/sys/bus",
-                          "--ro-bind", "/sys/class", "/sys/class",
-                          "--ro-bind", "/sys/dev", "/sys/dev",
-                          "--ro-bind", "/sys/devices", "/sys/devices",
                           "--ro-bind-try", "/proc/self/ns/user", "/run/.userns",
                           /* glib uses this like /etc/timezone */
                           "--symlink", "/etc/timezone", "/var/db/zoneinfo",
                           NULL);
+
+  for (i = 0; i < G_N_ELEMENTS (sysfs_dirs); i++)
+    {
+      const char *dir = sysfs_dirs[i];
+
+      if (access (dir, R_OK|X_OK) == 0)
+        flatpak_bwrap_add_args (bwrap, "--ro-bind", dir, dir, NULL);
+      else
+        g_info ("Not sharing %s with sandbox: %s", dir, g_strerror (errno));
+    }
 
   if (flags & FLATPAK_RUN_FLAG_DIE_WITH_PARENT)
     flatpak_bwrap_add_args (bwrap,

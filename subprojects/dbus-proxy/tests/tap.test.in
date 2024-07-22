@@ -1,4 +1,0 @@
-[Test]
-Type=session
-Exec=@installed_testdir@/@basename@ --tap
-Output=TAP

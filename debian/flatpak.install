@@ -3,11 +3,11 @@ etc/X11/Xsession.d
 etc/profile.d/
 usr/bin/flatpak
 usr/lib/systemd/system-environment-generators
+usr/lib/systemd/system/flatpak-system-helper.service
 usr/lib/systemd/user-environment-generators
 usr/lib/systemd/user/flatpak-oci-authenticator.service
 usr/lib/systemd/user/flatpak-portal.service
 usr/lib/systemd/user/flatpak-session-helper.service
-usr/lib/systemd/system/flatpak-system-helper.service
 usr/lib/sysusers.d
 usr/lib/tmpfiles.d
 usr/libexec/flatpak-oci-authenticator
