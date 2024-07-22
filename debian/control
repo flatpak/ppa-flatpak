@@ -78,13 +78,13 @@ Architecture: linux-any
 Depends:
  adduser,
  bubblewrap (>= 0.8.0),
- default-dbus-system-bus | dbus-system-bus,
  fuse3,
  xdg-dbus-proxy (>= 0.1.0),
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
  ca-certificates,
+ default-dbus-system-bus | dbus-system-bus,
  desktop-file-utils,
  hicolor-icon-theme,
  gtk-update-icon-cache,
