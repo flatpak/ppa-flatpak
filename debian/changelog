@@ -1,4 +1,4 @@
-flatpak (1.14.8-1flatpak1~20.04.1) UNRELEASED; urgency=medium
+flatpak (1.14.8-1flatpak1~20.04.1) focal; urgency=medium
 
   * Rebuild for Ubuntu 20.04 'focal' for PPA
   * Remaining changes relative to jammy PPA:
@@ -16,7 +16,7 @@ flatpak (1.14.8-1flatpak1~20.04.1) UNRELEASED; urgency=medium
       + dbus-daemon -> dbus
       + polkitd -> policykit-1
 
- -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 20:43:40 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 20:44:27 +0100
 
 flatpak (1.14.8-1flatpak1~22.04.1) jammy; urgency=medium
 
