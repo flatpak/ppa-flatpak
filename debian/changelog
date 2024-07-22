@@ -1,3 +1,90 @@
+flatpak (1.14.8-1flatpak1~20.04.1) focal; urgency=medium
+
+  * Rebuild for Ubuntu 20.04 'focal' for PPA
+  * Remaining changes relative to jammy PPA:
+    - Revert libmalcontent integration
+    - Downgrade dbus from Depends to Recommends
+    - Roll back to debhelper 12
+      + Don't rely on debhelper to create a temporary $HOME for tests
+    - Reduce libseccomp dependency for compatibility with focal
+    - Go back to using libfuse version 2.
+      Ubuntu 20.04 has both, but version 2 is the one used by desktop
+      components like gvfs-fuse and ntfs-3g, so sticking to that version
+      avoids scary messages from apt.
+    - Go back to old dependency package names
+      + libgdk-pixbuf-2.0-dev -> libgdk-pixbuf2.0-dev
+      + dbus-daemon -> dbus
+      + polkitd -> policykit-1
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 20:44:27 +0100
+
+flatpak (1.14.8-1flatpak1~22.04.1) jammy; urgency=medium
+
+  * Rebuild for Ubuntu 22.04 'jammy' for PPA
+    - Reinstate dependency on system bwrap/dbus-proxy for jammy
+  * Remaining changes relative to noble PPA:
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 20:36:20 +0100
+
+flatpak (1.14.8-1flatpak1~24.04.1) noble; urgency=medium
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+    - Reinstate dependency on system bwrap/dbus-proxy for noble
+    - Ship systemd unit in /usr
+    - Keep build-dependency on gir1.2-*-dev
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 19:57:02 +0100
+
+flatpak (1.14.8-1) unstable; urgency=medium
+
+  * New upstream stable release 1.14.7
+    - Automatically reload D-Bus session bus configuration when apps are
+      installed or upgraded, ensuring that any new .service files get
+      picked up
+    - Allow apps to be run if the D-Bus system bus is missing or
+      non-functional
+    - Add several more environment variables to the list not inherited
+      into the sandbox:
+      + $LD_AUDIT, $LD_PRELOAD for ld.so
+      + $__EGL_VENDOR_LIBRARY_DIRS, etc. for EGL
+      + $VK_ADD_DRIVER_FILES, etc. for Vulkan
+      + $container, when running Flatpak inside a container manager
+    - Use xdg-desktop-portal-gnome, if installed, to detect whether apps
+      are running in the background
+    - If an app's data is migrated to a new name and then deleted, don't
+      try to migrate it again, avoiding a recursive symlink loop
+    - Don't leak temporary variable $new_dirs from /etc/profile.d/flatpak.sh
+      into user shell sessions
+    - Avoid an out-of-bounds left-shift (which is technically undefined
+      behaviour) when hashing object names
+    - Fix critical warnings "GFileInfo created without
+      standard::is-symlink" when using /var/lib/flatpak/extension with
+      testing/unstable glib2.0
+    - Fix validation of documentation against Docbook DTD
+    - Fix a misleading comment in the test for CVE-2024-32462
+    - Fix a double-free in the test suite
+    - Skip more tests if bubblewrap works but FUSE doesn't
+  * New upstream stable release 1.14.8
+    - Respin of 1.14.7 reverting unintended submodule changes
+  * d/control: Replace one more polkitd|policykit-1 dependency with polkitd
+  * d/control: Move dbus-system-bus from Depends to Recommends.
+    `flatpak run` no longer has a working system bus as a hard requirement.
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 30 Apr 2024 15:08:35 +0100
+
+flatpak (1.14.6-1~deb13u1) trixie; urgency=high
+
+  * Rebuild for trixie
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 19 Apr 2024 11:00:13 +0100
+
 flatpak (1.14.6-1~flatpak1~18.04.1) bionic; urgency=medium
 
   * Backport from Ubuntu 20.04 'focal' to 18.04 'bionic'
