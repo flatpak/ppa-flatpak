@@ -2,7 +2,7 @@
 ## DO NOT EDIT - This file generated from ./build-aux/ltmain.in
 ##               by inline-source v2019-02-19.15
 
-# libtool (GNU libtool) 2.4.7
+# libtool (GNU libtool) 2.4.7.4-1ec8f-dirty
 # Provide generalized library-building support services.
 # Written by Gordon Matzigkeit <gord@gnu.ai.mit.edu>, 1996
 
@@ -31,8 +31,8 @@
 
 PROGRAM=libtool
 PACKAGE=libtool
-VERSION="2.4.7 Debian-2.4.7-5"
-package_revision=2.4.7
+VERSION=2.4.7.4-1ec8f-dirty
+package_revision=2.4.7.4
 
 
 ## ------ ##
@@ -430,7 +430,7 @@ EXIT_SKIP=77	  # $? = 77 is used to indicate a skipped test to automake.
 # putting '$debug_cmd' at the start of all your functions, you can get
 # bash to show function call trace with:
 #
-#    debug_cmd='echo "${FUNCNAME[0]} $*" >&2' bash your-script-name
+#    debug_cmd='eval echo "${FUNCNAME[0]} $*" >&2' bash your-script-name
 debug_cmd=${debug_cmd-":"}
 exit_cmd=:
 
@@ -1706,8 +1706,6 @@ func_run_hooks ()
 {
     $debug_cmd
 
-    _G_rc_run_hooks=false
-
     case " $hookable_fns " in
       *" $1 "*) ;;
       *) func_fatal_error "'$1' does not support hook functions." ;;
@@ -2217,7 +2215,7 @@ func_version ()
 # End:
 
 # Set a version string.
-scriptversion='(GNU libtool) 2.4.7'
+scriptversion='(GNU libtool) 2.4.7.4-1ec8f-dirty'
 
 
 # func_echo ARG...
@@ -2308,7 +2306,7 @@ include the following information:
        compiler:       $LTCC
        compiler flags: $LTCFLAGS
        linker:         $LD (gnu? $with_gnu_ld)
-       version:        $progname $scriptversion Debian-2.4.7-5
+       version:        $progname (GNU libtool) 2.4.7.4-1ec8f-dirty
        automake:       `($AUTOMAKE --version) 2>/dev/null |$SED 1q`
        autoconf:       `($AUTOCONF --version) 2>/dev/null |$SED 1q`
 
@@ -2509,8 +2507,6 @@ libtool_options_prep ()
 
     nonopt=
     preserve_args=
-
-    _G_rc_lt_options_prep=:
 
     _G_rc_lt_options_prep=:
 
@@ -7561,13 +7557,12 @@ func_mode_link ()
       # -stdlib=*            select c++ std lib with clang
       # -fsanitize=*         Clang/GCC memory and address sanitizer
       # -fuse-ld=*           Linker select flags for GCC
-      # -static-*            direct GCC to link specific libraries statically
-      # -fcilkplus           Cilk Plus language extension features for C/C++
       # -Wa,*                Pass flags directly to the assembler
+      # -Werror, -Werror=*   Report (specified) warnings as errors
       -64|-mips[0-9]|-r[0-9][0-9]*|-xarch=*|-xtarget=*|+DA*|+DD*|-q*|-m*| \
       -t[45]*|-txscale*|-p|-pg|--coverage|-fprofile-*|-F*|@*|-tp=*|--sysroot=*| \
       -O*|-g*|-flto*|-fwhopr*|-fuse-linker-plugin|-fstack-protector*|-stdlib=*| \
-      -specs=*|-fsanitize=*|-fuse-ld=*|-static-*|-fcilkplus|-Wa,*)
+      -specs=*|-fsanitize=*|-fuse-ld=*|-Wa,*|-Werror|-Werror=*)
         func_quote_arg pretty "$arg"
 	arg=$func_quote_arg_result
         func_append compile_command " $arg"
@@ -7860,10 +7855,7 @@ func_mode_link ()
 	case $pass in
 	dlopen) libs=$dlfiles ;;
 	dlpreopen) libs=$dlprefiles ;;
-	link)
-	  libs="$deplibs %DEPLIBS%"
-	  test "X$link_all_deplibs" != Xno && libs="$libs $dependency_libs"
-	  ;;
+	link) libs="$deplibs %DEPLIBS% $dependency_libs" ;;
 	esac
       fi
       if test lib,dlpreopen = "$linkmode,$pass"; then
@@ -8182,19 +8174,19 @@ func_mode_link ()
 	    # It is a libtool convenience library, so add in its objects.
 	    func_append convenience " $ladir/$objdir/$old_library"
 	    func_append old_convenience " $ladir/$objdir/$old_library"
-	    tmp_libs=
-	    for deplib in $dependency_libs; do
-	      deplibs="$deplib $deplibs"
-	      if $opt_preserve_dup_deps; then
-		case "$tmp_libs " in
-		*" $deplib "*) func_append specialdeplibs " $deplib" ;;
-		esac
-	      fi
-	      func_append tmp_libs " $deplib"
-	    done
 	  elif test prog != "$linkmode" && test lib != "$linkmode"; then
 	    func_fatal_error "'$lib' is not a convenience library"
 	  fi
+	  tmp_libs=
+	  for deplib in $dependency_libs; do
+	    deplibs="$deplib $deplibs"
+	    if $opt_preserve_dup_deps; then
+	      case "$tmp_libs " in
+	      *" $deplib "*) func_append specialdeplibs " $deplib" ;;
+	      esac
+	    fi
+	    func_append tmp_libs " $deplib"
+	  done
 	  continue
 	fi # $pass = conv
 
@@ -9117,9 +9109,6 @@ func_mode_link ()
 	    age=$number_minor
 	    revision=$number_minor
 	    lt_irix_increment=no
-	    ;;
-	  *)
-	    func_fatal_configuration "$modename: unknown library version type '$version_type'"
 	    ;;
 	  esac
 	  ;;
