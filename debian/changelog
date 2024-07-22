@@ -1,3 +1,9 @@
+flatpak (1.15.9-1) UNRELEASED; urgency=medium
+
+  * New upstream development release
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 18:24:24 +0100
+
 flatpak (1.15.8-1) experimental; urgency=high
 
   * New upstream development release
