@@ -9,15 +9,15 @@ Ideally import new versions into Debian experimental, but directly into
 this repository is OK too.
 
 First, import/merge new versions into the branch corresponding to the newest
-Ubuntu branch, currently ppa/jammy for Ubuntu 22.04.
+Ubuntu branch, currently ppa/noble for Ubuntu 24.04.
 
 If you have merged updated packaging from Debian, you might need to adjust
-it for compatibility with jammy.
+it for compatibility with noble.
 
-Then merge the ppa/jammy branch into ppa/focal, and adjust as necessary
-for compatibility with focal.
+Then merge the ppa/noble branch into ppa/jammy, and adjust as necessary
+for compatibility with jammy.
 
-Next, merge the ppa/focal branch into ppa/bionic, and so on.
+Next, merge the ppa/jammy branch into ppa/focal, and so on.
 
 The advantage of this approach is that the package in each branch is as
 modern as possible: changes that were necessary to be compatible with
@@ -28,7 +28,7 @@ Version numbering
 -----------------
 
 If the version has already been packaged in Debian, for example as
-1.14.0-1, version it like 1.14.0-1flatpak1~22.04.1 in the PPA.
+1.14.0-1, version it like 1.14.0-1flatpak1~24.04.1 in the PPA.
 
 If the version has not already been packaged in Debian,
-version it like 1.14.0-0flatpak1~22.04.1 in the PPA.
+version it like 1.14.0-0flatpak1~24.04.1 in the PPA.
