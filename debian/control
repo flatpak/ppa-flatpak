@@ -9,18 +9,14 @@ Build-Depends:
  attr <!nocheck>,
  automake (>= 1.14.1),
  bison,
- bubblewrap (>= 0.5.0),
  ca-certificates <!nocheck>,
  dbus-daemon,
- debhelper (>= 13.11.6~),
  debhelper-compat (= 13),
  desktop-file-utils <!nocheck>,
  dh-exec (>= 0.23~),
  docbook-xml <!nodoc>,
  docbook-xsl <!nodoc>,
  fuse3 <!nocheck>,
- gir1.2-gio-2.0-dev,
- gir1.2-gobject-2.0-dev,
  gnupg <!nocheck>,
  gobject-introspection (>= 1.54.1-2~),
  gtk-doc-tools,
@@ -58,7 +54,6 @@ Build-Depends:
  python3-pyparsing,
  shared-mime-info <!nocheck>,
  socat <!nocheck>,
- xdg-dbus-proxy (>= 0.1.0),
  xmlto <!nodoc>,
  xsltproc <!nodoc>,
 Build-Depends-Indep:
@@ -74,9 +69,7 @@ Package: flatpak
 Architecture: linux-any
 Depends:
  adduser,
- bubblewrap (>= 0.5.0),
  fuse3,
- xdg-dbus-proxy (>= 0.1.0),
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
@@ -208,7 +201,6 @@ Package: libflatpak0
 Architecture: linux-any
 Section: libs
 Depends:
- bubblewrap (>= 0.5.0),
  ${misc:Depends},
  ${shlibs:Depends},
 Pre-Depends:
