@@ -1,3 +1,15 @@
+flatpak (1.14.8-1flatpak1~22.04.1) UNRELEASED; urgency=medium
+
+  * Rebuild for Ubuntu 22.04 'jammy' for PPA
+    - Reinstate dependency on system bwrap/dbus-proxy for noble
+  * Remaining changes relative to noble PPA:
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 20:00:37 +0100
+
 flatpak (1.14.8-1flatpak1~24.04.1) noble; urgency=medium
 
   * Rebuild for Ubuntu 24.04 'noble' for PPA
