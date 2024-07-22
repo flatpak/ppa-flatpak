@@ -1,5 +1,83 @@
+Changes in 1.15.9
+~~~~~~~~~~~~~~~~~
+Released: 2024-07-22
+
+Dependencies:
+
+ * bubblewrap and xdg-dbus-proxy are now provided by Meson wrap files
+   instead of being directly vendored via `git submodule`.
+   If downloading external software during build is not allowed in your
+   environment, please install suitable versions of bubblewrap and
+   xdg-dbus-proxy separately, then configure Flatpak with options similar to
+   `-Dsystem_bubblewrap=bwrap -Dsystem_dbus_proxy=xdg-dbus-proxy`
+   (most major distributions package it like this already).
+
+Enhancements:
+
+ * If xdg-dbus-proxy is new enough (0.1.6 or later, not yet released),
+   allow two broadcast signals from AT-SPI by default, allowing bus
+   traffic to be reduced. If xdg-dbus-proxy is older, this change will
+   have no practical effect but is harmless. (#5828)
+
+ * Install csh profile snippet (#5753)
+
+Bug fixes:
+
+ * Expand the list of environment variables that Flatpak apps do not
+   inherit from the host system (#5765, #5785)
+
+ * Take time zone information from $TZDIR if set (#5850)
+
+ * Fix a memory leak since 1.15.7 when reloading D-Bus configuration (#5856)
+
+ * Fix a memory leak when running `flatpak permissions` (#5844)
+
+ * Fix memory leaks in `flatpak update` (#5816)
+
+ * Fix memory leaks when installing packages (#5811)
+
+ * Use more similar translatable strings for some error messages (#5748)
+
+ * Document `flatpak config --set languages '*all*'` correctly:
+   it is really `*all*` (or equivalently `*`), not just `all` (#5836)
+
+ * Fix a misleading comment in the test for CVE-2024-32462 (#5779)
+
+ * Fix a copy/paste error in the 1.15.7 release notes
+
+ * On systems where subdirectories of /sys have been made inaccessible,
+   continue without them (#5138)
+
+ * Make tests more compatible with non-GNU shell utilities (#5812)
+
+ * Translation updates: ka (#5873), hi (#5838), pt_BR (#5877), zh_CN (#5843)
+
+Internal changes:
+
+ * libglnx and variant-schema-compiler are now managed as `git subtree`
+   instead of `git submodule`.
+   Maintainers and contributors, please see `subprojects/README.md` for
+   details of how to interact with these.
+   In particular this means that submodules no longer need to be set up
+   before working on a git clone. (#5800, #5845)
+
+ * Split library code into more, smaller translation units, reducing
+   internal circular dependencies (#5409, #5801, #5803)
+
+ * Add some convenience macros in the test suite (#5693)
+
+ * Minor internal robustness improvement (#5833)
+
+ * Add configuration for Github Codespaces (#5767)
+
+ * Improve CI configuration (#5791)
+
+ * Work around infrastructure issues in third-party apt repositories
+   used by default in Github Workflows (#5786)
+
 Changes in 1.15.8
 ~~~~~~~~~~~~~~~~~
+Released: 2024-04-18
 
 Security fixes:
 
@@ -62,7 +140,7 @@ Bug fixes:
      * Improve memory allocation behaviour
      * Silence various compiler warnings
 
- * Update included copy of bubblewrap to version 0.1.5:
+ * Update included copy of xdg-dbus-proxy to version 0.1.5:
 
      * Fix handling of long object paths
 
