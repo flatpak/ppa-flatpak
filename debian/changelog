@@ -1,3 +1,15 @@
+flatpak (1.14.8-1flatpak1~24.04.1) UNRELEASED; urgency=medium
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+    - Reinstate dependency on system bwrap/dbus-proxy for noble
+    - Ship systemd unit in /usr
+    - Keep build-dependency on gir1.2-*-dev
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 18:46:54 +0100
+
 flatpak (1.14.8-1) unstable; urgency=medium
 
   * New upstream stable release 1.14.7
