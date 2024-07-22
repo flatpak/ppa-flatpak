@@ -11,6 +11,7 @@ Build-Depends:
  bison,
  ca-certificates <!nocheck>,
  dbus-daemon,
+ debhelper (>= 13.11.6~),
  debhelper-compat (= 13),
  desktop-file-utils <!nocheck>,
  dh-exec (>= 0.23~),
