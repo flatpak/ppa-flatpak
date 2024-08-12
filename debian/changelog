@@ -6,8 +6,11 @@ flatpak (1.14.9~rc1-1) UNRELEASED; urgency=medium
       or compromised app could edit the symlink to point to a directory
       that the app should not have been allowed to read or write.
       (CVE-2024-42472, GHSA-7hgv-f2j8-xw87)
+  * d/control: Bump required bubblewrap version to 0.10.0 rc1.
+    This adds the new --bind-fd option, required to solve CVE-2024-42472
+    without introducing a race condition.
 
- -- Simon McVittie <smcv@debian.org>  Mon, 12 Aug 2024 20:47:46 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 12 Aug 2024 20:50:43 +0100
 
 flatpak (1.14.8-1) unstable; urgency=medium
 
