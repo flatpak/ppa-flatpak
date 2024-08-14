@@ -1,6 +1,6 @@
-flatpak (1.15.10~rc1-1) UNRELEASED; urgency=medium
+flatpak (1.15.10-1) UNRELEASED; urgency=medium
 
-  * New upstream development snapshot
+  * New upstream development release
     - Don't follow symbolic links when mounting persistent directories
       (--persist option). This prevents a sandbox escape where a malicious
       or compromised app could edit the symlink to point to a directory
