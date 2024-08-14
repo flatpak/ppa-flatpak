@@ -1,3 +1,19 @@
+flatpak (1.14.10-1~deb12u1) UNRELEASED; urgency=medium
+
+  * Backport upstream stable release into Debian 12 (CVE-2024-42472)
+  * d/control: Relax required bubblewrap version to 0.8.0-2+deb12u1.
+    This version has a backport of the required --bind-fd option.
+  * Other changes relative to 1.14.10-1 in unstable:
+    - Revert polkitd dependencies to polkitd | policykit-1 as previously
+      used in bookworm
+    - Revert pkgconf dependencies to pkg-config as previously used in
+      bookworm
+    - Revert location of systemd unit to /lib/systemd/system as previously
+      used in bookworm, dropping versioned dependency on debhelper 13.11.6~
+    - Revert changes related to Debian 13 GIR XML packaging policy
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 15:43:28 +0100
+
 flatpak (1.14.10-1) unstable; urgency=high
 
   * New upstream stable release
