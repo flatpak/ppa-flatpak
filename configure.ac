@@ -15,7 +15,7 @@ AC_PREREQ([2.63])
 
 m4_define([flatpak_major_version], [1])
 m4_define([flatpak_minor_version], [14])
-m4_define([flatpak_micro_version], [8])
+m4_define([flatpak_micro_version], [10])
 m4_define([flatpak_extra_version], [])
 m4_define([flatpak_interface_age], [0])
 m4_define([flatpak_binary_age],
@@ -175,6 +175,9 @@ if test "x$BWRAP" != xfalse; then
    BWRAP_VERSION=`$BWRAP --version | sed 's,.*\ \([0-9]*\.[0-9]*\.[0-9]*\)$,\1,'`
    AX_COMPARE_VERSION([$SYSTEM_BWRAP_REQS],[gt],[$BWRAP_VERSION],
                       [AC_MSG_ERROR([You need at least version $SYSTEM_BWRAP_REQS of bubblewrap to use the system installed version])])
+   AS_IF([$BWRAP --help | grep '@<:@-@:>@-bind-fd' >/dev/null],
+         [:],
+         [AC_MSG_ERROR([$BWRAP does not list required option --bind-fd in its --help])])
    AM_CONDITIONAL([WITH_SYSTEM_BWRAP], [true])
 else
    AC_CHECK_LIB(cap, cap_from_text, CAP_LIB=-lcap)
