@@ -1,3 +1,35 @@
+flatpak (1.14.10-1~flatpak1~22.04.1) jammy; urgency=high
+
+  * Rebuild for Ubuntu 22.04 'jammy' for PPA
+  * Remaining changes relative to noble PPA:
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 16:08:15 +0100
+
+flatpak (1.14.10-1~flatpak1~24.04.1) noble; urgency=high
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 15:51:18 +0100
+
+flatpak (1.14.10-1) unstable; urgency=high
+
+  * New upstream stable release
+    - Don't follow symbolic links when mounting persistent directories
+      (--persist option). This prevents a sandbox escape where a malicious
+      or compromised app could edit the symlink to point to a directory
+      that the app should not have been allowed to read or write.
+      (CVE-2024-42472, GHSA-7hgv-f2j8-xw87)
+  * d/control: Bump required bubblewrap version to 0.10.0.
+    This adds the new --bind-fd option, required to solve CVE-2024-42472
+    without introducing a race condition.
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 15:03:33 +0100
+
 flatpak (1.14.8-1flatpak1~20.04.1) focal; urgency=medium
 
   * Rebuild for Ubuntu 20.04 'focal' for PPA
