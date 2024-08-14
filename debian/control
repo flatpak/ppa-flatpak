@@ -8,7 +8,7 @@ Uploaders:
 Build-Depends:
  attr <!nocheck>,
  bison,
- bubblewrap (>= 0.8.0),
+ bubblewrap (>= 0.10.0~),
  ca-certificates <!nocheck>,
  dbus-daemon,
  debhelper (>= 13.11.6~),
@@ -77,7 +77,7 @@ Package: flatpak
 Architecture: linux-any
 Depends:
  adduser,
- bubblewrap (>= 0.8.0),
+ bubblewrap (>= 0.10.0~),
  fuse3,
  xdg-dbus-proxy (>= 0.1.0),
  ${misc:Depends},
@@ -223,7 +223,7 @@ Package: libflatpak0
 Architecture: linux-any
 Section: libs
 Depends:
- bubblewrap (>= 0.8.0),
+ bubblewrap (>= 0.10.0~),
  ${misc:Depends},
  ${shlibs:Depends},
 Pre-Depends:
