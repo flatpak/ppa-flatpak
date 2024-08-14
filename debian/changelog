@@ -1,4 +1,4 @@
-flatpak (1.14.10-1~deb12u1) UNRELEASED; urgency=medium
+flatpak (1.14.10-1~deb12u1) bookworm-security; urgency=high
 
   * Backport upstream stable release into Debian 12 (CVE-2024-42472)
   * d/control: Relax required bubblewrap version to 0.8.0-2+deb12u1.
@@ -12,7 +12,7 @@ flatpak (1.14.10-1~deb12u1) UNRELEASED; urgency=medium
       used in bookworm, dropping versioned dependency on debhelper 13.11.6~
     - Revert changes related to Debian 13 GIR XML packaging policy
 
- -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 15:43:28 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 15:49:20 +0100
 
 flatpak (1.14.10-1) unstable; urgency=high
 
