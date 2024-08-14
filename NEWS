@@ -1,6 +1,6 @@
-Changes in 1.14.9
-~~~~~~~~~~~~~~~~~
-Released: not yet
+Changes in 1.14.10
+~~~~~~~~~~~~~~~~~~
+Released: 2024-08-14
 
 Dependencies:
 
@@ -21,6 +21,9 @@ Security fixes:
 Documentation:
 
  * Mark the 1.12.x and 1.10.x branches as end-of-life (#5352)
+
+Version 1.14.9 was not released due to an incompatibility with older
+versions of GLib. Version 1.14.10 replaces it.
 
 Changes in 1.14.8
 ~~~~~~~~~~~~~~~~~

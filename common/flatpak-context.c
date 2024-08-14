@@ -2963,7 +2963,7 @@ flatpak_context_append_bwrap_filesystem (FlatpakContext  *context,
 
           g_autofree char *src_via_proc = g_strdup_printf ("%d", src_fd);
 
-          flatpak_bwrap_add_fd (bwrap, g_steal_fd (&src_fd));
+          flatpak_bwrap_add_fd (bwrap, glnx_steal_fd (&src_fd));
           flatpak_bwrap_add_bind_arg (bwrap, "--bind-fd", src_via_proc, dest);
         }
     }
