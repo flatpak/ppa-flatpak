@@ -14,8 +14,8 @@
 m4_ifndef([AC_CONFIG_MACRO_DIRS], [m4_defun([_AM_CONFIG_MACRO_DIRS], [])m4_defun([AC_CONFIG_MACRO_DIRS], [_AM_CONFIG_MACRO_DIRS($@)])])
 m4_ifndef([AC_AUTOCONF_VERSION],
   [m4_copy([m4_PACKAGE_VERSION], [AC_AUTOCONF_VERSION])])dnl
-m4_if(m4_defn([AC_AUTOCONF_VERSION]), [2.72],,
-[m4_warning([this file was generated for autoconf 2.72.
+m4_if(m4_defn([AC_AUTOCONF_VERSION]), [2.71],,
+[m4_warning([this file was generated for autoconf 2.71.
 You have another version of autoconf.  It may work, but is not guaranteed to.
 If you have problems, you may need to regenerate the build system entirely.
 To do so, use the procedure documented by the package, typically 'autoreconf'.])])
@@ -31,7 +31,7 @@ To do so, use the procedure documented by the package, typically 'autoreconf'.])
 # WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
-# Last-changed: 2022-11-25
+# Last-changed: 2022-11-15
 
 
 dnl
@@ -280,9 +280,8 @@ dnl                       [ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND ]]])
 dnl Test for libgpgme and define GPGME_PTHREAD_CFLAGS
 dnl  and GPGME_PTHREAD_LIBS.
 dnl
-AC_DEFUN([AM_PATH_GPGME_PTHREAD],[
-  AC_OBSOLETE([$0], [; use AM_PATH_GPGME instead to use GPGME_CFLAGS and GPGME_LIBS])dnl
-  AC_REQUIRE([_AM_PATH_GPGME_CONFIG])dnl
+AC_DEFUN([AM_PATH_GPGME_PTHREAD],
+[ AC_REQUIRE([_AM_PATH_GPGME_CONFIG])dnl
   tmp=ifelse([$1], ,1:0.4.2,$1)
   if echo "$tmp" | grep ':' >/dev/null 2>/dev/null ; then
      req_gpgme_api=`echo "$tmp"     | sed 's/\(.*\):\(.*\)/\1/'`
@@ -295,37 +294,35 @@ AC_DEFUN([AM_PATH_GPGME_PTHREAD],[
   AC_MSG_CHECKING(for GPGME pthread - version >= $min_gpgme_version)
   ok=no
   if test "$GPGME_CONFIG" != "no" ; then
-    req_major=`echo $min_gpgme_version | \
+    if `$GPGME_CONFIG --thread=pthread 2> /dev/null` ; then
+      req_major=`echo $min_gpgme_version | \
                sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\1/'`
-    req_minor=`echo $min_gpgme_version | \
+      req_minor=`echo $min_gpgme_version | \
                sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\2/'`
-    req_micro=`echo $min_gpgme_version | \
+      req_micro=`echo $min_gpgme_version | \
                sed 's/\([[0-9]]*\)\.\([[0-9]]*\)\.\([[0-9]]*\)/\3/'`
-    if test "$gpgme_version_major" -gt "$req_major"; then
+      if test "$gpgme_version_major" -gt "$req_major"; then
         ok=yes
-    else
+      else
         if test "$gpgme_version_major" -eq "$req_major"; then
-            if test "$gpgme_version_minor" -gt "$req_minor"; then
-               ok=yes
-            else
-               if test "$gpgme_version_minor" -eq "$req_minor"; then
-                   if test "$gpgme_version_micro" -ge "$req_micro"; then
-                     ok=yes
-                   fi
-               fi
+          if test "$gpgme_version_minor" -gt "$req_minor"; then
+            ok=yes
+          else
+            if test "$gpgme_version_minor" -eq "$req_minor"; then
+              if test "$gpgme_version_micro" -ge "$req_micro"; then
+                ok=yes
+              fi
             fi
+          fi
         fi
+      fi
     fi
   fi
   if test $ok = yes; then
      # If we have a recent GPGME, we should also check that the
      # API is compatible.
      if test "$req_gpgme_api" -gt 0 ; then
-        if test -z "$use_gpgrt_config"; then
-          tmp=`$GPGME_CONFIG --api-version 2>/dev/null || echo 0`
-        else
-          tmp=`$GPGME_CONFIG --variable=api_version 2>/dev/null || echo 0`
-        fi
+        tmp=`$GPGME_CONFIG --api-version 2>/dev/null || echo 0`
         if test "$tmp" -gt 0 ; then
            if test "$req_gpgme_api" -ne "$tmp" ; then
              ok=no
@@ -334,8 +331,8 @@ AC_DEFUN([AM_PATH_GPGME_PTHREAD],[
      fi
   fi
   if test $ok = yes; then
-    GPGME_PTHREAD_CFLAGS=`$GPGME_CONFIG --cflags`
-    GPGME_PTHREAD_LIBS=`$GPGME_CONFIG --libs`
+    GPGME_PTHREAD_CFLAGS=`$GPGME_CONFIG --thread=pthread --cflags`
+    GPGME_PTHREAD_LIBS=`$GPGME_CONFIG --thread=pthread --libs`
     AC_MSG_RESULT(yes)
     ifelse([$2], , :, [$2])
     _AM_PATH_GPGME_CONFIG_HOST_CHECK
