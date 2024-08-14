@@ -1,4 +1,4 @@
-flatpak (1.15.10-1) UNRELEASED; urgency=medium
+flatpak (1.15.10-1) experimental; urgency=high
 
   * New upstream development release
     - Don't follow symbolic links when mounting persistent directories
@@ -6,8 +6,11 @@ flatpak (1.15.10-1) UNRELEASED; urgency=medium
       or compromised app could edit the symlink to point to a directory
       that the app should not have been allowed to read or write.
       (CVE-2024-42472, GHSA-7hgv-f2j8-xw87)
+  * d/control: Bump required bubblewrap version to 0.10.0.
+    This adds the new --bind-fd option, required to solve CVE-2024-42472
+    without introducing a race condition.
 
- -- Simon McVittie <smcv@debian.org>  Mon, 12 Aug 2024 20:41:58 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 11:00:52 +0100
 
 flatpak (1.15.9-1) experimental; urgency=medium
 
