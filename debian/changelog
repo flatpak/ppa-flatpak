@@ -1,3 +1,12 @@
+flatpak (1.14.10-1~flatpak1~18.04.1) bionic; urgency=high
+
+  * Rebuild for Ubuntu 18.04 'bionic' for PPA
+  * Remaining changes relative to focal PPA:
+    - Roll back to debhelper compat level 11
+    - Reinstate --libexecdir
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 16:26:28 +0100
+
 flatpak (1.14.10-1~flatpak1~20.04.1) focal; urgency=high
 
   * Rebuild for Ubuntu 20.04 'focal' for PPA
