@@ -1,0 +1,22 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Thu, 28 Nov 2024 15:50:25 +0000
+Subject: tests: Install missing test data
+
+Fixes: 1d56bd37 "context: Implement device lists for usb"
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ tests/meson.build | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/tests/meson.build b/tests/meson.build
+index 9d3a5c8..e4b1566 100644
+--- a/tests/meson.build
++++ b/tests/meson.build
+@@ -309,6 +309,7 @@ if get_option('installed_tests')
+   subdir('installed-services')
+ 
+   install_data(
++    'gphoto2-list',
+     'http-utils-test-server.py',
+     'make-multi-collection-id-repo.sh',
+     'make-test-app.sh',
