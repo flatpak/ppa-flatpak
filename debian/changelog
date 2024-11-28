@@ -1,13 +1,15 @@
-flatpak (1.15.12-1) UNRELEASED; urgency=medium
+flatpak (1.15.12-1) experimental; urgency=medium
 
   * New upstream development release
+  * d/p/tests-Install-missing-test-data.patch:
+    Add patch to fix autopkgtest failure
   * d/salsa-ci.yml: Use the currently-recommended recipe
   * Standards-Version: 4.7.0 (no changes required)
   * Merge packaging from unstable
     - d/upstream/metadata: Canonicalize sort order of keys
     - d/upstream/metadata: Add Security-Contact
 
- -- Simon McVittie <smcv@debian.org>  Thu, 28 Nov 2024 15:14:47 +0000
+ -- Simon McVittie <smcv@debian.org>  Thu, 28 Nov 2024 15:50:46 +0000
 
 flatpak (1.15.10-1) experimental; urgency=high
 
