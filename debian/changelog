@@ -1,5 +1,6 @@
-flatpak (1.15.10-2) UNRELEASED; urgency=medium
+flatpak (1.15.12-1) UNRELEASED; urgency=medium
 
+  * New upstream development release
   * d/upstream/metadata: Canonicalize sort order of keys
   * d/upstream/metadata: Add Security-Contact
   * d/salsa-ci.yml: Use the currently-recommended recipe
