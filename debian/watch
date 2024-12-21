@@ -1,5 +1,5 @@
 version=4
-# Upstream releases official Autotools 'make dist' tarballs, so we use
+# Upstream releases official 'meson dist' tarballs, so we use
 # those in preference to git tags
 opts="\
     compression=xz, \
