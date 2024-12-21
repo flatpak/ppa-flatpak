@@ -1,3 +1,160 @@
+flatpak (1.15.91-1) UNRELEASED; urgency=medium
+
+  * New upstream release candidate (1.16.0 rc1)
+  * d/p/tests-Install-missing-test-data.patch:
+    Drop patch, applied (slightly differently) upstream
+
+ -- Simon McVittie <smcv@debian.org>  Sat, 21 Dec 2024 23:03:55 +0000
+
+flatpak (1.15.12-1) experimental; urgency=medium
+
+  * New upstream development release
+  * d/p/tests-Install-missing-test-data.patch:
+    Add patch to fix autopkgtest failure
+  * d/salsa-ci.yml: Use the currently-recommended recipe
+  * Standards-Version: 4.7.0 (no changes required)
+  * Merge packaging from unstable
+    - d/upstream/metadata: Canonicalize sort order of keys
+    - d/upstream/metadata: Add Security-Contact
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 28 Nov 2024 15:50:46 +0000
+
+flatpak (1.15.10-1) experimental; urgency=high
+
+  * New upstream development release
+    - Don't follow symbolic links when mounting persistent directories
+      (--persist option). This prevents a sandbox escape where a malicious
+      or compromised app could edit the symlink to point to a directory
+      that the app should not have been allowed to read or write.
+      (CVE-2024-42472, GHSA-7hgv-f2j8-xw87)
+  * d/control: Bump required bubblewrap version to 0.10.0.
+    This adds the new --bind-fd option, required to solve CVE-2024-42472
+    without introducing a race condition.
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 11:00:52 +0100
+
+flatpak (1.15.9-1) experimental; urgency=medium
+
+  * New upstream development release
+  * Merge packaging from unstable
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 18:28:31 +0100
+
+flatpak (1.15.8-1) experimental; urgency=high
+
+  * New upstream development release
+    - Don't allow an executable name to be misinterpreted as a command-line
+      option for bwrap(1). This prevents a sandbox escape where a malicious
+      or compromised app could ask xdg-desktop-portal to generate a .desktop
+      file with access to files outside the sandbox. (CVE-2024-32462)
+  * Merge packaging from unstable
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 17 Apr 2024 20:17:44 +0100
+
+flatpak (1.15.7-1) experimental; urgency=medium
+
+  * New upstream development release
+  * d/copyright: Update
+  * d/flatpak.lintian-overrides: Remove an obsolete Lintian override
+  * d/control, d/rules: Activate dh-sequence-gir declaratively
+  * d/patches: Add a patch to fix the "as-installed" tests
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 27 Mar 2024 15:35:47 +0000
+
+flatpak (1.15.6-1) experimental; urgency=medium
+
+  * New upstream development release
+  * Mention #1033098, #1033099 in previous changelog entry
+  * d/control: (Build-)depend on pkgconf in preference to pkg-config
+  * Install systemd system unit into /usr/lib/systemd/system.
+    This was allowed by TC resolution #1053901.
+    Build-depend on debhelper 13.11.6~ to ensure that the unit is still
+    picked up by dh_installsystemd.
+  * d/test.sh: Disable http proxy if used, to ensure we can reach localhost.
+    Some reproducible.org builders set http_proxy, which makes attempts
+    to access our temporary http server on localhost fail with a 503 error.
+  * d/control: Build-depend on required GIR XML files (Helps: #1030223)
+  * d/control: Add ${gir:Depends}, ${gir:Provides} to -dev package
+    (Helps: #1030223)
+  * d/control: Require bubblewrap 0.8.0
+  * d/control: (Build-)depend on Wayland components for new security context
+    extension
+  * d/flatpak.install: Install new tmpfiles.d snippet
+  * d/copyright: Update
+  * d/libflatpak0.symbols: Update
+  * d/libflatpak0.symbols: Reduce entropy.
+    For each symbol introduced in a development branch older than the
+    current one, behave as if the symbol was added in the stable release
+    that followed the development branch: this will generate slightly more
+    conservative dependencies. For 0.x versions, use 1.0.
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 14 Nov 2023 19:52:48 +0000
+
+flatpak (1.15.4-1) experimental; urgency=medium
+
+  * New upstream development release
+    - Escape special characters when displaying permissions and metadata,
+      preventing malicious apps from manipulating the appearance of the
+      permissions list using crafted metadata
+      (Closes: #1033098; CVE-2023-28101)
+    - If a Flatpak app is run on a Linux virtual console (tty1, etc.),
+      don't allow copy/paste via the TIOCLINUX ioctl
+      (Closes: #1033099; CVE-2023-28100).
+      Note that this is specific to virtual consoles: Flatpak is not
+      vulnerable to this if run from a graphical terminal emulator such
+      as xterm, gnome-terminal or Konsole.
+  * Merge packaging from unstable
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 16 Mar 2023 10:41:58 +0000
+
+flatpak (1.15.3-1) experimental; urgency=medium
+
+  * New upstream development release
+  * Merge packaging changes from unstable
+    - Remove obsolete maintscript entries
+    - Avoid explicitly specifying -Wl,--as-needed linker flag, which is
+      the default with newer toolchains
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 21 Feb 2023 10:44:05 +0000
+
+flatpak (1.15.2-1) experimental; urgency=medium
+
+  * New upstream development release
+  * Update standards version to 4.6.2 (no changes needed)
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 06 Feb 2023 14:15:47 +0000
+
+flatpak (1.15.1-1) experimental; urgency=medium
+
+  * New upstream development release
+  * d/test.sh: Don't try to show Autotools test logs.
+    We're using Meson now, so this is not applicable.
+  * d/rules, d/test.sh: Rely on debhelper to set HOME, XDG_RUNTIME_DIR etc.
+  * d/test.sh: Extend test timeout to cope better with slow buildds.
+    The upstream test timeouts assume a relatively non-loaded system, but
+    on a buildd we might be sharing the machine with other processes.
+  * Drop the only patch, applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 17 Nov 2022 19:06:05 +0000
+
+flatpak (1.15.0-2) experimental; urgency=medium
+
+  * d/p/revokefs-Use-correct-format-string-for-a-ssize_t.patch:
+    Fix the build on ILP32 architectures
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 25 Oct 2022 09:37:58 +0100
+
+flatpak (1.15.0-1) experimental; urgency=medium
+
+  * d/gbp.conf, d/control: Branch for experimental
+  * New upstream development release
+  * Build using Meson
+  * d/control: Add more -dev dependencies to libflatpak-dev.
+    Meson is more thorough about including private dependencies in the
+    Requires.private field.
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 24 Oct 2022 19:29:56 +0100
+
 flatpak (1.14.10-1) unstable; urgency=high
 
   * New upstream stable release

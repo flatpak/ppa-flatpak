@@ -31,6 +31,7 @@
 
 #include "flatpak-builtins.h"
 #include "flatpak-builtins-utils.h"
+#include "flatpak-repo-utils-private.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-table-printer.h"
 #include "flatpak-variant-impl-private.h"
@@ -130,7 +131,6 @@ ls_remote (GHashTable *refs_hash, const char **arches, const char *app_runtime, 
   g_autofree char *match_branch = NULL;
   gboolean need_cache_data = FALSE;
   gboolean need_appstream_data = FALSE;
-  int rows, cols;
 
   printer = flatpak_table_printer_new ();
 
@@ -235,7 +235,7 @@ ls_remote (GHashTable *refs_hash, const char **arches, const char *app_runtime, 
         }
 
       keys = (FlatpakDecomposed **) g_hash_table_get_keys_as_array (names, &n_keys);
-      g_qsort_with_data (keys, n_keys, sizeof (char *), (GCompareDataFunc) flatpak_decomposed_strcmp_p, NULL);
+      qsort (keys, n_keys, sizeof (char *), (GCompareFunc) flatpak_decomposed_strcmp_p);
 
       for (i = 0; i < n_keys; i++)
         {
@@ -368,9 +368,7 @@ ls_remote (GHashTable *refs_hash, const char **arches, const char *app_runtime, 
 
   if (flatpak_table_printer_get_current_row (printer) > 0)
     {
-      flatpak_get_window_size (&rows, &cols);
-      flatpak_table_printer_print_full (printer, 0, cols, NULL, NULL);
-      g_print ("\n");
+      flatpak_table_printer_print (printer);
     }
 
   return TRUE;

@@ -320,11 +320,11 @@ flatpak_installation_new_system_with_id (const char   *id,
                                                    &local_error);
   if (installation == NULL)
     {
-      g_debug ("Error creating Flatpak installation: %s", local_error->message);
+      g_info ("Error creating Flatpak installation: %s", local_error->message);
       g_propagate_error (error, g_steal_pointer (&local_error));
     }
 
-  g_debug ("Found Flatpak installation for '%s'", id);
+  g_info ("Found Flatpak installation for '%s'", id);
   return g_steal_pointer (&installation);
 }
 
@@ -673,11 +673,14 @@ flatpak_installation_launch_full (FlatpakInstallation *self,
                                   GCancellable        *cancellable,
                                   GError             **error)
 {
+  g_auto(GStrv) run_environ = NULL;
   g_autoptr(FlatpakDir) dir = NULL;
   g_autoptr(FlatpakDeploy) app_deploy = NULL;
   g_autoptr(FlatpakDecomposed) app_ref = NULL;
   g_autofree char *instance_dir = NULL;
   FlatpakRunFlags run_flags;
+
+  run_environ = g_get_environ ();
 
   dir = flatpak_installation_get_dir (self, error);
   if (dir == NULL)
@@ -708,6 +711,7 @@ flatpak_installation_launch_full (FlatpakInstallation *self,
                         NULL,
                         NULL,
                         NULL, 0, -1,
+                        (const char * const *) run_environ,
                         &instance_dir,
                         cancellable, error))
     return FALSE;
@@ -987,9 +991,8 @@ end_of_lifed_with_rebase (FlatpakTransaction *transaction,
   if (rebased_to_ref == NULL || remote == NULL)
     return FALSE;
 
-  /* No need to call flatpak_transaction_add_uninstall() and
-   * flatpak_transaction_add_rebase() here since we only care about what needs
-   * an update
+  /* No need to call flatpak_transaction_add_rebase_and_uninstall() here since
+   * we only care about what needs an update
    */
   g_ptr_array_add (*eol_rebase_refs, g_strdup (ref));
   return TRUE;
@@ -1013,7 +1016,7 @@ transaction_ready (FlatpakTransaction  *transaction,
       if (type == FLATPAK_TRANSACTION_OPERATION_UNINSTALL)
         {
           const char *ref = flatpak_transaction_operation_get_ref (op);
-          g_debug ("Update transaction wants to uninstall %s", ref);
+          g_info ("Update transaction wants to uninstall %s", ref);
           continue;
         }
 
@@ -1105,7 +1108,7 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
 
       if (g_error_matches (local_error, FLATPAK_ERROR, FLATPAK_ERROR_REMOTE_NOT_FOUND))
         {
-          g_debug ("%s: Unable to update %s: %s", G_STRFUNC, ref, local_error->message);
+          g_info ("%s: Unable to update %s: %s", G_STRFUNC, ref, local_error->message);
           g_clear_error (&local_error);
         }
       else
@@ -1159,7 +1162,7 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
           if (!g_hash_table_contains (installed_refs_for_update_set, op_ref))
             {
               g_hash_table_add (installed_refs_for_update_set, (char *)op_ref);
-              g_debug ("%s: Installed ref %s needs update", G_STRFUNC, op_ref);
+              g_info ("%s: Installed ref %s needs update", G_STRFUNC, op_ref);
               g_ptr_array_add (installed_refs_for_update,
                                g_object_ref (installed_ref));
             }
@@ -1177,7 +1180,7 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
                   if (installed_ref != NULL)
                     {
                       g_hash_table_add (installed_refs_for_update_set, (char *)related_op_ref);
-                      g_debug ("%s: Installed ref %s needs update", G_STRFUNC, related_op_ref);
+                      g_info ("%s: Installed ref %s needs update", G_STRFUNC, related_op_ref);
                       g_ptr_array_add (installed_refs_for_update,
                                        g_object_ref (installed_ref));
                     }
@@ -1200,7 +1203,7 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
           if (!g_hash_table_contains (installed_refs_for_update_set, rebased_ref))
             {
               g_hash_table_add (installed_refs_for_update_set, (char *)rebased_ref);
-              g_debug ("%s: Installed ref %s needs update", G_STRFUNC, rebased_ref);
+              g_info ("%s: Installed ref %s needs update", G_STRFUNC, rebased_ref);
               g_ptr_array_add (installed_refs_for_update,
                                g_object_ref (installed_ref));
             }
@@ -3068,10 +3071,11 @@ flatpak_installation_list_unused_refs (FlatpakInstallation *self,
  *
  *   * exclude-refs (as): Act as if these refs are not installed even if they
  *       are when determining the set of unused refs
- *   * filter-by-eol (b): Only return refs as unused if they are End-Of-Life.
- *       Note that if this option is combined with other filters (of which there
- *       are none currently) non-EOL refs may also be returned.
- *
+ *   * filter-by-eol (b): Return refs as unused if they are End-Of-Life.
+ *       Note that if this option is combined with other filters then non-EOL refs may also be returned.
+ *   * filter-by-autoprune (b): Return refs as unused if they should be autopruned.
+ *       Note that if this option is combined with other filters then non-autoprune refs may also be returned.
+
  * Returns: (transfer container) (element-type FlatpakInstalledRef): a GPtrArray of
  *   #FlatpakInstalledRef instances
  *
@@ -3090,19 +3094,28 @@ flatpak_installation_list_unused_refs_with_options (FlatpakInstallation *self,
   g_auto(GStrv) refs_strv = NULL;
   g_autofree char **refs_to_exclude = NULL;
   gboolean filter_by_eol = FALSE;
+  gboolean filter_by_autoprune = FALSE;
+  FlatpakDirFilterFlags filter_flags = FLATPAK_DIR_FILTER_NONE;
 
   if (options)
     {
       (void) g_variant_lookup (options, "exclude-refs", "^a&s", &refs_to_exclude);
       (void) g_variant_lookup (options, "filter-by-eol", "b", &filter_by_eol);
+      (void) g_variant_lookup (options, "filter-by-autoprune", "b", &filter_by_autoprune);
     }
 
   dir = flatpak_installation_get_dir (self, error);
   if (dir == NULL)
     return NULL;
 
+  if (filter_by_eol)
+    filter_flags |= FLATPAK_DIR_FILTER_EOL;
+  if (filter_by_autoprune)
+    filter_flags |= FLATPAK_DIR_FILTER_AUTOPRUNE;
+
   refs_strv = flatpak_dir_list_unused_refs (dir, arch, metadata_injection, NULL,
-                                            (const char * const *)refs_to_exclude, filter_by_eol,
+                                            (const char * const *)refs_to_exclude,
+                                            filter_flags,
                                             cancellable, error);
   if (refs_strv == NULL)
     return NULL;

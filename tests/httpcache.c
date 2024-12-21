@@ -1,10 +1,12 @@
+#include "libglnx.h"
+#include "common/flatpak-utils-http-private.h"
 #include "common/flatpak-utils-private.h"
 
 int
 main (int argc, char *argv[])
 {
   g_autoptr(FlatpakHttpSession) session = flatpak_create_http_session (PACKAGE_STRING);
-  GError *error = NULL;
+  g_autoptr(GError) error = NULL;
   const char *url, *dest;
   int flags = 0;
 

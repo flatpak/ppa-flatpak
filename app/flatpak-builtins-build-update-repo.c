@@ -30,6 +30,7 @@
 #include "libglnx.h"
 
 #include "flatpak-builtins.h"
+#include "flatpak-repo-utils-private.h"
 #include "flatpak-utils-base-private.h"
 #include "flatpak-builtins-utils.h"
 #include "flatpak-prune-private.h"
@@ -400,7 +401,7 @@ generate_all_deltas (OstreeRepo   *repo,
 
       if (ignore_ref)
         {
-          g_debug ("Ignoring deltas for ref %s", ref);
+          g_info ("Ignoring deltas for ref %s", ref);
           continue;
         }
 

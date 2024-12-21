@@ -25,6 +25,7 @@
 #include "flatpak-utils-private.h"
 #include "flatpak-remote-ref-private.h"
 #include "flatpak-remote-ref.h"
+#include "flatpak-repo-utils-private.h"
 #include "flatpak-enum-types.h"
 #include "flatpak-variant-impl-private.h"
 
@@ -341,7 +342,7 @@ flatpak_remote_ref_new (FlatpakDecomposed   *decomposed,
                                        &download_size, &installed_size, &metadata,
                                        NULL))
     {
-      g_debug ("Can't find metadata for ref %s", flatpak_decomposed_get_ref (decomposed));
+      g_info ("Can't find metadata for ref %s", flatpak_decomposed_get_ref (decomposed));
     }
 
   if (metadata)

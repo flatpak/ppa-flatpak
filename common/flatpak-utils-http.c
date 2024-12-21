@@ -373,7 +373,11 @@ flatpak_create_http_session (const char *user_agent)
   g_mutex_init (&session->lock);
 
   curl_easy_setopt (curl, CURLOPT_USERAGENT, user_agent);
+#if CURL_AT_LEAST_VERSION(7, 85, 0)
+  rc = curl_easy_setopt (curl, CURLOPT_PROTOCOLS_STR, "http,https");
+#else
   rc = curl_easy_setopt (curl, CURLOPT_PROTOCOLS, (long)(CURLPROTO_HTTP | CURLPROTO_HTTPS));
+#endif
   g_assert_cmpint (rc, ==, CURLM_OK);
 
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -467,7 +471,7 @@ flatpak_download_http_uri_once (FlatpakHttpSession    *session,
   long response;
   CURL *curl = session->curl;
 
-  g_debug ("Loading %s using curl", uri);
+  g_info ("Loading %s using curl", uri);
 
   curl_easy_setopt (curl, CURLOPT_URL, uri);
   curl_easy_setopt (curl, CURLOPT_WRITEDATA, (void *)data);
@@ -556,7 +560,7 @@ flatpak_download_http_uri_once (FlatpakHttpSession    *session,
       !check_http_status (data->status, error))
     return FALSE;
 
-  g_debug ("Received %" G_GUINT64_FORMAT " bytes", data->downloaded_bytes);
+  g_info ("Received %" G_GUINT64_FORMAT " bytes", data->downloaded_bytes);
 
   /* This is not really needed, but the auto-pointer confuses some compilers in the CI */
   g_clear_pointer (&curl_lock, g_mutex_locker_free);
@@ -816,7 +820,7 @@ flatpak_download_http_uri_once (FlatpakHttpSession    *http_session,
   g_autoptr(SoupRequestHTTP) request = NULL;
   SoupMessage *m;
 
-  g_debug ("Loading %s using libsoup", uri);
+  g_info ("Loading %s using libsoup", uri);
 
   request = soup_session_request_http (soup_session,
                                        (data->flags & FLATPAK_HTTP_FLAGS_HEAD) != 0 ? "HEAD" : "GET",
@@ -881,7 +885,7 @@ flatpak_download_http_uri_once (FlatpakHttpSession    *http_session,
       return FALSE;
     }
 
-  g_debug ("Received %" G_GUINT64_FORMAT " bytes", data->downloaded_bytes);
+  g_info ("Received %" G_GUINT64_FORMAT " bytes", data->downloaded_bytes);
 
   return TRUE;
 }
@@ -912,8 +916,8 @@ flatpak_http_should_retry_request (const GError *error,
       g_error_matches (error, G_RESOLVER_ERROR, G_RESOLVER_ERROR_NOT_FOUND) ||
       g_error_matches (error, G_RESOLVER_ERROR, G_RESOLVER_ERROR_TEMPORARY_FAILURE))
     {
-      g_debug ("Should retry request (remaining: %u retries), due to transient error: %s",
-               n_retries_remaining, error->message);
+      g_info ("Should retry request (remaining: %u retries), due to transient error: %s",
+              n_retries_remaining, error->message);
       return TRUE;
     }
 
