@@ -1,8 +1,10 @@
 flatpak (1.15.91-1) UNRELEASED; urgency=medium
 
   * New upstream release candidate (1.16.0 rc1)
+  * d/p/tests-Install-missing-test-data.patch:
+    Drop patch, applied (slightly differently) upstream
 
- -- Simon McVittie <smcv@debian.org>  Sat, 21 Dec 2024 22:55:05 +0000
+ -- Simon McVittie <smcv@debian.org>  Sat, 21 Dec 2024 23:03:55 +0000
 
 flatpak (1.15.12-1) experimental; urgency=medium
 
