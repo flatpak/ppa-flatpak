@@ -1,14 +1,14 @@
-flatpak (1.15.91-1) UNRELEASED; urgency=medium
+flatpak (1.15.91-1) unstable; urgency=medium
 
   * New upstream release candidate (1.16.0 rc1)
   * d/p/tests-Install-missing-test-data.patch:
     Drop patch, applied (slightly differently) upstream
-  * d/watch: Correct a comment for removal of Autotools
   * d/flatpak.install, d/*.pkla:
     Stop installing a policy snippet for policykit-1 (<< 0.106).
     This is no longer necessary since Debian 12 and Ubuntu 22.04.
+  * d/watch: Correct a comment for removal of Autotools
 
- -- Simon McVittie <smcv@debian.org>  Sat, 21 Dec 2024 23:10:48 +0000
+ -- Simon McVittie <smcv@debian.org>  Sun, 22 Dec 2024 12:30:56 +0000
 
 flatpak (1.15.12-1) experimental; urgency=medium
 
