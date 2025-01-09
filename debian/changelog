@@ -1,3 +1,15 @@
+flatpak (1.15.91-2) UNRELEASED; urgency=medium
+
+  * d/test.sh: Set a longer test timeout for non-x86 architectures.
+    Some (perhaps all?) of the hppa buildds in Debian Ports are actually
+    x86_64 machines emulating hppa with qemu, and the same might in
+    principle be true for any other -ports architecture: there is no
+    documented way to know this.
+    Allowing 3x timeouts on x86 and 20x on other architectures has worked
+    well for GLib, so do the same here.
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 09 Jan 2025 18:56:38 +0000
+
 flatpak (1.15.91-1) unstable; urgency=medium
 
   * New upstream release candidate (1.16.0 rc1)
