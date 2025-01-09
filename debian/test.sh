@@ -12,6 +12,16 @@ unset no_proxy
 
 adverb=
 
+case "$DEB_HOST_ARCH_CPU" in
+    (amd64|i386)
+        test_timeout_multiplier=3
+        ;;
+
+    (*)
+        test_timeout_multiplier=20
+        ;;
+esac
+
 if [ "$DEB_HOST_ARCH_BITS" = 64 ]; then
     # reprotest sometimes uses linux32 even for x86_64 builds, and
     # Flatpak's tests don't support this.
@@ -19,11 +29,7 @@ if [ "$DEB_HOST_ARCH_BITS" = 64 ]; then
 fi
 
 e=0
-$adverb dh_auto_test || e=$?
-
-find . -name 'test*.log' \
--not -name test-suite.log \
--print0 | xargs -0 tail -v -c1M
+$adverb dh_auto_test -- --timeout-multiplier "${test_timeout_multiplier}" || e=$?
 
 echo "Killing gpg-agent processes:"
 pgrep --list-full --full "gpg-agent --homedir /var/tmp/test-flatpak-.*" >&2 || :

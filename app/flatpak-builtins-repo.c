@@ -30,6 +30,7 @@
 #include "libglnx.h"
 
 #include "flatpak-builtins.h"
+#include "flatpak-repo-utils-private.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-table-printer.h"
 #include "flatpak-variant-impl-private.h"
@@ -253,9 +254,9 @@ print_branches_for_subsummary (FlatpakTablePrinter *printer,
 
           flatpak_table_printer_add_column (printer, ""); /* Options */
 
-          if (g_variant_lookup (ref_meta, FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE, "&s", &eol))
+          if (g_variant_lookup (ref_meta, FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE, "&s", &eol))
             flatpak_table_printer_append_with_comma_printf (printer, "eol=%s", eol);
-          if (g_variant_lookup (ref_meta, FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE, "&s", &eol))
+          if (g_variant_lookup (ref_meta, FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE_REBASE, "&s", &eol))
             flatpak_table_printer_append_with_comma_printf (printer, "eol-rebase=%s", eol);
 
 
@@ -308,9 +309,9 @@ print_branches_for_subsummary (FlatpakTablePrinter *printer,
                   if (g_variant_lookup (sparse_cache, ref, "@a{sv}", &sparse))
                     {
                       const char *eol;
-                      if (g_variant_lookup (sparse, FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE, "&s", &eol))
+                      if (g_variant_lookup (sparse, FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE, "&s", &eol))
                         flatpak_table_printer_append_with_comma_printf (printer, "eol=%s", eol);
-                      if (g_variant_lookup (sparse, FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE, "&s", &eol))
+                      if (g_variant_lookup (sparse, FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE_REBASE, "&s", &eol))
                         flatpak_table_printer_append_with_comma_printf (printer, "eol-rebase=%s", eol);
                     }
                 }

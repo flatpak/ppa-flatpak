@@ -34,6 +34,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <glib-unix.h>
+
 #include "flatpak-dbus-generated.h"
 #include "flatpak-dir-private.h"
 #include "flatpak-error.h"
@@ -144,6 +146,7 @@ ongoing_pull_free (OngoingPull *pull)
   close (pull->client_socket);
   close (pull->backend_exit_socket);
 
+  g_clear_object (&pull->cancellable);
   g_slice_free (OngoingPull, pull);
 }
 
@@ -152,7 +155,7 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (OngoingPull, ongoing_pull_free);
 static void
 skeleton_died_cb (gpointer data)
 {
-  g_debug ("skeleton finalized, exiting");
+  g_info ("skeleton finalized, exiting");
   g_main_loop_quit (main_loop);
 }
 
@@ -161,7 +164,7 @@ unref_skeleton_in_timeout_cb (gpointer user_data)
 {
   static gboolean unreffed = FALSE;
 
-  g_debug ("unreffing helper main ref");
+  g_info ("unreffing helper main ref");
   if (!unreffed)
     {
       g_object_unref (helper);
@@ -197,7 +200,7 @@ idle_timeout_cb (gpointer user_data)
 
   if (name_owner_id)
     {
-      g_debug ("Idle - unowning name");
+      g_info ("Idle - unowning name");
       unref_skeleton_in_timeout ();
     }
   return G_SOURCE_REMOVE;
@@ -405,7 +408,7 @@ handle_deploy (FlatpakSystemHelper   *object,
   g_autofree gchar *src_dir = NULL;
   g_autoptr(FlatpakDecomposed) ref = NULL;
 
-  g_debug ("Deploy %s %u %s %s %s", arg_repo_path, arg_flags, arg_ref, arg_origin, arg_installation);
+  g_info ("Deploy %s %u %s %s %s", arg_repo_path, arg_flags, arg_ref, arg_origin, arg_installation);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_DEPLOY_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -726,7 +729,7 @@ handle_cancel_pull (FlatpakSystemHelper   *object,
   g_autoptr(GError) error = NULL;
   uid_t uid;
 
-  g_debug ("CancelPull %s %u %s", arg_installation, arg_flags, arg_src_dir);
+  g_info ("CancelPull %s %u %s", arg_installation, arg_flags, arg_src_dir);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_CANCEL_PULL_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -784,7 +787,7 @@ handle_deploy_appstream (FlatpakSystemHelper   *object,
   g_autofree char *subset = NULL;
   gboolean is_oci;
 
-  g_debug ("DeployAppstream %s %u %s %s %s", arg_repo_path, arg_flags, arg_origin, arg_arch, arg_installation);
+  g_info ("DeployAppstream %s %u %s %s %s", arg_repo_path, arg_flags, arg_origin, arg_arch, arg_installation);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_DEPLOY_APPSTREAM_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -952,7 +955,7 @@ handle_uninstall (FlatpakSystemHelper   *object,
   g_autoptr(GError) error = NULL;
   g_autoptr(FlatpakDecomposed) ref = NULL;
 
-  g_debug ("Uninstall %u %s %s", arg_flags, arg_ref, arg_installation);
+  g_info ("Uninstall %u %s %s", arg_flags, arg_ref, arg_installation);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_UNINSTALL_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -1005,7 +1008,7 @@ handle_install_bundle (FlatpakSystemHelper   *object,
   g_autoptr(GError) error = NULL;
   g_autoptr(FlatpakDecomposed) ref = NULL;
 
-  g_debug ("InstallBundle %s %u %s %s", arg_bundle_path, arg_flags, arg_remote, arg_installation);
+  g_info ("InstallBundle %s %u %s %s", arg_bundle_path, arg_flags, arg_remote, arg_installation);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -1056,7 +1059,7 @@ handle_configure_remote (FlatpakSystemHelper   *object,
   g_autoptr(GBytes) gpg_data = NULL;
   gboolean force_remove;
 
-  g_debug ("ConfigureRemote %u %s %s", arg_flags, arg_remote, arg_installation);
+  g_info ("ConfigureRemote %u %s %s", arg_flags, arg_remote, arg_installation);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_CONFIGURE_REMOTE_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -1131,7 +1134,7 @@ handle_configure (FlatpakSystemHelper   *object,
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
 
-  g_debug ("Configure %u %s=%s %s", arg_flags, arg_key, arg_value, arg_installation);
+  g_info ("Configure %u %s=%s %s", arg_flags, arg_key, arg_value, arg_installation);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_CONFIGURE_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -1197,7 +1200,7 @@ handle_update_remote (FlatpakSystemHelper   *object,
   g_autoptr(FlatpakRemoteState) state = NULL;
   gboolean summary_is_index = (arg_flags & FLATPAK_HELPER_UPDATE_REMOTE_FLAGS_SUMMARY_IS_INDEX) != 0;
 
-  g_debug ("UpdateRemote %u %s %s %s %s", arg_flags, arg_remote, arg_installation, arg_summary_path, arg_summary_sig_path);
+  g_info ("UpdateRemote %u %s %s %s %s", arg_flags, arg_remote, arg_installation, arg_summary_path, arg_summary_sig_path);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_UPDATE_REMOTE_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -1276,7 +1279,7 @@ handle_remove_local_ref (FlatpakSystemHelper   *object,
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
 
-  g_debug ("RemoveLocalRef %u %s %s %s", arg_flags, arg_remote, arg_ref, arg_installation);
+  g_info ("RemoveLocalRef %u %s %s %s", arg_flags, arg_remote, arg_ref, arg_installation);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_REMOVE_LOCAL_REF_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -1325,7 +1328,7 @@ handle_prune_local_repo (FlatpakSystemHelper   *object,
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
 
-  g_debug ("PruneLocalRepo %u %s", arg_flags, arg_installation);
+  g_info ("PruneLocalRepo %u %s", arg_flags, arg_installation);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_PRUNE_LOCAL_REPO_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -1369,7 +1372,7 @@ handle_ensure_repo (FlatpakSystemHelper   *object,
   g_autoptr(GError) error = NULL;
   g_autoptr(GError) local_error = NULL;
 
-  g_debug ("EnsureRepo %u %s", arg_flags, arg_installation);
+  g_info ("EnsureRepo %u %s", arg_flags, arg_installation);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_ENSURE_REPO_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -1408,7 +1411,7 @@ handle_run_triggers (FlatpakSystemHelper   *object,
   g_autoptr(FlatpakDir) system = NULL;
   g_autoptr(GError) error = NULL;
 
-  g_debug ("RunTriggers %u %s", arg_flags, arg_installation);
+  g_info ("RunTriggers %u %s", arg_flags, arg_installation);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_RUN_TRIGGERS_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -1495,7 +1498,7 @@ revokefs_fuse_backend_child_setup (gpointer user_data)
   /* We use 5 instead of 3 here, because fd 3 is the inherited SOCK_SEQPACKET
    * socket and fd 4 is the --close-with-fd pipe; both were dup2()'d into place
    * before this by GSubprocess */
-  flatpak_close_fds_workaround (5);
+  g_fdwalk_set_cloexec (5);
 
   if (setgid (passwd->pw_gid) == -1)
     {
@@ -1580,7 +1583,8 @@ ongoing_pull_new (FlatpakSystemHelper   *object,
       return NULL;
     }
 
-  /* We use INHERIT_FDS to work around dead-lock, see flatpak_close_fds_workaround */
+  /* We use INHERIT_FDS and close them in the child_setup
+   * to work around a deadlock in GLib < 2.60 */
   launcher = g_subprocess_launcher_new (G_SUBPROCESS_FLAGS_INHERIT_FDS);
   g_subprocess_launcher_set_child_setup (launcher, revokefs_fuse_backend_child_setup, passwd, NULL);
   g_subprocess_launcher_take_fd (launcher, sockets[0], 3);
@@ -1618,7 +1622,7 @@ reuse_cache_dir_if_available (const gchar    *repo_tmp,
   const gchar *name;
   gboolean res = FALSE;
 
-  g_debug ("Checking for any temporary cache directory available to reuse");
+  g_info ("Checking for any temporary cache directory available to reuse");
 
   repo_tmpfile = g_file_new_for_path (repo_tmp);
   enumerator = g_file_enumerate_children (repo_tmpfile,
@@ -1693,7 +1697,7 @@ handle_get_revokefs_fd (FlatpakSystemHelper   *object,
   uid_t uid;
   int fd_index = -1;
 
-  g_debug ("GetRevokefsFd %u %s", arg_flags, arg_installation);
+  g_info ("GetRevokefsFd %u %s", arg_flags, arg_installation);
 
   if (disable_revokefs)
     {
@@ -1736,7 +1740,7 @@ handle_get_revokefs_fd (FlatpakSystemHelper   *object,
   repo_tmp = g_build_filename (flatpak_dir, "repo", "tmp", NULL);
 
    if (reuse_cache_dir_if_available (repo_tmp, &src_dir, &passwd))
-     g_debug ("Cache dir %s can be reused", src_dir);
+     g_info ("Cache dir %s can be reused", src_dir);
   else
     {
       /* Create a new cache dir and add it to cache_dirs_in_use. Do all this under
@@ -1796,7 +1800,7 @@ handle_update_summary (FlatpakSystemHelper   *object,
   g_autoptr(GError) error = NULL;
   gboolean delete_summary;
 
-  g_debug ("UpdateSummary %u %s", arg_flags, arg_installation);
+  g_info ("UpdateSummary %u %s", arg_flags, arg_installation);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_UPDATE_SUMMARY_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -1842,7 +1846,7 @@ handle_generate_oci_summary (FlatpakSystemHelper   *object,
   gboolean only_cached;
   gboolean is_oci;
 
-  g_debug ("GenerateOciSummary %u %s %s", arg_flags, arg_origin, arg_installation);
+  g_info ("GenerateOciSummary %u %s %s", arg_flags, arg_origin, arg_installation);
 
   system = dir_get_system (arg_installation, get_sender_pid (invocation), (arg_flags & FLATPAK_HELPER_GENERATE_OCI_SUMMARY_FLAGS_NO_INTERACTION) != 0, &error);
   if (system == NULL)
@@ -2204,7 +2208,7 @@ on_bus_acquired (GDBusConnection *connection,
 {
   GError *error = NULL;
 
-  g_debug ("Bus acquired, creating skeleton");
+  g_info ("Bus acquired, creating skeleton");
 
   g_dbus_connection_set_exit_on_close (connection, FALSE);
 
@@ -2252,7 +2256,7 @@ on_name_acquired (GDBusConnection *connection,
                   const gchar     *name,
                   gpointer         user_data)
 {
-  g_debug ("Name acquired");
+  g_info ("Name acquired");
 }
 
 static void
@@ -2260,7 +2264,7 @@ on_name_lost (GDBusConnection *connection,
               const gchar     *name,
               gpointer         user_data)
 {
-  g_debug ("Name lost");
+  g_info ("Name lost");
   unref_skeleton_in_timeout ();
 }
 
@@ -2275,7 +2279,7 @@ binary_file_changed_cb (GFileMonitor     *file_monitor,
 
   if (!got_it)
     {
-      g_debug ("binary file changed");
+      g_info ("binary file changed");
       unref_skeleton_in_timeout ();
     }
 
@@ -2314,7 +2318,7 @@ main (int    argc,
   gboolean replace;
   gboolean show_version;
   GBusNameOwnerFlags flags;
-  GOptionContext *context;
+  g_autoptr(GOptionContext) context = NULL;
   g_autoptr(GError) error = NULL;
   const GOptionEntry options[] = {
     { "replace", 'r', 0, G_OPTION_ARG_NONE, &replace,  "Replace old daemon.", NULL },
@@ -2370,12 +2374,10 @@ main (int    argc,
       return 0;
     }
 
-  flatpak_disable_fancy_output ();
-
   if (opt_verbose > 0)
-    g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG | G_LOG_LEVEL_INFO, message_handler, NULL);
+    g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, message_handler, NULL);
   if (opt_verbose > 1)
-    g_log_set_handler (G_LOG_DOMAIN "2", G_LOG_LEVEL_DEBUG | G_LOG_LEVEL_INFO, message_handler, NULL);
+    g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, message_handler, NULL);
 
   if (opt_ostree_verbose)
     g_log_set_handler ("OSTree", G_LOG_LEVEL_DEBUG | G_LOG_LEVEL_INFO, message_handler, NULL);
