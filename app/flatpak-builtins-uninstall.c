@@ -180,8 +180,8 @@ confirm_runtime_removal (gboolean           yes_opt,
                                                                &udir->extension_app_map,
                                                                ref, NULL, &local_error);
       if (apps == NULL)
-        g_debug ("Unable to list apps using extension %s: %s\n",
-                 flatpak_decomposed_get_ref (ref), local_error->message);
+        g_info ("Unable to list apps using extension %s: %s\n",
+                flatpak_decomposed_get_ref (ref), local_error->message);
     }
   else
     {
@@ -189,8 +189,8 @@ confirm_runtime_removal (gboolean           yes_opt,
                                                      &udir->runtime_app_map,
                                                      ref, NULL, &local_error);
       if (apps == NULL)
-        g_debug ("Unable to list apps using runtime %s: %s\n",
-                 flatpak_decomposed_get_ref (ref), local_error->message);
+        g_info ("Unable to list apps using runtime %s: %s\n",
+                flatpak_decomposed_get_ref (ref), local_error->message);
     }
 
   if (apps == NULL || apps->len == 0)
@@ -345,7 +345,7 @@ flatpak_builtin_uninstall (int argc, char **argv, GCancellable *cancellable, GEr
 
           udir = uninstall_dir_ensure (uninstall_dirs, dir);
 
-          unused = flatpak_dir_list_unused_refs (dir, opt_arch, NULL, NULL, NULL, FALSE, cancellable, error);
+          unused = flatpak_dir_list_unused_refs (dir, opt_arch, NULL, NULL, NULL, FLATPAK_DIR_FILTER_NONE, cancellable, error);
           if (unused == NULL)
             return FALSE;
 

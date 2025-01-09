@@ -218,7 +218,7 @@ open_tmpfile_core (int dfd, const char *subpath,
           return glnx_throw_errno_prefix (error, "fchmod");
         out_tmpf->initialized = TRUE;
         out_tmpf->src_dfd = dfd; /* Copied; caller must keep open */
-        out_tmpf->fd = glnx_steal_fd (&fd);
+        out_tmpf->fd = g_steal_fd (&fd);
         out_tmpf->path = NULL;
         return TRUE;
       }
@@ -245,7 +245,7 @@ open_tmpfile_core (int dfd, const char *subpath,
           {
             out_tmpf->initialized = TRUE;
             out_tmpf->src_dfd = dfd;  /* Copied; caller must keep open */
-            out_tmpf->fd = glnx_steal_fd (&fd);
+            out_tmpf->fd = g_steal_fd (&fd);
             out_tmpf->path = g_steal_pointer (&tmp);
             return TRUE;
           }
@@ -463,7 +463,7 @@ glnx_tmpfile_reopen_rdonly (GLnxTmpfile *tmpf,
     }
 
   glnx_close_fd (&tmpf->fd);
-  tmpf->fd = glnx_steal_fd (&rdonly_fd);
+  tmpf->fd = g_steal_fd (&rdonly_fd);
   return TRUE;
 }
 
@@ -794,10 +794,21 @@ glnx_regfile_copy_bytes (int fdf, int fdt, off_t max_bytes)
 
   /* If we've requested to copy the whole range, try a full-file clone first.
    */
-  if (max_bytes == (off_t) -1)
+  if (max_bytes == (off_t) -1 &&
+      lseek (fdf, 0, SEEK_CUR) == 0 &&
+      lseek (fdt, 0, SEEK_CUR) == 0)
     {
       if (ioctl (fdt, FICLONE, fdf) == 0)
-        return 0;
+        {
+          /* All the other methods advance the fds. Do it here too for consistency. */
+          if (lseek (fdf, 0, SEEK_END) < 0)
+            return -1;
+          if (lseek (fdt, 0, SEEK_END) < 0)
+            return -1;
+
+          return 0;
+        }
+
       /* Fall through */
       struct stat stbuf;
 

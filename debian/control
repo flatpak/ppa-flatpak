@@ -7,7 +7,6 @@ Uploaders:
  Simon McVittie <smcv@debian.org>,
 Build-Depends:
  attr <!nocheck>,
- automake (>= 1.14.1),
  bison,
  bubblewrap (>= 0.10.0~),
  ca-certificates <!nocheck>,
@@ -16,6 +15,7 @@ Build-Depends:
  debhelper-compat (= 13),
  desktop-file-utils <!nocheck>,
  dh-exec (>= 0.23~),
+ dh-sequence-gir,
  docbook-xml <!nodoc>,
  docbook-xsl <!nodoc>,
  fuse3 <!nocheck>,
@@ -46,10 +46,12 @@ Build-Depends:
  libpolkit-gobject-1-dev,
  libseccomp-dev (>= 2.5.2),
  libsystemd-dev,
+ libwayland-dev,
  libxau-dev,
  libxml2-dev (>= 2.4),
  libxml2-utils,
  libzstd-dev,
+ meson (>= 0.53.0),
  ostree (>= 2020.8) <!nocheck>,
  pkgconf,
  polkitd <!nocheck>,
@@ -58,13 +60,14 @@ Build-Depends:
  python3-pyparsing,
  shared-mime-info <!nocheck>,
  socat <!nocheck>,
+ wayland-protocols,
  xdg-dbus-proxy (>= 0.1.0),
  xmlto <!nodoc>,
  xsltproc <!nodoc>,
 Build-Depends-Indep:
  libglib2.0-doc,
  libostree-doc,
-Standards-Version: 4.6.2
+Standards-Version: 4.7.0
 Homepage: https://flatpak.org/
 Vcs-Git: https://salsa.debian.org/debian/flatpak.git
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
@@ -164,10 +167,22 @@ Section: libdevel
 Depends:
  gir1.2-glib-2.0,
  gir1.2-flatpak-1.0 (= ${binary:Version}),
+ libarchive-dev (>= 2.8.0),
+ libcurl4-gnutls-dev | libcurl-dev,
+ libdconf-dev,
  libflatpak0 (= ${binary:Version}),
  libglib2.0-dev,
+ libgpgme-dev (>= 1.1.8),
+ libjson-glib-dev,
+ libmalcontent-0-dev (>= 0.4.0),
  libostree-dev (>= 2020.8),
+ libpolkit-agent-1-dev,
+ libseccomp-dev (>= 2.5.2),
+ libsystemd-dev,
+ libwayland-dev,
+ libxau-dev,
  libxml2-dev (>= 2.4),
+ libzstd-dev,
  pkgconf,
  python3:any,
  ${gir:Depends},

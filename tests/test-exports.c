@@ -26,8 +26,9 @@
 #include "flatpak-bwrap-private.h"
 #include "flatpak-context-private.h"
 #include "flatpak-exports-private.h"
-#include "flatpak-run-private.h"
+#include "flatpak-metadata-private.h"
 #include "flatpak-utils-base-private.h"
+#include "flatpak-utils-private.h"
 
 #include "tests/testlib.h"
 
@@ -225,7 +226,7 @@ test_full_context (void)
                         FLATPAK_METADATA_GROUP_CONTEXT,
                         FLATPAK_METADATA_KEY_SOCKETS,
                         "x11;wayland;pulseaudio;session-bus;system-bus;"
-                        "fallback-x11;ssh-auth;pcsc;cups;");
+                        "fallback-x11;ssh-auth;pcsc;cups;inherit-wayland-socket;");
   g_key_file_set_value (keyfile,
                         FLATPAK_METADATA_GROUP_CONTEXT,
                         FLATPAK_METADATA_KEY_DEVICES,
@@ -280,6 +281,7 @@ test_full_context (void)
   g_assert_cmpuint (context->sockets, ==,
                     (FLATPAK_CONTEXT_SOCKET_X11 |
                      FLATPAK_CONTEXT_SOCKET_WAYLAND |
+                     FLATPAK_CONTEXT_SOCKET_INHERIT_WAYLAND_SOCKET |
                      FLATPAK_CONTEXT_SOCKET_PULSEAUDIO |
                      FLATPAK_CONTEXT_SOCKET_SESSION_BUS |
                      FLATPAK_CONTEXT_SOCKET_SYSTEM_BUS |
@@ -340,8 +342,7 @@ test_full_context (void)
                                      &n, &error);
   g_assert_nonnull (strv);
   /* The order is undefined, so sort them first */
-  g_qsort_with_data (strv, n, sizeof (char *),
-                     (GCompareDataFunc) flatpak_strcmp0_ptr, NULL);
+  qsort (strv, n, sizeof (char *), flatpak_strcmp0_ptr);
   i = 0;
   g_assert_cmpstr (strv[i++], ==, "!/opt");
   g_assert_cmpstr (strv[i++], ==, "/home");
@@ -355,8 +356,7 @@ test_full_context (void)
                                      &n, &error);
   g_assert_no_error (error);
   g_assert_nonnull (strv);
-  g_qsort_with_data (strv, n, sizeof (char *),
-                     (GCompareDataFunc) flatpak_strcmp0_ptr, NULL);
+  qsort (strv, n, sizeof (char *), flatpak_strcmp0_ptr);
   i = 0;
   g_assert_cmpstr (strv[i++], ==, "ipc");
   g_assert_cmpstr (strv[i++], ==, "network");
@@ -369,11 +369,11 @@ test_full_context (void)
                                      &n, &error);
   g_assert_no_error (error);
   g_assert_nonnull (strv);
-  g_qsort_with_data (strv, n, sizeof (char *),
-                     (GCompareDataFunc) flatpak_strcmp0_ptr, NULL);
+  qsort (strv, n, sizeof (char *), flatpak_strcmp0_ptr);
   i = 0;
   g_assert_cmpstr (strv[i++], ==, "cups");
   g_assert_cmpstr (strv[i++], ==, "fallback-x11");
+  g_assert_cmpstr (strv[i++], ==, "inherit-wayland-socket");
   g_assert_cmpstr (strv[i++], ==, "pcsc");
   g_assert_cmpstr (strv[i++], ==, "pulseaudio");
   g_assert_cmpstr (strv[i++], ==, "session-bus");
@@ -390,8 +390,7 @@ test_full_context (void)
                                      &n, &error);
   g_assert_no_error (error);
   g_assert_nonnull (strv);
-  g_qsort_with_data (strv, n, sizeof (char *),
-                     (GCompareDataFunc) flatpak_strcmp0_ptr, NULL);
+  qsort (strv, n, sizeof (char *), flatpak_strcmp0_ptr);
   i = 0;
   g_assert_cmpstr (strv[i++], ==, "all");
   g_assert_cmpstr (strv[i++], ==, "dri");
@@ -406,8 +405,7 @@ test_full_context (void)
                                      &n, &error);
   g_assert_no_error (error);
   g_assert_nonnull (strv);
-  g_qsort_with_data (strv, n, sizeof (char *),
-                     (GCompareDataFunc) flatpak_strcmp0_ptr, NULL);
+  qsort (strv, n, sizeof (char *), flatpak_strcmp0_ptr);
   i = 0;
   g_assert_cmpstr (strv[i++], ==, ".openarena");
   g_assert_cmpstr (strv[i], ==, NULL);
@@ -419,8 +417,7 @@ test_full_context (void)
                                      &n, &error);
   g_assert_no_error (error);
   g_assert_nonnull (strv);
-  g_qsort_with_data (strv, n, sizeof (char *),
-                     (GCompareDataFunc) flatpak_strcmp0_ptr, NULL);
+  qsort (strv, n, sizeof (char *), flatpak_strcmp0_ptr);
   i = 0;
   g_assert_cmpstr (strv[i++], ==, "LD_AUDIT");
   g_assert_cmpstr (strv[i++], ==, "LD_PRELOAD");
@@ -432,8 +429,7 @@ test_full_context (void)
                               &n, &error);
   g_assert_no_error (error);
   g_assert_nonnull (strv);
-  g_qsort_with_data (strv, n, sizeof (char *),
-                     (GCompareDataFunc) flatpak_strcmp0_ptr, NULL);
+  qsort (strv, n, sizeof (char *), flatpak_strcmp0_ptr);
   i = 0;
   g_assert_cmpstr (strv[i++], ==, "org.example.SessionService");
   g_assert_cmpstr (strv[i], ==, NULL);
@@ -450,8 +446,7 @@ test_full_context (void)
                               &n, &error);
   g_assert_no_error (error);
   g_assert_nonnull (strv);
-  g_qsort_with_data (strv, n, sizeof (char *),
-                     (GCompareDataFunc) flatpak_strcmp0_ptr, NULL);
+  qsort (strv, n, sizeof (char *), flatpak_strcmp0_ptr);
   i = 0;
   g_assert_cmpstr (strv[i++], ==, "net.example.SystemService");
   g_assert_cmpstr (strv[i], ==, NULL);
@@ -468,8 +463,7 @@ test_full_context (void)
                               &n, &error);
   g_assert_no_error (error);
   g_assert_nonnull (strv);
-  g_qsort_with_data (strv, n, sizeof (char *),
-                     (GCompareDataFunc) flatpak_strcmp0_ptr, NULL);
+  qsort (strv, n, sizeof (char *), flatpak_strcmp0_ptr);
   i = 0;
   g_assert_cmpstr (strv[i++], ==, "HYPOTHETICAL_PATH");
   g_assert_cmpstr (strv[i++], ==, "LD_AUDIT");
@@ -498,8 +492,7 @@ test_full_context (void)
                               &n, &error);
   g_assert_no_error (error);
   g_assert_nonnull (strv);
-  g_qsort_with_data (strv, n, sizeof (char *),
-                     (GCompareDataFunc) flatpak_strcmp0_ptr, NULL);
+  qsort (strv, n, sizeof (char *), flatpak_strcmp0_ptr);
   i = 0;
   g_assert_cmpstr (strv[i++], ==, "Colours");
   g_assert_cmpstr (strv[i], ==, NULL);
@@ -510,8 +503,7 @@ test_full_context (void)
                                      "Colours", &n, &error);
   g_assert_no_error (error);
   g_assert_nonnull (strv);
-  g_qsort_with_data (strv, n, sizeof (char *),
-                     (GCompareDataFunc) flatpak_strcmp0_ptr, NULL);
+  qsort (strv, n, sizeof (char *), flatpak_strcmp0_ptr);
   i = 0;
   g_assert_cmpstr (strv[i++], ==, "blue");
   g_assert_cmpstr (strv[i++], ==, "green");
@@ -1007,7 +999,7 @@ test_host_exports_setup (const FakeFile *files,
   glnx_openat_rdonly (AT_FDCWD, host, TRUE, &fd, &error);
   g_assert_no_error (error);
   g_assert_cmpint (fd, >=, 0);
-  flatpak_exports_take_host_fd (exports, glnx_steal_fd (&fd));
+  flatpak_exports_take_host_fd (exports, g_steal_fd (&fd));
 
   if (etc_mode > FLATPAK_FILESYSTEM_MODE_NONE)
     flatpak_exports_add_host_etc_expose (exports, etc_mode);
