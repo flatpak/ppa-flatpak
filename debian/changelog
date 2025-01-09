@@ -1,3 +1,42 @@
+flatpak (1.16.0-1) unstable; urgency=medium
+
+  * New upstream stable release
+  * d/gbp.conf, d/watch: Track Flatpak 1.16.x for trixie
+  * d/test.sh: Set a longer test timeout for non-x86 architectures.
+    Some (perhaps all?) of the hppa buildds in Debian Ports are actually
+    x86_64 machines emulating hppa with qemu, and the same might in
+    principle be true for any other -ports architecture: there is no
+    documented way to know this.
+    Allowing 3x timeouts on x86 and 20x on other architectures has worked
+    well for GLib, so do the same here.
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 09 Jan 2025 19:11:42 +0000
+
+flatpak (1.15.91-1) unstable; urgency=medium
+
+  * New upstream release candidate (1.16.0 rc1)
+  * d/p/tests-Install-missing-test-data.patch:
+    Drop patch, applied (slightly differently) upstream
+  * d/flatpak.install, d/*.pkla:
+    Stop installing a policy snippet for policykit-1 (<< 0.106).
+    This is no longer necessary since Debian 12 and Ubuntu 22.04.
+  * d/watch: Correct a comment for removal of Autotools
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 22 Dec 2024 12:30:56 +0000
+
+flatpak (1.15.12-1) experimental; urgency=medium
+
+  * New upstream development release
+  * d/p/tests-Install-missing-test-data.patch:
+    Add patch to fix autopkgtest failure
+  * d/salsa-ci.yml: Use the currently-recommended recipe
+  * Standards-Version: 4.7.0 (no changes required)
+  * Merge packaging from unstable
+    - d/upstream/metadata: Canonicalize sort order of keys
+    - d/upstream/metadata: Add Security-Contact
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 28 Nov 2024 15:50:46 +0000
+
 flatpak (1.15.10-1~flatpak1~24.04.1) noble; urgency=medium
 
   * Rebuild for Ubuntu 24.04 'noble' for PPA
@@ -205,6 +244,20 @@ flatpak (1.15.0-1) experimental; urgency=medium
     Requires.private field.
 
  -- Simon McVittie <smcv@debian.org>  Mon, 24 Oct 2022 19:29:56 +0100
+
+flatpak (1.14.10-1) unstable; urgency=high
+
+  * New upstream stable release
+    - Don't follow symbolic links when mounting persistent directories
+      (--persist option). This prevents a sandbox escape where a malicious
+      or compromised app could edit the symlink to point to a directory
+      that the app should not have been allowed to read or write.
+      (CVE-2024-42472, GHSA-7hgv-f2j8-xw87)
+  * d/control: Bump required bubblewrap version to 0.10.0.
+    This adds the new --bind-fd option, required to solve CVE-2024-42472
+    without introducing a race condition.
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 15:03:33 +0100
 
 flatpak (1.14.8-1) unstable; urgency=medium
 

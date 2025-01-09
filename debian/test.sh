@@ -11,7 +11,16 @@ unset https_proxy
 unset no_proxy
 
 adverb=
-test_timeout_multiplier=3
+
+case "$DEB_HOST_ARCH_CPU" in
+    (amd64|i386)
+        test_timeout_multiplier=3
+        ;;
+
+    (*)
+        test_timeout_multiplier=20
+        ;;
+esac
 
 if [ "$DEB_HOST_ARCH_BITS" = 64 ]; then
     # reprotest sometimes uses linux32 even for x86_64 builds, and

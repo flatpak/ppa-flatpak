@@ -579,9 +579,18 @@ flatpak_oci_registry_initable_init (GInitable    *initable,
   FlatpakOciRegistry *self = FLATPAK_OCI_REGISTRY (initable);
   gboolean res;
 
-  if (self->tmp_dfd == -1 &&
-      !glnx_opendirat (AT_FDCWD, "/var/tmp", TRUE, &self->tmp_dfd, error))
-    return FALSE;
+  if (self->tmp_dfd == -1)
+    {
+      /* We don't use TMPDIR because the downloaded artifacts can be
+       * very big, and we want to prefer /var/tmp to /tmp.
+       */
+      const char *tmpdir = g_getenv ("FLATPAK_DOWNLOAD_TMPDIR");
+      if (tmpdir == NULL)
+        tmpdir = "/var/tmp";
+
+      if (!glnx_opendirat (AT_FDCWD, tmpdir, TRUE, &self->tmp_dfd, error))
+        return FALSE;
+    }
 
   if (g_str_has_prefix (self->uri, "file:/"))
     res = flatpak_oci_registry_ensure_local (self, self->for_write, cancellable, error);
@@ -3044,9 +3053,9 @@ flatpak_oci_index_make_summary (GFile        *index,
           if (token_type_v != NULL)
             g_variant_builder_add (sparse_builder, "{s@v}", FLATPAK_SPARSE_CACHE_KEY_TOKEN_TYPE, token_type_v);
           if (endoflife_v != NULL)
-            g_variant_builder_add (sparse_builder, "{s@v}", FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE, endoflife_v);
+            g_variant_builder_add (sparse_builder, "{s@v}", FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE, endoflife_v);
           if (endoflife_rebase_v != NULL)
-            g_variant_builder_add (sparse_builder, "{s@v}", FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE, endoflife_rebase_v);
+            g_variant_builder_add (sparse_builder, "{s@v}", FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE_REBASE, endoflife_rebase_v);
 
           g_variant_builder_add (ref_sparse_data_builder, "{s@a{sv}}",
                                  ref, g_variant_builder_end (sparse_builder));

@@ -1100,9 +1100,9 @@ read_commit_data (OstreeRepo   *repo,
       g_auto(GVariantBuilder) sparse_builder = FLATPAK_VARIANT_BUILDER_INITIALIZER;
       g_variant_builder_init (&sparse_builder, G_VARIANT_TYPE_VARDICT);
       if (eol)
-        g_variant_builder_add (&sparse_builder, "{sv}", FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE, g_variant_new_string (eol));
+        g_variant_builder_add (&sparse_builder, "{sv}", FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE, g_variant_new_string (eol));
       if (eol_rebase)
-        g_variant_builder_add (&sparse_builder, "{sv}", FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE, g_variant_new_string (eol_rebase));
+        g_variant_builder_add (&sparse_builder, "{sv}", FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE_REBASE, g_variant_new_string (eol_rebase));
       if (token_type >= 0)
         g_variant_builder_add (&sparse_builder, "{sv}", FLATPAK_SPARSE_CACHE_KEY_TOKEN_TYPE, g_variant_new_int32 (GINT32_TO_LE(token_type)));
       if (n_extra_data > 0)
@@ -3617,7 +3617,8 @@ flatpak_repo_generate_appstream (OstreeRepo   *repo,
   all_refs_keys = (FlatpakDecomposed **) g_hash_table_get_keys_as_array (all_refs, &n_keys);
 
   /* Sort refs so that appdata order is stable for e.g. deltas */
-  g_qsort_with_data (all_refs_keys, n_keys, sizeof (FlatpakDecomposed *), (GCompareDataFunc) flatpak_decomposed_strcmp_p, NULL);
+  qsort (all_refs_keys, n_keys, sizeof (FlatpakDecomposed *),
+         (GCompareFunc) flatpak_decomposed_strcmp_p);
 
   transaction = flatpak_repo_transaction_start (repo, cancellable, error);
   if (transaction == NULL)

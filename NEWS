@@ -1,3 +1,174 @@
+Changes in 1.16.0
+~~~~~~~~~~~~~~~~~~
+Released: 2025-01-09
+
+Bug fixes:
+
+ * Update libglnx to 2024-12-06:
+    - Fix an assertion failure if creating a parent directory encounters a
+      dangling symlink (GNOME/libglnx#1)
+    - Fix a Meson warning
+
+* Don't emit terminal progress indicator escape sequences by default. They are
+  interpreted as notifications by some terminal emulators. (#6052)
+
+* Fix introspection annotations in libflatpak
+
+Enhancements:
+
+* Add the `FLATPAK_TTY_PROGRESS` environment variable, which re-enables the
+  terminal progress indicator escape sequences added in 1.15.91.
+
+* Document the `FLATPAK_FANCY_OUTPUT` environment variable, which allows
+  disabling the fancy formatting when outputting to a terminal.
+
+Changes in 1.15.91
+~~~~~~~~~~~~~~~~~~
+Released: 2024-12-19
+
+Enhancements:
+
+ * Add the `FLATPAK_DATA_DIR` environment variable, which allows overriding
+   at runtime the data directory location that Flatpak uses to search for
+   configuration files such as remotes. This is useful for running tests,
+   and for when installing using Flatpak in a chroot.
+
+ * Add a `FLATPAK_DOWNLOAD_TMPDIR` variable. This allows using download
+   directories other than /var/tmp.
+
+ * Emit progress escape sequence. This can be used by terminal emulators
+   to detect and display progress of Flatpak operations on their graphical
+   user interfaces.
+
+Bug fixes:
+
+ * Install missing test data. This should fix "as-installed" tests via
+   `ginsttest-runner`, used for example in Debian's autopkgtest framework.
+
+ * Unify and improve how the Wayland socket is passed to the sandboxed app.
+   This should fix a regression that is triggered by compositors that both
+   implement the security-context-v1 protocol, and sets the `WAYLAND_DISPLAY`
+   environment variable when launching Flatpak apps. (#5863)
+
+ * Fix the plural form of a translatable string.
+
+Changes in 1.15.12
+~~~~~~~~~~~~~~~~~~
+Released: 2024-11-28
+
+Bug fixes:
+
+ * Return to using the process ID of the Flatpak app in the cgroup name.
+   Using the instance ID in 1.15.11 caused crashes when installing apps,
+   extensions or runtimes that use the "extra data" mechanism, which
+   does not set up an instance ID. (#6009)
+
+Changes in 1.15.11
+~~~~~~~~~~~~~~~~~~
+Released: 2024-11-26
+
+Dependencies:
+
+ * In distributions that compile Flatpak to use a separate bubblewrap
+   executable, version 0.11.0 is recommended (but not required).
+   The minimum bubblewrap continues to be 0.10.0.
+
+ * In distributions that compile Flatpak to use a separate xdg-dbus-proxy
+   executable, version 0.1.6 is recommended (but not required).
+   The minimum xdg-dbus-proxy continues to be 0.1.0.
+
+Enhancements:
+
+ * Allow applications like WebKit to connect the AT-SPI accessibility tree
+   of processes in a sub-sandbox with the tree in the main process (#5898)
+
+     * New sandboxing parameter `flatpak run --a11y-own-name`, which is
+       like `--own-name` but for the accessibility bus
+
+     * flatpak-portal API v7: add new sandbox-a11y-own-names option, which
+       accepts names matching `${FLATPAK_ID}.*`
+
+     * Apps may call the `org.a11y.atspi.Socket.Embedded` method on names
+       matching `${FLATPAK_ID}.Sandboxed.*` by default
+
+ * `flatpak run -vv $app_id` shows all applicable sandboxing parameters
+   and their source, including overrides, as debug messages (#5895)
+
+ * Add --device=usb, a subset of --device=all
+
+ * Introduce USB device listing
+
+   * Apps can list which USB devices they want to access ahead of time by
+     using the `--usb` parameter. Check the manpages for the more information
+     about the accepted syntax.
+
+   * Denying access to USB devices is also possible with the `--no-usb`
+     parameter. The syntax is equal to `--usb`.
+
+   * Both options merely store metadata, and aren't used by Flatpak itself.
+     This metadata is intended to be used by the (as of now, still in
+     progress) USB portal to decide which devices the app can enumerate and
+     request access.
+
+ * Add support for KDE search completion
+
+ * Use the instance id of the Flatpak app as part of the cgroup name. This
+   better matches the naming conventions for cgroup.
+
+ * Preconfigured repositories can now be set up by OS vendors using
+   `${datadir}/flatpak/remotes.d` (typically /usr/share/flatpak/remotes.d),
+   in addition to `${sysconfdir}/flatpak/remotes.d` (typically
+   /etc/flatpak/remotes.d) which is intended for local sysadmin use
+
+Bug fixes:
+
+ * Update libglnx to 2024-08-23 (#5918)
+
+     * fix build in environments that use -Werror=return-type, such as
+       openSUSE Tumbleweed (#5778)
+
+     * add a fallback definition for G_PID_FORMAT with older GLib
+
+     * avoid warnings for g_steal_fd() with newer GLib
+
+     * improve compatibility of g_closefrom() backport with newer GLib
+
+ * Update meson wrap file for bubblewrap to version 0.11.0:
+
+     * drop Autotools build system
+
+     * improve handling of EINTR
+
+     * improve handling of socket control messages
+
+     * improve compatibility with busybox
+
+     * improve compatibility with older Meson
+
+     * fix deprecation warnings
+
+ * Update meson wrap file for xdg-dbus-proxy to version 0.1.6:
+
+     * compatibility with D-Bus implementations that pipeline the
+       authentication handshake, such as sd-bus and zbus
+
+     * compatibility with D-Bus implementations that use non-consecutive
+       serial numbers, such as godbus and zbus
+
+     * broadcast signals can be allowed without having to add TALK permission
+       (#5828)
+
+     * fix memory leaks
+
+ * Fix some memory leaks
+
+ * Translation updates: cs, pl, zh_CN
+
+Internal changes:
+
+ * Better const-correctness (#5913)
+ * Fix a shellcheck warning in the tests (#5914)
+
 Changes in 1.15.10
 ~~~~~~~~~~~~~~~~~~
 Released: 2024-08-14

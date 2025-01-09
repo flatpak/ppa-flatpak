@@ -60,7 +60,11 @@
 
        <para>
             System-wide remotes can be statically preconfigured by dropping
-            <citerefentry><refentrytitle>flatpakrepo</refentrytitle><manvolnum>5</manvolnum></citerefentry> files into <filename>/etc/flatpak/remotes.d/</filename>.
+            <citerefentry><refentrytitle>flatpakrepo</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+            files into <filename>/usr/share/flatpak/remotes.d/</filename> and
+            <filename>/etc/flatpak/remotes.d/</filename>. If a file with
+            the same name exists in both, the file under
+            <filename>/etc</filename> will take precedence.
        </para>
 
         <para>
@@ -603,6 +607,28 @@
               <envar>XDG_DATA_HOME</envar>, flatpak is consulting some of its own.
             </para>
             <variablelist>
+                <varlistentry>
+                    <term><envar>FLATPAK_FANCY_OUTPUT</envar></term>
+                    <listitem><para>
+                        May be set to <literal>0</literal> to avoid fancy
+                        formatting when outputting to a terminal.
+                        This feature is also disabled automatically when
+                        standard output is not a terminal,
+                        or when <envar>G_MESSAGES_DEBUG</envar> is set.
+                    </para></listitem>
+                </varlistentry>
+                <varlistentry>
+                    <term><envar>FLATPAK_TTY_PROGRESS</envar></term>
+
+                    <listitem><para>
+                        May be set to <literal>1</literal> to enable reporting
+                        machine-readable progress to the terminal.
+                        This feature is not currently enabled by default
+                        because it uses the OSC 9;4 sequence,
+                        which some terminal emulators interpret as a
+                        popup notification.
+                    </para></listitem>
+                </varlistentry>
                 <varlistentry>
                     <term><envar>FLATPAK_USER_DIR</envar></term>
 

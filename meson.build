@@ -4,7 +4,7 @@
 project(
   'flatpak',
   'c',
-  version : '1.15.10',
+  version : '1.16.0',
   default_options: [
     'warning_level=2',
   ],
@@ -12,8 +12,8 @@ project(
 )
 
 flatpak_major_version = 1
-flatpak_minor_version = 15
-flatpak_micro_version = 10
+flatpak_minor_version = 16
+flatpak_micro_version = 0
 flatpak_extra_version = ''
 
 flatpak_interface_age = 0
@@ -343,12 +343,8 @@ cdata.set_quoted(
   get_option('prefix') / get_option('sysconfdir') / 'flatpak',
 )
 cdata.set_quoted(
-  'FLATPAK_BASEDIR',
+  'FLATPAK_DATADIR',
   get_option('prefix') / get_option('datadir') / 'flatpak',
-)
-cdata.set_quoted(
-  'FLATPAK_TRIGGERDIR',
-  get_option('prefix') / get_option('datadir') / 'flatpak' / 'triggers',
 )
 cdata.set_quoted('LIBEXECDIR', get_option('prefix') / get_option('libexecdir'))
 cdata.set_quoted('DATADIR', get_option('prefix') / get_option('datadir'))

@@ -2410,9 +2410,8 @@ find_runtime_remote (FlatpakTransaction             *self,
   /* Put @app_remote before the others at its priority level */
   rsd.dir = priv->dir;
   rsd.prioritized_remote = app_remote;
-  g_qsort_with_data (all_remotes, g_strv_length (all_remotes), sizeof (char *),
-                     cmp_remote_with_prioritized, &rsd);
-
+  qsort_r (all_remotes, g_strv_length (all_remotes), sizeof (char *),
+           cmp_remote_with_prioritized, &rsd);
 
   app_pref = flatpak_decomposed_get_pref (app_ref);
   runtime_pref = flatpak_decomposed_get_pref (runtime_ref);
@@ -3455,8 +3454,8 @@ try_resolve_op_from_metadata (FlatpakTransaction *self,
 
   if (flatpak_remote_state_lookup_sparse_cache (state, flatpak_decomposed_get_ref (op->ref), &sparse_cache, NULL))
     {
-      op->eol = g_strdup (var_metadata_lookup_string (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE, NULL));
-      op->eol_rebase = g_strdup (var_metadata_lookup_string (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE, NULL));
+      op->eol = g_strdup (var_metadata_lookup_string (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE, NULL));
+      op->eol_rebase = g_strdup (var_metadata_lookup_string (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_ENDOFLIFE_REBASE, NULL));
       op->token_type = GINT32_FROM_LE (var_metadata_lookup_int32 (sparse_cache, FLATPAK_SPARSE_CACHE_KEY_TOKEN_TYPE, op->token_type));
 
       if (op->eol_rebase)
