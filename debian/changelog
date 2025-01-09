@@ -1,6 +1,7 @@
-flatpak (1.16.0-1) UNRELEASED; urgency=medium
+flatpak (1.16.0-1) unstable; urgency=medium
 
   * New upstream stable release
+  * d/gbp.conf, d/watch: Track Flatpak 1.16.x for trixie
   * d/test.sh: Set a longer test timeout for non-x86 architectures.
     Some (perhaps all?) of the hppa buildds in Debian Ports are actually
     x86_64 machines emulating hppa with qemu, and the same might in
@@ -9,7 +10,7 @@ flatpak (1.16.0-1) UNRELEASED; urgency=medium
     Allowing 3x timeouts on x86 and 20x on other architectures has worked
     well for GLib, so do the same here.
 
- -- Simon McVittie <smcv@debian.org>  Thu, 09 Jan 2025 18:56:38 +0000
+ -- Simon McVittie <smcv@debian.org>  Thu, 09 Jan 2025 19:11:42 +0000
 
 flatpak (1.15.91-1) unstable; urgency=medium
 
