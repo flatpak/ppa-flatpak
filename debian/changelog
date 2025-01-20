@@ -1,3 +1,10 @@
+flatpak (1.16.0-1~flatpak1~22.04.2) jammy; urgency=medium
+
+  * Revert "Stop installing a policy snippet for policykit-1 (<< 0.106)".
+    Ubuntu 22.04 still needs this.
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 20 Jan 2025 11:52:13 +0000
+
 flatpak (1.16.0-1~flatpak1~22.04.1) jammy; urgency=medium
 
   * Rebuild for Ubuntu 22.04 'jammy' for PPA
