@@ -1,10 +1,14 @@
-flatpak (1.16.0-2) UNRELEASED; urgency=medium
+flatpak (1.16.0-2) unstable; urgency=medium
 
   * d/changelog: Fix Ubuntu version information in 1.15.91-1 changelog.
     Ubuntu 22.04 still needed .pkla files, it is only 24.04 that has
     caught up with upstream polkitd.
+  * d/flathub.flatpakrepo, d/flatpak.examples:
+    Provide the address and GPG key for Flathub
+  * d/p/debian/system-helper-Set-Debian-s-canonical-home-directory-for-s.patch:
+    Make the home directory from sysusers.d consistent with adduser
 
- -- Simon McVittie <smcv@debian.org>  Mon, 20 Jan 2025 11:50:29 +0000
+ -- Simon McVittie <smcv@debian.org>  Mon, 17 Mar 2025 13:09:49 +0000
 
 flatpak (1.16.0-1) unstable; urgency=medium
 
