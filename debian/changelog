@@ -1,3 +1,60 @@
+flatpak (1.16.1-1~flatpak1~24.04.1) noble; urgency=medium
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 12 May 2025 13:19:56 +0100
+
+flatpak (1.16.1-1) unstable; urgency=medium
+
+  * New upstream stable release
+    - When using parental controls, child accounts can update existing
+      apps by default
+    - Make systemd scopes easier to match to Flatpak app instances
+    - Access to --device=dri now includes /dev/udmabuf
+    - Better error message for invalid parametrs to
+      `flatpak-spawn --sandbox-a11y-own-name`
+    - Speed up `flatpak prune --dry-run`
+    - Speed up `flatpak permission-reset`
+    - Add support for authenticating to OCI registries using TLS certs
+      in /etc/containers/certs.d
+    - Fix intermittent flatpak-portal crashes
+    - Avoid an unnecessary confirmation prompt when
+      `flatpak remove --unused` cleans up, for example, old Nvidia drivers
+    - Don't propagate $PYTHONPYCACHEPREFIX from host into sandbox
+    - Don't propagate $WAYLAND_DISPLAY, $WAYLAND_SOCKET from host into
+      sandbox when access to the actual socket has been denied
+    - Use $AT_SPI_BUS_ADDRESS to discover the AT-SPI bus, if set
+    - Fix a memory leak while installing extra-data
+    - Don't show fatal transaction errors twice
+    - Fix the build with -Ddefault_library=static
+    - Fix incorrect error reporting
+    - Use more interoperable OSC escape sequences for FLATPAK_TTY_PROGRESS
+      (this feature is still off by default)
+    - Improve shell completion for `flatpak search`
+    - Fix an unclear boolean expression (no functional change)
+    - Avoid a duplicate redirection in the test suite
+    - Translation updates
+    - Documentation improvements
+    - CI updates
+  * Standards-Version: 4.7.2 (no changes required)
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 12 May 2025 12:10:10 +0100
+
+flatpak (1.16.0-2) unstable; urgency=medium
+
+  * d/changelog: Fix Ubuntu version information in 1.15.91-1 changelog.
+    Ubuntu 22.04 still needed .pkla files, it is only 24.04 that has
+    caught up with upstream polkitd.
+  * d/flathub.flatpakrepo, d/flatpak.examples:
+    Provide the address and GPG key for Flathub
+  * d/p/debian/system-helper-Set-Debian-s-canonical-home-directory-for-s.patch:
+    Make the home directory from sysusers.d consistent with adduser
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 17 Mar 2025 13:09:49 +0000
+
 flatpak (1.16.0-1~flatpak1~22.04.2) jammy; urgency=medium
 
   * Revert "Stop installing a policy snippet for policykit-1 (<< 0.106)".
@@ -44,7 +101,7 @@ flatpak (1.15.91-1) unstable; urgency=medium
     Drop patch, applied (slightly differently) upstream
   * d/flatpak.install, d/*.pkla:
     Stop installing a policy snippet for policykit-1 (<< 0.106).
-    This is no longer necessary since Debian 12 and Ubuntu 22.04.
+    This is no longer necessary since Debian 12 and Ubuntu 24.04.
   * d/watch: Correct a comment for removal of Autotools
 
  -- Simon McVittie <smcv@debian.org>  Sun, 22 Dec 2024 12:30:56 +0000

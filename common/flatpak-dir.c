@@ -8280,7 +8280,7 @@ extract_extra_data (FlatpakDir   *self,
           const guchar *data;
           gsize len;
 
-          g_variant_get_child (extra_data, j, "(^ay@ay)",
+          g_variant_get_child (extra_data, j, "(^&ay@ay)",
                                &extra_data_name,
                                &content);
 
@@ -8403,12 +8403,16 @@ apply_extra_data (FlatpakDir   *self,
     }
 
   runtime_pref = g_key_file_get_string (metakey, group,
-                                        FLATPAK_METADATA_KEY_RUNTIME, error);
+                                        FLATPAK_METADATA_KEY_RUNTIME, NULL);
   if (runtime_pref == NULL)
     runtime_pref = g_key_file_get_string (metakey, FLATPAK_METADATA_GROUP_EXTENSION_OF,
                                           FLATPAK_METADATA_KEY_RUNTIME, NULL);
   if (runtime_pref == NULL)
-    return FALSE;
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                   _("Unable to get runtime key from metadata"));
+      return FALSE;
+    }
 
   runtime_ref = flatpak_decomposed_new_from_pref (FLATPAK_KINDS_RUNTIME, runtime_pref, error);
   if (runtime_ref == NULL)
@@ -8547,6 +8551,7 @@ static gboolean
 flatpak_dir_check_parental_controls (FlatpakDir    *self,
                                      const char    *ref,
                                      GBytes        *deploy_data,
+                                     const char    *action_id,
                                      GCancellable  *cancellable,
                                      GError       **error)
 {
@@ -8673,7 +8678,7 @@ flatpak_dir_check_parental_controls (FlatpakDir    *self,
   if (!flatpak_dir_get_no_interaction (self))
     polkit_flags |= POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION;
   result = polkit_authority_check_authorization_sync (authority, subject,
-                                                      "org.freedesktop.Flatpak.override-parental-controls",
+                                                      action_id,
                                                       NULL,
                                                       polkit_flags,
                                                       cancellable, error);
@@ -8718,6 +8723,7 @@ flatpak_dir_deploy (FlatpakDir          *self,
                     const char          *checksum_or_latest,
                     const char * const * subpaths,
                     const char * const * previous_ids,
+                    const char          *parental_controls_action_id,
                     GCancellable        *cancellable,
                     GError             **error)
 {
@@ -9099,7 +9105,9 @@ flatpak_dir_deploy (FlatpakDir          *self,
 
   /* Check the app is actually allowed to be used by this user. This can block
    * on getting authorisation. */
-  if (!flatpak_dir_check_parental_controls (self, flatpak_decomposed_get_ref (ref), deploy_data, cancellable, error))
+  if (!flatpak_dir_check_parental_controls (self, flatpak_decomposed_get_ref (ref),
+                                            deploy_data, parental_controls_action_id,
+                                            cancellable, error))
     return FALSE;
 
   deploy_data_file = g_file_get_child (checkoutdir, "deploy");
@@ -9234,7 +9242,9 @@ flatpak_dir_deploy_install (FlatpakDir        *self,
   created_deploy_base = TRUE;
 
   if (!flatpak_dir_deploy (self, origin, ref, NULL, (const char * const *) subpaths,
-                           previous_ids, cancellable, error))
+                           previous_ids,
+                           "org.freedesktop.Flatpak.override-parental-controls",
+                           cancellable, error))
     goto out;
 
   if (flatpak_decomposed_is_app (ref))
@@ -9335,6 +9345,7 @@ flatpak_dir_deploy_update (FlatpakDir        *self,
                            checksum_or_latest,
                            opt_subpaths ? opt_subpaths : old_subpaths,
                            (const char * const *) previous_ids_owned,
+                           "org.freedesktop.Flatpak.override-parental-controls-update",
                            cancellable, error))
     return FALSE;
 
