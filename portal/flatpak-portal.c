@@ -77,7 +77,7 @@ static int opt_poll_timeout;
 static gboolean opt_poll_when_metered;
 static FlatpakSpawnSupportFlags supports = 0;
 
-G_LOCK_DEFINE (update_monitors); /* This protects the three variables below */
+G_LOCK_DEFINE_STATIC (update_monitors); /* This protects the three variables below */
 static GHashTable *update_monitors;
 static guint update_monitors_timeout = 0;
 static gboolean update_monitors_timeout_running_thread = FALSE;
@@ -963,7 +963,7 @@ handle_spawn (PortalFlatpak         *object,
         {
           g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
                                                  G_DBUS_ERROR_INVALID_ARGS,
-                                                 "Invalid sandbox a11y own name, doesn't match app id");
+                                                 "Invalid sandbox a11y own name: '%s' doesn't match app id", sandbox_a11y_own_names[i]);
           return G_DBUS_METHOD_INVOCATION_HANDLED;
         }
     }
@@ -2965,9 +2965,6 @@ on_bus_acquired (GDBusConnection *connection,
                                       NULL, NULL);
 
   g_object_set_data_full (G_OBJECT (portal), "track-alive", GINT_TO_POINTER (42), skeleton_died_cb);
-
-  g_dbus_interface_skeleton_set_flags (G_DBUS_INTERFACE_SKELETON (portal),
-                                       G_DBUS_INTERFACE_SKELETON_FLAGS_HANDLE_METHOD_INVOCATIONS_IN_THREAD);
 
   portal_flatpak_set_version (PORTAL_FLATPAK (portal), 7);
   portal_flatpak_set_supports (PORTAL_FLATPAK (portal), supports);
