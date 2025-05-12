@@ -1,4 +1,4 @@
-flatpak (1.16.1-1) UNRELEASED; urgency=medium
+flatpak (1.16.1-1) unstable; urgency=medium
 
   * New upstream stable release
     - When using parental controls, child accounts can update existing
@@ -30,8 +30,9 @@ flatpak (1.16.1-1) UNRELEASED; urgency=medium
     - Translation updates
     - Documentation improvements
     - CI updates
+  * Standards-Version: 4.7.2 (no changes required)
 
- -- Simon McVittie <smcv@debian.org>  Mon, 12 May 2025 11:57:41 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 12 May 2025 12:10:10 +0100
 
 flatpak (1.16.0-2) unstable; urgency=medium
 
