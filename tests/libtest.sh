@@ -275,7 +275,7 @@ assert_remote_has_config () {
 
 assert_remote_has_no_config () {
     { { local BASH_XTRACEFD=3; } 2> /dev/null
-    if ostree config --repo=$FL_DIR/repo get --group 'remote "'"$1"'"' "$2" > /dev/null &> /dev/null; then
+    if ostree config --repo=$FL_DIR/repo get --group 'remote "'"$1"'"' "$2" &> /dev/null; then
         echo 1>&2 "Remote '$1' unexpectedly has key '$2' at $(basename ${BASH_SOURCE[1]}):${BASH_LINENO[0]}"
         exit 1
     fi
@@ -332,12 +332,16 @@ make_runtime () {
 }
 
 httpd () {
-    COMMAND=${1:-web-server.py}
-    DIR=${2:-repos}
+    if [ $# -eq 0 ] ; then
+        set web-server.py repos
+    fi
+
+    COMMAND=$1
+    shift
 
     rm -f httpd-pipe
     mkfifo httpd-pipe
-    PYTHONUNBUFFERED=1 $(dirname $0)/$COMMAND "$DIR" 3> httpd-pipe 2>&1 | tee -a httpd-log >&2 &
+    PYTHONUNBUFFERED=1 $(dirname $0)/$COMMAND "$@" 3> httpd-pipe 2>&1 | tee -a httpd-log >&2 &
     read < httpd-pipe
 }
 
@@ -589,10 +593,15 @@ skip_without_libsystemd () {
   fi
 }
 
+FLATPAK_SYSTEM_CERTS_D=$(pwd)/certs.d
+export FLATPAK_SYSTEM_CERTS_D
+
 sed s#@testdir@#${test_builddir}# ${test_srcdir}/session.conf.in > session.conf
 dbus-daemon --fork --config-file=session.conf --print-address=3 --print-pid=4 \
     3> dbus-session-bus-address 4> dbus-session-bus-pid
-export DBUS_SESSION_BUS_ADDRESS="$(cat dbus-session-bus-address)"
+
+DBUS_SESSION_BUS_ADDRESS="$(cat dbus-session-bus-address)"
+export DBUS_SESSION_BUS_ADDRESS
 DBUS_SESSION_BUS_PID="$(cat dbus-session-bus-pid)"
 
 if ! /bin/kill -0 "$DBUS_SESSION_BUS_PID"; then
