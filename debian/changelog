@@ -1,3 +1,17 @@
+flatpak (1.16.1-2) unstable; urgency=medium
+
+  * d/copyright: Point to GNU web address instead of old FSF postal address
+  * d/copyright: Clarify possible interpretations of LGPL-2
+  * Stop build-depending on libgirepository1.0-dev.
+    Build-depend on gobject-introspection (>= 1.80) instead.
+    libgirepository1.0-dev is not multiarch-compatible and should be removed
+    during the forky cycle.
+  * d/control: Only require gtk-doc-tools, etc. if we are building documentation
+  * Prefer the OpenSSL flavour of libcurl.
+    This is the one that upstream is going to be testing with in practice.
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 14 Aug 2025 22:18:17 +0100
+
 flatpak (1.16.1-1) unstable; urgency=medium
 
   * New upstream stable release
