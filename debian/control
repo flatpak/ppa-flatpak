@@ -6,16 +6,16 @@ Uploaders:
  Matthias Klumpp <mak@debian.org>,
  Simon McVittie <smcv@debian.org>,
 Build-Depends:
+ debhelper (>= 13.11.6~),
+ debhelper-compat (= 13),
+ dh-exec (>= 0.23~),
+ dh-sequence-gir,
  attr <!nocheck>,
  bison,
  bubblewrap (>= 0.10.0~),
  ca-certificates <!nocheck>,
  dbus-daemon,
- debhelper (>= 13.11.6~),
- debhelper-compat (= 13),
  desktop-file-utils <!nocheck>,
- dh-exec (>= 0.23~),
- dh-sequence-gir,
  docbook-xml <!nodoc>,
  docbook-xsl <!nodoc>,
  fuse3 <!nocheck>,
@@ -54,8 +54,8 @@ Build-Depends:
  pkgconf,
  polkitd <!nocheck>,
  procps,
- python3:any,
  python3-pyparsing,
+ python3:any,
  shared-mime-info <!nocheck>,
  socat <!nocheck>,
  wayland-protocols,
@@ -71,6 +71,7 @@ Homepage: https://flatpak.org/
 Vcs-Git: https://salsa.debian.org/debian/flatpak.git
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
 Rules-Requires-Root: no
+X-Style: black
 
 Package: flatpak
 Architecture: linux-any
@@ -85,8 +86,8 @@ Recommends:
  ca-certificates,
  default-dbus-system-bus | dbus-system-bus,
  desktop-file-utils,
- hicolor-icon-theme,
  gtk-update-icon-cache,
+ hicolor-icon-theme,
  libpam-systemd,
  p11-kit,
  polkitd,
@@ -164,8 +165,8 @@ Architecture: linux-any
 Multi-Arch: same
 Section: libdevel
 Depends:
- gir1.2-glib-2.0,
  gir1.2-flatpak-1.0 (= ${binary:Version}),
+ gir1.2-glib-2.0,
  libarchive-dev (>= 2.8.0),
  libcurl4-openssl-dev | libcurl-dev,
  libdconf-dev,
