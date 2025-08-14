@@ -23,7 +23,6 @@ Build-Depends:
  gir1.2-gobject-2.0-dev,
  gnupg <!nocheck>,
  gobject-introspection (>= 1.80),
- gtk-doc-tools,
  gtk-update-icon-cache <!nocheck>,
  hicolor-icon-theme <!nocheck>,
  libappstream-dev (>= 0.12.0),
@@ -64,8 +63,9 @@ Build-Depends:
  xmlto <!nodoc>,
  xsltproc <!nodoc>,
 Build-Depends-Indep:
- libglib2.0-doc,
- libostree-doc,
+ gtk-doc-tools <!nodoc>,
+ libglib2.0-doc <!nodoc>,
+ libostree-doc <!nodoc>,
 Standards-Version: 4.7.2
 Homepage: https://flatpak.org/
 Vcs-Git: https://salsa.debian.org/debian/flatpak.git
