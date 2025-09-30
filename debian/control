@@ -5,6 +5,7 @@ Maintainer: Utopia Maintenance Team <pkg-utopia-maintainers@lists.alioth.debian.
 Uploaders:
  Matthias Klumpp <mak@debian.org>,
  Simon McVittie <smcv@debian.org>,
+# We need polkitd, socat, etc. if !nocheck || !noinsttest
 Build-Depends:
  debhelper (>= 13.11.6~),
  debhelper-compat (= 13),
@@ -52,12 +53,12 @@ Build-Depends:
  meson (>= 0.53.0),
  ostree (>= 2020.8) <!nocheck>,
  pkgconf,
- polkitd <!nocheck>,
+ polkitd <!nocheck> <!noinsttest>,
  procps,
  python3-pyparsing,
  python3:any,
  shared-mime-info <!nocheck>,
- socat <!nocheck>,
+ socat <!nocheck> <!noinsttest>,
  wayland-protocols,
  xdg-dbus-proxy (>= 0.1.0),
  xmlto <!nodoc>,
@@ -121,6 +122,7 @@ Description: Application deployment framework for desktop apps
  limited access to resources outside the sandbox.
 
 Package: flatpak-tests
+Build-Profiles: <!noinsttest>
 Architecture: linux-any
 Section: misc
 Depends:
