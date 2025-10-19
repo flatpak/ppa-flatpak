@@ -11,6 +11,7 @@ Build-Depends:
  debhelper-compat (= 13),
  dh-exec (>= 0.23~),
  dh-sequence-gir,
+ dh-sequence-installsysusers,
  attr <!nocheck>,
  bison,
  bubblewrap (>= 0.10.0~),
@@ -76,7 +77,6 @@ X-Style: black
 Package: flatpak
 Architecture: linux-any
 Depends:
- adduser,
  bubblewrap (>= 0.10.0~),
  fuse3,
  xdg-dbus-proxy (>= 0.1.0),
