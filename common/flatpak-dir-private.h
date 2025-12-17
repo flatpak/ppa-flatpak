@@ -172,6 +172,13 @@ void flatpak_remote_state_add_sideload_dir (FlatpakRemoteState *self,
                                             GFile              *path);
 void flatpak_remote_state_add_sideload_image_collection (FlatpakRemoteState     *self,
                                                          FlatpakImageCollection *image_collection);
+FlatpakImageSource * flatpak_remote_state_fetch_image_source (FlatpakRemoteState  *self,
+                                                              FlatpakDir          *dir,
+                                                              const char          *ref,
+                                                              const char          *opt_rev,
+                                                              const char          *token,
+                                                              GCancellable        *cancellable,
+                                                              GError             **error);
 
 
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (FlatpakDir, g_object_unref)
@@ -1038,5 +1045,10 @@ char **               flatpak_dir_list_unused_refs                          (Fla
                                                                              FlatpakDirFilterFlags          filter_flags,
                                                                              GCancellable                  *cancellable,
                                                                              GError                       **error);
+gboolean              flatpak_dir_pull_oci_extra_data                       (OstreeRepo              *repo,
+                                                                             FlatpakImageSource      *image_source,
+                                                                             const char              *rev,
+                                                                             GCancellable            *cancellable,
+                                                                             GError                 **error);
 
 #endif /* __FLATPAK_DIR_H__ */

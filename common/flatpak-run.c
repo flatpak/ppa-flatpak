@@ -288,8 +288,10 @@ flatpak_run_add_environment_args (FlatpakBwrap           *bwrap,
                                   FlatpakRunFlags         flags,
                                   const char             *app_id,
                                   FlatpakContext         *context,
+                                  FlatpakContextShares    shares,
                                   FlatpakContextDevices   devices,
                                   FlatpakContextSockets   sockets,
+                                  FlatpakContextFeatures  features,
                                   GFile                  *app_id_dir,
                                   GPtrArray              *previous_app_id_dirs,
                                   int                     per_app_dir_lock_fd,
@@ -305,13 +307,13 @@ flatpak_run_add_environment_args (FlatpakBwrap           *bwrap,
   gboolean home_access = FALSE;
   gboolean sandboxed = (flags & FLATPAK_RUN_FLAG_SANDBOX) != 0;
 
-  if ((context->shares & FLATPAK_CONTEXT_SHARED_IPC) == 0)
+  if ((shares & FLATPAK_CONTEXT_SHARED_IPC) == 0)
     {
       g_info ("Disallowing ipc access");
       flatpak_bwrap_add_args (bwrap, "--unshare-ipc", NULL);
     }
 
-  if ((context->shares & FLATPAK_CONTEXT_SHARED_NETWORK) == 0)
+  if ((shares & FLATPAK_CONTEXT_SHARED_NETWORK) == 0)
     {
       g_info ("Disallowing network access");
       flatpak_bwrap_add_args (bwrap, "--unshare-net", NULL);
@@ -331,7 +333,7 @@ flatpak_run_add_environment_args (FlatpakBwrap           *bwrap,
                * shared /dev. The host and all sandboxes and subsandboxes
                * all share /dev/shm */
             }
-          else if ((context->features & FLATPAK_CONTEXT_FEATURE_PER_APP_DEV_SHM)
+          else if ((features & FLATPAK_CONTEXT_FEATURE_PER_APP_DEV_SHM)
                    && per_app_dir_lock_fd >= 0)
             {
               g_autofree char *shared_dev_shm = NULL;
@@ -374,7 +376,7 @@ flatpak_run_add_environment_args (FlatpakBwrap           *bwrap,
                                           "--bind", "/run/shm", "/run/shm",
                                           NULL);
                 }
-              else if ((context->features & FLATPAK_CONTEXT_FEATURE_PER_APP_DEV_SHM)
+              else if ((features & FLATPAK_CONTEXT_FEATURE_PER_APP_DEV_SHM)
                        && per_app_dir_lock_fd >= 0)
                 {
                   g_autofree char *shared_dev_shm = NULL;
@@ -477,7 +479,7 @@ flatpak_run_add_environment_args (FlatpakBwrap           *bwrap,
           if (real_dev_shm != NULL)
               flatpak_bwrap_add_args (bwrap, "--bind", real_dev_shm, "/dev/shm", NULL);
         }
-      else if ((context->features & FLATPAK_CONTEXT_FEATURE_PER_APP_DEV_SHM)
+      else if ((features & FLATPAK_CONTEXT_FEATURE_PER_APP_DEV_SHM)
                && per_app_dir_lock_fd >= 0)
         {
           g_autofree char *shared_dev_shm = NULL;
@@ -530,7 +532,7 @@ flatpak_run_add_environment_args (FlatpakBwrap           *bwrap,
   flatpak_context_append_bwrap_filesystem (context, bwrap, app_id, app_id_dir,
                                            exports, xdg_dirs_conf, home_access);
 
-  flatpak_run_add_socket_args_environment (bwrap, context->shares, sockets, app_id, instance_id);
+  flatpak_run_add_socket_args_environment (bwrap, shares, sockets, app_id, instance_id);
   flatpak_run_add_session_dbus_args (bwrap, proxy_arg_bwrap, sockets, context, flags, app_id);
   flatpak_run_add_system_dbus_args (bwrap, proxy_arg_bwrap, sockets, context, flags);
   flatpak_run_add_a11y_dbus_args (bwrap, proxy_arg_bwrap, context, flags, app_id);
@@ -1886,34 +1888,22 @@ setup_seccomp (FlatpakBwrap   *bwrap,
 
   /**** BEGIN NOTE ON CODE SHARING
    *
-   * There are today a number of different Linux container
-   * implementations.  That will likely continue for long into the
-   * future.  But we can still try to share code, and it's important
-   * to do so because it affects what library and application writers
-   * can do, and we should support code portability between different
-   * container tools.
+   * This code was originally part of the obsolete linux-user-chroot project,
+   * which was itself heavily influenced by Sandstorm's seccomp filters.
+   * Nowadays, the canonical upstream location for this code is Flatpak:
    *
-   * This syscall blocklist is copied from linux-user-chroot, which was in turn
-   * clearly influenced by the Sandstorm.io blocklist.
+   *   https://github.com/flatpak/flatpak/blob/main/common/flatpak-run.c
    *
-   * If you make any changes here, I suggest sending the changes along
-   * to other sandbox maintainers.  Using the libseccomp list is also
-   * an appropriate venue:
-   * https://groups.google.com/forum/#!forum/libseccomp
+   * Here is a list of projects that have directly copied Flatpak's sandbox
+   * filters. These projects aim to exactly or almost exactly match what Flatpak
+   * is doing, so we almost always need to update them whenever the code here is
+   * touched:
    *
-   * A non-exhaustive list of links to container tooling that might
-   * want to share this blocklist:
+   *   https://github.com/WebKit/WebKit/blob/main/Source/WebKit/UIProcess/Launcher/glib/BubblewrapLauncher.cpp
+   *   https://gitlab.gnome.org/GNOME/gnome-desktop/-/blob/master/libgnome-desktop/gnome-desktop-thumbnail-script.c
    *
-   *  https://github.com/sandstorm-io/sandstorm
-   *    in src/sandstorm/supervisor.c++
-   *  https://github.com/flatpak/flatpak.git
-   *    in common/flatpak-run.c
-   *  https://git.gnome.org/browse/linux-user-chroot
-   *    in src/setup-seccomp.c
-   *
-   * Other useful resources:
-   * https://github.com/systemd/systemd/blob/HEAD/src/shared/seccomp-util.c
-   * https://github.com/moby/moby/blob/HEAD/profiles/seccomp/default.json
+   * (We perhaps ought to split this code out of Flatpak into a subproject, to
+   * make code sharing easier and reduce the need for manual copy/pasting.)
    *
    **** END NOTE ON CODE SHARING
    */
@@ -2959,6 +2949,13 @@ open_namespace_fd_if_needed (const char *path,
   return -1;
 }
 
+FlatpakContextShares
+flatpak_run_compute_allowed_shares (FlatpakContext *context)
+{
+  return flatpak_context_compute_allowed_shares (context,
+                                                 flatpak_run_evaluate_conditions);
+}
+
 FlatpakContextDevices
 flatpak_run_compute_allowed_devices (FlatpakContext *context)
 {
@@ -2971,6 +2968,13 @@ flatpak_run_compute_allowed_sockets (FlatpakContext *context)
 {
   return flatpak_context_compute_allowed_sockets (context,
                                                   flatpak_run_evaluate_conditions);
+}
+
+FlatpakContextFeatures
+flatpak_run_compute_allowed_features (FlatpakContext *context)
+{
+  return flatpak_context_compute_allowed_features (context,
+                                                   flatpak_run_evaluate_conditions);
 }
 
 gboolean
@@ -3044,8 +3048,10 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
   const char *app_target_path = "/app";
   const char *runtime_target_path = "/usr";
   struct stat s;
+  FlatpakContextShares shares;
   FlatpakContextDevices devices;
   FlatpakContextSockets sockets;
+  FlatpakContextFeatures features;
 
   g_assert (run_environ != NULL);
 
@@ -3176,8 +3182,10 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
 
   flatpak_context_dump (app_context, "Final context");
 
+  shares = flatpak_run_compute_allowed_shares (app_context);
   devices = flatpak_run_compute_allowed_devices (app_context);
   sockets = flatpak_run_compute_allowed_sockets (app_context);
+  features = flatpak_run_compute_allowed_features (app_context);
 
   original_runtime_files = flatpak_deploy_get_files (runtime_deploy);
 
@@ -3453,7 +3461,7 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
       flatpak_bwrap_add_fd (bwrap, ld_so_fd);
     }
 
-  flags |= flatpak_context_get_run_flags (app_context);
+  flags |= flatpak_context_features_to_run_flags (features);
 
   if (!flatpak_run_setup_base_argv (bwrap, runtime_files, app_id_dir, app_arch, flags, error))
     return FALSE;
@@ -3516,7 +3524,8 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
     add_document_portal_args (bwrap, app_id, &doc_mount_path);
 
   if (!flatpak_run_add_environment_args (bwrap, app_info_path, flags,
-                                         app_id, app_context, devices, sockets,
+                                         app_id, app_context,
+                                         shares, devices, sockets, features,
                                          app_id_dir, previous_app_id_dirs,
                                          per_app_dir_lock_fd, instance_id,
                                          &exports, cancellable, error))
@@ -3532,7 +3541,7 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
                               NULL);
     }
 
-  flatpak_run_add_socket_args_late (bwrap, app_context->shares);
+  flatpak_run_add_socket_args_late (bwrap, shares);
   add_font_path_args (bwrap);
   add_icon_path_args (bwrap);
 
