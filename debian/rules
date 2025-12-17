@@ -35,7 +35,6 @@ override_dh_auto_configure:
 	rm -f app/parse-datetime.c
 	dh_auto_configure -- \
 		-Dauto_sideloading=false \
-		-Ddbus_config_dir=/usr/share/dbus-1/system.d \
 		-Dgdm_env_file=true \
 		-Dhttp_backend=curl \
 		-Dprivileged_group=sudo \
