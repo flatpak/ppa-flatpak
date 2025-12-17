@@ -4,7 +4,7 @@
 project(
   'flatpak',
   'c',
-  version : '1.16.1',
+  version : '1.17.0',
   default_options: [
     'warning_level=2',
   ],
@@ -12,8 +12,8 @@ project(
 )
 
 flatpak_major_version = 1
-flatpak_minor_version = 16
-flatpak_micro_version = 1
+flatpak_minor_version = 17
+flatpak_micro_version = 0
 flatpak_extra_version = ''
 
 flatpak_interface_age = 0
@@ -126,7 +126,7 @@ endif
 
 dbus_config_dir = get_option('dbus_config_dir')
 if dbus_config_dir == ''
-  dbus_config_dir = get_option('sysconfdir') / 'dbus-1' / 'system.d'
+  dbus_config_dir = get_option('datadir') / 'dbus-1' / 'system.d'
 endif
 
 dbus_service_dir = get_option('dbus_service_dir')
@@ -359,6 +359,10 @@ cdata.set_quoted('G_LOG_DOMAIN', 'flatpak')
 cdata.set_quoted('GETTEXT_PACKAGE', 'flatpak')
 cdata.set('FUSE_USE_VERSION', fuse_api)
 cdata.set_quoted('FUSERMOUNT', fusermount)
+
+if get_option('internal_tests')
+  cdata.set('INCLUDE_INTERNAL_TESTS', 1)
+endif
 
 if get_option('system_bubblewrap') == ''
   cdata.set_quoted('HELPER', get_option('prefix') / get_option('libexecdir') / 'flatpak-bwrap')

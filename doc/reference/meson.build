@@ -25,7 +25,7 @@ doc_gdbus = gnome.gdbus_codegen(
   docbook : 'dbus',
 )
 
-gnome.gtkdoc(
+libflatpak_doc = gnome.gtkdoc(
   'flatpak',
   main_xml : 'libflatpak-docs.xml',
   namespace : 'flatpak',
@@ -46,6 +46,8 @@ gnome.gtkdoc(
     'flatpak-document-dbus-generated.h',
     'flatpak-enum-types.h',
     'flatpak-exports-private.h',
+    'flatpak-image-collection-private.h',
+    'flatpak-image-source-private.h',
     'flatpak-installed-ref-private.h',
     'flatpak-json-oci-private.h',
     'flatpak-json-private.h',
@@ -72,3 +74,26 @@ gnome.gtkdoc(
     '--rebuild-types',
   ],
 )
+
+if xmlto.found()
+  custom_target(
+    'libflatpak-docs.html',
+    input : [
+      '../xmlto-config.xsl',
+    ],
+    output : ['libflatpak-docs.html'],
+    depends : libflatpak_doc,
+    command : [
+      xmlto,
+      '-o', meson.current_build_dir(),
+    ] + get_option('xmlto_flags') + [
+      '--skip-validation',
+      'xhtml-nochunks',
+      '-m', '@INPUT0@',
+      fs.parent(libflatpak_doc.full_path()) / 'libflatpak-docs.xml',
+    ],
+    build_by_default : true,
+    install : true,
+    install_dir : docdir,
+  )
+endif

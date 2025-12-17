@@ -2929,7 +2929,10 @@ flatpak_parse_repofile (const char   *remote_name,
                                                           FLATPAK_REPO_COLLECTION_ID_KEY);
   if (collection_id != NULL)
     {
-      if (gpg_key == NULL)
+      /* We don't support signatures for OCI remotes, but Collection ID's are
+       * still useful for preinstallation.
+       */
+      if (gpg_key == NULL && !g_str_has_prefix (uri, "oci+"))
         {
           flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Collection ID requires GPG key to be provided"));
           return NULL;
@@ -3228,9 +3231,6 @@ extract_appstream (OstreeRepo        *repo,
               component = component->next_sibling;
               continue;
             }
-
-          if (g_str_has_suffix (component_id_suffix, ".desktop"))
-            component_id_suffix[strlen (component_id_suffix) - strlen (".desktop")] = 0;
 
           if (!copy_icon (component_id_text, icons_dir, repo, size1_mtree, "64x64", &my_error))
             {
@@ -3857,8 +3857,8 @@ flatpak_pull_from_bundle (OstreeRepo   *repo,
   if (metadata_contents != NULL)
     metadata_size = strlen (metadata_contents);
 
-  if (!ostree_repo_get_remote_option (repo, remote, "collection-id", NULL,
-                                      &remote_collection_id, NULL))
+  if (!remote || !ostree_repo_get_remote_option (repo, remote, "collection-id", NULL,
+                                                 &remote_collection_id, NULL))
     remote_collection_id = NULL;
 
   if (remote_collection_id != NULL && collection_id != NULL &&

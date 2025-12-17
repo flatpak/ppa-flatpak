@@ -1775,7 +1775,7 @@ flatpak_installation_install_bundle (FlatpakInstallation    *self,
   if (!flatpak_dir_ensure_repo (dir_clone, cancellable, error))
     return NULL;
 
-  if (!flatpak_dir_install_bundle (dir_clone, file, remote, NULL,
+  if (!flatpak_dir_install_bundle (dir_clone, FALSE, file, remote, NULL,
                                    cancellable, error))
     return NULL;
 
@@ -1929,8 +1929,8 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_PULL) != 0,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_DEPLOY) != 0,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_STATIC_DELTAS) != 0,
-                            FALSE, FALSE, FALSE, state,
-                            ref, NULL, (const char **) subpaths, NULL, NULL, NULL, NULL,
+                            FALSE, FALSE, FALSE, FALSE, state,
+                            ref, NULL, (const char **) subpaths, NULL, NULL, NULL, NULL, NULL,
                             progress, cancellable, error))
     return NULL;
 
@@ -2098,7 +2098,7 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
                            (flags & FLATPAK_UPDATE_FLAGS_NO_STATIC_DELTAS) != 0,
                            FALSE, FALSE, FALSE, state,
                            ref, target_commit,
-                           (const char **) subpaths, NULL, NULL, NULL, NULL,
+                           (const char **) subpaths, NULL, NULL, NULL, NULL, NULL,
                            progress, cancellable, error))
     return NULL;
 

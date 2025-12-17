@@ -469,6 +469,50 @@ flatpak_get_arches (void)
   return (const char **) arches;
 }
 
+static char *
+get_os_release_value (const char *key,
+                      const char *default_value)
+{
+  const char *file = "/etc/os-release";
+  g_autofree char *contents = NULL;
+  g_autoptr(GKeyFile) keyfile = g_key_file_new ();
+  g_autoptr(GString) str = NULL;
+  g_autofree char *value = NULL;
+  g_autofree char *unquoted = NULL;
+
+  if (!g_file_test (file, G_FILE_TEST_EXISTS))
+    file = "/usr/lib/os-release";
+
+  if (!g_file_get_contents (file, &contents, NULL, NULL))
+    return g_strdup (default_value);
+
+  str = g_string_new (contents);
+  g_string_prepend (str, "[os-release]\n");
+
+  if (!g_key_file_load_from_data (keyfile, str->str, -1, G_KEY_FILE_NONE, NULL))
+    return g_strdup (default_value);
+
+  value = flatpak_keyfile_get_string_non_empty (keyfile, "os-release", key);
+  unquoted = value ? g_shell_unquote (value, NULL) : NULL;
+
+  if (!unquoted)
+    return g_strdup (default_value);
+
+  return g_steal_pointer (&unquoted);
+}
+
+char *
+flatpak_get_os_release_id (void)
+{
+  return get_os_release_value ("ID", "linux");
+}
+
+char *
+flatpak_get_os_release_version_id (void)
+{
+  return get_os_release_value ("VERSION_ID", "unknown");
+}
+
 const char **
 flatpak_get_gl_drivers (void)
 {
@@ -517,7 +561,7 @@ flatpak_get_have_intel_gpu (void)
   static int have_intel = -1;
 
   if (have_intel == -1)
-    have_intel = g_file_test ("/sys/module/i915", G_FILE_TEST_EXISTS);
+    have_intel = g_file_test ("/sys/module/i915", G_FILE_TEST_EXISTS) || g_file_test ("/sys/module/xe", G_FILE_TEST_EXISTS);
 
   return have_intel;
 }
@@ -2437,7 +2481,7 @@ flatpak_validate_path_characters (const char *path,
 }
 
 gboolean
-running_under_sudo (void)
+running_under_sudo_root (void)
 {
   const char *sudo_command_env = g_getenv ("SUDO_COMMAND");
   g_auto(GStrv) split_command = NULL;
@@ -2447,7 +2491,9 @@ running_under_sudo (void)
 
   /* SUDO_COMMAND could be a value like `/usr/bin/flatpak run foo` */
   split_command = g_strsplit (sudo_command_env, " ", 2);
-  if (g_str_has_suffix (split_command[0], "flatpak"))
+  /* Check if sudo was used to run as root instead of non-root users
+   * using -u or -g for example. */
+  if (g_str_has_suffix (split_command[0], "flatpak") && geteuid () == 0)
     return TRUE;
 
   return FALSE;
@@ -2470,4 +2516,24 @@ flatpak_is_debugging (void)
 #endif
 
   return is_debugging;
+}
+
+#ifdef INCLUDE_INTERNAL_TESTS
+static GList *flatpak_test_paths = NULL;
+static GList *flatpak_test_fns = NULL;
+
+void flatpak_add_test (const char *path, flatpak_test_fn fn)
+{
+  flatpak_test_paths = g_list_prepend (flatpak_test_paths, (void *)path);
+  flatpak_test_fns = g_list_prepend (flatpak_test_fns, fn);
+}
+#endif
+
+void flatpak_add_all_tests (void)
+{
+#ifdef INCLUDE_INTERNAL_TESTS
+  for (GList *l1 = flatpak_test_paths, *l2 = flatpak_test_fns; l1 != NULL; l1 = l1->next, l2 = l2->next) {
+    g_test_add_func (l1->data, l2->data);
+  }
+#endif
 }

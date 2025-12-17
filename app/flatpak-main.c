@@ -89,6 +89,7 @@ static FlatpakCommand commands[] = {
   { "config", N_("Configure flatpak"), flatpak_builtin_config, flatpak_complete_config },
   { "repair", N_("Repair flatpak installation"), flatpak_builtin_repair, flatpak_complete_repair },
   { "create-usb", N_("Put applications or runtimes onto removable media"), flatpak_builtin_create_usb, flatpak_complete_create_usb },
+  { "preinstall", N_("Install flatpaks that are part of the operating system"), flatpak_builtin_preinstall, flatpak_complete_preinstall },
 
   /* translators: please keep the leading newline and space */
   { N_("\n Find applications and runtimes") },
@@ -375,7 +376,7 @@ flatpak_option_context_parse (GOptionContext     *context,
    * which is almost certainly not what the user intended so just consider it
    * an error.
    */
-  if (opt_user && running_under_sudo ())
+  if (opt_user && running_under_sudo_root ())
     return flatpak_fail_error (error, FLATPAK_ERROR,
                                _("Refusing to operate under sudo with --user. "
                                  "Omit sudo to operate on the user installation, "
