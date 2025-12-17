@@ -1,4 +1,4 @@
-flatpak (1.17.2-1) UNRELEASED; urgency=medium
+flatpak (1.17.2-1) experimental; urgency=medium
 
   * New upstream development release
   * d/copyright: Update
@@ -13,7 +13,7 @@ flatpak (1.17.2-1) UNRELEASED; urgency=medium
   * d/p/Tell-as-installed-tests-where-they-can-find-triggers.patch:
     Add proposed patch to fix autopkgtest regression in 1.17.0
 
- -- Simon McVittie <smcv@debian.org>  Wed, 17 Dec 2025 15:48:16 +0000
+ -- Simon McVittie <smcv@debian.org>  Wed, 17 Dec 2025 15:53:54 +0000
 
 flatpak (1.16.1-3) unstable; urgency=medium
 
