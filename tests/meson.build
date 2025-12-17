@@ -143,7 +143,6 @@ foreach testcase : c_tests
       libflatpak_common_base_dep,
       libglnx_dep,
       libostree_dep,
-      libsoup_dep,
       libtestlib_dep,
     ] + options.get('extra_dependencies', [])),
     sources : [name + '.c'] + options.get('extra_sources', []),
@@ -208,7 +207,6 @@ executable(
     libflatpak_common_base_dep,
     libglnx_dep,
     libostree_dep,
-    libsoup_dep,
   ],
   include_directories : [common_include_directories],
   install : get_option('installed_tests'),
@@ -228,7 +226,6 @@ executable(
     libtestlib_dep,
     libglnx_dep,
     libostree_dep,
-    libsoup_dep,
   ],
   install : get_option('installed_tests'),
   install_dir : installed_testdir,
@@ -362,6 +359,7 @@ foreach testcase : wrapped_tests
     'test-summaries.sh' : 60,
     'test-unused.sh' : 90,
     'test-update-portal.sh' : 90,
+    'test-extra-data.sh' : 90,
   }.get(script, 30)
 
   is_parallel = {

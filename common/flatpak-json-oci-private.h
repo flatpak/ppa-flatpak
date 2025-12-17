@@ -29,8 +29,8 @@ G_BEGIN_DECLS
 #define FLATPAK_OCI_MEDIA_TYPE_IMAGE_MANIFEST "application/vnd.oci.image.manifest.v1+json"
 #define FLATPAK_DOCKER_MEDIA_TYPE_IMAGE_MANIFEST2 "application/vnd.docker.distribution.manifest.v2+json"
 #define FLATPAK_OCI_MEDIA_TYPE_IMAGE_INDEX "application/vnd.oci.image.index.v1+json"
-#define FLATPAK_OCI_MEDIA_TYPE_IMAGE_LAYER "application/vnd.oci.image.layer.v1.tar+gzip"
-#define FLATPAK_OCI_MEDIA_TYPE_IMAGE_LAYER_NONDISTRIBUTABLE "application/vnd.oci.image.layer.nondistributable.v1.tar+gzip"
+#define FLATPAK_OCI_MEDIA_TYPE_IMAGE_LAYER_GZIP "application/vnd.oci.image.layer.v1.tar+gzip"
+#define FLATPAK_OCI_MEDIA_TYPE_IMAGE_LAYER_ZSTD "application/vnd.oci.image.layer.v1.tar+zstd"
 #define FLATPAK_OCI_MEDIA_TYPE_IMAGE_CONFIG "application/vnd.oci.image.config.v1+json"
 #define FLATPAK_DOCKER_MEDIA_TYPE_IMAGE_IMAGE_CONFIG "application/vnd.docker.container.image.v1+json"
 
@@ -249,6 +249,10 @@ void flatpak_oci_add_labels_for_commit (GHashTable *labels,
                                         const char *commit,
                                         GVariant   *commit_data);
 
+/* FlatpakOciSignature is a "simple signature" as defined:
+ * https://github.com/containers/image/blob/main/docs/containers-signature.5.md
+ */
+
 #define FLATPAK_TYPE_OCI_SIGNATURE flatpak_oci_signature_get_type ()
 G_DECLARE_FINAL_TYPE (FlatpakOciSignature, flatpak_oci_signature, FLATPAK, OCI_SIGNATURE, FlatpakJson)
 
@@ -259,7 +263,7 @@ typedef struct
 
 typedef struct
 {
-  char *ref;
+  char *reference;
 } FlatpakOciSignatureCriticalIdentity;
 
 typedef struct
@@ -287,9 +291,6 @@ struct _FlatpakOciSignatureClass
 {
   FlatpakJsonClass parent_class;
 };
-
-FlatpakOciSignature *flatpak_oci_signature_new (const char *digest,
-                                                const char *ref);
 
 
 #define FLATPAK_TYPE_OCI_INDEX_RESPONSE flatpak_oci_index_response_get_type ()
