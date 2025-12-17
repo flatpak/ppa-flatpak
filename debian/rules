@@ -36,7 +36,6 @@ override_dh_auto_configure:
 	dh_auto_configure -- \
 		-Dauto_sideloading=false \
 		-Dgdm_env_file=true \
-		-Dhttp_backend=curl \
 		-Dprivileged_group=sudo \
 		-Drun_media_dir=/media \
 		-Dselinux_module=disabled \
