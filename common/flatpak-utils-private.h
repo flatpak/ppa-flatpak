@@ -29,6 +29,11 @@
 #include "flatpak-error.h"
 #include "flatpak-glib-backports-private.h"
 
+#define XCONCATENATE(x, y) x ## y
+#define CONCATENATE(x, y) XCONCATENATE(x, y)
+
+#define FLATPAK_UNIQUE_NAME(base) CONCATENATE(base, __COUNTER__)
+
 #define AUTOFS_SUPER_MAGIC 0x0187
 
 #define FLATPAK_XA_CACHE_VERSION 2
@@ -72,6 +77,8 @@ gint flatpak_strcmp0_ptr (gconstpointer a,
 /* Sometimes this is /var/run which is a symlink, causing weird issues when we pass
  * it as a path into the sandbox */
 char * flatpak_get_real_xdg_runtime_dir (void);
+char * flatpak_get_os_release_id (void);
+char * flatpak_get_os_release_version_id (void);
 
 gboolean  flatpak_has_path_prefix (const char *str,
                                    const char *prefix);
@@ -343,10 +350,25 @@ char * flatpak_escape_string (const char        *s,
 gboolean flatpak_validate_path_characters (const char *path,
                                            GError    **error);
 
-gboolean running_under_sudo (void);
+gboolean running_under_sudo_root (void);
 
 void flatpak_set_debugging (gboolean debugging);
 gboolean flatpak_is_debugging (void);
+
+#ifdef INCLUDE_INTERNAL_TESTS
+typedef void (*flatpak_test_fn) (void);
+void flatpak_add_test (const char *path, flatpak_test_fn fn);
+#define FLATPAK_INTERNAL_TEST(path, fn) \
+  __attribute__((constructor)) static void       \
+  FLATPAK_UNIQUE_NAME(internal_test_) (void) {   \
+    flatpak_add_test (path, fn);                 \
+  }
+#else
+#define FLATPAK_INTERNAL_TEST(path, fn)
+#endif
+
+FLATPAK_EXTERN
+void flatpak_add_all_tests (void);
 
 #define FLATPAK_MESSAGE_ID "c7b39b1e006b464599465e105b361485"
 

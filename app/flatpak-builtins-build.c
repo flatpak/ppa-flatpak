@@ -59,6 +59,17 @@ static GOptionEntry options[] = {
   { NULL }
 };
 
+static void
+add_empty_font_dirs_xml (FlatpakBwrap *bwrap)
+{
+  g_autoptr(GString) xml_snippet = g_string_new ("<?xml version=\"1.0\"?>\n"
+                                                 "<!DOCTYPE fontconfig SYSTEM \"urn:fontconfig:fonts.dtd\">\n"
+                                                 "<fontconfig></fontconfig>\n");
+
+  if (!flatpak_bwrap_add_args_data (bwrap, "font-dirs.xml", xml_snippet->str, xml_snippet->len, "/run/host/font-dirs.xml", NULL))
+    g_warning ("Unable to add fontconfig data snippet");
+}
+
 /* Unset FD_CLOEXEC on the array of fds passed in @user_data */
 static void
 child_setup (gpointer user_data)
@@ -204,6 +215,8 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   char pid_str[64];
   g_autofree char *pid_path = NULL;
   g_autoptr(GFile) app_id_dir = NULL;
+  FlatpakContextDevices devices;
+  FlatpakContextSockets sockets;
 
   context = g_option_context_new (_("DIRECTORY [COMMAND [ARGUMENT…]] - Build in directory"));
   g_option_context_set_translation_domain (context, GETTEXT_PACKAGE);
@@ -425,7 +438,6 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   if (app_context == NULL)
     return FALSE;
 
-  flatpak_context_allow_host_fs (app_context);
   flatpak_context_merge (app_context, arg_context);
 
   minimal_envp = flatpak_run_get_minimal_env (TRUE, FALSE);
@@ -541,12 +553,16 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
                             "--bind", flatpak_file_get_path_cached (res_files), extension_point,
                             NULL);
 
+  devices = flatpak_run_compute_allowed_devices (app_context);
+  sockets = flatpak_run_compute_allowed_sockets (app_context);
+
   if (!flatpak_run_add_app_info_args (bwrap,
                                       app_files, app_files, NULL, app_extensions,
                                       runtime_files, runtime_files, runtime_deploy_data, runtime_extensions,
                                       id, NULL,
                                       runtime_ref,
                                       app_id_dir, app_context, NULL,
+                                      sockets,
                                       FALSE, TRUE, TRUE,
                                       &app_info_path, -1,
                                       &instance_id_host_dir, NULL,
@@ -555,9 +571,12 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
     return FALSE;
 
   if (!flatpak_run_add_environment_args (bwrap, app_info_path, run_flags, id,
-                                         app_context, app_id_dir, NULL, -1,
+                                         app_context, devices, sockets,
+                                         app_id_dir, NULL, -1,
                                          instance_id, NULL, cancellable, error))
     return FALSE;
+
+  add_empty_font_dirs_xml (bwrap);
 
   for (i = 0; opt_bind_mounts != NULL && opt_bind_mounts[i] != NULL; i++)
     {

@@ -223,7 +223,7 @@
                 <listitem><para>
                     Allow the application access to a subset of the filesystem.
                     This overrides to the Context section from the application metadata.
-                    <arg choice="plain">FILESYSTEM</arg> can be one of: home, host, host-os, host-etc, xdg-desktop, xdg-documents, xdg-download,
+                    <arg choice="plain">FILESYSTEM</arg> can be one of: home, host, host-os, host-etc, host-root, xdg-desktop, xdg-documents, xdg-download,
                     xdg-music, xdg-pictures, xdg-public-share, xdg-templates, xdg-videos, xdg-run,
                     xdg-config, xdg-cache, xdg-data, an absolute path, or a homedir-relative
                     path like ~/dir or paths relative to the xdg dirs, like xdg-download/subdir.
@@ -233,6 +233,7 @@
                     See the "[Context] filesystems" list in
                     <citerefentry><refentrytitle>flatpak-metadata</refentrytitle><manvolnum>5</manvolnum></citerefentry>
                     for details of the meanings of these filesystems.
+                    Before flatpak 1.17.0, access to host was granted by default.
                 </para></listitem>
             </varlistentry>
 
@@ -243,7 +244,7 @@
                     Remove access to the specified subset of the filesystem from
                     the application. This overrides to the Context section from the
                     application metadata.
-                    <arg choice="plain">FILESYSTEM</arg> can be one of: home, host, host-os, host-etc, xdg-desktop, xdg-documents, xdg-download,
+                    <arg choice="plain">FILESYSTEM</arg> can be one of: home, host, host-os, host-etc, host-root xdg-desktop, xdg-documents, xdg-download,
                     xdg-music, xdg-pictures, xdg-public-share, xdg-templates, xdg-videos,
                     an absolute path, or a homedir-relative path like ~/dir.
                     This option can be used multiple times.

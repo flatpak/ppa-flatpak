@@ -16,7 +16,7 @@ option(
 option(
   'dbus_config_dir',
   type : 'string',
-  description : 'directory for D-Bus system configuration [$sysconfdir/dbus-1/system.d]',
+  description : 'directory for D-Bus system configuration [$datadir/dbus-1/system.d]',
   value : '',
 )
 option(
@@ -72,6 +72,12 @@ option(
   'internal_checks',
   type : 'boolean',
   description : 'enable internal checking',
+  value : false,
+)
+option(
+  'internal_tests',
+  type : 'boolean',
+  description : 'include internal tests in binary',
   value : false,
 )
 option(

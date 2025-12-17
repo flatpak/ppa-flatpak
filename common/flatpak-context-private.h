@@ -55,7 +55,7 @@ typedef enum {
   FLATPAK_CONTEXT_SOCKET_PULSEAUDIO  = 1 << 2,
   FLATPAK_CONTEXT_SOCKET_SESSION_BUS = 1 << 3,
   FLATPAK_CONTEXT_SOCKET_SYSTEM_BUS  = 1 << 4,
-  FLATPAK_CONTEXT_SOCKET_FALLBACK_X11 = 1 << 5, /* For backwards compat, also set SOCKET_X11 */
+  FLATPAK_CONTEXT_SOCKET_FALLBACK_X11 = 1 << 5, /* For backwards compat, not used internally */
   FLATPAK_CONTEXT_SOCKET_SSH_AUTH    = 1 << 6,
   FLATPAK_CONTEXT_SOCKET_PCSC        = 1 << 7,
   FLATPAK_CONTEXT_SOCKET_CUPS        = 1 << 8,
@@ -80,14 +80,19 @@ typedef enum {
   FLATPAK_CONTEXT_FEATURE_PER_APP_DEV_SHM = 1 << 4,
 } FlatpakContextFeatures;
 
+typedef enum {
+  FLATPAK_CONTEXT_CONDITION_TRUE          = 1 << 0,
+  FLATPAK_CONTEXT_CONDITION_FALSE         = 1 << 1,
+  FLATPAK_CONTEXT_CONDITION_HAS_INPUT_DEV = 1 << 2,
+  FLATPAK_CONTEXT_CONDITION_HAS_WAYLAND   = 1 << 3,
+} FlatpakContextConditions;
+
 struct FlatpakContext
 {
   FlatpakContextShares   shares;
   FlatpakContextShares   shares_valid;
-  FlatpakContextSockets  sockets;
-  FlatpakContextSockets  sockets_valid;
-  FlatpakContextDevices  devices;
-  FlatpakContextDevices  devices_valid;
+  GHashTable            *socket_permissions;
+  GHashTable            *device_permissions;
   FlatpakContextFeatures features;
   FlatpakContextFeatures features_valid;
   GHashTable            *env_vars;
@@ -100,6 +105,9 @@ struct FlatpakContext
   GHashTable            *enumerable_usb_devices;
   GHashTable            *hidden_usb_devices;
 };
+
+/* Gets a single condition as param and returns whether the condition is true. */
+typedef gboolean (*FlatpakContextConditionEvaluator) (FlatpakContextConditions condition);
 
 extern const char *flatpak_context_sockets[];
 extern const char *flatpak_context_devices[];
@@ -126,7 +134,6 @@ gboolean       flatpak_context_load_metadata (FlatpakContext *context,
 void           flatpak_context_save_metadata (FlatpakContext *context,
                                               gboolean        flatten,
                                               GKeyFile       *metakey);
-void           flatpak_context_allow_host_fs (FlatpakContext *context);
 void           flatpak_context_set_session_bus_policy (FlatpakContext *context,
                                                        const char     *name,
                                                        FlatpakPolicy   policy);
@@ -200,5 +207,10 @@ gboolean flatpak_context_get_allowed_exports (FlatpakContext *context,
                                               char         ***allowed_extensions_out,
                                               char         ***allowed_prefixes_out,
                                               gboolean       *require_exact_match_out);
+
+FlatpakContextSockets flatpak_context_compute_allowed_sockets (FlatpakContext                   *context,
+                                                               FlatpakContextConditionEvaluator  evaluator);
+FlatpakContextDevices flatpak_context_compute_allowed_devices (FlatpakContext                   *context,
+                                                               FlatpakContextConditionEvaluator  evaluator);
 
 #endif /* __FLATPAK_CONTEXT_H__ */
