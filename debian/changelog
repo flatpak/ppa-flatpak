@@ -1,6 +1,9 @@
-flatpak (1.17.0-1) UNRELEASED; urgency=medium
+flatpak (1.17.2-1) UNRELEASED; urgency=medium
 
   * New upstream development release
+  * d/copyright: Update
+  * d/rules: Stop overriding location for system bus setup snippets.
+    The default is now what we want (below /usr).
 
  -- Simon McVittie <smcv@debian.org>  Wed, 17 Dec 2025 10:04:16 +0000
 
