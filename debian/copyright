@@ -48,6 +48,13 @@ Copyright:
 License: LGPL-2+ and LGPL-2.1+
 
 Files:
+ .github/workflows/check-potfiles.sh
+Copyright:
+ 2024 Florian Müllner
+ 2024 Matthijs Velsink
+License: LGPL-2+
+
+Files:
  common/valgrind-private.h
 Copyright:
  © 2000-2017 Julian Seward
