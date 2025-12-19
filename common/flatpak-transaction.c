@@ -2595,7 +2595,7 @@ add_deps (FlatpakTransaction          *self,
                 return FALSE;
             }
 
-          if (sdk_op->kind != FLATPAK_TRANSACTION_OPERATION_UNINSTALL)
+          if (sdk_op && sdk_op->kind != FLATPAK_TRANSACTION_OPERATION_UNINSTALL)
             {
               flatpak_transaction_operation_add_related_to_op (sdk_op, op);
               run_operation_before (sdk_op, op, 2);
@@ -4892,7 +4892,7 @@ _run_op_kind (FlatpakTransaction           *self,
                                                                    op->resolved_metakey, error))
         res = FALSE;
       else
-        res = flatpak_dir_install_bundle (priv->dir, op->bundle,
+        res = flatpak_dir_install_bundle (priv->dir, priv->reinstall, op->bundle,
                                           op->remote, NULL,
                                           cancellable, error);
       flatpak_transaction_progress_done (progress);
