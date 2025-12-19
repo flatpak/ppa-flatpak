@@ -1,6 +1,8 @@
 flatpak (1.17.2-2) UNRELEASED; urgency=medium
 
   * Merge packaging from unstable (no functional changes)
+  * d/p/Tell-as-installed-tests-where-they-can-find-triggers.patch:
+    Mark patch as applied upstream for 1.17.3
 
  -- Simon McVittie <smcv@debian.org>  Fri, 19 Dec 2025 15:17:30 +0000
 

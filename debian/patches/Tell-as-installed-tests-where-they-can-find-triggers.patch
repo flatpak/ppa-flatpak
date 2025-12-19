@@ -17,6 +17,7 @@ Debian to regress with 1.17.x.
 Fixes: d10e1148 "Add initial support for preinstalling flatpaks"
 Signed-off-by: Simon McVittie <smcv@debian.org>
 Forwarded: https://github.com/flatpak/flatpak/pull/6444
+Applied-upstream: 1.17.3, commit:c324778b0720cb2d01c217fdc70358e232c38b4d
 ---
  tests/installed-tests.sh.in | 3 +++
  tests/meson.build           | 1 +
