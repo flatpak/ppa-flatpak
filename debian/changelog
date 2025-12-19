@@ -1,3 +1,42 @@
+flatpak (1.16.2-1) UNRELEASED; urgency=medium
+
+  * New upstream stable release
+    - Fix a memory leak in flatpak-session-helper when invoking host
+      commands (flatpak-spawn --host) from privileged apps
+    - Treat either the xe or i915 kernel module as indicating an Intel GPU,
+      not just i915, and install the appropriate VA-API extensions
+    - If using GLib 2.86.1 (specifically that version due to a regression
+      that was later fixed), avoid exposing $HOME to apps if an XDG special
+      directory such as Music is requested by the app but has been disabled
+      locally
+    - In flatpak-kill(1), make killing processes more robust, and avoid race
+      conditions that could lead to the whole process group being killed
+    - Allow `flatpak run` or `flatpak install --user` while under
+      `sudo -u otheruser` or `sudo -g`, as long as the other user is not root,
+      relaxing a check that was only intended to avoid accidents involving
+      running as root
+    - Provide an empty /run/host/font-dirs.xml during flatpak-build(1),
+      avoiding spurious warnings for processes that use fontconfig during
+      build-time tests
+    - Fix a crash in `flatpak install --include-sdk` if the app is installed
+      on a per-user basis but the corresponding SDK is already installed
+      system-wide
+    - Take the --reinstall option into account when installing a bundle
+    - Add a missing argument to fcntl F_DUPFD_CLOEXEC during Flatpak's own
+      build-time tests, fixing a test regression with newer glibc on Ubuntu
+    - Fix flatpak-pin(1)/flatpak-mask(1) with multiple arguments, by
+      reloading configuration when needed
+    - Fix an assertion failure in flatpak-build-import-bundle(1)
+    - When using the library API, allow http downloads with libcurl to be
+      cancelled
+    - If an OCI registry only has one image, allow the tag to be omitted
+    - Fix a memory leak when using an OCI registry
+    - Fix an uninitialized variable
+    - Documentation improvements
+    - Translation updates: pl
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 19 Dec 2025 10:53:35 +0000
+
 flatpak (1.16.1-3) unstable; urgency=medium
 
   * Fix <!nocheck> builds (Closes: #1116737)
