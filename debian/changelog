@@ -3,6 +3,7 @@ flatpak (1.16.2-1) UNRELEASED; urgency=medium
   * New upstream stable release
     - Fix a memory leak in flatpak-session-helper when invoking host
       commands (flatpak-spawn --host) from privileged apps
+      (Closes: #1114484)
     - Treat either the xe or i915 kernel module as indicating an Intel GPU,
       not just i915, and install the appropriate VA-API extensions
     - If using GLib 2.86.1 (specifically that version due to a regression
