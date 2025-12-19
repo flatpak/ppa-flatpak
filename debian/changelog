@@ -34,8 +34,12 @@ flatpak (1.16.2-1) UNRELEASED; urgency=medium
     - Fix an uninitialized variable
     - Documentation improvements
     - Translation updates: pl
+  * d/libflatpak-doc.install:
+    Install single-file HTML documentation for the library.
+    This was built by Autotools in 1.14.x and disappeared during the switch
+    to Meson, but is now built again as a result of upstream fixes.
 
- -- Simon McVittie <smcv@debian.org>  Fri, 19 Dec 2025 10:53:35 +0000
+ -- Simon McVittie <smcv@debian.org>  Fri, 19 Dec 2025 11:12:33 +0000
 
 flatpak (1.16.1-3) unstable; urgency=medium
 
