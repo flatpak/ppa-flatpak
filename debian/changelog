@@ -1,3 +1,12 @@
+flatpak (1.16.3-1) UNRELEASED; urgency=medium
+
+  * New upstream stable release
+    - Only provide /run/host/font-dirs.xml if the calling process has not
+      already added it, fixing a regression for users of GNOME Builder and
+      Foundry (flatpak#6450 upstream)
+
+ -- Simon McVittie <smcv@debian.org>  Sat, 24 Jan 2026 13:56:05 +0000
+
 flatpak (1.16.2-1) unstable; urgency=medium
 
   * New upstream stable release
