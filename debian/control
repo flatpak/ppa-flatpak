@@ -1,6 +1,5 @@
 Source: flatpak
 Section: admin
-Priority: optional
 Maintainer: Utopia Maintenance Team <pkg-utopia-maintainers@lists.alioth.debian.org>
 Uploaders:
  Matthias Klumpp <mak@debian.org>,
@@ -67,7 +66,7 @@ Build-Depends-Indep:
  gtk-doc-tools <!nodoc>,
  libglib2.0-doc <!nodoc>,
  libostree-doc <!nodoc>,
-Standards-Version: 4.7.2
+Standards-Version: 4.7.3
 Homepage: https://flatpak.org/
 Vcs-Git: https://salsa.debian.org/debian/flatpak.git
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
