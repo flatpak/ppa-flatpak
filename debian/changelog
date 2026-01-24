@@ -1,4 +1,4 @@
-flatpak (1.16.3-1) UNRELEASED; urgency=medium
+flatpak (1.16.3-1) unstable; urgency=medium
 
   * New upstream stable release
     - In flatpak-build(1), only provide /run/host/font-dirs.xml if the
@@ -11,7 +11,7 @@ flatpak (1.16.3-1) UNRELEASED; urgency=medium
     - d/watch.devel: Add a second watch file for development
       (odd-numbered) releases
 
- -- Simon McVittie <smcv@debian.org>  Sat, 24 Jan 2026 14:52:37 +0000
+ -- Simon McVittie <smcv@debian.org>  Sat, 24 Jan 2026 16:05:24 +0000
 
 flatpak (1.16.2-1) unstable; urgency=medium
 
