@@ -1,11 +1,17 @@
 flatpak (1.16.3-1) UNRELEASED; urgency=medium
 
   * New upstream stable release
-    - Only provide /run/host/font-dirs.xml if the calling process has not
-      already added it, fixing a regression for users of GNOME Builder and
-      Foundry (flatpak#6450 upstream)
+    - In flatpak-build(1), only provide /run/host/font-dirs.xml if the
+      calling process has not already added it, fixing a regression for
+      users of GNOME Builder and Foundry (flatpak#6450 upstream)
+  * Standards-Version: 4.7.3
+    - Remove Priority: optional, unnecessary since Debian 13
+  * d/watch: Convert to v5 format
+  * d/watch: Only watch stable (even-numbered) releases
+    - d/watch.devel: Add a second watch file for development
+      (odd-numbered) releases
 
- -- Simon McVittie <smcv@debian.org>  Sat, 24 Jan 2026 13:56:05 +0000
+ -- Simon McVittie <smcv@debian.org>  Sat, 24 Jan 2026 14:52:37 +0000
 
 flatpak (1.16.2-1) unstable; urgency=medium
 
