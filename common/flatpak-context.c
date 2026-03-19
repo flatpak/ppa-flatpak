@@ -223,8 +223,8 @@ flatpak_permission_remove_conditional (FlatpakPermission *permission,
   if (permission->allowed)
     return;
 
-  /* The only way to correcly layer removal of conditional is to completely
-     remove eveything from the lower layer */
+  /* The only way to correctly layer removal of conditional is to completely
+     remove everything from the lower layer */
   permission->reset = TRUE;
 
   if (!g_ptr_array_find_with_equal_func (permission->conditionals,
@@ -1544,7 +1544,7 @@ get_xdg_dir_from_string (const char  *filesystem,
                          const char **suffix,
                          const char **where)
 {
-  char *slash;
+  const char *slash;
   const char *rest;
   g_autofree char *prefix = NULL;
   const char *dir = NULL;
@@ -1578,7 +1578,7 @@ get_xdg_user_dir_from_string (const char  *filesystem,
                               const char **suffix,
                               char **dir)
 {
-  char *slash;
+  const char *slash;
   const char *rest;
   g_autofree char *prefix = NULL;
   gsize len;
@@ -1874,21 +1874,20 @@ flatpak_context_parse_filesystem (const char             *filesystem_and_mode,
   if (filesystem == NULL)
     return FALSE;
 
+  /* Forbid /../ in paths */
+  if (g_str_has_suffix (filesystem, "/..") ||
+      strstr (filesystem, "/../") != NULL)
+    {
+      g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
+                   _("Filesystem location \"%s\" contains \"..\""),
+                   filesystem);
+      return FALSE;
+    }
+
   slash = strchr (filesystem, '/');
 
-  /* Forbid /../ in paths */
   if (slash != NULL)
     {
-      if (g_str_has_prefix (slash + 1, "../") ||
-          g_str_has_suffix (slash + 1, "/..") ||
-          strstr (slash + 1, "/../") != NULL)
-        {
-          g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
-                       _("Filesystem location \"%s\" contains \"..\""),
-                       filesystem);
-          return FALSE;
-        }
-
       /* Convert "//" and "/./" to "/" */
       for (; slash != NULL; slash = strchr (slash + 1, '/'))
         {
@@ -2581,7 +2580,7 @@ option_add_generic_policy_cb (const gchar *option_name,
                               GError     **error)
 {
   FlatpakContext *context = data;
-  char *t;
+  const char *t;
   g_autofree char *key = NULL;
   const char *policy_value;
 
@@ -2620,7 +2619,7 @@ option_remove_generic_policy_cb (const gchar *option_name,
                                  GError     **error)
 {
   FlatpakContext *context = data;
-  char *t;
+  const char *t;
   g_autofree char *key = NULL;
   const char *policy_value;
   g_autofree char *extended_value = NULL;

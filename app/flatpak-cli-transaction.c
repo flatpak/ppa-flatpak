@@ -1458,6 +1458,7 @@ transaction_ready_pre_auth (FlatpakTransaction *transaction)
       text1 = g_strdup_printf ("< 999.9 kB (%s)", _("partial"));
       text2 = g_strdup_printf ("  123.4 MB / 999.9 MB");
       size = MAX (strlen (text1), strlen (text2));
+      /* Translators: Download is used here as a noun */
       text = g_strdup_printf ("%-*s", size, _("Download"));
       flatpak_table_printer_set_column_title (printer, i++, text);
     }
@@ -1563,7 +1564,7 @@ transaction_ready (FlatpakTransaction *transaction)
 
   if (self->did_interaction)
     {
-      /* We did some interaction since ready_pre_auth which messes up the formating, so re-print table */
+      /* We did some interaction since ready_pre_auth which messes up the formatting, so re-print table */
       flatpak_table_printer_print_full (printer, 0, self->cols,
                                         &self->table_height, &self->table_width);
       g_print ("\n\n");
