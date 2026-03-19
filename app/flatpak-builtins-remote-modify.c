@@ -67,7 +67,7 @@ static GOptionEntry modify_options[] = {
   { "gpg-verify", 0, 0, G_OPTION_ARG_NONE, &opt_do_gpg_verify, N_("Enable GPG verification"), NULL },
   { "enumerate", 0, 0, G_OPTION_ARG_NONE, &opt_do_enumerate, N_("Mark the remote as enumerate"), NULL },
   { "use-for-deps", 0, 0, G_OPTION_ARG_NONE, &opt_do_deps, N_("Mark the remote as used for dependencies"), NULL },
-  { "url", 0, 0, G_OPTION_ARG_STRING, &opt_url, N_("Set a new url"), N_("URL") },
+  { "url", 0, 0, G_OPTION_ARG_STRING, &opt_url, N_("Set a new URL"), N_("URL") },
   { "subset", 0, 0, G_OPTION_ARG_STRING, &opt_subset, N_("Set a new subset to use"), N_("SUBSET") },
   { "enable", 0, 0, G_OPTION_ARG_NONE, &opt_enable, N_("Enable the remote"), NULL },
   { "update-metadata", 0, 0, G_OPTION_ARG_NONE, &opt_update_metadata, N_("Update extra metadata from the summary file"), NULL },
@@ -317,7 +317,7 @@ flatpak_builtin_remote_modify (int argc, char **argv, GCancellable *cancellable,
 
   remote_name = argv[1];
 
-  if (!flatpak_resolve_duplicate_remotes (dirs, remote_name, &preferred_dir, cancellable, error))
+  if (!flatpak_resolve_duplicate_remotes (dirs, remote_name, FALSE, &preferred_dir, cancellable, error))
     return FALSE;
 
   if (opt_update_metadata)
