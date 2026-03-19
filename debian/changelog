@@ -1,15 +1,17 @@
-flatpak (1.17.3-1) UNRELEASED; urgency=medium
+flatpak (1.17.3-1) experimental; urgency=medium
 
   [ Simon McVittie ]
   * Merge packaging from unstable (no functional changes)
   * New upstream development release
   * d/p/Tell-as-installed-tests-where-they-can-find-triggers.patch:
     Drop, applied upstream
+  * Standards-Version: 4.7.3.
+    Remove Priority: optional, no longer needed.
 
   [ Luca Boccassi ]
   * Switch from adduser to dh-sequence-installsysusers
 
- -- Simon McVittie <smcv@debian.org>  Fri, 19 Dec 2025 15:21:37 +0000
+ -- Simon McVittie <smcv@debian.org>  Thu, 19 Mar 2026 16:22:15 +0000
 
 flatpak (1.17.2-1) experimental; urgency=medium
 
