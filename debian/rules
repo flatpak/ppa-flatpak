@@ -25,6 +25,12 @@ else
 configure_options += -Dgtkdoc=disabled
 endif
 
+ifeq ($(filter nocheck,$(DEB_BUILD_OPTIONS))$(filter %-tests,$(binaries)),nocheck)
+configure_options += -Dinstalled_tests=false -Dtests=false
+else
+configure_options += -Dinstalled_tests=true -Dtests=true
+endif
+
 override_dh_auto_configure:
 	rm -f app/parse-datetime.c
 	dh_auto_configure -- \
@@ -32,7 +38,6 @@ override_dh_auto_configure:
 		-Ddbus_config_dir=/usr/share/dbus-1/system.d \
 		-Dgdm_env_file=true \
 		-Dhttp_backend=curl \
-		-Dinstalled_tests=true \
 		-Dprivileged_group=sudo \
 		-Drun_media_dir=/media \
 		-Dselinux_module=disabled \

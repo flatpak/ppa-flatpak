@@ -281,7 +281,7 @@ flatpak_get_certificates_for_uri (const char  *uri,
     {
       g_autoptr(GFile) certs_dir = g_file_new_for_path (certs_path[i]);
       g_autoptr(GFile) host_dir = g_file_get_child (certs_dir, hostport);
-      g_autoptr(GFileEnumerator) enumerator;
+      g_autoptr(GFileEnumerator) enumerator = NULL;
       g_autoptr(GError) local_error = NULL;
 
       enumerator = g_file_enumerate_children (host_dir, G_FILE_ATTRIBUTE_STANDARD_NAME,
@@ -499,6 +499,10 @@ _write_cb (void *content_data,
         }
     }
 
+  /* Check for cancellation */
+  if (g_cancellable_is_cancelled (data->cancellable))
+    return 0; /* Returning 0 (short read) makes curl abort the transfer */
+
   if (data->content)
     {
       g_string_append_len (data->content, content_data, realsize);
@@ -594,15 +598,23 @@ flatpak_http_session_free (FlatpakHttpSession* session)
 }
 
 static void
-set_error_from_curl (GError **error,
-                     const char *uri,
-                     CURLcode res)
+set_error_from_curl (GError        **error,
+                     const char     *uri,
+                     CURLcode        res,
+                     GCancellable   *cancellable)
 {
   GQuark domain = G_IO_ERROR;
   int code;
 
   switch (res)
     {
+    case CURLE_WRITE_ERROR:
+      /* Check if this was due to cancellation */
+      if (g_cancellable_is_cancelled (cancellable))
+        code = G_IO_ERROR_CANCELLED;
+      else
+        code = G_IO_ERROR_FAILED;
+      break;
     case CURLE_COULDNT_CONNECT:
     case CURLE_COULDNT_RESOLVE_HOST:
     case CURLE_COULDNT_RESOLVE_PROXY:
@@ -706,7 +718,7 @@ flatpak_download_http_uri_once (FlatpakHttpSession    *session,
 
   if (res != CURLE_OK)
     {
-      set_error_from_curl (error, uri, res);
+      set_error_from_curl (error, uri, res, data->cancellable);
 
       /* Make sure we clear the tmpfile stream we possible created during the request */
       if (data->out_tmpfile && data->out)
