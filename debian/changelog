@@ -16,7 +16,7 @@ flatpak (1.16.3-1~flatpak1~20.04.1) UNRELEASED; urgency=medium
 
  -- Simon McVittie <smcv@debian.org>  Wed, 01 Apr 2026 20:19:56 +0100
 
-flatpak (1.16.3-1~flatpak1~22.04.1) UNRELEASED; urgency=medium
+flatpak (1.16.3-1~flatpak1~22.04.1) jammy; urgency=medium
 
   * Rebuild for Ubuntu 22.04 'jammy' for PPA
   * Remaining changes relative to noble PPA:
@@ -25,9 +25,9 @@ flatpak (1.16.3-1~flatpak1~22.04.1) UNRELEASED; urgency=medium
     - Install a policy snippet for policykit-1 (<< 0.106)
     - Revert "Stop build-depending on libgirepository1.0-dev"
 
- -- Simon McVittie <smcv@debian.org>  Wed, 01 Apr 2026 20:19:56 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 03 Apr 2026 16:08:12 +0100
 
-flatpak (1.16.3-1~flatpak1~24.04.1) UNRELEASED; urgency=medium
+flatpak (1.16.3-1~flatpak1~24.04.1) noble; urgency=medium
 
   * Rebuild for Ubuntu 24.04 'noble' for PPA
   * Remaining changes relative to Debian:
@@ -35,7 +35,7 @@ flatpak (1.16.3-1~flatpak1~24.04.1) UNRELEASED; urgency=medium
     - Add PPA backport notes to debian/README.source
   * Reinstate Priority: optional field for backport
 
- -- Simon McVittie <smcv@debian.org>  Wed, 01 Apr 2026 20:19:56 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 03 Apr 2026 15:46:56 +0100
 
 flatpak (1.16.3-1) unstable; urgency=medium
 
