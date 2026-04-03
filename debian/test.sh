@@ -12,6 +12,8 @@ unset XDG_DATA_DIRS
 # dconf assumes this directory exists and is writable
 export XDG_RUNTIME_DIR="$(pwd)/debian/XDG_RUNTIME_DIR"
 
+export LC_ALL=C.UTF-8
+
 # Some build/test infrastructure provides internet access via a proxy.
 # libostree doesn't always support no_proxy (and in any case
 # reproducible-builds.org doesn't set it), so tests will try to use the
@@ -40,7 +42,10 @@ if [ "$DEB_HOST_ARCH_BITS" = 64 ]; then
 fi
 
 e=0
-$adverb dh_auto_test -- --timeout-multiplier "${test_timeout_multiplier}" || e=$?
+$adverb env -C "obj-${DEB_HOST_GNU_TYPE}" \
+meson test --verbose --timeout-multiplier "${test_timeout_multiplier}" || e=$?
+
+env -C "obj-${DEB_HOST_GNU_TYPE}" tail -v -n +0 meson-logs/testlog.txt || :
 
 echo "Killing gpg-agent processes:"
 pgrep --list-full --full "gpg-agent --homedir /var/tmp/test-flatpak-.*" >&2 || :
