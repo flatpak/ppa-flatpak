@@ -46,8 +46,8 @@ override_dh_auto_configure:
 		-Dprivileged_group=sudo \
 		-Drun_media_dir=/media \
 		-Dselinux_module=disabled \
-		-Dsystem_bubblewrap= \
-		-Dsystem_dbus_proxy= \
+		-Dsystem_bubblewrap=bwrap \
+		-Dsystem_dbus_proxy=xdg-dbus-proxy \
 		-Dsystem_helper_user=_flatpak \
 		-Dsystemdsystemunitdir=/lib/systemd/system \
 		$(configure_options)

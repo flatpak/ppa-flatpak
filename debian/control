@@ -12,6 +12,7 @@ Build-Depends:
  dh-sequence-gir,
  attr <!nocheck>,
  bison,
+ bubblewrap (>= 0.10.0~),
  ca-certificates <!nocheck>,
  dbus,
  desktop-file-utils <!nocheck>,
@@ -56,6 +57,7 @@ Build-Depends:
  shared-mime-info <!nocheck>,
  socat <!nocheck> <!noinsttest>,
  wayland-protocols,
+ xdg-dbus-proxy (>= 0.1.0),
  xmlto <!nodoc>,
  xsltproc <!nodoc>,
 Build-Depends-Indep:
@@ -72,7 +74,9 @@ Package: flatpak
 Architecture: linux-any
 Depends:
  adduser,
+ bubblewrap (>= 0.5.0),
  fuse,
+ xdg-dbus-proxy (>= 0.1.0),
  ${misc:Depends},
  ${shlibs:Depends},
 Recommends:
@@ -215,6 +219,7 @@ Package: libflatpak0
 Architecture: linux-any
 Section: libs
 Depends:
+ bubblewrap (>= 0.5.0),
  ${misc:Depends},
  ${shlibs:Depends},
 Pre-Depends:
