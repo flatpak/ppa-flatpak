@@ -1,0 +1,26 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Tue, 30 Aug 2022 12:32:44 +0100
+Subject: app: Print a warning message about bionic being EOL
+
+---
+ app/flatpak-main.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/app/flatpak-main.c b/app/flatpak-main.c
+index 0451871..5795795 100644
+--- a/app/flatpak-main.c
++++ b/app/flatpak-main.c
+@@ -675,6 +675,13 @@ flatpak_run (int      argc,
+ 
+   __attribute__((cleanup (uninstall_polkit_agent))) gpointer polkit_agent = NULL;
+ 
++  g_printerr ("Ubuntu 18.04 'bionic' reached end-of-life for general support in May 2023.\n"
++              "\n"
++              "The packages in the Flatpak PPAs for Ubuntu 18.04 will not necessarily\n"
++              "be updated, even if there are security vulnerabilities. Please upgrade\n"
++              "to a newer LTS branch of Ubuntu.\n"
++              "\n");
++
+   command = extract_command (&argc, argv, &command_name);
+ 
+   if (!command->fn)
