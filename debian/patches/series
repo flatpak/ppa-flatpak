@@ -1,1 +1,2 @@
 debian/system-helper-Set-Debian-s-canonical-home-directory-for-s.patch
+app-Print-a-warning-message-about-focal-being-EOL.patch
