@@ -31,6 +31,8 @@
 
 #include "flatpak-builtins.h"
 #include "flatpak-builtins-utils.h"
+#include "flatpak-repo-utils-private.h"
+#include "flatpak-utils-http-private.h"
 #include "flatpak-utils-private.h"
 
 static gboolean opt_no_gpg_verify;

@@ -218,7 +218,6 @@ static void
 print_matches (Column *columns, GSList *matches)
 {
   g_autoptr(FlatpakTablePrinter) printer = NULL;
-  int rows, cols;
   GSList *s;
 
   printer = flatpak_table_printer_new ();
@@ -231,9 +230,7 @@ print_matches (Column *columns, GSList *matches)
       print_app (columns, res, printer);
     }
 
-  flatpak_get_window_size (&rows, &cols);
-  flatpak_table_printer_print_full (printer, 0, cols, NULL, NULL);
-  g_print ("\n");
+  flatpak_table_printer_print (printer);
 }
 
 gboolean
@@ -294,8 +291,8 @@ flatpak_builtin_search (int argc, char **argv, GCancellable *cancellable, GError
           if (bundle == NULL || as_bundle_get_id (bundle) == NULL ||
               (decomposed = flatpak_decomposed_new_from_ref (as_bundle_get_id (bundle), NULL)) == NULL)
             {
-              g_debug ("Ignoring app %s from remote %s as it lacks a flatpak bundle",
-                       as_component_get_id (app), remote_name);
+              g_info ("Ignoring app %s from remote %s as it lacks a flatpak bundle",
+                      as_component_get_id (app), remote_name);
               continue;
             }
 
@@ -306,7 +303,8 @@ flatpak_builtin_search (int argc, char **argv, GCancellable *cancellable, GError
           if (score == 0)
             {
               g_autofree char *app_id = component_get_flatpak_id (app);
-              if (strcasestr (app_id, search_text) != NULL)
+              const char *app_name = as_component_get_name (app);
+              if (strcasestr (app_id, search_text) != NULL || strcasestr (app_name, search_text) != NULL)
                 score = 50;
               else
                 continue;
@@ -352,6 +350,8 @@ flatpak_complete_search (FlatpakCompletion *completion)
     return FALSE;
 
   flatpak_complete_options (completion, global_entries);
+  flatpak_complete_options (completion, options);
   flatpak_complete_options (completion, user_entries);
+  flatpak_complete_columns (completion, all_columns);
   return TRUE;
 }

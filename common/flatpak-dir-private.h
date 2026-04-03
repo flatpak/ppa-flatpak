@@ -58,46 +58,7 @@
 GType flatpak_dir_get_type (void);
 GType flatpak_deploy_get_type (void);
 
-#define FLATPAK_REF_GROUP "Flatpak Ref"
-#define FLATPAK_REF_VERSION_KEY "Version"
-#define FLATPAK_REF_URL_KEY "Url"
-#define FLATPAK_REF_RUNTIME_REPO_KEY "RuntimeRepo"
-#define FLATPAK_REF_SUGGEST_REMOTE_NAME_KEY "SuggestRemoteName"
-#define FLATPAK_REF_TITLE_KEY "Title"
-#define FLATPAK_REF_GPGKEY_KEY "GPGKey"
-#define FLATPAK_REF_IS_RUNTIME_KEY "IsRuntime"
-#define FLATPAK_REF_NAME_KEY "Name"
-#define FLATPAK_REF_BRANCH_KEY "Branch"
-#define FLATPAK_REF_COLLECTION_ID_KEY "CollectionID"
-#define FLATPAK_REF_DEPLOY_COLLECTION_ID_KEY "DeployCollectionID"
-#define FLATPAK_REF_DEPLOY_SIDELOAD_COLLECTION_ID_KEY "DeploySideloadCollectionID"
-
-#define FLATPAK_REPO_GROUP "Flatpak Repo"
-#define FLATPAK_REPO_VERSION_KEY "Version"
-#define FLATPAK_REPO_URL_KEY "Url"
-#define FLATPAK_REPO_SUBSET_KEY "Subset"
-#define FLATPAK_REPO_TITLE_KEY "Title"
-#define FLATPAK_REPO_DEFAULT_BRANCH_KEY "DefaultBranch"
-#define FLATPAK_REPO_GPGKEY_KEY "GPGKey"
-#define FLATPAK_REPO_NODEPS_KEY "NoDeps"
-#define FLATPAK_REPO_COMMENT_KEY "Comment"
-#define FLATPAK_REPO_DESCRIPTION_KEY "Description"
-#define FLATPAK_REPO_HOMEPAGE_KEY "Homepage"
-#define FLATPAK_REPO_ICON_KEY "Icon"
-#define FLATPAK_REPO_FILTER_KEY "Filter"
-#define FLATPAK_REPO_AUTHENTICATOR_NAME_KEY "AuthenticatorName"
-#define FLATPAK_REPO_AUTHENTICATOR_INSTALL_KEY "AuthenticatorInstall"
-
-#define FLATPAK_REPO_COLLECTION_ID_KEY "CollectionID"
-#define FLATPAK_REPO_DEPLOY_COLLECTION_ID_KEY "DeployCollectionID"
-#define FLATPAK_REPO_DEPLOY_SIDELOAD_COLLECTION_ID_KEY "DeploySideloadCollectionID"
-
 #define FLATPAK_CLI_UPDATE_INTERVAL_MS 300
-
-#define FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE "eol"
-#define FLATPAK_SPARSE_CACHE_KEY_ENDOFLINE_REBASE "eolr"
-#define FLATPAK_SPARSE_CACHE_KEY_TOKEN_TYPE "tokt"
-#define FLATPAK_SPARSE_CACHE_KEY_EXTRA_DATA_SIZE "eds"
 
 typedef struct
 {
@@ -278,9 +239,11 @@ typedef enum {
 typedef enum {
   FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_NONE = 0,
   FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_NO_INTERACTION = 1 << 0,
+  FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_REINSTALL = 1 << 1,
 } FlatpakHelperInstallBundleFlags;
 
-#define FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_ALL (FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_NO_INTERACTION)
+#define FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_ALL (FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_NO_INTERACTION | \
+                                                 FLATPAK_HELPER_INSTALL_BUNDLE_FLAGS_REINSTALL)
 
 typedef enum {
   FLATPAK_HELPER_DEPLOY_APPSTREAM_FLAGS_NONE = 0,
@@ -361,6 +324,12 @@ typedef enum {
 } FlatpakDirStorageType;
 
 typedef enum {
+  FLATPAK_DIR_FILTER_NONE = 0,
+  FLATPAK_DIR_FILTER_EOL = 1 << 0,
+  FLATPAK_DIR_FILTER_AUTOPRUNE = 1 << 1,
+} FlatpakDirFilterFlags;
+
+typedef enum {
   FIND_MATCHING_REFS_FLAGS_NONE = 0,
   FIND_MATCHING_REFS_FLAGS_FUZZY = (1 << 0),
 } FindMatchingRefsFlags;
@@ -379,26 +348,9 @@ GQuark       flatpak_dir_error_quark (void);
 #define FLATPAK_DEPLOY_DATA_GVARIANT_STRING "(ssasta{sv})"
 #define FLATPAK_DEPLOY_DATA_GVARIANT_FORMAT G_VARIANT_TYPE (FLATPAK_DEPLOY_DATA_GVARIANT_STRING)
 
-/**
- * FLATPAK_SUMMARY_INDEX_GVARIANT_FORMAT:
- *
- * dict
- *   s: subset name
- *  ->
- *   ay - checksum of subsummary
- *   aay - previous subsummary checksums
- *   a{sv} - per subset metadata
- * a{sv} - metadata
-
- */
-#define FLATPAK_SUMMARY_INDEX_GVARIANT_STRING "(a{s(ayaaya{sv})}a{sv})"
-#define FLATPAK_SUMMARY_INDEX_GVARIANT_FORMAT G_VARIANT_TYPE (FLATPAK_SUMMARY_INDEX_GVARIANT_STRING)
-
-
 GPtrArray *flatpak_get_system_base_dir_locations        (GCancellable  *cancellable,
                                                          GError       **error);
 GFile *    flatpak_get_system_default_base_dir_location (void);
-GFile *    flatpak_get_user_base_dir_location           (void);
 
 GKeyFile *      flatpak_load_override_keyfile   (const char  *app_id,
                                                  gboolean     user,
@@ -713,6 +665,7 @@ gboolean              flatpak_dir_deploy                                    (Fla
                                                                              const char                    *checksum_or_latest,
                                                                              const char * const            *subpaths,
                                                                              const char * const            *previous_ids,
+                                                                             const char                    *parental_controls_action_id,
                                                                              GCancellable                  *cancellable,
                                                                              GError                       **error);
 gboolean              flatpak_dir_deploy_update                             (FlatpakDir                    *self,
@@ -759,6 +712,7 @@ char *                flatpak_dir_ensure_bundle_remote                      (Fla
                                                                              GCancellable                  *cancellable,
                                                                              GError                       **error);
 gboolean              flatpak_dir_install_bundle                            (FlatpakDir                    *self,
+                                                                             gboolean                       reinstall,
                                                                              GFile                         *file,
                                                                              const char                    *remote,
                                                                              FlatpakDecomposed            **out_ref,
@@ -1050,7 +1004,7 @@ char **               flatpak_dir_list_unused_refs                          (Fla
                                                                              GHashTable                    *metadata_injection,
                                                                              GHashTable                    *eol_injection,
                                                                              const char * const            *refs_to_exclude,
-                                                                             gboolean                       filter_by_eol,
+                                                                             FlatpakDirFilterFlags          filter_flags,
                                                                              GCancellable                  *cancellable,
                                                                              GError                       **error);
 

@@ -1,3 +1,485 @@
+flatpak (1.16.3-1~flatpak1~22.04.1) UNRELEASED; urgency=medium
+
+  * Rebuild for Ubuntu 22.04 'jammy' for PPA
+  * Remaining changes relative to noble PPA:
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+    - Install a policy snippet for policykit-1 (<< 0.106)
+    - Revert "Stop build-depending on libgirepository1.0-dev"
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 01 Apr 2026 20:19:56 +0100
+
+flatpak (1.16.3-1~flatpak1~24.04.1) UNRELEASED; urgency=medium
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+  * Reinstate Priority: optional field for backport
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 01 Apr 2026 20:19:56 +0100
+
+flatpak (1.16.3-1) unstable; urgency=medium
+
+  * New upstream stable release
+    - In flatpak-build(1), only provide /run/host/font-dirs.xml if the
+      calling process has not already added it, fixing a regression for
+      users of GNOME Builder and Foundry (flatpak#6450 upstream)
+  * Standards-Version: 4.7.3
+    - Remove Priority: optional, unnecessary since Debian 13
+  * d/watch: Convert to v5 format
+  * d/watch: Only watch stable (even-numbered) releases
+    - d/watch.devel: Add a second watch file for development
+      (odd-numbered) releases
+
+ -- Simon McVittie <smcv@debian.org>  Sat, 24 Jan 2026 16:05:24 +0000
+
+flatpak (1.16.2-1) unstable; urgency=medium
+
+  * New upstream stable release
+    - Fix a memory leak in flatpak-session-helper when invoking host
+      commands (flatpak-spawn --host) from privileged apps
+      (Closes: #1114484)
+    - Treat either the xe or i915 kernel module as indicating an Intel GPU,
+      not just i915, and install the appropriate VA-API extensions
+    - If using GLib 2.86.1 (specifically that version due to a regression
+      that was later fixed), avoid exposing $HOME to apps if an XDG special
+      directory such as Music is requested by the app but has been disabled
+      locally
+    - In flatpak-kill(1), make killing processes more robust, and avoid race
+      conditions that could lead to the whole process group being killed
+    - Allow `flatpak run` or `flatpak install --user` while under
+      `sudo -u otheruser` or `sudo -g`, as long as the other user is not root,
+      relaxing a check that was only intended to avoid accidents involving
+      running as root
+    - Provide an empty /run/host/font-dirs.xml during flatpak-build(1),
+      avoiding spurious warnings for processes that use fontconfig during
+      build-time tests
+    - Fix a crash in `flatpak install --include-sdk` if the app is installed
+      on a per-user basis but the corresponding SDK is already installed
+      system-wide
+    - Take the --reinstall option into account when installing a bundle
+    - Add a missing argument to fcntl F_DUPFD_CLOEXEC during Flatpak's own
+      build-time tests, fixing a test regression with newer glibc on Ubuntu
+    - Fix flatpak-pin(1)/flatpak-mask(1) with multiple arguments, by
+      reloading configuration when needed
+    - Fix an assertion failure in flatpak-build-import-bundle(1)
+    - When using the library API, allow http downloads with libcurl to be
+      cancelled
+    - If an OCI registry only has one image, allow the tag to be omitted
+    - Fix a memory leak when using an OCI registry
+    - Fix an uninitialized variable
+    - Documentation improvements
+    - Translation updates: pl
+  * d/libflatpak-doc.install:
+    Install single-file HTML documentation for the library.
+    This was built by Autotools in 1.14.x and disappeared during the switch
+    to Meson, but is now built again as a result of upstream fixes.
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 19 Dec 2025 11:38:19 +0000
+
+flatpak (1.16.1-3) unstable; urgency=medium
+
+  * Fix <!nocheck> builds (Closes: #1116737)
+    - d/control: Remove <!nocheck> annotation from fuse3.
+      This is required unconditionally (even if not running tests)
+      since 1.15.7 upstream, so that the build system can autodetect
+      the distro's appropriate path to fusermount3 or fusermount.
+    - d/control, d/rules: Tighten up handling of nocheck and noinsttest.
+      The upstream build system checks for some programs that are required
+      during testing whenever the tests are compiled. If we are under both
+      the nocheck and noinsttest build profiles, don't compile the tests,
+      so that pkcheck and socat won't be needed in that configuration;
+      and otherwise, we need them in Build-Depends.
+  * d/control: Remove Rules-Requires-Root, no longer needed since trixie
+  * Normalize formatting with debputy
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 30 Sep 2025 17:11:16 +0100
+
+flatpak (1.16.1-2) unstable; urgency=medium
+
+  * d/copyright: Point to GNU web address instead of old FSF postal address
+  * d/copyright: Clarify possible interpretations of LGPL-2
+  * Stop build-depending on libgirepository1.0-dev.
+    Build-depend on gobject-introspection (>= 1.80) instead.
+    libgirepository1.0-dev is not multiarch-compatible and should be removed
+    during the forky cycle.
+  * d/control: Only require gtk-doc-tools, etc. if we are building documentation
+  * Prefer the OpenSSL flavour of libcurl.
+    This is the one that upstream is going to be testing with in practice.
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 14 Aug 2025 22:18:17 +0100
+
+flatpak (1.16.1-1~flatpak1~22.04.1) jammy; urgency=medium
+
+  * Rebuild for Ubuntu 22.04 'jammy' for PPA
+  * Remaining changes relative to noble PPA:
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+    - Install a policy snippet for policykit-1 (<< 0.106)
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 12 May 2025 16:57:44 +0100
+
+flatpak (1.16.1-1~flatpak1~24.04.1) noble; urgency=medium
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 12 May 2025 13:19:56 +0100
+
+flatpak (1.16.1-1) unstable; urgency=medium
+
+  * New upstream stable release
+    - When using parental controls, child accounts can update existing
+      apps by default
+    - Make systemd scopes easier to match to Flatpak app instances
+    - Access to --device=dri now includes /dev/udmabuf
+    - Better error message for invalid parametrs to
+      `flatpak-spawn --sandbox-a11y-own-name`
+    - Speed up `flatpak prune --dry-run`
+    - Speed up `flatpak permission-reset`
+    - Add support for authenticating to OCI registries using TLS certs
+      in /etc/containers/certs.d
+    - Fix intermittent flatpak-portal crashes
+    - Avoid an unnecessary confirmation prompt when
+      `flatpak remove --unused` cleans up, for example, old Nvidia drivers
+    - Don't propagate $PYTHONPYCACHEPREFIX from host into sandbox
+    - Don't propagate $WAYLAND_DISPLAY, $WAYLAND_SOCKET from host into
+      sandbox when access to the actual socket has been denied
+    - Use $AT_SPI_BUS_ADDRESS to discover the AT-SPI bus, if set
+    - Fix a memory leak while installing extra-data
+    - Don't show fatal transaction errors twice
+    - Fix the build with -Ddefault_library=static
+    - Fix incorrect error reporting
+    - Use more interoperable OSC escape sequences for FLATPAK_TTY_PROGRESS
+      (this feature is still off by default)
+    - Improve shell completion for `flatpak search`
+    - Fix an unclear boolean expression (no functional change)
+    - Avoid a duplicate redirection in the test suite
+    - Translation updates
+    - Documentation improvements
+    - CI updates
+  * Standards-Version: 4.7.2 (no changes required)
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 12 May 2025 12:10:10 +0100
+
+flatpak (1.16.0-2) unstable; urgency=medium
+
+  * d/changelog: Fix Ubuntu version information in 1.15.91-1 changelog.
+    Ubuntu 22.04 still needed .pkla files, it is only 24.04 that has
+    caught up with upstream polkitd.
+  * d/flathub.flatpakrepo, d/flatpak.examples:
+    Provide the address and GPG key for Flathub
+  * d/p/debian/system-helper-Set-Debian-s-canonical-home-directory-for-s.patch:
+    Make the home directory from sysusers.d consistent with adduser
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 17 Mar 2025 13:09:49 +0000
+
+flatpak (1.16.0-1~flatpak1~22.04.2) jammy; urgency=medium
+
+  * Revert "Stop installing a policy snippet for policykit-1 (<< 0.106)".
+    Ubuntu 22.04 still needs this.
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 20 Jan 2025 11:52:13 +0000
+
+flatpak (1.16.0-1~flatpak1~22.04.1) jammy; urgency=medium
+
+  * Rebuild for Ubuntu 22.04 'jammy' for PPA
+  * Remaining changes relative to noble PPA:
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 13 Jan 2025 13:41:21 +0000
+
+flatpak (1.16.0-1~flatpak1~24.04.1) noble; urgency=medium
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 13 Jan 2025 13:25:59 +0000
+
+flatpak (1.16.0-1) unstable; urgency=medium
+
+  * New upstream stable release
+  * d/gbp.conf, d/watch: Track Flatpak 1.16.x for trixie
+  * d/test.sh: Set a longer test timeout for non-x86 architectures.
+    Some (perhaps all?) of the hppa buildds in Debian Ports are actually
+    x86_64 machines emulating hppa with qemu, and the same might in
+    principle be true for any other -ports architecture: there is no
+    documented way to know this.
+    Allowing 3x timeouts on x86 and 20x on other architectures has worked
+    well for GLib, so do the same here.
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 09 Jan 2025 19:11:42 +0000
+
+flatpak (1.15.91-1) unstable; urgency=medium
+
+  * New upstream release candidate (1.16.0 rc1)
+  * d/p/tests-Install-missing-test-data.patch:
+    Drop patch, applied (slightly differently) upstream
+  * d/flatpak.install, d/*.pkla:
+    Stop installing a policy snippet for policykit-1 (<< 0.106).
+    This is no longer necessary since Debian 12 and Ubuntu 24.04.
+  * d/watch: Correct a comment for removal of Autotools
+
+ -- Simon McVittie <smcv@debian.org>  Sun, 22 Dec 2024 12:30:56 +0000
+
+flatpak (1.15.12-1) experimental; urgency=medium
+
+  * New upstream development release
+  * d/p/tests-Install-missing-test-data.patch:
+    Add patch to fix autopkgtest failure
+  * d/salsa-ci.yml: Use the currently-recommended recipe
+  * Standards-Version: 4.7.0 (no changes required)
+  * Merge packaging from unstable
+    - d/upstream/metadata: Canonicalize sort order of keys
+    - d/upstream/metadata: Add Security-Contact
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 28 Nov 2024 15:50:46 +0000
+
+flatpak (1.15.10-1~flatpak1~22.04.1) jammy; urgency=medium
+
+  * Rebuild for Ubuntu 22.04 'jammy' for PPA
+  * Remaining changes relative to noble PPA:
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 15:09:00 +0100
+
+flatpak (1.15.10-1~flatpak1~24.04.1) noble; urgency=medium
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 14:48:44 +0100
+
+flatpak (1.15.10-1) experimental; urgency=high
+
+  * New upstream development release
+    - Don't follow symbolic links when mounting persistent directories
+      (--persist option). This prevents a sandbox escape where a malicious
+      or compromised app could edit the symlink to point to a directory
+      that the app should not have been allowed to read or write.
+      (CVE-2024-42472, GHSA-7hgv-f2j8-xw87)
+  * d/control: Bump required bubblewrap version to 0.10.0.
+    This adds the new --bind-fd option, required to solve CVE-2024-42472
+    without introducing a race condition.
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 11:00:52 +0100
+
+flatpak (1.15.9-1flatpak1~22.04.1) jammy; urgency=medium
+
+  * Rebuild for Ubuntu 22.04 'jammy' for PPA
+    - Reinstate dependency on system bwrap/dbus-proxy for jammy
+  * Remaining changes relative to noble PPA:
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 21:03:34 +0100
+
+flatpak (1.15.9-1flatpak1~24.04.1) noble; urgency=medium
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+    - Reinstate dependency on system bwrap/dbus-proxy for noble
+    - Ship systemd unit in /usr
+    - Keep build-dependency on gir1.2-*-dev
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 20:52:19 +0100
+
+flatpak (1.15.9-1) experimental; urgency=medium
+
+  * New upstream development release
+  * Merge packaging from unstable
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 18:28:31 +0100
+
+flatpak (1.15.8-1~flatpak1~22.04.1) jammy; urgency=medium
+
+  * Merge security fix from Debian (CVE-2024-32462)
+  * Remaining changes relative to Debian:
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+    - d/p/tests-Make-GLib-warnings-non-fatal-while-running-flatpak-.patch:
+      Add patch to work around #1006684 in libappstream (again)
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 19 Apr 2024 10:47:53 +0100
+
+flatpak (1.15.8-1) experimental; urgency=high
+
+  * New upstream development release
+    - Don't allow an executable name to be misinterpreted as a command-line
+      option for bwrap(1). This prevents a sandbox escape where a malicious
+      or compromised app could ask xdg-desktop-portal to generate a .desktop
+      file with access to files outside the sandbox. (CVE-2024-32462)
+  * Merge packaging from unstable
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 17 Apr 2024 20:17:44 +0100
+
+flatpak (1.15.7-1) experimental; urgency=medium
+
+  * New upstream development release
+  * d/copyright: Update
+  * d/flatpak.lintian-overrides: Remove an obsolete Lintian override
+  * d/control, d/rules: Activate dh-sequence-gir declaratively
+  * d/patches: Add a patch to fix the "as-installed" tests
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 27 Mar 2024 15:35:47 +0000
+
+flatpak (1.15.6-1) experimental; urgency=medium
+
+  * New upstream development release
+  * Mention #1033098, #1033099 in previous changelog entry
+  * d/control: (Build-)depend on pkgconf in preference to pkg-config
+  * Install systemd system unit into /usr/lib/systemd/system.
+    This was allowed by TC resolution #1053901.
+    Build-depend on debhelper 13.11.6~ to ensure that the unit is still
+    picked up by dh_installsystemd.
+  * d/test.sh: Disable http proxy if used, to ensure we can reach localhost.
+    Some reproducible.org builders set http_proxy, which makes attempts
+    to access our temporary http server on localhost fail with a 503 error.
+  * d/control: Build-depend on required GIR XML files (Helps: #1030223)
+  * d/control: Add ${gir:Depends}, ${gir:Provides} to -dev package
+    (Helps: #1030223)
+  * d/control: Require bubblewrap 0.8.0
+  * d/control: (Build-)depend on Wayland components for new security context
+    extension
+  * d/flatpak.install: Install new tmpfiles.d snippet
+  * d/copyright: Update
+  * d/libflatpak0.symbols: Update
+  * d/libflatpak0.symbols: Reduce entropy.
+    For each symbol introduced in a development branch older than the
+    current one, behave as if the symbol was added in the stable release
+    that followed the development branch: this will generate slightly more
+    conservative dependencies. For 0.x versions, use 1.0.
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 14 Nov 2023 19:52:48 +0000
+
+flatpak (1.15.4-1~flatpak1~22.04.1) jammy; urgency=high
+
+  * Merge from Debian
+  * Remaining changes relative to Debian:
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+  * d/p/tests-Make-GLib-warnings-non-fatal-while-running-flatpak-.patch:
+    Add patch to work around #1006684 in libappstream (again)
+    (this will become unnecessary if SRU LP#2006110 is done)
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 16 Mar 2023 16:33:31 +0000
+
+flatpak (1.15.4-1) experimental; urgency=medium
+
+  * New upstream development release
+    - Escape special characters when displaying permissions and metadata,
+      preventing malicious apps from manipulating the appearance of the
+      permissions list using crafted metadata
+      (Closes: #1033098; CVE-2023-28101)
+    - If a Flatpak app is run on a Linux virtual console (tty1, etc.),
+      don't allow copy/paste via the TIOCLINUX ioctl
+      (Closes: #1033099; CVE-2023-28100).
+      Note that this is specific to virtual consoles: Flatpak is not
+      vulnerable to this if run from a graphical terminal emulator such
+      as xterm, gnome-terminal or Konsole.
+  * Merge packaging from unstable
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 16 Mar 2023 10:41:58 +0000
+
+flatpak (1.15.3-1flatpak1~22.04.1) jammy; urgency=medium
+
+  * Merge from Debian
+  * Remaining changes relative to Debian:
+    - Don't rely on system bwrap/dbus-proxy.
+      This is easier for a PPA: it avoids needing to backport bubblewrap
+      and xdg-dbus-proxy separately if the host OS versions are too old.
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+  * d/p/tests-Make-GLib-warnings-non-fatal-while-running-flatpak-.patch:
+    Add patch to work around #1006684 in libappstream (again)
+    (this will become unnecessary if SRU LP#2006110 is done)
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 24 Feb 2023 17:33:01 +0000
+
+flatpak (1.15.3-1) experimental; urgency=medium
+
+  * New upstream development release
+  * Merge packaging changes from unstable
+    - Remove obsolete maintscript entries
+    - Avoid explicitly specifying -Wl,--as-needed linker flag, which is
+      the default with newer toolchains
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 21 Feb 2023 10:44:05 +0000
+
+flatpak (1.14.8-1flatpak1~22.04.1) jammy; urgency=medium
+
+  * Rebuild for Ubuntu 22.04 'jammy' for PPA
+    - Reinstate dependency on system bwrap/dbus-proxy for jammy
+  * Remaining changes relative to noble PPA:
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 20:36:20 +0100
+
+flatpak (1.14.8-1flatpak1~24.04.1) noble; urgency=medium
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+    - Reinstate dependency on system bwrap/dbus-proxy for noble
+    - Ship systemd unit in /usr
+    - Keep build-dependency on gir1.2-*-dev
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 22 Jul 2024 19:57:02 +0100
+
+flatpak (1.15.1-1) experimental; urgency=medium
+
+  * New upstream development release
+  * d/test.sh: Don't try to show Autotools test logs.
+    We're using Meson now, so this is not applicable.
+  * d/rules, d/test.sh: Rely on debhelper to set HOME, XDG_RUNTIME_DIR etc.
+  * d/test.sh: Extend test timeout to cope better with slow buildds.
+    The upstream test timeouts assume a relatively non-loaded system, but
+    on a buildd we might be sharing the machine with other processes.
+  * Drop the only patch, applied upstream
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 17 Nov 2022 19:06:05 +0000
+
+flatpak (1.15.0-2) experimental; urgency=medium
+
+  * d/p/revokefs-Use-correct-format-string-for-a-ssize_t.patch:
+    Fix the build on ILP32 architectures
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 25 Oct 2022 09:37:58 +0100
+
+flatpak (1.15.0-1) experimental; urgency=medium
+
+  * d/gbp.conf, d/control: Branch for experimental
+  * New upstream development release
+  * Build using Meson
+  * d/control: Add more -dev dependencies to libflatpak-dev.
+    Meson is more thorough about including private dependencies in the
+    Requires.private field.
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 24 Oct 2022 19:29:56 +0100
+
 flatpak (1.14.10-1~flatpak1~20.04.1) focal; urgency=high
 
   * Rebuild for Ubuntu 20.04 'focal' for PPA
@@ -166,7 +648,7 @@ flatpak (1.14.6-1~flatpak1~22.04.1) jammy; urgency=high
     - Set changelog merge driver for debian/changelog
     - Add PPA backport notes to debian/README.source
 
- -- Simon McVittie <smcv@debian.org>  Thu, 18 Apr 2024 20:19:22 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 06 Feb 2023 14:47:26 +0000
 
 flatpak (1.14.6-1) unstable; urgency=high
 

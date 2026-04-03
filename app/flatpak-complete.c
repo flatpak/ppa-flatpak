@@ -73,7 +73,8 @@ flatpak_complete_dir (FlatpakCompletion *completion)
 
 void
 flatpak_complete_word (FlatpakCompletion *completion,
-                       char *format, ...)
+                       const char *format,
+                       ...)
 {
   va_list args;
   const char *rest;
@@ -555,8 +556,8 @@ parse_completion_line_to_argv (const char        *initial_completion_line,
 
   /* Make a shallow copy of argv, which will be our "working set" */
   completion->argc = completion->original_argc;
-  completion->argv = g_memdup (completion->original_argv,
-                               sizeof (gchar *) * (completion->original_argc + 1));
+  completion->argv = g_memdup2 (completion->original_argv,
+                                sizeof (gchar *) * (completion->original_argc + 1));
 
   return parse_result;
 }

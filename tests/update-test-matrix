@@ -23,7 +23,7 @@ TEST_MATRIX_SOURCE=(
 	'tests/test-extensions.sh' \
 	'tests/test-bundle.sh{user+system+system-norevokefs}' \
 	'tests/test-oci.sh' \
-	'tests/test-oci-registry.sh{user+system}' \
+	'tests/test-oci-registry.sh{{user+system},{http+https}}' \
 	'tests/test-update-remote-configuration.sh{newsummary+oldsummary}' \
 	'tests/test-override.sh' \
 	'tests/test-update-portal.sh{user+system}' \
@@ -36,4 +36,4 @@ TEST_MATRIX_SOURCE=(
 	'tests/test-repair.sh' \
 )
 
-"${tests_srcdir}/expand-test-matrix.sh" --automake "${TEST_MATRIX_SOURCE[*]}" > "${tests_srcdir}/Makefile-test-matrix.am.inc"
+"${tests_srcdir}/expand-test-matrix.sh" --meson "${TEST_MATRIX_SOURCE[*]}" > "${tests_srcdir}/test-matrix/meson.build"

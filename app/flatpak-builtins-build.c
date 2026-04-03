@@ -59,6 +59,56 @@ static GOptionEntry options[] = {
   { NULL }
 };
 
+static gboolean
+has_bind_mount_for_path (FlatpakBwrap *bwrap, const char *dest_path)
+{
+  guint i;
+
+  for (i = 0; i < bwrap->argv->len; i++)
+    {
+      const char *arg = g_ptr_array_index (bwrap->argv, i);
+
+      if (g_strcmp0 (arg, "--bind") == 0 ||
+          g_strcmp0 (arg, "--bind-try") == 0 ||
+          g_strcmp0 (arg, "--ro-bind") == 0 ||
+          g_strcmp0 (arg, "--ro-bind-try") == 0 ||
+          g_strcmp0 (arg, "--bind-data") == 0 ||
+          g_strcmp0 (arg, "--ro-bind-data") == 0)
+        {
+          /* For all bind mount types, the destination path is at index i+2.
+           *
+           *   --bind/--ro-bind/--bind-try/--ro-bind-try: type, src, dest
+           *   --bind-data/--ro-bind-data: type, fd_string, dest
+           */
+          if (i + 2 < bwrap->argv->len)
+            {
+              const char *dest = g_ptr_array_index (bwrap->argv, i + 2);
+              if (dest != NULL && g_strcmp0 (dest, dest_path) == 0)
+                return TRUE;
+            }
+        }
+    }
+
+  return FALSE;
+}
+
+static void
+add_empty_font_dirs_xml (FlatpakBwrap *bwrap)
+{
+  const char *font_dirs_path = "/run/host/font-dirs.xml";
+
+  /* Check if a bind mount already exists for this path */
+  if (has_bind_mount_for_path (bwrap, font_dirs_path))
+    return;
+
+  g_autoptr(GString) xml_snippet = g_string_new ("<?xml version=\"1.0\"?>\n"
+                                                 "<!DOCTYPE fontconfig SYSTEM \"urn:fontconfig:fonts.dtd\">\n"
+                                                 "<fontconfig></fontconfig>\n");
+
+  if (!flatpak_bwrap_add_args_data (bwrap, "font-dirs.xml", xml_snippet->str, xml_snippet->len, font_dirs_path, NULL))
+    g_warning ("Unable to add fontconfig data snippet");
+}
+
 /* Unset FD_CLOEXEC on the array of fds passed in @user_data */
 static void
 child_setup (gpointer user_data)
@@ -200,6 +250,7 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
   g_autofree char *runtime_extensions = NULL;
   g_autofree char *runtime_ld_path = NULL;
   g_autofree char *instance_id_host_dir = NULL;
+  g_autofree char *instance_id = NULL;
   char pid_str[64];
   g_autofree char *pid_path = NULL;
   g_autoptr(GFile) app_id_dir = NULL;
@@ -548,13 +599,14 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
                                       app_id_dir, app_context, NULL,
                                       FALSE, TRUE, TRUE,
                                       &app_info_path, -1,
-                                      &instance_id_host_dir,
+                                      &instance_id_host_dir, NULL,
+                                      &instance_id,
                                       error))
     return FALSE;
 
   if (!flatpak_run_add_environment_args (bwrap, app_info_path, run_flags, id,
                                          app_context, app_id_dir, NULL, -1,
-                                         NULL, cancellable, error))
+                                         instance_id, NULL, cancellable, error))
     return FALSE;
 
   for (i = 0; opt_bind_mounts != NULL && opt_bind_mounts[i] != NULL; i++)
@@ -572,6 +624,9 @@ flatpak_builtin_build (int argc, char **argv, GCancellable *cancellable, GError 
                               "--bind", split, opt_bind_mounts[i],
                               NULL);
     }
+
+  /* Add empty font-dirs.xml only if user hasn't already mapped it */
+  add_empty_font_dirs_xml (bwrap);
 
   if (opt_build_dir != NULL)
     {

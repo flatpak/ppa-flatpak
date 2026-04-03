@@ -5,28 +5,28 @@ Maintainer: Utopia Maintenance Team <pkg-utopia-maintainers@lists.alioth.debian.
 Uploaders:
  Matthias Klumpp <mak@debian.org>,
  Simon McVittie <smcv@debian.org>,
+# We need polkitd, socat, etc. if !nocheck || !noinsttest
 Build-Depends:
+ debhelper-compat (= 12),
+ dh-exec (>= 0.23~),
+ dh-sequence-gir,
  attr <!nocheck>,
- automake (>= 1.14.1),
  bison,
  ca-certificates <!nocheck>,
  dbus,
- debhelper-compat (= 12),
  desktop-file-utils <!nocheck>,
- dh-exec (>= 0.23~),
  docbook-xml <!nodoc>,
  docbook-xsl <!nodoc>,
- fuse <!nocheck>,
+ fuse,
  gnupg <!nocheck>,
  gobject-introspection (>= 1.54.1-2~),
- gtk-doc-tools,
  gtk-update-icon-cache <!nocheck>,
  hicolor-icon-theme <!nocheck>,
  libappstream-dev (>= 0.12.0),
  libarchive-dev (>= 2.8.0),
  libattr1-dev,
  libcap-dev,
- libcurl4-gnutls-dev | libcurl-dev,
+ libcurl4-openssl-dev | libcurl-dev,
  libdconf-dev,
  libdw-dev,
  libelf-dev,
@@ -41,28 +41,32 @@ Build-Depends:
  libpolkit-gobject-1-dev,
  libseccomp-dev,
  libsystemd-dev,
+ libwayland-dev,
  libxau-dev,
  libxml2-dev (>= 2.4),
  libxml2-utils,
  libzstd-dev,
+ meson (>= 0.53.0),
  ostree (>= 2020.8) <!nocheck>,
  pkg-config,
- policykit-1 <!nocheck>,
+ policykit-1 <!nocheck> <!noinsttest>,
  procps,
- python3:any,
  python3-pyparsing,
+ python3:any,
  shared-mime-info <!nocheck>,
- socat <!nocheck>,
+ socat <!nocheck> <!noinsttest>,
+ wayland-protocols,
  xmlto <!nodoc>,
  xsltproc <!nodoc>,
 Build-Depends-Indep:
- libglib2.0-doc,
- libostree-doc,
-Standards-Version: 4.6.2
+ gtk-doc-tools <!nodoc>,
+ libglib2.0-doc <!nodoc>,
+ libostree-doc <!nodoc>,
+Standards-Version: 4.7.3
 Homepage: https://flatpak.org/
 Vcs-Git: https://salsa.debian.org/debian/flatpak.git
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
-Rules-Requires-Root: no
+X-Style: black
 
 Package: flatpak
 Architecture: linux-any
@@ -75,8 +79,8 @@ Recommends:
  ca-certificates,
  dbus,
  desktop-file-utils,
- hicolor-icon-theme,
  gtk-update-icon-cache,
+ hicolor-icon-theme,
  libpam-systemd,
  p11-kit,
  policykit-1,
@@ -109,6 +113,7 @@ Description: Application deployment framework for desktop apps
  limited access to resources outside the sandbox.
 
 Package: flatpak-tests
+Build-Profiles: <!noinsttest>
 Architecture: linux-any
 Section: misc
 Depends:
@@ -152,12 +157,24 @@ Architecture: linux-any
 Multi-Arch: same
 Section: libdevel
 Depends:
- gir1.2-glib-2.0,
  gir1.2-flatpak-1.0 (= ${binary:Version}),
+ gir1.2-glib-2.0,
+ libarchive-dev (>= 2.8.0),
+ libcurl4-openssl-dev | libcurl-dev,
+ libdconf-dev,
  libflatpak0 (= ${binary:Version}),
  libglib2.0-dev,
+ libgpgme-dev (>= 1.1.8),
+ libjson-glib-dev,
+ libmalcontent-0-dev (>= 0.4.0),
  libostree-dev (>= 2020.8),
+ libpolkit-agent-1-dev,
+ libseccomp-dev (>= 2.5.2),
+ libsystemd-dev,
+ libwayland-dev,
+ libxau-dev,
  libxml2-dev (>= 2.4),
+ libzstd-dev,
  pkgconf,
  python3:any,
  ${gir:Depends},
