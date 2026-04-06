@@ -8,3 +8,4 @@ CVE-2026-34078/run-Add-usr-fd-and-app-fd-options.patch
 CVE-2026-34078/run-Add-ro-bind-fds-to-flatpak_run_app.patch
 CVE-2026-34078/run-Add-ro-bind-fd-options.patch
 CVE-2026-34078/portal-Use-bind-fd-app-fd-and-usr-fd-options-to-avoid-rac.patch
+CVE-2026-34079/utils-Only-remove-cached-files-in-the-cache-directory.patch
