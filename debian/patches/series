@@ -10,3 +10,4 @@ CVE-2026-34078/run-Add-ro-bind-fd-options.patch
 CVE-2026-34078/portal-Use-bind-fd-app-fd-and-usr-fd-options-to-avoid-rac.patch
 CVE-2026-34079/utils-Only-remove-cached-files-in-the-cache-directory.patch
 GHSA-89xm-3m96-w3jg/system-helper-Only-remove-an-ongoing-pull-if-users-match.patch
+GHSA-2fxp-43j9-pwvc/utils-Do-not-follow-symlinks-in-flatpak_open_file_at.patch
