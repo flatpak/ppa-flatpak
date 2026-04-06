@@ -11,3 +11,11 @@ CVE-2026-34078/chase-Don-t-leak-struct-glnx_statx-when-we-go-up-a-level.patch
 CVE-2026-34078/chase-Factor-out-a-function-to-append-to-the-queue.patch
 CVE-2026-34078/build-Add-glnx-chase.-ch-to-subprojects.patch
 CVE-2026-34078/build-Link-libglnx-into-libflatpak-common-not-just-into-l.patch
+CVE-2026-34078/flatpak-bwrap-Add-dup-ing-variant-flatpak_bwrap_add_args_.patch
+CVE-2026-34078/utils-Add-flatpak_parse_fd.patch
+CVE-2026-34078/flatpak-bwrap-Use-glnx_close_fd-as-clear-func.patch
+CVE-2026-34078/run-Use-O_PATH-fds-for-the-runtime-and-app-deploy-directo.patch
+CVE-2026-34078/run-Add-usr-fd-and-app-fd-options.patch
+CVE-2026-34078/run-Add-ro-bind-fds-to-flatpak_run_app.patch
+CVE-2026-34078/run-Add-ro-bind-fd-options.patch
+CVE-2026-34078/portal-Use-bind-fd-app-fd-and-usr-fd-options-to-avoid-rac.patch
