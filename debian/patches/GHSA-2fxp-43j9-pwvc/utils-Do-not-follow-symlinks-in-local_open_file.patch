@@ -1,0 +1,47 @@
+From: Sebastian Wick <sebastian.wick@redhat.com>
+Date: Mon, 12 Jan 2026 17:38:02 +0100
+Subject: utils: Do not follow symlinks in local_open_file
+
+We use local_open_file in the context of the system helper to open
+files written by a user. This means that we want to prevent DOS and
+exposing files which only the system helper has access to.
+
+To prevent DOS and avoid side-effects, the file is opened with
+O_NONBLOCK and O_NOCTTY.
+
+To prevent leaking files, the file is supposed to not open symlinks.
+This part, we failed at. We check if the opened file is a regular file,
+but what we actually checked is, if the file a symlink might point at is
+a regular file.
+
+Fix this by also specifying O_NOFOLLOW in openat.
+
+Origin: upstream, 1.16.4, commit:a27ec46e8c0ab0ae162f2aa3142dccb6b79d9211
+Bug: https://github.com/flatpak/flatpak/security/advisories/GHSA-2fxp-43j9-pwvc
+---
+ common/flatpak-oci-registry.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/common/flatpak-oci-registry.c b/common/flatpak-oci-registry.c
+index 01dcd26..6ad9882 100644
+--- a/common/flatpak-oci-registry.c
++++ b/common/flatpak-oci-registry.c
+@@ -265,6 +265,9 @@ flatpak_oci_registry_new (const char   *uri,
+   return oci_registry;
+ }
+ 
++/* Carefully opens a file from a base directory and subpath,
++ * making sure that its not a symlink, pipe, etc.
++ */
+ static int
+ local_open_file (int           dfd,
+                  const char   *subpath,
+@@ -276,7 +279,7 @@ local_open_file (int           dfd,
+   struct stat tmp_st_buf;
+ 
+   do
+-    fd = openat (dfd, subpath, O_RDONLY | O_NONBLOCK | O_CLOEXEC | O_NOCTTY);
++    fd = openat (dfd, subpath, O_NOFOLLOW | O_RDONLY | O_NONBLOCK | O_CLOEXEC | O_NOCTTY);
+   while (G_UNLIKELY (fd == -1 && errno == EINTR));
+   if (fd == -1)
+     {
