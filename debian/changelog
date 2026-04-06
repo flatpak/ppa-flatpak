@@ -1,3 +1,30 @@
+flatpak (1.14.10-1~deb12u2) UNRELEASED; urgency=medium
+
+  * Security update
+  * d/p/CVE-2026-34078/*.patch:
+    Backport libglnx changes required to address CVE-2026-34078
+  * d/p/CVE-2026-34078/*.patch:
+    Fix a sandbox escape involving symlinks passed to flatpak-portal.
+    A malicious or compromised Flatpak app could exploit this to achieve
+    arbitrary code execution on the host.
+    (CVE-2026-34078, GHSA-cc2q-qc34-jprg) (Closes: #1132943)
+  * d/p/CVE-2026-34079/*.patch:
+    Prevent arbitrary file deletion outside the sandbox by a malicious or
+    compromised Flatpak app
+    (CVE-2026-34079, GHSA-p29x-r292-46pp) (Closes: #1132944)
+  * d/p/GHSA-2fxp-43j9-pwvc/*.patch:
+    Prevent a local user from reading any file that is readable by the
+    _flatpak system user. A mitigation is that it would be very unusual
+    for these files not to be readable by the original local user as well.
+    (No CVE ID, GHSA-2fxp-43j9-pwvc) (Closes: #1132946)
+  * d/p/GHSA-89xm-3m96-w3jg/*.patch:
+    Prevent a local user from making another local user unable to cancel
+    an ongoing download of apps or runtimes installed system-wide
+    via the system helper.
+    (No CVE ID, GHSA-89xm-3m96-w3jg) (Closes: #1132945)
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 06 Apr 2026 20:46:00 +0100
+
 flatpak (1.14.10-1~deb12u1) bookworm-security; urgency=high
 
   * Backport upstream stable release into Debian 12 (CVE-2024-42472)
