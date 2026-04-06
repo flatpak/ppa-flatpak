@@ -1,0 +1,13 @@
+CVE-2026-34078/backports-Add-g_clear_fd.patch
+CVE-2026-34078/glnx-errors.h-add-glnx_fd_throw-_-variants.patch
+CVE-2026-34078/fdio-Add-glnx_fd_reopen.patch
+CVE-2026-34078/missing-Add-syscall-and-structs-for-statx.patch
+CVE-2026-34078/fdio-Add-glnx_statx.patch
+CVE-2026-34078/missing-Add-syscall-number-for-openat2-and-open_tree.patch
+CVE-2026-34078/chase-Add-glnx_chaseat-which-functions-similar-to-openat2.patch
+CVE-2026-34078/chase-Add-glnx_chase_and_statxat.patch
+CVE-2026-34078/chase-Don-t-left-shift-signed-integer-1-by-31-places.patch
+CVE-2026-34078/chase-Don-t-leak-struct-glnx_statx-when-we-go-up-a-level.patch
+CVE-2026-34078/chase-Factor-out-a-function-to-append-to-the-queue.patch
+CVE-2026-34078/build-Add-glnx-chase.-ch-to-subprojects.patch
+CVE-2026-34078/build-Link-libglnx-into-libflatpak-common-not-just-into-l.patch
