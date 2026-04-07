@@ -1,5 +1,5 @@
 debian/system-helper-Set-Debian-s-canonical-home-directory-for-s.patch
-CVE-2026-34078/Update-subtree-libglnx-2026-03-25.patch
+CVE-2026-34078/Update-subtree-libglnx-2026-04-07.patch
 CVE-2026-34078/flatpak-bwrap-Add-dup-ing-variant-flatpak_bwrap_add_args_.patch
 CVE-2026-34078/utils-Add-flatpak_parse_fd.patch
 CVE-2026-34078/flatpak-bwrap-Use-glnx_close_fd-as-clear-func.patch
