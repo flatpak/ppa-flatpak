@@ -1,6 +1,5 @@
-flatpak (1.17.3-2) UNRELEASED; urgency=high
+flatpak (1.17.3-2) experimental; urgency=high
 
-  * Security update
   * d/p/CVE-2026-34078/*.patch:
     Fix a sandbox escape involving symlinks passed to flatpak-portal.
     A malicious or compromised Flatpak app could exploit this to achieve
@@ -21,8 +20,9 @@ flatpak (1.17.3-2) UNRELEASED; urgency=high
     for these files not to be readable by the original local user as well.
     (No CVE ID, GHSA-2fxp-43j9-pwvc) (Closes: #1132946)
   * Merge packaging changes from unstable
+  * Standards-Version: 4.7.4 (no changes required)
 
- -- Simon McVittie <smcv@debian.org>  Mon, 06 Apr 2026 18:13:01 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 07 Apr 2026 23:55:57 +0100
 
 flatpak (1.16.4-1) unstable; urgency=high
 
