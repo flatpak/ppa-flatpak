@@ -5,21 +5,21 @@ flatpak (1.17.3-2) UNRELEASED; urgency=high
     Fix a sandbox escape involving symlinks passed to flatpak-portal.
     A malicious or compromised Flatpak app could exploit this to achieve
     arbitrary code execution on the host.
-    (CVE-2026-34078, GHSA-cc2q-qc34-jprg)
+    (CVE-2026-34078, GHSA-cc2q-qc34-jprg) (Closes: #1132943)
   * d/p/CVE-2026-34079/*.patch:
     Prevent arbitrary file deletion outside the sandbox by a malicious or
     compromised Flatpak app
-    (CVE-2026-34079, GHSA-p29x-r292-46pp)
+    (CVE-2026-34079, GHSA-p29x-r292-46pp) (Closes: #1132944)
   * d/p/GHSA-89xm-3m96-w3jg/*.patch:
     Prevent a local user from making another local user unable to cancel
     an ongoing download of apps or runtimes installed system-wide
     via the system helper.
-    (No CVE ID, GHSA-89xm-3m96-w3jg)
+    (No CVE ID, GHSA-89xm-3m96-w3jg) (Closes: #1132945)
   * d/p/GHSA-2fxp-43j9-pwvc/*.patch:
     Prevent a local user from reading any file that is readable by the
     _flatpak system user. A mitigation is that it would be very unusual
     for these files not to be readable by the original local user as well.
-    (No CVE ID, GHSA-2fxp-43j9-pwvc)
+    (No CVE ID, GHSA-2fxp-43j9-pwvc) (Closes: #1132946)
   * Merge packaging changes from unstable
 
  -- Simon McVittie <smcv@debian.org>  Mon, 06 Apr 2026 18:13:01 +0100
