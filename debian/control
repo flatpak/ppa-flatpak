@@ -70,7 +70,7 @@ Build-Depends-Indep:
  gtk-doc-tools <!nodoc>,
  libglib2.0-doc <!nodoc>,
  libostree-doc <!nodoc>,
-Standards-Version: 4.7.3
+Standards-Version: 4.7.4
 Homepage: https://flatpak.org/
 Vcs-Git: https://salsa.debian.org/debian/flatpak.git -b debian/experimental
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
