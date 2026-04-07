@@ -16,6 +16,7 @@ a regular file.
 
 Fix this by also specifying O_NOFOLLOW in openat.
 
+Origin: upstream, 1.17.4, commit:3c111d9e19267dad63bf006647c1d44861a7fec5
 Bug: https://github.com/flatpak/flatpak/security/advisories/GHSA-2fxp-43j9-pwvc
 ---
  common/flatpak-utils.c | 4 ++--

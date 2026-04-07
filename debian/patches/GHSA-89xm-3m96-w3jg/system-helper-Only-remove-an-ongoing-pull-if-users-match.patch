@@ -7,6 +7,7 @@ users match and abort if they don't. Either way, the pull gets dropped.
 
 Fix this by only removing the pull if the dir and the user match.
 
+Origin: upstream, 1.17.4, commit:f1bdc6aeae91f7171d1529f40267acc78825231d
 Bug: https://github.com/flatpak/flatpak/security/advisories/GHSA-89xm-3m96-w3jg
 ---
  system-helper/flatpak-system-helper.c | 85 +++++++++++++++--------------------
