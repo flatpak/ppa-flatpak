@@ -20,6 +20,7 @@ flatpak (1.17.3-2) UNRELEASED; urgency=high
     _flatpak system user. A mitigation is that it would be very unusual
     for these files not to be readable by the original local user as well.
     (No CVE ID, GHSA-2fxp-43j9-pwvc)
+  * Merge packaging changes from unstable
 
  -- Simon McVittie <smcv@debian.org>  Mon, 06 Apr 2026 18:13:01 +0100
 
