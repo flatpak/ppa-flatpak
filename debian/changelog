@@ -1,3 +1,39 @@
+flatpak (1.16.4-1~flatpak1~20.04.1) focal; urgency=high
+
+  * Rebuild for Ubuntu 20.04 'focal' for PPA
+    - Fix a sandbox escape involving symlinks passed to flatpak-portal.
+      A malicious or compromised Flatpak app could exploit this to achieve
+      arbitrary code execution on the host.
+      (CVE-2026-34078, GHSA-cc2q-qc34-jprg)
+    - Prevent arbitrary file deletion outside the sandbox by a malicious or
+      compromised Flatpak app
+      (CVE-2026-34079, GHSA-p29x-r292-46pp)
+    - Prevent a local user from reading any file that is readable by the
+      _flatpak system user. A mitigation is that it would be very unusual
+      for these files not to be readable by the original local user as well.
+      (No CVE ID, GHSA-2fxp-43j9-pwvc)
+    - Prevent a local user from making another local user unable to cancel
+      an ongoing download of apps or runtimes installed system-wide
+      via the system helper.
+      (No CVE ID, GHSA-89xm-3m96-w3jg)
+  * Remaining changes relative to jammy PPA:
+    - Use bundled bwrap/dbus-proxy instead of older system copies
+    - Revert libmalcontent integration
+    - Downgrade dbus from Depends to Recommends
+    - Roll back to debhelper 12
+      + Don't rely on debhelper to create a temporary $HOME for tests
+    - Reduce libseccomp dependency for compatibility with focal
+    - Go back to using libfuse version 2
+    - Go back to old dependency package names
+      + libgdk-pixbuf-2.0-dev -> libgdk-pixbuf2.0-dev
+      + dbus-daemon -> dbus
+      + polkitd -> policykit-1
+    - d/p/app-Print-a-warning-message-about-focal-being-EOL.patch:
+      Add a patch to show a warning when flatpak is run.
+      focal is EOL and this backport is unlikely to be updated further.
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 07 Apr 2026 22:58:13 +0100
+
 flatpak (1.16.4-1~flatpak1~22.04.1) jammy; urgency=high
 
   * Rebuild for Ubuntu 22.04 'jammy' for PPA
