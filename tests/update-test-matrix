@@ -21,6 +21,7 @@ TEST_MATRIX_SOURCE=(
 	'tests/test-default-remotes.sh' \
 	'tests/test-metadata-validation.sh' \
 	'tests/test-extensions.sh' \
+	'tests/test-extension-branch-follow.sh' \
 	'tests/test-bundle.sh{user+system+system-norevokefs}' \
 	'tests/test-oci.sh' \
 	'tests/test-oci-registry.sh{{user+system},{http+https}}' \
@@ -35,6 +36,7 @@ TEST_MATRIX_SOURCE=(
 	'tests/test-seccomp.sh' \
 	'tests/test-repair.sh' \
 	'tests/test-extra-data.sh{user+system}' \
+	'tests/test-preinstall.sh' \
 )
 
 "${tests_srcdir}/expand-test-matrix.sh" --meson "${TEST_MATRIX_SOURCE[*]}" > "${tests_srcdir}/test-matrix/meson.build"

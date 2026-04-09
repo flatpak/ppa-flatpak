@@ -2432,21 +2432,16 @@ option_env_fd_cb (const gchar *option_name,
                   GError     **error)
 {
   FlatpakContext *context = data;
-  guint64 fd;
-  gchar *endptr;
-  gboolean ret;
+  glnx_autofd int fd = -1;
 
-  fd = g_ascii_strtoull (value, &endptr, 10);
+  fd = flatpak_parse_fd (value, error);
+  if (fd < 0)
+    return FALSE;
 
-  if (endptr == NULL || *endptr != '\0' || fd > G_MAXINT)
-    return glnx_throw (error, "Not a valid file descriptor: %s", value);
+  if (fd < 3)
+    return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
 
-  ret = flatpak_context_parse_env_fd (context, (int) fd, error);
-
-  if (fd >= 3)
-    close (fd);
-
-  return ret;
+  return flatpak_context_parse_env_fd (context, fd, error);
 }
 
 static gboolean
@@ -3711,8 +3706,9 @@ flatpak_context_make_sandboxed (FlatpakContext *context)
   /* We drop almost everything from the app permission, except
    * multiarch which is inherited, to make sure app code keeps
    * running. */
-  FlatpakPermission *multiarch =
-    g_hash_table_lookup (context->features_permissions, "multiarch");
+  g_autoptr(FlatpakPermission) multiarch =
+    flatpak_permission_dup (g_hash_table_lookup (context->features_permissions,
+                                                 "multiarch"));
 
   g_hash_table_remove_all (context->shares_permissions);
   g_hash_table_remove_all (context->socket_permissions);
@@ -3723,7 +3719,7 @@ flatpak_context_make_sandboxed (FlatpakContext *context)
     {
       g_hash_table_insert (context->features_permissions,
                            g_strdup ("multiarch"),
-                           flatpak_permission_dup (multiarch));
+                           g_steal_pointer (&multiarch));
     }
 
   g_hash_table_remove_all (context->persistent);
