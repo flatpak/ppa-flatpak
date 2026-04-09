@@ -1,3 +1,1 @@
-run-Fix-checking-wrong-variable-in-runtime-fd-selection.patch
-run-Mount-original-app-on-run-parent-app-when-using-app-p.patch
 debian/system-helper-Set-Debian-s-canonical-home-directory-for-s.patch
