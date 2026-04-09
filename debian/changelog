@@ -1,9 +1,11 @@
 flatpak (1.16.5-1) UNRELEASED; urgency=high
 
-  * New upstream release fixing regressions in 1.16.4-1
+  * New upstream release fixing (some) regressions in 1.16.4
     (Closes: #1132960, #1132968)
+    - Note that other regressions are still being investigated
+  * Drop patches that were applied upstream
 
- -- Simon McVittie <smcv@debian.org>  Thu, 09 Apr 2026 09:57:24 +0100
+ -- Simon McVittie <smcv@debian.org>  Thu, 09 Apr 2026 10:00:38 +0100
 
 flatpak (1.16.4-2) unstable; urgency=medium
 
