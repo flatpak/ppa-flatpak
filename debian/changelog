@@ -1,3 +1,10 @@
+flatpak (1.16.5-1) UNRELEASED; urgency=high
+
+  * New upstream release fixing regressions in 1.16.4-1
+    (Closes: #1132960, #1132968)
+
+ -- Simon McVittie <smcv@debian.org>  Thu, 09 Apr 2026 09:57:24 +0100
+
 flatpak (1.16.4-2) unstable; urgency=medium
 
   * d/p/run-Fix-checking-wrong-variable-in-runtime-fd-selection.patch,
