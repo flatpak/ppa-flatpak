@@ -1,3 +1,9 @@
+flatpak (1.16.6-1) UNRELEASED; urgency=medium
+
+  * New upstream stable release
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 10 Apr 2026 19:05:55 +0100
+
 flatpak (1.16.5-1) unstable; urgency=high
 
   * New upstream release fixing some of the regressions in 1.16.4
