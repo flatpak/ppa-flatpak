@@ -2,6 +2,8 @@ utils-Add-flatpak_set_cloexec.patch
 run-context-Mark-fd-arguments-as-close-on-exec.patch
 run-Cope-with-an-empty-runtime.patch
 dir-In-apply_extra_data-don-t-assume-there-is-always-a-ru.patch
+tests-Add-test-extra-data.sh-to-test-extra-data-installat.patch
+tests-Add-test-for-NoRuntime-extra-data-app.patch
 utils-Move-flatpak_get_path_for_fd-to-here.patch
 portal-Avoid-crash-if-sandbox-expose-ro-fd-is-out-of-rang.patch
 portal-Log-and-ignore-unusable-sandbox-expose-fds-instead.patch

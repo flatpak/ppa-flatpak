@@ -1,0 +1,117 @@
+From: bbhtt <bbhtt.zn0i8@slmail.me>
+Date: Fri, 10 Apr 2026 10:14:23 +0530
+Subject: tests: Add test for NoRuntime extra-data app
+
+(cherry picked from commit 79cb10e8803a3f13fe5bd8329dec37e58cfa2a84)
+---
+ tests/apply-extra-static.c | 15 +++++++++++++++
+ tests/meson.build          | 15 +++++++++++++++
+ tests/test-extra-data.sh   | 43 ++++++++++++++++++++++++++++++++++++++++++-
+ 3 files changed, 72 insertions(+), 1 deletion(-)
+ create mode 100644 tests/apply-extra-static.c
+
+diff --git a/tests/apply-extra-static.c b/tests/apply-extra-static.c
+new file mode 100644
+index 0000000..5be3993
+--- /dev/null
++++ b/tests/apply-extra-static.c
+@@ -0,0 +1,15 @@
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <unistd.h>
++
++static const char msg[] = "noruntime-extra-data\n";
++
++int main(void) {
++    mkdir("/app/extra", 0755);
++    int fd = open("/app/extra/ran", O_WRONLY | O_CREAT | O_TRUNC, 0644);
++    if (fd < 0)
++        return 1;
++    write(fd, msg, sizeof(msg) - 1);
++    close(fd);
++    return 0;
++}
+diff --git a/tests/meson.build b/tests/meson.build
+index 8f96e5f..464ed0b 100644
+--- a/tests/meson.build
++++ b/tests/meson.build
+@@ -291,6 +291,21 @@ executable(
+   install_dir : installed_testdir,
+ )
+ 
++if cc.links('#include <stdio.h>\nint main(void) { printf("test"); return 0; }',
++            args: ['-static'],
++            name: 'static libc')
++  executable(
++    'apply-extra-static',
++    'apply-extra-static.c',
++    install : get_option('installed_tests'),
++    install_dir : installed_testdir,
++    override_options : ['b_sanitize=none'],
++    link_args : ['-static'],
++  )
++else
++  warning('static libc not available, apply-extra-static will be skipped')
++endif
++
+ subdir('share/xdg-desktop-portal/portals')
+ subdir('services')
+ subdir('test-keyring')
+diff --git a/tests/test-extra-data.sh b/tests/test-extra-data.sh
+index 41c9b91..73fe3ce 100755
+--- a/tests/test-extra-data.sh
++++ b/tests/test-extra-data.sh
+@@ -45,7 +45,7 @@ curl "${EXTRA_DATA_URL}" -o "${DOWNLOADED_EXTRA_DATA}"
+ EXTRA_DATA_SIZE=$(stat --printf="%s" "${DOWNLOADED_EXTRA_DATA}")
+ EXTRA_DATA_SHA256=$(sha256sum "${DOWNLOADED_EXTRA_DATA}" | cut -f1 -d' ')
+ 
+-echo "1..1"
++echo "1..2"
+ 
+ # build the app with the extra data
+ EXTRA_DATA="--extra-data=test:${EXTRA_DATA_SHA256}:${EXTRA_DATA_SIZE}:${EXTRA_DATA_SIZE}:${EXTRA_DATA_URL}"
+@@ -61,3 +61,44 @@ assert_file_has_content out "extra-data-test-content"
+ ${FLATPAK} ${U} uninstall -y org.test.Hello >&2
+ 
+ ok "install extra data app with ostree"
++
++build_extra_data_noruntime_app() {
++    local repo="$1"
++    local branch="$2"
++
++    DIR="$(mktemp -d)"
++    ARCH="$(flatpak --default-arch)"
++
++    mkdir -p "${DIR}/files/bin"
++
++    cp "${G_TEST_BUILDDIR}/apply-extra-static" "${DIR}/files/bin/apply_extra"
++    chmod +x "${DIR}/files/bin/apply_extra"
++
++    cat > "${DIR}/metadata" <<EOF
++[Application]
++name=org.test.ExtraDataNoRuntime
++runtime=org.test.Platform/${ARCH}/${branch}
++
++[Extra Data]
++NoRuntime=true
++uri=${EXTRA_DATA_URL}
++size=${EXTRA_DATA_SIZE}
++checksum=${EXTRA_DATA_SHA256}
++EOF
++
++    flatpak build-finish "${DIR}" >&2
++    flatpak build-export ${FL_GPGARGS} "${repo}" "${DIR}" "${branch}" >&2
++    rm -rf "${DIR}"
++}
++
++if test -f "${G_TEST_BUILDDIR}/apply-extra-static"; then
++    build_extra_data_noruntime_app repos/test ${BRANCH}
++    update_repo ${REPONAME} ${COLLECTION_ID}
++    ${FLATPAK} ${U} install --or-update -y ${REPONAME}-repo org.test.ExtraDataNoRuntime ${BRANCH} >&2
++    DEPLOY_DIR="$(${FLATPAK} ${U} info --show-location org.test.ExtraDataNoRuntime)"
++    assert_file_has_content "${DEPLOY_DIR}/files/extra/ran" "^noruntime-extra-data$"
++    ${FLATPAK} ${U} uninstall -y org.test.ExtraDataNoRuntime >&2
++    ok "install+run extra data app with NoRuntime"
++else
++    ok "# SKIP install+run extra data app with NoRuntime apply-extra-static not found"
++fi

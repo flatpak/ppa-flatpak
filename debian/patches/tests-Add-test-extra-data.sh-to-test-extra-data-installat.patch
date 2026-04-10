@@ -1,0 +1,122 @@
+From: Sebastian Wick <sebastian.wick@redhat.com>
+Date: Thu, 21 Aug 2025 18:40:33 +0200
+Subject: tests: Add test-extra-data.sh to test extra-data installation
+
+[smcv: Remove OCI test because #3790 was only solved in 1.17.x,
+only keep libostree test]
+
+(cherry picked from commit e9e713fa0ddd0d1af4b8cdec6aa9124d471ed33e)
+---
+ tests/meson.build             |  1 +
+ tests/test-extra-data.sh      | 63 +++++++++++++++++++++++++++++++++++++++++++
+ tests/test-matrix/meson.build |  2 ++
+ tests/update-test-matrix      |  1 +
+ 4 files changed, 67 insertions(+)
+ create mode 100755 tests/test-extra-data.sh
+
+diff --git a/tests/meson.build b/tests/meson.build
+index cb187d7..8f96e5f 100644
+--- a/tests/meson.build
++++ b/tests/meson.build
+@@ -362,6 +362,7 @@ foreach testcase : wrapped_tests
+     'test-summaries.sh' : 60,
+     'test-unused.sh' : 90,
+     'test-update-portal.sh' : 90,
++    'test-extra-data.sh' : 90,
+   }.get(script, 30)
+ 
+   is_parallel = {
+diff --git a/tests/test-extra-data.sh b/tests/test-extra-data.sh
+new file mode 100755
+index 0000000..41c9b91
+--- /dev/null
++++ b/tests/test-extra-data.sh
+@@ -0,0 +1,63 @@
++#!/bin/bash
++#
++# Copyright (C) 2025 Red Hat, Inc
++#
++# This library is free software; you can redistribute it and/or
++# modify it under the terms of the GNU Lesser General Public
++# License as published by the Free Software Foundation; either
++# version 2 of the License, or (at your option) any later version.
++#
++# This library is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++# Lesser General Public License for more details.
++#
++# You should have received a copy of the GNU Lesser General Public
++# License along with this library; if not, write to the
++# Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++# Boston, MA 02111-1307, USA.
++
++set -euo pipefail
++
++. "$(dirname $0)/libtest.sh"
++
++skip_without_bwrap
++
++REPONAME="test"
++BRANCH="master"
++COLLECTION_ID="org.test.Collection.${REPONAME}"
++
++setup_repo ${REPONAME} ${COLLECTION_ID}
++
++# create the extra data
++EXTRA_DATA_FILE="extra-data-test"
++EXTRA_DATA_DIR="${TEST_DATA_DIR}/extra-data-server/"
++mkdir -p "${EXTRA_DATA_DIR}"
++echo "extra-data-test-content" > "${EXTRA_DATA_DIR}/${EXTRA_DATA_FILE}"
++
++# serve the extra data
++httpd web-server.py "${EXTRA_DATA_DIR}"
++EXTRA_DATA_URL="http://127.0.0.1:$(cat httpd-port)/${EXTRA_DATA_FILE}"
++
++# download to get the size and sha256 sum
++DOWNLOADED_EXTRA_DATA="${TEST_DATA_DIR}/downloaded-extra-data"
++curl "${EXTRA_DATA_URL}" -o "${DOWNLOADED_EXTRA_DATA}"
++EXTRA_DATA_SIZE=$(stat --printf="%s" "${DOWNLOADED_EXTRA_DATA}")
++EXTRA_DATA_SHA256=$(sha256sum "${DOWNLOADED_EXTRA_DATA}" | cut -f1 -d' ')
++
++echo "1..1"
++
++# build the app with the extra data
++EXTRA_DATA="--extra-data=test:${EXTRA_DATA_SHA256}:${EXTRA_DATA_SIZE}:${EXTRA_DATA_SIZE}:${EXTRA_DATA_URL}"
++BUILD_FINISH_ARGS=${EXTRA_DATA} make_updated_app ${REPONAME} ${COLLECTION_ID} ${BRANCH} UPDATE1
++
++# ensure it installs correctly
++install_repo ${REPONAME} ${BRANCH}
++
++# ensure the right extra-data got downloaded
++${FLATPAK} run --command=sh org.test.Hello -c "cat /app/extra/test" > out
++assert_file_has_content out "extra-data-test-content"
++
++${FLATPAK} ${U} uninstall -y org.test.Hello >&2
++
++ok "install extra data app with ostree"
+diff --git a/tests/test-matrix/meson.build b/tests/test-matrix/meson.build
+index ef85b7e..037500e 100644
+--- a/tests/test-matrix/meson.build
++++ b/tests/test-matrix/meson.build
+@@ -29,6 +29,8 @@ wrapped_tests += {'name' : 'test-summaries@user.wrap', 'script' : 'test-summarie
+ wrapped_tests += {'name' : 'test-summaries@system.wrap', 'script' : 'test-summaries.sh'}
+ wrapped_tests += {'name' : 'test-subset@user.wrap', 'script' : 'test-subset.sh'}
+ wrapped_tests += {'name' : 'test-subset@system.wrap', 'script' : 'test-subset.sh'}
++wrapped_tests += {'name' : 'test-extra-data@user.wrap', 'script' : 'test-extra-data.sh'}
++wrapped_tests += {'name' : 'test-extra-data@system.wrap', 'script' : 'test-extra-data.sh'}
+ wrapped_tests += {'name' : 'test-basic.sh', 'script' : 'test-basic.sh'}
+ wrapped_tests += {'name' : 'test-completion.sh', 'script' : 'test-completion.sh'}
+ wrapped_tests += {'name' : 'test-config.sh', 'script' : 'test-config.sh'}
+diff --git a/tests/update-test-matrix b/tests/update-test-matrix
+index 3a51d0b..2e26a6f 100755
+--- a/tests/update-test-matrix
++++ b/tests/update-test-matrix
+@@ -34,6 +34,7 @@ TEST_MATRIX_SOURCE=(
+ 	'tests/test-prune.sh' \
+ 	'tests/test-seccomp.sh' \
+ 	'tests/test-repair.sh' \
++	'tests/test-extra-data.sh{user+system}' \
+ )
+ 
+ "${tests_srcdir}/expand-test-matrix.sh" --meson "${TEST_MATRIX_SOURCE[*]}" > "${tests_srcdir}/test-matrix/meson.build"
