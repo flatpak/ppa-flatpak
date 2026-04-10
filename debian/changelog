@@ -1,4 +1,4 @@
-flatpak (1.16.5-1) UNRELEASED; urgency=high
+flatpak (1.16.5-1) unstable; urgency=high
 
   * New upstream release fixing some of the regressions in 1.16.4
     (Closes: #1132960, #1132968)
@@ -18,8 +18,10 @@ flatpak (1.16.5-1) UNRELEASED; urgency=high
     d/p/portal-Reinstate-flatpak_get_path_for_fd-checks.patch:
     Add proposed patches to fix regression in 1.16.4 for Epiphany and
     possibly other WebKitGTK-based apps
+  * d/p/libtest-Allow-adding-a-new-ref-to-an-existing-temporary-o.patch:
+    Add proposed patch to fix autopkgtest failure
 
- -- Simon McVittie <smcv@debian.org>  Fri, 10 Apr 2026 10:52:34 +0100
+ -- Simon McVittie <smcv@debian.org>  Fri, 10 Apr 2026 12:47:08 +0100
 
 flatpak (1.16.4-2) unstable; urgency=medium
 
