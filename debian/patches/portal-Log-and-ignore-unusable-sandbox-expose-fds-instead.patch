@@ -1,0 +1,61 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Thu, 9 Apr 2026 20:24:48 +0100
+Subject: portal: Log and ignore unusable sandbox-expose fds instead of
+ erroring
+
+For the sandbox expose fds, a historical quirk of this code is that if
+the checks in get_path_for_fd() failed, we would merely log at g_info()
+level (usually only shown when debugging the portal), and otherwise
+silently ignore the request to expose the fd in the sandbox.
+
+With hindsight this was probably not the right thing to do, but apps
+could well be relying on it now. For example, there are indications
+that Epiphany might send a memfd from the main instance to a subsandbox,
+which never actually worked, but will break that subsandbox process
+if that's treated as a fatal error.
+
+Fixes: 3c500145 "portal: Use --bind-fd, --app-fd and --usr-fd options to avoid races"
+Co-authored-by: Sebastian Wick <sebastian.wick@redhat.com>
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Bug: https://github.com/flatpak/flatpak/issues/6584
+Forwarded: https://github.com/flatpak/flatpak/pull/6588
+---
+ portal/flatpak-portal.c | 18 ++++++------------
+ 1 file changed, 6 insertions(+), 12 deletions(-)
+
+diff --git a/portal/flatpak-portal.c b/portal/flatpak-portal.c
+index be4d40a..1803dad 100644
+--- a/portal/flatpak-portal.c
++++ b/portal/flatpak-portal.c
+@@ -1263,12 +1263,9 @@ handle_spawn (PortalFlatpak         *object,
+             }
+           else
+             {
+-              g_debug ("Invalid sandbox expose fd: %s", error->message);
+-              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+-                                                     G_DBUS_ERROR_INVALID_ARGS,
+-                                                     "No valid file descriptor for handle %d",
+-                                                     handle);
+-              return G_DBUS_METHOD_INVOCATION_HANDLED;
++              g_info ("unable to validate sandbox-expose-fd %d, ignoring: %s",
++                      fds[handle], error->message);
++              g_clear_error (&error);
+             }
+         }
+     }
+@@ -1298,12 +1295,9 @@ handle_spawn (PortalFlatpak         *object,
+             }
+           else
+             {
+-              g_debug ("Invalid sandbox expose ro fd: %s", error->message);
+-              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+-                                                     G_DBUS_ERROR_INVALID_ARGS,
+-                                                     "No file descriptor for handle %d",
+-                                                     handle);
+-              return G_DBUS_METHOD_INVOCATION_HANDLED;
++              g_info ("unable to validate sandbox-expose-ro-fd %d, ignoring: %s",
++                      fds[handle], error->message);
++              g_clear_error (&error);
+             }
+         }
+     }

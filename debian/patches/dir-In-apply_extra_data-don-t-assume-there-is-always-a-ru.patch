@@ -1,0 +1,39 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Thu, 9 Apr 2026 18:47:40 +0100
+Subject: dir: In apply_extra_data(), don't assume there is always a runtime
+
+org.freedesktop.Platform.openh264 is one example of an extension that
+runs a statically-linked extra-data helper, with no runtime. Only open
+the runtime if there is one.
+
+Fixes: ac62ebe3 "run: Use O_PATH fds for the runtime and app deploy directories"
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Bug: https://github.com/flatpak/flatpak/issues/6583
+Forwarded: https://github.com/flatpak/flatpak/pull/6587
+---
+ common/flatpak-dir.c | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+diff --git a/common/flatpak-dir.c b/common/flatpak-dir.c
+index 7e8fbf6..e381b16 100644
+--- a/common/flatpak-dir.c
++++ b/common/flatpak-dir.c
+@@ -8476,10 +8476,14 @@ apply_extra_data (FlatpakDir   *self,
+   run_flags |= FLATPAK_RUN_FLAG_NO_PROC;
+ 
+   glnx_autofd int usr_fd = -1;
+-  usr_fd = open (flatpak_file_get_path_cached (runtime_files),
+-                 O_PATH | O_CLOEXEC | O_NOFOLLOW);
+-  if (usr_fd < 0)
+-    return glnx_throw_errno_prefix (error, "Failed to open runtime files");
++
++  if (runtime_files != NULL)
++    {
++      usr_fd = open (flatpak_file_get_path_cached (runtime_files),
++                     O_PATH | O_CLOEXEC | O_NOFOLLOW);
++      if (usr_fd < 0)
++        return glnx_throw_errno_prefix (error, "Failed to open runtime files");
++    }
+ 
+   if (!flatpak_run_setup_base_argv (bwrap, usr_fd, NULL, runtime_arch,
+                                     run_flags, error))
