@@ -15,6 +15,7 @@ Build-Depends:
  bison,
  bubblewrap (>= 0.10.0~),
  ca-certificates <!nocheck>,
+ curl <!nocheck>,
  dbus-daemon,
  desktop-file-utils <!nocheck>,
  docbook-xml <!nodoc>,
@@ -127,6 +128,7 @@ Section: misc
 Depends:
  attr,
  ca-certificates,
+ curl,
  dbus-daemon,
  desktop-file-utils,
  flatpak (= ${binary:Version}),

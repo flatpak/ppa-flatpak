@@ -1,3 +1,37 @@
+flatpak (1.16.6-1) unstable; urgency=high
+
+  * New upstream stable release
+    - Incorporates the patches from the previous upload, plus
+      additional bugfixes
+  * Drop patches that were included in the new upstream release
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 10 Apr 2026 19:06:41 +0100
+
+flatpak (1.16.5-1) unstable; urgency=high
+
+  * New upstream release fixing some of the regressions in 1.16.4
+    (Closes: #1132960, #1132968)
+  * Drop patches that were applied upstream
+  * d/p/utils-Add-flatpak_set_cloexec.patch,
+    d/p/run-context-Mark-fd-arguments-as-close-on-exec.patch:
+    Add proposed patches to fix another regression in 1.16.4 for
+    Chromium-based browsers
+    (Closes: #1132968)
+  * d/p/run-Cope-with-an-empty-runtime.patch,
+    d/p/dir-In-apply_extra_data-don-t-assume-there-is-always-a-ru.patch:
+    Add proposed patches to fix regression in 1.16.4 when installing
+    apps/runtimes/extensions that use a statically-linked extra-data helper
+  * d/p/utils-Move-flatpak_get_path_for_fd-to-here.patch,
+    d/p/portal-Avoid-crash-if-sandbox-expose-ro-fd-is-out-of-rang.patch,
+    d/p/portal-Log-and-ignore-unusable-sandbox-expose-fds-instead.patch,
+    d/p/portal-Reinstate-flatpak_get_path_for_fd-checks.patch:
+    Add proposed patches to fix regression in 1.16.4 for Epiphany and
+    possibly other WebKitGTK-based apps
+  * d/p/libtest-Allow-adding-a-new-ref-to-an-existing-temporary-o.patch:
+    Add proposed patch to fix autopkgtest failure
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 10 Apr 2026 12:47:08 +0100
+
 flatpak (1.16.4-2~flatpak1~24.04.1) noble; urgency=medium
 
   * Rebuild for Ubuntu 24.04 'noble' for PPA
