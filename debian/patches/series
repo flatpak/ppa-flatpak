@@ -6,4 +6,5 @@ utils-Move-flatpak_get_path_for_fd-to-here.patch
 portal-Avoid-crash-if-sandbox-expose-ro-fd-is-out-of-rang.patch
 portal-Log-and-ignore-unusable-sandbox-expose-fds-instead.patch
 portal-Reinstate-flatpak_get_path_for_fd-checks.patch
+libtest-Allow-adding-a-new-ref-to-an-existing-temporary-o.patch
 debian/system-helper-Set-Debian-s-canonical-home-directory-for-s.patch
