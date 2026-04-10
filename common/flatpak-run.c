@@ -1366,7 +1366,7 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
                                gboolean            build,
                                gboolean            devel,
                                char              **app_info_path_out,
-                               int                 instance_id_fd,
+                               int                 instance_id_fd_arg,
                                char              **instance_id_host_dir_out,
                                char              **instance_id_host_private_dir_out,
                                char              **instance_id_out,
@@ -1374,7 +1374,11 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
 {
   g_autofree char *info_path = NULL;
   g_autofree char *bwrapinfo_path = NULL;
-  int fd, fd2, fd3;
+  glnx_autofd int fd1 = -1;
+  glnx_autofd int fd2 = -1;
+  glnx_autofd int fd3 = -1;
+  int info_fd;
+  glnx_autofd int instance_id_fd = instance_id_fd_arg;
   g_autoptr(GKeyFile) keyfile = NULL;
   g_autofree char *runtime_path = NULL;
   const char *group;
@@ -1523,8 +1527,8 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
      This way even if the bind-mount is unmounted we can find the real data.
    */
 
-  fd = open (info_path, O_RDONLY);
-  if (fd == -1)
+  fd1 = info_fd = open (info_path, O_RDONLY);
+  if (fd1 == -1)
     {
       int errsv = errno;
       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
@@ -1535,7 +1539,6 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
   fd2 = open (info_path, O_RDONLY);
   if (fd2 == -1)
     {
-      close (fd);
       int errsv = errno;
       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
                    _("Failed to open flatpak-info file: %s"), g_strerror (errsv));
@@ -1544,9 +1547,9 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
 
   flatpak_bwrap_add_args (bwrap, "--perms", "0600", NULL);
   flatpak_bwrap_add_args_data_fd (bwrap,
-                                  "--file", fd, "/.flatpak-info");
+                                  "--file", g_steal_fd (&fd1), "/.flatpak-info");
   flatpak_bwrap_add_args_data_fd (bwrap,
-                                  "--ro-bind-data", fd2, "/.flatpak-info");
+                                  "--ro-bind-data", g_steal_fd (&fd2), "/.flatpak-info");
 
   /* Tell the application that it's running under Flatpak in a generic way. */
   flatpak_bwrap_add_args (bwrap,
@@ -1563,8 +1566,6 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
   fd3 = open (bwrapinfo_path, O_RDWR | O_CREAT, 0644);
   if (fd3 == -1)
     {
-      close (fd);
-      close (fd2);
       int errsv = errno;
       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
                    _("Failed to open bwrapinfo.json file: %s"), g_strerror (errsv));
@@ -1587,10 +1588,6 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
               if (errsv == EINTR)
                 continue;
 
-              close (fd);
-              close (fd2);
-              close (fd3);
-
               g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
                            _("Failed to write to instance id fd: %s"), g_strerror (errsv));
               return FALSE;
@@ -1600,13 +1597,14 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
           instance_id_size -= bytes_written;
         }
 
-      close (instance_id_fd);
+      /* explicitly close this as soon as we're done to notify the other side */
+      g_clear_fd (&instance_id_fd, NULL);
     }
 
-  flatpak_bwrap_add_args_data_fd (bwrap, "--info-fd", fd3, NULL);
+  flatpak_bwrap_add_args_data_fd (bwrap, "--info-fd", g_steal_fd (&fd3), NULL);
 
   if (app_info_path_out != NULL)
-    *app_info_path_out = g_strdup_printf ("/proc/self/fd/%d", fd);
+    *app_info_path_out = g_strdup_printf ("/proc/self/fd/%d", info_fd);
 
   if (instance_id_host_dir_out != NULL)
     *instance_id_host_dir_out = g_steal_pointer (&instance_id_host_dir);
@@ -1620,6 +1618,10 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
   return TRUE;
 }
 
+/*
+ * @runtime_fd: the /usr for the runtime, or -1 if running with no runtime,
+ *  perhaps to unpack extra-data
+ */
 static void
 add_tzdata_args (FlatpakBwrap *bwrap,
                  int           runtime_fd)
@@ -1632,6 +1634,8 @@ add_tzdata_args (FlatpakBwrap *bwrap,
   glnx_autofd int zoneinfo_fd = -1;
   g_autoptr(GError) error = NULL;
 
+  g_return_if_fail (runtime_fd >= -1);
+
   raw_timezone = flatpak_get_timezone ();
   timezone_content = g_strdup_printf ("%s\n", raw_timezone);
   localtime_content = g_strconcat ("../usr/share/zoneinfo/", raw_timezone, NULL);
@@ -1640,10 +1644,11 @@ add_tzdata_args (FlatpakBwrap *bwrap,
 
   tzdir_fd = glnx_chaseat (AT_FDCWD, tzdir, GLNX_CHASE_MUST_BE_DIRECTORY, NULL);
 
-  zoneinfo_fd = glnx_chaseat (runtime_fd, "share/zoneinfo",
-                              GLNX_CHASE_RESOLVE_BENEATH |
-                              GLNX_CHASE_MUST_BE_DIRECTORY,
-                              NULL);
+  if (runtime_fd >= 0)
+    zoneinfo_fd = glnx_chaseat (runtime_fd, "share/zoneinfo",
+                                GLNX_CHASE_RESOLVE_BENEATH |
+                                GLNX_CHASE_MUST_BE_DIRECTORY,
+                                NULL);
 
   /* Check for host /usr/share/zoneinfo */
   if (tzdir_fd >= 0 && zoneinfo_fd >= 0)
@@ -1654,7 +1659,7 @@ add_tzdata_args (FlatpakBwrap *bwrap,
                               "--symlink", localtime_content, "/etc/localtime",
                               NULL);
     }
-  else
+  else if (runtime_fd >= 0)
     {
       g_autofree char *runtime_zoneinfo = NULL;
       glnx_autofd int runtime_zoneinfo_fd = -1;
@@ -2165,6 +2170,10 @@ setup_seccomp (FlatpakBwrap   *bwrap,
 }
 #endif
 
+/*
+ * @runtime_fd: the /usr for the runtime, or -1 if running with no runtime,
+ *  perhaps to unpack extra-data
+ */
 static void
 flatpak_run_setup_usr_links (FlatpakBwrap *bwrap,
                              int          runtime_fd,
@@ -2228,6 +2237,10 @@ static const char *const sysfs_dirs[] =
   "/sys/devices"
 };
 
+/*
+ * @runtime_fd: the /usr for the runtime, or -1 if running with no runtime,
+ *  perhaps to unpack extra-data
+ */
 gboolean
 flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
                              int             runtime_fd,
@@ -2248,7 +2261,7 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
   gboolean bwrap_unprivileged = flatpak_bwrap_is_unprivileged ();
   gsize i;
 
-  g_return_val_if_fail (runtime_fd >= 0, FALSE);
+  g_return_val_if_fail (runtime_fd >= -1, FALSE);
 
   /* Disable recursive userns for all flatpak processes, as we need this
    * to guarantee that the sandbox can't restructure the filesystem.
@@ -2357,7 +2370,8 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
   else if (g_file_test ("/var/lib/dbus/machine-id", G_FILE_TEST_EXISTS))
     flatpak_bwrap_add_args (bwrap, "--ro-bind", "/var/lib/dbus/machine-id", "/etc/machine-id", NULL);
 
-  if ((flags & FLATPAK_RUN_FLAG_WRITABLE_ETC) == 0)
+  if (runtime_fd >= 0
+      && (flags & FLATPAK_RUN_FLAG_WRITABLE_ETC) == 0)
     {
       g_auto(GLnxDirFdIterator) dfd_iter = { 0, };
       struct dirent *dent;
@@ -2925,42 +2939,6 @@ open_namespace_fd_if_needed (const char *path,
   return -1;
 }
 
-static char *
-get_path_for_fd (int        fd,
-                 GError   **error)
-{
-  g_autofree char *proc_path = NULL;
-  g_autofree char *path = NULL;
-
-  proc_path = g_strdup_printf ("/proc/self/fd/%d", fd);
-  path = glnx_readlinkat_malloc (AT_FDCWD, proc_path, NULL, error);
-  if (path == NULL)
-    return NULL;
-
-  /* All normal paths start with /, but some weird things
-     don't, such as socket:[27345] or anon_inode:[eventfd].
-     We don't support any of these */
-  if (path[0] != '/')
-    {
-      return glnx_null_throw (error, "%s resolves to non-absolute path %s",
-                              proc_path, path);
-    }
-
-  /* File descriptors to actually deleted files have " (deleted)"
-     appended to them. This also happens to some fake fd types
-     like shmem which are "/<name> (deleted)". All such
-     files are considered invalid. Unfortunately this also
-     matches files with filenames that actually end in " (deleted)",
-     but there is not much to do about this. */
-  if (g_str_has_suffix (path, " (deleted)"))
-    {
-      return glnx_null_throw (error, "%s resolves to deleted path %s",
-                              proc_path, path);
-    }
-
-  return g_steal_pointer (&path);
-}
-
 gboolean
 flatpak_run_app (FlatpakDecomposed   *app_ref,
                  FlatpakDeploy       *app_deploy,
@@ -3189,7 +3167,7 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
     {
       g_autofree char *path = NULL;
 
-      path = get_path_for_fd (custom_runtime_fd, &my_error);
+      path = flatpak_get_path_for_fd (custom_runtime_fd, &my_error);
       if (path == NULL)
         {
           return flatpak_fail_error (error, FLATPAK_ERROR,
@@ -3203,7 +3181,7 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
       runtime_fd = custom_runtime_fd;
       runtime_files = custom_runtime_files;
     }
-  else if (custom_app_fd == FLATPAK_RUN_APP_DEPLOY_USR_ORIGINAL)
+  else if (custom_runtime_fd == FLATPAK_RUN_APP_DEPLOY_USR_ORIGINAL)
     {
       original_runtime_target_path = "/usr";
       runtime_fd = original_runtime_fd;
@@ -3317,7 +3295,7 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
     {
       g_autofree char *path = NULL;
 
-      path = get_path_for_fd (custom_app_fd, error);
+      path = flatpak_get_path_for_fd (custom_app_fd, error);
       if (path == NULL)
         return glnx_prefix_error (error, "Cannot convert custom app fd to path");
 
@@ -3335,6 +3313,7 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
     }
   else if (custom_app_fd == FLATPAK_RUN_APP_DEPLOY_APP_EMPTY)
     {
+      original_app_target_path = "/run/parent/app";
       app_fd = -1;
       app_files = NULL;
     }
@@ -3555,7 +3534,8 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
                                       app_id, flatpak_decomposed_get_branch (app_ref),
                                       runtime_ref, app_id_dir, app_context, extra_context,
                                       sandboxed, FALSE, flags & FLATPAK_RUN_FLAG_DEVEL,
-                                      &app_info_path, instance_id_fd,
+                                      &app_info_path,
+                                      g_steal_fd (&instance_id_fd),
                                       &instance_id_host_dir, &instance_id_host_private_dir,
                                       &instance_id, error))
     return FALSE;
@@ -3583,40 +3563,6 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
       flatpak_bwrap_add_arg (bwrap, "--bind");
       flatpak_bwrap_add_arg (bwrap, shared_xdg_runtime_dir);
       flatpak_bwrap_add_arg_printf (bwrap, "/run/user/%d", getuid ());
-    }
-
-  for (i = 0; bind_fds && i < bind_fds->len; i++)
-    {
-      int fd = g_array_index (bind_fds, int, i);
-      g_autofree char *path = NULL;
-
-      /* We get the path the fd refers to, to determine to mount point
-       * destination inside the sandbox */
-      path = get_path_for_fd (fd, error);
-      if (!path)
-        return FALSE;
-
-      if (!flatpak_bwrap_add_args_data_fd_dup (bwrap,
-                                               "--bind-fd", fd, path,
-                                               error))
-        return FALSE;
-    }
-
-  for (i = 0; ro_bind_fds && i < ro_bind_fds->len; i++)
-    {
-      int fd = g_array_index (ro_bind_fds, int, i);
-      g_autofree char *path = NULL;
-
-      /* We get the path the fd refers to, to determine to mount point
-       * destination inside the sandbox */
-      path = get_path_for_fd (fd, error);
-      if (!path)
-        return FALSE;
-
-      if (!flatpak_bwrap_add_args_data_fd_dup (bwrap,
-                                               "--ro-bind-fd", fd, path,
-                                               error))
-        return FALSE;
     }
 
   if (!flatpak_run_add_dconf_args (bwrap, app_id, metakey, error))
@@ -3650,6 +3596,40 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
                           "--symlink", "/app/lib/debug/source", "/run/build",
                           "--symlink", "/usr/lib/debug/source", "/run/build-runtime",
                           NULL);
+
+  for (i = 0; bind_fds && i < bind_fds->len; i++)
+    {
+      int fd = g_array_index (bind_fds, int, i);
+      g_autofree char *path = NULL;
+
+      /* We get the path the fd refers to, to determine to mount point
+       * destination inside the sandbox */
+      path = flatpak_get_path_for_fd (fd, error);
+      if (!path)
+        return FALSE;
+
+      if (!flatpak_bwrap_add_args_data_fd_dup (bwrap,
+                                               "--bind-fd", fd, path,
+                                               error))
+        return FALSE;
+    }
+
+  for (i = 0; ro_bind_fds && i < ro_bind_fds->len; i++)
+    {
+      int fd = g_array_index (ro_bind_fds, int, i);
+      g_autofree char *path = NULL;
+
+      /* We get the path the fd refers to, to determine to mount point
+       * destination inside the sandbox */
+      path = flatpak_get_path_for_fd (fd, error);
+      if (!path)
+        return FALSE;
+
+      if (!flatpak_bwrap_add_args_data_fd_dup (bwrap,
+                                               "--ro-bind-fd", fd, path,
+                                               error))
+        return FALSE;
+    }
 
   if (cwd)
     flatpak_bwrap_add_args (bwrap, "--chdir", cwd, NULL);
