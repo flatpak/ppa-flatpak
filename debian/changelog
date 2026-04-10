@@ -1,3 +1,13 @@
+flatpak (1.16.6-1~flatpak1~24.04.1) noble; urgency=medium
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+    - Reinstate Priority: optional field for backport
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 10 Apr 2026 20:29:44 +0100
+
 flatpak (1.16.6-1) unstable; urgency=high
 
   * New upstream stable release
