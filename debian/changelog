@@ -1,4 +1,4 @@
-flatpak (1.16.6-1~flatpak1~20.04.1) UNRELEASED; urgency=medium
+flatpak (1.16.6-1~flatpak1~20.04.1) focal; urgency=medium
 
   * Rebuild for Ubuntu 20.04 'focal' for PPA
   * Remaining changes relative to jammy PPA:
@@ -17,7 +17,7 @@ flatpak (1.16.6-1~flatpak1~20.04.1) UNRELEASED; urgency=medium
       focal is EOL and this backport is unlikely to be updated further.
   * Only show the EOL warning if stdout and stderr are a terminal
 
- -- Simon McVittie <smcv@debian.org>  Fri, 10 Apr 2026 20:31:33 +0100
+ -- Simon McVittie <smcv@debian.org>  Sat, 11 Apr 2026 10:37:11 +0100
 
 flatpak (1.16.6-1~flatpak1~22.04.1) jammy; urgency=medium
 
