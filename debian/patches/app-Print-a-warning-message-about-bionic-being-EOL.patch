@@ -3,23 +3,27 @@ Date: Tue, 30 Aug 2022 12:32:44 +0100
 Subject: app: Print a warning message about bionic being EOL
 
 ---
- app/flatpak-main.c | 7 +++++++
- 1 file changed, 7 insertions(+)
+ app/flatpak-main.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
 
 diff --git a/app/flatpak-main.c b/app/flatpak-main.c
-index 0451871..5795795 100644
+index 0451871..0bff2a6 100644
 --- a/app/flatpak-main.c
 +++ b/app/flatpak-main.c
-@@ -675,6 +675,13 @@ flatpak_run (int      argc,
+@@ -675,6 +675,17 @@ flatpak_run (int      argc,
  
    __attribute__((cleanup (uninstall_polkit_agent))) gpointer polkit_agent = NULL;
  
-+  g_printerr ("Ubuntu 18.04 'bionic' reached end-of-life for general support in May 2023.\n"
-+              "\n"
-+              "The packages in the Flatpak PPAs for Ubuntu 18.04 will not necessarily\n"
-+              "be updated, even if there are security vulnerabilities. Please upgrade\n"
-+              "to a newer LTS branch of Ubuntu.\n"
-+              "\n");
++  if (isatty (1) && isatty (2))
++    g_printerr ("========================================================================\n"
++                "Ubuntu 18.04 'bionic' reached end-of-life for general support in May 2023.\n"
++                "\n"
++                "The packages in the Flatpak PPAs for Ubuntu 18.04 are unlikely to be\n"
++                "updated further, even if there are security vulnerabilities. Please upgrade\n"
++                "to a newer LTS branch of Ubuntu, or obtain a maintained version of\n"
++                "Flatpak from someone who supports old LTS releases.\n"
++                "========================================================================\n"
++                "\n");
 +
    command = extract_command (&argc, argv, &command_name);
  
