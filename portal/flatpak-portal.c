@@ -558,7 +558,9 @@ validate_opath_fd (int        fd,
 {
   int fd_flags;
   struct stat st_buf;
+  struct stat real_st_buf;
   int access_mode;
+  g_autofree char *path = NULL;
 
   /* Must be able to get fd flags */
   fd_flags = fcntl (fd, F_GETFL);
@@ -576,6 +578,24 @@ validate_opath_fd (int        fd,
   /* Must be able to fstat */
   if (fstat (fd, &st_buf) < 0)
     return glnx_throw_errno_prefix (error, "Failed to fstat");
+
+  path = flatpak_get_path_for_fd (fd, error);
+  if (path == NULL)
+    return FALSE;
+
+  /* Verify that this is the same file as the app opened.
+   * Note that this is not security relevant because flatpak-run/bwrap will
+   * check things and abort if something is off. We do this only for backwards
+   * compatibility reasons: we need to be able to ignore the issue instead of
+   * aborting the entire sandbox setup later. */
+  if (stat (path, &real_st_buf) < 0 ||
+      st_buf.st_dev != real_st_buf.st_dev ||
+      st_buf.st_ino != real_st_buf.st_ino)
+    {
+      /* Different files on the inside and the outside, reject the request */
+      return glnx_throw (error,
+                         "different file inside and outside sandbox");
+    }
 
   access_mode = R_OK;
   if (S_ISDIR (st_buf.st_mode))
@@ -1150,6 +1170,7 @@ handle_spawn (PortalFlatpak         *object,
 
       g_ptr_array_add (flatpak_argv, g_strdup_printf ("--instance-id-fd=%d", pipe_fds[1]));
       child_setup_data.instance_id_fd = pipe_fds[1];
+      max_fd = MAX(max_fd, pipe_fds[1]);
     }
 
   if (devel)
@@ -1246,19 +1267,25 @@ handle_spawn (PortalFlatpak         *object,
           gint32 handle;
 
           g_variant_get_child (sandbox_expose_fd, i, "h", &handle);
-          if (handle >= 0 && handle < fds_len &&
-              validate_opath_fd (fds[handle], TRUE, &error))
+          if (handle >= fds_len || handle < 0)
+            {
+              g_debug ("Invalid sandbox-expose-fd handle %d", handle);
+              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
+                                                     G_DBUS_ERROR_INVALID_ARGS,
+                                                     "No file descriptor for handle %d",
+                                                     handle);
+              return G_DBUS_METHOD_INVOCATION_HANDLED;
+            }
+
+          if (validate_opath_fd (fds[handle], TRUE, &error))
             {
               g_array_append_val (expose_fds, fds[handle]);
             }
           else
             {
-              g_debug ("Invalid sandbox expose fd: %s", error->message);
-              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
-                                                     G_DBUS_ERROR_INVALID_ARGS,
-                                                     "No valid file descriptor for handle %d",
-                                                     handle);
-              return G_DBUS_METHOD_INVOCATION_HANDLED;
+              g_info ("unable to validate sandbox-expose-fd %d, ignoring: %s",
+                      fds[handle], error->message);
+              g_clear_error (&error);
             }
         }
     }
@@ -1272,19 +1299,25 @@ handle_spawn (PortalFlatpak         *object,
           gint32 handle;
 
           g_variant_get_child (sandbox_expose_fd_ro, i, "h", &handle);
-          if (handle >= 0 && handle < fds_len &&
-              validate_opath_fd (fds[handle], FALSE, &error))
+          if (handle >= fds_len || handle < 0)
             {
-              g_array_append_val (expose_fds_ro, fds[handle]);
-            }
-          else
-            {
-              g_debug ("Invalid sandbox expose ro fd: %s", error->message);
+              g_debug ("Invalid sandbox-expose-ro-fd handle %d", handle);
               g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
                                                      G_DBUS_ERROR_INVALID_ARGS,
                                                      "No file descriptor for handle %d",
                                                      handle);
               return G_DBUS_METHOD_INVOCATION_HANDLED;
+            }
+
+          if (validate_opath_fd (fds[handle], FALSE, &error))
+            {
+              g_array_append_val (expose_fds_ro, fds[handle]);
+            }
+          else
+            {
+              g_info ("unable to validate sandbox-expose-ro-fd %d, ignoring: %s",
+                      fds[handle], error->message);
+              g_clear_error (&error);
             }
         }
     }
@@ -1293,7 +1326,7 @@ handle_spawn (PortalFlatpak         *object,
     {
       int remapped_fd;
 
-      remapped_fd = fd_map_remap_fd (fd_map, &max_fd, expose_fds->data[i]);
+      remapped_fd = fd_map_remap_fd (fd_map, &max_fd, g_array_index (expose_fds, int, i));
 
       g_ptr_array_add (flatpak_argv, g_strdup_printf ("--bind-fd=%d",
                                                       remapped_fd));
@@ -1303,7 +1336,7 @@ handle_spawn (PortalFlatpak         *object,
     {
       int remapped_fd;
 
-      remapped_fd = fd_map_remap_fd (fd_map, &max_fd, expose_fds_ro->data[i]);
+      remapped_fd = fd_map_remap_fd (fd_map, &max_fd, g_array_index (expose_fds_ro, int, i));
 
       g_ptr_array_add (flatpak_argv, g_strdup_printf ("--ro-bind-fd=%d",
                                                       remapped_fd));

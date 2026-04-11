@@ -74,14 +74,13 @@ option_bind_fd_cb (const char  *option_name,
 {
   glnx_autofd int fd = -1;
 
-  fd = flatpak_parse_fd (value, error);
+  fd = flatpak_accept_fd_argument (option_name, value, error);
+
   if (fd < 0)
     return FALSE;
 
-  if (fd < 3)
-    return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
-
   g_array_append_val (opt_bind_fds, fd);
+  fd = -1; /* ownership transferred to GArray */
   return TRUE;
 }
 
@@ -93,14 +92,64 @@ option_ro_bind_fd_cb (const char  *option_name,
 {
   glnx_autofd int fd = -1;
 
-  fd = flatpak_parse_fd (value, error);
+  fd = flatpak_accept_fd_argument (option_name, value, error);
+
   if (fd < 0)
     return FALSE;
 
-  if (fd < 3)
-    return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
-
   g_array_append_val (opt_ro_bind_fds, fd);
+  fd = -1; /* ownership transferred to GArray */
+  return TRUE;
+}
+
+static gboolean
+opt_instance_id_fd_cb (const char  *option_name,
+                       const char  *value,
+                       gpointer     data,
+                       GError     **error)
+{
+  glnx_autofd int fd = -1;
+
+  fd = flatpak_accept_fd_argument (option_name, value, error);
+
+  if (fd < 0)
+    return FALSE;
+
+  opt_instance_id_fd = g_steal_fd (&fd);
+  return TRUE;
+}
+
+static gboolean
+opt_app_fd_cb (const char  *option_name,
+               const char  *value,
+               gpointer     data,
+               GError     **error)
+{
+  glnx_autofd int fd = -1;
+
+  fd = flatpak_accept_fd_argument (option_name, value, error);
+
+  if (fd < 0)
+    return FALSE;
+
+  opt_app_fd = g_steal_fd (&fd);
+  return TRUE;
+}
+
+static gboolean
+opt_usr_fd_cb (const char  *option_name,
+               const char  *value,
+               gpointer     data,
+               GError     **error)
+{
+  glnx_autofd int fd = -1;
+
+  fd = flatpak_accept_fd_argument (option_name, value, error);
+
+  if (fd < 0)
+    return FALSE;
+
+  opt_usr_fd = g_steal_fd (&fd);
   return TRUE;
 }
 
@@ -128,11 +177,11 @@ static GOptionEntry options[] = {
   { "parent-pid", 0, 0, G_OPTION_ARG_INT, &opt_parent_pid, N_("Use PID as parent pid for sharing namespaces"), N_("PID") },
   { "parent-expose-pids", 0, 0, G_OPTION_ARG_NONE, &opt_parent_expose_pids, N_("Make processes visible in parent namespace"), NULL },
   { "parent-share-pids", 0, 0, G_OPTION_ARG_NONE, &opt_parent_share_pids, N_("Share process ID namespace with parent"), NULL },
-  { "instance-id-fd", 0, 0, G_OPTION_ARG_INT, &opt_instance_id_fd, N_("Write the instance ID to the given file descriptor"), NULL },
+  { "instance-id-fd", 0, 0, G_OPTION_ARG_CALLBACK, &opt_instance_id_fd_cb, N_("Write the instance ID to the given file descriptor"), NULL },
   { "app-path", 0, 0, G_OPTION_ARG_FILENAME, &opt_app_path, N_("Use PATH instead of the app's /app"), N_("PATH") },
-  { "app-fd", 0, 0, G_OPTION_ARG_INT, &opt_app_fd, N_("Use FD instead of the app's /app"), N_("FD") },
+  { "app-fd", 0, 0, G_OPTION_ARG_CALLBACK, &opt_app_fd_cb, N_("Use FD instead of the app's /app"), N_("FD") },
   { "usr-path", 0, 0, G_OPTION_ARG_FILENAME, &opt_usr_path, N_("Use PATH instead of the runtime's /usr"), N_("PATH") },
-  { "usr-fd", 0, 0, G_OPTION_ARG_INT, &opt_usr_fd, N_("Use FD instead of the runtime's /usr"), N_("FD") },
+  { "usr-fd", 0, 0, G_OPTION_ARG_CALLBACK, &opt_usr_fd_cb, N_("Use FD instead of the runtime's /usr"), N_("FD") },
   { "bind-fd", 0, 0, G_OPTION_ARG_CALLBACK | G_OPTION_FLAG_HIDDEN, &option_bind_fd_cb, N_("Bind mount the file or directory referred to by FD to its canonicalized path"), N_("FD") },
   { "ro-bind-fd", 0, 0, G_OPTION_ARG_CALLBACK | G_OPTION_FLAG_HIDDEN, &option_ro_bind_fd_cb, N_("Bind mount the file or directory referred to by FD read-only to its canonicalized path"), N_("FD") },
   { NULL }

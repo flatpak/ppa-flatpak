@@ -1,3 +1,89 @@
+flatpak (1.16.6-1~flatpak1~22.04.1) jammy; urgency=medium
+
+  * Rebuild for Ubuntu 22.04 'jammy' for PPA
+  * Remaining changes relative to noble PPA:
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+    - Install a policy snippet for policykit-1 (<< 0.106)
+    - Revert "Stop build-depending on libgirepository1.0-dev"
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 10 Apr 2026 20:31:33 +0100
+
+flatpak (1.16.6-1~flatpak1~24.04.1) noble; urgency=medium
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+    - Reinstate Priority: optional field for backport
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 10 Apr 2026 20:29:44 +0100
+
+flatpak (1.16.6-1) unstable; urgency=high
+
+  * New upstream stable release
+    - Incorporates the patches from the previous upload, plus
+      additional bugfixes
+  * Drop patches that were included in the new upstream release
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 10 Apr 2026 19:06:41 +0100
+
+flatpak (1.16.5-1) unstable; urgency=high
+
+  * New upstream release fixing some of the regressions in 1.16.4
+    (Closes: #1132960, #1132968)
+  * Drop patches that were applied upstream
+  * d/p/utils-Add-flatpak_set_cloexec.patch,
+    d/p/run-context-Mark-fd-arguments-as-close-on-exec.patch:
+    Add proposed patches to fix another regression in 1.16.4 for
+    Chromium-based browsers
+    (Closes: #1132968)
+  * d/p/run-Cope-with-an-empty-runtime.patch,
+    d/p/dir-In-apply_extra_data-don-t-assume-there-is-always-a-ru.patch:
+    Add proposed patches to fix regression in 1.16.4 when installing
+    apps/runtimes/extensions that use a statically-linked extra-data helper
+  * d/p/utils-Move-flatpak_get_path_for_fd-to-here.patch,
+    d/p/portal-Avoid-crash-if-sandbox-expose-ro-fd-is-out-of-rang.patch,
+    d/p/portal-Log-and-ignore-unusable-sandbox-expose-fds-instead.patch,
+    d/p/portal-Reinstate-flatpak_get_path_for_fd-checks.patch:
+    Add proposed patches to fix regression in 1.16.4 for Epiphany and
+    possibly other WebKitGTK-based apps
+  * d/p/libtest-Allow-adding-a-new-ref-to-an-existing-temporary-o.patch:
+    Add proposed patch to fix autopkgtest failure
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 10 Apr 2026 12:47:08 +0100
+
+flatpak (1.16.4-2~flatpak1~22.04.1) jammy; urgency=medium
+
+  * Rebuild for Ubuntu 22.04 'jammy' for PPA
+  * Remaining changes relative to noble PPA:
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+    - Install a policy snippet for policykit-1 (<< 0.106)
+    - Revert "Stop build-depending on libgirepository1.0-dev"
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 08 Apr 2026 11:01:11 +0100
+
+flatpak (1.16.4-2~flatpak1~24.04.1) noble; urgency=medium
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+    - Reinstate Priority: optional field for backport
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 08 Apr 2026 11:01:11 +0100
+
+flatpak (1.16.4-2) unstable; urgency=medium
+
+  * d/p/run-Fix-checking-wrong-variable-in-runtime-fd-selection.patch,
+    d/p/run-Mount-original-app-on-run-parent-app-when-using-app-p.patch:
+    Add proposed patches fixing regression for unofficial Steam Flatpak app
+    (Closes: #1132960)
+  * Mention Debian bug numbers in previous changelog entry
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 08 Apr 2026 10:55:53 +0100
+
 flatpak (1.16.4-1~flatpak1~20.04.1) focal; urgency=high
 
   * Rebuild for Ubuntu 20.04 'focal' for PPA
@@ -91,18 +177,18 @@ flatpak (1.16.4-1) unstable; urgency=high
     - Fix a sandbox escape involving symlinks passed to flatpak-portal.
       A malicious or compromised Flatpak app could exploit this to achieve
       arbitrary code execution on the host.
-      (CVE-2026-34078, GHSA-cc2q-qc34-jprg)
+      (CVE-2026-34078, GHSA-cc2q-qc34-jprg) (Closes: #1132943)
     - Prevent arbitrary file deletion outside the sandbox by a malicious or
       compromised Flatpak app
-      (CVE-2026-34079, GHSA-p29x-r292-46pp)
+      (CVE-2026-34079, GHSA-p29x-r292-46pp) (Closes: #1132944)
     - Prevent a local user from reading any file that is readable by the
       _flatpak system user. A mitigation is that it would be very unusual
       for these files not to be readable by the original local user as well.
-      (No CVE ID, GHSA-2fxp-43j9-pwvc)
+      (No CVE ID, GHSA-2fxp-43j9-pwvc) (Closes: #1132946)
     - Prevent a local user from making another local user unable to cancel
       an ongoing download of apps or runtimes installed system-wide
       via the system helper.
-      (No CVE ID, GHSA-89xm-3m96-w3jg)
+      (No CVE ID, GHSA-89xm-3m96-w3jg) (Closes: #1132945)
 
  -- Simon McVittie <smcv@debian.org>  Tue, 07 Apr 2026 22:14:56 +0100
 
