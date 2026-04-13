@@ -2434,12 +2434,10 @@ option_env_fd_cb (const gchar *option_name,
   FlatpakContext *context = data;
   glnx_autofd int fd = -1;
 
-  fd = flatpak_parse_fd (value, error);
+  fd = flatpak_accept_fd_argument (option_name, value, error);
+
   if (fd < 0)
     return FALSE;
-
-  if (fd < 3)
-    return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
 
   return flatpak_context_parse_env_fd (context, fd, error);
 }

@@ -2653,3 +2653,117 @@ void flatpak_add_all_tests (void)
   }
 #endif
 }
+
+/* Sets errno on failure. */
+gboolean
+flatpak_set_cloexec (int fd)
+{
+  int flags = fcntl (fd, F_GETFD);
+
+  if (flags == -1)
+    return FALSE;
+
+  flags |= FD_CLOEXEC;
+
+  if (fcntl (fd, F_SETFD, flags) < 0)
+    return FALSE;
+
+  return TRUE;
+}
+
+/*
+ * flatpak_accept_fd_argument:
+ * @option_name: Name of a command-line option such as `--env-fd`
+ * @value: Value of the command-line option
+ *
+ * Parse a command-line argument whose value is a file descriptor to be
+ * used internally by Flatpak.
+ *
+ * The file descriptor must be 3 or higher (cannot be stdin, stdout
+ * or stderr).
+ *
+ * The file descriptor is set to be close-on-execute (CLOEXEC).
+ * If child processes are meant to inherit it, the caller must clear the
+ * close-on-execute flag, or duplicate the fd.
+ *
+ * Returns: A file descriptor to be closed by the caller, or -1 on error
+ */
+int
+flatpak_accept_fd_argument (const char  *option_name,
+                            const char  *value,
+                            GError     **error)
+{
+  glnx_autofd int fd = -1;
+
+  fd = flatpak_parse_fd (value, error);
+
+  if (fd < 0)
+    {
+      g_prefix_error (error, "%s: ", option_name);
+      return -1;
+    }
+
+  if (fd < 3)
+    {
+      /* We don't want to close stdin, stdout or stderr */
+      fd = -1;
+      return glnx_fd_throw (error,
+                            "%s: Cannot use reserved file descriptor 0, 1 or 2",
+                            option_name);
+    }
+
+  if (!flatpak_set_cloexec (fd))
+    return glnx_fd_throw_errno_prefix (error, "%s", option_name);
+
+  return g_steal_fd (&fd);
+}
+
+/*
+ * Attempt to discover the filesystem path corresponding to @fd.
+ *
+ * If @fd points to an existing file, return the absolute path of that
+ * file in the environment where it was opened. Note that this is not
+ * necessarily a valid path in the current namespace, if it was
+ * transferred via fd-passing from a process in a different filesystem
+ * namespace.
+ *
+ * If @fd points to a deleted file, or to a socket, fifo, memfd or similar
+ * non-filesystem object, set an error and return %NULL.
+ *
+ * Returns: (type filename) (transfer full) (nullable):
+ */
+char *
+flatpak_get_path_for_fd (int        fd,
+                         GError   **error)
+{
+  g_autofree char *proc_path = NULL;
+  g_autofree char *path = NULL;
+
+  proc_path = g_strdup_printf ("/proc/self/fd/%d", fd);
+  path = glnx_readlinkat_malloc (AT_FDCWD, proc_path, NULL, error);
+  if (path == NULL)
+    return NULL;
+
+  /* All normal paths start with /, but some weird things
+     don't, such as socket:[27345] or anon_inode:[eventfd].
+     We don't support any of these */
+  if (path[0] != '/')
+    {
+      return glnx_null_throw (error, "%s resolves to non-absolute path %s",
+                              proc_path, path);
+    }
+
+  /* File descriptors to actually deleted files have " (deleted)"
+     appended to them. This also happens to some fake fd types
+     like shmem which are "/<name> (deleted)". All such
+     files are considered invalid. Unfortunately this also
+     matches files with filenames that actually end in " (deleted)",
+     but there is not much to do about this. */
+  if (g_str_has_suffix (path, " (deleted)"))
+    {
+      return glnx_null_throw (error, "%s resolves to deleted path %s",
+                              proc_path, path);
+    }
+
+  return g_steal_pointer (&path);
+}
