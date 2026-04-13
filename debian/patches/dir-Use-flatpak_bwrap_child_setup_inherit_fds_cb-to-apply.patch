@@ -1,0 +1,63 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Sat, 11 Apr 2026 17:06:03 +0100
+Subject: dir: Use flatpak_bwrap_child_setup_inherit_fds_cb() to apply
+ extra-data
+
+This is functionally equivalent to the local child_setup() deleted by
+this commit, except that it ignores lseek() errors, which can
+legitimately happen when inheriting a non-seekable file descriptor.
+Since commit ac62ebe "run: Use O_PATH fds for the runtime and app
+deploy directories", any extra-data helper that runs inside a runtime
+will receive a non-seekable O_PATH fd as its /usr.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+Bug: https://github.com/flatpak/flatpak/issues/6608
+Applied-upstream: 1.17.7, commit:ce75d96b3fa39554ace1a890d564d067df48262e
+---
+ common/flatpak-dir.c | 26 +-------------------------
+ 1 file changed, 1 insertion(+), 25 deletions(-)
+
+diff --git a/common/flatpak-dir.c b/common/flatpak-dir.c
+index 51b994f..85e4f8a 100644
+--- a/common/flatpak-dir.c
++++ b/common/flatpak-dir.c
+@@ -9165,30 +9165,6 @@ extract_extra_data (FlatpakDir   *self,
+   return TRUE;
+ }
+ 
+-static void
+-child_setup (gpointer user_data)
+-{
+-  GArray *fd_array = user_data;
+-  int i;
+-
+-  /* If no fd_array was specified, don't care. */
+-  if (fd_array == NULL)
+-    return;
+-
+-  /* Otherwise, mark not - close-on-exec all the fds in the array */
+-  for (i = 0; i < fd_array->len; i++)
+-    {
+-      int fd = g_array_index (fd_array, int, i);
+-
+-      /* We also seek all fds to the start, because this lets
+-         us use the same fd_array multiple times */
+-      if (lseek (fd, 0, SEEK_SET) < 0)
+-        g_printerr ("lseek error in child setup");
+-
+-      fcntl (fd, F_SETFD, 0);
+-    }
+-}
+-
+ static gboolean
+ apply_extra_data (FlatpakDir   *self,
+                   GFile        *checkoutdir,
+@@ -9363,7 +9339,7 @@ apply_extra_data (FlatpakDir   *self,
+                      (char **) bwrap->argv->pdata,
+                      bwrap->envp,
+                      G_SPAWN_SEARCH_PATH,
+-                     child_setup, bwrap->fds,
++                     flatpak_bwrap_child_setup_inherit_fds_cb, bwrap->fds,
+                      NULL, NULL,
+                      &exit_status,
+                      error))
