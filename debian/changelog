@@ -5,9 +5,12 @@ flatpak (1.17.6-1) UNRELEASED; urgency=medium
     - Fix regressions caused by fixing CVE-2026-34078
       (Closes: #1132960, #1132968)
   * Drop patches that were included in the upstream release
+  * d/p/dir-Use-flatpak_bwrap_child_setup_inherit_fds_cb-to-apply.patch:
+    Add patch from upstream to silence a spurious warning when installing
+    apps that use extra-data
   * Merge changelog from unstable
 
- -- Simon McVittie <smcv@debian.org>  Thu, 09 Apr 2026 10:02:12 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 13 Apr 2026 10:36:16 +0100
 
 flatpak (1.16.6-1) unstable; urgency=high
 
