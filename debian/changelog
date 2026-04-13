@@ -5,6 +5,7 @@ flatpak (1.17.6-1) UNRELEASED; urgency=medium
     - Fix regressions caused by fixing CVE-2026-34078
       (Closes: #1132960, #1132968)
   * Drop patches that were included in the upstream release
+  * Merge changelog from unstable
 
  -- Simon McVittie <smcv@debian.org>  Thu, 09 Apr 2026 10:02:12 +0100
 
