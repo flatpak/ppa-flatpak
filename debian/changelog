@@ -1,11 +1,10 @@
-flatpak (1.17.5-1) UNRELEASED; urgency=medium
+flatpak (1.17.6-1) UNRELEASED; urgency=medium
 
   * New upstream release
     - Incorporate security fixes previously in 1.17.3-2
-    - Fix (some) regressions caused by fixing CVE-2026-34078
+    - Fix regressions caused by fixing CVE-2026-34078
       (Closes: #1132960, #1132968)
-      - Note that other regressions are still being investigated
-  * Drop patches that were applied upstream
+  * Drop patches that were included in the upstream release
 
  -- Simon McVittie <smcv@debian.org>  Thu, 09 Apr 2026 10:02:12 +0100
 
