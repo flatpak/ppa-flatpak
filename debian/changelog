@@ -1,4 +1,4 @@
-flatpak (1.17.6-1) UNRELEASED; urgency=medium
+flatpak (1.17.6-1) experimental; urgency=medium
 
   * New upstream release
     - Incorporate security fixes previously in 1.17.3-2
@@ -10,7 +10,7 @@ flatpak (1.17.6-1) UNRELEASED; urgency=medium
     apps that use extra-data
   * Merge changelog from unstable
 
- -- Simon McVittie <smcv@debian.org>  Mon, 13 Apr 2026 10:36:16 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 13 Apr 2026 19:06:56 +0100
 
 flatpak (1.16.6-1) unstable; urgency=high
 
