@@ -1657,6 +1657,10 @@ flatpak_run_add_app_info_args (FlatpakBwrap           *bwrap,
   return TRUE;
 }
 
+/*
+ * @runtime_fd: the /usr for the runtime, or -1 if running with no runtime,
+ *  perhaps to unpack extra-data
+ */
 static void
 add_tzdata_args (FlatpakBwrap *bwrap,
                  int           runtime_fd)
@@ -1669,6 +1673,8 @@ add_tzdata_args (FlatpakBwrap *bwrap,
   glnx_autofd int zoneinfo_fd = -1;
   g_autoptr(GError) error = NULL;
 
+  g_return_if_fail (runtime_fd >= -1);
+
   raw_timezone = flatpak_get_timezone ();
   timezone_content = g_strdup_printf ("%s\n", raw_timezone);
   localtime_content = g_strconcat ("../usr/share/zoneinfo/", raw_timezone, NULL);
@@ -1677,10 +1683,11 @@ add_tzdata_args (FlatpakBwrap *bwrap,
 
   tzdir_fd = glnx_chaseat (AT_FDCWD, tzdir, GLNX_CHASE_MUST_BE_DIRECTORY, NULL);
 
-  zoneinfo_fd = glnx_chaseat (runtime_fd, "share/zoneinfo",
-                              GLNX_CHASE_RESOLVE_BENEATH |
-                              GLNX_CHASE_MUST_BE_DIRECTORY,
-                              NULL);
+  if (runtime_fd >= 0)
+    zoneinfo_fd = glnx_chaseat (runtime_fd, "share/zoneinfo",
+                                GLNX_CHASE_RESOLVE_BENEATH |
+                                GLNX_CHASE_MUST_BE_DIRECTORY,
+                                NULL);
 
   /* Check for host /usr/share/zoneinfo */
   if (tzdir_fd >= 0 && zoneinfo_fd >= 0)
@@ -1691,7 +1698,7 @@ add_tzdata_args (FlatpakBwrap *bwrap,
                               "--symlink", localtime_content, "/etc/localtime",
                               NULL);
     }
-  else
+  else if (runtime_fd >= 0)
     {
       g_autofree char *runtime_zoneinfo = NULL;
       glnx_autofd int runtime_zoneinfo_fd = -1;
@@ -2190,6 +2197,10 @@ setup_seccomp (FlatpakBwrap   *bwrap,
 }
 #endif
 
+/*
+ * @runtime_fd: the /usr for the runtime, or -1 if running with no runtime,
+ *  perhaps to unpack extra-data
+ */
 static void
 flatpak_run_setup_usr_links (FlatpakBwrap *bwrap,
                              int          runtime_fd,
@@ -2253,6 +2264,10 @@ static const char *const sysfs_dirs[] =
   "/sys/devices"
 };
 
+/*
+ * @runtime_fd: the /usr for the runtime, or -1 if running with no runtime,
+ *  perhaps to unpack extra-data
+ */
 gboolean
 flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
                              int             runtime_fd,
@@ -2273,7 +2288,7 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
   gboolean bwrap_unprivileged = flatpak_bwrap_is_unprivileged ();
   gsize i;
 
-  g_return_val_if_fail (runtime_fd >= 0, FALSE);
+  g_return_val_if_fail (runtime_fd >= -1, FALSE);
 
   /* Disable recursive userns for all flatpak processes, as we need this
    * to guarantee that the sandbox can't restructure the filesystem.
@@ -2382,7 +2397,8 @@ flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
   else if (g_file_test ("/var/lib/dbus/machine-id", G_FILE_TEST_EXISTS))
     flatpak_bwrap_add_args (bwrap, "--ro-bind", "/var/lib/dbus/machine-id", "/etc/machine-id", NULL);
 
-  if ((flags & FLATPAK_RUN_FLAG_WRITABLE_ETC) == 0)
+  if (runtime_fd >= 0
+      && (flags & FLATPAK_RUN_FLAG_WRITABLE_ETC) == 0)
     {
       g_auto(GLnxDirFdIterator) dfd_iter = { 0, };
       struct dirent *dent;
@@ -2994,42 +3010,6 @@ open_namespace_fd_if_needed (const char *path,
   return -1;
 }
 
-static char *
-get_path_for_fd (int        fd,
-                 GError   **error)
-{
-  g_autofree char *proc_path = NULL;
-  g_autofree char *path = NULL;
-
-  proc_path = g_strdup_printf ("/proc/self/fd/%d", fd);
-  path = glnx_readlinkat_malloc (AT_FDCWD, proc_path, NULL, error);
-  if (path == NULL)
-    return NULL;
-
-  /* All normal paths start with /, but some weird things
-     don't, such as socket:[27345] or anon_inode:[eventfd].
-     We don't support any of these */
-  if (path[0] != '/')
-    {
-      return glnx_null_throw (error, "%s resolves to non-absolute path %s",
-                              proc_path, path);
-    }
-
-  /* File descriptors to actually deleted files have " (deleted)"
-     appended to them. This also happens to some fake fd types
-     like shmem which are "/<name> (deleted)". All such
-     files are considered invalid. Unfortunately this also
-     matches files with filenames that actually end in " (deleted)",
-     but there is not much to do about this. */
-  if (g_str_has_suffix (path, " (deleted)"))
-    {
-      return glnx_null_throw (error, "%s resolves to deleted path %s",
-                              proc_path, path);
-    }
-
-  return g_steal_pointer (&path);
-}
-
 FlatpakContextShares
 flatpak_run_compute_allowed_shares (FlatpakContext *context)
 {
@@ -3296,7 +3276,7 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
     {
       g_autofree char *path = NULL;
 
-      path = get_path_for_fd (custom_runtime_fd, &my_error);
+      path = flatpak_get_path_for_fd (custom_runtime_fd, &my_error);
       if (path == NULL)
         {
           return flatpak_fail_error (error, FLATPAK_ERROR,
@@ -3424,7 +3404,7 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
     {
       g_autofree char *path = NULL;
 
-      path = get_path_for_fd (custom_app_fd, error);
+      path = flatpak_get_path_for_fd (custom_app_fd, error);
       if (path == NULL)
         return glnx_prefix_error (error, "Cannot convert custom app fd to path");
 
@@ -3737,7 +3717,7 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
 
       /* We get the path the fd refers to, to determine to mount point
        * destination inside the sandbox */
-      path = get_path_for_fd (fd, error);
+      path = flatpak_get_path_for_fd (fd, error);
       if (!path)
         return FALSE;
 
@@ -3754,7 +3734,7 @@ flatpak_run_app (FlatpakDecomposed   *app_ref,
 
       /* We get the path the fd refers to, to determine to mount point
        * destination inside the sandbox */
-      path = get_path_for_fd (fd, error);
+      path = flatpak_get_path_for_fd (fd, error);
       if (!path)
         return FALSE;
 
