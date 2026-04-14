@@ -9,6 +9,7 @@ Fix this by only removing the pull if the dir and the user match.
 
 Origin: upstream, 1.16.4, commit:a27ec46e8c0ab0ae162f2aa3142dccb6b79d9211
 Bug: https://github.com/flatpak/flatpak/security/advisories/GHSA-89xm-3m96-w3jg
+Bug-Debian: https://bugs.debian.org/1132945
 ---
  system-helper/flatpak-system-helper.c | 85 +++++++++++++++--------------------
  1 file changed, 36 insertions(+), 49 deletions(-)

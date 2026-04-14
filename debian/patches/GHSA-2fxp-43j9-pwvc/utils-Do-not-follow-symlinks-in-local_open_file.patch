@@ -18,6 +18,7 @@ Fix this by also specifying O_NOFOLLOW in openat.
 
 Origin: upstream, 1.16.4, commit:a27ec46e8c0ab0ae162f2aa3142dccb6b79d9211
 Bug: https://github.com/flatpak/flatpak/security/advisories/GHSA-2fxp-43j9-pwvc
+Bug-Debian: https://bugs.debian.org/1132946
 ---
  common/flatpak-oci-registry.c | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
