@@ -1,3 +1,5 @@
+portal-Use-G_LOCK_DEFINE_STATIC.patch
+portal-Don-t-run-method-invocations-in-a-thread.patch
 CVE-2026-34078-prep/backports-Add-g_clear_fd.patch
 CVE-2026-34078-prep/glnx-errors.h-add-glnx_fd_throw-_-variants.patch
 CVE-2026-34078-prep/fdio-Add-glnx_fd_reopen.patch
