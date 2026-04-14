@@ -1,0 +1,103 @@
+From: Sebastian Wick <sebastian.wick@redhat.com>
+Date: Wed, 8 Apr 2026 21:59:19 +0200
+Subject: run: Add bind-fd and ro-bind-fd binds after all other binds
+
+This is only moving it a bit down because
+flatpak_run_add_environment_args still adds a whole bunch of binds which
+then can over-mount the user requested binds (bind-fd, ro-bind-fd).
+
+[smcv: Resolve conflicts for 1.14.x]
+
+Origin: backport, 1.16.5, commit:6118b415e4ed1e35852736c9a28585f4093bf246
+Bug: https://github.com/flatpak/flatpak/issues/6570
+Bug-Debian: https://bugs.debian.org/1132968
+---
+ common/flatpak-run.c | 68 ++++++++++++++++++++++++++--------------------------
+ 1 file changed, 34 insertions(+), 34 deletions(-)
+
+diff --git a/common/flatpak-run.c b/common/flatpak-run.c
+index 415c6fa..0f3d122 100644
+--- a/common/flatpak-run.c
++++ b/common/flatpak-run.c
+@@ -4803,40 +4803,6 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
+       flatpak_bwrap_add_arg_printf (bwrap, "/run/user/%d", getuid ());
+     }
+ 
+-  for (i = 0; bind_fds && i < bind_fds->len; i++)
+-    {
+-      int fd = g_array_index (bind_fds, int, i);
+-      g_autofree char *path = NULL;
+-
+-      /* We get the path the fd refers to, to determine to mount point
+-       * destination inside the sandbox */
+-      path = get_path_for_fd (fd, error);
+-      if (!path)
+-        return FALSE;
+-
+-      if (!flatpak_bwrap_add_args_data_fd_dup (bwrap,
+-                                               "--bind-fd", fd, path,
+-                                               error))
+-        return FALSE;
+-    }
+-
+-  for (i = 0; ro_bind_fds && i < ro_bind_fds->len; i++)
+-    {
+-      int fd = g_array_index (ro_bind_fds, int, i);
+-      g_autofree char *path = NULL;
+-
+-      /* We get the path the fd refers to, to determine to mount point
+-       * destination inside the sandbox */
+-      path = get_path_for_fd (fd, error);
+-      if (!path)
+-        return FALSE;
+-
+-      if (!flatpak_bwrap_add_args_data_fd_dup (bwrap,
+-                                               "--ro-bind-fd", fd, path,
+-                                               error))
+-        return FALSE;
+-    }
+-
+   if (!flatpak_run_add_dconf_args (bwrap, app_id, metakey, error))
+     return FALSE;
+ 
+@@ -4872,6 +4838,40 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
+                           "--symlink", "/usr/lib/debug/source", "/run/build-runtime",
+                           NULL);
+ 
++  for (i = 0; bind_fds && i < bind_fds->len; i++)
++    {
++      int fd = g_array_index (bind_fds, int, i);
++      g_autofree char *path = NULL;
++
++      /* We get the path the fd refers to, to determine to mount point
++       * destination inside the sandbox */
++      path = get_path_for_fd (fd, error);
++      if (!path)
++        return FALSE;
++
++      if (!flatpak_bwrap_add_args_data_fd_dup (bwrap,
++                                               "--bind-fd", fd, path,
++                                               error))
++        return FALSE;
++    }
++
++  for (i = 0; ro_bind_fds && i < ro_bind_fds->len; i++)
++    {
++      int fd = g_array_index (ro_bind_fds, int, i);
++      g_autofree char *path = NULL;
++
++      /* We get the path the fd refers to, to determine to mount point
++       * destination inside the sandbox */
++      path = get_path_for_fd (fd, error);
++      if (!path)
++        return FALSE;
++
++      if (!flatpak_bwrap_add_args_data_fd_dup (bwrap,
++                                               "--ro-bind-fd", fd, path,
++                                               error))
++        return FALSE;
++    }
++
+   if (cwd)
+     flatpak_bwrap_add_args (bwrap, "--chdir", cwd, NULL);
+ 

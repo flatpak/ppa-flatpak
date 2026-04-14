@@ -1,0 +1,27 @@
+From: Sebastian Wick <sebastian.wick@redhat.com>
+Date: Wed, 8 Apr 2026 18:15:42 +0200
+Subject: utils: Improve error message when passing an FD numer which is not a
+ FD
+
+Origin: upstream, 1.16.5, commit:e2ef538e8d70f8ddaf1adf201c3bb1578d0444f1
+Bug: https://github.com/flatpak/flatpak/issues/6570
+Bug-Debian: https://bugs.debian.org/1132968
+---
+ common/flatpak-utils.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/common/flatpak-utils.c b/common/flatpak-utils.c
+index 2778304..6706aaa 100644
+--- a/common/flatpak-utils.c
++++ b/common/flatpak-utils.c
+@@ -9466,8 +9466,8 @@ flatpak_parse_fd (const char  *fd_string,
+ 
+   fd = (int) parsed;
+ 
+-  if (!glnx_fstat (fd, &stbuf, error))
+-    return -1;
++  if (!glnx_fstat (fd, &stbuf, NULL))
++    return glnx_fd_throw (error, "Not an open file descriptor: %d", fd);
+ 
+   return fd;
+ }

@@ -1,0 +1,37 @@
+From: Alberto Garcia <berto@igalia.com>
+Date: Wed, 8 Apr 2026 19:44:29 +0200
+Subject: portal: use g_array_index() to read from expose_fds / expose_fds_ro
+
+The data field of a GArray is a gchar* but we're storing integers
+here, so use the proper method to ensure that we're getting the
+element at the right offset and with the correct type.
+
+Origin: upstream, 1.16.5, commit:8e71548ab56a97b88c7d34d68a6b04f6d430b2aa
+Bug: https://github.com/flatpak/flatpak/issues/6570
+Bug-Debian: https://bugs.debian.org/1132968
+---
+ portal/flatpak-portal.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/portal/flatpak-portal.c b/portal/flatpak-portal.c
+index 3b9f0b6..a82cfdf 100644
+--- a/portal/flatpak-portal.c
++++ b/portal/flatpak-portal.c
+@@ -1222,7 +1222,7 @@ handle_spawn (PortalFlatpak         *object,
+     {
+       int remapped_fd;
+ 
+-      remapped_fd = fd_map_remap_fd (fd_map, &max_fd, expose_fds->data[i]);
++      remapped_fd = fd_map_remap_fd (fd_map, &max_fd, g_array_index (expose_fds, int, i));
+ 
+       g_ptr_array_add (flatpak_argv, g_strdup_printf ("--bind-fd=%d",
+                                                       remapped_fd));
+@@ -1232,7 +1232,7 @@ handle_spawn (PortalFlatpak         *object,
+     {
+       int remapped_fd;
+ 
+-      remapped_fd = fd_map_remap_fd (fd_map, &max_fd, expose_fds_ro->data[i]);
++      remapped_fd = fd_map_remap_fd (fd_map, &max_fd, g_array_index (expose_fds_ro, int, i));
+ 
+       g_ptr_array_add (flatpak_argv, g_strdup_printf ("--ro-bind-fd=%d",
+                                                       remapped_fd));

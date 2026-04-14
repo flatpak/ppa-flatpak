@@ -1,0 +1,31 @@
+From: Sebastian Wick <sebastian.wick@redhat.com>
+Date: Wed, 8 Apr 2026 18:14:19 +0200
+Subject: run: Do not close --bind/--ro-bind
+
+Origin: upstream, 1.16.5, commit:e654ebade0b9154830563c55c0a5f426b41fd46d
+Bug: https://github.com/flatpak/flatpak/issues/6570
+Bug-Debian: https://bugs.debian.org/1132968
+---
+ app/flatpak-builtins-run.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/app/flatpak-builtins-run.c b/app/flatpak-builtins-run.c
+index 40ab8fc..2b53a9e 100644
+--- a/app/flatpak-builtins-run.c
++++ b/app/flatpak-builtins-run.c
+@@ -82,6 +82,7 @@ option_bind_fd_cb (const char  *option_name,
+     return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
+ 
+   g_array_append_val (opt_bind_fds, fd);
++  fd = -1; /* ownership transferred to GArray */
+   return TRUE;
+ }
+ 
+@@ -101,6 +102,7 @@ option_ro_bind_fd_cb (const char  *option_name,
+     return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
+ 
+   g_array_append_val (opt_ro_bind_fds, fd);
++  fd = -1; /* ownership transferred to GArray */
+   return TRUE;
+ }
+ 

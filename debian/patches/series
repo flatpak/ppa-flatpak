@@ -24,3 +24,15 @@ CVE-2026-34078/portal-Use-bind-fd-app-fd-and-usr-fd-options-to-avoid-rac.patch
 CVE-2026-34079/utils-Only-remove-cached-files-in-the-cache-directory.patch
 GHSA-2fxp-43j9-pwvc/utils-Do-not-follow-symlinks-in-local_open_file.patch
 GHSA-89xm-3m96-w3jg/system-helper-Only-remove-an-ongoing-pull-if-users-match.patch
+1.16.5/run-Fix-checking-wrong-variable-in-runtime-fd-selection.patch
+1.16.5/run-Mount-original-app-on-run-parent-app-when-using-app-p.patch
+1.16.5/portal-update-max_fd-after-creating-the-instance-ID-pipe.patch
+1.16.5/run-Fix-fd-tracking-in-flatpak_run_add_app_info_args.patch
+1.16.5/utils-Improve-error-message-when-passing-an-FD-numer-whic.patch
+1.16.5/run-Do-not-close-bind-ro-bind.patch
+1.16.5/run-Use-the-same-FD-validation-for-all-FD-options.patch
+1.16.5/run-Add-bind-fd-and-ro-bind-fd-binds-after-all-other-bind.patch
+1.16.5/portal-use-g_array_index-to-read-from-expose_fds-expose_f.patch
+1.16.5/run-Fix-backport-mistake.patch
+1.16.5/tests-test-run-custom-Test-usr-path-usr-fd-app-path-app-f.patch
+1.16.5/tests-test-run-custom-Test-bind-fd-and-ro-bind-fd.patch
