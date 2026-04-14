@@ -1,0 +1,67 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Thu, 9 Apr 2026 20:28:57 +0100
+Subject: portal: Reinstate flatpak_get_path_for_fd() checks
+
+As with the previous commit, historically we would debug-log but
+otherwise silently ignore attempts to expose a file in a sandboxed
+subsandbox that doesn't have a suitable path.
+
+For example, org.gnome.Epiphany (or possibly WebKitGTK) asks to expose
+files from /app and /usr in the subsandbox. When we ignored those
+requests (because /app and /usr have a different meaning on the host
+system), the app worked as intended anyway, because the subsandbox has
+access to the app's /app and the runtime's /usr whether they're
+explicitly added or not, so it all worked out OK. However, treating
+this as a fatal error (as it arguably should have been) broke
+Epiphany's subsandboxes.
+
+Fixes: 3c500145 "portal: Use --bind-fd, --app-fd and --usr-fd options to avoid races"
+Co-authored-by: Sebastian Wick <sebastian.wick@redhat.com>
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+(cherry picked from commit 28634c7f52e57df7091007973d1bb5e1f87f1e9d)
+Origin: backport, 1.16.6, commit:0ef48d4a4bd7479d35c2526104292e36d9ea1500
+Bug: https://github.com/flatpak/flatpak/issues/6584
+Bug-Debian: https://bugs.debian.org/1132968
+---
+ portal/flatpak-portal.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/portal/flatpak-portal.c b/portal/flatpak-portal.c
+index d97f917..b0ba1f4 100644
+--- a/portal/flatpak-portal.c
++++ b/portal/flatpak-portal.c
+@@ -557,7 +557,9 @@ validate_opath_fd (int        fd,
+ {
+   int fd_flags;
+   struct stat st_buf;
++  struct stat real_st_buf;
+   int access_mode;
++  g_autofree char *path = NULL;
+ 
+   /* Must be able to get fd flags */
+   fd_flags = fcntl (fd, F_GETFL);
+@@ -576,6 +578,24 @@ validate_opath_fd (int        fd,
+   if (fstat (fd, &st_buf) < 0)
+     return glnx_throw_errno_prefix (error, "Failed to fstat");
+ 
++  path = flatpak_get_path_for_fd (fd, error);
++  if (path == NULL)
++    return FALSE;
++
++  /* Verify that this is the same file as the app opened.
++   * Note that this is not security relevant because flatpak-run/bwrap will
++   * check things and abort if something is off. We do this only for backwards
++   * compatibility reasons: we need to be able to ignore the issue instead of
++   * aborting the entire sandbox setup later. */
++  if (stat (path, &real_st_buf) < 0 ||
++      st_buf.st_dev != real_st_buf.st_dev ||
++      st_buf.st_ino != real_st_buf.st_ino)
++    {
++      /* Different files on the inside and the outside, reject the request */
++      return glnx_throw (error,
++                         "different file inside and outside sandbox");
++    }
++
+   access_mode = R_OK;
+   if (S_ISDIR (st_buf.st_mode))
+     access_mode |= X_OK;

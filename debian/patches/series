@@ -36,3 +36,16 @@ GHSA-89xm-3m96-w3jg/system-helper-Only-remove-an-ongoing-pull-if-users-match.pat
 1.16.5/run-Fix-backport-mistake.patch
 1.16.5/tests-test-run-custom-Test-usr-path-usr-fd-app-path-app-f.patch
 1.16.5/tests-test-run-custom-Test-bind-fd-and-ro-bind-fd.patch
+1.16.6/run-Cope-with-an-empty-runtime.patch
+1.16.6/dir-In-apply_extra_data-don-t-assume-there-is-always-a-ru.patch
+1.16.6/tests-Add-test-extra-data.sh-to-test-extra-data-installat.patch
+1.16.6/utils-Add-flatpak_set_cloexec.patch
+1.16.6/run-context-Mark-fd-arguments-as-close-on-exec.patch
+1.16.6/utils-Move-flatpak_get_path_for_fd-to-here.patch
+1.16.6/portal-Avoid-crash-if-sandbox-expose-ro-fd-is-out-of-rang.patch
+1.16.6/portal-Log-and-ignore-unusable-sandbox-expose-fds-instead.patch
+1.16.6/portal-Reinstate-flatpak_get_path_for_fd-checks.patch
+1.16.6/libtest-Allow-adding-a-new-ref-to-an-existing-temporary-o.patch
+1.16.6/tests-Check-that-flatpak-run-fd-arguments-do-not-leak-to-.patch
+1.16.6/app-context-Never-close-fds-0-1-or-2.patch
+1.16.6/app-context-Factor-out-flatpak_accept_fd_argument.patch

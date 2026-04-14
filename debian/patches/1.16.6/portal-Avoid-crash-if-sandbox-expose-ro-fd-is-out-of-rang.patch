@@ -1,0 +1,64 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Thu, 9 Apr 2026 20:16:16 +0100
+Subject: portal: Avoid crash if sandbox-expose-[ro-]fd is out of range
+
+If the handle is not in the range `0 <= handle < fds_len`, but no
+GError is set, we'd have crashed when we dereferenced error->message.
+Instead, log an error and early-return, matching what we do for
+app-fd, usr-fd and the array of inheritable fds.
+
+Fixes: 3c500145 "portal: Use --bind-fd, --app-fd and --usr-fd options to avoid races"
+Co-authored-by: Sebastian Wick <sebastian.wick@redhat.com>
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+(cherry picked from commit 4ef2421bd22d8fbf8f17cf9bf5da1dd95aedef8d)
+Origin: upstream, 1.16.6, commit:5f73d530a25a119222b42b0680766faba3875777
+Bug: https://github.com/flatpak/flatpak/issues/6584
+Bug-Debian: https://bugs.debian.org/1132968
+---
+ portal/flatpak-portal.c | 26 ++++++++++++++++++++++----
+ 1 file changed, 22 insertions(+), 4 deletions(-)
+
+diff --git a/portal/flatpak-portal.c b/portal/flatpak-portal.c
+index a82cfdf..cf459e7 100644
+--- a/portal/flatpak-portal.c
++++ b/portal/flatpak-portal.c
+@@ -1175,8 +1175,17 @@ handle_spawn (PortalFlatpak         *object,
+           gint32 handle;
+ 
+           g_variant_get_child (sandbox_expose_fd, i, "h", &handle);
+-          if (handle >= 0 && handle < fds_len &&
+-              validate_opath_fd (fds[handle], TRUE, &error))
++          if (handle >= fds_len || handle < 0)
++            {
++              g_debug ("Invalid sandbox-expose-fd handle %d", handle);
++              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
++                                                     G_DBUS_ERROR_INVALID_ARGS,
++                                                     "No file descriptor for handle %d",
++                                                     handle);
++              return G_DBUS_METHOD_INVOCATION_HANDLED;
++            }
++
++          if (validate_opath_fd (fds[handle], TRUE, &error))
+             {
+               g_array_append_val (expose_fds, fds[handle]);
+             }
+@@ -1201,8 +1210,17 @@ handle_spawn (PortalFlatpak         *object,
+           gint32 handle;
+ 
+           g_variant_get_child (sandbox_expose_fd_ro, i, "h", &handle);
+-          if (handle >= 0 && handle < fds_len &&
+-              validate_opath_fd (fds[handle], FALSE, &error))
++          if (handle >= fds_len || handle < 0)
++            {
++              g_debug ("Invalid sandbox-expose-ro-fd handle %d", handle);
++              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
++                                                     G_DBUS_ERROR_INVALID_ARGS,
++                                                     "No file descriptor for handle %d",
++                                                     handle);
++              return G_DBUS_METHOD_INVOCATION_HANDLED;
++            }
++
++          if (validate_opath_fd (fds[handle], FALSE, &error))
+             {
+               g_array_append_val (expose_fds_ro, fds[handle]);
+             }

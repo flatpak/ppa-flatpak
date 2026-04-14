@@ -1,0 +1,50 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Fri, 10 Apr 2026 09:58:05 +0100
+Subject: utils: Add flatpak_set_cloexec()
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+(cherry picked from commit 8a989c790d9121f53ada88fd001a3997b9e40632)
+Origin: upstream, 1.16.6, commit:90625f0ef612364ded91a67327bdfe5b59e03b27
+Bug: https://github.com/flatpak/flatpak/issues/6582
+Bug-Debian: https://bugs.debian.org/1132968
+---
+ common/flatpak-utils-private.h |  2 ++
+ common/flatpak-utils.c         | 17 +++++++++++++++++
+ 2 files changed, 19 insertions(+)
+
+diff --git a/common/flatpak-utils-private.h b/common/flatpak-utils-private.h
+index 800ce5e..0a29bd5 100644
+--- a/common/flatpak-utils-private.h
++++ b/common/flatpak-utils-private.h
+@@ -949,4 +949,6 @@ int flatpak_parse_fd (const char  *fd_string,
+ 
+ #define FLATPAK_MESSAGE_ID "c7b39b1e006b464599465e105b361485"
+ 
++gboolean flatpak_set_cloexec (int fd);
++
+ #endif /* __FLATPAK_UTILS_H__ */
+diff --git a/common/flatpak-utils.c b/common/flatpak-utils.c
+index 6706aaa..46a2b4c 100644
+--- a/common/flatpak-utils.c
++++ b/common/flatpak-utils.c
+@@ -9471,3 +9471,20 @@ flatpak_parse_fd (const char  *fd_string,
+ 
+   return fd;
+ }
++
++/* Sets errno on failure. */
++gboolean
++flatpak_set_cloexec (int fd)
++{
++  int flags = fcntl (fd, F_GETFD);
++
++  if (flags == -1)
++    return FALSE;
++
++  flags |= FD_CLOEXEC;
++
++  if (fcntl (fd, F_SETFD, flags) < 0)
++    return FALSE;
++
++  return TRUE;
++}
