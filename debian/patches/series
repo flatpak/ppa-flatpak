@@ -49,3 +49,5 @@ GHSA-89xm-3m96-w3jg/system-helper-Only-remove-an-ongoing-pull-if-users-match.pat
 1.16.6/tests-Check-that-flatpak-run-fd-arguments-do-not-leak-to-.patch
 1.16.6/app-context-Never-close-fds-0-1-or-2.patch
 1.16.6/app-context-Factor-out-flatpak_accept_fd_argument.patch
+1.16.7/bwrap-Clarify-a-comment.patch
+dir-Silence-a-spurious-warning-when-installing-extra-data.patch
