@@ -1,4 +1,4 @@
-flatpak (1.14.10-1~deb12u2) UNRELEASED; urgency=medium
+flatpak (1.14.10-1~deb12u2) bookworm-security; urgency=high
 
   * Security update
   * d/p/CVE-2026-34078-prep/*.patch:
@@ -42,7 +42,7 @@ flatpak (1.14.10-1~deb12u2) UNRELEASED; urgency=medium
     d/p/dir-Silence-a-spurious-warning-when-installing-extra-data.patch:
     Silence a spurious warning seen while testing 1.16.6
 
- -- Simon McVittie <smcv@debian.org>  Tue, 14 Apr 2026 10:51:33 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 15 Apr 2026 20:27:40 +0100
 
 flatpak (1.14.10-1~deb12u1) bookworm-security; urgency=high
 
