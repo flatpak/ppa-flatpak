@@ -19,8 +19,11 @@ flatpak (1.14.10-1~flatpak2~18.04.1) UNRELEASED; urgency=medium
       + libgdk-pixbuf-2.0-dev -> libgdk-pixbuf2.0-dev
       + dbus-daemon -> dbus
       + polkitd -> policykit-1
+  * d/p/CVE-2026-34080/*.patch:
+    Add patches to bundled xdg-dbus-proxy to address CVE-2026-34080
+  * Improve EOL message, and don't show it if not run from a terminal
 
- -- Simon McVittie <smcv@debian.org>  Wed, 22 Apr 2026 10:38:34 +0100
+ -- Simon McVittie <smcv@debian.org>  Wed, 22 Apr 2026 10:52:09 +0100
 
 flatpak (1.14.10-1~deb12u2) bookworm-security; urgency=high
 
