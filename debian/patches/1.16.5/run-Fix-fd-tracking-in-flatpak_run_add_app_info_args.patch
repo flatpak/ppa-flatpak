@@ -1,0 +1,124 @@
+From: Sebastian Wick <sebastian.wick@redhat.com>
+Date: Wed, 8 Apr 2026 17:47:48 +0200
+Subject: run: Fix fd tracking in flatpak_run_add_app_info_args
+
+Calls to flatpak_bwrap_add_args_data_fd take ownership over the fd they
+take. Closing them while they are still in the bwrap struct will abort
+later when the bwrap struct gets freed and it tries to close the already
+closed fd.
+
+Fix this by using glnx_autofd and g_steal_fd.
+
+[smcv: Resolve conflicts in 1.14.x]
+
+Origin: backport, 1.16.5, commit:bd41305b98373d762cc02395d9fe7b9486da20d4
+Bug: https://github.com/flatpak/flatpak/issues/6570
+Bug-Debian: https://bugs.debian.org/1132968
+---
+ common/flatpak-run.c | 34 +++++++++++++++++-----------------
+ 1 file changed, 17 insertions(+), 17 deletions(-)
+
+diff --git a/common/flatpak-run.c b/common/flatpak-run.c
+index 2e47f28..415c6fa 100644
+--- a/common/flatpak-run.c
++++ b/common/flatpak-run.c
+@@ -2676,13 +2676,17 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
+                                gboolean            build,
+                                gboolean            devel,
+                                char              **app_info_path_out,
+-                               int                 instance_id_fd,
++                               int                 instance_id_fd_arg,
+                                char              **instance_id_host_dir_out,
+                                GError             **error)
+ {
+   g_autofree char *info_path = NULL;
+   g_autofree char *bwrapinfo_path = NULL;
+-  int fd, fd2, fd3;
++  glnx_autofd int fd1 = -1;
++  glnx_autofd int fd2 = -1;
++  glnx_autofd int fd3 = -1;
++  int info_fd;
++  glnx_autofd int instance_id_fd = instance_id_fd_arg;
+   g_autoptr(GKeyFile) keyfile = NULL;
+   g_autofree char *runtime_path = NULL;
+   const char *group;
+@@ -2828,8 +2832,8 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
+      This way even if the bind-mount is unmounted we can find the real data.
+    */
+ 
+-  fd = open (info_path, O_RDONLY);
+-  if (fd == -1)
++  fd1 = info_fd = open (info_path, O_RDONLY);
++  if (fd1 == -1)
+     {
+       int errsv = errno;
+       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+@@ -2840,7 +2844,6 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
+   fd2 = open (info_path, O_RDONLY);
+   if (fd2 == -1)
+     {
+-      close (fd);
+       int errsv = errno;
+       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+                    _("Failed to open flatpak-info file: %s"), g_strerror (errsv));
+@@ -2849,9 +2852,9 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
+ 
+   flatpak_bwrap_add_args (bwrap, "--perms", "0600", NULL);
+   flatpak_bwrap_add_args_data_fd (bwrap,
+-                                  "--file", fd, "/.flatpak-info");
++                                  "--file", g_steal_fd (&fd1), "/.flatpak-info");
+   flatpak_bwrap_add_args_data_fd (bwrap,
+-                                  "--ro-bind-data", fd2, "/.flatpak-info");
++                                  "--ro-bind-data", g_steal_fd (&fd2), "/.flatpak-info");
+ 
+   /* Tell the application that it's running under Flatpak in a generic way. */
+   flatpak_bwrap_add_args (bwrap,
+@@ -2868,8 +2871,6 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
+   fd3 = open (bwrapinfo_path, O_RDWR | O_CREAT, 0644);
+   if (fd3 == -1)
+     {
+-      close (fd);
+-      close (fd2);
+       int errsv = errno;
+       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+                    _("Failed to open bwrapinfo.json file: %s"), g_strerror (errsv));
+@@ -2892,10 +2893,6 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
+               if (errsv == EINTR)
+                 continue;
+ 
+-              close (fd);
+-              close (fd2);
+-              close (fd3);
+-
+               g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+                            _("Failed to write to instance id fd: %s"), g_strerror (errsv));
+               return FALSE;
+@@ -2905,13 +2902,14 @@ flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
+           instance_id_size -= bytes_written;
+         }
+ 
+-      close (instance_id_fd);
++      /* explicitly close this as soon as we're done to notify the other side */
++      g_clear_fd (&instance_id_fd, NULL);
+     }
+ 
+-  flatpak_bwrap_add_args_data_fd (bwrap, "--info-fd", fd3, NULL);
++  flatpak_bwrap_add_args_data_fd (bwrap, "--info-fd", g_steal_fd (&fd3), NULL);
+ 
+   if (app_info_path_out != NULL)
+-    *app_info_path_out = g_strdup_printf ("/proc/self/fd/%d", fd);
++    *app_info_path_out = g_strdup_printf ("/proc/self/fd/%d", info_fd);
+ 
+   if (instance_id_host_dir_out != NULL)
+     *instance_id_host_dir_out = g_steal_pointer (&instance_id_host_dir);
+@@ -4780,7 +4778,9 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
+                                       app_id, flatpak_decomposed_get_branch (app_ref),
+                                       runtime_ref, app_id_dir, app_context, extra_context,
+                                       sandboxed, FALSE, flags & FLATPAK_RUN_FLAG_DEVEL,
+-                                      &app_info_path, instance_id_fd, &instance_id_host_dir,
++                                      &app_info_path,
++                                      g_steal_fd (&instance_id_fd),
++                                      &instance_id_host_dir,
+                                       error))
+     return FALSE;
+ 

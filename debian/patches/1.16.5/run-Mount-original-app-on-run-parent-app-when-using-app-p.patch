@@ -1,0 +1,31 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Wed, 8 Apr 2026 09:44:55 +0100
+Subject: run: Mount original app on /run/parent/app when using --app-path=""
+
+Before addressing CVE-2026-34078, we would always mount the original app
+*somewhere*, either /app (in the normal case) or /run/parent/app (when
+using a custom or empty /app for the subsandbox). The empty-app case
+regressed during the fix for CVE-2026-34078; bring back previous behaviour.
+
+Fixes: ac62ebe3 "run: Use O_PATH fds for the runtime and app deploy directories"
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+(cherry picked from commit fde4716f67b6620da57fd74481694eb58795d589)
+Origin: upstream, 1.16.5, commit:ccd9c8a7fa8bee1b728e683c2d478f4408cd651c
+Bug: https://github.com/flatpak/flatpak/issues/6568
+Bug-Debian: https://bugs.debian.org/1132960
+---
+ common/flatpak-run.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/common/flatpak-run.c b/common/flatpak-run.c
+index e0e98de..2e47f28 100644
+--- a/common/flatpak-run.c
++++ b/common/flatpak-run.c
+@@ -4559,6 +4559,7 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
+     }
+   else if (custom_app_fd == FLATPAK_RUN_APP_DEPLOY_APP_EMPTY)
+     {
++      original_app_target_path = "/run/parent/app";
+       app_fd = -1;
+       app_files = NULL;
+     }

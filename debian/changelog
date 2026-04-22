@@ -1,3 +1,148 @@
+flatpak (1.14.10-1~deb12u2) bookworm-security; urgency=high
+
+  * Security update
+  * d/p/CVE-2026-34078-prep/*.patch:
+    Backport libglnx changes required to address CVE-2026-34078
+  * d/p/CVE-2026-34078/*.patch:
+    Fix a sandbox escape involving symlinks passed to flatpak-portal.
+    A malicious or compromised Flatpak app could exploit this to achieve
+    arbitrary code execution on the host.
+    (CVE-2026-34078, GHSA-cc2q-qc34-jprg) (Closes: #1132943)
+  * d/p/CVE-2026-34079/*.patch:
+    Prevent arbitrary file deletion outside the sandbox by a malicious or
+    compromised Flatpak app
+    (CVE-2026-34079, GHSA-p29x-r292-46pp) (Closes: #1132944)
+  * d/p/GHSA-2fxp-43j9-pwvc/*.patch:
+    Prevent a local user from reading any file that is readable by the
+    _flatpak system user. A mitigation is that it would be very unusual
+    for these files not to be readable by the original local user as well.
+    (No CVE ID, GHSA-2fxp-43j9-pwvc) (Closes: #1132946)
+  * d/p/GHSA-89xm-3m96-w3jg/*.patch:
+    Prevent a local user from making another local user unable to cancel
+    an ongoing download of apps or runtimes installed system-wide
+    via the system helper.
+    (No CVE ID, GHSA-89xm-3m96-w3jg) (Closes: #1132945)
+  * d/p/portal-Use-G_LOCK_DEFINE_STATIC.patch,
+    d/p/portal-Don-t-run-method-invocations-in-a-thread.patch:
+    Add patches from upstream flatpak-1.14.x branch (which never got into a
+    release before the branch was discontinued), originally from 1.16.1,
+    fixing a thread-safety issue in flatpak-portal
+  * d/p/1.16.5/*.patch:
+    Add regression fixes taken from the upstream 1.16.5 release,
+    fixing various regressions introduced by fixing CVE-2026-34078
+    and improving test coverage
+    (Closes: #1132960)
+  * d/p/1.16.6/*.patch:
+    Add regression fixes taken from the upstream 1.16.6 release,
+    fixing additional regressions introduced by fixing CVE-2026-34078
+    and improving test coverage
+    (Closes: #1132968)
+    - d/control: Add curl(1) to Build-Depends and flatpak-tests Depends
+  * d/p/1.16.7/bwrap-Clarify-a-comment.patch,
+    d/p/dir-Silence-a-spurious-warning-when-installing-extra-data.patch:
+    Silence a spurious warning seen while testing 1.16.6
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 15 Apr 2026 20:27:40 +0100
+
+flatpak (1.14.10-1~deb12u1) bookworm-security; urgency=high
+
+  * Backport upstream stable release into Debian 12 (CVE-2024-42472)
+  * d/control: Relax required bubblewrap version to 0.8.0-2+deb12u1.
+    This version has a backport of the required --bind-fd option.
+  * Other changes relative to 1.14.10-1 in unstable:
+    - Revert polkitd dependencies to polkitd | policykit-1 as previously
+      used in bookworm
+    - Revert pkgconf dependencies to pkg-config as previously used in
+      bookworm
+    - Revert location of systemd unit to /lib/systemd/system as previously
+      used in bookworm, dropping versioned dependency on debhelper 13.11.6~
+    - Revert changes related to Debian 13 GIR XML packaging policy
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 14 Aug 2024 15:49:20 +0100
+
+flatpak (1.14.8-1~deb12u1) bookworm; urgency=medium
+
+  * Backport upstream stable release for Debian 12
+  * Changes relative to 1.14.4-1+deb12u1 in bookworm-security:
+    - New upstream stable release 1.14.6
+      + Don't parse `<developer><name/></developer>` as though it was
+        the application name
+      + Install a tmpfiles.d snippet to clean up /var/tmp/flatpak-cache-*
+        during boot
+      + Stop http transfers if a download in progress becomes very slow
+      + Silence warnings when using GLib 2.77.0 or later
+      + Bypass page cache for backend requests in revokefs, fixing
+        installation errors with libostree 2023.4 or later
+      + Show AppStream metadata in `flatpak remote-info` as intended,
+        fixing a regression in 1.9.1
+      + Don't let Flatpak apps inherit $VK_DRIVER_FILES or $VK_ICD_FILENAMES
+        from the host system, which would be wrong in the sandbox
+      + Fix forward-compatibility with libappstream 0.17.x and 1.0
+      + Fix a memory leak
+      + Fix some compiler warnings
+      + Make the test failure produce a clearer message if a required tool
+        is missing
+      + Don't force `GIO_USE_VFS=local` for programs launched via
+        flatpak-spawn
+      + Documentation improvements
+    - New upstream stable release 1.14.7
+      + Automatically reload D-Bus session bus configuration when apps are
+        installed or upgraded, ensuring that any new .service files get
+        picked up
+      + Allow apps to be run if the D-Bus system bus is missing or
+        non-functional
+      + Add several more environment variables to the list not inherited
+        into the sandbox:
+        * $LD_AUDIT, $LD_PRELOAD for ld.so
+        * $__EGL_VENDOR_LIBRARY_DIRS, etc. for EGL
+        * $VK_ADD_DRIVER_FILES, etc. for Vulkan
+        * $container, when running Flatpak inside a container manager
+      + Use xdg-desktop-portal-gnome, if installed, to detect whether apps
+        are running in the background
+      + If an app's data is migrated to a new name and then deleted, don't
+        try to migrate it again, avoiding a recursive symlink loop
+      + Don't leak temporary variable $new_dirs from /etc/profile.d/flatpak.sh
+        into user shell sessions
+      + Avoid an out-of-bounds left-shift (which is technically undefined
+        behaviour) when hashing object names
+      + Fix critical warnings "GFileInfo created without
+        standard::is-symlink" when using /var/lib/flatpak/extension with
+        testing/unstable glib2.0
+      + Fix validation of documentation against Docbook DTD
+      + Fix a misleading comment in the test for CVE-2024-32462
+      + Fix a double-free in the test suite
+      + Skip more tests if bubblewrap works but FUSE doesn't
+    - New upstream stable release 1.14.8
+      + Respin of 1.14.7 reverting unintended submodule changes
+    - d/control: Move dbus-system-bus from Depends to Recommends.
+      `flatpak run` no longer has a working system bus as a hard requirement
+      (verified in `podman run --privileged --rm -it debian:sid-slim`)
+    - Drop CVE-2024-32462 patches, included in the upstream stable release
+    - debian/test.sh: Disable http proxy if used, to ensure we can reach
+      a HTTP server on localhost during automated tests
+  * Changes relative to 1.14.8-1 in unstable:
+    - Revert polkitd dependencies to polkitd | policykit-1 as previously
+      used in bookworm
+    - Revert pkgconf dependencies to pkg-config as previously used in
+      bookworm
+    - Revert location of systemd unit to /lib/systemd/system as previously
+      used in bookworm, dropping versioned dependency on debhelper 13.11.6~
+    - Revert changes related to Debian 13 GIR XML packaging policy
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 30 Apr 2024 16:50:10 +0100
+
+flatpak (1.14.4-1+deb12u1) bookworm-security; urgency=high
+
+  * d/p/When-starting-non-static-command-using-bwrap-use.patch,
+    d/p/test-run-Add-a-reproducer-for-CVE-2024-32462.patch:
+    Don't allow an executable name to be misinterpreted as a command-line
+    option for bwrap(1). This prevents a sandbox escape where a malicious
+    or compromised app could ask xdg-desktop-portal to generate a .desktop
+    file with access to files outside the sandbox. (CVE-2024-32462)
+  * d/gbp.conf: Use debian/bookworm packaging branch
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 17 Apr 2024 19:39:48 +0100
+
 flatpak (1.14.10-1~flatpak1~18.04.2) bionic; urgency=medium
 
   * d/p/app-Print-a-warning-message-about-bionic-being-EOL.patch:

@@ -10,6 +10,7 @@ Build-Depends:
  automake (>= 1.14.1),
  bison,
  ca-certificates <!nocheck>,
+ curl <!nocheck>,
  dbus,
  debhelper-compat (= 11),
  desktop-file-utils <!nocheck>,
@@ -114,6 +115,7 @@ Section: misc
 Depends:
  attr,
  ca-certificates,
+ curl,
  desktop-file-utils,
  flatpak (= ${binary:Version}),
  fuse,
@@ -159,9 +161,8 @@ Depends:
  libglib2.0-dev,
  libostree-dev (>= 2020.8),
  libxml2-dev (>= 2.4),
- pkgconf,
+ pkg-config,
  python3:any,
- ${gir:Depends},
  ${misc:Depends},
 Recommends:
  flatpak,
@@ -170,8 +171,6 @@ Suggests:
  ostree,
  python3-gi,
  systemd-coredump,
-Provides:
- ${gir:Provides},
 Description: Application deployment framework for desktop apps (development)
  Flatpak installs, manages and runs sandboxed desktop application bundles.
  See the flatpak package for a more comprehensive description.

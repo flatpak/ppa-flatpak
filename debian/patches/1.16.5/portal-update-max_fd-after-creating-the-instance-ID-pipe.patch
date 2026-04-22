@@ -1,0 +1,29 @@
+From: Alberto Garcia <berto@igalia.com>
+Date: Wed, 8 Apr 2026 19:28:32 +0200
+Subject: portal: update max_fd after creating the instance ID pipe
+
+fd_map_remap_fd() is called several times after this, and without this
+change it can allocate a target fd that collides with instance_id_fd.
+
+Only the write end of the pipe needs to be considered because that's
+the one passed to the child.
+
+Origin: upstream, 1.16.5, commit:2e2f4a430b784163614403b333ab3990c9354db3
+Bug: https://github.com/flatpak/flatpak/issues/6570
+Bug-Debian: https://bugs.debian.org/1132968
+---
+ portal/flatpak-portal.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/portal/flatpak-portal.c b/portal/flatpak-portal.c
+index 6821831..3b9f0b6 100644
+--- a/portal/flatpak-portal.c
++++ b/portal/flatpak-portal.c
+@@ -1078,6 +1078,7 @@ handle_spawn (PortalFlatpak         *object,
+ 
+       g_ptr_array_add (flatpak_argv, g_strdup_printf ("--instance-id-fd=%d", pipe_fds[1]));
+       child_setup_data.instance_id_fd = pipe_fds[1];
++      max_fd = MAX(max_fd, pipe_fds[1]);
+     }
+ 
+   if (devel)

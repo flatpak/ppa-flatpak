@@ -1,0 +1,33 @@
+From: Georges Basile Stavracas Neto <georges.stavracas@gmail.com>
+Date: Tue, 11 Mar 2025 10:25:16 -0300
+Subject: portal: Don't run method invocations in a thread
+
+Most access to the `client_pid_data_hash` hash table are unsafe due to
+threading.
+
+One approach to solve this would be to protect the hash table with a
+mutex, but as per a deeper analysis, nothing in these callbacks is
+slow or heavy enough to justify the need for separate threads.
+
+Make method invocations run in the main thread.
+
+Origin: upstream, flatpak-1.14.x branch, commit:c11cbbfce1b8c469e7802ea81a1ccfa1337562fa
+Bug: https://github.com/flatpak/flatpak/issues/5605
+---
+ portal/flatpak-portal.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/portal/flatpak-portal.c b/portal/flatpak-portal.c
+index c0f1fb2..b32e5e4 100644
+--- a/portal/flatpak-portal.c
++++ b/portal/flatpak-portal.c
+@@ -2905,9 +2905,6 @@ on_bus_acquired (GDBusConnection *connection,
+ 
+   g_object_set_data_full (G_OBJECT (portal), "track-alive", GINT_TO_POINTER (42), skeleton_died_cb);
+ 
+-  g_dbus_interface_skeleton_set_flags (G_DBUS_INTERFACE_SKELETON (portal),
+-                                       G_DBUS_INTERFACE_SKELETON_FLAGS_HANDLE_METHOD_INVOCATIONS_IN_THREAD);
+-
+   portal_flatpak_set_version (PORTAL_FLATPAK (portal), 6);
+   portal_flatpak_set_supports (PORTAL_FLATPAK (portal), supports);
+ 

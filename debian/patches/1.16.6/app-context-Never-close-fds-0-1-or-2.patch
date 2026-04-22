@@ -1,0 +1,101 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Fri, 10 Apr 2026 14:00:14 +0100
+Subject: app, context: Never close fds 0, 1 or 2
+
+These fds are stdin, stdout and stderr respectively, and are expected
+to remain open at all times (if they are not needed then they can point
+to /dev/null, but they should always be open). If the user gives us
+`--env-fd=2` or similar, we don't want to close fd 2 before exiting
+unsuccessfully: that would give us nowhere to display the error message.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+(cherry picked from commit c4ab58cd2e66c4bcf193919ef9cbdce1dac042da)
+
+Origin: upstream, 1.16.6, commit:7f5306876adc6f322f88c01801fd5aab2742c7b4
+---
+ app/flatpak-builtins-run.c | 26 +++++++++++++++++++++-----
+ common/flatpak-context.c   |  6 +++++-
+ 2 files changed, 26 insertions(+), 6 deletions(-)
+
+diff --git a/app/flatpak-builtins-run.c b/app/flatpak-builtins-run.c
+index 2b5eccc..574a2d5 100644
+--- a/app/flatpak-builtins-run.c
++++ b/app/flatpak-builtins-run.c
+@@ -79,7 +79,11 @@ option_bind_fd_cb (const char  *option_name,
+     return FALSE;
+ 
+   if (fd < 3)
+-    return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
++    {
++      /* Don't close these fds! */
++      fd = -1;
++      return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
++    }
+ 
+   if (!flatpak_set_cloexec (fd))
+     return glnx_throw_errno_prefix (error, "--bind-fd");
+@@ -102,7 +106,10 @@ option_ro_bind_fd_cb (const char  *option_name,
+     return FALSE;
+ 
+   if (fd < 3)
+-    return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
++    {
++      fd = -1;
++      return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
++    }
+ 
+   if (!flatpak_set_cloexec (fd))
+     return glnx_throw_errno_prefix (error, "--ro-bind-fd");
+@@ -125,7 +132,10 @@ opt_instance_id_fd_cb (const char  *option_name,
+     return FALSE;
+ 
+   if (fd < 3)
+-    return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
++    {
++      fd = -1;
++      return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
++    }
+ 
+   if (!flatpak_set_cloexec (fd))
+     return glnx_throw_errno_prefix (error, "--instance-id-fd");
+@@ -147,7 +157,10 @@ opt_app_fd_cb (const char  *option_name,
+     return FALSE;
+ 
+   if (fd < 3)
+-    return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
++    {
++      fd = -1;
++      return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
++    }
+ 
+   if (!flatpak_set_cloexec (fd))
+     return glnx_throw_errno_prefix (error, "--app-fd");
+@@ -169,7 +182,10 @@ opt_usr_fd_cb (const char  *option_name,
+     return FALSE;
+ 
+   if (fd < 3)
+-    return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
++    {
++      fd = -1;
++      return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
++    }
+ 
+   if (!flatpak_set_cloexec (fd))
+     return glnx_throw_errno_prefix (error, "--usr-fd");
+diff --git a/common/flatpak-context.c b/common/flatpak-context.c
+index 014ed0b..a3e58ea 100644
+--- a/common/flatpak-context.c
++++ b/common/flatpak-context.c
+@@ -1311,7 +1311,11 @@ option_env_fd_cb (const gchar *option_name,
+     return FALSE;
+ 
+   if (fd < 3)
+-    return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
++    {
++      /* Don't close these fds! */
++      fd = -1;
++      return glnx_throw (error, "File descriptors 0, 1, 2 are reserved");
++    }
+ 
+   /* This is not strictly necessary, because we're going to close it after
+    * parsing the environment block, but let's be consistent with other fd

@@ -1,0 +1,25 @@
+From: Georges Basile Stavracas Neto <georges.stavracas@gmail.com>
+Date: Tue, 11 Mar 2025 10:28:03 -0300
+Subject: portal: Use G_LOCK_DEFINE_STATIC
+
+The `update_monitors` lock lives in the global namespace and is not
+used by other compile units, so make it static.
+
+Origin: upstream, flatpak-1.14.x branch, commit:1e43d5dc9ec1c73efe13420f1eff36c65b7ee870
+---
+ portal/flatpak-portal.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/portal/flatpak-portal.c b/portal/flatpak-portal.c
+index b3f82ff..c0f1fb2 100644
+--- a/portal/flatpak-portal.c
++++ b/portal/flatpak-portal.c
+@@ -76,7 +76,7 @@ static int opt_poll_timeout;
+ static gboolean opt_poll_when_metered;
+ static FlatpakSpawnSupportFlags supports = 0;
+ 
+-G_LOCK_DEFINE (update_monitors); /* This protects the three variables below */
++G_LOCK_DEFINE_STATIC (update_monitors); /* This protects the three variables below */
+ static GHashTable *update_monitors;
+ static guint update_monitors_timeout = 0;
+ static gboolean update_monitors_timeout_running_thread = FALSE;

@@ -1,0 +1,36 @@
+From: Xiangzhe <xiangzhedev@gmail.com>
+Date: Wed, 8 Apr 2026 12:27:28 +0800
+Subject: run: Fix checking wrong variable in runtime fd selection
+
+In flatpak_run_app(), the else-if branch that handles
+FLATPAK_RUN_APP_DEPLOY_USR_ORIGINAL was checking custom_app_fd instead
+of custom_runtime_fd. When custom_app_fd is APP_EMPTY (-3) and
+custom_runtime_fd is USR_ORIGINAL (-2), the condition would not match
+and fall through to g_assert_not_reached(), aborting the process.
+
+This broke sub-sandbox spawning with --app-path="" (empty app), which
+is used by steam-runtime-check-requirements to verify that Flatpak's
+sub-sandbox mechanism works.
+
+Fixes: ac62ebe3 "run: Use O_PATH fds for the runtime and app deploy directories"
+(cherry picked from commit 066babba75d355d077ea11091e5f65d3b0e0d818)
+Origin: upstream, 1.16.5, commit:d19f44408000b53b6d61d3e60a3c65104dc5a8c6
+Bug: https://github.com/flatpak/flatpak/issues/6568
+Bug-Debian: https://bugs.debian.org/1132960
+---
+ common/flatpak-run.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common/flatpak-run.c b/common/flatpak-run.c
+index f12b1f8..e0e98de 100644
+--- a/common/flatpak-run.c
++++ b/common/flatpak-run.c
+@@ -4427,7 +4427,7 @@ flatpak_run_app (FlatpakDecomposed *app_ref,
+       runtime_fd = custom_runtime_fd;
+       runtime_files = custom_runtime_files;
+     }
+-  else if (custom_app_fd == FLATPAK_RUN_APP_DEPLOY_USR_ORIGINAL)
++  else if (custom_runtime_fd == FLATPAK_RUN_APP_DEPLOY_USR_ORIGINAL)
+     {
+       original_runtime_target_path = "/usr";
+       runtime_fd = original_runtime_fd;

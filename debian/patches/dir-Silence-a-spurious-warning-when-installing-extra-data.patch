@@ -1,0 +1,37 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Tue, 14 Apr 2026 10:45:12 +0100
+Subject: dir: Silence a spurious warning when installing extra-data
+
+Since commit ac62ebe "run: Use O_PATH fds for the runtime and app
+deploy directories", any extra-data helper that runs inside a runtime
+will receive a non-seekable O_PATH fd as its /usr. Instead of
+logging a (non-async-signal-safe!) warning, ignore the failure to seek,
+like flatpak_bwrap_child_setup() already did.
+
+Functionally equivalent to commit 333459c8 "dir: Use
+flatpak_bwrap_child_setup_inherit_fds_cb() to apply extra-data" upstream,
+but that function didn't exist yet in the 1.14.x branch.
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+Bug: https://github.com/flatpak/flatpak/issues/6608
+Forwarded: not-needed, upstream no longer supports 1.14.x
+---
+ common/flatpak-dir.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/common/flatpak-dir.c b/common/flatpak-dir.c
+index 44180d0..6262ad9 100644
+--- a/common/flatpak-dir.c
++++ b/common/flatpak-dir.c
+@@ -8183,7 +8183,10 @@ child_setup (gpointer user_data)
+       /* We also seek all fds to the start, because this lets
+          us use the same fd_array multiple times */
+       if (lseek (fd, 0, SEEK_SET) < 0)
+-        g_printerr ("lseek error in child setup");
++        {
++          /* Ignore the error, not all fds are seekable
++           * (for example pipes and O_PATH fds are not) */
++        }
+ 
+       fcntl (fd, F_SETFD, 0);
+     }

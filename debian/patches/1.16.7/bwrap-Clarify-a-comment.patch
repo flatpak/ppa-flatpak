@@ -1,0 +1,30 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Sat, 11 Apr 2026 16:59:10 +0100
+Subject: bwrap: Clarify a comment
+
+Now that we're passing the app's /app and /usr down to bwrap as O_PATH
+file descriptors, it will be even more common to have non-seekable fds
+in the array.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+(cherry picked from commit dc9173b2d330f3ac411b135f261e81551db05f3f)
+
+Origin: upstream, 1.16.7, commit:57a5f51199ea8f35e1236857d962e4ac6cbe2a57
+---
+ common/flatpak-bwrap.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/common/flatpak-bwrap.c b/common/flatpak-bwrap.c
+index 7cb1be5..6bfb089 100644
+--- a/common/flatpak-bwrap.c
++++ b/common/flatpak-bwrap.c
+@@ -522,7 +522,8 @@ flatpak_bwrap_child_setup (GArray *fd_array,
+          us use the same fd_array multiple times */
+       if (lseek (fd, 0, SEEK_SET) < 0)
+         {
+-          /* Ignore the error, this happens on e.g. pipe fds */
++          /* Ignore the error, not all fds are seekable
++           * (for example pipes and O_PATH fds are not) */
+         }
+ 
+       fcntl (fd, F_SETFD, 0);
