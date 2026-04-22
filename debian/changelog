@@ -1,3 +1,27 @@
+flatpak (1.14.10-1~flatpak2~18.04.1) UNRELEASED; urgency=medium
+
+  * Rebuild for Ubuntu 18.04 'bionic' for PPA, using Debian 12 security
+    update as a base
+  * Remaining changes relative to Debian 12:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+    - Use bundled bwrap/dbus-proxy instead of older system copies
+    - Revert libmalcontent integration
+    - Downgrade dbus from Depends to Recommends
+    - Roll back to debhelper 11
+      + Don't rely on debhelper to create a temporary $HOME for tests
+      + Reinstate --libexecdir
+    - Reduce libseccomp dependency for compatibility with bionic
+    - Go back to using libfuse version 2
+    - Go back to old dependency package names
+      + libgdk-pixbuf-2.0-dev -> libgdk-pixbuf2.0-dev
+      + dbus-daemon -> dbus
+      + polkitd -> policykit-1
+
+ -- Simon McVittie <smcv@debian.org>  Wed, 22 Apr 2026 10:38:34 +0100
+
 flatpak (1.14.10-1~deb12u2) bookworm-security; urgency=high
 
   * Security update
