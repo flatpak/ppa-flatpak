@@ -57,3 +57,4 @@ CVE-2026-34080/Fix-GVariant-reference-leaks.patch
 CVE-2026-34080/flatpak-proxy-Use-g_autoptr-in-validate_arg0_match.patch
 CVE-2026-34080/Improve-detection-of-eavesdrop-true.patch
 app-Print-a-warning-message-about-bionic-being-EOL.patch
+libglnx-Cope-with-old-kernel-in-Ubuntu-18.04.patch

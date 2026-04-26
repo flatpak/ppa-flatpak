@@ -1,0 +1,54 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Sun, 26 Apr 2026 12:18:51 +0100
+Subject: libglnx: Cope with old kernel in Ubuntu 18.04
+
+Ubuntu 18.04 shipped with Linux 5.4, which is too old to have the
+STX_MNT_ID feature introduced in Linux 5.8. We can get the same
+information by calling name_to_handle_at() on the same dirfd.
+
+Signed-off-by: Simon McVittie <smcv@debian.org>
+---
+ subprojects/libglnx/glnx-chase.c | 30 ++++++++++++++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/subprojects/libglnx/glnx-chase.c b/subprojects/libglnx/glnx-chase.c
+index 9ad2fe3..60d54fd 100644
+--- a/subprojects/libglnx/glnx-chase.c
++++ b/subprojects/libglnx/glnx-chase.c
+@@ -116,6 +116,36 @@ glnx_chase_statx (int                 dfd,
+                    error))
+     return FALSE;
+ 
++  if ((buf->stx_mask & (GLNX_STATX_MNT_ID | GLNX_STATX_MNT_ID_UNIQUE)) == 0)
++    {
++      /* Ubuntu 18.04's Linux 5.4 kernel is too old to implement
++       * STATX_MNT_ID, so try to fill in the same information with
++       * name_to_handle_at. There's no point in trying with
++       * AT_HANDLE_MNT_ID_UNIQUE because that was new in Linux 6.12,
++       * which would certainly have implemented STATX_MNT_ID */
++      int mount_id = -1;
++      /* We assume that in practice pre-5.8 kernels didn't generate any
++       * file handles larger than the original value of MAX_HANDLE_SZ,
++       * which was 128 bytes. We don't need to future-proof this against
++       * new kernels, because new kernels would implement STATX_MNT_ID. */
++      const size_t ORIGINAL_MAX_HANDLE_SZ = 128;
++      union
++        {
++          struct file_handle fh;
++          char padding[sizeof (struct file_handle) + ORIGINAL_MAX_HANDLE_SZ];
++        } fh;
++
++      memset (&fh, 0, sizeof (fh));
++      G_STATIC_ASSERT (sizeof (fh) - G_STRUCT_OFFSET (struct file_handle, f_handle) == ORIGINAL_MAX_HANDLE_SZ);
++      fh.fh.handle_bytes = ORIGINAL_MAX_HANDLE_SZ;
++
++      if (name_to_handle_at (dfd, "", &fh.fh, &mount_id, AT_EMPTY_PATH) == 0)
++        {
++          buf->stx_mask |= GLNX_STATX_MNT_ID;
++          buf->stx_mnt_id = mount_id;
++        }
++    }
++
+   if ((buf->stx_mask & (GLNX_STATX_TYPE | GLNX_STATX_INO)) !=
+         (GLNX_STATX_TYPE | GLNX_STATX_INO) ||
+       (buf->stx_mask & (GLNX_STATX_MNT_ID | GLNX_STATX_MNT_ID_UNIQUE)) == 0)
