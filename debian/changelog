@@ -1,7 +1,7 @@
-flatpak (1.14.10-1~flatpak2~18.04.1) UNRELEASED; urgency=medium
+flatpak (1.14.10-1~flatpak2~18.04.1) bionic; urgency=medium
 
   * Rebuild for Ubuntu 18.04 'bionic' for PPA, using Debian 12 security
-    update as a base
+    update DSA-6223-1 as a base
   * Remaining changes relative to Debian 12:
     - Set changelog merge driver for debian/changelog
     - Add PPA backport notes to debian/README.source
@@ -21,9 +21,16 @@ flatpak (1.14.10-1~flatpak2~18.04.1) UNRELEASED; urgency=medium
       + polkitd -> policykit-1
   * d/p/CVE-2026-34080/*.patch:
     Add patches to bundled xdg-dbus-proxy to address CVE-2026-34080
-  * Improve EOL message, and don't show it if not run from a terminal
+  * d/patches: Backport some additional GLib backports into libglnx to cope
+    with Ubuntu 18.04's older GLib
+  * d/p/libglnx-Cope-with-old-kernel-in-Ubuntu-18.04.patch:
+    Use name_to_handle_at() to work around Ubuntu 18.04's standard
+    kernel being too old to support STATX_MNT_ID, which was introduced
+    in Linux 5.8
+  * d/p/app-Print-a-warning-message-about-bionic-being-EOL.patch:
+    Improve EOL message, and don't show it if not run from a terminal
 
- -- Simon McVittie <smcv@debian.org>  Wed, 22 Apr 2026 10:52:09 +0100
+ -- Simon McVittie <smcv@debian.org>  Sun, 26 Apr 2026 13:02:32 +0100
 
 flatpak (1.14.10-1~deb12u2) bookworm-security; urgency=high
 
