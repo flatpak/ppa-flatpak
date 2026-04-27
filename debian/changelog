@@ -1,3 +1,10 @@
+flatpak (1.16.6-2) UNRELEASED; urgency=medium
+
+  [ Luca Boccassi ]
+  * Switch from adduser to dh-sequence-installsysusers
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 27 Apr 2026 10:56:18 +0100
+
 flatpak (1.16.6-1) unstable; urgency=high
 
   * New upstream stable release
