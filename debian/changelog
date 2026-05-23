@@ -1,8 +1,10 @@
 flatpak (1.17.7-1) UNRELEASED; urgency=medium
 
   * New upstream development prerelease
+  * d/p/dir-Use-flatpak_bwrap_child_setup_inherit_fds_cb-to-apply.patch:
+    Drop patch, applied upstream
 
- -- Simon McVittie <smcv@debian.org>  Sat, 23 May 2026 19:04:45 +0100
+ -- Simon McVittie <smcv@debian.org>  Sat, 23 May 2026 21:36:16 +0100
 
 flatpak (1.17.6-1) experimental; urgency=medium
 
