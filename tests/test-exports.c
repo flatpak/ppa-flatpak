@@ -371,6 +371,7 @@ test_full_context (void)
   g_assert_cmpstr (strv[i++], ==, "ssh-auth");
   g_assert_cmpstr (strv[i++], ==, "system-bus");
   g_assert_cmpstr (strv[i++], ==, "wayland");
+  g_assert_cmpstr (strv[i++], ==, "x11");
   g_assert_cmpstr (strv[i], ==, NULL);
   g_assert_cmpuint (i, ==, n);
   g_clear_pointer (&strv, g_strfreev);
@@ -738,9 +739,6 @@ test_full (void)
     g_error ("mkdir: %s", g_strerror (errno));
 
   if (g_mkdir_with_parents (hide, S_IRWXU) != 0)
-    g_error ("mkdir: %s", g_strerror (errno));
-
-  if (g_mkdir_with_parents (dont_hide, S_IRWXU) != 0)
     g_error ("mkdir: %s", g_strerror (errno));
 
   if (g_mkdir_with_parents (dont_hide, S_IRWXU) != 0)
