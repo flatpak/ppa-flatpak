@@ -4618,10 +4618,12 @@ apply_new_flatpakrepo (const char *remote_name,
   g_autoptr(GKeyFile) group_config = NULL;
   g_autoptr(GKeyFile) keyfile = g_key_file_new ();
   g_autoptr(GError) local_error = NULL;
+  g_autoptr(GKeyFile) old_config = NULL;
   g_autoptr(GKeyFile) new_config = NULL;
   g_auto(GStrv) old_applied_remotes = NULL;
   g_autoptr(GPtrArray) new_applied_remotes = NULL;
   int i;
+  gboolean res = FALSE;
 
   if (!g_key_file_load_from_file (keyfile, flatpak_file_get_path_cached (file), 0, &local_error))
     {
@@ -4636,6 +4638,7 @@ apply_new_flatpakrepo (const char *remote_name,
       return FALSE;
     }
 
+  old_config = ostree_repo_copy_config (repo);
   new_config = ostree_repo_copy_config (repo);
 
   old_applied_remotes = g_key_file_get_string_list (new_config, "core", "xa.applied-remotes", NULL, NULL);
@@ -4652,10 +4655,10 @@ apply_new_flatpakrepo (const char *remote_name,
                               (const char * const *) new_applied_remotes->pdata, new_applied_remotes->len);
 
   if (!ostree_repo_write_config (repo, new_config, error))
-    return FALSE;
+    goto out;
 
   if (!ostree_repo_reload_config (repo, NULL, error))
-    return FALSE;
+    goto out;
 
   if (gpg_data != NULL)
     {
@@ -4664,12 +4667,21 @@ apply_new_flatpakrepo (const char *remote_name,
 
       if (!ostree_repo_remote_gpg_import (repo, remote_name, input_stream,
                                           NULL, &imported, NULL, error))
-        return FALSE;
+        goto out;
 
       g_info ("Imported %u GPG key%s to remote \"%s\"", imported, (imported == 1) ? "" : "s", remote_name);
     }
 
-  return TRUE;
+  res = TRUE;
+out:
+  if (!res)
+    {
+      /* Roll back the changes. Ideally they would be atomic, because if the
+       * program terminates before we roll back, we end up in a broken state */
+      ostree_repo_write_config (repo, old_config, NULL);
+      ostree_repo_reload_config (repo, NULL, NULL);
+    }
+  return res;
 }
 
 static gboolean
@@ -4767,11 +4779,19 @@ _flatpak_dir_ensure_repo (FlatpakDir   *self,
 
       if (flatpak_dir_use_system_helper (self, NULL))
         {
+          g_autoptr(GError) local_error = NULL;
+
           if (!system_helper_maybe_ensure_repo (self, ensure_flags, allow_empty, cancellable, error))
             return FALSE;
 
-          if (!ensure_repo_opened (repo, cancellable, error))
-            return FALSE;
+          if (!ensure_repo_opened (repo, cancellable, &local_error))
+            {
+              if (allow_empty)
+                return TRUE;
+
+              g_propagate_error (error, g_steal_pointer (&local_error));
+              return FALSE;
+            }
         }
       else
         {
@@ -6125,6 +6145,18 @@ repo_pull (OstreeRepo                           *self,
   if (!flatpak_repo_resolve_rev (self, NULL, state->remote_name, ref_to_fetch, TRUE,
                                  &current_checksum, cancellable, error))
     return FALSE;
+
+  /* The remote tracking ref may be absent (e.g. the remote was removed and
+   * re-added, the app was installed from a bundle, or the ref was deleted by
+   * ostree-prune/flatpak-repair).  Fall back to the deploy/ ref that flatpak
+   * always writes on every successful deploy so that Flatpak-Upgrade-From is
+   * still sent correctly on the next update. */
+  if (current_checksum == NULL && dir != NULL)
+    {
+      g_autofree char *deploy_ref = g_strconcat ("deploy/", ref_to_fetch, NULL);
+      flatpak_repo_resolve_rev (self, NULL, NULL, deploy_ref, TRUE,
+                                &current_checksum, cancellable, NULL);
+    }
 
   if (current_checksum != NULL &&
       !ostree_repo_load_commit (self, current_checksum, &old_commit, NULL, error))
@@ -9165,30 +9197,6 @@ extract_extra_data (FlatpakDir   *self,
   return TRUE;
 }
 
-static void
-child_setup (gpointer user_data)
-{
-  GArray *fd_array = user_data;
-  int i;
-
-  /* If no fd_array was specified, don't care. */
-  if (fd_array == NULL)
-    return;
-
-  /* Otherwise, mark not - close-on-exec all the fds in the array */
-  for (i = 0; i < fd_array->len; i++)
-    {
-      int fd = g_array_index (fd_array, int, i);
-
-      /* We also seek all fds to the start, because this lets
-         us use the same fd_array multiple times */
-      if (lseek (fd, 0, SEEK_SET) < 0)
-        g_printerr ("lseek error in child setup");
-
-      fcntl (fd, F_SETFD, 0);
-    }
-}
-
 static gboolean
 apply_extra_data (FlatpakDir   *self,
                   GFile        *checkoutdir,
@@ -9363,7 +9371,7 @@ apply_extra_data (FlatpakDir   *self,
                      (char **) bwrap->argv->pdata,
                      bwrap->envp,
                      G_SPAWN_SEARCH_PATH,
-                     child_setup, bwrap->fds,
+                     flatpak_bwrap_child_setup_inherit_fds_cb, bwrap->fds,
                      NULL, NULL,
                      &exit_status,
                      error))
@@ -16018,9 +16026,11 @@ flatpak_dir_modify_remote (FlatpakDir   *self,
   g_autofree char *group = g_strdup_printf ("remote \"%s\"", remote_name);
   g_autofree char *url = NULL;
   g_autofree char *metalink = NULL;
+  g_autoptr(GKeyFile) old_config = NULL;
   g_autoptr(GKeyFile) new_config = NULL;
   g_autofree gchar *filter_path = NULL;
   gboolean has_remote;
+  gboolean res = FALSE;
 
   if (strchr (remote_name, '/') != NULL)
     return flatpak_fail_error (error, FLATPAK_ERROR_REMOTE_NOT_FOUND, _("Invalid character '/' in remote name: %s"),
@@ -16074,6 +16084,8 @@ flatpak_dir_modify_remote (FlatpakDir   *self,
   if (!flatpak_dir_cleanup_remote_for_url_change (self, remote_name, url, cancellable, error))
     return FALSE;
 
+  old_config = ostree_repo_copy_config (self->repo);
+
   /* Add it if its not there yet */
   if (!ostree_repo_remote_change (self->repo, NULL,
                                   OSTREE_REPO_REMOTE_CHANGE_ADD_IF_NOT_EXISTS,
@@ -16086,21 +16098,7 @@ flatpak_dir_modify_remote (FlatpakDir   *self,
   copy_remote_config (new_config, config, remote_name);
 
   if (!ostree_repo_write_config (self->repo, new_config, error))
-    return FALSE;
-
-  if (gpg_data != NULL)
-    {
-      g_autoptr(GInputStream) input_stream = g_memory_input_stream_new_from_bytes (gpg_data);
-      guint imported = 0;
-
-      if (!ostree_repo_remote_gpg_import (self->repo, remote_name, input_stream,
-                                          NULL, &imported, cancellable, error))
-        return FALSE;
-
-      /* XXX If we ever add internationalization, use ngettext() here. */
-      g_info ("Imported %u GPG key%s to remote \"%s\"",
-              imported, (imported == 1) ? "" : "s", remote_name);
-    }
+    goto out;
 
   filter_path = g_key_file_get_value (new_config, group, "xa.filter", NULL);
   if (filter_path && *filter_path && g_file_test (filter_path, G_FILE_TEST_EXISTS))
@@ -16130,10 +16128,28 @@ flatpak_dir_modify_remote (FlatpakDir   *self,
 
   /* If we e.g. changed url or gpg config the cached summary may be invalid */
   if (!flatpak_dir_remote_clear_cached_summary (self, remote_name, cancellable, error))
-    return FALSE;
+    goto out;
 
-  if (!flatpak_dir_mark_changed (self, error))
-    return FALSE;
+  if (gpg_data != NULL)
+    {
+      g_autoptr(GInputStream) input_stream = g_memory_input_stream_new_from_bytes (gpg_data);
+      guint imported = 0;
+
+      if (!ostree_repo_remote_gpg_import (self->repo, remote_name, input_stream,
+                                          NULL, &imported, cancellable, error))
+        goto out;
+
+      /* XXX If we ever add internationalization, use ngettext() here. */
+      g_info ("Imported %u GPG key%s to remote \"%s\"",
+              imported, (imported == 1) ? "" : "s", remote_name);
+    }
+
+  {
+    g_autoptr(GError) local_error = NULL;
+
+    if (!flatpak_dir_mark_changed (self, &local_error))
+      g_warning ("Failed to mark dir as changed: %s", local_error->message);
+  }
 
   if (has_remote)
     flatpak_dir_log (self, "modify remote", remote_name, NULL, NULL, NULL, url,
@@ -16142,7 +16158,16 @@ flatpak_dir_modify_remote (FlatpakDir   *self,
     flatpak_dir_log (self, "add remote", remote_name, NULL, NULL, NULL, url,
                      "Added remote %s to %s", remote_name, url);
 
-  return TRUE;
+  res = TRUE;
+out:
+  if (!res)
+    {
+      /* Roll back the changes. Ideally they would be atomic, because if the
+       * program terminates before we roll back, we end up in a broken state */
+      ostree_repo_write_config (self->repo, old_config, NULL);
+      ostree_repo_reload_config (self->repo, NULL, NULL);
+    }
+  return res;
 }
 
 gboolean
