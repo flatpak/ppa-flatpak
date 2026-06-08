@@ -1,7 +1,7 @@
-flatpak (1.17.7-1) UNRELEASED; urgency=medium
+flatpak (1.18.0-1) UNRELEASED; urgency=medium
 
   [ Simon McVittie ]
-  * New upstream development prerelease
+  * New upstream release
   * d/p/dir-Use-flatpak_bwrap_child_setup_inherit_fds_cb-to-apply.patch:
     Drop patch, applied upstream
   * Revert "d/control, d/gbp.conf, d/watch: Watch for upstream development
