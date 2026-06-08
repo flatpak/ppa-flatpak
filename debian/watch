@@ -3,7 +3,7 @@ Version: 5
 # Upstream releases official tarballs, so we use those in preference to
 # git tags
 Source: https://github.com/@PACKAGE@/@PACKAGE@/tags
-Matching-Pattern: .*/releases/tag/v?@ANY_VERSION@
+Matching-Pattern: .*/releases/tag/v?(\d+\.\d+[02468]\.[-+.:~\da-zA-Z]*)
 Compression: xz
 Download-URL-Mangle: s#/tag/#/download/#;s#(v?@ANY_VERSION@)$#$1/@PACKAGE@-$2.tar.xz#
 Dversion-Mangle: s/\+(?:git)?[0-9]+(?:\+g[0-9a-f]*)?//;s/[+~](?:dfsg|ds)[0-9]*//
