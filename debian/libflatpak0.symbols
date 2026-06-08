@@ -38,6 +38,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_get_priority@Base 1.0
  flatpak_installation_get_remote_by_name@Base 1.0
  flatpak_installation_get_storage_type@Base 1.0
+ flatpak_installation_get_timestamp@Base 1.18
  flatpak_installation_get_type@Base 1.0
  flatpak_installation_install@Base 1.0
  flatpak_installation_install_bundle@Base 1.0
