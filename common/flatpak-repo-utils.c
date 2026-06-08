@@ -917,7 +917,7 @@ populate_commit_data_cache (OstreeRepo *repo,
           return NULL;
         }
 
-      /* Note that all summaries refered to by the index is in new format */
+      /* Note that all summaries referred to by the index is in new format */
       summary = var_summary_from_gvariant (summary_v);
       ref_map = var_summary_get_ref_map (summary);
       n_refs = var_ref_map_get_length (ref_map);
@@ -1577,10 +1577,8 @@ flatpak_summary_generate_diff (GVariant *old_v,
 {
   VarSummaryRef new, old;
   VarRefMapRef new_refs, old_refs;
-  VarRefMapEntryRef new_entry, old_entry;
   gsize new_len, old_len;
   int new_i, old_i;
-  const char *old_ref, *new_ref;
   g_autoptr(GArray) ops = g_array_new (FALSE, TRUE, sizeof (DiffOp));
   g_autoptr(GArray) data_bytes = g_array_new (FALSE, TRUE, 1);
   g_autoptr(GBytes) diff_uncompressed = NULL;
@@ -1604,61 +1602,37 @@ flatpak_summary_generate_diff (GVariant *old_v,
   new_i = old_i = 0;
   while (new_i < new_len && old_i < old_len)
     {
-      if (new_i == new_len)
+      VarRefMapEntryRef new_entry = var_ref_map_get_at (new_refs, new_i);
+      const char *new_ref = var_ref_map_entry_get_ref (new_entry);
+
+      VarRefMapEntryRef old_entry = var_ref_map_get_at (old_refs, old_i);
+      const char *old_ref = var_ref_map_entry_get_ref (old_entry);
+
+      int cmp = strcmp (new_ref, old_ref);
+      if (cmp == 0)
         {
-          /* Just old left */
-          old_entry = var_ref_map_get_at (old_refs, old_i);
-          old_ref = var_ref_map_entry_get_ref (old_entry);
+          /* same ref */
+          diff_consume_block (&data,
+                              (const guchar *)old_entry.base - (const guchar *)old.base, old_entry.size,
+                              (const guchar *)new_entry.base - (const guchar *)new.base, new_entry.size);
           old_i++;
+          new_i++;
+        }
+      else if (cmp < 0)
+        {
+          /* new added */
           diff_consume_block (&data,
                               -1, 0,
                               (const guchar *)new_entry.base - (const guchar *)new.base, new_entry.size);
-        }
-      else if (old_i == old_len)
-        {
-          /* Just new left */
-          new_entry = var_ref_map_get_at (new_refs, new_i);
-          new_ref = var_ref_map_entry_get_ref (new_entry);
-          diff_consume_block (&data,
-                              (const guchar *)old_entry.base - (const guchar *)old.base, old_entry.size,
-                              -1, 0);
-
           new_i++;
         }
       else
         {
-          new_entry = var_ref_map_get_at (new_refs, new_i);
-          new_ref = var_ref_map_entry_get_ref (new_entry);
-
-          old_entry = var_ref_map_get_at (old_refs, old_i);
-          old_ref = var_ref_map_entry_get_ref (old_entry);
-
-          int cmp = strcmp (new_ref, old_ref);
-          if (cmp == 0)
-            {
-              /* same ref */
-              diff_consume_block (&data,
-                                  (const guchar *)old_entry.base - (const guchar *)old.base, old_entry.size,
-                                  (const guchar *)new_entry.base - (const guchar *)new.base, new_entry.size);
-              old_i++;
-              new_i++;
-            }
-          else if (cmp < 0)
-            {
-              /* new added */
-              diff_consume_block (&data,
-                                  -1, 0,
-                                  (const guchar *)new_entry.base - (const guchar *)new.base, new_entry.size);
-              new_i++;
-            }
-          else
-            {
-              /* old removed */
-              diff_consume_block (&data,
-                                  (const guchar *)old_entry.base - (const guchar *)old.base, old_entry.size,
-                                  -1, 0);
-              old_i++;
-            }
+          /* old removed */
+          diff_consume_block (&data,
+                              (const guchar *)old_entry.base - (const guchar *)old.base, old_entry.size,
+                              -1, 0);
+          old_i++;
         }
     }
 
@@ -2816,6 +2790,7 @@ flatpak_parse_repofile (const char   *remote_name,
   g_autofree char *uri = NULL;
   g_autofree char *title = NULL;
   g_autofree char *gpg_key = NULL;
+  g_autofree char *signature_lookaside = NULL;
   g_autofree char *collection_id = NULL;
   g_autofree char *default_branch = NULL;
   g_autofree char *comment = NULL;
@@ -2910,6 +2885,11 @@ flatpak_parse_repofile (const char   *remote_name,
       g_key_file_set_boolean (config, group, "gpg-verify", FALSE);
     }
 
+  signature_lookaside = g_key_file_get_string (keyfile, source_group,
+                                               FLATPAK_REPO_SIGNATURE_LOOKASIDE_KEY, NULL);
+  if (signature_lookaside != NULL)
+    g_key_file_set_string (config, group, "xa.signature-lookaside", signature_lookaside);
+
   /* We have a hierarchy of keys for setting the collection ID, which all have
    * the same effect. The only difference is which versions of Flatpak support
    * them, and therefore what P2P implementation is enabled by them:
@@ -2929,7 +2909,10 @@ flatpak_parse_repofile (const char   *remote_name,
                                                           FLATPAK_REPO_COLLECTION_ID_KEY);
   if (collection_id != NULL)
     {
-      if (gpg_key == NULL)
+      /* We don't support signatures for OCI remotes, but Collection ID's are
+       * still useful for preinstallation.
+       */
+      if (gpg_key == NULL && !g_str_has_prefix (uri, "oci+"))
         {
           flatpak_fail_error (error, FLATPAK_ERROR_INVALID_DATA, _("Collection ID requires GPG key to be provided"));
           return NULL;
@@ -3228,9 +3211,6 @@ extract_appstream (OstreeRepo        *repo,
               component = component->next_sibling;
               continue;
             }
-
-          if (g_str_has_suffix (component_id_suffix, ".desktop"))
-            component_id_suffix[strlen (component_id_suffix) - strlen (".desktop")] = 0;
 
           if (!copy_icon (component_id_text, icons_dir, repo, size1_mtree, "64x64", &my_error))
             {

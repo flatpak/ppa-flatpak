@@ -20,6 +20,7 @@ Build-Depends:
  desktop-file-utils <!nocheck>,
  docbook-xml <!nodoc>,
  docbook-xsl <!nodoc>,
+ file <!nocheck>,
  fuse3,
  gir1.2-gio-2.0-dev,
  gir1.2-gobject-2.0-dev,
@@ -27,6 +28,7 @@ Build-Depends:
  gobject-introspection (>= 1.80),
  gtk-update-icon-cache <!nocheck>,
  hicolor-icon-theme <!nocheck>,
+ jq <!nocheck>,
  libappstream-dev (>= 0.12.0),
  libarchive-dev (>= 2.8.0),
  libattr1-dev,
@@ -68,9 +70,9 @@ Build-Depends-Indep:
  gtk-doc-tools <!nodoc>,
  libglib2.0-doc <!nodoc>,
  libostree-doc <!nodoc>,
-Standards-Version: 4.7.3
+Standards-Version: 4.7.4
 Homepage: https://flatpak.org/
-Vcs-Git: https://salsa.debian.org/debian/flatpak.git
+Vcs-Git: https://salsa.debian.org/debian/flatpak.git -b debian/experimental
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
 X-Style: black
 
@@ -130,10 +132,12 @@ Depends:
  curl,
  dbus-daemon,
  desktop-file-utils,
+ file,
  flatpak (= ${binary:Version}),
  gnupg,
  gtk-update-icon-cache,
  hicolor-icon-theme,
+ jq,
  ostree (>= 2020.8),
  polkitd,
  shared-mime-info,

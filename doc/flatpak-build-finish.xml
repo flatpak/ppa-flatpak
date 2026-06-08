@@ -128,6 +128,29 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--share-if=SUBSYSTEM:CONDITION</option></term>
+
+                <listitem><para>
+                    Share a subsystem with the host session conditionally,
+                    only when the specified condition is met at runtime.
+                    This updates the [Context] group in the metadata.
+                    <arg choice="plain">SUBSYSTEM</arg> must be one of: network, ipc.
+                    <arg choice="plain">CONDITION</arg> must be one of:
+                    <option>true</option>, <option>false</option>,
+                    <option>has-input-device</option>, <option>has-wayland</option>,
+                    <option>has-usb-device</option>, <option>has-usb-portal</option>.
+                    Conditions can be negated with <literal>!</literal>,
+                    for example <option>!has-input-device</option>.
+                    This option can be used multiple times.
+                    Available since 1.17.
+                </para><para>
+                    See the Conditional Permissions section in
+                    <citerefentry><refentrytitle>flatpak-metadata</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+                    for more details.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--socket=SOCKET</option></term>
 
                 <listitem><para>
@@ -157,6 +180,27 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--socket-if=SOCKET:CONDITION</option></term>
+
+                <listitem><para>
+                    Expose a well-known socket to the application conditionally,
+                    only when the specified condition is met at runtime.
+                    This updates the [Context] group in the metadata.
+                    SOCKET must be one of: x11, wayland, fallback-x11, pulseaudio, system-bus, session-bus,
+                    ssh-auth, pcsc, cups, gpg-agent, inherit-wayland-socket.
+                    CONDITION must be one of: true, false, has-input-device, has-wayland, has-usb-device, has-usb-portal.
+                    Conditions can be negated with <literal>!</literal>,
+                    for example <option>!has-wayland</option>.
+                    This option can be used multiple times.
+                    Available since 1.17.
+                </para><para>
+                    See the Conditional Permissions section in
+                    <citerefentry><refentrytitle>flatpak-metadata</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+                    for more details.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--device=DEVICE</option></term>
 
                 <listitem><para>
@@ -175,6 +219,26 @@
                     the [Context] group in the metadata.
                     DEVICE must be one of: dri, input, usb, kvm, shm, all.
                     This option can be used multiple times.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
+                <term><option>--device-if=DEVICE:CONDITION</option></term>
+
+                <listitem><para>
+                    Expose a device to the application conditionally,
+                    only when the specified condition is met at runtime.
+                    This updates the [Context] group in the metadata.
+                    DEVICE must be one of: dri, input, usb, kvm, shm, all.
+                    CONDITION must be one of: true, false, has-input-device, has-wayland, has-usb-device, has-usb-portal.
+                    Conditions can be negated with <literal>!</literal>,
+                    for example <option>!has-input-device</option>.
+                    This option can be used multiple times.
+                    Available since 1.17.
+                </para><para>
+                    See the Conditional Permissions section in
+                    <citerefentry><refentrytitle>flatpak-metadata</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+                    for more details.
                 </para></listitem>
             </varlistentry>
 
@@ -229,12 +293,35 @@
             </varlistentry>
 
             <varlistentry>
+                <term><option>--allow-if=FEATURE:CONDITION</option></term>
+
+                <listitem><para>
+                    Allow access to a specific feature conditionally,
+                    only when the specified condition is met at runtime.
+                    This updates the [Context] group in the metadata.
+                    <arg choice="plain">FEATURE</arg> must be one of: devel, multiarch, bluetooth.
+                    <arg choice="plain">CONDITION</arg> must be one of:
+                    <option>true</option>, <option>false</option>,
+                    <option>has-input-device</option>, <option>has-wayland</option>,
+                    <option>has-usb-device</option>, <option>has-usb-portal</option>.
+                    Conditions can be negated with <literal>!</literal>,
+                    for example <option>!has-input-device</option>.
+                    This option can be used multiple times.
+                    Available since 1.17.
+                </para><para>
+                    See the Conditional Permissions section in
+                    <citerefentry><refentrytitle>flatpak-metadata</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+                    for more details.
+                </para></listitem>
+            </varlistentry>
+
+            <varlistentry>
                 <term><option>--filesystem=FS</option></term>
 
                 <listitem><para>
                     Allow the application access to a subset of the filesystem.
                     This updates the [Context] group in the metadata.
-                    FS can be one of: home, host, host-os, host-etc, xdg-desktop, xdg-documents, xdg-download,
+                    FS can be one of: home, host, host-os, host-etc, host-root, xdg-desktop, xdg-documents, xdg-download,
                     xdg-music, xdg-pictures, xdg-public-share, xdg-templates, xdg-videos, xdg-run,
                     xdg-config, xdg-cache, xdg-data, an absolute path, or a homedir-relative
                     path like ~/dir or paths relative to the xdg dirs, like xdg-download/subdir.
@@ -254,7 +341,7 @@
                     Remove access to the specified subset of the filesystem from
                     the application. This overrides to the Context section from the
                     application metadata.
-                    FILESYSTEM can be one of: home, host, host-os, host-etc, xdg-desktop, xdg-documents, xdg-download,
+                    FILESYSTEM can be one of: home, host, host-os, host-etc, host-root, xdg-desktop, xdg-documents, xdg-download,
                     xdg-music, xdg-pictures, xdg-public-share, xdg-templates, xdg-videos,
                     an absolute path, or a homedir-relative path like ~/dir.
                     This option can be used multiple times.
@@ -593,6 +680,14 @@ More than one executable
 Using gcalccmd as command
 Please review the exported files and the metadata
 </programlisting>
+
+        <para>
+            <command>$ flatpak build-finish /build/my-app --socket=wayland --socket-if=x11:!has-wayland --share=ipc</command>
+        </para>
+        <para>
+            This grants Wayland access unconditionally and X11 access only when not running in a Wayland session,
+            allowing the application to fall back to X11 when needed.
+        </para>
 
     </refsect1>
 

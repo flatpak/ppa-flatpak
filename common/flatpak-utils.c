@@ -469,6 +469,50 @@ flatpak_get_arches (void)
   return (const char **) arches;
 }
 
+static char *
+get_os_release_value (const char *key,
+                      const char *default_value)
+{
+  const char *file = "/etc/os-release";
+  g_autofree char *contents = NULL;
+  g_autoptr(GKeyFile) keyfile = g_key_file_new ();
+  g_autoptr(GString) str = NULL;
+  g_autofree char *value = NULL;
+  g_autofree char *unquoted = NULL;
+
+  if (!g_file_test (file, G_FILE_TEST_EXISTS))
+    file = "/usr/lib/os-release";
+
+  if (!g_file_get_contents (file, &contents, NULL, NULL))
+    return g_strdup (default_value);
+
+  str = g_string_new (contents);
+  g_string_prepend (str, "[os-release]\n");
+
+  if (!g_key_file_load_from_data (keyfile, str->str, -1, G_KEY_FILE_NONE, NULL))
+    return g_strdup (default_value);
+
+  value = flatpak_keyfile_get_string_non_empty (keyfile, "os-release", key);
+  unquoted = value ? g_shell_unquote (value, NULL) : NULL;
+
+  if (!unquoted)
+    return g_strdup (default_value);
+
+  return g_steal_pointer (&unquoted);
+}
+
+char *
+flatpak_get_os_release_id (void)
+{
+  return get_os_release_value ("ID", "linux");
+}
+
+char *
+flatpak_get_os_release_version_id (void)
+{
+  return get_os_release_value ("VERSION_ID", "unknown");
+}
+
 const char **
 flatpak_get_gl_drivers (void)
 {
@@ -1867,6 +1911,70 @@ flatpak_allocate_tmpdir (int           tmpdir_dfd,
   return TRUE;
 }
 
+/* Carefully opens a file from a base directory and subpath,
+ * making sure that its not a symlink, pipe, etc.
+ */
+int
+flatpak_open_file_at (int           dfd,
+                      const char   *subpath,
+                      struct stat  *st_buf,
+                      GCancellable *cancellable,
+                      GError      **error)
+{
+  glnx_autofd int fd = -1;
+  struct stat tmp_st_buf;
+
+  do
+    fd = openat (dfd, subpath, O_NOFOLLOW | O_RDONLY | O_NONBLOCK | O_CLOEXEC | O_NOCTTY);
+  while (G_UNLIKELY (fd == -1 && errno == EINTR));
+  if (fd == -1)
+    {
+      glnx_set_error_from_errno (error);
+      return -1;
+    }
+
+  if (st_buf == NULL)
+    st_buf = &tmp_st_buf;
+
+  if (fstat (fd, st_buf) != 0)
+    {
+      glnx_set_error_from_errno (error);
+      return -1;
+    }
+
+  if (!S_ISREG (st_buf->st_mode))
+    {
+      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                   "Non-regular file not allowed at %s", subpath);
+      return -1;
+    }
+
+  return g_steal_fd (&fd);
+}
+
+/* Carefully gets the content of a file from a base directory and
+ * subpath, making sure that its not a symlink.
+ */
+GBytes *
+flatpak_load_file_at (int           dfd,
+                      const char   *subpath,
+                      GCancellable *cancellable,
+                      GError      **error)
+{
+  glnx_autofd int fd = -1;
+  GBytes *bytes;
+
+  fd = flatpak_open_file_at (dfd, subpath, NULL, cancellable, error);
+  if (fd == -1)
+    return NULL;
+
+  bytes = glnx_fd_readall_bytes (fd, cancellable, error);
+  if (bytes == NULL)
+    return NULL;
+
+  return bytes;
+}
+
 static gint
 string_length_compare_func (gconstpointer a,
                             gconstpointer b)
@@ -2524,6 +2632,26 @@ flatpak_parse_fd (const char  *fd_string,
     return glnx_fd_throw (error, "Not an open file descriptor: %d", fd);
 
   return fd;
+}
+
+#ifdef INCLUDE_INTERNAL_TESTS
+static GList *flatpak_test_paths = NULL;
+static GList *flatpak_test_fns = NULL;
+
+void flatpak_add_test (const char *path, flatpak_test_fn fn)
+{
+  flatpak_test_paths = g_list_prepend (flatpak_test_paths, (void *)path);
+  flatpak_test_fns = g_list_prepend (flatpak_test_fns, fn);
+}
+#endif
+
+void flatpak_add_all_tests (void)
+{
+#ifdef INCLUDE_INTERNAL_TESTS
+  for (GList *l1 = flatpak_test_paths, *l2 = flatpak_test_fns; l1 != NULL; l1 = l1->next, l2 = l2->next) {
+    g_test_add_func (l1->data, l2->data);
+  }
+#endif
 }
 
 /* Sets errno on failure. */

@@ -45,7 +45,7 @@ curl "${EXTRA_DATA_URL}" -o "${DOWNLOADED_EXTRA_DATA}"
 EXTRA_DATA_SIZE=$(stat --printf="%s" "${DOWNLOADED_EXTRA_DATA}")
 EXTRA_DATA_SHA256=$(sha256sum "${DOWNLOADED_EXTRA_DATA}" | cut -f1 -d' ')
 
-echo "1..2"
+echo "1..3"
 
 # build the app with the extra data
 EXTRA_DATA="--extra-data=test:${EXTRA_DATA_SHA256}:${EXTRA_DATA_SIZE}:${EXTRA_DATA_SIZE}:${EXTRA_DATA_URL}"
@@ -61,6 +61,41 @@ assert_file_has_content out "extra-data-test-content"
 ${FLATPAK} ${U} uninstall -y org.test.Hello >&2
 
 ok "install extra data app with ostree"
+
+# Start the fake registry server
+
+httpd oci-registry-server.py --dir=.
+port=$(cat httpd-port)
+scheme=http
+
+client="python3 $test_srcdir/oci-registry-client.py --url=${scheme}://127.0.0.1:${port}"
+
+# Add OCI bundles to it
+
+${FLATPAK} build-bundle --runtime --oci $FL_GPGARGS repos/test oci/platform-image org.test.Platform >&2
+$client add platform latest "$(pwd)/oci/platform-image"
+
+${FLATPAK} build-bundle --oci $FL_GPGARGS repos/test oci/app-image org.test.Hello >&2
+$client add hello latest "$(pwd)/oci/app-image"
+
+# Add an OCI remote
+
+${FLATPAK} remote-add ${U} oci-registry "oci+${scheme}://127.0.0.1:${port}" >&2
+
+# Check that the images we expect are listed
+
+images=$(${FLATPAK} remote-ls ${U} --columns=app oci-registry | sort | tr '\n' ' ' | sed 's/ $//')
+assert_streq "$images" "org.test.Hello org.test.Platform"
+
+${FLATPAK} ${U} install -y oci-registry org.test.Hello >&2
+
+# ensure the right extra-data got downloaded
+${FLATPAK} run --command=sh org.test.Hello -c "cat /app/extra/test" > out
+assert_file_has_content out "extra-data-test-content"
+
+${FLATPAK} ${U} uninstall -y org.test.Hello >&2
+
+ok "install extra data app with oci"
 
 build_extra_data_noruntime_app() {
     local repo="$1"
