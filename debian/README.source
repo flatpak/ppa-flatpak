@@ -9,15 +9,15 @@ Ideally import new versions into Debian experimental, but directly into
 this repository is OK too.
 
 First, import/merge new versions into the branch corresponding to the newest
-Ubuntu branch, currently ppa/noble for Ubuntu 24.04.
+Ubuntu LTS branch, currently ppa/resolute for Ubuntu 26.04.
 
 If you have merged updated packaging from Debian, you might need to adjust
-it for compatibility with noble.
+it for compatibility with resolute.
 
-Then merge the ppa/noble branch into ppa/jammy, and adjust as necessary
-for compatibility with jammy.
+Then merge the ppa/resolute branch into ppa/noble, and adjust as necessary
+for compatibility with noble.
 
-Next, merge the ppa/jammy branch into ppa/focal, and so on.
+Next, merge the ppa/noble branch into ppa/jammy, and so on.
 
 The advantage of this approach is that the package in each branch is as
 modern as possible: changes that were necessary to be compatible with

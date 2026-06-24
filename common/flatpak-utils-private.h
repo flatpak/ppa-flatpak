@@ -29,6 +29,11 @@
 #include "flatpak-error.h"
 #include "flatpak-glib-backports-private.h"
 
+#define XCONCATENATE(x, y) x ## y
+#define CONCATENATE(x, y) XCONCATENATE(x, y)
+
+#define FLATPAK_UNIQUE_NAME(base) CONCATENATE(base, __COUNTER__)
+
 #define AUTOFS_SUPER_MAGIC 0x0187
 
 #define FLATPAK_XA_CACHE_VERSION 2
@@ -40,7 +45,7 @@
  * version 1 is compact format with inline cache and no deltas
  */
 
-/* Thse are key names in the per-ref metadata in the summary */
+/* These are key names in the per-ref metadata in the summary */
 #define OSTREE_COMMIT_TIMESTAMP "ostree.commit.timestamp"
 #define OSTREE_COMMIT_TIMESTAMP2 "ot.ts" /* Shorter version of the above */
 
@@ -72,6 +77,8 @@ gint flatpak_strcmp0_ptr (gconstpointer a,
 /* Sometimes this is /var/run which is a symlink, causing weird issues when we pass
  * it as a path into the sandbox */
 char * flatpak_get_real_xdg_runtime_dir (void);
+char * flatpak_get_os_release_id (void);
+char * flatpak_get_os_release_version_id (void);
 
 gboolean  flatpak_has_path_prefix (const char *str,
                                    const char *prefix);
@@ -300,6 +307,16 @@ gboolean flatpak_allocate_tmpdir (int           tmpdir_dfd,
                                   GCancellable *cancellable,
                                   GError      **error);
 
+int flatpak_open_file_at (int           dfd,
+                          const char   *subpath,
+                          struct stat  *st_buf,
+                          GCancellable *cancellable,
+                          GError      **error);
+GBytes *flatpak_load_file_at (int           dfd,
+                              const char   *subpath,
+                              GCancellable *cancellable,
+                              GError      **error);
+
 gboolean flatpak_check_required_version (const char *ref,
                                          GKeyFile   *metakey,
                                          GError    **error);
@@ -348,6 +365,33 @@ gboolean running_under_sudo_root (void);
 void flatpak_set_debugging (gboolean debugging);
 gboolean flatpak_is_debugging (void);
 
+int flatpak_parse_fd (const char  *fd_string,
+                      GError     **error);
+
+#ifdef INCLUDE_INTERNAL_TESTS
+typedef void (*flatpak_test_fn) (void);
+void flatpak_add_test (const char *path, flatpak_test_fn fn);
+#define FLATPAK_INTERNAL_TEST(path, fn) \
+  __attribute__((constructor)) static void       \
+  FLATPAK_UNIQUE_NAME(internal_test_) (void) {   \
+    flatpak_add_test (path, fn);                 \
+  }
+#else
+#define FLATPAK_INTERNAL_TEST(path, fn)
+#endif
+
+FLATPAK_EXTERN
+void flatpak_add_all_tests (void);
+
+char * flatpak_get_path_for_fd (int      fd,
+                                GError **error);
+
 #define FLATPAK_MESSAGE_ID "c7b39b1e006b464599465e105b361485"
+
+gboolean flatpak_set_cloexec (int fd);
+
+int flatpak_accept_fd_argument (const char  *option_name,
+                                const char  *value,
+                                GError     **error);
 
 #endif /* __FLATPAK_UTILS_H__ */

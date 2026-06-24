@@ -10,19 +10,23 @@ Build-Depends:
  debhelper-compat (= 13),
  dh-exec (>= 0.23~),
  dh-sequence-gir,
+ dh-sequence-installsysusers,
  attr <!nocheck>,
  bison,
  bubblewrap (>= 0.10.0~),
  ca-certificates <!nocheck>,
+ curl <!nocheck>,
  dbus-daemon,
  desktop-file-utils <!nocheck>,
  docbook-xml <!nodoc>,
  docbook-xsl <!nodoc>,
+ file <!nocheck>,
  fuse3,
  gnupg <!nocheck>,
  gobject-introspection (>= 1.54.1-2~),
  gtk-update-icon-cache <!nocheck>,
  hicolor-icon-theme <!nocheck>,
+ jq <!nocheck>,
  libappstream-dev (>= 0.12.0),
  libarchive-dev (>= 2.8.0),
  libattr1-dev,
@@ -65,7 +69,7 @@ Build-Depends-Indep:
  gtk-doc-tools <!nodoc>,
  libglib2.0-doc <!nodoc>,
  libostree-doc <!nodoc>,
-Standards-Version: 4.7.3
+Standards-Version: 4.7.4
 Homepage: https://flatpak.org/
 Vcs-Git: https://salsa.debian.org/debian/flatpak.git
 Vcs-Browser: https://salsa.debian.org/debian/flatpak
@@ -74,7 +78,6 @@ X-Style: black
 Package: flatpak
 Architecture: linux-any
 Depends:
- adduser,
  bubblewrap (>= 0.10.0~),
  fuse3,
  xdg-dbus-proxy (>= 0.1.0),
@@ -125,12 +128,15 @@ Section: misc
 Depends:
  attr,
  ca-certificates,
+ curl,
  dbus-daemon,
  desktop-file-utils,
+ file,
  flatpak (= ${binary:Version}),
  gnupg,
  gtk-update-icon-cache,
  hicolor-icon-theme,
+ jq,
  ostree (>= 2020.8),
  polkitd,
  shared-mime-info,

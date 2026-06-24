@@ -30,6 +30,11 @@
 #include "flatpak-utils-private.h"
 #include "flatpak-exports-private.h"
 
+#define FLATPAK_RUN_APP_DEPLOY_APP_ORIGINAL (-2)
+#define FLATPAK_RUN_APP_DEPLOY_APP_EMPTY (-3)
+
+#define FLATPAK_RUN_APP_DEPLOY_USR_ORIGINAL (-2)
+
 gboolean flatpak_run_in_transient_unit (const char *app_id,
                                         const char *instance_id,
                                         GError    **error);
@@ -46,18 +51,22 @@ gboolean flatpak_run_add_extension_args   (FlatpakBwrap       *bwrap,
                                            char              **ld_path_out,
                                            GCancellable       *cancellable,
                                            GError            **error);
-gboolean flatpak_run_add_environment_args (FlatpakBwrap       *bwrap,
-                                           const char         *app_info_path,
-                                           FlatpakRunFlags     flags,
-                                           const char         *app_id,
-                                           FlatpakContext     *context,
-                                           GFile              *app_id_dir,
-                                           GPtrArray          *previous_app_id_dirs,
-                                           int                 per_app_dir_lock_fd,
-                                           const char         *instance_id,
-                                           FlatpakExports    **exports_out,
-                                           GCancellable       *cancellable,
-                                           GError            **error);
+gboolean flatpak_run_add_environment_args (FlatpakBwrap           *bwrap,
+                                           const char             *app_info_path,
+                                           FlatpakRunFlags         flags,
+                                           const char             *app_id,
+                                           FlatpakContext         *context,
+                                           FlatpakContextShares    shares,
+                                           FlatpakContextDevices   devices,
+                                           FlatpakContextSockets   sockets,
+                                           FlatpakContextFeatures  features,
+                                           GFile                  *app_id_dir,
+                                           GPtrArray              *previous_app_id_dirs,
+                                           int                     per_app_dir_lock_fd,
+                                           const char             *instance_id,
+                                           FlatpakExports        **exports_out,
+                                           GCancellable           *cancellable,
+                                           GError                **error);
 char **  flatpak_run_get_minimal_env (gboolean devel,
                                       gboolean use_ld_so_cache);
 void     flatpak_run_apply_env_default (FlatpakBwrap *bwrap,
@@ -72,44 +81,45 @@ gboolean flatpak_ensure_data_dir (GFile        *app_id_dir,
                                   GError      **error);
 
 gboolean flatpak_run_setup_base_argv (FlatpakBwrap   *bwrap,
-                                      GFile          *runtime_files,
+                                      int             runtime_fd,
                                       GFile          *app_id_dir,
                                       const char     *arch,
                                       FlatpakRunFlags flags,
                                       GError        **error);
-gboolean flatpak_run_add_app_info_args (FlatpakBwrap       *bwrap,
-                                        GFile              *app_files,
-                                        GFile              *original_app_files,
-                                        GBytes             *app_deploy_data,
-                                        const char         *app_extensions,
-                                        GFile              *runtime_files,
-                                        GFile              *original_runtime_files,
-                                        GBytes             *runtime_deploy_data,
-                                        const char         *runtime_extensions,
-                                        const char         *app_id,
-                                        const char         *app_branch,
-                                        FlatpakDecomposed  *runtime_ref,
-                                        GFile              *app_id_dir,
-                                        FlatpakContext     *final_app_context,
-                                        FlatpakContext     *cmdline_context,
-                                        gboolean            sandbox,
-                                        gboolean            build,
-                                        gboolean            devel,
-                                        char              **app_info_path_out,
-                                        int                 instance_id_fd,
-                                        char              **host_instance_id_host_dir_out,
-                                        char              **host_instance_id_host_private_dir_out,
-                                        char              **instance_id_out,
-                                        GError            **error);
+gboolean flatpak_run_add_app_info_args (FlatpakBwrap           *bwrap,
+                                        GFile                  *app_files,
+                                        GFile                  *original_app_files,
+                                        GBytes                 *app_deploy_data,
+                                        const char             *app_extensions,
+                                        GFile                  *runtime_files,
+                                        GFile                  *original_runtime_files,
+                                        GBytes                 *runtime_deploy_data,
+                                        const char             *runtime_extensions,
+                                        const char             *app_id,
+                                        const char             *app_branch,
+                                        FlatpakDecomposed      *runtime_ref,
+                                        GFile                  *app_id_dir,
+                                        FlatpakContext         *final_app_context,
+                                        FlatpakContext         *cmdline_context,
+                                        FlatpakContextSockets   sockets,
+                                        gboolean                sandbox,
+                                        gboolean                build,
+                                        gboolean                devel,
+                                        char                  **app_info_path_out,
+                                        int                     instance_id_fd,
+                                        char                  **host_instance_id_host_dir_out,
+                                        char                  **host_instance_id_host_private_dir_out,
+                                        char                  **instance_id_out,
+                                        GError                **error);
 
 gboolean flatpak_run_app (FlatpakDecomposed   *app_ref,
                           FlatpakDeploy       *app_deploy,
-                          const char          *custom_app_path,
+                          int                  custom_app_fd,
                           FlatpakContext      *extra_context,
                           const char          *custom_runtime,
                           const char          *custom_runtime_version,
                           const char          *custom_runtime_commit,
-                          const char          *custom_usr_path,
+                          int                  custom_usr_fd,
                           int                  parent_pid,
                           FlatpakRunFlags      flags,
                           const char          *cwd,
@@ -119,7 +129,15 @@ gboolean flatpak_run_app (FlatpakDecomposed   *app_ref,
                           int                  instance_id_fd,
                           const char * const  *run_environ,
                           char               **instance_dir_out,
+                          GArray              *bind_fds,
+                          GArray              *ro_bind_fds,
                           GCancellable        *cancellable,
                           GError             **error);
+
+
+FlatpakContextShares flatpak_run_compute_allowed_shares (FlatpakContext *context);
+FlatpakContextDevices flatpak_run_compute_allowed_devices (FlatpakContext *context);
+FlatpakContextSockets flatpak_run_compute_allowed_sockets (FlatpakContext *context);
+FlatpakContextFeatures flatpak_run_compute_allowed_features (FlatpakContext *context);
 
 #endif /* __FLATPAK_RUN_H__ */

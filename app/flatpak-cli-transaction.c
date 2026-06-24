@@ -317,7 +317,8 @@ progress_changed_cb (FlatpakTransactionProgress *progress,
           guint64 total_time = elapsed_time * 100 / (double) percent;
           remaining = format_duration (total_time - elapsed_time);
         }
-      speed = g_strdup_printf ("%s/s%s%s", formatted_bytes_sec, remaining ? "  " : "", remaining ? remaining : "");
+      /* Formatted size/remaining time in seconds */
+      speed = g_strdup_printf (_("%s/s%s%s"), formatted_bytes_sec, remaining ? "  " : "", remaining ? remaining : "");
       cli->speed_len = MAX (cli->speed_len, strlen (speed) + 2);
     }
 
@@ -353,7 +354,9 @@ progress_changed_cb (FlatpakTransactionProgress *progress,
     g_string_append (str, " ");
 
   g_string_append (str, " ");
-  g_string_append_printf (str, "%3d%%", percent);
+  /* Download progress percentage, use the appropriate
+    percent format for your language */
+  g_string_append_printf (str, _("%3d%%"), percent);
 
   if (speed)
     g_string_append_printf (str, "  %s", speed);
@@ -1359,7 +1362,7 @@ transaction_ready_pre_auth (FlatpakTransaction *transaction)
   GList *l;
   int i;
   FlatpakTablePrinter *printer;
-  const char *op_shorthand[] = { "i", "u", "i", "r" };
+  const char *op_shorthand[] = { "i", "u", "i", "r", "i" };
 
   /* These caches may no longer be valid once the transaction runs */
   g_clear_pointer (&self->runtime_app_map, g_hash_table_unref);
@@ -1455,6 +1458,7 @@ transaction_ready_pre_auth (FlatpakTransaction *transaction)
       text1 = g_strdup_printf ("< 999.9 kB (%s)", _("partial"));
       text2 = g_strdup_printf ("  123.4 MB / 999.9 MB");
       size = MAX (strlen (text1), strlen (text2));
+      /* Translators: Download is used here as a noun */
       text = g_strdup_printf ("%-*s", size, _("Download"));
       flatpak_table_printer_set_column_title (printer, i++, text);
     }
@@ -1560,7 +1564,7 @@ transaction_ready (FlatpakTransaction *transaction)
 
   if (self->did_interaction)
     {
-      /* We did some interaction since ready_pre_auth which messes up the formating, so re-print table */
+      /* We did some interaction since ready_pre_auth which messes up the formatting, so re-print table */
       flatpak_table_printer_print_full (printer, 0, self->cols,
                                         &self->table_height, &self->table_width);
       g_print ("\n\n");

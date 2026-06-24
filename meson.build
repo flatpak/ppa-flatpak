@@ -4,7 +4,7 @@
 project(
   'flatpak',
   'c',
-  version : '1.16.3',
+  version : '1.18.0',
   default_options: [
     'warning_level=2',
   ],
@@ -12,8 +12,8 @@ project(
 )
 
 flatpak_major_version = 1
-flatpak_minor_version = 16
-flatpak_micro_version = 3
+flatpak_minor_version = 18
+flatpak_micro_version = 0
 flatpak_extra_version = ''
 
 flatpak_interface_age = 0
@@ -126,7 +126,7 @@ endif
 
 dbus_config_dir = get_option('dbus_config_dir')
 if dbus_config_dir == ''
-  dbus_config_dir = get_option('sysconfdir') / 'dbus-1' / 'system.d'
+  dbus_config_dir = get_option('datadir') / 'dbus-1' / 'system.d'
 endif
 
 dbus_service_dir = get_option('dbus_service_dir')
@@ -171,16 +171,7 @@ libarchive_dep = dependency('libarchive', version : '>=2.8.0')
 glib_dep = dependency('glib-2.0', version : '>=' + required_glib)
 gio_dep = dependency('gio-2.0', version : '>=' + required_glib)
 gio_unix_dep = dependency('gio-unix-2.0', version : '>=' + required_glib)
-
-libcurl_dep = not_found
-libsoup_dep = not_found
-
-if get_option('http_backend') == 'soup'
-  libsoup_dep = dependency('libsoup-2.4')
-else
-  libcurl_dep = dependency('libcurl', version : '>=7.29.0')
-endif
-
+libcurl_dep = dependency('libcurl', version : '>=7.29.0')
 libxml_dep = dependency('libxml-2.0', version : '>=2.4')
 libzstd_dep = dependency('libzstd', version : '>=0.8.1', required : get_option('libzstd'))
 dconf_dep = dependency('dconf', version : '>=0.26', required : get_option('dconf'))
@@ -360,6 +351,10 @@ cdata.set_quoted('GETTEXT_PACKAGE', 'flatpak')
 cdata.set('FUSE_USE_VERSION', fuse_api)
 cdata.set_quoted('FUSERMOUNT', fusermount)
 
+if get_option('internal_tests')
+  cdata.set('INCLUDE_INTERNAL_TESTS', 1)
+endif
+
 if get_option('system_bubblewrap') == ''
   cdata.set_quoted('HELPER', get_option('prefix') / get_option('libexecdir') / 'flatpak-bwrap')
 else
@@ -384,16 +379,8 @@ if dconf_dep.found()
   cdata.set('HAVE_DCONF', 1)
 endif
 
-if libcurl_dep.found()
-  cdata.set('HAVE_CURL', 1)
-endif
-
 if libseccomp_dep.found()
   cdata.set('ENABLE_SECCOMP', 1)
-endif
-
-if libsoup_dep.found()
-  cdata.set('HAVE_SOUP', 1)
 endif
 
 if libsystemd_dep.found()
@@ -529,7 +516,6 @@ pkgconfig_variables += 'datadir=' + ('${prefix}' / get_option('datadir'))
 
 pkgconfig_variables += 'datarootdir=' + ('${prefix}' / get_option('datadir'))
 pkgconfig_variables += 'interfaces_dir=${datadir}/dbus-1/interfaces/'
-pkgconfig_variables += 'httpbackend=' + get_option('http_backend')
 
 pkgconfig.generate(
   libflatpak,

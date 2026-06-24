@@ -127,7 +127,7 @@ flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, G
   remote = argv[1];
   pref = argv[2];
 
-  if (!flatpak_resolve_duplicate_remotes (dirs, remote, &preferred_dir, cancellable, error))
+  if (!flatpak_resolve_duplicate_remotes (dirs, remote, FALSE, &preferred_dir, cancellable, error))
     return FALSE;
 
   default_branch = flatpak_dir_get_remote_default_branch (preferred_dir, remote);
@@ -151,7 +151,7 @@ flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, G
       if (opt_commit)
         commit = g_strdup (opt_commit);
       else if (!flatpak_remote_state_lookup_ref (state, flatpak_decomposed_get_ref (ref),
-                                                 &commit, NULL, NULL, NULL, error))
+                                                 &commit, NULL, NULL, NULL, NULL, error))
         {
           g_assert (error == NULL || *error != NULL);
           return FALSE;
@@ -244,9 +244,9 @@ flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, G
       if (collection_id != NULL)
         len = MAX (len, g_utf8_strlen (_("Collection:"), -1));
       if (formatted_download_size)
-        len = MAX (len, g_utf8_strlen (_("Download:"), -1));
+        len = MAX (len, g_utf8_strlen (_("Download Size:"), -1));
       if (formatted_installed_size)
-        len = MAX (len, g_utf8_strlen (_("Installed:"), -1));
+        len = MAX (len, g_utf8_strlen (_("Installed Size:"), -1));
       if (flatpak_decomposed_is_app (ref) == 0 && metakey != NULL)
         {
           len = MAX (len, g_utf8_strlen (_("Runtime:"), -1));
@@ -279,9 +279,9 @@ flatpak_builtin_remote_info (int argc, char **argv, GCancellable *cancellable, G
       if (collection_id != NULL)
         print_aligned (len, _("Collection:"), collection_id);
       if (formatted_download_size)
-        print_aligned (len, _("Download:"), formatted_download_size);
+        print_aligned (len, _("Download Size:"), formatted_download_size);
       if (formatted_installed_size)
-        print_aligned (len, _("Installed:"), formatted_installed_size);
+        print_aligned (len, _("Installed Size:"), formatted_installed_size);
       if (flatpak_decomposed_is_app (ref) && metakey != NULL)
         {
           g_autofree char *runtime = g_key_file_get_string (metakey, "Application", "runtime", error);
