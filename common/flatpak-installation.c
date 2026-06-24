@@ -106,9 +106,6 @@ flatpak_installation_class_init (FlatpakInstallationClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->finalize = flatpak_installation_finalize;
-
-  /* Avoid weird recursive type initialization deadlocks from libsoup */
-  g_type_ensure (G_TYPE_SOCKET);
 }
 
 static void
@@ -1237,7 +1234,7 @@ flatpak_installation_list_installed_refs_for_update (FlatpakInstallation *self,
  * Lists only the remotes whose type is included in the @types argument.
  *
  * Since flatpak 1.7 this will never return any types except FLATPAK_REMOTE_TYPE_STATIC.
- * Equivalent functionallity to FLATPAK_REMOTE_TYPE_USB can be had by listing remote refs
+ * Equivalent functionality to FLATPAK_REMOTE_TYPE_USB can be had by listing remote refs
  * with FLATPAK_QUERY_FLAGS_ONLY_SIDELOADED.
  *
  * Returns: (transfer container) (element-type FlatpakRemote): a GPtrArray of
@@ -1931,8 +1928,8 @@ flatpak_installation_install_full (FlatpakInstallation    *self,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_PULL) != 0,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_DEPLOY) != 0,
                             (flags & FLATPAK_INSTALL_FLAGS_NO_STATIC_DELTAS) != 0,
-                            FALSE, FALSE, FALSE, state,
-                            ref, NULL, (const char **) subpaths, NULL, NULL, NULL, NULL,
+                            FALSE, FALSE, FALSE, FALSE, state,
+                            ref, NULL, (const char **) subpaths, NULL, NULL, NULL, NULL, NULL,
                             progress, cancellable, error))
     return NULL;
 
@@ -2100,7 +2097,7 @@ flatpak_installation_update_full (FlatpakInstallation    *self,
                            (flags & FLATPAK_UPDATE_FLAGS_NO_STATIC_DELTAS) != 0,
                            FALSE, FALSE, FALSE, state,
                            ref, target_commit,
-                           (const char **) subpaths, NULL, NULL, NULL, NULL,
+                           (const char **) subpaths, NULL, NULL, NULL, NULL, NULL,
                            progress, cancellable, error))
     return NULL;
 
@@ -2678,6 +2675,41 @@ flatpak_installation_create_monitor (FlatpakInstallation *self,
                               cancellable, error);
 }
 
+/**
+ * flatpak_installation_get_timestamp:
+ * @self: a #FlatpakInstallation
+ *
+ * Gets the modification time of the installation, based on the file monitored by
+ * flatpak_installation_create_monitor(). This can be used to detect when
+ * applications or runtimes have been installed, uninstalled, or updated, or when
+ * remotes have been added, removed, or modified, to aid cache invalidation.
+ *
+ * Returns: the modification time (seconds since the Unix epoch) of the
+ *   installation configuration, or %G_MAXUINT64 if unavailable
+ *
+ * Since: 1.18.0
+ */
+guint64
+flatpak_installation_get_timestamp (FlatpakInstallation *self)
+{
+  g_autoptr(FlatpakDir) dir = NULL;
+  g_autoptr(GFile) changed_file = NULL;
+  g_autoptr(GFileInfo) info = NULL;
+
+  dir = flatpak_installation_get_dir_maybe_no_repo (self);
+  changed_file = flatpak_dir_get_changed_path (dir);
+
+  info = g_file_query_info (changed_file,
+                            G_FILE_ATTRIBUTE_TIME_MODIFIED,
+                            G_FILE_QUERY_INFO_NONE,
+                            NULL,
+                            NULL);
+  if (info == NULL)
+    return G_MAXUINT64;
+
+  return g_file_info_get_attribute_uint64 (info, G_FILE_ATTRIBUTE_TIME_MODIFIED);
+}
+
 
 /**
  * flatpak_installation_list_remote_related_refs_sync:
@@ -3127,14 +3159,25 @@ flatpak_installation_list_unused_refs_with_options (FlatpakInstallation *self,
     {
       g_autoptr(GError) local_error = NULL;
       FlatpakInstalledRef *ref = NULL;
-      g_autoptr(FlatpakDecomposed) decomposed = flatpak_decomposed_new_from_ref (*iter, &local_error);
-      if (decomposed)
-        ref = get_ref (dir, decomposed, cancellable, &local_error);
+      g_autoptr(FlatpakDecomposed) decomposed = NULL;
 
-      if (ref != NULL)
-        g_ptr_array_add (refs, ref);
-      else
-        g_warning ("Unexpected failure getting ref for %s: %s", flatpak_decomposed_get_ref (decomposed), local_error->message);
+      decomposed = flatpak_decomposed_new_from_ref (*iter, &local_error);
+      if (decomposed == NULL)
+        {
+          g_warning ("Unexpected failure parsing ref %s: %s", *iter, local_error->message);
+          continue;
+        }
+
+      ref = get_ref (dir, decomposed, cancellable, &local_error);
+      if (ref == NULL)
+        {
+          g_warning ("Unexpected failure getting ref for %s: %s",
+                     flatpak_decomposed_get_ref (decomposed),
+                     local_error->message);
+          continue;
+        }
+
+      g_ptr_array_add (refs, ref);
     }
 
   return g_steal_pointer (&refs);

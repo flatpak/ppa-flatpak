@@ -89,6 +89,7 @@ static FlatpakCommand commands[] = {
   { "config", N_("Configure flatpak"), flatpak_builtin_config, flatpak_complete_config },
   { "repair", N_("Repair flatpak installation"), flatpak_builtin_repair, flatpak_complete_repair },
   { "create-usb", N_("Put applications or runtimes onto removable media"), flatpak_builtin_create_usb, flatpak_complete_create_usb },
+  { "preinstall", N_("Install flatpaks that are part of the operating system"), flatpak_builtin_preinstall, flatpak_complete_preinstall },
 
   /* translators: please keep the leading newline and space */
   { N_("\n Find applications and runtimes") },
@@ -604,6 +605,8 @@ install_polkit_agent (void)
   g_autoptr(GError) local_error = NULL;
   g_autoptr(GDBusConnection) bus = NULL;
   const char *on_session;
+  const char *env;
+  const char *distro_name;
 
   on_session = g_getenv ("FLATPAK_SYSTEM_HELPER_ON_SESSION");
   if (on_session != NULL)
@@ -632,7 +635,11 @@ install_polkit_agent (void)
       subject = polkit_unix_process_new_for_owner (getpid (), 0, getuid ());
 
       g_variant_builder_init (&opt_builder, G_VARIANT_TYPE_VARDICT);
-      if (g_strcmp0 (g_getenv ("FLATPAK_FORCE_TEXT_AUTH"), "1") != 0)
+      env = g_getenv ("WSL_INTEROP");
+      distro_name = g_getenv ("WSL_DISTRO_NAME");
+      if ((env == NULL || *env == '\0') &&
+          (distro_name == NULL || *distro_name == '\0') &&
+          g_strcmp0 (g_getenv ("FLATPAK_FORCE_TEXT_AUTH"), "1") != 0)
         g_variant_builder_add (&opt_builder, "{sv}", "fallback", g_variant_new_boolean (TRUE));
       options = g_variant_ref_sink (g_variant_builder_end (&opt_builder));
 
@@ -954,9 +961,6 @@ main (int    argc,
   g_log_set_handler (G_LOG_DOMAIN, G_LOG_LEVEL_MESSAGE | G_LOG_LEVEL_WARNING, message_handler, NULL);
 
   g_set_prgname (argv[0]);
-
-  /* Avoid weird recursive type initialization deadlocks from libsoup */
-  g_type_ensure (G_TYPE_SOCKET);
 
   if (argc >= 4 && strcmp (argv[1], "complete") == 0)
     return complete (argc, argv);

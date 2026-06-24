@@ -1,5 +1,6 @@
 libflatpak.so.0 libflatpak0 #MINVER#
 * Build-Depends-Package: libflatpak-dev
+ flatpak_add_all_tests@Base 1.18
  flatpak_bundle_ref_get_appstream@Base 1.0
  flatpak_bundle_ref_get_file@Base 1.0
  flatpak_bundle_ref_get_icon@Base 1.0
@@ -37,6 +38,7 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_installation_get_priority@Base 1.0
  flatpak_installation_get_remote_by_name@Base 1.0
  flatpak_installation_get_storage_type@Base 1.0
+ flatpak_installation_get_timestamp@Base 1.18
  flatpak_installation_get_type@Base 1.0
  flatpak_installation_install@Base 1.0
  flatpak_installation_install_bundle@Base 1.0
@@ -179,9 +181,12 @@ libflatpak.so.0 libflatpak0 #MINVER#
  flatpak_transaction_add_install@Base 1.0
  flatpak_transaction_add_install_bundle@Base 1.0
  flatpak_transaction_add_install_flatpakref@Base 1.0
+ flatpak_transaction_add_install_image@Base 1.18
  flatpak_transaction_add_rebase@Base 1.4
- flatpak_transaction_add_rebase_and_uninstall@Base 1.15.6
+ flatpak_transaction_add_rebase_and_uninstall@Base 1.16
+ flatpak_transaction_add_sideload_image_collection@Base 1.18
  flatpak_transaction_add_sideload_repo@Base 1.8
+ flatpak_transaction_add_sync_preinstalled@Base 1.18
  flatpak_transaction_add_uninstall@Base 1.0
  flatpak_transaction_add_update@Base 1.0
  flatpak_transaction_complete_basic_auth@Base 1.6

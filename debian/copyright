@@ -7,7 +7,7 @@ Files:
 Copyright:
  © 1995-2017 Free Software Foundation, Inc.
  © 1995-1997 Peter Mattis, Spencer Kimball and Josh MacDonald
- © 2004-2022 Red Hat, Inc
+ © 2004-2025 Red Hat, Inc
  © 2004-2010 Christian Persch
  © 2004 Hidetoshi Tajima
  © 2006-2019 Matthias Clasen
@@ -46,6 +46,13 @@ Copyright:
  © 2023 Sebastian Wilhelmi
  © 2023 CaiJingLong
 License: LGPL-2+ and LGPL-2.1+
+
+Files:
+ .github/workflows/check-potfiles.sh
+Copyright:
+ 2024 Florian Müllner
+ 2024 Matthijs Velsink
+License: LGPL-2+
 
 Files:
  common/valgrind-private.h
