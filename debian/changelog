@@ -1,4 +1,4 @@
-flatpak (1.18.0-1~flatpak1~22.04.1) UNRELEASED; urgency=medium
+flatpak (1.18.0-1~flatpak1~22.04.1) jammy; urgency=medium
 
   * Rebuild for Ubuntu 22.04 'jammy' for PPA
   * Remaining changes relative to noble:
@@ -8,7 +8,7 @@ flatpak (1.18.0-1~flatpak1~22.04.1) UNRELEASED; urgency=medium
     - Revert "Stop build-depending on libgirepository1.0-dev"
     - Revert "Switch from adduser to dh-sequence-installsysusers"
 
- -- Simon McVittie <smcv@debian.org>  Wed, 24 Jun 2026 12:45:23 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 10 Aug 2026 00:46:03 +0100
 
 flatpak (1.18.0-1~flatpak1~24.04.1) noble; urgency=medium
 
