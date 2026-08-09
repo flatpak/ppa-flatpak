@@ -1,11 +1,11 @@
-flatpak (1.18.0-1~flatpak1~26.04.1) UNRELEASED; urgency=medium
+flatpak (1.18.0-1~flatpak1~26.04.1) resolute; urgency=medium
 
   * Rebuild for Ubuntu 26.04 'resolute' for PPA
   * Remaining changes relative to Debian:
     - Set changelog merge driver for debian/changelog
     - Add PPA backport notes to debian/README.source
 
- -- Simon McVittie <smcv@debian.org>  Wed, 24 Jun 2026 12:45:23 +0100
+ -- Simon McVittie <smcv@debian.org>  Sun, 09 Aug 2026 23:35:15 +0100
 
 flatpak (1.18.0-1) unstable; urgency=medium
 
