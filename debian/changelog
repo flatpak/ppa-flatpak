@@ -1,10 +1,10 @@
-flatpak (1.18.0-1~flatpak1~24.04.1) UNRELEASED; urgency=medium
+flatpak (1.18.0-1~flatpak1~24.04.1) noble; urgency=medium
 
   * Rebuild for Ubuntu 24.04 'noble' for PPA
   * Remaining changes relative to resolute:
     - Reinstate Priority: optional field for backport
 
- -- Simon McVittie <smcv@debian.org>  Wed, 24 Jun 2026 12:45:23 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 10 Aug 2026 00:35:48 +0100
 
 flatpak (1.18.0-1~flatpak1~26.04.1) resolute; urgency=medium
 
