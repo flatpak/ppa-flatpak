@@ -1,0 +1,30 @@
+From: Simon McVittie <smcv@collabora.com>
+Date: Tue, 11 Aug 2026 13:49:16 +0100
+Subject: tests: Avoid Meson's strict TAP parsing for now
+
+Older versions of Meson parsed TAP output very strictly, and would fail
+the test when a `g_test_message()` mentions non-UTF-8, which results
+in GLib adding a prefix on stdout that is not valid TAP syntax.
+
+Ideally our error messages should all be valid UTF-8 even if the input
+is not, but that's a larger refactor that shouldn't block security fix
+releases, so for now just tell Meson to get the tests' pass/fail status
+from their exit status rather than parsing their stdout.
+
+Signed-off-by: Simon McVittie <smcv@collabora.com>
+---
+ tests/meson.build | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/tests/meson.build b/tests/meson.build
+index 4101415..2156456 100644
+--- a/tests/meson.build
++++ b/tests/meson.build
+@@ -181,7 +181,6 @@ foreach testcase : c_tests
+       args : [exe],
+       depends : runtime_repo,
+       env : test_env,
+-      protocol : 'tap',
+       timeout : options.get('timeout', 30),
+     )
+   endif
