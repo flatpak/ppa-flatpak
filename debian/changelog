@@ -1,3 +1,12 @@
+flatpak (1.18.1-1~flatpak1~26.04.1) unstable; urgency=high
+
+  * New upstream security fix release
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 11 Aug 2026 15:05:39 +0100
+
 flatpak (1.18.1-1) unstable; urgency=high
 
   * New upstream security fix release (Closes: #1144130)
