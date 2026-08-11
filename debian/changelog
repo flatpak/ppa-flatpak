@@ -1,4 +1,4 @@
-flatpak (1.18.1-1) UNRELEASED; urgency=medium
+flatpak (1.18.1-1) unstable; urgency=high
 
   * New upstream security fix release (Closes: #1144130)
     - GHSA-fqx6-vh4p-42cg:
@@ -45,7 +45,7 @@ flatpak (1.18.1-1) UNRELEASED; urgency=medium
       result of an xdg-dbus-proxy security issue, fixed in 0.1.8.
     - Numerous non-security-related bug fixes
 
- -- Simon McVittie <smcv@debian.org>  Tue, 11 Aug 2026 14:01:50 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 11 Aug 2026 14:02:52 +0100
 
 flatpak (1.18.0-1) unstable; urgency=medium
 
