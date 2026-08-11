@@ -1,4 +1,4 @@
-flatpak (1.18.1-1~flatpak1~22.04.1) UNRELEASED; urgency=medium
+flatpak (1.18.1-1~flatpak1~22.04.1) jammy; urgency=high
 
   * Rebuild for Ubuntu 22.04 'jammy' for PPA
   * Remaining changes relative to noble:
@@ -10,7 +10,7 @@ flatpak (1.18.1-1~flatpak1~22.04.1) UNRELEASED; urgency=medium
   * d/p/tests-Avoid-Meson-s-strict-TAP-parsing-for-now.patch:
     Work around build-time test failure with older Meson
 
- -- Simon McVittie <smcv@debian.org>  Tue, 11 Aug 2026 15:10:34 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 11 Aug 2026 15:14:39 +0100
 
 flatpak (1.18.1-1~flatpak1~24.04.1) noble; urgency=high
 
