@@ -1,3 +1,15 @@
+flatpak (1.18.1-1~flatpak1~22.04.1) UNRELEASED; urgency=medium
+
+  * Rebuild for Ubuntu 22.04 'jammy' for PPA
+  * Remaining changes relative to noble:
+    - Move systemd unit back to /lib/systemd/system
+    - Revert build-dependency on gir1.2-*.dev
+    - Install a policy snippet for policykit-1 (<< 0.106)
+    - Revert "Stop build-depending on libgirepository1.0-dev"
+    - Revert "Switch from adduser to dh-sequence-installsysusers"
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 11 Aug 2026 15:10:34 +0100
+
 flatpak (1.18.1-1~flatpak1~24.04.1) noble; urgency=high
 
   * Rebuild for Ubuntu 24.04 'noble' for PPA
