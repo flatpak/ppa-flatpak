@@ -1,3 +1,9 @@
+flatpak (1.18.2-1) UNRELEASED; urgency=medium
+
+  * New upstream release
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 28 Aug 2026 11:13:07 +0100
+
 flatpak (1.18.1-1) unstable; urgency=high
 
   * New upstream security fix release (Closes: #1144130)
