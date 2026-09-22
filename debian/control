@@ -11,6 +11,7 @@ Build-Depends:
  dh-sequence-dwz,
  dh-sequence-gir,
  dh-sequence-installsysusers,
+ dpkg-build-api (= 1),
  attr <!nocheck>,
  bison,
  bubblewrap (>= 0.10.0~),
