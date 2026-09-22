@@ -7,7 +7,7 @@ flatpak (1.18.3-1~flatpak1~24.04.1) UNRELEASED; urgency=medium
 
  -- Simon McVittie <smcv@debian.org>  Tue, 22 Sep 2026 14:17:16 +0100
 
-flatpak (1.18.3-1~flatpak1~26.04.1) UNRELEASED; urgency=medium
+flatpak (1.18.3-1~flatpak1~26.04.1) resolute; urgency=medium
 
   * Rebuild for Ubuntu 26.04 'resolute' for PPA
   * Remaining changes relative to Debian:
@@ -15,7 +15,7 @@ flatpak (1.18.3-1~flatpak1~26.04.1) UNRELEASED; urgency=medium
     - Add PPA backport notes to debian/README.source
   * Roll back debhelper compat level to 13
 
- -- Simon McVittie <smcv@debian.org>  Tue, 22 Sep 2026 14:17:16 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 22 Sep 2026 20:08:23 +0100
 
 flatpak (1.18.3-1) unstable; urgency=medium
 
