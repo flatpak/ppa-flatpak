@@ -4,8 +4,13 @@ flatpak (1.18.3-1) UNRELEASED; urgency=medium
   * Mention CVE-2026-90616, CVE-2026-92162 in 1.18.1 changelog entry.
     These were not available at the time of release but have now been
     allocated.
+  * d/control: Use recommended debhelper compat level 14.
+    flatpak-session-helper, flatpak-proxy and flatpak-oci-authenticator
+    will be restarted during upgrades.
+  * d/control: Request dpkg build API v1
+  * d/watch*: Normalize formatting (debputy reformat)
 
- -- Simon McVittie <smcv@debian.org>  Tue, 22 Sep 2026 12:14:59 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 22 Sep 2026 12:43:27 +0100
 
 flatpak (1.18.2-1) unstable; urgency=medium
 
