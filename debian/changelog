@@ -1,6 +1,9 @@
 flatpak (1.18.3-1) UNRELEASED; urgency=medium
 
   * New upstream bugfix release
+  * Mention CVE-2026-90616, CVE-2026-92162 in 1.18.1 changelog entry.
+    These were not available at the time of release but have now been
+    allocated.
 
  -- Simon McVittie <smcv@debian.org>  Tue, 22 Sep 2026 12:14:59 +0100
 
@@ -21,7 +24,7 @@ flatpak (1.18.1-1) unstable; urgency=high
       Fix local privilege escalation involving revokefs.
       A malicious local user could write files outside /var/lib/flatpak
       as root by tampering with OSTree objects after signature verification.
-    - GHSA-8688-9x26-hhxj:
+    - CVE-2026-90616, GHSA-8688-9x26-hhxj:
       Fix a sandbox escape involving directories inside ~/.var/app/APP_ID.
       A malicious or compromised Flatpak app could write to arbitrary files
       outside its sandbox.
@@ -29,7 +32,7 @@ flatpak (1.18.1-1) unstable; urgency=high
       Fix a sandbox escape involving the ld.so cache.
       A malicious or compromised Flatpak app could write files with a fixed
       name and limited control over content outside the sandbox.
-    - GHSA-v2gw-v9h5-9q4x:
+    - CVE-2026-92162, GHSA-v2gw-v9h5-9q4x:
       Fix local privilege escalation involving crafted OCI architecture names.
       A malicious local user on a system with an OCI remote configured
       (unusual on non-Fedora systems) could trick the flatpak-system-helper
