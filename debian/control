@@ -6,9 +6,9 @@ Uploaders:
  Simon McVittie <smcv@debian.org>,
 # We need polkitd, socat, etc. if !nocheck || !noinsttest
 Build-Depends:
- debhelper (>= 13.11.6~),
- debhelper-compat (= 13),
+ debhelper-compat (= 14),
  dh-exec (>= 0.23~),
+ dh-sequence-dwz,
  dh-sequence-gir,
  dh-sequence-installsysusers,
  attr <!nocheck>,
