@@ -9,6 +9,7 @@ Uploaders:
 Build-Depends:
  debhelper-compat (= 14),
  dh-exec (>= 0.23~),
+ dh-sequence-dwz,
  dh-sequence-gir,
  dh-sequence-installsysusers,
  dpkg-build-api (= 1),
