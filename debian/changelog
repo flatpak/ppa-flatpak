@@ -1,3 +1,34 @@
+flatpak (1.18.3-1~flatpak1~26.04.1) UNRELEASED; urgency=medium
+
+  * Rebuild for Ubuntu 26.04 'resolute' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 22 Sep 2026 14:17:16 +0100
+
+flatpak (1.18.3-1) unstable; urgency=medium
+
+  * New upstream bugfix release
+  * Mention CVE-2026-90616, CVE-2026-92162 in 1.18.1 changelog entry.
+    These were not available at the time of release but have now been
+    allocated.
+  * d/control: Use recommended debhelper compat level 14.
+    flatpak-session-helper, flatpak-proxy and flatpak-oci-authenticator
+    will be restarted during upgrades, if running.
+  * d/control: Request dpkg build API v1
+  * d/watch*: Normalize formatting (debputy reformat)
+  * d/flatpak.lintian-overrides: Ignore false positives for tmpfiles.d
+    snippets in postrm
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 22 Sep 2026 14:13:11 +0100
+
+flatpak (1.18.2-1) unstable; urgency=medium
+
+  * New upstream bugfix release
+
+ -- Simon McVittie <smcv@debian.org>  Fri, 28 Aug 2026 18:43:03 +0100
+
 flatpak (1.18.1-1~flatpak1~24.04.1) noble; urgency=high
 
   * Rebuild for Ubuntu 24.04 'noble' for PPA
@@ -26,7 +57,7 @@ flatpak (1.18.1-1) unstable; urgency=high
       Fix local privilege escalation involving revokefs.
       A malicious local user could write files outside /var/lib/flatpak
       as root by tampering with OSTree objects after signature verification.
-    - GHSA-8688-9x26-hhxj:
+    - CVE-2026-90616, GHSA-8688-9x26-hhxj:
       Fix a sandbox escape involving directories inside ~/.var/app/APP_ID.
       A malicious or compromised Flatpak app could write to arbitrary files
       outside its sandbox.
@@ -34,7 +65,7 @@ flatpak (1.18.1-1) unstable; urgency=high
       Fix a sandbox escape involving the ld.so cache.
       A malicious or compromised Flatpak app could write files with a fixed
       name and limited control over content outside the sandbox.
-    - GHSA-v2gw-v9h5-9q4x:
+    - CVE-2026-92162, GHSA-v2gw-v9h5-9q4x:
       Fix local privilege escalation involving crafted OCI architecture names.
       A malicious local user on a system with an OCI remote configured
       (unusual on non-Fedora systems) could trick the flatpak-system-helper
