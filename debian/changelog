@@ -3,6 +3,8 @@ flatpak (1.18.3-1~flatpak1~24.04.1) UNRELEASED; urgency=medium
   * Rebuild for Ubuntu 24.04 'noble' for PPA
   * Remaining changes relative to resolute:
     - Reinstate Priority: optional field for backport
+  * Roll back debhelper compat level to 13
+  * Roll back dpkg build API to v0
 
  -- Simon McVittie <smcv@debian.org>  Tue, 22 Sep 2026 14:17:16 +0100
 
