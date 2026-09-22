@@ -1,4 +1,4 @@
-flatpak (1.18.3-1) UNRELEASED; urgency=medium
+flatpak (1.18.3-1) unstable; urgency=medium
 
   * New upstream bugfix release
   * Mention CVE-2026-90616, CVE-2026-92162 in 1.18.1 changelog entry.
@@ -6,11 +6,13 @@ flatpak (1.18.3-1) UNRELEASED; urgency=medium
     allocated.
   * d/control: Use recommended debhelper compat level 14.
     flatpak-session-helper, flatpak-proxy and flatpak-oci-authenticator
-    will be restarted during upgrades.
+    will be restarted during upgrades, if running.
   * d/control: Request dpkg build API v1
   * d/watch*: Normalize formatting (debputy reformat)
+  * d/flatpak.lintian-overrides: Ignore false positives for tmpfiles.d
+    snippets in postrm
 
- -- Simon McVittie <smcv@debian.org>  Tue, 22 Sep 2026 12:43:27 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 22 Sep 2026 14:13:11 +0100
 
 flatpak (1.18.2-1) unstable; urgency=medium
 
