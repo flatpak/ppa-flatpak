@@ -306,6 +306,182 @@ enum {
 #define OSTREE_GIO_FAST_QUERYINFO ("standard::name,standard::type,standard::size,standard::is-symlink,standard::symlink-target," \
                                    "unix::device,unix::inode,unix::mode,unix::uid,unix::gid,unix::rdev")
 
+#define X_FLATPAK_KEY_ID "X-Flatpak"
+#define X_FLATPAK_KEY_RENAMED_FROM "X-Flatpak-RenamedFrom"
+#define X_FLATPAK_KEY_TAGS "X-Flatpak-Tags"
+
+static const char * const allowed_desktop_entry_keys[] = {
+  /* OFFICIAL SPECIFICATION */
+  /* Standardised fields that are safe for an app to specify: */
+  "Actions",
+  "Categories",
+  "Comment",
+  "DBusActivatable",
+  "GenericName",
+  "Hidden",
+  "Icon",
+  "Implements",
+  "Keywords",
+  "MimeType",
+  "Name",
+  "NoDisplay",
+  "NotShowIn",
+  "OnlyShowIn",
+  "Path",
+  "PrefersNonDefaultGPU",
+  "SingleMainWindow",
+  "StartupNotify",
+  "StartupWMClass",
+  "Terminal",
+  "Type",
+  "Version",
+
+  /* Unsafe to export without proper sanitisation or adjustments, but rewritten
+   * by Flatpak: */
+  "Exec",
+
+  /* Intentionally not exported, only useful for Type=Link and not
+   * Type=Application:
+   *
+   * "URL",
+   *
+   * Intentionally not exported, unsafe and unnecessary due sandbox being an
+   * app controlled environment:
+   *
+   * "TryExec",
+   */
+
+  /* CUSTOM EXTENSIONS */
+
+/* Keys controlled by Flatpak: */
+  X_FLATPAK_KEY_ID,
+  X_FLATPAK_KEY_RENAMED_FROM,
+  X_FLATPAK_KEY_TAGS,
+
+  /* Exported, because they are deemed harmless: */
+  "X-AppInstall-Keywords",
+  "X-AppStream-Ignore",
+  "X-GNOME-FullName",
+  "X-GNOME-Gettext-Domain",
+  "X-GNOME-UsesNotifications",
+  "X-GNOME-SingleWindow",
+  "X-Meego-Priority",
+  "X-MultipleArgs",
+  "X-KDE-AliasFor",
+  "X-KDE-FormFactor",
+  "X-KDE-Keywords",
+  "X-KDE-PluginInfo-Author",
+  "X-KDE-PluginInfo-Email",
+  "X-KDE-PluginInfo-License",
+  "X-KDE-PluginInfo-Name",
+  "X-KDE-PluginInfo-Version",
+  "X-KDE-Priority",
+  "X-KDE-Submenu",
+  "X-KDE-Wayland-VirtualKeyboard",
+  "X-Plasma-API",
+  "X-Plasma-DBusRunner-Service",
+  "X-Plasma-DBusRunner-Path",
+  "X-Plasma-Request-Actions-Once",
+  "X-Plasma-Runner-Match-Regex",
+  "X-Plasma-Runner-Min-Letter-Count",
+  "X-Plasma-Runner-Syntax-Descriptions",
+  "X-Plasma-Runner-Syntaxes",
+  "X-Plasma-Runner-Unique-Results",
+  "X-Plasma-Runner-Weak-Results",
+  "X-Krita-Version",
+  "X-Phosh-Lockscreen-Actions",
+  "X-Phosh-UsesFeedback",
+  "X-Purism-FormFactor",
+  "X-SingleMainWindow",
+  "X-systemd-skip",
+  "X-Ubuntu-Gettext-Domain",
+  "X-Unity-IconBackgroundColor",
+
+  /* Exported key, whose implications are only evaluated for
+   * $XDG_DATA_DIRS/krunner/dbusplugins, i.e. in the context of KRunner runners,
+   * but not in e.g. $XDG_DATA_DIRS/kio/servicemenus, because non of those other
+   * directories are exported:
+   */
+  "X-KDE-ServiceTypes",
+
+  /* Intentionally not exported, these are unnecessary or would not work with
+   * sandboxed Flatpak apps:
+   *
+   * "DocPath",
+   * "Encoding",
+   * "X-DocPath",
+   * "X-Geoclue-Reason",
+   * "X-GNOME-Bugzilla-Bugzilla",
+   * "X-GNOME-Bugzilla-Component",
+   * "X-GNOME-Bugzilla-Product",
+   * "X-GNOME-Bugzilla-Version",
+   * "X-GNOME-DocPath",
+   * "X-KDE-NativeMimeType",
+   */
+
+  /* Intentionally not exported, these show potential for sandbox or portal
+   * bypass, incl. inferring host file structure, denial of service, code
+   * execution on host:
+   *
+   * "AutostartCondition",
+   * "InitialPreference",
+   * "ServiceTypes",
+   * "X-DBUS-StartupType",
+   * "X-DBUS-ServiceName",
+   * "X-GIO-NoFuse",
+   * "X-GNOME-AutoRestart",
+   * "X-GNOME-Autostart-Delay",
+   * "X-GNOME-Autostart-enabled",
+   * "X-GNOME-Bugzilla-ExtraInfoScript",
+   * "X-GNOME-SearchProvider-Path",
+   * "X-GNOME-SearchProvider-Prefix",
+   * "X-KDE-autostart-after",
+   * "X-KDE-autostart-phase",
+   * "X-KDE-DBus-Restricted-Interfaces",
+   * "X-KDE-ExtraNativeMimeTypes",
+   * "X-KDE-PluginInfo-EnabledByDefault",
+   * "X-KDE-Protocols",
+   * "X-KDE-SubstituteUID",
+   * "X-KDE-Username",
+   */
+  NULL
+};
+
+static const char * const allowed_desktop_entry_action_keys[] = {
+  "Exec",
+  "Icon",
+  "Name",
+  NULL
+};
+
+static const char * const allowed_dbus_service_keys[] = {
+  /* STANDARDISED FIELDS */
+  "Exec",
+  "Name",
+
+  /* CUSTOM EXTENSIONS */
+  /* These fields were used by LocalSearch, but are no longer used and thus
+   * are not necessary to export:
+   *
+   * "Comment",
+   * "DisplayName",
+   * "NameSuffix",
+   * "Path",
+   */
+
+  /* Intentionally not exported, makes only sense when system-controlled:
+   *
+   * "AssumedAppArmorLabel",
+   */
+
+  /* Intentionally not exported, these show potential for sandbox bypass:
+   *
+   * "User",
+   * "SystemdService",
+   */
+  NULL
+};
+
 static const char *
 get_config_dir_location (void)
 {
@@ -8526,6 +8702,7 @@ export_desktop_file (const char         *app,
   gsize new_data_len;
   g_autoptr(GKeyFile) keyfile = NULL;
   g_auto(GStrv) groups = NULL;
+  g_auto(GStrv) intents = NULL;
   g_autofree char *escaped_app = maybe_quote (app);
   g_autofree char *escaped_branch = maybe_quote (branch);
   g_autofree char *escaped_arch = maybe_quote (arch);
@@ -8559,30 +8736,41 @@ export_desktop_file (const char         *app,
   if (g_str_has_suffix (name, ".desktop"))
     {
       gsize length;
-      g_auto(GStrv) tags = g_key_file_get_string_list (metadata,
-                                                       "Application",
-                                                       "tags", &length,
-                                                       NULL);
+      g_auto(GStrv) tags = NULL;
+      g_autofree gchar *type = NULL;
+
+      tags = g_key_file_get_string_list (metadata,
+                                         "Application",
+                                         "tags", &length,
+                                         NULL);
+
+      intents = g_key_file_get_string_list (keyfile, G_KEY_FILE_DESKTOP_GROUP,
+                                            "Implements", NULL, NULL);
+
+      type = g_key_file_get_string (keyfile, G_KEY_FILE_DESKTOP_GROUP,
+                                    G_KEY_FILE_DESKTOP_KEY_TYPE, error);
+
+      if (type == NULL)
+        return FALSE;
+
+      if (g_strcmp0 (type, G_KEY_FILE_DESKTOP_TYPE_APPLICATION) != 0 &&
+          g_strcmp0 (type, "Service") != 0)
+        {
+          return flatpak_fail_error (error, FLATPAK_ERROR_EXPORT_FAILED,
+                                     _("Desktop Entry '%s' neither has Type=Application nor Type=Service"),
+                                     name);
+        }
 
       if (tags != NULL)
         {
           g_key_file_set_string_list (keyfile,
                                       G_KEY_FILE_DESKTOP_GROUP,
-                                      "X-Flatpak-Tags",
+                                      X_FLATPAK_KEY_TAGS,
                                       (const char * const *) tags, length);
         }
 
       /* Add a marker so consumers can easily find out that this launches a sandbox */
-      g_key_file_set_string (keyfile, G_KEY_FILE_DESKTOP_GROUP, "X-Flatpak", app);
-
-      /* Disable krunner dbusplugins by default, so that flatpak applications cannot
-       * unintentionally grab sensitive search data.
-       */
-      if (g_key_file_get_boolean (keyfile, G_KEY_FILE_DESKTOP_GROUP,
-                               "X-KDE-PluginInfo-EnabledByDefault", NULL))
-        {
-          g_key_file_set_boolean (keyfile, G_KEY_FILE_DESKTOP_GROUP, "X-KDE-PluginInfo-EnabledByDefault", FALSE);
-        }
+      g_key_file_set_string (keyfile, G_KEY_FILE_DESKTOP_GROUP, X_FLATPAK_KEY_ID, app);
 
       /* If the app has been renamed, add its old .desktop filename to
        * X-Flatpak-RenamedFrom in the new .desktop file, taking care not to
@@ -8590,10 +8778,9 @@ export_desktop_file (const char         *app,
        */
       if (previous_ids != NULL)
         {
-          const char *X_FLATPAK_RENAMED_FROM = "X-Flatpak-RenamedFrom";
           g_auto(GStrv) renamed_from = g_key_file_get_string_list (keyfile,
                                                                    G_KEY_FILE_DESKTOP_GROUP,
-                                                                   X_FLATPAK_RENAMED_FROM,
+                                                                   X_FLATPAK_KEY_RENAMED_FROM,
                                                                    NULL, NULL);
           g_autoptr(GPtrArray) merged = g_ptr_array_new_with_free_func (g_free);
           g_autoptr(GHashTable) seen = g_hash_table_new (g_str_hash, g_str_equal);
@@ -8638,7 +8825,7 @@ export_desktop_file (const char         *app,
               g_ptr_array_add (merged, NULL);
               g_key_file_set_string_list (keyfile,
                                           G_KEY_FILE_DESKTOP_GROUP,
-                                          X_FLATPAK_RENAMED_FROM,
+                                          X_FLATPAK_KEY_RENAMED_FROM,
                                           (const char * const *) merged->pdata,
                                           merged->len - 1);
             }
@@ -8655,12 +8842,67 @@ export_desktop_file (const char         *app,
       g_autoptr(GString) new_exec = NULL;
       g_auto(GStrv) flatpak_run_opts = g_key_file_get_string_list (keyfile, groups[i], "X-Flatpak-RunOptions", NULL, NULL);
       g_autofree char *flatpak_run_args = format_flatpak_run_args_from_run_opts (flatpak_run_opts);
+      g_auto(GStrv) keys_for_group = NULL;
+      const char * const *allowed_keys;
 
       g_key_file_remove_key (keyfile, groups[i], "X-Flatpak-RunOptions", NULL);
-      g_key_file_remove_key (keyfile, groups[i], "TryExec", NULL);
 
-      /* Remove this to make sure nothing tries to execute it outside the sandbox*/
-      g_key_file_remove_key (keyfile, groups[i], "X-GNOME-Bugzilla-ExtraInfoScript", NULL);
+      keys_for_group = g_key_file_get_keys (keyfile, groups[i], NULL, error);
+
+      if (keys_for_group == NULL)
+        return FALSE;
+
+      if (g_str_has_suffix (name, ".desktop") &&
+          g_strcmp0 (groups[i], G_KEY_FILE_DESKTOP_GROUP) == 0)
+        {
+          allowed_keys = allowed_desktop_entry_keys;
+        }
+      else if (g_str_has_suffix (name, ".desktop") &&
+               g_str_has_prefix (groups[i], "Desktop Action "))
+        {
+          allowed_keys = allowed_desktop_entry_action_keys;
+        }
+      else if (g_str_has_suffix (name, ".desktop") &&
+               intents != NULL &&
+               g_strv_contains ((const char * const *) intents, groups[i]))
+        {
+          continue;
+        }
+      else if (g_str_has_suffix (name, ".service") &&
+               g_strcmp0 (groups[i], "D-BUS Service") == 0)
+        {
+          allowed_keys = allowed_dbus_service_keys;
+        }
+      else
+        {
+          if (!g_key_file_remove_group (keyfile, groups[i], error))
+            return FALSE;
+          continue;
+        }
+
+      for (size_t k = 0; keys_for_group[k] != NULL; k++)
+        {
+          char *locale_suffix;
+          g_autofree char *base_key = NULL;
+
+          locale_suffix = g_strrstr (keys_for_group[k], "[");
+
+          if (locale_suffix != NULL && g_str_has_suffix (locale_suffix, "]"))
+            {
+              base_key = g_strndup (keys_for_group[k],
+                                    strlen (keys_for_group[k]) - strlen (locale_suffix));
+            }
+          else
+            {
+              base_key = g_strdup (keys_for_group[k]);
+            }
+
+          if (!g_strv_contains (allowed_keys, base_key))
+            {
+              if (!g_key_file_remove_key (keyfile, groups[i], keys_for_group[k], error))
+                return FALSE;
+            }
+        }
 
       new_exec = g_string_new ("");
       if ((flatpak = g_getenv ("FLATPAK_BINARY")) == NULL)
@@ -8903,41 +9145,21 @@ flatpak_rewrite_export_dir (const char         *app,
                             const char         *arch,
                             GKeyFile           *metadata,
                             const char * const *previous_ids,
-                            GFile              *source,
+                            int                 export_dfd,
                             GCancellable       *cancellable,
                             GError            **error)
 {
-  gboolean ret = FALSE;
-  g_autoptr(GFile) parent = g_file_get_parent (source);
-  glnx_autofd int parentfd = -1;
-  g_autofree char *name = g_file_get_basename (source);
-
-  /* Start with a source path of "" - we don't care about
-   * the "export" component and we want to start path traversal
-   * relative to it. */
-  const char *source_path = "";
   g_autoptr(FlatpakContext) context = flatpak_context_new ();
 
   if (!flatpak_context_load_metadata (context, metadata, error))
     return FALSE;
 
-  if (!glnx_opendirat (AT_FDCWD,
-                       flatpak_file_get_path_cached (parent),
-                       TRUE,
-                       &parentfd,
-                       error))
+  if (!rewrite_export_dir (app, branch, arch, metadata, previous_ids, context,
+                           export_dfd, ".", "",
+                           cancellable, error))
     return FALSE;
 
-  /* The fds are closed by this call */
-  if (!rewrite_export_dir (app, branch, arch, metadata, previous_ids, context,
-                           parentfd, name, source_path,
-                           cancellable, error))
-    goto out;
-
-  ret = TRUE;
-
-out:
-  return ret;
+  return TRUE;
 }
 
 
@@ -9280,6 +9502,97 @@ extract_extra_data (FlatpakDir   *self,
   return TRUE;
 }
 
+static int
+deploy_open_fd (int              deploy_dfd,
+                const char      *name,
+                const char      *subpath,
+                GlnxChaseFlags   flags,
+                GError         **error)
+{
+  glnx_autofd int dfd = -1;
+  glnx_autofd int fd = -1;
+
+  g_return_val_if_fail ((flags & ~(GLNX_CHASE_MUST_BE_DIRECTORY |
+                                   GLNX_CHASE_MUST_BE_REGULAR)) == 0, -1);
+
+  if (subpath == NULL)
+    {
+      fd = glnx_chaseat (deploy_dfd, name,
+                         GLNX_CHASE_RESOLVE_NO_SYMLINKS | flags,
+                         error);
+      if (fd < 0)
+        g_prefix_error (error, _("Failed to open %s: "), name);
+
+      return g_steal_fd (&fd);
+    }
+
+  dfd = glnx_chaseat (deploy_dfd, name,
+                      GLNX_CHASE_RESOLVE_NO_SYMLINKS |
+                      GLNX_CHASE_MUST_BE_DIRECTORY,
+                      error);
+  if (dfd < 0)
+    {
+      g_prefix_error (error, _("Failed to open %s: "), name);
+      return -1;
+    }
+
+  /* We cannot use RESOLVE_IN_ROOT because files gets mounted either in
+   * /app or /usr in the real filesystem, making resolution incorrect.
+   * Using RESOLVE_BENEATH gives us support for most symlink setups. */
+  fd = glnx_chaseat (dfd, subpath,
+                     GLNX_CHASE_RESOLVE_BENEATH | flags,
+                     error);
+  if (fd < 0)
+    g_prefix_error (error, _("Failed to open %s/%s: "), name, subpath);
+
+  return g_steal_fd (&fd);
+}
+
+int
+flatpak_deploy_get_files_fd (int              deploy_dfd,
+                             const char      *subpath,
+                             GlnxChaseFlags   flags,
+                             GError         **error)
+{
+  return deploy_open_fd (deploy_dfd, "files", subpath, flags, error);
+}
+
+int
+flatpak_deploy_get_export_fd (int              deploy_dfd,
+                              const char      *subpath,
+                              GlnxChaseFlags   flags,
+                              GError         **error)
+{
+  return deploy_open_fd (deploy_dfd, "export", subpath, flags, error);
+}
+
+int
+flatpak_deploy_get_metadata_fd (int      deploy_dfd,
+                                int      access_flags,
+                                GError **error)
+{
+  glnx_autofd int path_fd = -1;
+  glnx_autofd int fd = -1;
+
+  g_return_val_if_fail ((access_flags & ~(O_RDONLY | O_RDWR)) == 0, -1);
+
+  path_fd = glnx_chaseat (deploy_dfd, "metadata",
+                          GLNX_CHASE_RESOLVE_NO_SYMLINKS |
+                          GLNX_CHASE_MUST_BE_REGULAR,
+                          error);
+  if (path_fd < 0)
+    {
+      g_prefix_error (error, _("Failed to open metadata: "));
+      return -1;
+    }
+
+  fd = glnx_fd_reopen (path_fd, access_flags, error);
+  if (fd < 0)
+    g_prefix_error (error, _("Failed to open metadata: "));
+
+  return g_steal_fd (&fd);
+}
+
 static gboolean
 apply_extra_data (FlatpakDir   *self,
                   int           checkoutdir_dfd,
@@ -9299,8 +9612,7 @@ apply_extra_data (FlatpakDir   *self,
   g_auto(GStrv) minimal_envp = NULL;
   g_autofree char *runtime_arch = NULL;
   glnx_autofd int app_files_dfd = -1;
-  glnx_autofd int metadata_path_fd = -1;
-  glnx_autofd int metadata_read_fd = -1;
+  glnx_autofd int metadata_fd = -1;
   glnx_autofd int extra_dfd = -1;
   glnx_autofd int usr_fd = -1;
   int exit_status;
@@ -9308,20 +9620,17 @@ apply_extra_data (FlatpakDir   *self,
   g_autoptr(GError) local_error = NULL;
   FlatpakRunFlags run_flags;
 
-  app_files_dfd = glnx_chaseat (checkoutdir_dfd, "files",
-                                GLNX_CHASE_RESOLVE_NO_SYMLINKS |
-                                GLNX_CHASE_MUST_BE_DIRECTORY,
-                                error);
+  app_files_dfd = flatpak_deploy_get_files_fd (checkoutdir_dfd, NULL, 0, error);
   if (app_files_dfd < 0)
     return FALSE;
 
   {
     glnx_autofd int apply_extra_fd = -1;
 
-    apply_extra_fd = glnx_chaseat (app_files_dfd, "bin/apply_extra",
-                                   GLNX_CHASE_RESOLVE_BENEATH |
-                                   GLNX_CHASE_MUST_BE_REGULAR,
-                                   &local_error);
+    apply_extra_fd = flatpak_deploy_get_files_fd (checkoutdir_dfd,
+                                                  "bin/apply_extra",
+                                                  GLNX_CHASE_MUST_BE_REGULAR,
+                                                  &local_error);
     if (apply_extra_fd < 0)
       {
         if (g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
@@ -9334,18 +9643,11 @@ apply_extra_data (FlatpakDir   *self,
       }
   }
 
-  metadata_path_fd = glnx_chaseat (checkoutdir_dfd, "metadata",
-                                   GLNX_CHASE_RESOLVE_NO_SYMLINKS |
-                                   GLNX_CHASE_MUST_BE_REGULAR,
-                                   error);
-  if (metadata_path_fd < 0)
+  metadata_fd = flatpak_deploy_get_metadata_fd (checkoutdir_dfd, O_RDONLY, error);
+  if (metadata_fd < 0)
     return FALSE;
 
-  metadata_read_fd = glnx_fd_reopen (metadata_path_fd, O_RDONLY, error);
-  if (metadata_read_fd < 0)
-    return FALSE;
-
-  metadata_contents = glnx_fd_readall_utf8 (metadata_read_fd, &metadata_size,
+  metadata_contents = glnx_fd_readall_utf8 (metadata_fd, &metadata_size,
                                             cancellable, error);
   if (metadata_contents == NULL)
     return FALSE;
@@ -9400,10 +9702,9 @@ apply_extra_data (FlatpakDir   *self,
       runtime_files = flatpak_deploy_get_files (runtime_deploy);
     }
 
-  extra_dfd = glnx_chaseat (app_files_dfd, "extra",
-                            GLNX_CHASE_RESOLVE_BENEATH |
-                            GLNX_CHASE_MUST_BE_DIRECTORY,
-                            error);
+  extra_dfd = flatpak_deploy_get_files_fd (checkoutdir_dfd, "extra",
+                                           GLNX_CHASE_MUST_BE_DIRECTORY,
+                                           error);
   if (extra_dfd < 0)
     return FALSE;
 
@@ -9747,15 +10048,12 @@ flatpak_dir_deploy (FlatpakDir          *self,
   g_autoptr(GFile) deploy_base = NULL;
   glnx_autofd int deploy_base_dfd = -1;
   g_autoptr(GFile) checkoutdir = NULL;
-  g_autoptr(GFile) bindir = NULL;
   g_autofree char *checkoutdirpath = NULL;
   const char *checkoutdir_basename;
   g_autoptr(GFile) real_checkoutdir = NULL;
-  g_autoptr(GFile) files_etc = NULL;
   g_autoptr(GFile) deploy_data_file = NULL;
   g_autoptr(GVariant) commit_data = NULL;
   g_autoptr(GBytes) deploy_data = NULL;
-  g_autoptr(GFile) export = NULL;
   g_autoptr(GFile) extradir = NULL;
   g_autoptr(GKeyFile) keyfile = NULL;
   guint64 installed_size = 0;
@@ -9768,7 +10066,6 @@ flatpak_dir_deploy (FlatpakDir          *self,
   gboolean created_extra_data = FALSE;
   g_autoptr(GVariant) commit_metadata = NULL;
   g_auto(GLnxLockFile) lock = { 0, };
-  g_autoptr(GFile) metadata_file = NULL;
   g_autofree char *metadata_contents = NULL;
   gsize metadata_size = 0;
   const char *flatpak;
@@ -9923,10 +10220,7 @@ flatpak_dir_deploy (FlatpakDir          *self,
     return FALSE;
 
   /* Extract any extra data */
-  app_files_dfd = glnx_chaseat (checkoutdir_dfd, "files",
-                                GLNX_CHASE_RESOLVE_NO_SYMLINKS |
-                                GLNX_CHASE_MUST_BE_DIRECTORY,
-                                error);
+  app_files_dfd = flatpak_deploy_get_files_fd (checkoutdir_dfd, NULL, 0, error);
   if (app_files_dfd < 0)
     return FALSE;
 
@@ -9996,10 +10290,33 @@ flatpak_dir_deploy (FlatpakDir          *self,
     }
 
   keyfile = g_key_file_new ();
-  metadata_file = g_file_resolve_relative_path (checkoutdir, "metadata");
-  if (g_file_load_contents (metadata_file, NULL,
-                            &metadata_contents,
-                            &metadata_size, NULL, NULL))
+
+  {
+    g_autoptr(GError) local_error = NULL;
+    glnx_autofd int metadata_fd = -1;
+
+    metadata_fd = flatpak_deploy_get_metadata_fd (checkoutdir_dfd, O_RDONLY, &local_error);
+    if (metadata_fd < 0 &&
+        !g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+      {
+        g_propagate_error (error, g_steal_pointer (&local_error));
+        return FALSE;
+      }
+
+    if (metadata_fd >= 0)
+      {
+        g_autoptr(GBytes) bytes = NULL;
+
+        bytes = glnx_fd_readall_bytes (metadata_fd, cancellable, error);
+        if (bytes == NULL)
+          return FALSE;
+
+        metadata_contents = g_bytes_unref_to_data (g_steal_pointer (&bytes),
+                                                   &metadata_size);
+      }
+  }
+
+  if (metadata_contents != NULL)
     {
       if (!g_key_file_load_from_data (keyfile,
                                       metadata_contents,
@@ -10019,104 +10336,134 @@ flatpak_dir_deploy (FlatpakDir          *self,
                                  metadata_contents, metadata_size, error))
     return FALSE;
 
-  {
-    g_autofree char *files_path = g_build_filename (checkoutdir_basename, "files", NULL);
-    glnx_autofd int files_dfd = -1;
-
-    if (!glnx_opendirat (deploy_base_dfd, files_path, FALSE, &files_dfd, error))
-      return FALSE;
-
-    if (!glnx_file_replace_contents_at (files_dfd, ".ref",
-                                        (const guint8 *) "", 0,
-                                        GLNX_FILE_REPLACE_NODATASYNC,
-                                        cancellable, error))
-      return FALSE;
-  }
-
-  export = g_file_get_child (checkoutdir, "export");
+  if (!glnx_file_replace_contents_at (app_files_dfd, ".ref",
+                                      (const guint8 *) "", 0,
+                                      GLNX_FILE_REPLACE_NODATASYNC,
+                                      cancellable, error))
+    return FALSE;
 
   /* Never export any binaries bundled with the app */
-  bindir = g_file_get_child (export, "bin");
-  if (!flatpak_rm_rf (bindir, cancellable, error))
-    return FALSE;
+  {
+    g_autoptr(GError) local_error = NULL;
+    glnx_autofd int export_dfd = -1;
+
+    export_dfd = flatpak_deploy_get_export_fd (checkoutdir_dfd, NULL, 0, &local_error);
+    if (export_dfd < 0 &&
+        !g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+      {
+        g_propagate_error (error, g_steal_pointer (&local_error));
+        return FALSE;
+      }
+
+    if (export_dfd >= 0 &&
+        !glnx_shutil_rm_rf_at (export_dfd, "bin", cancellable, error))
+      return FALSE;
+  }
 
   if (flatpak_decomposed_is_runtime (ref))
     {
       /* Ensure that various files exist as regular files in /usr/etc, as we
          want to bind-mount over them */
-      files_etc = g_file_resolve_relative_path (checkoutdir, "files/etc");
-      if (g_file_query_exists (files_etc, cancellable))
-        {
-          static const char * const etcfiles[] = {"passwd", "group", "machine-id" };
-          g_autoptr(GFile) etc_resolve_conf = g_file_get_child (files_etc, "resolv.conf");
-          int i;
-          for (i = 0; i < G_N_ELEMENTS (etcfiles); i++)
-            {
-              g_autoptr(GFile) etc_file = g_file_get_child (files_etc, etcfiles[i]);
-              GFileType type;
+      g_autoptr(GError) local_error = NULL;
+      glnx_autofd int etc_dfd = -1;
 
-              type = g_file_query_file_type (etc_file, G_FILE_QUERY_INFO_NOFOLLOW_SYMLINKS,
-                                             cancellable);
-              if (type == G_FILE_TYPE_REGULAR)
+      etc_dfd = flatpak_deploy_get_files_fd (checkoutdir_dfd, "etc",
+                                             GLNX_CHASE_MUST_BE_DIRECTORY,
+                                             &local_error);
+      if (etc_dfd < 0 &&
+          !g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+        {
+          g_propagate_error (error, g_steal_pointer (&local_error));
+          return FALSE;
+        }
+      g_clear_error (&local_error);
+
+      if (etc_dfd >= 0)
+        {
+          static const char * const etcfiles[] = {
+            "passwd", "group", "machine-id",
+          };
+
+          for (size_t i = 0; i < G_N_ELEMENTS (etcfiles); i++)
+            {
+              struct stat stbuf;
+
+              if (!glnx_fstatat_allow_noent (etc_dfd, etcfiles[i], &stbuf,
+                                             AT_SYMLINK_NOFOLLOW, error))
+                return FALSE;
+              if (errno == 0 && S_ISREG (stbuf.st_mode))
                 continue;
 
-              if (type != G_FILE_TYPE_UNKNOWN)
-                {
-                  /* Already exists, but not regular, probably symlink. Remove it */
-                  if (!g_file_delete (etc_file, cancellable, error))
-                    return FALSE;
-                }
-
-              if (!g_file_replace_contents (etc_file, "", 0, NULL, FALSE,
-                                            G_FILE_CREATE_REPLACE_DESTINATION,
-                                            NULL, cancellable, error))
+              if (!glnx_file_replace_contents_at (etc_dfd, etcfiles[i],
+                                                  (const guint8 *) "", 0,
+                                                  GLNX_FILE_REPLACE_NODATASYNC,
+                                                  cancellable, error))
                 return FALSE;
             }
 
-          if (g_file_query_exists (etc_resolve_conf, cancellable) &&
-              !g_file_delete (etc_resolve_conf, cancellable, error))
-            return FALSE;
+          if (!glnx_unlinkat (etc_dfd, "resolv.conf", 0, &local_error))
+            {
+              if (!g_error_matches (local_error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
+                {
+                  g_propagate_error (error, g_steal_pointer (&local_error));
+                  return FALSE;
+                }
+              g_clear_error (&local_error);
+            }
 
-          if (!g_file_make_symbolic_link (etc_resolve_conf,
-                                          "/run/host/monitor/resolv.conf",
-                                          cancellable, error))
-            return FALSE;
+          if (symlinkat ("/run/host/monitor/resolv.conf", etc_dfd, "resolv.conf") != 0)
+            return glnx_throw_errno_prefix (error, "symlinkat(files/etc/resolv.conf)");
         }
 
       /* Runtime should never export anything */
-      if (!flatpak_rm_rf (export, cancellable, error))
+      if (!glnx_shutil_rm_rf_at (checkoutdir_dfd, "export", cancellable, error))
         return FALSE;
     }
   else /* is app */
     {
       g_autofree char *ref_arch = flatpak_decomposed_dup_arch (ref);
       g_autofree char *ref_branch = flatpak_decomposed_dup_branch (ref);
-      g_autoptr(GFile) wrapper = g_file_get_child (bindir, ref_id);
       g_autofree char *escaped_app = maybe_quote (ref_id);
       g_autofree char *escaped_branch = maybe_quote (ref_branch);
       g_autofree char *escaped_arch = maybe_quote (ref_arch);
       g_autofree char *bin_data = NULL;
+      glnx_autofd int export_dfd = -1;
+      glnx_autofd int bin_dfd = -1;
       int r;
 
-      if (!flatpak_mkdir_p (bindir, cancellable, error))
+      export_dfd = glnx_chase_and_mkdirat (checkoutdir_dfd, "export",
+                                           GLNX_CHASE_RESOLVE_NO_SYMLINKS,
+                                           0755, error);
+      if (export_dfd < 0)
+        return FALSE;
+
+      bin_dfd = glnx_chase_and_mkdirat (export_dfd, "bin",
+                                        GLNX_CHASE_RESOLVE_NO_SYMLINKS,
+                                        0755, error);
+      if (bin_dfd < 0)
         return FALSE;
 
       if (!flatpak_rewrite_export_dir (ref_id, ref_branch, ref_arch,
-                                       keyfile, previous_ids, export,
+                                       keyfile, previous_ids, export_dfd,
                                        cancellable,
                                        error))
         return FALSE;
+
       if ((flatpak = g_getenv ("FLATPAK_BINARY")) == NULL)
         flatpak = FLATPAK_BINDIR "/flatpak";
 
       bin_data = g_strdup_printf ("#!/bin/sh\nexec %s run --branch=%s --arch=%s %s \"$@\"\n",
                                   flatpak, escaped_branch, escaped_arch, escaped_app);
-      if (!g_file_replace_contents (wrapper, bin_data, strlen (bin_data), NULL, FALSE,
-                                    G_FILE_CREATE_REPLACE_DESTINATION, NULL, cancellable, error))
+
+      if (!glnx_file_replace_contents_at (bin_dfd, ref_id,
+                                          (const uint8_t *) bin_data,
+                                          strlen (bin_data),
+                                          GLNX_FILE_REPLACE_NODATASYNC,
+                                          cancellable, error))
         return FALSE;
 
       do
-        r = fchmodat (AT_FDCWD, flatpak_file_get_path_cached (wrapper), 0755, 0);
+        r = fchmodat (bin_dfd, ref_id, 0755, 0);
       while (G_UNLIKELY (r == -1 && errno == EINTR));
       if (r == -1)
         return glnx_throw_errno_prefix (error, "fchmodat");
@@ -10449,7 +10796,7 @@ rewrite_one_dynamic_launcher (const char *portal_desktop_dir,
       g_warning ("Error encountered loading key file %s: %s", desktop_path, local_error->message);
       return;
     }
-  if (!g_key_file_has_key (old_key_file, G_KEY_FILE_DESKTOP_GROUP, "X-Flatpak", NULL))
+  if (!g_key_file_has_key (old_key_file, G_KEY_FILE_DESKTOP_GROUP, X_FLATPAK_KEY_ID, NULL))
     {
       g_info ("Ignoring non-Flatpak dynamic launcher: %s", desktop_path);
       return;
@@ -12240,27 +12587,36 @@ out:
 }
 
 static gboolean
-dir_is_locked (GFile *dir)
+deploy_dir_is_locked (GFile *deploy_dir)
 {
+  glnx_autofd int deploy_dfd = -1;
+  glnx_autofd int ref_path_fd = -1;
   glnx_autofd int ref_fd = -1;
   struct flock lock = {0};
-  g_autoptr(GFile) reffile = NULL;
 
-  reffile = g_file_resolve_relative_path (dir, "files/.ref");
+  if (!glnx_opendirat (AT_FDCWD, flatpak_file_get_path_cached (deploy_dir),
+                       FALSE, &deploy_dfd, NULL))
+    return FALSE;
 
-  ref_fd = open (flatpak_file_get_path_cached (reffile), O_RDWR | O_CLOEXEC);
-  if (ref_fd != -1)
-    {
-      lock.l_type = F_WRLCK;
-      lock.l_whence = SEEK_SET;
-      lock.l_start = 0;
-      lock.l_len = 0;
+  ref_path_fd = flatpak_deploy_get_files_fd (deploy_dfd, ".ref",
+                                             GLNX_CHASE_MUST_BE_REGULAR,
+                                             NULL);
+  if (ref_path_fd < 0)
+    return FALSE;
 
-      if (fcntl (ref_fd, F_GETLK, &lock) == 0)
-        return lock.l_type != F_UNLCK;
-    }
+  ref_fd = glnx_fd_reopen (ref_path_fd, O_RDWR, NULL);
+  if (ref_fd < 0)
+    return FALSE;
 
-  return FALSE;
+  lock.l_type = F_WRLCK;
+  lock.l_whence = SEEK_SET;
+  lock.l_start = 0;
+  lock.l_len = 0;
+
+  if (fcntl (ref_fd, F_GETLK, &lock) != 0)
+    return FALSE;
+
+  return lock.l_type != F_UNLCK;
 }
 
 gboolean
@@ -12388,7 +12744,7 @@ flatpak_dir_undeploy (FlatpakDir        *self,
       }
   }
 
-  if (force_remove || !dir_is_locked (removed_subdir))
+  if (force_remove || !deploy_dir_is_locked (removed_subdir))
     {
       g_autoptr(GError) tmp_error = NULL;
 
@@ -12585,7 +12941,7 @@ flatpak_dir_cleanup_removed (FlatpakDir   *self,
       g_autoptr(GFile) child = g_file_get_child (removed_dir, name);
 
       if (g_file_info_get_file_type (child_info) == G_FILE_TYPE_DIRECTORY &&
-          !dir_is_locked (child))
+          !deploy_dir_is_locked (child))
         {
           g_autoptr(GError) tmp_error = NULL;
           if (!flatpak_rm_rf (child, cancellable, &tmp_error))
