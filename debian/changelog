@@ -1,3 +1,12 @@
+flatpak (1.18.4-1~flatpak1~24.04.1) noble; urgency=high
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+  * Remaining changes relative to resolute:
+    - Reinstate Priority: optional field for backport
+  * Roll back dpkg build API to v0
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 28 Sep 2026 15:08:19 +0100
+
 flatpak (1.18.4-1~flatpak1~26.04.1) resolute; urgency=high
 
   * Rebuild for Ubuntu 26.04 'resolute' for PPA
