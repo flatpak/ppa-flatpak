@@ -1,3 +1,52 @@
+Changes in 1.18.4
+~~~~~~~~~~~~~~~~~
+Released: 2026-09-28
+
+Security fixes:
+
+* Prevent privileged overwrite of arbitrary files with an empty file or a
+  symlink to /run/host/monitor/resolv.conf when a malicious app is installed
+  (CVE-2026-97024, GHSA-8xgq-v545-vgvf; thanks to Sebastian Wick)
+
+* Prevent privileged deletion of arbitrary files when a malicious app
+  is installed
+  (CVE-2026-97023, GHSA-5p67-xh8x-rq54; thanks to Sebastian Wick)
+
+* When downloading apps or runtimes from an OCI repository that requires
+  authentication, don't make the authentication token visible to other users
+  (CVE-2026-97025, GHSA-7rvf-rqr3-43j4; thanks to AISLE in cooperation
+  with Red Hat)
+
+* Restrict permissions on temporary repository directories in
+  /var/tmp/flatpak-cache-*
+  (CVE-2026-97026, GHSA-r9w3-qx54-qvc8; thanks to AISLE in cooperation
+  with Red Hat)
+
+* Filter .desktop and D-Bus .service files against an allowlist of fields,
+  preventing denial of service and unintended interactions with host services
+  (CVE-2026-97027, GHSA-v64f-hrwr-j4vh; thanks to Markus Göllnitz)
+
+* Prevent apps from sending signals to a process group that includes a
+  parent process outside the app, causing denial of service by killing
+  the desktop environment
+  (CVE-2026-97029, GHSA-f3p8-vr7v-gxf2; thanks to Guthrie Armstrong,
+  Coalition, Inc.)
+
+Bug fixes:
+
+* Update Meson wrap subprojects for projects that are normally taken from
+  the host system:
+  - xdg-dbus-proxy 0.1.9 (CVE-2026-93676, CVE-2026-94422)
+
+* Improve hardening against symlink traversal, related to
+  CVE-2026-97023 and CVE-2026-97024
+
+Internal changes:
+
+* Add CVE IDs and reporter credits to 1.18.1's NEWS entry
+
+* Remove unnecessary U+200E LEFT-TO-RIGHT MARK from some older NEWS entries
+
 Changes in 1.18.3
 ~~~~~~~~~~~~~~~~~
 Released: 2026-09-22
@@ -52,34 +101,41 @@ Released: 2026-08-11
 Security fixes:
 
 * Fix sandbox escape with full host filesystem read/write access via symlink
-  attack on app data directories (GHSA-8688-9x26-hhxj)
+  attack on app data directories
+  (CVE-2026-90616, GHSA-8688-9x26-hhxj; thanks to Ee Yang)
 
 * Fix local root privilege escalation via revokefs symlink path traversal and
-  commit tampering (GHSA-qrwq-7qwx-q9rp)
+  commit tampering
+  (CVE-2026-96808, GHSA-qrwq-7qwx-q9rp; thanks to Ee Yang)
 
 * Fix arbitrary root write via symlink and path traversal in extra-data
-  extraction (GHSA-fqx6-vh4p-42cg)
+  extraction
+  (CVE-2026-96275, GHSA-fqx6-vh4p-42cg; thanks to AISLE in cooperation
+  with Red Hat)
 
 * Fix arbitrary root write via path traversal in `flatpak build-init`
-  (GHSA-8qxj-x646-phcm)
+  (CVE-2026-96276, GHSA-8qxj-x646-phcm; thanks to Sebastian Wick)
 
 * Fix arbitrary host file read via hardlink path traversal in OCI archive
-  extraction (GHSA-9rww-v4mm-x4jg)
+  extraction
+  (CVE-2026-96279, GHSA-9rww-v4mm-x4jg; thanks to Sebastian Wick)
 
 * Fix path traversal via unvalidated architecture parameter in DeployAppstream
-  (GHSA-v2gw-v9h5-9q4x)
+  (CVE-2026-92162, GHSA-v2gw-v9h5-9q4x; thanks to Yehia Ali Mohamed Ezzat)
 
 * Fix buffer overflow in OCI delta stream path names on 32-bit systems
-  (GHSA-jr92-2v97-wgvc)
+  (CVE-2026-96280, GHSA-jr92-2v97-wgvc; thanks to Sebastian Wick)
 
 * Fix fixed-filename writes to arbitrary locations via symlink attack on .ld.so
-  (GHSA-99wv-m8rp-g58x)
+  (CVE-2026-96807, GHSA-99wv-m8rp-g58x; thanks to Sebastian Wick)
 
 * Fix extension metadata path traversal allowing host filesystem probing and
-  unintended mount locations (GHSA-w69g-9x8j-7p8f)
+  unintended mount locations
+  (CVE-2026-96282, GHSA-w69g-9x8j-7p8f; thanks to Sebastian Wick)
 
 * Fix anti-downgrade bypass allowing unprivileged users to downgrade system
-  apps (GHSA-q4gr-vc25-57m5)
+  apps
+  (CVE-2026-96281, GHSA-q4gr-vc25-57m5; thanks to BreachX Zero Day Labs)
 
 Bug fixes:
 
@@ -123,7 +179,7 @@ Enhancements:
 
 * Improve startup time for fish shell integration (#6635)
 
-* Translation updates: ‎zh_CN (#6671)
+* Translation updates: zh_CN (#6671)
 
 Bug fixes:
 
@@ -161,7 +217,7 @@ Enhancements:
 
 * Improve various tests (#6604, #6606, #6619, #6617, #6605, #6625)
 
-* Translation updates: tr (#6629), ‎zh_CN (#6630)
+* Translation updates: tr (#6629), zh_CN (#6630)
 
 Bug fixes:
 
