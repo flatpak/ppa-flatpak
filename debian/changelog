@@ -1,4 +1,4 @@
-flatpak (1.18.4-1) UNRELEASED; urgency=medium
+flatpak (1.18.4-1) unstable; urgency=high
 
   * New upstream security fix release (Closes: #1149218)
     - Fix two related symlink traversal vulnerabilities to prevent arbitrary
@@ -18,7 +18,7 @@ flatpak (1.18.4-1) UNRELEASED; urgency=medium
       sandbox
       (CVE-2026-97029, GHSA-f3p8-vr7v-gxf2)
 
- -- Simon McVittie <smcv@debian.org>  Tue, 22 Sep 2026 21:53:24 +0100
+ -- Simon McVittie <smcv@debian.org>  Mon, 28 Sep 2026 14:10:44 +0100
 
 flatpak (1.18.3-1) unstable; urgency=medium
 
