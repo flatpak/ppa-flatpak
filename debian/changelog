@@ -1,3 +1,44 @@
+flatpak (1.18.4-1~flatpak1~24.04.1) noble; urgency=high
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+  * Remaining changes relative to resolute:
+    - Reinstate Priority: optional field for backport
+  * Roll back dpkg build API to v0
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 28 Sep 2026 15:08:19 +0100
+
+flatpak (1.18.4-1~flatpak1~26.04.1) resolute; urgency=high
+
+  * Rebuild for Ubuntu 26.04 'resolute' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+  * Roll back debhelper compat level to 13
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 28 Sep 2026 15:07:03 +0100
+
+flatpak (1.18.4-1) unstable; urgency=high
+
+  * New upstream security fix release (Closes: #1149218)
+    - Fix two related symlink traversal vulnerabilities to prevent arbitrary
+      file deletion and limited file overwriting outside the deploy
+      directory, and harden related code paths against symlink traversal
+      (deletion: CVE-2026-97023, GHSA-5p67-xh8x-rq54)
+      (overwriting: CVE-2026-97024, GHSA-8xgq-v545-vgvf)
+    - Don't write authentication token to disk when using OCI remotes
+      (CVE-2026-97025, GHSA-7rvf-rqr3-43j4)
+    - Restrict permissions of temporary directories /var/tmp/flatpak-cache-*
+      (CVE-2026-97026, GHSA-r9w3-qx54-qvc8)
+    - Filter D-Bus .service files and freedesktop.org .desktop files
+      with an allowlist to prevent denial of service and possibly
+      sandbox escape
+      (CVE-2026-97027, GHSA-v64f-hrwr-j4vh)
+    - Prevent sandboxed processes from killing a parent process outside the
+      sandbox
+      (CVE-2026-97029, GHSA-f3p8-vr7v-gxf2)
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 28 Sep 2026 14:10:44 +0100
+
 flatpak (1.18.3-1~flatpak1~22.04.1) jammy; urgency=medium
 
   * Rebuild for Ubuntu 22.04 'jammy' for PPA
