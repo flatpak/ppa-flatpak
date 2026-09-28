@@ -1,3 +1,13 @@
+flatpak (1.18.4-1~flatpak1~26.04.1) resolute; urgency=high
+
+  * Rebuild for Ubuntu 26.04 'resolute' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+  * Roll back debhelper compat level to 13
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 28 Sep 2026 15:07:03 +0100
+
 flatpak (1.18.4-1) unstable; urgency=high
 
   * New upstream security fix release (Closes: #1149218)
