@@ -40,6 +40,7 @@
 #include <gio/gdesktopappinfo.h>
 #include "flatpak-portal-dbus.h"
 #include "flatpak-portal.h"
+#include "flatpak-dbus-utils-private.h"
 #include "flatpak-dir-private.h"
 #include "flatpak-utils-private.h"
 #include "flatpak-transaction.h"
@@ -510,7 +511,8 @@ child_setup_func (gpointer user_data)
     {
       if (fd_map[i].from != fd_map[i].to)
         {
-          dup2 (fd_map[i].from, fd_map[i].to);
+          if (dup2 (fd_map[i].from, fd_map[i].to) == -1)
+            _exit (255);
           close (fd_map[i].from);
         }
     }
@@ -520,7 +522,8 @@ child_setup_func (gpointer user_data)
     {
       if (fd_map[i].to != fd_map[i].final)
         {
-          dup2 (fd_map[i].to, fd_map[i].final);
+          if (dup2 (fd_map[i].to, fd_map[i].final) == -1)
+            _exit (255);
           close (fd_map[i].to);
         }
 
@@ -651,8 +654,7 @@ handle_spawn (PortalFlatpak         *object,
   PidData *pid_data;
   InstanceIdReadData *instance_id_read_data = NULL;
   gsize i, j, n_fds, n_envs;
-  const gint *fds = NULL;
-  gint fds_len = 0;
+  g_autoptr(FlatpakUniqueFDList) unique_fds = NULL;
   g_autoptr(GArray) fd_map = NULL;
   g_auto(GStrv) env = NULL;
   gint32 max_fd;
@@ -678,8 +680,8 @@ handle_spawn (PortalFlatpak         *object,
   g_autoptr(FlatpakInstance) instance = NULL;
   g_autoptr(GVariant) sandbox_expose_fd = NULL;
   g_autoptr(GVariant) sandbox_expose_fd_ro = NULL;
-  g_autoptr(GVariant) app_fd = NULL;
-  g_autoptr(GVariant) usr_fd = NULL;
+  g_autoptr(GVariant) app_fd_variant = NULL;
+  g_autoptr(GVariant) usr_fd_variant = NULL;
   g_autoptr(GOutputStream) instance_id_out_stream = NULL;
   guint sandbox_flags = 0;
   gboolean sandboxed;
@@ -701,7 +703,15 @@ handle_spawn (PortalFlatpak         *object,
   child_setup_data.env_fd = -1;
 
   if (fd_list != NULL)
-    fds = g_unix_fd_list_peek_fds (fd_list, &fds_len);
+    {
+      unique_fds = flatpak_unique_fd_list_new (fd_list, &error);
+
+      if (unique_fds == NULL)
+        {
+          g_dbus_method_invocation_return_gerror (invocation, error);
+          return G_DBUS_METHOD_INVOCATION_HANDLED;
+        }
+    }
 
   app_info = g_object_get_data (G_OBJECT (invocation), "app-info");
   g_assert (app_info != NULL);
@@ -799,8 +809,8 @@ handle_spawn (PortalFlatpak         *object,
   sandbox_expose_fd = g_variant_lookup_value (arg_options, "sandbox-expose-fd", G_VARIANT_TYPE ("ah"));
   sandbox_expose_fd_ro = g_variant_lookup_value (arg_options, "sandbox-expose-fd-ro", G_VARIANT_TYPE ("ah"));
   g_variant_lookup (arg_options, "unset-env", "^as", &unset_env);
-  app_fd = g_variant_lookup_value (arg_options, "app-fd", G_VARIANT_TYPE_HANDLE);
-  usr_fd = g_variant_lookup_value (arg_options, "usr-fd", G_VARIANT_TYPE_HANDLE);
+  app_fd_variant = g_variant_lookup_value (arg_options, "app-fd", G_VARIANT_TYPE_HANDLE);
+  usr_fd_variant = g_variant_lookup_value (arg_options, "usr-fd", G_VARIANT_TYPE_HANDLE);
 
   if ((sandbox_flags & ~FLATPAK_SPAWN_SANDBOX_FLAGS_ALL) != 0)
     {
@@ -842,7 +852,7 @@ handle_spawn (PortalFlatpak         *object,
   g_info ("Running spawn command %s", arg_argv[0]);
 
   n_fds = 0;
-  if (fds != NULL)
+  if (unique_fds != NULL)
     n_fds = g_variant_n_children (arg_fds);
 
   fd_map = g_array_sized_new (FALSE, FALSE, sizeof (FdMapEntry), n_fds);
@@ -855,17 +865,13 @@ handle_spawn (PortalFlatpak         *object,
       int handle_fd;
 
       g_variant_get_child (arg_fds, i, "{uh}", &dest_fd, &handle);
+      handle_fd = flatpak_unique_fd_list_get (unique_fds, handle, &error);
 
-      if (handle >= fds_len || handle < 0)
+      if (handle_fd < 0)
         {
-          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
-                                                 G_DBUS_ERROR_INVALID_ARGS,
-                                                 "No file descriptor for handle %d",
-                                                 handle);
+          g_dbus_method_invocation_return_gerror (invocation, error);
           return G_DBUS_METHOD_INVOCATION_HANDLED;
         }
-
-      handle_fd = fds[handle];
 
       fd_map_entry.to = dest_fd;
       fd_map_entry.from = handle_fd;
@@ -1302,26 +1308,26 @@ handle_spawn (PortalFlatpak         *object,
       for (i = 0; i < len; i++)
         {
           gint32 handle;
+          int expose_fd;
 
           g_variant_get_child (sandbox_expose_fd, i, "h", &handle);
-          if (handle >= fds_len || handle < 0)
+          expose_fd = flatpak_unique_fd_list_get (unique_fds, handle, &error);
+
+          if (expose_fd < 0)
             {
               g_debug ("Invalid sandbox-expose-fd handle %d", handle);
-              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
-                                                     G_DBUS_ERROR_INVALID_ARGS,
-                                                     "No file descriptor for handle %d",
-                                                     handle);
+              g_dbus_method_invocation_return_gerror (invocation, error);
               return G_DBUS_METHOD_INVOCATION_HANDLED;
             }
 
-          if (validate_opath_fd (fds[handle], TRUE, &error))
+          if (validate_opath_fd (expose_fd, TRUE, &error))
             {
-              g_array_append_val (expose_fds, fds[handle]);
+              g_array_append_val (expose_fds, expose_fd);
             }
           else
             {
               g_info ("unable to validate sandbox-expose-fd %d, ignoring: %s",
-                      fds[handle], error->message);
+                      expose_fd, error->message);
               g_clear_error (&error);
             }
         }
@@ -1334,26 +1340,26 @@ handle_spawn (PortalFlatpak         *object,
       for (i = 0; i < len; i++)
         {
           gint32 handle;
+          int expose_fd;
 
           g_variant_get_child (sandbox_expose_fd_ro, i, "h", &handle);
-          if (handle >= fds_len || handle < 0)
+          expose_fd = flatpak_unique_fd_list_get (unique_fds, handle, &error);
+
+          if (expose_fd < 0)
             {
               g_debug ("Invalid sandbox-expose-ro-fd handle %d", handle);
-              g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
-                                                     G_DBUS_ERROR_INVALID_ARGS,
-                                                     "No file descriptor for handle %d",
-                                                     handle);
+              g_dbus_method_invocation_return_gerror (invocation, error);
               return G_DBUS_METHOD_INVOCATION_HANDLED;
             }
 
-          if (validate_opath_fd (fds[handle], FALSE, &error))
+          if (validate_opath_fd (expose_fd, FALSE, &error))
             {
-              g_array_append_val (expose_fds_ro, fds[handle]);
+              g_array_append_val (expose_fds_ro, expose_fd);
             }
           else
             {
               g_info ("unable to validate sandbox-expose-ro-fd %d, ignoring: %s",
-                      fds[handle], error->message);
+                      expose_fd, error->message);
               g_clear_error (&error);
             }
         }
@@ -1381,7 +1387,7 @@ handle_spawn (PortalFlatpak         *object,
 
   empty_app = (arg_flags & FLATPAK_SPAWN_FLAGS_EMPTY_APP) != 0;
 
-  if (empty_app && app_fd != NULL)
+  if (empty_app && app_fd_variant != NULL)
     {
       g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
                                              G_DBUS_ERROR_INVALID_ARGS,
@@ -1389,23 +1395,21 @@ handle_spawn (PortalFlatpak         *object,
       return G_DBUS_METHOD_INVOCATION_HANDLED;
     }
 
-  if (app_fd != NULL)
+  if (app_fd_variant != NULL)
     {
+      int app_fd;
       int remapped_fd;
-      gint32 handle = g_variant_get_handle (app_fd);
+      gint32 handle = g_variant_get_handle (app_fd_variant);
 
-      if (handle >= fds_len || handle < 0)
+      app_fd = flatpak_unique_fd_list_get (unique_fds, handle, &error);
+
+      if (app_fd < 0)
         {
-          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
-                                                 G_DBUS_ERROR_INVALID_ARGS,
-                                                 "No file descriptor for handle %d",
-                                                 handle);
+          g_dbus_method_invocation_return_gerror (invocation, error);
           return G_DBUS_METHOD_INVOCATION_HANDLED;
         }
 
-      g_assert (fds != NULL);   /* otherwise fds_len would be 0 */
-
-      remapped_fd = fd_map_remap_fd (fd_map, &max_fd, fds[handle]);
+      remapped_fd = fd_map_remap_fd (fd_map, &max_fd, app_fd);
 
       g_ptr_array_add (flatpak_argv, g_strdup_printf ("--app-fd=%d",
                                                       remapped_fd));
@@ -1415,23 +1419,21 @@ handle_spawn (PortalFlatpak         *object,
       g_ptr_array_add (flatpak_argv, g_strdup ("--app-path="));
     }
 
-  if (usr_fd != NULL)
+  if (usr_fd_variant != NULL)
     {
+      int usr_fd;
       int remapped_fd;
-      gint32 handle = g_variant_get_handle (usr_fd);
+      gint32 handle = g_variant_get_handle (usr_fd_variant);
 
-      if (handle >= fds_len || handle < 0)
+      usr_fd = flatpak_unique_fd_list_get (unique_fds, handle, &error);
+
+      if (usr_fd < 0)
         {
-          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
-                                                 G_DBUS_ERROR_INVALID_ARGS,
-                                                 "No file descriptor for handle %d",
-                                                 handle);
+          g_dbus_method_invocation_return_gerror (invocation, error);
           return G_DBUS_METHOD_INVOCATION_HANDLED;
         }
 
-      g_assert (fds != NULL);   /* otherwise fds_len would be 0 */
-
-      remapped_fd = fd_map_remap_fd (fd_map, &max_fd, fds[handle]);
+      remapped_fd = fd_map_remap_fd (fd_map, &max_fd, usr_fd);
 
       g_ptr_array_add (flatpak_argv, g_strdup_printf ("--usr-fd=%d",
                                                       remapped_fd));
