@@ -1,5 +1,12 @@
-flatpak (1.18.4-2) UNRELEASED; urgency=medium
+flatpak (1.18.6-1) unstable; urgency=high
 
+  * New upstream security fix release
+    - Prevent a malicious app/runtime/extension from creating setuid-root
+      executables in /var/lib/flatpak which a cooperating local user could
+      use for privilege escalation
+      (CVE-2026-133842, GHSA-p4mw-6jfq-r82r)
+    - Prevent a sandbox escape via crafted messages to flatpak-portal
+      (CVE-2026-133845, GHSA-5jrj-948r-2wx6)
   * d/control: Remove dh-sequence-installsysusers, no longer needed in
     compat 14 (it is now the default)
 
