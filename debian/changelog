@@ -1,3 +1,14 @@
+flatpak (1.18.6-1~flatpak1~26.04.1) UNRELEASED; urgency=high
+
+  * Rebuild for Ubuntu 26.04 'resolute' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+    - Roll back debhelper compat level to 13
+  * Revert "d/control: Remove dh-sequence-installsysusers"
+
+ -- Simon McVittie <smcv@debian.org>  Mon, 28 Sep 2026 15:07:03 +0100
+
 flatpak (1.18.6-1) unstable; urgency=high
 
   * New upstream security fix release
