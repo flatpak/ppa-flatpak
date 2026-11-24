@@ -1,4 +1,4 @@
-flatpak (1.18.6-1~flatpak1~26.04.1) UNRELEASED; urgency=high
+flatpak (1.18.6-1~flatpak1~26.04.1) resolute; urgency=high
 
   * Rebuild for Ubuntu 26.04 'resolute' for PPA
   * Remaining changes relative to Debian:
@@ -7,7 +7,7 @@ flatpak (1.18.6-1~flatpak1~26.04.1) UNRELEASED; urgency=high
     - Roll back debhelper compat level to 13
   * Revert "d/control: Remove dh-sequence-installsysusers"
 
- -- Simon McVittie <smcv@debian.org>  Mon, 28 Sep 2026 15:07:03 +0100
+ -- Simon McVittie <smcv@debian.org>  Tue, 24 Nov 2026 17:27:52 +0000
 
 flatpak (1.18.6-1) unstable; urgency=high
 
