@@ -1359,14 +1359,25 @@ _flatpak_canonicalize_permissions (int         parent_dfd,
           res = FALSE;
         }
 
-      if (glnx_dirfd_iterator_init_at (parent_dfd, rel_path, FALSE, &dfd_iter, NULL))
+      if (glnx_dirfd_iterator_init_at (parent_dfd, rel_path, FALSE, &dfd_iter, error))
         {
           while (TRUE)
             {
               struct dirent *dent;
 
-              if (!glnx_dirfd_iterator_next_dent (&dfd_iter, &dent, NULL, NULL) || dent == NULL)
-                break;
+              if (!glnx_dirfd_iterator_next_dent (&dfd_iter, &dent, NULL, error))
+                {
+                  /* Can't continue iteration, fail closed */
+                  error = NULL;
+                  res = FALSE;
+                  break;
+                }
+
+              if (dent == NULL)
+                {
+                  /* End of iteration, not an error */
+                  break;
+                }
 
               if (!_flatpak_canonicalize_permissions (dfd_iter.fd, dent->d_name, FALSE, uid, gid, error))
                 {
@@ -1375,8 +1386,19 @@ _flatpak_canonicalize_permissions (int         parent_dfd,
                 }
             }
         }
+      else
+        {
+          /* Can't open for iteration, fail closed */
+          error = NULL;
+          res = FALSE;
+        }
 
+      /* Only chmod the top-level directory back to 0755 if we did not
+       * encounter any errors among its descendants. If we did, then it
+       * might still contain setuid/setgid files, and it isn't safe to let
+       * other users access those. */
       if (toplevel &&
+          res &&
           fchmodat (parent_dfd, rel_path, 0755, 0) != 0)
         {
           glnx_set_error_from_errno (error);

@@ -1,3 +1,37 @@
+flatpak (1.18.6-1~flatpak1~24.04.1) noble; urgency=high
+
+  * Rebuild for Ubuntu 24.04 'noble' for PPA
+  * Remaining changes relative to resolute:
+    - Reinstate Priority: optional field for backport
+    - Roll back dpkg build API to v0
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 24 Nov 2026 17:29:35 +0000
+
+flatpak (1.18.6-1~flatpak1~26.04.1) resolute; urgency=high
+
+  * Rebuild for Ubuntu 26.04 'resolute' for PPA
+  * Remaining changes relative to Debian:
+    - Set changelog merge driver for debian/changelog
+    - Add PPA backport notes to debian/README.source
+    - Roll back debhelper compat level to 13
+  * Revert "d/control: Remove dh-sequence-installsysusers"
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 24 Nov 2026 17:27:52 +0000
+
+flatpak (1.18.6-1) unstable; urgency=high
+
+  * New upstream security fix release
+    - Prevent a malicious app/runtime/extension from creating setuid-root
+      executables in /var/lib/flatpak which a cooperating local user could
+      use for privilege escalation
+      (CVE-2026-133842, GHSA-p4mw-6jfq-r82r)
+    - Prevent a sandbox escape via crafted messages to flatpak-portal
+      (CVE-2026-133845, GHSA-5jrj-948r-2wx6)
+  * d/control: Remove dh-sequence-installsysusers, no longer needed in
+    compat 14 (it is now the default)
+
+ -- Simon McVittie <smcv@debian.org>  Tue, 24 Nov 2026 14:14:37 +0000
+
 flatpak (1.18.4-1~flatpak1~24.04.1) noble; urgency=high
 
   * Rebuild for Ubuntu 24.04 'noble' for PPA
